@@ -164,6 +164,7 @@ public class TestTableUtil {
   }
 
   public static TableFiles files(ArcticTable table) {
+    table.refresh();
     if (table.isUnkeyedTable()) {
       Pair<Set<DataFile>, Set<DeleteFile>> fileStatistic = icebergFiles(table.asUnkeyedTable());
       return new TableFiles(fileStatistic.getLeft(), fileStatistic.getRight());
@@ -222,6 +223,7 @@ public class TestTableUtil {
 
   public static List<Record> tableRecords(ArcticTable table, Expression expression) {
     List<Record> records;
+    table.refresh();
     if (table.isKeyedTable()) {
       if (table instanceof SupportHive) {
         records = readKeyedTable(table.asKeyedTable(), expression);

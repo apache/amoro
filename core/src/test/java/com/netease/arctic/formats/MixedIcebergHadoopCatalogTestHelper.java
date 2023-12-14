@@ -44,10 +44,13 @@ public class MixedIcebergHadoopCatalogTestHelper
 
   @Override
   public AmoroCatalog amoroCatalog() {
-    MixedIcebergCatalogFactory icebergCatalogFactory = new MixedIcebergCatalogFactory();
+    MixedIcebergCatalogFactory mixedIcebergCatalogFactory = new MixedIcebergCatalogFactory();
     TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
-    return icebergCatalogFactory.create(
-        catalogName, getMetastoreType(), catalogProperties, metaStore);
+    Map<String, String> properties =
+        mixedIcebergCatalogFactory.convertCatalogProperties(
+            catalogName, getMetastoreType(), catalogProperties);
+    return mixedIcebergCatalogFactory.create(
+        catalogName, getMetastoreType(), properties, metaStore);
   }
 
   @Override

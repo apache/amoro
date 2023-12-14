@@ -98,11 +98,28 @@ public class TestCatalog extends CatalogTestBase {
 
   @After
   public void after() {
-    sql("DROP TABLE " + CATALOG + "." + DB + "." + TABLE);
-    sql("DROP DATABASE " + CATALOG + "." + DB);
+    sql("DROP TABLE IF EXISTS " + CATALOG + "." + DB + "." + TABLE);
+    sql("DROP DATABASE IF EXISTS " + CATALOG + "." + DB);
     Assert.assertTrue(CollectionUtil.isNullOrEmpty(getMixedFormatCatalog().listDatabases()));
     sql("USE CATALOG default_catalog");
     sql("DROP CATALOG " + CATALOG);
+  }
+
+  @Test
+  public void testCreateIcebergHiveCatalog() {
+    sql(
+        "CREATE CATALOG mixed_iceberg_catalog WITH ('type'='mixed_iceberg', 'metastore.url'='%s')",
+        getCatalogUrl());
+    sql(
+        "CREATE CATALOG mixed_hive_catalog WITH ('type'='mixed_hive', 'metastore.url'='%s')",
+        getCatalogUrl());
+
+    String[] catalogs = getTableEnv().listCatalogs();
+    Assert.assertArrayEquals(
+        Arrays.stream(catalogs).sorted().toArray(),
+        Stream.of("default_catalog", "arcticCatalog", "mixed_iceberg_catalog", "mixed_hive_catalog")
+            .sorted()
+            .toArray());
   }
 
   @Test
