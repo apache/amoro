@@ -2,13 +2,14 @@ package com.netease.arctic.optimizer.common;
 
 import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.ErrorCodes;
+import com.netease.arctic.ams.api.OptimizerProperties;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
-import com.netease.arctic.ams.api.PropertyNames;
-import java.util.Map;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 public class OptimizerToucher extends AbstractOptimizerOperator {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerToucher.class);
@@ -55,7 +56,7 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
             callAms(
                 client -> {
                   withRegisterProperty(
-                      PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL,
+                      OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL,
                       String.valueOf(getConfig().getHeartBeat()));
                   OptimizerRegisterInfo registerInfo = new OptimizerRegisterInfo();
                   registerInfo.setThreadCount(getConfig().getExecutionParallel());
