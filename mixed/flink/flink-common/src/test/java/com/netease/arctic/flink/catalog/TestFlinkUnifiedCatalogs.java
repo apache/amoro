@@ -32,7 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-class TestFlinkCatalogs {
+class TestFlinkUnifiedCatalogs {
   static FlinkCatalogContext flinkCatalogContext = new FlinkCatalogContext();
 
   @BeforeAll

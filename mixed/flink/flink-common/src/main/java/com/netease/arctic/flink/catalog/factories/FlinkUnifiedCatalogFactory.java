@@ -20,8 +20,8 @@ package com.netease.arctic.flink.catalog.factories;
 
 import static com.netease.arctic.ams.api.Constants.THRIFT_TABLE_SERVICE_NAME;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
-import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.DEFAULT_DATABASE;
-import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.FLINK_TABLE_FORMATS;
+import static com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions.DEFAULT_DATABASE;
+import static com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions.FLINK_TABLE_FORMATS;
 import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
 
 import com.netease.arctic.UnifiedCatalog;
@@ -30,7 +30,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.flink.catalog.FlinkUnifiedCatalog;
 import com.netease.arctic.flink.catalog.factories.iceberg.IcebergFlinkCatalogFactory;
-import com.netease.arctic.flink.catalog.factories.mixed.ArcticCatalogFactory;
+import com.netease.arctic.flink.catalog.factories.mixed.MixedCatalogFactory;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.Catalog;
@@ -46,20 +46,20 @@ import java.util.Map;
 import java.util.Set;
 
 /** Factory for {@link FlinkUnifiedCatalog}. */
-public class FlinkCatalogFactory implements CatalogFactory {
+public class FlinkUnifiedCatalogFactory implements CatalogFactory {
 
   private static final Set<TableFormat> SUPPORTED_FORMATS =
       Sets.newHashSet(TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE, TableFormat.ICEBERG);
 
   @Override
   public String factoryIdentifier() {
-    return ArcticCatalogFactoryOptions.UNIFIED_IDENTIFIER;
+    return CatalogFactoryOptions.UNIFIED_IDENTIFIER;
   }
 
   @Override
   public Set<ConfigOption<?>> requiredOptions() {
     Set<ConfigOption<?>> requiredOptions = new HashSet<>();
-    requiredOptions.add(ArcticCatalogFactoryOptions.METASTORE_URL);
+    requiredOptions.add(CatalogFactoryOptions.METASTORE_URL);
     return requiredOptions;
   }
 
@@ -78,7 +78,7 @@ public class FlinkCatalogFactory implements CatalogFactory {
     helper.validate();
 
     final String defaultDatabase = helper.getOptions().get(DEFAULT_DATABASE);
-    String metastoreUrl = helper.getOptions().get(ArcticCatalogFactoryOptions.METASTORE_URL);
+    String metastoreUrl = helper.getOptions().get(CatalogFactoryOptions.METASTORE_URL);
 
     String amoroCatalogName =
         ArcticThriftUrl.parse(metastoreUrl, THRIFT_TABLE_SERVICE_NAME).catalogName();
@@ -114,7 +114,7 @@ public class FlinkCatalogFactory implements CatalogFactory {
     switch (tableFormat) {
       case MIXED_ICEBERG:
       case MIXED_HIVE:
-        catalogFactory = new ArcticCatalogFactory();
+        catalogFactory = new MixedCatalogFactory();
         break;
       case ICEBERG:
         catalogFactory = new IcebergFlinkCatalogFactory(hadoopConf);

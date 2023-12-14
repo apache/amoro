@@ -18,13 +18,13 @@
 
 package com.netease.arctic.flink.catalog;
 
-import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.METASTORE_URL;
+import static com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions.METASTORE_URL;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.TABLE_FORMAT;
 
 import com.netease.arctic.TestAms;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.flink.catalog.factories.FlinkCatalogFactory;
+import com.netease.arctic.flink.catalog.factories.FlinkUnifiedCatalogFactory;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import org.apache.flink.configuration.Configuration;
@@ -49,7 +49,8 @@ public class FlinkCatalogContext {
 
   static final TestHMS TEST_HMS = new TestHMS();
   static final TestAms TEST_AMS = new TestAms();
-  static final FlinkCatalogFactory flinkCatalogFactory = new FlinkCatalogFactory();
+  static final FlinkUnifiedCatalogFactory FLINK_UNIFIED_CATALOG_FACTORY =
+      new FlinkUnifiedCatalogFactory();
 
   static ResolvedSchema resolvedSchema =
       ResolvedSchema.of(
@@ -112,7 +113,8 @@ public class FlinkCatalogContext {
             factoryOptions,
             new Configuration(),
             FlinkCatalogContext.class.getClassLoader());
-    flinkUnifiedCatalog = (FlinkUnifiedCatalog) flinkCatalogFactory.createCatalog(context);
+    flinkUnifiedCatalog =
+        (FlinkUnifiedCatalog) FLINK_UNIFIED_CATALOG_FACTORY.createCatalog(context);
     flinkUnifiedCatalog.open();
     return flinkUnifiedCatalog;
   }

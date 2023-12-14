@@ -16,19 +16,19 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.catalog.factories;
+package com.netease.arctic.flink.catalog.factories.mixed;
 
-import com.netease.arctic.flink.catalog.ArcticCatalog;
-import com.netease.arctic.flink.catalog.factories.mixed.ArcticCatalogFactory;
+import com.netease.arctic.flink.catalog.MixedCatalog;
+import com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions;
 
 /**
- * The factory to create {@link ArcticCatalog} with {@link
- * ArcticCatalogFactoryOptions#MIXED_HIVE_IDENTIFIER} identifier.
+ * The factory to create {@link MixedCatalog} with {@link
+ * CatalogFactoryOptions#MIXED_HIVE_IDENTIFIER} identifier.
  */
-public class MixedHiveCatalogFactory extends ArcticCatalogFactory {
+public class MixedHiveCatalogFactory extends MixedCatalogFactory {
 
-    @Override
-    public String factoryIdentifier() {
-        return ArcticCatalogFactoryOptions.MIXED_HIVE_IDENTIFIER;
-    }
+  @Override
+  public String factoryIdentifier() {
+    return CatalogFactoryOptions.MIXED_HIVE_IDENTIFIER;
+  }
 }
