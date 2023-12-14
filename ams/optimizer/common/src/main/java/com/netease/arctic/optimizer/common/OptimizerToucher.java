@@ -1,6 +1,9 @@
 package com.netease.arctic.optimizer.common;
 
-import com.netease.arctic.ams.api.*;
+import com.netease.arctic.ams.api.ArcticException;
+import com.netease.arctic.ams.api.ErrorCodes;
+import com.netease.arctic.ams.api.OptimizerRegisterInfo;
+import com.netease.arctic.ams.api.PropertyNames;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -52,7 +55,7 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
         String token =
             callAms(
                 client -> {
-                  this.withRegisterProperty(
+                  withRegisterProperty(
                       PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL,
                       String.valueOf(getConfig().getHeartBeat()));
                   OptimizerRegisterInfo registerInfo = new OptimizerRegisterInfo();
