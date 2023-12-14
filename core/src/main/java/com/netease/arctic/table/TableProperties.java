@@ -97,7 +97,7 @@ public class TableProperties {
 
   public static final String SELF_OPTIMIZING_MIN_TARGET_SIZE_RATIO =
       "self-optimizing.min-target-size-ratio";
-  public static final double SELF_OPTIMIZING_MIN_FILE_SIZE_RATIO_DEFAULT = 0.75;
+  public static final double SELF_OPTIMIZING_MIN_TARGET_SIZE_RATIO_DEFAULT = 0.75;
 
   public static final String SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT =
       "self-optimizing.minor.trigger.file-count";

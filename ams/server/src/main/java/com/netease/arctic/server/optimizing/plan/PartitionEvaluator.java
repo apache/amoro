@@ -83,11 +83,11 @@ public interface PartitionEvaluator {
   /** Get the total size of fragment files involved in optimizing. */
   long getFragmentFileSize();
 
-  /** Get the count of undersized segment files involved in optimizing. */
-  int getUndersizedSegmentFileCount();
+  /** Get the count of segment files involved in optimizing. */
+  int getSegmentFileCount();
 
-  /** Get the total size of undersized segment files involved in optimizing. */
-  long getUndersizedSegmentFileSize();
+  /** Get the total size of segment files involved in optimizing. */
+  long getSegmentFileSize();
 
   /** Get the count of equality delete files involved in optimizing. */
   int getEqualityDeleteFileCount();

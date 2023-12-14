@@ -192,9 +192,8 @@ public class OptimizingEvaluator {
     public PendingInput(Collection<PartitionEvaluator> evaluators) {
       for (PartitionEvaluator evaluator : evaluators) {
         partitions.add(evaluator.getPartition());
-        dataFileCount +=
-            evaluator.getFragmentFileCount() + evaluator.getUndersizedSegmentFileCount();
-        dataFileSize += evaluator.getFragmentFileSize() + evaluator.getUndersizedSegmentFileSize();
+        dataFileCount += evaluator.getFragmentFileCount() + evaluator.getSegmentFileCount();
+        dataFileSize += evaluator.getFragmentFileSize() + evaluator.getSegmentFileSize();
         positionalDeleteBytes += evaluator.getPosDeleteFileSize();
         positionalDeleteFileCount += evaluator.getPosDeleteFileCount();
         equalityDeleteBytes += evaluator.getEqualityDeleteFileSize();

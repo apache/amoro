@@ -354,7 +354,7 @@ public class OptimizingConfig {
             CompatiblePropertyUtil.propertyAsDouble(
                 properties,
                 TableProperties.SELF_OPTIMIZING_MIN_TARGET_SIZE_RATIO,
-                TableProperties.SELF_OPTIMIZING_MIN_FILE_SIZE_RATIO_DEFAULT))
+                TableProperties.SELF_OPTIMIZING_MIN_TARGET_SIZE_RATIO_DEFAULT))
         .setMaxFileCount(
             CompatiblePropertyUtil.propertyAsInt(
                 properties,

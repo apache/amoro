@@ -189,13 +189,13 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   }
 
   @Override
-  public int getUndersizedSegmentFileCount() {
-    return evaluator().getUndersizedSegmentFileCount();
+  public int getSegmentFileCount() {
+    return evaluator().getSegmentFileCount();
   }
 
   @Override
-  public long getUndersizedSegmentFileSize() {
-    return evaluator().getUndersizedSegmentFileSize();
+  public long getSegmentFileSize() {
+    return evaluator().getSegmentFileSize();
   }
 
   @Override

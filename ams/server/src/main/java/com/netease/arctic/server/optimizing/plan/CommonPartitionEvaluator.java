@@ -52,10 +52,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   protected long fragmentFileSize = 0;
 
   // segment files
-  protected int undersizedSegmentFileCount = 0;
-  protected long undersizedSegmentFileSize = 0;
   protected int rewriteSegmentFileCount = 0;
   protected long rewriteSegmentFileSize = 0L;
+  protected int undersizedSegmentFileCount = 0;
+  protected long undersizedSegmentFileSize = 0;
   protected int rewritePosSegmentFileCount = 0;
   protected long rewritePosSegmentFileSize = 0L;
   protected long min1SegmentFileSize = Integer.MAX_VALUE;
@@ -362,29 +362,13 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   @Override
-  public int getUndersizedSegmentFileCount() {
-    return undersizedSegmentFileCount;
+  public int getSegmentFileCount() {
+    return rewriteSegmentFileCount + undersizedSegmentFileCount + rewritePosSegmentFileCount;
   }
 
   @Override
-  public long getUndersizedSegmentFileSize() {
-    return undersizedSegmentFileSize;
-  }
-
-  public int getRewriteSegmentFileCount() {
-    return rewriteSegmentFileCount;
-  }
-
-  public long getRewriteSegmentFileSize() {
-    return rewriteSegmentFileSize;
-  }
-
-  public int getRewritePosSegmentFileCount() {
-    return rewritePosSegmentFileCount;
-  }
-
-  public long getRewritePosSegmentFileSize() {
-    return rewritePosSegmentFileSize;
+  public long getSegmentFileSize() {
+    return rewriteSegmentFileSize + undersizedSegmentFileSize + rewritePosSegmentFileSize;
   }
 
   @Override
