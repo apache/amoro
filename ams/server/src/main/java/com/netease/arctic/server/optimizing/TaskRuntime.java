@@ -50,7 +50,7 @@ public class TaskRuntime extends StatedPersistentBase {
   @StateField private int runTimes = 0;
   @StateField private long startTime = ArcticServiceConstants.INVALID_TIME;
   @StateField private long endTime = ArcticServiceConstants.INVALID_TIME;
-  @StateField private long costTime = 0;
+  @StateField private long costTime = ArcticServiceConstants.INVALID_TIME;
   @StateField private String token;
   @StateField private int threadId = -1;
   @StateField private String failReason;
@@ -92,6 +92,8 @@ public class TaskRuntime extends StatedPersistentBase {
             summary.setNewDeleteSize(OptimizingUtil.getFileSize(filesOutput.getDeleteFiles()));
             summary.setNewDeleteRecordCnt(
                 OptimizingUtil.getRecordCnt(filesOutput.getDeleteFiles()));
+            summary.setNewFileSize(summary.getNewDataSize() + summary.getNewDeleteSize());
+            summary.setNewFileCnt(summary.getNewDataFileCnt() + summary.getNewDeleteFileCnt());
             endTime = System.currentTimeMillis();
             costTime += endTime - startTime;
             output = filesOutput;
@@ -108,7 +110,15 @@ public class TaskRuntime extends StatedPersistentBase {
     invokeConsisitency(
         () -> {
           statusMachine.accept(Status.PLANNED);
-          doAs(OptimizingMapper.class, mapper -> mapper.updateTaskStatus(this, Status.PLANNED));
+          startTime = ArcticServiceConstants.INVALID_TIME;
+          endTime = ArcticServiceConstants.INVALID_TIME;
+          token = null;
+          threadId = -1;
+          failReason = null;
+          output = null;
+          summary = new MetricsSummary(input);
+          // The cost time should not be reset since it is the total cost time of all runs.
+          persistTaskRuntime(this);
         });
   }
 
@@ -128,8 +138,6 @@ public class TaskRuntime extends StatedPersistentBase {
         () -> {
           validThread(thread);
           statusMachine.accept(Status.ACKED);
-          startTime = System.currentTimeMillis();
-          endTime = ArcticServiceConstants.INVALID_TIME;
           persistTaskRuntime(this);
         });
   }
@@ -138,7 +146,10 @@ public class TaskRuntime extends StatedPersistentBase {
     invokeConsisitency(
         () -> {
           if (statusMachine.tryAccepting(Status.CANCELED)) {
-            costTime = System.currentTimeMillis() - startTime;
+            endTime = System.currentTimeMillis();
+            if (startTime != ArcticServiceConstants.INVALID_TIME) {
+              costTime += endTime - startTime;
+            }
             persistTaskRuntime(this);
           }
         });
@@ -234,10 +245,6 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public long getCostTime() {
-    if (endTime == ArcticServiceConstants.INVALID_TIME) {
-      long elapse = System.currentTimeMillis() - startTime;
-      return Math.max(0, elapse) + costTime;
-    }
     return costTime;
   }
 
@@ -345,7 +352,7 @@ public class TaskRuntime extends StatedPersistentBase {
     }
 
     public synchronized boolean tryAccepting(Status targetStatus) {
-      if (owner.isClosed() || !getNext().contains(targetStatus)) {
+      if (!getNext().contains(targetStatus)) {
         return false;
       }
       status = targetStatus;
