@@ -389,7 +389,6 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
-    partitionPlan.globalEvaluate();
     return partitionPlan;
   }
 

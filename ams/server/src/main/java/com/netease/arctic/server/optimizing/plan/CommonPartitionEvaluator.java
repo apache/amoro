@@ -25,6 +25,7 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,14 +95,6 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return partition;
   }
 
-  public void globalEvaluate() {
-    if (isFullNecessary() || enoughContent()) {
-      return;
-    }
-    undersizedSegmentFileSize = 0;
-    undersizedSegmentFileCount = 0;
-  }
-
   protected boolean isFragmentFile(DataFile dataFile) {
     return dataFile.fileSizeInBytes() <= fragmentSize;
   }
@@ -143,12 +136,15 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   private boolean addUndersizedSegmentFile(DataFile dataFile, List<ContentFile<?>> deletes) {
+    // Because UndersizedSegment can determine whether it is rewritten during the split task stage.
+    // So the calculated posDeleteFileCount, posDeleteFileSize, equalityDeleteFileCount,
+    // equalityDeleteFileSize are not accurate
+    for (ContentFile<?> delete : deletes) {
+      addDelete(delete);
+    }
     if (segmentShouldRewrite(dataFile, deletes)) {
       rewriteSegmentFileSize += dataFile.fileSizeInBytes();
       rewriteSegmentFileCount++;
-      for (ContentFile<?> delete : deletes) {
-        addDelete(delete);
-      }
       return true;
     }
 
@@ -159,7 +155,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     } else if (dataFile.fileSizeInBytes() < min2SegmentFileSize) {
       min2SegmentFileSize = dataFile.fileSizeInBytes();
     }
-    // Undersized segment files add deletes in AbstractPartitionPlan#globalEvaluate
+
     undersizedSegmentFileSize += dataFile.fileSizeInBytes();
     undersizedSegmentFileCount++;
     return true;
@@ -214,20 +210,12 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   public boolean segmentShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
-    if (isFullOptimizing()) {
-      return false;
-    }
-    if (isFragmentFile(dataFile)) {
-      return false;
-    }
-    if (deletes.stream().anyMatch(delete -> delete.content() == FileContent.EQUALITY_DELETES)) {
-      return true;
-    } else {
-      return deletes.stream()
-              .filter(delete -> delete.content() == FileContent.POSITION_DELETES)
-              .count()
-          >= 2;
-    }
+    Preconditions.checkArgument(!isFragmentFile(dataFile), "Unsupported fragment file.");
+    return deletes.stream().anyMatch(delete -> delete.content() == FileContent.EQUALITY_DELETES)
+        || deletes.stream()
+                .filter(delete -> delete.content() == FileContent.POSITION_DELETES)
+                .count()
+            >= 2;
   }
 
   protected boolean isFullOptimizing() {
