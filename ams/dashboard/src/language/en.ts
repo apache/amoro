@@ -198,5 +198,6 @@ export default {
   tags: 'tags',
   nothingToShow: 'Nothing to show',
   filterBranchesOrTags: 'Filter branches/tags',
-  findATag: 'Find a tag'
+  findATag: 'Find a tag',
+  fileSearchPlaceholder: 'Filter partitions'
 }
