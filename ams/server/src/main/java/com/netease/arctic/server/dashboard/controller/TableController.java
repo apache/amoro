@@ -50,6 +50,8 @@ import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.CommonUtil;
+import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableIdentifier;
@@ -624,6 +626,41 @@ public class TableController {
     int offset = (page - 1) * pageSize;
     PageResult<TagOrBranchInfo> amsPageResult = PageResult.of(partitionBaseInfos, offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
+  }
+
+  /**
+   * cancel the running optimizing process of one certain table.
+   *
+   * @param ctx - context for handling the request and response
+   */
+  public void cancelOptimizingProcess(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    String processId = ctx.pathParam("processId");
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(catalog)
+            && StringUtils.isNotBlank(db)
+            && StringUtils.isNotBlank(table),
+        "catalog.database.tableName can not be empty in any element");
+    Preconditions.checkState(tableService.catalogExist(catalog), "invalid catalog!");
+
+    ServerTableIdentifier serverTableIdentifier =
+        tableService.getServerTableIdentifier(
+            TableIdentifier.of(catalog, db, table).buildTableIdentifier());
+    TableRuntime tableRuntime =
+        serverTableIdentifier != null ? tableService.getRuntime(serverTableIdentifier) : null;
+
+    Preconditions.checkArgument(
+        tableRuntime != null
+            && tableRuntime.getOptimizingProcess() != null
+            && Objects.equals(
+                tableRuntime.getOptimizingProcess().getProcessId(), Long.parseLong(processId)),
+        "Can't cancel optimizing process %s",
+        processId);
+
+    tableRuntime.getOptimizingProcess().close();
+    ctx.json(OkResponse.ok());
   }
 
   private void putMainBranchFirst(List<TagOrBranchInfo> branchInfos) {

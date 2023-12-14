@@ -150,8 +150,8 @@ export function getOperations(
   const { catalog, db, table, page, pageSize, token } = params
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/operations`, { params: { page, pageSize, token } })
 }
-// get optimizes
-export function getOptimizes(
+// get optimizing processes
+export function getOptimizingProcesses(
   params: {
     catalog: string
     db: string,
@@ -165,6 +165,22 @@ export function getOptimizes(
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes`, { params: { page, pageSize, token } })
 }
 
+// get optimizing taskes
+export function getTasksByOptimizingProcessId(
+  params: {
+    catalog: string
+    db: string,
+    table: string,
+    processId: number,
+    page: number
+    pageSize: number
+    token?: string
+  }
+) {
+  const { catalog, db, table, processId, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes/${processId}/tasks`, { params: { page, pageSize, token } })
+}
+
 export function upgradeHiveTable(
   { catalog = '' as string, db = '' as string, table = '' as string, properties = {} as IMap<string>, pkList = [] as IMap<string>[] }
 ) {
@@ -176,6 +192,12 @@ export function upgradeHiveTable(
 
 export function getUpgradeProperties() {
   return request.get('ams/v1/upgrade/properties')
+}
+
+export function cancelOptimizingProcess(
+  { catalog = '' as string, db = '' as string, table = '' as string, processId = '' as string }
+) {
+  return request.post(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes/${processId}/cancel`)
 }
 
 export function getBranches(params: { catalog: string, db: string, table: string }) {

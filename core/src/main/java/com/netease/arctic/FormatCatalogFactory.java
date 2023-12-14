@@ -43,4 +43,16 @@ public interface FormatCatalogFactory {
 
   /** format of this catalog factory */
   TableFormat format();
+
+  /**
+   * Convert UnifiedCatalog Properties to corresponding format Properties and use them to initialize
+   * the corresponding Catalog.
+   *
+   * @param catalogName register in AMS
+   * @param metastoreType metastore type
+   * @param unifiedCatalogProperties properties of unified catalog.
+   * @return properties of the target format.
+   */
+  Map<String, String> convertCatalogProperties(
+      String catalogName, String metastoreType, Map<String, String> unifiedCatalogProperties);
 }

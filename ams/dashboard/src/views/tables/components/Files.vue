@@ -47,6 +47,12 @@
         :loading="loading"
       >
         <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'file'">
+            <a-tooltip>
+              <template #title>{{record.file}}</template>
+              <span>{{record.file}}</span>
+            </a-tooltip>
+          </template>
           <template v-if="column.dataIndex === 'path'">
             <a-tooltip>
               <template #title>{{record.path}}</template>

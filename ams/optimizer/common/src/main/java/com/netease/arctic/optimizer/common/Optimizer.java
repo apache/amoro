@@ -1,6 +1,6 @@
 package com.netease.arctic.optimizer.common;
 
-import com.netease.arctic.ams.api.PropertyNames;
+import com.netease.arctic.ams.api.OptimizerProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +21,7 @@ public class Optimizer {
     IntStream.range(0, config.getExecutionParallel())
         .forEach(i -> executors[i] = new OptimizerExecutor(config, i));
     if (config.getResourceId() != null) {
-      toucher.withRegisterProperty(PropertyNames.RESOURCE_ID, config.getResourceId());
+      toucher.withRegisterProperty(OptimizerProperties.RESOURCE_ID, config.getResourceId());
     }
   }
 

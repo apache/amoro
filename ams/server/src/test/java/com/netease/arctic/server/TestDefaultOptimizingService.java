@@ -335,10 +335,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
     optimizingService()
         .completeTask(token, buildOptimizingTaskFailResult(task.getTaskId(), "error"));
-
-    Assertions.assertEquals(
-        optimizingService().listTasks(defaultResourceGroup().getName()).get(0).getFailReason(),
-        "error");
+    assertTaskStatus(TaskRuntime.Status.PLANNED);
   }
 
   private OptimizerRegisterInfo buildRegisterInfo() {
