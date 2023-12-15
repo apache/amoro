@@ -128,16 +128,17 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       return cacheAndReturnTasks(Collections.emptyList());
     }
 
-    List<PartitionEvaluator> evaluators = new ArrayList<>(partitionPlanMap.values());
-    // prioritize partitions with high cost to avoid starvation
-    evaluators.sort(Comparator.comparing(PartitionEvaluator::getWeight, Comparator.reverseOrder()));
+    List<PartitionEvaluator> partitionPlans = new ArrayList<>(partitionPlanMap.values());
+    // Prioritize partitions with high cost to avoid starvation
+    partitionPlans.sort(
+        Comparator.comparing(PartitionEvaluator::getWeight, Comparator.reverseOrder()));
 
     double maxInputSize = maxInputSizePerThread * availableCore;
     actualPartitionPlans = Lists.newArrayList();
     long actualInputSize = 0;
-    for (PartitionEvaluator evaluator : evaluators) {
-      actualPartitionPlans.add((AbstractPartitionPlan) evaluator);
-      actualInputSize += evaluator.getCost();
+    for (PartitionEvaluator partitionPlan : partitionPlans) {
+      actualPartitionPlans.add((AbstractPartitionPlan) partitionPlan);
+      actualInputSize += partitionPlan.getCost();
       if (actualInputSize > maxInputSize) {
         break;
       }
@@ -146,14 +147,14 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     double avgThreadCost = actualInputSize / availableCore;
     List<TaskDescriptor> tasks = Lists.newArrayList();
     for (AbstractPartitionPlan partitionPlan : actualPartitionPlans) {
-      tasks.addAll(partitionPlan.splitTasks((int) (actualInputSize / avgThreadCost)));
+      tasks.addAll(partitionPlan.splitTasks((int) (partitionPlan.getCost() / avgThreadCost)));
     }
     if (!tasks.isEmpty()) {
-      if (evaluators.stream()
-          .anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.FULL)) {
+      if (actualPartitionPlans.stream()
+          .anyMatch(plan -> plan.getOptimizingType() == OptimizingType.FULL)) {
         optimizingType = OptimizingType.FULL;
-      } else if (evaluators.stream()
-          .anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.MAJOR)) {
+      } else if (actualPartitionPlans.stream()
+          .anyMatch(plan -> plan.getOptimizingType() == OptimizingType.MAJOR)) {
         optimizingType = OptimizingType.MAJOR;
       } else {
         optimizingType = OptimizingType.MINOR;
