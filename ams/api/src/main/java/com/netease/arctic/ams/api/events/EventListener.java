@@ -20,8 +20,6 @@ package com.netease.arctic.ams.api.events;
 
 import com.netease.arctic.ams.api.ActivePlugin;
 
-import java.util.Set;
-
 /**
  * This is an interface defining a reporter, which users can implement to notify event to a
  * monitoring system.

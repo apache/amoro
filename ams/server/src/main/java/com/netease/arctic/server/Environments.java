@@ -18,46 +18,32 @@
 
 package com.netease.arctic.server;
 
-/**
- * Util method to help get system directories.
- */
+/** Util method to help get system directories. */
 public class Environments {
 
-  /**
-   * Adapt with older version to set AMORO_HOME
-   */
-  @Deprecated
-  public static final String LEGACY_ENV_AMORO_HOME = "ARCTIC_HOME";
+  /** Adapt with older version to set AMORO_HOME */
+  @Deprecated public static final String LEGACY_ENV_AMORO_HOME = "ARCTIC_HOME";
 
-  /**
-   * Environment variable to set config dir.
-   */
+  /** Environment variable to set config dir. */
   public static final String AMORO_CONF_DIR = "AMORO_CONF_DIR";
 
-  /**
-   * Environment variable to set HOME dir
-   */
+  /** Environment variable to set HOME dir */
   public static final String AMORO_HOME = "AMORO_HOME";
 
-  /**
-   * Environment variable to set PLUGIN dir
-   */
+  /** Environment variable to set PLUGIN dir */
   public static final String AMORO_PLUGIN_DIR = "AMORO_PLUGIN_DIR";
 
-  /**
-   * Default directory name of config dir.
-   */
+  /** Default directory name of config dir. */
   public static final String DEFAULT_CONFIG_DIR_NAME = "conf";
 
-  /**
-   * Default directory name of plugin dir.
-   */
-  public static final String DEFAULT_PLUGIN_DIR_NAME = "plugins";
+  /** Default directory name of plugin dir. */
+  public static final String DEFAULT_PLUGIN_DIR_NAME = "plugin";
 
   private static final String PROPERTY_USER_DIR = "user.dir";
 
   /**
    * Get the home path which contains sub-directories of `/bin`, `/conf`, `/plugins` and so on.
+   *
    * @return Get the home path
    */
   public static String getHomePath() {
@@ -77,7 +63,9 @@ public class Environments {
   }
 
   /**
-   * Get the config path which is a directory contains `config.yaml`, `jvm.properties`, `log4j2.xml` and so on.
+   * Get the config path which is a directory contains `config.yaml`, `jvm.properties`, `log4j2.xml`
+   * and so on.
+   *
    * @return The config path
    */
   public static String getConfigPath() {
@@ -90,6 +78,7 @@ public class Environments {
 
   /**
    * Get the path of plugins which is a directory contains jars of plugins.
+   *
    * @return The plugin path.
    */
   public static String getPluginPath() {

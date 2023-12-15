@@ -135,8 +135,7 @@ public class ArcticServiceContainer {
 
   public void startService() throws Exception {
     EventsManager.initialize(
-        pluginConfigurations.getOrDefault(EventsManager.PLUGIN_TYPE, ImmutableList.of())
-    );
+        pluginConfigurations.getOrDefault(EventsManager.PLUGIN_TYPE, ImmutableList.of()));
     MetricManager.initialize(
         pluginConfigurations.getOrDefault(MetricManager.PLUGIN_CONFIG_KEY, ImmutableList.of()));
 

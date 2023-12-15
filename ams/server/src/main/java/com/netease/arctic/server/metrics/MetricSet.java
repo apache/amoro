@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-
 package com.netease.arctic.server.metrics;
 
 import com.netease.arctic.ams.api.metrics.Metric;
@@ -24,9 +23,7 @@ import com.netease.arctic.ams.api.metrics.MetricName;
 
 import java.util.Map;
 
-/**
- * A set of named metrics.
- */
+/** A set of named metrics. */
 public interface MetricSet {
   Map<MetricName, Metric> getMetrics();
 }

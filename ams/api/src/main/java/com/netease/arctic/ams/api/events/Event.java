@@ -25,11 +25,8 @@ package com.netease.arctic.ams.api.events;
  */
 public interface Event {
 
-
-  /**
-   * @return event type
-   */
-   EventType type();
+  /** @return event type */
+  EventType type();
 
   /**
    * The timestamp of event when it is happened.

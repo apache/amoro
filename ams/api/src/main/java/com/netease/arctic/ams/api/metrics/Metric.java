@@ -18,7 +18,5 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-/**
- * Base interface for all amoro metric
- */
+/** Base interface for all amoro metric */
 public interface Metric {}

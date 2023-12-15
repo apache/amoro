@@ -31,9 +31,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
-/**
- * A registry of amoro metric.
- */
+/** A registry of amoro metric. */
 public class MetricRegistry implements MetricSet {
 
   private final ConcurrentMap<MetricName, Metric> metrics = Maps.newConcurrentMap();
@@ -41,6 +39,7 @@ public class MetricRegistry implements MetricSet {
 
   /**
    * Add metric registry listener
+   *
    * @param listener Metric registry listener
    */
   public void addListener(MetricRegistryListener listener) {
@@ -49,6 +48,7 @@ public class MetricRegistry implements MetricSet {
 
   /**
    * Register a new metric
+   *
    * @param name metric name
    * @param metric metric
    * @param <T> Subclass of metric
@@ -66,6 +66,7 @@ public class MetricRegistry implements MetricSet {
 
   /**
    * Remove a metric
+   *
    * @param name metric name
    */
   public void unregister(MetricName name) {
@@ -77,6 +78,7 @@ public class MetricRegistry implements MetricSet {
 
   /**
    * Register a metric set
+   *
    * @param metrics metric set
    */
   public void registerAll(MetricSet metrics) {

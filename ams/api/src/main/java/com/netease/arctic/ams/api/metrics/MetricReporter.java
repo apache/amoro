@@ -21,9 +21,7 @@ package com.netease.arctic.ams.api.metrics;
 import com.netease.arctic.ams.api.ActivePlugin;
 
 /**
- * This interface define a collector, which users can fetch metrics and report to
- * metrics monitor system.
+ * This interface define a collector, which users can fetch metrics and report to metrics monitor
+ * system.
  */
-public interface MetricReporter extends ActivePlugin, MetricRegistryListener {
-
-}
+public interface MetricReporter extends ActivePlugin, MetricRegistryListener {}

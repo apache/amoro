@@ -18,14 +18,9 @@
 
 package com.netease.arctic.server.manager;
 
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.ActivePlugin;
 import com.netease.arctic.server.Environments;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,16 +35,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -81,15 +73,19 @@ public abstract class BasePluginManager<T extends ActivePlugin> {
     this.pluginConfigurations = pluginConfigurations;
 
     // single thread pool, and min thread size is 1.
-    this.pluginExecutorPool = new ThreadPoolExecutor(0, 1,
-        Long.MAX_VALUE, TimeUnit.MILLISECONDS,
-        new LinkedBlockingQueue<Runnable>(),
-        r -> {
-          Thread thread = new Thread(r);
-          thread.setName("Plugin-" + pluginType() + "-0");
-          thread.setDaemon(true);
-          return thread;
-        });
+    this.pluginExecutorPool =
+        new ThreadPoolExecutor(
+            0,
+            1,
+            Long.MAX_VALUE,
+            TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<Runnable>(),
+            r -> {
+              Thread thread = new Thread(r);
+              thread.setName("Plugin-" + pluginCategory() + "-0");
+              thread.setDaemon(true);
+              return thread;
+            });
   }
 
   /** Initialize the plugin manager, and install all plugins. */
@@ -113,11 +109,11 @@ public abstract class BasePluginManager<T extends ActivePlugin> {
   }
 
   /**
-   * Plugin type to manger
+   * Plugin category to manger
    *
-   * @return Type of plugins.
+   * @return Category name of plugins.
    */
-  protected abstract String pluginType();
+  protected abstract String pluginCategory();
 
   /**
    * Jars path for this plugin manager.
@@ -125,25 +121,30 @@ public abstract class BasePluginManager<T extends ActivePlugin> {
    * @return plugins path.
    */
   protected String pluginPath() {
-    return Environments.getPluginPath() + "/" + pluginType();
+    return Environments.getPluginPath() + "/" + pluginCategory();
   }
 
   /**
    * Visit all installed plugins
+   *
    * @param visitor function to visit all installed plugins.
    */
   protected void callPlugins(Consumer<T> visitor) {
-    this.installedPlugins.values().forEach(p -> {
-      try (ClassLoaderContext ignored = new ClassLoaderContext(p)) {
-        visitor.accept(p);
-      } catch (Throwable throwable) {
-        LOG.error("Error when call plugin: " + p.name(), throwable);
-      }
-    });
+    this.installedPlugins
+        .values()
+        .forEach(
+            p -> {
+              try (ClassLoaderContext ignored = new ClassLoaderContext(p)) {
+                visitor.accept(p);
+              } catch (Throwable throwable) {
+                LOG.error("Error when call plugin: " + p.name(), throwable);
+              }
+            });
   }
 
   /**
    * Visit all installed plugins and non-block the current thread.
+   *
    * @param visitor function to visit all installed plugins.
    */
   protected void callPluginsAsync(Consumer<T> visitor) {

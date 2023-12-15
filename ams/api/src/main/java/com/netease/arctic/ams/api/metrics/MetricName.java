@@ -18,6 +18,11 @@
 
 package com.netease.arctic.ams.api.metrics;
 
+import org.apache.iceberg.relocated.com.google.common.base.Joiner;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -25,14 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.apache.iceberg.relocated.com.google.common.base.Joiner;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-
-/**
- * Amoro metric name.
- */
+/** Amoro metric name. */
 public class MetricName {
 
   private final String name;
@@ -48,7 +46,8 @@ public class MetricName {
       return new MetricName(explicitMetricName, Collections.emptyList(), Collections.emptyList());
     } else {
       String name = explicitMetricName.substring(0, tagStart);
-      String tagValueString = explicitMetricName.substring(tagStart + 1, explicitMetricName.length() - 1);
+      String tagValueString =
+          explicitMetricName.substring(tagStart + 1, explicitMetricName.length() - 1);
       String[] tagValuePairs = tagValueString.split(",");
       List<String> tags = Lists.newArrayList();
       List<String> values = Lists.newArrayList();
@@ -61,7 +60,6 @@ public class MetricName {
     }
   }
 
-
   public MetricName(String name, List<String> tags, List<String> values) {
     if (tags == null) {
       tags = Collections.emptyList();
@@ -70,10 +68,10 @@ public class MetricName {
       values = Collections.emptyList();
     }
 
-    Preconditions.checkArgument(tags.size() == values.size(),
-        "Illegal metric name: tags size and values mismatch");
+    Preconditions.checkArgument(
+        tags.size() == values.size(), "Illegal metric name: tags size and values mismatch");
     this.name = name;
-    Map<String,String> valueMap;
+    Map<String, String> valueMap;
 
     StringBuilder nameBuilder = new StringBuilder(100);
     nameBuilder.append(this.name);
@@ -88,8 +86,8 @@ public class MetricName {
         valueMap.put(tag, value);
       }
       tags = tags.stream().sorted().collect(Collectors.toList());
-      List<String> tagAndValueList = tags.stream()
-          .map(t -> t + "=" + (valueMap.get(t))).collect(Collectors.toList());
+      List<String> tagAndValueList =
+          tags.stream().map(t -> t + "=" + (valueMap.get(t))).collect(Collectors.toList());
       String tagAndValue = Joiner.on(",").join(tagAndValueList);
       nameBuilder.append("<").append(tagAndValue).append(">");
     } else {
@@ -100,7 +98,6 @@ public class MetricName {
     this.values = valueMap;
     this.explicitMetricName = nameBuilder.toString();
   }
-
 
   public String getName() {
     return name;

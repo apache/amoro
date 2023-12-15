@@ -18,9 +18,5 @@
 
 package com.netease.arctic.ams.api.events;
 
-/**
- * Event types define
- */
-public enum EventType {
-
-}
+/** Event types define */
+public enum EventType {}

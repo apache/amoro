@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-
 public interface MetricRegistryListener {
 
   void onMetricAdded(MetricName name, Metric metric);

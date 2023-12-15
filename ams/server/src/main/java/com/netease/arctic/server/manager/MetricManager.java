@@ -20,6 +20,7 @@ package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.metrics.MetricReporter;
 import com.netease.arctic.server.metrics.MetricRegistry;
+
 import java.util.List;
 
 /** Metric plugins manager and registry */
@@ -28,9 +29,7 @@ public class MetricManager extends BasePluginManager<MetricReporter> {
   public static final String PLUGIN_CONFIG_KEY = "metric-reporters";
   private static volatile MetricManager INSTANCE;
 
-  /**
-   * @return Get the singleton object.
-   */
+  /** @return Get the singleton object. */
   public static MetricManager getInstance() {
     if (INSTANCE == null) {
       synchronized (MetricManager.class) {
@@ -63,7 +62,7 @@ public class MetricManager extends BasePluginManager<MetricReporter> {
   }
 
   @Override
-  protected String pluginType() {
+  protected String pluginCategory() {
     return PLUGIN_CONFIG_KEY;
   }
 

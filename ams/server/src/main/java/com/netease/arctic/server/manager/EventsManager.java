@@ -20,9 +20,10 @@ package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.events.Event;
 import com.netease.arctic.ams.api.events.EventListener;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /** This class is used to trigger various events in the process and notify event emitter plugins. */
 public class EventsManager extends BasePluginManager<EventListener> {
@@ -31,9 +32,7 @@ public class EventsManager extends BasePluginManager<EventListener> {
   public static final String PLUGIN_TYPE = "events";
   private static volatile EventsManager INSTANCE;
 
-  /**
-   * @return Get the singleton object.
-   */
+  /** @return Get the singleton object. */
   public static EventsManager getInstance() {
     if (INSTANCE == null) {
       synchronized (EventsManager.class) {
@@ -60,7 +59,7 @@ public class EventsManager extends BasePluginManager<EventListener> {
   }
 
   @Override
-  protected String pluginType() {
+  protected String pluginCategory() {
     return PLUGIN_TYPE;
   }
 

@@ -20,15 +20,11 @@ package com.netease.arctic.ams.api.metrics;
 
 import java.util.concurrent.atomic.LongAdder;
 
-/**
- * An incrementing counter metric.
- */
+/** An incrementing counter metric. */
 public class Counter implements Metric {
   private final LongAdder count = new LongAdder();
 
-  /**
-   * Increment the counter by one.
-   */
+  /** Increment the counter by one. */
   public void inc() {
     inc(1);
   }

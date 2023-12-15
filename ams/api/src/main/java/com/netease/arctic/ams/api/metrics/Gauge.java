@@ -18,19 +18,14 @@
 package com.netease.arctic.ams.api.metrics;
 
 /**
- * A gauge metric is an instantaneous reading of a particular value. To instrument a queue's depth, for example:
- *   final Queue<String> queue = new ConcurrentLinkedQueue<String>();
- *   final Gauge<Integer> queueDepth = new Gauge<Integer>() {
- *       public Integer getValue() {
- *           return queue.size();
- *       }
- *   };
- * Type parameters:
+ * A gauge metric is an instantaneous reading of a particular value. To instrument a queue's depth,
+ * for example: final Queue<String> queue = new ConcurrentLinkedQueue<String>(); final
+ * Gauge<Integer> queueDepth = new Gauge<Integer>() { public Integer getValue() { return
+ * queue.size(); } }; Type parameters:
+ *
  * @param <T> – the type of the metric's value
  */
 public interface Gauge<T extends Number> extends Metric {
-  /**
-   * @return The current value of metric
-   */
+  /** @return The current value of metric */
   T getValue();
 }
