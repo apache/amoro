@@ -37,14 +37,18 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticDataFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.PartitionData;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
@@ -476,7 +480,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
       List<DataFile> rePosDeletedDataFiles,
       List<? extends ContentFile<?>> readOnlyDeleteFiles,
       List<? extends ContentFile<?>> rewrittenDeleteFiles) {
-    Assert.assertEquals(actual.getPartition(), getPartition());
+    Assert.assertEquals(actual.getPartition(), getPartitionPath());
     assertFiles(rewrittenDeleteFiles, actual.getInput().rewrittenDeleteFiles());
     assertFiles(rewrittenDataFiles, actual.getInput().rewrittenDataFiles());
     assertFiles(readOnlyDeleteFiles, actual.getInput().readOnlyDeleteFiles());
@@ -517,7 +521,15 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   protected abstract TableFileScanHelper getTableFileScanHelper();
 
-  protected String getPartition() {
+  protected Pair<Integer, StructLike> getPartition() {
+    return isPartitionedTable()
+        ? Pair.of(
+            getArcticTable().spec().specId(),
+            ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01"))
+        : Pair.of(getArcticTable().spec().specId(), new PartitionData(Types.StructType.of()));
+  }
+
+  protected String getPartitionPath() {
     return isPartitionedTable() ? "op_time_day=2022-01-01" : "";
   }
 

@@ -24,12 +24,16 @@ import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.BinPacking;
+import org.apache.iceberg.util.Pair;
 
 import java.util.List;
 import java.util.Map;
@@ -38,7 +42,7 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
-  protected final String partition;
+  protected final Pair<Integer, StructLike> partition;
   protected final OptimizingConfig config;
   protected final TableRuntime tableRuntime;
   private CommonPartitionEvaluator evaluator;
@@ -55,7 +59,10 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   protected final Set<String> reservedDeleteFiles = Sets.newHashSet();
 
   public AbstractPartitionPlan(
-      TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
+      TableRuntime tableRuntime,
+      ArcticTable table,
+      Pair<Integer, StructLike> partition,
+      long planTime) {
     this.partition = partition;
     this.tableObject = table;
     this.config = tableRuntime.getOptimizingConfig();
@@ -64,7 +71,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   }
 
   @Override
-  public String getPartition() {
+  public Pair<Integer, StructLike> getPartition() {
     return partition;
   }
 
@@ -238,8 +245,14 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
               readOnlyDeleteFiles.toArray(new ContentFile[0]),
               rewriteDeleteFiles.toArray(new ContentFile[0]),
               tableObject);
+      PartitionSpec spec =
+          ArcticTableUtil.getArcticTablePartitionSpecById(tableObject, partition.first());
+      String partitionPath = spec.partitionToPath(partition.second());
       return new TaskDescriptor(
-          tableRuntime.getTableIdentifier().getId(), partition, input, properties.getProperties());
+          tableRuntime.getTableIdentifier().getId(),
+          partitionPath,
+          input,
+          properties.getProperties());
     }
   }
 

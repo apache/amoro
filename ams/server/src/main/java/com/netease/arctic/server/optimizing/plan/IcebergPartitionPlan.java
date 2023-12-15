@@ -22,11 +22,16 @@ import com.netease.arctic.optimizing.IcebergRewriteExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.util.Pair;
 
 public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
   protected IcebergPartitionPlan(
-      TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
+      TableRuntime tableRuntime,
+      ArcticTable table,
+      Pair<Integer, StructLike> partition,
+      long planTime) {
     super(tableRuntime, table, partition, planTime);
   }
 

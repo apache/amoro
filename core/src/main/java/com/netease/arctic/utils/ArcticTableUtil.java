@@ -5,6 +5,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.Table;
@@ -152,6 +153,23 @@ public class ArcticTableUtil {
             table, TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
       default:
         throw new IllegalArgumentException("Unknown type: " + type);
+    }
+  }
+
+  /**
+   * Return the {@link PartitionSpec} of the arctic table by {@link PartitionSpec#specId()}, Mix
+   * format table will return directly after checking}.
+   */
+  public static PartitionSpec getArcticTablePartitionSpecById(ArcticTable arcticTable, int specId) {
+    if (arcticTable.format() == TableFormat.ICEBERG) {
+      return arcticTable.asUnkeyedTable().specs().get(specId);
+    } else {
+      PartitionSpec spec = arcticTable.spec();
+      if (spec.specId() != specId) {
+        throw new IllegalArgumentException(
+            "Partition spec id " + specId + " not found in table " + arcticTable.name());
+      }
+      return spec;
     }
   }
 }

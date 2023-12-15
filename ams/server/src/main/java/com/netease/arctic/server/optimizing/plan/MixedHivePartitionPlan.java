@@ -27,7 +27,9 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.util.Pair;
 
 import java.util.List;
 import java.util.Map;
@@ -40,7 +42,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   public MixedHivePartitionPlan(
       TableRuntime tableRuntime,
       ArcticTable table,
-      String partition,
+      Pair<Integer, StructLike> partition,
       String hiveLocation,
       long planTime) {
     super(tableRuntime, table, partition, planTime);
@@ -120,7 +122,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
 
     public MixedHivePartitionEvaluator(
         TableRuntime tableRuntime,
-        String partition,
+        Pair<Integer, StructLike> partition,
         Map<String, String> partitionProperties,
         String hiveLocation,
         long planTime,

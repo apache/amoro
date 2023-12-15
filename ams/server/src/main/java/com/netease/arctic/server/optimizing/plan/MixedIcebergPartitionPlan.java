@@ -30,9 +30,11 @@ import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.util.Pair;
 
 import javax.annotation.Nonnull;
 
@@ -46,9 +48,12 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   protected final Map<String, String> partitionProperties;
 
   public MixedIcebergPartitionPlan(
-      TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
+      TableRuntime tableRuntime,
+      ArcticTable table,
+      Pair<Integer, StructLike> partition,
+      long planTime) {
     super(tableRuntime, table, partition, planTime);
-    this.partitionProperties = TablePropertyUtil.getPartitionProperties(table, partition);
+    this.partitionProperties = TablePropertyUtil.getPartitionProperties(table, partition.second());
   }
 
   @Override
@@ -105,7 +110,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
 
     public MixedIcebergPartitionEvaluator(
         TableRuntime tableRuntime,
-        String partition,
+        Pair<Integer, StructLike> partition,
         Map<String, String> partitionProperties,
         long planTime,
         boolean keyedTable) {

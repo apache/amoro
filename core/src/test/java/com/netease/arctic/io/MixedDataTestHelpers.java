@@ -200,8 +200,8 @@ public class MixedDataTestHelpers {
   }
 
   public static List<DataFile> writeAndCommitChangeStore(
-      KeyedTable keyedTable, Long txId, ChangeAction action, List<Record> records) {
-    List<DataFile> writeFiles = writeChangeStore(keyedTable, txId, action, records, false);
+      KeyedTable keyedTable, Long txId, ChangeAction action, List<Record> records, boolean orderedWrite) {
+    List<DataFile> writeFiles = writeChangeStore(keyedTable, txId, action, records, orderedWrite);
     AppendFiles appendFiles = keyedTable.changeTable().newAppend();
     writeFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
