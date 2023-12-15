@@ -20,12 +20,10 @@ package com.netease.arctic.server.events;
 
 import com.netease.arctic.ams.api.events.Event;
 import com.netease.arctic.ams.api.events.EventListener;
-import com.netease.arctic.ams.api.events.DeprecatedEventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.Set;
 
 public class LoggingEventListener implements EventListener {
 

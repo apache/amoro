@@ -346,4 +346,7 @@ public class ArcticManagementConf {
   public static final String DB_TYPE_DERBY = "derby";
   public static final String DB_TYPE_MYSQL = "mysql";
   public static final String DB_TYPE_POSTGRES = "postgres";
+
+  // plugin config
+  public static final String PLUGIN_LIST = "plugins";
 }

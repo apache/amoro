@@ -20,14 +20,17 @@ package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.metrics.MetricReporter;
 import com.netease.arctic.server.metrics.MetricRegistry;
-import com.netease.arctic.server.utils.Configurations;
+import java.util.List;
 
-import java.util.Map;
+/** Metric plugins manager and registry */
+public class MetricManager extends BasePluginManager<MetricReporter> {
 
-public class MetricManager extends ActivePluginManager<MetricReporter> {
-
+  public static final String PLUGIN_CONFIG_KEY = "metric-reporters";
   private static volatile MetricManager INSTANCE;
 
+  /**
+   * @return Get the singleton object.
+   */
   public static MetricManager getInstance() {
     if (INSTANCE == null) {
       synchronized (MetricManager.class) {
@@ -39,23 +42,34 @@ public class MetricManager extends ActivePluginManager<MetricReporter> {
     return INSTANCE;
   }
 
-  public static void initialize(Configurations serverConfig) {
+  public static void initialize(List<PluginConfiguration> pluginConfigurations) {
     synchronized (MetricManager.class) {
       if (INSTANCE != null) {
         throw new IllegalStateException("MetricManger has been already initialized.");
       }
-      INSTANCE = new MetricManager();
+      INSTANCE = new MetricManager(pluginConfigurations);
+      INSTANCE.initialize();
     }
+  }
+
+  protected MetricManager(List<PluginConfiguration> pluginConfigurations) {
+    super(pluginConfigurations);
   }
 
   private final MetricRegistry globalRegistry = new MetricRegistry();
 
-  @Override
-  protected Map<String, String> loadProperties(String pluginName) {
-    return null;
-  }
-  
   public MetricRegistry getGlobalRegistry() {
     return this.globalRegistry;
+  }
+
+  @Override
+  protected String pluginType() {
+    return PLUGIN_CONFIG_KEY;
+  }
+
+  @Override
+  public void initialize() {
+    super.initialize();
+    callPlugins(globalRegistry::addListener);
   }
 }

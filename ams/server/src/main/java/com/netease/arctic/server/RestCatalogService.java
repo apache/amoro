@@ -32,9 +32,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.events.Event;
-import com.netease.arctic.ams.api.events.DeprecatedEventType;
-import com.netease.arctic.ams.api.events.IcebergReportEventContent;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
@@ -115,7 +112,7 @@ public class RestCatalogService extends PersistentBase {
     this.tableService = tableService;
     ObjectMapper objectMapper = jsonMapper();
     this.jsonMapper = new JavalinJackson(objectMapper);
-    this.eventsManager = EventsManager.instance();
+    this.eventsManager = EventsManager.getInstance();
   }
 
   public EndpointGroup endpoints() {

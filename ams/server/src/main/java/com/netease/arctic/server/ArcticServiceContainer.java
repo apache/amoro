@@ -31,7 +31,9 @@ import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.exception.ArcticRuntimeException;
+import com.netease.arctic.server.manager.EventsManager;
 import com.netease.arctic.server.manager.MetricManager;
+import com.netease.arctic.server.manager.PluginConfiguration;
 import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.OptimizerManager;
@@ -50,6 +52,8 @@ import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.SystemProperties;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -94,6 +98,7 @@ public class ArcticServiceContainer {
   private TServer tableManagementServer;
   private TServer optimizingServiceServer;
   private Javalin httpServer;
+  private Map<String, List<PluginConfiguration>> pluginConfigurations = Maps.newHashMap();
 
   public ArcticServiceContainer() throws Exception {
     initConfig();
@@ -129,7 +134,11 @@ public class ArcticServiceContainer {
   }
 
   public void startService() throws Exception {
-    MetricManager.initialize(serviceConfig);
+    EventsManager.initialize(
+        pluginConfigurations.getOrDefault(EventsManager.PLUGIN_TYPE, ImmutableList.of())
+    );
+    MetricManager.initialize(
+        pluginConfigurations.getOrDefault(MetricManager.PLUGIN_CONFIG_KEY, ImmutableList.of()));
 
     tableService = new DefaultTableService(serviceConfig);
     optimizingService = new DefaultOptimizingService(serviceConfig, tableService);
@@ -379,6 +388,7 @@ public class ArcticServiceContainer {
       initServiceConfig(envConfig);
       setIcebergSystemProperties();
       initContainerConfig();
+      initPluginConfig();
     }
 
     @SuppressWarnings("unchecked")
@@ -516,6 +526,25 @@ public class ArcticServiceContainer {
         }
       }
       ResourceContainers.init(containerList);
+    }
+
+    private void initPluginConfig() {
+      LOG.info("initializing plugins configuration...");
+      JSONObject plugins = yamlConfig.getJSONObject(ArcticManagementConf.PLUGIN_LIST);
+      plugins
+          .keySet()
+          .forEach(
+              pluginManagerName -> {
+                JSONArray pluginConfigList = plugins.getJSONArray(pluginManagerName);
+                List<PluginConfiguration> configs = Lists.newArrayList();
+                for (int i = 0; i < pluginConfigList.size(); i++) {
+                  JSONObject pluginConfiguration = pluginConfigList.getJSONObject(i);
+                  PluginConfiguration configuration =
+                      PluginConfiguration.fromJSONObject(pluginConfiguration);
+                  configs.add(configuration);
+                }
+                pluginConfigurations.put(pluginManagerName, configs);
+              });
     }
   }
 

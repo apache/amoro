@@ -18,78 +18,53 @@
 
 package com.netease.arctic.server.manager;
 
-import com.netease.arctic.server.Environments;
 import com.netease.arctic.ams.api.events.Event;
 import com.netease.arctic.ams.api.events.EventListener;
-import com.netease.arctic.server.exception.LoadingPluginException;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.util.Arrays;
-import java.util.Map;
 
 /** This class is used to trigger various events in the process and notify event emitter plugins. */
-public class EventsManager extends ActivePluginManager<EventListener> {
+public class EventsManager extends BasePluginManager<EventListener> {
 
   private static final Logger LOG = LoggerFactory.getLogger(EventsManager.class);
-  private static final String EVENTS_CONFIG_DIR = "events";
+  public static final String PLUGIN_TYPE = "events";
   private static volatile EventsManager INSTANCE;
 
-  private final String configPath;
-
-  public EventsManager() {
-    this(new File(Environments.getConfigPath(), EVENTS_CONFIG_DIR).getPath());
-  }
-
-  public EventsManager(String configPath) {
-    this.configPath = configPath;
-  }
-
-  public static EventsManager instance() {
+  /**
+   * @return Get the singleton object.
+   */
+  public static EventsManager getInstance() {
     if (INSTANCE == null) {
       synchronized (EventsManager.class) {
         if (INSTANCE == null) {
-          INSTANCE = new EventsManager();
-          INSTANCE.initialize();
+          throw new IllegalStateException("MetricManager is not initialized");
         }
       }
     }
     return INSTANCE;
   }
 
-  public void initialize() {
-    File dir = new File(configPath);
-    File[] yamlFiles = dir.listFiles((dir1, name) -> name.endsWith(".yaml"));
-    if (yamlFiles != null) {
-      Arrays.stream(yamlFiles)
-          .forEach(
-              file -> {
-                this.install(file.getName().replace(".yaml", ""));
-              });
+  public static void initialize(List<PluginConfiguration> pluginConfigurations) {
+    synchronized (MetricManager.class) {
+      if (INSTANCE != null) {
+        throw new IllegalStateException("MetricManger has been already initialized.");
+      }
+      INSTANCE = new EventsManager(pluginConfigurations);
+      INSTANCE.initialize();
     }
+  }
+
+  public EventsManager(List<PluginConfiguration> pluginConfigurations) {
+    super(pluginConfigurations);
   }
 
   @Override
-  protected Map<String, String> loadProperties(String pluginName) {
-    try {
-      return new Yaml().load(new FileInputStream(new File(configPath, pluginName + ".yaml")));
-    } catch (FileNotFoundException e) {
-      throw new LoadingPluginException("Cannot load plugin " + pluginName, e);
-    }
+  protected String pluginType() {
+    return PLUGIN_TYPE;
   }
 
   public void emit(Event event) {
-    forEach(
-        listener -> {
-          try (ClassLoaderContext ignored = new ClassLoaderContext(listener)) {
-            listener.handleEvent(event);
-          } catch (Throwable throwable) {
-            LOG.error("Emit metrics {} failed", event, throwable);
-          }
-        });
+    callPluginsAsync(listener -> listener.handleEvent(event));
   }
 }
