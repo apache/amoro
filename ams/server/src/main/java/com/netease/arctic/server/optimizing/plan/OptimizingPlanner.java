@@ -40,8 +40,6 @@ import java.util.stream.Collectors;
 public class OptimizingPlanner extends OptimizingEvaluator {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingPlanner.class);
 
-  private static final long MAX_INPUT_FILE_SIZE_PER_THREAD = 512 * 1024 * 1024; // 512MB
-
   private final TableFileScanHelper.PartitionFilter partitionFilter;
 
   protected long processId;
@@ -52,8 +50,13 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   private List<TaskDescriptor> tasks;
 
   private List<AbstractPartitionPlan> actualPartitionPlans;
+  private final long maxInputSizePerThread;
 
-  public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, double availableCore) {
+  public OptimizingPlanner(
+      TableRuntime tableRuntime,
+      ArcticTable table,
+      double availableCore,
+      long maxInputSizePerThread) {
     super(tableRuntime, table);
     this.partitionFilter =
         tableRuntime.getPendingInput() == null
@@ -63,6 +66,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     this.planTime = System.currentTimeMillis();
     this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, planTime);
     this.partitionPlannerFactory = new PartitionPlannerFactory(arcticTable, tableRuntime, planTime);
+    this.maxInputSizePerThread = maxInputSizePerThread;
   }
 
   @Override
@@ -128,7 +132,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     // prioritize partitions with high cost to avoid starvation
     evaluators.sort(Comparator.comparing(PartitionEvaluator::getWeight, Comparator.reverseOrder()));
 
-    double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * availableCore;
+    double maxInputSize = maxInputSizePerThread * availableCore;
     actualPartitionPlans = Lists.newArrayList();
     long actualInputSize = 0;
     for (PartitionEvaluator evaluator : evaluators) {
@@ -157,12 +161,14 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     }
     long endTime = System.nanoTime();
     LOG.info(
-        "{} finish plan, type = {}, get {} tasks, cost {} ns, {} ms",
+        "{} finish plan, type = {}, get {} tasks, cost {} ns, {} ms maxInputSize {} actualInputSize {}",
         tableRuntime.getTableIdentifier(),
         getOptimizingType(),
         tasks.size(),
         endTime - startTime,
-        (endTime - startTime) / 1_000_000);
+        (endTime - startTime) / 1_000_000,
+        maxInputSize,
+        actualInputSize);
     return cacheAndReturnTasks(tasks);
   }
 

@@ -386,6 +386,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
                     }
                     optimizingProcessInfo.setInputFiles(inputBuilder.build());
                     optimizingProcessInfo.setOutputFiles(outputBuilder.build());
+                    optimizingProcessInfo.setSummary(Collections.emptyMap());
                     return optimizingProcessInfo;
                   })
               .collect(Collectors.toList());

@@ -24,8 +24,8 @@ import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.Constants;
+import com.netease.arctic.ams.api.OptimizerProperties;
 import com.netease.arctic.ams.api.OptimizingService;
-import com.netease.arctic.ams.api.PropertyNames;
 import com.netease.arctic.server.dashboard.DashboardServer;
 import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
@@ -140,6 +140,7 @@ public class ArcticServiceContainer {
     addHandlerChain(AsyncTableExecutors.getInstance().getDataExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getSnapshotsExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
+    addHandlerChain(AsyncTableExecutors.getInstance().getDanglingDeleteFilesCleaningExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
@@ -505,9 +506,9 @@ public class ArcticServiceContainer {
                 containerConfig.getObject(ArcticManagementConf.CONTAINER_PROPERTIES, Map.class));
           }
           // put properties in config.yaml first.
-          containerProperties.put(PropertyNames.AMS_HOME, Environments.getHomePath());
+          containerProperties.put(OptimizerProperties.AMS_HOME, Environments.getHomePath());
           containerProperties.putIfAbsent(
-              PropertyNames.AMS_OPTIMIZER_URI,
+              OptimizerProperties.AMS_OPTIMIZER_URI,
               AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
           // put addition system properties
           container.setProperties(containerProperties);
