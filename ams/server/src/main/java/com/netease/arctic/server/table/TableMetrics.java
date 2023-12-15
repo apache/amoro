@@ -1,21 +1,30 @@
-package com.netease.arctic.server.metrics;
+package com.netease.arctic.server.table;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.MetricRegistry;
 import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.ams.api.metrics.Counter;
+import com.netease.arctic.ams.api.metrics.Gauge;
 import com.netease.arctic.ams.api.metrics.MetricName;
+import com.netease.arctic.server.metrics.MetricRegistry;
+import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
-import static com.netease.arctic.ams.api.events.TableOptimizingStateChangedEventContent.STATE_COMMITTING;
-import static com.netease.arctic.ams.api.events.TableOptimizingStateChangedEventContent.STATE_EXECUTING;
-import static com.netease.arctic.ams.api.events.TableOptimizingStateChangedEventContent.STATE_IDLE;
-import static com.netease.arctic.ams.api.events.TableOptimizingStateChangedEventContent.STATE_PENDING;
-import static com.netease.arctic.ams.api.events.TableOptimizingStateChangedEventContent.STATE_PLANING;
-
 public class TableMetrics {
+  /** Table is no need optimizing. */
+  public static final String STATE_IDLE = "idle";
 
-  private final TableIdentifier identifier;
+  /** Table is need optimizing, but waiting for resource */
+  public static final String STATE_PENDING = "pending";
+
+  /** Table is doing optimizing process planing. */
+  public static final String STATE_PLANING = "planing";
+
+  /** Table is executing optimizing process */
+  public static final String STATE_EXECUTING = "executing";
+
+  /** All optimizing process task is done, and process is committing. */
+  public static final String STATE_COMMITTING = "committing";
+  private final ServerTableIdentifier identifier;
 
   private final Counter processTotalCount = new Counter();
   private final Counter processFailedCount = new Counter();
@@ -32,7 +41,7 @@ public class TableMetrics {
   private final Gauge<Integer> executingDuration = new StateDurationGauge(STATE_EXECUTING);
   private final Gauge<Integer> committingDuration = new StateDurationGauge(STATE_COMMITTING);
 
-  public TableMetrics(TableIdentifier identifier) {
+  public TableMetrics(ServerTableIdentifier identifier) {
     this.identifier = identifier;
     tableMetricRegistry.register(explicitMetricName("table_optimizing_process_total_count"), processFailedCount);
     tableMetricRegistry.register(explicitMetricName("table_optimizing_process_failed_count"), processTotalCount);
@@ -51,22 +60,22 @@ public class TableMetrics {
   }
 
   public void unregister(MetricRegistry registry) {
-    tableMetricRegistry.getMetrics().keySet().forEach(registry::remove);
+    tableMetricRegistry.getMetrics().keySet().forEach(registry::unregister);
   }
 
 
-  public void stateChanged(String state, long stateSetTimestamp) {
-    this.state = state;
+  public void stateChanged(OptimizingStatus state, long stateSetTimestamp) {
+    this.state = state.name();
     this.stateSetTimestamp = stateSetTimestamp;
   }
 
 
-  private String explicitMetricName(String name) {
+  private MetricName explicitMetricName(String name) {
     return new MetricName(name, ImmutableList.of(
         "catalog", "database", "table_name"
     ), ImmutableList.of(
         identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName()
-    )).getExplicitMetricName();
+    ));
   }
 
   class StateDurationGauge implements Gauge<Integer> {

@@ -18,11 +18,36 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-import com.codahale.metrics.Metric;
+import java.util.concurrent.atomic.LongAdder;
 
-import java.util.Map;
+/**
+ * An incrementing counter metric.
+ */
+public class Counter implements Metric {
+  private final LongAdder count = new LongAdder();
 
-public interface MetricRegister {
+  /**
+   * Increment the counter by one.
+   */
+  public void inc() {
+    inc(1);
+  }
 
-  Map<MetricName, Metric> allMetrics();
+  /**
+   * Increment the counter by {@code n}.
+   *
+   * @param n the amount by which the counter will be increased
+   */
+  public void inc(long n) {
+    count.add(n);
+  }
+
+  /**
+   * Returns the counter's current value.
+   *
+   * @return the counter's current value
+   */
+  public long getCount() {
+    return count.sum();
+  }
 }

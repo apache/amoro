@@ -33,7 +33,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.events.Event;
-import com.netease.arctic.ams.api.events.EventType;
+import com.netease.arctic.ams.api.events.DeprecatedEventType;
 import com.netease.arctic.ams.api.events.IcebergReportEventContent;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
@@ -372,12 +372,6 @@ public class RestCatalogService extends PersistentBase {
           String bodyJson = ctx.body();
           ReportMetricsRequest metricsRequest = ReportMetricsRequestParser.fromJson(bodyJson);
           ServerTableIdentifier identifier = handler.tableMetadata().getTableIdentifier();
-          Event<IcebergReportEventContent> event =
-              Event.newEvent(
-                  EventType.IcebergReport,
-                  new IcebergReportEventContent(
-                      identifier.getIdentifier(), metricsRequest.report()));
-          eventsManager.emit(event);
           return null;
         });
   }

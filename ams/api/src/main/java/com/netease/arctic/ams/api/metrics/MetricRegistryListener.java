@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *  *
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,36 +16,12 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.events;
-
-import com.netease.arctic.ams.api.TableIdentifier;
-
-/** Event content for {@link EventType#TableOptimizingTaskAcked} */
-public class TableOptimizingTaskEventContent {
-
-  private final TableIdentifier identifier;
-
-  private final long processId;
-
-  private final long taskId;
+package com.netease.arctic.ams.api.metrics;
 
 
-  public TableOptimizingTaskEventContent(
-      TableIdentifier identifier, long processId, long taskId) {
-    this.identifier = identifier;
-    this.processId = processId;
-    this.taskId = taskId;
-  }
+public interface MetricRegistryListener {
 
-  public TableIdentifier getIdentifier() {
-    return identifier;
-  }
+  void onMetricAdded(MetricName name, Metric metric);
 
-  public long getProcessId() {
-    return processId;
-  }
-
-  public long getTaskId() {
-    return taskId;
-  }
+  void onMetricRemoved(MetricName name);
 }

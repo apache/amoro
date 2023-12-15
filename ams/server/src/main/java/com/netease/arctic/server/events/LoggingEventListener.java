@@ -19,15 +19,15 @@
 package com.netease.arctic.server.events;
 
 import com.netease.arctic.ams.api.events.Event;
-import com.netease.arctic.ams.api.events.EventEmitter;
-import com.netease.arctic.ams.api.events.EventType;
+import com.netease.arctic.ams.api.events.EventListener;
+import com.netease.arctic.ams.api.events.DeprecatedEventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Set;
 
-public class LoggingEventEmitter implements EventEmitter {
+public class LoggingEventListener implements EventListener {
 
   public static final String NAME = "log_event_emitter";
 
@@ -50,16 +50,11 @@ public class LoggingEventEmitter implements EventEmitter {
   }
 
   @Override
-  public void emit(Event<?> event) {
+  public void handleEvent(Event event) {
     LOG.info(
         "Received event: {} timestamp: {} content: {}",
         event.type(),
         event.eventTime(),
-        event.content());
-  }
-
-  @Override
-  public Set<EventType<?>> accepts() {
-    return EventType.allTypes();
+        event.toString());
   }
 }

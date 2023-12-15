@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
+import com.netease.arctic.server.manager.MetricManager;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
@@ -90,6 +91,7 @@ public class TableRuntime extends StatedPersistentBase {
   @StateField private volatile long processId;
   @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
   private volatile long lastPlanTime;
+  private volatile TableMetrics metrics;
 
   private final ReentrantLock blockerLock = new ReentrantLock();
 
@@ -103,6 +105,8 @@ public class TableRuntime extends StatedPersistentBase {
     this.tableConfiguration = TableConfiguration.parseConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
+    metrics = new TableMetrics(tableIdentifier);
+    metrics.register(MetricManager.getInstance().getGlobalRegistry());
   }
 
   protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
@@ -131,6 +135,9 @@ public class TableRuntime extends StatedPersistentBase {
             ? OptimizingStatus.PENDING
             : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
+    metrics = new TableMetrics(tableIdentifier);
+    metrics.register(MetricManager.getInstance().getGlobalRegistry());
+    metrics.stateChanged(optimizingStatus, this.currentStatusStartTime);
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -151,6 +158,8 @@ public class TableRuntime extends StatedPersistentBase {
                       TableMetaMapper.class,
                       mapper -> mapper.deleteOptimizingRuntime(tableIdentifier.getId())));
         });
+    metrics = new TableMetrics(tableIdentifier);
+    metrics.unregister(MetricManager.getInstance().getGlobalRegistry());
   }
 
   public void beginPlanning() {
@@ -282,6 +291,7 @@ public class TableRuntime extends StatedPersistentBase {
   private void updateOptimizingStatus(OptimizingStatus status) {
     this.optimizingStatus = status;
     this.currentStatusStartTime = System.currentTimeMillis();
+    this.metrics.stateChanged(status, currentStatusStartTime);
   }
 
   private boolean refreshSnapshots(AmoroTable<?> amoroTable) {

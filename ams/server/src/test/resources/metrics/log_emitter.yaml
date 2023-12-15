@@ -1,1 +1,1 @@
-impl: com.netease.arctic.server.metrics.LoggingEventEmitter
+impl: com.netease.arctic.server.metrics.LoggingEventListener

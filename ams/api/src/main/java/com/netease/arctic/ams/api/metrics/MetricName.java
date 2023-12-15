@@ -23,11 +23,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
+/**
+ * Amoro metric name.
+ */
 public class MetricName {
 
   private final String name;
@@ -68,8 +73,7 @@ public class MetricName {
     Preconditions.checkArgument(tags.size() == values.size(),
         "Illegal metric name: tags size and values mismatch");
     this.name = name;
-    this.tags = tags;
-    Map<String,String> valueMap = Collections.emptyMap();
+    Map<String,String> valueMap;
 
     StringBuilder nameBuilder = new StringBuilder(100);
     nameBuilder.append(this.name);
@@ -78,17 +82,21 @@ public class MetricName {
 
       Iterator<String> tagIt = tags.iterator();
       Iterator<String> valueIt = values.iterator();
-      List<String> tagAndValueList = Lists.newArrayList();
       while (tagIt.hasNext() && valueIt.hasNext()) {
         String tag = tagIt.next();
         String value = valueIt.next();
-        tagAndValueList.add(tag + "=" + value);
         valueMap.put(tag, value);
       }
-
+      tags = tags.stream().sorted().collect(Collectors.toList());
+      List<String> tagAndValueList = tags.stream()
+          .map(t -> t + "=" + (valueMap.get(t))).collect(Collectors.toList());
       String tagAndValue = Joiner.on(",").join(tagAndValueList);
       nameBuilder.append("<").append(tagAndValue).append(">");
+    } else {
+      valueMap = Collections.emptyMap();
     }
+
+    this.tags = tags;
     this.values = valueMap;
     this.explicitMetricName = nameBuilder.toString();
   }

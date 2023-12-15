@@ -24,7 +24,6 @@ import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.Constants;
-import com.netease.arctic.ams.api.Environments;
 import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.PropertyNames;
 import com.netease.arctic.server.dashboard.DashboardServer;
@@ -32,6 +31,7 @@ import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.exception.ArcticRuntimeException;
+import com.netease.arctic.server.manager.MetricManager;
 import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.OptimizerManager;
@@ -129,6 +129,8 @@ public class ArcticServiceContainer {
   }
 
   public void startService() throws Exception {
+    MetricManager.initialize(serviceConfig);
+
     tableService = new DefaultTableService(serviceConfig);
     optimizingService = new DefaultOptimizingService(serviceConfig, tableService);
 

@@ -2,7 +2,6 @@ package com.netease.arctic.server;
 
 import com.netease.arctic.SingletonResourceUtil;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.Environments;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.resource.ResourceGroup;

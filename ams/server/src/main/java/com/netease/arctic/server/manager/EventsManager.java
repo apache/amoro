@@ -18,9 +18,9 @@
 
 package com.netease.arctic.server.manager;
 
-import com.netease.arctic.ams.api.Environments;
+import com.netease.arctic.server.Environments;
 import com.netease.arctic.ams.api.events.Event;
-import com.netease.arctic.ams.api.events.EventEmitter;
+import com.netease.arctic.ams.api.events.EventListener;
 import com.netease.arctic.server.exception.LoadingPluginException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 /** This class is used to trigger various events in the process and notify event emitter plugins. */
-public class EventsManager extends ActivePluginManager<EventEmitter> {
+public class EventsManager extends ActivePluginManager<EventListener> {
 
   private static final Logger LOG = LoggerFactory.getLogger(EventsManager.class);
   private static final String EVENTS_CONFIG_DIR = "events";
@@ -82,13 +82,11 @@ public class EventsManager extends ActivePluginManager<EventEmitter> {
     }
   }
 
-  public void emit(Event<?> event) {
+  public void emit(Event event) {
     forEach(
-        emitter -> {
-          try (ClassLoaderContext ignored = new ClassLoaderContext(emitter)) {
-            if (emitter.accepts().contains(event.type())) {
-              emitter.emit(event);
-            }
+        listener -> {
+          try (ClassLoaderContext ignored = new ClassLoaderContext(listener)) {
+            listener.handleEvent(event);
           } catch (Throwable throwable) {
             LOG.error("Emit metrics {} failed", event, throwable);
           }

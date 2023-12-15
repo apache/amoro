@@ -16,37 +16,9 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.events;
+package com.netease.arctic.ams.api.metrics;
 
-import com.netease.arctic.ams.api.TableIdentifier;
-import org.apache.iceberg.metrics.MetricsReport;
-
-/** Event content for {@link EventType#IcebergReport} */
-public class IcebergReportEventContent {
-
-  private final MetricsReport report;
-  private final TableIdentifier identifier;
-
-  public IcebergReportEventContent(TableIdentifier identifier, MetricsReport data) {
-    this.identifier = identifier;
-    this.report = data;
-  }
-
-  /**
-   * Table identifier of event
-   *
-   * @return Table identifier
-   */
-  public TableIdentifier getIdentifier() {
-    return identifier;
-  }
-
-  /**
-   * Iceberg metric report
-   *
-   * @return iceberg metric report
-   */
-  public MetricsReport getReport() {
-    return report;
-  }
-}
+/**
+ * Base interface for all amoro metric
+ */
+public interface Metric {}
