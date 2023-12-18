@@ -304,7 +304,7 @@ public class MixedTableMaintainer implements TableMaintainer {
           LOG.info("{} delete {} change files", unkeyedTable.name(), tableFiles.size());
           if (!tableFiles.isEmpty()) {
             DeleteFiles changeDelete = unkeyedTable.newDelete();
-            changeFiles.forEach(changeDelete::deleteFile);
+            tableFiles.forEach(changeDelete::deleteFile);
             changeDelete.commit();
           }
           LOG.info(
