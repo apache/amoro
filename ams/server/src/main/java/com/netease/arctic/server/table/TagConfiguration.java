@@ -54,21 +54,11 @@ public class TagConfiguration {
       protected TemporalUnit getPeriodUnit() {
         return ChronoUnit.DAYS;
       }
-
-      @Override
-      protected Duration periodSize() {
-        return Duration.ofDays(1);
-      }
     },
     HOURLY("hourly") {
       @Override
       protected TemporalUnit getPeriodUnit() {
         return ChronoUnit.HOURS;
-      }
-
-      @Override
-      protected Duration periodSize() {
-        return Duration.ofHours(1);
       }
     };
 
@@ -84,7 +74,6 @@ public class TagConfiguration {
 
     protected abstract TemporalUnit getPeriodUnit();
 
-    protected abstract Duration periodSize();
 
     /**
      * Obtain the trigger time for creating a tag, which is the ideal time of the last tag before
@@ -99,8 +88,6 @@ public class TagConfiguration {
      * 2022-08-08 00:30:00.
      */
     public long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
-      checkTime = checkTime.plus(periodSize());
-
       return checkTime
           .minusMinutes(triggerOffsetMinutes)
           .truncatedTo(getPeriodUnit())
