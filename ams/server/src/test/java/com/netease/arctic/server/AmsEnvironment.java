@@ -443,6 +443,11 @@ public class AmsEnvironment {
         + "\n"
         + "    container: localContainer\n"
         + "    properties:\n"
-        + "      memory: 1024 # MB\n";
+        + "      memory: 1024 # MB\n"
+        + "\n"
+        + "metric-reporters:\n"
+        + "  - name: test-reporter\n"
+        + "    properties:\n"
+        + "      port: 7001";
   }
 }

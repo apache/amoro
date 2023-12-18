@@ -101,17 +101,6 @@ ams:
 #    cluster-name: default
 #    zookeeper-address: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
 
-plugins:
-  metric-reporters:
-    - name: prometheus-exporter
-      properties:
-        port: 7001
-
-    - name: prometheus-pusher
-      properties:
-        gateway-uri: 'http://prometheus-push-gateway-host:port/'
-        interval: 15s
-
 
 
 containers:
