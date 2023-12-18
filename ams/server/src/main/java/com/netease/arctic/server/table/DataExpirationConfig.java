@@ -33,8 +33,8 @@ public class DataExpirationConfig {
   private String dateTimePattern;
   // data-expire.datetime-number-format
   private String numberDateFormat;
-  // data-expire.since
-  private Since since;
+  // data-expire.base-on-rule
+  private BaseOnRule baseOnRule;
 
   @VisibleForTesting
   public enum ExpireLevel {
@@ -52,14 +52,15 @@ public class DataExpirationConfig {
   }
 
   @VisibleForTesting
-  public enum Since {
-    LATEST_SNAPSHOT,
-    CURRENT_TIMESTAMP;
+  public enum BaseOnRule {
+    LAST_COMMIT_TIME,
+    CURRENT_TIME;
 
-    public static Since fromString(String since) {
-      Preconditions.checkArgument(null != since, "data-expire.since is invalid: null");
+    public static BaseOnRule fromString(String since) {
+      Preconditions.checkArgument(
+          null != since, TableProperties.DATA_EXPIRATION_BASE_ON_RULE + " is invalid: null");
       try {
-        return Since.valueOf(since.toUpperCase(Locale.ENGLISH));
+        return BaseOnRule.valueOf(since.toUpperCase(Locale.ENGLISH));
       } catch (IllegalArgumentException e) {
         throw new IllegalArgumentException(
             String.format("Unable to expire data since: %s", since), e);
@@ -81,14 +82,14 @@ public class DataExpirationConfig {
       long retentionTime,
       String dateTimePattern,
       String numberDateFormat,
-      Since since) {
+      BaseOnRule baseOnRule) {
     this.enabled = enabled;
     this.expirationField = expirationField;
     this.expirationLevel = expirationLevel;
     this.retentionTime = retentionTime;
     this.dateTimePattern = dateTimePattern;
     this.numberDateFormat = numberDateFormat;
-    this.since = since;
+    this.baseOnRule = baseOnRule;
   }
 
   public DataExpirationConfig(ArcticTable table) {
@@ -133,12 +134,12 @@ public class DataExpirationConfig {
             properties,
             TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT,
             TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT);
-    since =
-        Since.fromString(
+    baseOnRule =
+        BaseOnRule.fromString(
             CompatiblePropertyUtil.propertyAsString(
                 properties,
-                TableProperties.DATA_EXPIRATION_SINCE,
-                TableProperties.DATA_EXPIRATION_SINCE_DEFAULT));
+                TableProperties.DATA_EXPIRATION_BASE_ON_RULE,
+                TableProperties.DATA_EXPIRATION_BASE_ON_RULE_DEFAULT));
   }
 
   public static DataExpirationConfig parse(Map<String, String> properties) {
@@ -168,12 +169,12 @@ public class DataExpirationConfig {
                     properties,
                     TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT,
                     TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT))
-            .setSince(
-                Since.fromString(
+            .setBaseOnRule(
+                BaseOnRule.fromString(
                     CompatiblePropertyUtil.propertyAsString(
                         properties,
-                        TableProperties.DATA_EXPIRATION_SINCE,
-                        TableProperties.DATA_EXPIRATION_SINCE_DEFAULT)));
+                        TableProperties.DATA_EXPIRATION_BASE_ON_RULE,
+                        TableProperties.DATA_EXPIRATION_BASE_ON_RULE_DEFAULT)));
     String retention =
         CompatiblePropertyUtil.propertyAsString(
             properties, TableProperties.DATA_EXPIRATION_RETENTION_TIME, null);
@@ -238,12 +239,12 @@ public class DataExpirationConfig {
     return this;
   }
 
-  public Since getSince() {
-    return since;
+  public BaseOnRule getBaseOnRule() {
+    return baseOnRule;
   }
 
-  public DataExpirationConfig setSince(Since since) {
-    this.since = since;
+  public DataExpirationConfig setBaseOnRule(BaseOnRule baseOnRule) {
+    this.baseOnRule = baseOnRule;
     return this;
   }
 
@@ -262,7 +263,7 @@ public class DataExpirationConfig {
         && expirationLevel == config.expirationLevel
         && Objects.equal(dateTimePattern, config.dateTimePattern)
         && Objects.equal(numberDateFormat, config.numberDateFormat)
-        && since == config.since;
+        && baseOnRule == config.baseOnRule;
   }
 
   @Override
@@ -274,7 +275,7 @@ public class DataExpirationConfig {
         retentionTime,
         dateTimePattern,
         numberDateFormat,
-        since);
+        baseOnRule);
   }
 
   public boolean isValid(Types.NestedField field, String name) {
