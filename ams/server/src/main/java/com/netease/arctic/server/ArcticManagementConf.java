@@ -100,6 +100,18 @@ public class ArcticManagementConf {
           .defaultValue(10)
           .withDescription("The number of threads used for orphan files cleaning.");
 
+  public static final ConfigOption<Boolean> CLEAN_DANGLING_DELETE_FILES_ENABLED =
+      ConfigOptions.key("clean-dangling-delete-files.enabled")
+          .booleanType()
+          .defaultValue(true)
+          .withDescription("Enable dangling delete files cleaning.");
+
+  public static final ConfigOption<Integer> CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT =
+      ConfigOptions.key("clean-dangling-delete-files.thread-count")
+          .intType()
+          .defaultValue(10)
+          .withDescription("The number of threads used for dangling delete files cleaning.");
+
   public static final ConfigOption<Boolean> SYNC_HIVE_TABLES_ENABLED =
       ConfigOptions.key("sync-hive-tables.enabled")
           .booleanType()

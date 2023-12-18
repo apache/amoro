@@ -72,6 +72,7 @@ export default {
   filterPlaceholder: 'Filter {inputPh}',
   basicInformation: 'Basic Information',
   partition: 'Partition',
+  taskId: 'Task ID',
   fileCount: 'File Count',
   fsn: 'FSN',
   commitTime: 'Commit Time',
@@ -99,6 +100,9 @@ export default {
   optimizingStatus: 'Optimizing Status',
   optimzerGroup: 'Optimizer Group',
   allGroups: 'All Groups',
+  retry: 'Retry',
+  costTime: 'Cost Time',
+  thread: 'Thread',
   resourceOccupation: 'Resource Occupation',
   core: 'Core',
   scaleOut: 'Scale-Out',
@@ -129,6 +133,7 @@ export default {
   ready: 'Ready',
   running: 'Running',
   cancel: 'Cancel',
+  cancelProcess: 'Cancel Process',
   finish: 'Finish',
   fail: 'Fail',
   loading: 'Loading',
@@ -179,7 +184,7 @@ export default {
   cannotDeleteGroupModalTitle: "Can't remove this group.",
   cannotDeleteGroupModalContent: 'This group has been used.',
   deleteGroupModalTitle: 'Remove this group',
-  processId: 'Process Id',
+  processId: 'Process ID',
   tasks: 'Tasks',
   recordChartTitle: 'Table record count',
   fileChartTitle: 'Table file count',
@@ -193,5 +198,6 @@ export default {
   tags: 'tags',
   nothingToShow: 'Nothing to show',
   filterBranchesOrTags: 'Filter branches/tags',
-  findATag: 'Find a tag'
+  findATag: 'Find a tag',
+  fileSearchPlaceholder: 'Filter partitions'
 }

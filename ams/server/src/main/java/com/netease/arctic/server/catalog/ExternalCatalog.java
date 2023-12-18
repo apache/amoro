@@ -24,6 +24,7 @@ public class ExternalCatalog extends ServerCatalog {
   UnifiedCatalog unifiedCatalog;
   TableMetaStore tableMetaStore;
   private Pattern tableFilterPattern;
+  private Pattern databaseFilterPattern;
 
   protected ExternalCatalog(CatalogMeta metadata) {
     super(metadata);
@@ -32,6 +33,7 @@ public class ExternalCatalog extends ServerCatalog {
         this.tableMetaStore.doAs(
             () -> new CommonUnifiedCatalog(this::getMetadata, Maps.newHashMap()));
     updateTableFilter(metadata);
+    updateDatabaseFilter(metadata);
   }
 
   public void syncTable(String database, String tableName, TableFormat format) {
@@ -58,6 +60,7 @@ public class ExternalCatalog extends ServerCatalog {
     super.updateMetadata(metadata);
     this.tableMetaStore = CatalogUtil.buildMetaStore(metadata);
     this.unifiedCatalog.refresh();
+    updateDatabaseFilter(metadata);
     updateTableFilter(metadata);
   }
 
@@ -73,7 +76,14 @@ public class ExternalCatalog extends ServerCatalog {
 
   @Override
   public List<String> listDatabases() {
-    return doAs(() -> unifiedCatalog.listDatabases());
+    return doAs(
+        () ->
+            unifiedCatalog.listDatabases().stream()
+                .filter(
+                    database ->
+                        databaseFilterPattern == null
+                            || databaseFilterPattern.matcher(database).matches())
+                .collect(Collectors.toList()));
   }
 
   @Override
@@ -107,6 +117,16 @@ public class ExternalCatalog extends ServerCatalog {
   @Override
   public AmoroTable<?> loadTable(String database, String tableName) {
     return doAs(() -> unifiedCatalog.loadTable(database, tableName));
+  }
+
+  private void updateDatabaseFilter(CatalogMeta metadata) {
+    String databaseFilter =
+        metadata.getCatalogProperties().get(CatalogMetaProperties.KEY_DATABASE_FILTER);
+    if (databaseFilter != null) {
+      databaseFilterPattern = Pattern.compile(databaseFilter);
+    } else {
+      databaseFilterPattern = null;
+    }
   }
 
   private void updateTableFilter(CatalogMeta metadata) {

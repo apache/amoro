@@ -23,6 +23,7 @@ import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRI
 import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT;
 import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE;
 
+import com.netease.arctic.ams.api.OptimizerProperties;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutor;
 import com.netease.arctic.optimizing.IcebergRewriteExecutor;
@@ -182,7 +183,11 @@ public class CompleteOptimizingFlow {
     Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> optimizingConfig());
     Mockito.when(tableRuntime.getTableIdentifier())
         .thenReturn(ServerTableIdentifier.of(1L, "a", "b", "c", table.format()));
-    return new OptimizingPlanner(tableRuntime, table, availableCore);
+    return new OptimizingPlanner(
+        tableRuntime,
+        table,
+        availableCore,
+        OptimizerProperties.MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT);
   }
 
   private OptimizingConfig optimizingConfig() {

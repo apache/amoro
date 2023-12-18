@@ -48,4 +48,11 @@ public class IcebergCatalogFactory implements FormatCatalogFactory {
   public TableFormat format() {
     return TableFormat.ICEBERG;
   }
+
+  @Override
+  public Map<String, String> convertCatalogProperties(
+      String catalogName, String metastoreType, Map<String, String> unifiedCatalogProperties) {
+    return com.netease.arctic.utils.CatalogUtil.withIcebergCatalogInitializeProperties(
+        catalogName, metastoreType, unifiedCatalogProperties);
+  }
 }
