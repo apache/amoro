@@ -446,8 +446,7 @@ public class AmsEnvironment {
         + "      memory: 1024 # MB\n"
         + "\n"
         + "metric-reporters:\n"
-        + "  - name: test-reporter\n"
-        + "    properties:\n"
-        + "      port: 7001";
+        + "  - name: mocked-reporter\n"
+        + "    properties:\n";
   }
 }

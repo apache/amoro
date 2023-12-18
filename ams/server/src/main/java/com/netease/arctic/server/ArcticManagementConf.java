@@ -348,5 +348,7 @@ public class ArcticManagementConf {
   public static final String DB_TYPE_POSTGRES = "postgres";
 
   // plugin config
-  public static final String PLUGIN_LIST = "plugins";
+  public static final String METRIC_REPORTERS = "metric-reports";
+
+  public static final String EVENT_LISTENERS = "event-listeners";
 }

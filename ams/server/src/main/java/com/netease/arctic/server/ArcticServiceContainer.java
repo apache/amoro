@@ -52,7 +52,6 @@ import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.SystemProperties;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.TProcessor;
@@ -98,7 +97,8 @@ public class ArcticServiceContainer {
   private TServer tableManagementServer;
   private TServer optimizingServiceServer;
   private Javalin httpServer;
-  private Map<String, List<PluginConfiguration>> pluginConfigurations = Maps.newHashMap();
+  private List<PluginConfiguration> metricPluginConfigs = Lists.newArrayList();
+  private List<PluginConfiguration> eventPluginConfigs = Lists.newArrayList();
 
   public ArcticServiceContainer() throws Exception {
     initConfig();
@@ -134,10 +134,8 @@ public class ArcticServiceContainer {
   }
 
   public void startService() throws Exception {
-    EventsManager.initialize(
-        pluginConfigurations.getOrDefault(EventsManager.PLUGIN_TYPE, ImmutableList.of()));
-    MetricManager.initialize(
-        pluginConfigurations.getOrDefault(MetricManager.PLUGIN_CONFIG_KEY, ImmutableList.of()));
+    EventsManager.initialize(eventPluginConfigs);
+    MetricManager.initialize(metricPluginConfigs);
 
     tableService = new DefaultTableService(serviceConfig);
     optimizingService = new DefaultOptimizingService(serviceConfig, tableService);
@@ -529,21 +527,23 @@ public class ArcticServiceContainer {
 
     private void initPluginConfig() {
       LOG.info("initializing plugins configuration...");
-      JSONObject plugins = yamlConfig.getJSONObject(ArcticManagementConf.PLUGIN_LIST);
-      plugins
-          .keySet()
-          .forEach(
-              pluginManagerName -> {
-                JSONArray pluginConfigList = plugins.getJSONArray(pluginManagerName);
-                List<PluginConfiguration> configs = Lists.newArrayList();
-                for (int i = 0; i < pluginConfigList.size(); i++) {
-                  JSONObject pluginConfiguration = pluginConfigList.getJSONObject(i);
-                  PluginConfiguration configuration =
-                      PluginConfiguration.fromJSONObject(pluginConfiguration);
-                  configs.add(configuration);
-                }
-                pluginConfigurations.put(pluginManagerName, configs);
-              });
+      eventPluginConfigs = initPluginConfig(ArcticManagementConf.EVENT_LISTENERS);
+      metricPluginConfigs = initPluginConfig(ArcticManagementConf.METRIC_REPORTERS);
+    }
+
+    private List<PluginConfiguration> initPluginConfig(String key) {
+      LOG.info("initializing plugin configuration for: " + key);
+      JSONArray pluginConfigList = yamlConfig.getJSONArray(key);
+      List<PluginConfiguration> configs = Lists.newArrayList();
+      if (pluginConfigList != null && !pluginConfigList.isEmpty()) {
+        for (int i = 0; i < pluginConfigList.size(); i++) {
+          JSONObject pluginConfiguration = pluginConfigList.getJSONObject(i);
+          PluginConfiguration configuration =
+              PluginConfiguration.fromJSONObject(pluginConfiguration);
+          configs.add(configuration);
+        }
+      }
+      return configs;
     }
   }
 

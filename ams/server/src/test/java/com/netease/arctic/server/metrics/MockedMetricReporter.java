@@ -21,25 +21,34 @@ package com.netease.arctic.server.metrics;
 import com.netease.arctic.ams.api.metrics.Metric;
 import com.netease.arctic.ams.api.metrics.MetricName;
 import com.netease.arctic.ams.api.metrics.MetricReporter;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 
-public class TestMetricReporter implements MetricReporter {
+public class MockedMetricReporter implements MetricReporter {
+
+  private final Map<MetricName, Metric> globalMetrics = Maps.newConcurrentMap();
 
   @Override
   public void open(Map<String, String> properties) {}
 
   @Override
-  public void close() {}
-
-  @Override
-  public String name() {
-    return "test-reporter";
+  public void close() {
+    globalMetrics.clear();
   }
 
   @Override
-  public void onMetricAdded(MetricName name, Metric metric) {}
+  public String name() {
+    return "mocked-reporter";
+  }
 
   @Override
-  public void onMetricRemoved(MetricName name) {}
+  public void onMetricAdded(MetricName name, Metric metric) {
+    globalMetrics.put(name, metric);
+  }
+
+  @Override
+  public void onMetricRemoved(MetricName name) {
+    globalMetrics.remove(name);
+  }
 }

@@ -1,1 +1,1 @@
- com.netease.arctic.server.metrics.TestMetricReporter
+ com.netease.arctic.server.metrics.MockedMetricReporter
