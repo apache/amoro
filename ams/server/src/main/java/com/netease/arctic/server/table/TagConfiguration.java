@@ -29,7 +29,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.Locale;
 import java.util.Map;
 
@@ -51,14 +50,30 @@ public class TagConfiguration {
   public enum Period {
     DAILY("daily") {
       @Override
-      protected TemporalUnit getPeriodUnit() {
-        return ChronoUnit.DAYS;
+      protected Duration onePeriodSize() {
+        return Duration.ofDays(1);
+      }
+
+      @Override
+      public LocalDateTime getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
+        return checkTime
+            .minusMinutes(triggerOffsetMinutes)
+            .truncatedTo(ChronoUnit.DAYS)
+            .plusMinutes(triggerOffsetMinutes);
       }
     },
     HOURLY("hourly") {
       @Override
-      protected TemporalUnit getPeriodUnit() {
-        return ChronoUnit.HOURS;
+      protected Duration onePeriodSize() {
+        return Duration.ofHours(1);
+      }
+
+      @Override
+      public LocalDateTime getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
+        return checkTime
+            .minusMinutes(triggerOffsetMinutes)
+            .truncatedTo(ChronoUnit.HOURS)
+            .plusMinutes(triggerOffsetMinutes);
       }
     };
 
@@ -72,8 +87,7 @@ public class TagConfiguration {
       return propertyName;
     }
 
-    protected abstract TemporalUnit getPeriodUnit();
-
+    protected abstract Duration onePeriodSize();
 
     /**
      * Obtain the trigger time for creating a tag, which is the ideal time of the last tag before
@@ -87,20 +101,13 @@ public class TagConfiguration {
      * 2022-08-09 00:20:00 (before 00:30 of the next day), the ideal trigger time is still
      * 2022-08-08 00:30:00.
      */
-    public long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
-      return checkTime
-          .minusMinutes(triggerOffsetMinutes)
-          .truncatedTo(getPeriodUnit())
-          .plusMinutes(triggerOffsetMinutes)
-          .atZone(ZoneId.systemDefault())
-          .toInstant()
-          .toEpochMilli();
-    }
+    public abstract LocalDateTime getTagTriggerTime(
+        LocalDateTime checkTime, int triggerOffsetMinutes);
 
     public LocalDateTime normalizeToTagTime(long triggerTime, int triggerOffsetMinutes) {
       return LocalDateTime.ofInstant(Instant.ofEpochMilli(triggerTime), ZoneId.systemDefault())
           .minus(triggerOffsetMinutes, ChronoUnit.MINUTES)
-          .minus(1, getPeriodUnit());
+          .minus(onePeriodSize());
     }
   }
 

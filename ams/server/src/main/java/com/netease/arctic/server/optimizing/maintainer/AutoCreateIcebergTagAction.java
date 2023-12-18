@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
@@ -117,7 +118,9 @@ public class AutoCreateIcebergTagAction {
   }
 
   private long getTagTriggerTime() {
-    return tagConfig.getTriggerPeriod().getTagTriggerTime(now, tagConfig.getTriggerOffsetMinutes());
+    LocalDateTime tagTriggerTime =
+        tagConfig.getTriggerPeriod().getTagTriggerTime(now, tagConfig.getTriggerOffsetMinutes());
+    return tagTriggerTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
   }
 
   private static Snapshot findSnapshot(Table table, long tagTriggerTime) {

@@ -284,7 +284,11 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
                 .toEpochMilli();
 
     Long actualTriggerTime =
-        TagConfiguration.Period.HOURLY.getTagTriggerTime(checkTime, offsetMinutes);
+        TagConfiguration.Period.HOURLY
+            .getTagTriggerTime(checkTime, offsetMinutes)
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli();
 
     Assert.assertEquals(expectedTriggerTime, actualTriggerTime);
   }
@@ -301,7 +305,11 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
                 .toEpochMilli();
 
     Long actualTriggerTime =
-        TagConfiguration.Period.DAILY.getTagTriggerTime(checkTime, offsetMinutes);
+        TagConfiguration.Period.DAILY
+            .getTagTriggerTime(checkTime, offsetMinutes)
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli();
 
     Assert.assertEquals(expectedTriggerTime, actualTriggerTime);
   }
