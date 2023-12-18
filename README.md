@@ -153,3 +153,16 @@ If you are interested in Lakehouse, Data Lake Format, welcome to join our commun
 and individuals to grow together, and sincerely hope to help users better use Data Lake Format through open source.
 
 Join the Amoro WeChat Group: Add " `kllnn999` " as a friend on WeChat and specify "Amoro lover".
+
+## Contributors
+This project exists thanks to all the people who contribute.
+
+<a href="https://github.com/NetEase/amoro/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=NetEase/amoro" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=NetEase/amoro&type=Date)](https://star-history.com/#NetEase/amoro&Date)
