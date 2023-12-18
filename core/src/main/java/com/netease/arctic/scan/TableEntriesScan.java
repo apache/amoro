@@ -310,13 +310,13 @@ public class TableEntriesScan {
     String filePath = fileRecord.get(dataFileFieldIndex(DataFile.FILE_PATH.name()), String.class);
     Long fileSize = fileRecord.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
     Long recordCount = fileRecord.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class);
-    FileFormat format = FileFormat.fromFileName(filePath);
+    String format = fileRecord.get(dataFileFieldIndex(DataFile.FILE_FORMAT.name()), String.class);
     DataFiles.Builder builder =
         DataFiles.builder(table.spec())
             .withPath(filePath)
             .withFileSizeInBytes(fileSize)
             .withRecordCount(recordCount)
-            .withFormat(format != null ? format : FileFormat.PARQUET);
+            .withFormat(FileFormat.fromString(format));
     if (needMetrics()) {
       builder.withMetrics(buildMetrics(fileRecord));
     }
@@ -332,13 +332,13 @@ public class TableEntriesScan {
     String filePath = fileRecord.get(dataFileFieldIndex(DataFile.FILE_PATH.name()), String.class);
     Long fileSize = fileRecord.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
     Long recordCount = fileRecord.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class);
-    FileFormat format = FileFormat.fromFileName(filePath);
+    String format = fileRecord.get(dataFileFieldIndex(DataFile.FILE_FORMAT.name()), String.class);
     FileMetadata.Builder builder =
         FileMetadata.deleteFileBuilder(table.spec())
             .withPath(filePath)
             .withFileSizeInBytes(fileSize)
             .withRecordCount(recordCount)
-            .withFormat(format != null ? format : FileFormat.PARQUET);
+            .withFormat(FileFormat.fromString(format));
     if (needMetrics()) {
       builder.withMetrics(buildMetrics(fileRecord));
     }
