@@ -52,7 +52,6 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
@@ -61,7 +60,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -154,30 +152,33 @@ public class MixedTableMaintainer implements TableMaintainer {
       if (!expirationConfig.isValid(field, arcticTable.name())) {
         return;
       }
-      ZoneId defaultZone = IcebergTableMaintainer.getDefaultZoneId(field);
-      Instant startInstant;
-      if (expirationConfig.getSince() == DataExpirationConfig.Since.CURRENT_TIMESTAMP) {
-        startInstant = Instant.now().atZone(defaultZone).toInstant();
-      } else {
-        long latestBaseTs =
-            IcebergTableMaintainer.fetchLatestNonOptimizedSnapshotTime(baseMaintainer.getTable());
-        long latestChangeTs =
-            changeMaintainer == null
-                ? Long.MAX_VALUE
-                : IcebergTableMaintainer.fetchLatestNonOptimizedSnapshotTime(
-                    changeMaintainer.getTable());
-        long latestNonOptimizedTs = Longs.min(latestChangeTs, latestBaseTs);
 
-        startInstant = Instant.ofEpochMilli(latestNonOptimizedTs).atZone(defaultZone).toInstant();
-      }
-      expireDataFrom(expirationConfig, startInstant);
+      expireDataFrom(expirationConfig, expireMixedBaseOnRule(expirationConfig, field));
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
     }
   }
 
+  protected Instant expireMixedBaseOnRule(
+      DataExpirationConfig expirationConfig, Types.NestedField field) {
+    Instant changeInstant =
+        Optional.ofNullable(changeMaintainer).isPresent()
+            ? changeMaintainer.expireBaseOnRule(expirationConfig, field)
+            : Instant.MIN;
+    Instant baseInstant = baseMaintainer.expireBaseOnRule(expirationConfig, field);
+    if (changeInstant.compareTo(baseInstant) >= 0) {
+      return changeInstant;
+    } else {
+      return baseInstant;
+    }
+  }
+
   @VisibleForTesting
   public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+    if (instant.equals(Instant.MIN)) {
+      return;
+    }
+
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
     Types.NestedField field = arcticTable.schema().findField(expirationConfig.getExpirationField());
     LOG.info(
