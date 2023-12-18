@@ -16,14 +16,17 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.metrics;
-
-import com.netease.arctic.ams.api.metrics.Metric;
-import com.netease.arctic.ams.api.metrics.MetricName;
+package com.netease.arctic.ams.api.metrics;
 
 import java.util.Map;
 
 /** A set of named metrics. */
 public interface MetricSet {
+
+  /**
+   * Get all metrics of this metric set
+   *
+   * @return all metrics
+   */
   Map<MetricName, Metric> getMetrics();
 }

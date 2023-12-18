@@ -18,9 +18,21 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-public interface MetricRegistryListener {
+/** A listener interface to respond to events related to metric registration. */
+public interface MetricRegisterListener {
 
-  void onMetricAdded(MetricName name, Metric metric);
+  /**
+   * This method will be called when some metric is registered.
+   *
+   * @param name metric name
+   * @param metric metric object
+   */
+  void onMetricRegistered(MetricName name, Metric metric);
 
-  void onMetricRemoved(MetricName name);
+  /**
+   * This method will be called when some metric is unregistered.
+   *
+   * @param name metric name
+   */
+  void onMetricUnregistered(MetricName name);
 }

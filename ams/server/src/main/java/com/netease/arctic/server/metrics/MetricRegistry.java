@@ -21,7 +21,8 @@ package com.netease.arctic.server.metrics;
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.metrics.Metric;
 import com.netease.arctic.ams.api.metrics.MetricName;
-import com.netease.arctic.ams.api.metrics.MetricRegistryListener;
+import com.netease.arctic.ams.api.metrics.MetricRegisterListener;
+import com.netease.arctic.ams.api.metrics.MetricSet;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.Collections;
@@ -35,14 +36,14 @@ import java.util.function.Consumer;
 public class MetricRegistry implements MetricSet {
 
   private final ConcurrentMap<MetricName, Metric> metrics = Maps.newConcurrentMap();
-  private final List<MetricRegistryListener> listeners = new CopyOnWriteArrayList<>();
+  private final List<MetricRegisterListener> listeners = new CopyOnWriteArrayList<>();
 
   /**
    * Add metric registry listener
    *
    * @param listener Metric registry listener
    */
-  public void addListener(MetricRegistryListener listener) {
+  public void addListener(MetricRegisterListener listener) {
     this.listeners.add(listener);
   }
 
@@ -61,7 +62,7 @@ public class MetricRegistry implements MetricSet {
       throw new IllegalArgumentException("Metric: " + name + " has already been registered");
     }
 
-    callListener(l -> l.onMetricAdded(name, metric));
+    callListener(l -> l.onMetricRegistered(name, metric));
   }
 
   /**
@@ -72,7 +73,7 @@ public class MetricRegistry implements MetricSet {
   public void unregister(MetricName name) {
     Metric exists = metrics.remove(name);
     if (exists != null) {
-      callListener(l -> l.onMetricRemoved(name));
+      callListener(l -> l.onMetricUnregistered(name));
     }
   }
 
@@ -90,7 +91,7 @@ public class MetricRegistry implements MetricSet {
     return Collections.unmodifiableMap(metrics);
   }
 
-  private void callListener(Consumer<MetricRegistryListener> consumer) {
+  private void callListener(Consumer<MetricRegisterListener> consumer) {
     this.listeners.forEach(consumer);
   }
 }

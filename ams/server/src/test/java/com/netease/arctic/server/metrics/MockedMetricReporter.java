@@ -18,24 +18,20 @@
 
 package com.netease.arctic.server.metrics;
 
-import com.netease.arctic.ams.api.metrics.Metric;
-import com.netease.arctic.ams.api.metrics.MetricName;
 import com.netease.arctic.ams.api.metrics.MetricReporter;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import com.netease.arctic.ams.api.metrics.MetricSet;
 
 import java.util.Map;
 
 public class MockedMetricReporter implements MetricReporter {
 
-  private final Map<MetricName, Metric> globalMetrics = Maps.newConcurrentMap();
+  MetricSet metrics;
 
   @Override
   public void open(Map<String, String> properties) {}
 
   @Override
-  public void close() {
-    globalMetrics.clear();
-  }
+  public void close() {}
 
   @Override
   public String name() {
@@ -43,12 +39,7 @@ public class MockedMetricReporter implements MetricReporter {
   }
 
   @Override
-  public void onMetricAdded(MetricName name, Metric metric) {
-    globalMetrics.put(name, metric);
-  }
-
-  @Override
-  public void onMetricRemoved(MetricName name) {
-    globalMetrics.remove(name);
+  public void setGlobalMetricSet(MetricSet globalMetricSet) {
+    this.metrics = globalMetricSet;
   }
 }

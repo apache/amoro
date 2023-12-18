@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.manager;
 
+import com.netease.arctic.ams.api.metrics.MetricRegisterListener;
 import com.netease.arctic.ams.api.metrics.MetricReporter;
 import com.netease.arctic.server.metrics.MetricRegistry;
 
@@ -69,6 +70,12 @@ public class MetricManager extends BasePluginManager<MetricReporter> {
   @Override
   public void initialize() {
     super.initialize();
-    callPlugins(globalRegistry::addListener);
+    callPlugins(
+        l -> {
+          l.setGlobalMetricSet(globalRegistry);
+          if (l instanceof MetricRegisterListener) {
+            globalRegistry.addListener((MetricRegisterListener) l);
+          }
+        });
   }
 }

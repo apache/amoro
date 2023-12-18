@@ -23,5 +23,17 @@ import com.netease.arctic.ams.api.ActivePlugin;
 /**
  * This interface define a collector, which users can fetch metrics and report to metrics monitor
  * system.
+ *
+ * <p>If a metric reporter implement the {@link MetricRegisterListener} interface, when new metric
+ * added or removed, the listener method will be called.
  */
-public interface MetricReporter extends ActivePlugin, MetricRegistryListener {}
+public interface MetricReporter extends ActivePlugin {
+
+  /**
+   * This method will be called after metric reporter is opened. And a metric set will be set to the
+   * metric reporter which could fetch all metric at time.
+   *
+   * @param globalMetricSet a metric set contains all registered metrics
+   */
+  void setGlobalMetricSet(MetricSet globalMetricSet);
+}
