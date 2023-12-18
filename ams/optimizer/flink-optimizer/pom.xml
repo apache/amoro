@@ -42,6 +42,12 @@
             <groupId>com.netease.amoro</groupId>
             <artifactId>optimizer-common</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.esotericsoftware.kryo</groupId>
+                    <artifactId>kryo</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
