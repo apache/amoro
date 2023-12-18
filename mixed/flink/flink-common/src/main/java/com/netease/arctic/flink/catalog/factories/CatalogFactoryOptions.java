@@ -34,7 +34,7 @@ import org.apache.flink.table.catalog.CommonCatalogOptions;
 public class CatalogFactoryOptions {
   public static final String MIXED_ICEBERG_IDENTIFIER = "mixed_iceberg";
   public static final String MIXED_HIVE_IDENTIFIER = "mixed_hive";
-  @Deprecated public static final String IDENTIFIER = "arctic";
+  @Deprecated public static final String LEGACY_MIXED_IDENTIFIER = "arctic";
   public static final String UNIFIED_IDENTIFIER = "unified";
 
   public static final ConfigOption<String> DEFAULT_DATABASE =

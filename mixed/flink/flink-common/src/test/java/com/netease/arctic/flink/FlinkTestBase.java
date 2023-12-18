@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink;
 
-import static com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions.IDENTIFIER;
+import static com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
@@ -126,7 +126,7 @@ public class FlinkTestBase extends TableTestBase {
 
   public void config() {
     props = Maps.newHashMap();
-    props.put("type", IDENTIFIER);
+    props.put("type", LEGACY_MIXED_IDENTIFIER);
     props.put(CatalogFactoryOptions.METASTORE_URL.key(), metastoreUrl);
   }
 

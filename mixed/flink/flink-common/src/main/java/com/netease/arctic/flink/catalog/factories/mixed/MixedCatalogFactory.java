@@ -48,7 +48,7 @@ public class MixedCatalogFactory implements CatalogFactory {
 
   @Override
   public String factoryIdentifier() {
-    return CatalogFactoryOptions.IDENTIFIER;
+    return CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER;
   }
 
   @Override

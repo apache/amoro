@@ -70,10 +70,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TestCatalog extends CatalogTestBase {
-  private static final Logger LOG = LoggerFactory.getLogger(TestCatalog.class);
+public class TestLegacyMixedCatalog extends CatalogTestBase {
+  private static final Logger LOG = LoggerFactory.getLogger(TestLegacyMixedCatalog.class);
 
-  public TestCatalog() {
+  public TestLegacyMixedCatalog() {
     super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG));
   }
 
@@ -89,7 +89,7 @@ public class TestCatalog extends CatalogTestBase {
   @Before
   public void before() throws Exception {
     props = Maps.newHashMap();
-    props.put("type", CatalogFactoryOptions.IDENTIFIER);
+    props.put("type", CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER);
     props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
     sql("CREATE CATALOG " + CATALOG + " WITH %s", toWithClause(props));
     sql("USE CATALOG " + CATALOG);
@@ -417,11 +417,11 @@ public class TestCatalog extends CatalogTestBase {
 
     // create Table with compute columns under default catalog
     props = Maps.newHashMap();
-    props.put("connector", CatalogFactoryOptions.IDENTIFIER);
+    props.put("connector", CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER);
     props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
-    props.put(CatalogFactoryOptions.IDENTIFIER + ".catalog", CATALOG);
-    props.put(CatalogFactoryOptions.IDENTIFIER + ".database", DB);
-    props.put(CatalogFactoryOptions.IDENTIFIER + ".table", TABLE);
+    props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".catalog", CATALOG);
+    props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".database", DB);
+    props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".table", TABLE);
 
     sql(
         "CREATE TABLE default_catalog.default_database."
