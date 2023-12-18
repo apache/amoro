@@ -25,6 +25,8 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
+import com.netease.arctic.server.optimizerlegacy.TableFileScanHelper;
+import com.netease.arctic.server.optimizerlegacy.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;

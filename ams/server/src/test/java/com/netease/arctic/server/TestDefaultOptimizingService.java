@@ -32,9 +32,7 @@ import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.optimizing.TableOptimizing;
 import com.netease.arctic.server.exception.IllegalTaskStateException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
-import com.netease.arctic.server.optimizing.OptimizingProcess;
-import com.netease.arctic.server.optimizing.OptimizingStatus;
-import com.netease.arctic.server.optimizing.TaskRuntime;
+import com.netease.arctic.server.process.optimizing.OptimizingStage;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.table.AMSTableTestBase;
 import com.netease.arctic.server.table.TableRuntime;
@@ -383,7 +381,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         OptimizingProcess.Status.RUNNING,
         tableService().getRuntime(serverTableIdentifier()).getOptimizingProcess().getStatus());
     Assertions.assertEquals(
-        OptimizingStatus.COMMITTING,
+        OptimizingStage.COMMITTING,
         tableService().getRuntime(serverTableIdentifier()).getOptimizingStatus());
   }
 

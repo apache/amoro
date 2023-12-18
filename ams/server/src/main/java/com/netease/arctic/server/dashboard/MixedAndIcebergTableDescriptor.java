@@ -41,8 +41,8 @@ import com.netease.arctic.server.dashboard.model.TableStatistics;
 import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.TableStatCollector;
-import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
-import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
+import com.netease.arctic.server.persistence.OptimizingProcessPersistency;
+import com.netease.arctic.server.persistence.TaskRuntimePersistency;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.table.ArcticTable;
@@ -421,7 +421,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable, int limit, int offset) {
     TableIdentifier tableIdentifier = amoroTable.id();
-    List<OptimizingProcessMeta> processMetaList =
+    List<OptimizingProcessPersistency> processMetaList =
         getAs(
             OptimizingMapper.class,
             mapper ->
@@ -437,11 +437,11 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     }
     List<Long> processIds =
         processMetaList.stream()
-            .map(OptimizingProcessMeta::getProcessId)
+            .map(OptimizingProcessPersistency::getProcessId)
             .collect(Collectors.toList());
-    Map<Long, List<OptimizingTaskMeta>> optimizingTasks =
+    Map<Long, List<TaskRuntimePersistency>> optimizingTasks =
         getAs(OptimizingMapper.class, mapper -> mapper.selectOptimizeTaskMetas(processIds)).stream()
-            .collect(Collectors.groupingBy(OptimizingTaskMeta::getProcessId));
+            .collect(Collectors.groupingBy(TaskRuntimePersistency::getProcessId));
 
     return Pair.of(
         processMetaList.stream()
@@ -452,7 +452,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   @Override
   public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, long processId) {
-    List<OptimizingTaskMeta> optimizingTaskMetaList =
+    List<TaskRuntimePersistency> optimizingTaskMetaList =
         getAs(
             OptimizingMapper.class,
             mapper -> mapper.selectOptimizeTaskMetas(Collections.singletonList(processId)));

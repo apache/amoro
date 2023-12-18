@@ -1,7 +1,9 @@
 package com.netease.arctic.server.optimizing;
 
+import com.netease.arctic.server.persistence.OptimizingProcessPersistency;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
+import com.netease.arctic.server.process.optimizing.OptimizingType;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -67,7 +69,7 @@ public class BaseOptimizingChecker extends PersistentBase {
   }
 
   protected void assertOptimizingProcess(
-      OptimizingProcessMeta optimizingProcess,
+      OptimizingProcessPersistency optimizingProcess,
       OptimizingType optimizeType,
       int fileCntBefore,
       int fileCntAfter) {
@@ -85,13 +87,13 @@ public class BaseOptimizingChecker extends PersistentBase {
             + optimizingProcess.getSummary().getNewDeleteFileCnt());
   }
 
-  protected OptimizingProcessMeta waitOptimizeResult() {
+  protected OptimizingProcessPersistency waitOptimizeResult() {
     boolean success;
     try {
       success =
           waitUntilFinish(
               () -> {
-                List<OptimizingProcessMeta> tableOptimizingProcesses =
+                List<OptimizingProcessPersistency> tableOptimizingProcesses =
                     getAs(
                         OptimizingMapper.class,
                         mapper ->
@@ -103,7 +105,7 @@ public class BaseOptimizingChecker extends PersistentBase {
                   LOG.info("optimize history is empty");
                   return Status.RUNNING;
                 }
-                Optional<OptimizingProcessMeta> any =
+                Optional<OptimizingProcessPersistency> any =
                     tableOptimizingProcesses.stream()
                         .filter(p -> p.getProcessId() > lastProcessId)
                         .filter(p -> p.getStatus().equals(OptimizingProcess.Status.SUCCESS))
@@ -115,7 +117,7 @@ public class BaseOptimizingChecker extends PersistentBase {
                   LOG.info(
                       "optimize max process id {}",
                       tableOptimizingProcesses.stream()
-                          .map(OptimizingProcessMeta::getProcessId)
+                          .map(OptimizingProcessPersistency::getProcessId)
                           .max(Comparator.naturalOrder())
                           .get());
                   return Status.RUNNING;
@@ -128,7 +130,7 @@ public class BaseOptimizingChecker extends PersistentBase {
     }
 
     if (success) {
-      List<OptimizingProcessMeta> result =
+      List<OptimizingProcessPersistency> result =
           getAs(
                   OptimizingMapper.class,
                   mapper ->
@@ -157,7 +159,7 @@ public class BaseOptimizingChecker extends PersistentBase {
     } catch (InterruptedException e) {
       throw new IllegalStateException("waiting result was interrupted");
     }
-    List<OptimizingProcessMeta> tableOptimizingProcesses =
+    List<OptimizingProcessPersistency> tableOptimizingProcesses =
         getAs(
                 OptimizingMapper.class,
                 mapper ->

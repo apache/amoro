@@ -1,7 +1,7 @@
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.server.process.optimizing.OptimizingStage;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 
@@ -22,7 +22,7 @@ public class OptimizingCommitExecutor extends BaseTableExecutor {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.getOptimizingStatus() == OptimizingStatus.COMMITTING;
+    return tableRuntime.getOptimizingStatus() == OptimizingStage.COMMITTING;
   }
 
   @Override
@@ -36,7 +36,7 @@ public class OptimizingCommitExecutor extends BaseTableExecutor {
   }
 
   @Override
-  public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+  public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStage originalStatus) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 

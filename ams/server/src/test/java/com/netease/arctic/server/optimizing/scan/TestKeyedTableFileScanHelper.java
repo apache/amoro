@@ -27,6 +27,8 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
+import com.netease.arctic.server.optimizerlegacy.KeyedTableFileScanHelper;
+import com.netease.arctic.server.optimizerlegacy.TableFileScanHelper;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;

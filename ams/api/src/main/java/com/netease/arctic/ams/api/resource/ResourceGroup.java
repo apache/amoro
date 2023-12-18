@@ -18,26 +18,36 @@
 
 package com.netease.arctic.ams.api.resource;
 
+import com.netease.arctic.ams.api.Action;
 import com.netease.arctic.ams.api.Constants;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.checkerframework.checker.units.qual.A;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class ResourceGroup {
   private String name;
+  private Set<Action> actions;
   private String container;
   private Map<String, String> properties;
 
   protected ResourceGroup() {}
 
-  private ResourceGroup(String name, String container) {
+  private ResourceGroup(String name, Set<Action> actions, String container) {
     this.name = name;
+    this.actions = actions;
     this.container = container;
   }
 
   public String getName() {
     return name;
+  }
+
+  public Set<Action> getActions() {
+    return actions;
   }
 
   public Map<String, String> getProperties() {
@@ -56,6 +66,7 @@ public class ResourceGroup {
   public static class Builder {
     private final String name;
     private final String container;
+    private final Set<Action> actions = new HashSet<>();
     private final Map<String, String> properties = new HashMap<>();
 
     public Builder(String name, String container) {
@@ -85,13 +96,18 @@ public class ResourceGroup {
       return this;
     }
 
+    public Builder addAction(Action action) {
+      actions.add(action);
+      return this;
+    }
+
     public Builder addProperties(Map<String, String> properties) {
       this.properties.putAll(properties);
       return this;
     }
 
     public ResourceGroup build() {
-      ResourceGroup resourceGroup = new ResourceGroup(name, container);
+      ResourceGroup resourceGroup = new ResourceGroup(name, actions, container);
       resourceGroup.setProperties(properties);
       return resourceGroup;
     }

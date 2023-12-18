@@ -2,10 +2,7 @@ package com.netease.arctic.server.dashboard.utils;
 
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.TableOptimizingInfo;
-import com.netease.arctic.server.optimizing.MetricsSummary;
-import com.netease.arctic.server.optimizing.OptimizingProcess;
-import com.netease.arctic.server.optimizing.OptimizingStatus;
-import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
+import com.netease.arctic.server.process.optimizing.OptimizingStage;
 import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.ContentFile;
 
@@ -29,7 +26,7 @@ public class OptimizingUtil {
     FilesStatistics optimizeFileInfo;
     if (optimizingTableRuntime.getOptimizingStatus().isProcessing()) {
       optimizeFileInfo = collectOptimizingFileInfo(process == null ? null : process.getSummary());
-    } else if (optimizingTableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING) {
+    } else if (optimizingTableRuntime.getOptimizingStatus() == OptimizingStage.PENDING) {
       optimizeFileInfo = collectPendingFileInfo(optimizingTableRuntime.getPendingInput());
     } else {
       optimizeFileInfo = null;
@@ -55,16 +52,16 @@ public class OptimizingUtil {
         .build();
   }
 
-  private static FilesStatistics collectOptimizingFileInfo(MetricsSummary metricsSummary) {
-    if (metricsSummary == null) {
+  private static FilesStatistics collectOptimizingFileInfo(OptimizingSummary optimizingSummary) {
+    if (optimizingSummary == null) {
       return null;
     }
     return FilesStatistics.builder()
-        .addFiles(metricsSummary.getEqualityDeleteSize(), metricsSummary.getEqDeleteFileCnt())
+        .addFiles(optimizingSummary.getEqualityDeleteSize(), optimizingSummary.getEqDeleteFileCnt())
         .addFiles(
-            metricsSummary.getPositionalDeleteSize() + metricsSummary.getPositionDeleteSize(),
-            metricsSummary.getPosDeleteFileCnt())
-        .addFiles(metricsSummary.getRewriteDataSize(), metricsSummary.getRewriteDataFileCnt())
+            optimizingSummary.getPositionalDeleteSize() + optimizingSummary.getPositionDeleteSize(),
+            optimizingSummary.getPosDeleteFileCnt())
+        .addFiles(optimizingSummary.getRewriteDataSize(), optimizingSummary.getRewriteDataFileCnt())
         .build();
   }
 

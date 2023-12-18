@@ -2,15 +2,20 @@ package com.netease.arctic.server.table;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Objects;
-import com.netease.arctic.server.optimizing.OptimizingConfig;
+import com.netease.arctic.ams.api.Action;
+import com.netease.arctic.server.process.optimizing.OptimizingConfig;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TableConfiguration {
+
   private boolean expireSnapshotEnabled;
   private long snapshotTTLMinutes;
   private long changeDataTTLMinutes;
@@ -22,6 +27,18 @@ public class TableConfiguration {
   private TagConfiguration tagConfiguration;
 
   public TableConfiguration() {}
+
+  public Map<Action, Long> getActionMinIntervals(Set<Action> actions) {
+    Map<Action, Long> minIntervals = new HashMap<>();
+    if (actions.contains(Action.REFRESH_SNAPSHOT)) {
+      minIntervals.put(Action.REFRESH_SNAPSHOT, optimizingConfig.getRefreshMinInterval());
+    } else if (actions.contains(Action.EXPIRE_SNAPSHOTS) && isExpireSnapshotEnabled()) {
+      minIntervals.put(Action.EXPIRE_SNAPSHOTS, getSnapshotTTLMinutes() * 60 * 1000);
+    } else if (actions.contains(Action.CLEAN_ORPHANED_FILES)) {
+      minIntervals.put(Action.CLEAN_ORPHANED_FILES, getOrphanExistingMinutes() * 60 * 1000);
+    }
+    return minIntervals;
+  }
 
   public boolean isExpireSnapshotEnabled() {
     return expireSnapshotEnabled;

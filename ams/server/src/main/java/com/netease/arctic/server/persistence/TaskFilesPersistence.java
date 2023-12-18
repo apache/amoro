@@ -2,8 +2,8 @@ package com.netease.arctic.server.persistence;
 
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
-import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
+import com.netease.arctic.server.process.TaskRuntime;
 import com.netease.arctic.server.utils.CompressUtil;
 import com.netease.arctic.utils.SerializationUtil;
 
@@ -17,7 +17,8 @@ public class TaskFilesPersistence {
 
   private static final DatabasePersistence persistence = new DatabasePersistence();
 
-  public static void persistTaskInputs(long processId, Collection<TaskRuntime> tasks) {
+  public static void persistOptimizingInputs(long processId,
+                                       Collection<TaskRuntime<RewriteFilesInput, RewriteFilesOutput>> tasks) {
     persistence.persistTaskInputs(
         processId,
         tasks.stream()

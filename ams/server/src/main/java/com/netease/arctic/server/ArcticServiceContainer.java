@@ -37,7 +37,6 @@ import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
-import com.netease.arctic.server.table.RuntimeHandlerChain;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.table.executor.AsyncTableExecutors;
 import com.netease.arctic.server.terminal.TerminalManager;
@@ -134,16 +133,7 @@ public class ArcticServiceContainer {
 
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
-    addHandlerChain(optimizingService.getTableRuntimeHandler());
-    addHandlerChain(AsyncTableExecutors.getInstance().getDataExpiringExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getSnapshotsExpiringExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingExpiringExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getHiveCommitSyncExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getTableRefreshingExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getTagsAutoCreatingExecutor());
+
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
     terminalManager = new TerminalManager(serviceConfig, tableService);
@@ -153,12 +143,6 @@ public class ArcticServiceContainer {
 
     initHttpService();
     startHttpService();
-  }
-
-  private void addHandlerChain(RuntimeHandlerChain chain) {
-    if (chain != null) {
-      tableService.addHandlerChain(chain);
-    }
   }
 
   public void dispose() {
@@ -378,7 +362,6 @@ public class ArcticServiceContainer {
       initContainerConfig();
     }
 
-    @SuppressWarnings("unchecked")
     private void initServiceConfig(Map<String, Object> envConfig) throws IOException {
       LOG.info("initializing service configuration...");
       String configPath = Environments.getConfigPath() + "/" + SERVER_CONFIG_FILENAME;

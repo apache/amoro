@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.server.process.optimizing.OptimizingStage;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
@@ -39,7 +39,7 @@ public class TableOptimizingInfo {
 
   private final ServerTableIdentifier tableIdentifier;
   private String tableName;
-  private String optimizeStatus = OptimizingStatus.IDLE.displayValue();
+  private String optimizeStatus = OptimizingStage.IDLE.displayValue();
   private long duration = 0;
   private long fileCount = 0;
   private long fileSize = 0;

@@ -26,7 +26,8 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
-import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.server.persistence.TableRuntimePersistency;
+import com.netease.arctic.server.process.optimizing.OptimizingStage;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
@@ -122,8 +123,8 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
 
   static class TestHandler extends RuntimeHandlerChain {
 
-    private final List<TableRuntimeMeta> initTables = Lists.newArrayList();
-    private final List<Pair<TableRuntime, OptimizingStatus>> statusChangedTables =
+    private final List<TableRuntimePersistency> initTables = Lists.newArrayList();
+    private final List<Pair<TableRuntime, OptimizingStage>> statusChangedTables =
         Lists.newArrayList();
     private final List<Pair<TableRuntime, TableConfiguration>> configChangedTables =
         Lists.newArrayList();
@@ -132,7 +133,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     private boolean disposed = false;
 
     @Override
-    protected void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+    protected void handleStatusChanged(TableRuntime tableRuntime, OptimizingStage originalStatus) {
       statusChangedTables.add(Pair.of(tableRuntime, originalStatus));
     }
 
@@ -153,8 +154,8 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     }
 
     @Override
-    protected void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
-      initTables.addAll(tableRuntimeMetaList);
+    protected void initHandler(List<TableRuntimePersistency> tableRuntimePersistencyList) {
+      initTables.addAll(tableRuntimePersistencyList);
     }
 
     @Override
@@ -162,11 +163,11 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
       disposed = true;
     }
 
-    public List<TableRuntimeMeta> getInitTables() {
+    public List<TableRuntimePersistency> getInitTables() {
       return initTables;
     }
 
-    public List<Pair<TableRuntime, OptimizingStatus>> getStatusChangedTables() {
+    public List<Pair<TableRuntime, OptimizingStage>> getStatusChangedTables() {
       return statusChangedTables;
     }
 

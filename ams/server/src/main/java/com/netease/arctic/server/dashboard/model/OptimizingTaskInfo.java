@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.netease.arctic.server.optimizing.MetricsSummary;
-import com.netease.arctic.server.optimizing.TaskRuntime;
+import com.netease.arctic.server.process.optimizing.OptimizingSummary;
+import com.netease.arctic.server.process.TaskRuntime;
 
 import java.util.Map;
 
@@ -35,7 +35,7 @@ public class OptimizingTaskInfo {
   private long endTime;
   private long costTime;
   private String failReason;
-  private MetricsSummary summary;
+  private OptimizingSummary summary;
   private Map<String, String> properties;
 
   public OptimizingTaskInfo(
@@ -50,7 +50,7 @@ public class OptimizingTaskInfo {
       long endTime,
       long costTime,
       String failReason,
-      MetricsSummary summary,
+      OptimizingSummary summary,
       Map<String, String> properties) {
     this.tableId = tableId;
     this.processId = processId;
@@ -155,11 +155,11 @@ public class OptimizingTaskInfo {
     this.failReason = failReason;
   }
 
-  public MetricsSummary getSummary() {
+  public OptimizingSummary getSummary() {
     return summary;
   }
 
-  public void setSummary(MetricsSummary summary) {
+  public void setSummary(OptimizingSummary summary) {
     this.summary = summary;
   }
 

@@ -1,10 +1,6 @@
 package com.netease.arctic.server.table;
 
-import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.NoSuchTableException;
 import com.netease.arctic.TableIDWithFormat;
@@ -21,19 +17,23 @@ import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
-import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
+import com.netease.arctic.server.persistence.TableRuntimePersistency;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
-import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+import org.apache.iceberg.relocated.com.google.common.base.Objects;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,11 +58,10 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private final Map<String, InternalCatalog> internalCatalogMap = new ConcurrentHashMap<>();
   private final Map<String, ExternalCatalog> externalCatalogMap = new ConcurrentHashMap<>();
 
-  @StateField
   private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap =
       new ConcurrentHashMap<>();
 
-  private RuntimeHandlerChain headHandler;
+  private final List<TableWatcher> tableWatchers = Lists.newArrayList();
 
   private final ScheduledExecutorService tableExplorerScheduler =
       Executors.newSingleThreadScheduledExecutor(
@@ -77,10 +76,20 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private final Configurations serverConfiguration;
 
   public DefaultTableService(Configurations configuration) {
-    this.externalCatalogRefreshingInterval =
+    externalCatalogRefreshingInterval =
         configuration.getLong(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL);
-    this.blockerTimeout = configuration.getLong(ArcticManagementConf.BLOCKER_TIMEOUT);
-    this.serverConfiguration = configuration;
+    blockerTimeout = configuration.getLong(ArcticManagementConf.BLOCKER_TIMEOUT);
+    serverConfiguration = configuration;
+    List<CatalogMeta> catalogMetas = getAs(CatalogMetaMapper.class, CatalogMetaMapper::getCatalogs);
+    catalogMetas.forEach(this::initServerCatalog);
+
+    List<TableRuntimePersistency> tableRuntimePersistencyList =
+        getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
+    tableRuntimePersistencyList.forEach(
+        tableRuntimeMeta -> {
+          TableRuntime tableRuntime = new TableRuntime(tableRuntimeMeta, this);
+          tableRuntimeMap.put(tableRuntime.getTableIdentifier(), tableRuntime);
+        });
   }
 
   @Override
@@ -181,9 +190,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     Optional.ofNullable(tableRuntimeMap.remove(serverTableIdentifier))
         .ifPresent(
             tableRuntime -> {
-              if (headHandler != null) {
-                headHandler.fireTableRemoved(tableRuntime);
-              }
+              tableWatchers.forEach(watcher -> watcher.tableRemoved(tableRuntime));
               tableRuntime.dispose();
             });
   }
@@ -268,32 +275,24 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
       TableIdentifier tableIdentifier,
       List<BlockableOperation> operations,
       Map<String, String> properties) {
-    checkStarted();
-    return getAndCheckExist(getOrSyncServerTableIdentifier(tableIdentifier))
+    return getTableBlockerRuntime(getOrSyncServerTableIdentifier(tableIdentifier))
         .block(operations, properties, blockerTimeout)
         .buildBlocker();
   }
 
   @Override
   public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
-    checkStarted();
-    TableRuntime tableRuntime = getRuntime(getServerTableIdentifier(tableIdentifier));
-    if (tableRuntime != null) {
-      tableRuntime.release(blockerId);
-    }
+    getTableBlockerRuntime(getServerTableIdentifier(tableIdentifier)).release(blockerId);
   }
 
   @Override
   public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) {
-    checkStarted();
-    TableRuntime tableRuntime = getAndCheckExist(getServerTableIdentifier(tableIdentifier));
-    return tableRuntime.renew(blockerId, blockerTimeout);
+   return getTableBlockerRuntime(getServerTableIdentifier(tableIdentifier)).renew(blockerId, blockerTimeout);
   }
 
   @Override
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
-    checkStarted();
-    return getAndCheckExist(getOrSyncServerTableIdentifier(tableIdentifier)).getBlockers().stream()
+    return getTableBlockerRuntime(getOrSyncServerTableIdentifier(tableIdentifier)).getBlockers().stream()
         .map(TableBlocker::buildBlocker)
         .collect(Collectors.toList());
   }
@@ -304,46 +303,15 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public void addHandlerChain(RuntimeHandlerChain handler) {
+  public void addTableWatcher(TableWatcher tableWatcher) {
     checkNotStarted();
-    if (headHandler == null) {
-      headHandler = handler;
-    } else {
-      headHandler.appendNext(handler);
-    }
-  }
-
-  @Override
-  public void handleTableChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-    if (headHandler != null) {
-      headHandler.fireStatusChanged(tableRuntime, originalStatus);
-    }
-  }
-
-  @Override
-  public void handleTableChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
-    if (headHandler != null) {
-      headHandler.fireConfigChanged(tableRuntime, originalConfig);
-    }
+    tableWatchers.add(tableWatcher);
   }
 
   @Override
   public void initialize() {
     checkNotStarted();
-    List<CatalogMeta> catalogMetas = getAs(CatalogMetaMapper.class, CatalogMetaMapper::getCatalogs);
-    catalogMetas.forEach(this::initServerCatalog);
 
-    List<TableRuntimeMeta> tableRuntimeMetaList =
-        getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
-    tableRuntimeMetaList.forEach(
-        tableRuntimeMeta -> {
-          TableRuntime tableRuntime = tableRuntimeMeta.constructTableRuntime(this);
-          tableRuntimeMap.put(tableRuntime.getTableIdentifier(), tableRuntime);
-        });
-
-    if (headHandler != null) {
-      headHandler.initialize(tableRuntimeMetaList);
-    }
     if (tableExplorerExecutors == null) {
       int threadCount =
           serverConfiguration.getInteger(
@@ -362,18 +330,20 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                   .setDaemon(true)
                   .build());
     }
+
+    tableRuntimeMap.values().forEach(TableRuntime::recover);
     tableExplorerScheduler.scheduleAtFixedRate(
         this::exploreExternalCatalog, 0, externalCatalogRefreshingInterval, TimeUnit.MILLISECONDS);
     initialized.complete(true);
   }
 
-  private TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
+  private TableBlockerRuntime getTableBlockerRuntime(ServerTableIdentifier tableIdentifier) {
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier cannot be null");
     TableRuntime tableRuntime = getRuntime(tableIdentifier);
     if (tableRuntime == null) {
       throw new ObjectNotExistsException(tableIdentifier);
     }
-    return tableRuntime;
+    return tableRuntime.getBlockerRuntime();
   }
 
   @Override
@@ -411,6 +381,11 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
+  public List<TableRuntime> listTableRuntimes() {
+    return new ArrayList<>(tableRuntimeMap.values());
+  }
+
+  @Override
   public boolean contains(ServerTableIdentifier tableIdentifier) {
     checkStarted();
     return tableRuntimeMap.containsKey(tableIdentifier);
@@ -420,9 +395,6 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     tableExplorerScheduler.shutdown();
     if (tableExplorerExecutors != null) {
       tableExplorerExecutors.shutdown();
-    }
-    if (headHandler != null) {
-      headHandler.dispose();
     }
   }
 
@@ -623,9 +595,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     }
     TableRuntime tableRuntime = new TableRuntime(serverTableIdentifier, this, table.properties());
     tableRuntimeMap.put(serverTableIdentifier, tableRuntime);
-    if (headHandler != null) {
-      headHandler.fireTableAdded(table, tableRuntime);
-    }
+    tableWatchers.forEach(tableWatcher -> tableWatcher.tableAdded(tableRuntime, table));
     return true;
   }
 
@@ -650,9 +620,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     Optional.ofNullable(tableRuntimeMap.remove(tableIdentifier))
         .ifPresent(
             tableRuntime -> {
-              if (headHandler != null) {
-                headHandler.fireTableRemoved(tableRuntime);
-              }
+              tableWatchers.forEach(watcher -> watcher.tableRemoved(tableRuntime));
               tableRuntime.dispose();
             });
   }

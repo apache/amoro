@@ -27,8 +27,6 @@ import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.exception.OptimizingCommitException;
-import com.netease.arctic.server.optimizing.TaskRuntime;
-import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;

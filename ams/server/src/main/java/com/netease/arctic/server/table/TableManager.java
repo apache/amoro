@@ -20,7 +20,9 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.AmoroTable;
 
-public interface TableManager extends TableRuntimeHandler {
+import java.util.List;
+
+public interface TableManager {
 
   /**
    * load a managed table.
@@ -31,6 +33,10 @@ public interface TableManager extends TableRuntimeHandler {
   AmoroTable<?> loadTable(ServerTableIdentifier tableIdentifier);
 
   TableRuntime getRuntime(ServerTableIdentifier tableIdentifier);
+
+  List<TableRuntime> listTableRuntimes();
+
+  void addTableWatcher(TableWatcher watcher);
 
   default boolean contains(ServerTableIdentifier tableIdentifier) {
     return getRuntime(tableIdentifier) != null;

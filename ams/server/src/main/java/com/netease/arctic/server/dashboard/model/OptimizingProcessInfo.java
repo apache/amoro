@@ -19,11 +19,9 @@
 package com.netease.arctic.server.dashboard.model;
 
 import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
-import com.netease.arctic.server.optimizing.MetricsSummary;
-import com.netease.arctic.server.optimizing.OptimizingProcess;
-import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
-import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
-import com.netease.arctic.server.optimizing.OptimizingType;
+import com.netease.arctic.server.persistence.OptimizingProcessPersistency;
+import com.netease.arctic.server.persistence.TaskRuntimePersistency;
+import com.netease.arctic.server.process.optimizing.OptimizingType;
 
 import java.util.List;
 
@@ -46,7 +44,7 @@ public class OptimizingProcessInfo {
   private FilesStatistics inputFiles;
   private FilesStatistics outputFiles;
 
-  private MetricsSummary summary;
+  private OptimizingSummary summary;
 
   public Long getTableId() {
     return tableId;
@@ -176,16 +174,16 @@ public class OptimizingProcessInfo {
     this.outputFiles = outputFiles;
   }
 
-  public MetricsSummary getSummary() {
+  public OptimizingSummary getSummary() {
     return summary;
   }
 
-  public void setSummary(MetricsSummary summary) {
+  public void setSummary(OptimizingSummary summary) {
     this.summary = summary;
   }
 
   public static OptimizingProcessInfo build(
-      OptimizingProcessMeta meta, List<OptimizingTaskMeta> optimizingTaskStats) {
+      OptimizingProcessPersistency meta, List<TaskRuntimePersistency> optimizingTaskStats) {
     if (meta == null) {
       return null;
     }
@@ -194,7 +192,7 @@ public class OptimizingProcessInfo {
     if (optimizingTaskStats != null) {
       int successTasks = 0;
       int runningTasks = 0;
-      for (OptimizingTaskMeta optimizingTaskStat : optimizingTaskStats) {
+      for (TaskRuntimePersistency optimizingTaskStat : optimizingTaskStats) {
         switch (optimizingTaskStat.getStatus()) {
           case SUCCESS:
             successTasks++;
@@ -211,7 +209,7 @@ public class OptimizingProcessInfo {
     }
     FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
     FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
-    MetricsSummary summary = meta.getSummary();
+    OptimizingSummary summary = meta.getSummary();
     if (summary != null) {
       inputBuilder.addFiles(summary.getEqualityDeleteSize(), summary.getEqDeleteFileCnt());
       inputBuilder.addFiles(

@@ -53,15 +53,6 @@ public abstract class StatedPersistentBase extends PersistentBase {
     }
   }
 
-  protected final void invokeInStateLock(Runnable runnable) {
-    stateLock.lock();
-    try {
-      runnable.run();
-    } finally {
-      stateLock.unlock();
-    }
-  }
-
   Map<Field, Object> retainStates() {
     return Arrays.stream(consistentFields)
         .collect(Collectors.toMap(field -> field, this::getValue));

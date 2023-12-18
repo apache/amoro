@@ -19,7 +19,7 @@
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
+import com.netease.arctic.server.process.maintain.TableMaintainer;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;

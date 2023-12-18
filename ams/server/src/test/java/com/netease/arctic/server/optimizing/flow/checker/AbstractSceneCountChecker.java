@@ -18,10 +18,8 @@
 
 package com.netease.arctic.server.optimizing.flow.checker;
 
-import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
 import com.netease.arctic.server.optimizing.flow.CompleteOptimizingFlow;
-import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
-import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
+import com.netease.arctic.server.process.optimizing.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
 
 import javax.annotation.Nullable;

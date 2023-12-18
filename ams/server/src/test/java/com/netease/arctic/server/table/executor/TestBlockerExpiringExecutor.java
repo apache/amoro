@@ -26,7 +26,7 @@ import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableServiceTestBase;
-import com.netease.arctic.server.table.blocker.TableBlocker;
+import com.netease.arctic.server.table.TableBlocker;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

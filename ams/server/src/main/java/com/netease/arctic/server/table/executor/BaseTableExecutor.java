@@ -19,12 +19,11 @@
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.server.optimizing.OptimizingStatus;
-import com.netease.arctic.server.table.RuntimeHandlerChain;
+import com.netease.arctic.server.process.optimizing.OptimizingStage;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.TableRuntimeMeta;
+import com.netease.arctic.server.persistence.TableRuntimePersistency;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
@@ -57,8 +56,8 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   }
 
   @Override
-  protected void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
-    tableRuntimeMetaList.stream()
+  protected void initHandler(List<TableRuntimePersistency> tableRuntimePersistencyList) {
+    tableRuntimePersistencyList.stream()
         .map(tableRuntimeMeta -> tableRuntimeMeta.getTableRuntime())
         .filter(tableRuntime -> enabled(tableRuntime))
         .forEach(
@@ -110,7 +109,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   }
 
   @Override
-  public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {}
+  public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStage originalStatus) {}
 
   @Override
   public void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
