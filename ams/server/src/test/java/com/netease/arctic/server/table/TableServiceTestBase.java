@@ -21,7 +21,10 @@ package com.netease.arctic.server.table;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.DefaultOptimizingService;
+import com.netease.arctic.server.manager.EventsManager;
+import com.netease.arctic.server.manager.MetricManager;
 import com.netease.arctic.server.utils.Configurations;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -37,6 +40,8 @@ public abstract class TableServiceTestBase {
   public static void initTableService() {
     Configurations configurations = new Configurations();
     configurations.set(ArcticManagementConf.OPTIMIZER_HB_TIMEOUT, 800L);
+    MetricManager.initialize(Lists.newArrayList());
+    EventsManager.initialize(Lists.newArrayList());
     TABLE_SERVICE = new DefaultTableService(new Configurations());
     OPTIMIZING_SERVICE = new DefaultOptimizingService(configurations, TABLE_SERVICE);
     TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());

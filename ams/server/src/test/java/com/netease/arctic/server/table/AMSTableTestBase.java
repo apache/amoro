@@ -29,6 +29,7 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.server.manager.MetricManager;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
