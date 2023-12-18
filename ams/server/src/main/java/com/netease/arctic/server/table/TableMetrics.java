@@ -2,7 +2,9 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.ams.api.metrics.Counter;
 import com.netease.arctic.ams.api.metrics.Gauge;
-import com.netease.arctic.ams.api.metrics.MetricName;
+import com.netease.arctic.ams.api.metrics.Metric;
+import com.netease.arctic.ams.api.metrics.MetricDefine;
+import com.netease.arctic.ams.api.metrics.MetricType;
 import com.netease.arctic.server.metrics.MetricRegistry;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
@@ -42,22 +44,48 @@ public class TableMetrics {
 
   public TableMetrics(ServerTableIdentifier identifier) {
     this.identifier = identifier;
+    createMetric(
+        "table_optimizing_process_total_count",
+        processFailedCount,
+        "Total process  count after AMS started.");
+    createMetric(
+        "table_optimizing_process_failed_count",
+        processTotalCount,
+        "Total process failed count after AMS started.");
+    createMetric(
+        "table_optimizing_status_idle_duration_seconds",
+        idleDuration,
+        "Duration in seconds after table be in idle state");
+    createMetric(
+        "table_optimizing_status_pending_duration_seconds",
+        pendingDuration,
+        "Duration in seconds after table be in pending state");
+    createMetric(
+        "table_optimizing_status_planning_duration_seconds",
+        planDuration,
+        "Duration in seconds after table be in planning state");
+    createMetric(
+        "table_optimizing_status_executing_duration_seconds",
+        executingDuration,
+        "Duration in seconds after table be in executing state");
+    createMetric(
+        "table_optimizing_status_committing_duration_seconds",
+        committingDuration,
+        "Duration in seconds after table be in committing state");
+  }
+
+  private void createMetric(String name, Metric metric, String description) {
+    MetricType metricType = MetricType.ofType(metric);
+
+    MetricDefine define =
+        tableMetricRegistry.defineMetric(
+            name, metricType, description, "catalog", "database", "table_name");
+
     tableMetricRegistry.register(
-        explicitMetricName("table_optimizing_process_total_count"), processFailedCount);
-    tableMetricRegistry.register(
-        explicitMetricName("table_optimizing_process_failed_count"), processTotalCount);
-    tableMetricRegistry.register(
-        explicitMetricName("table_optimizing_status_idle_duration_seconds"), idleDuration);
-    tableMetricRegistry.register(
-        explicitMetricName("table_optimizing_status_pending_duration_seconds"), pendingDuration);
-    tableMetricRegistry.register(
-        explicitMetricName("table_optimizing_status_planning_duration_seconds"), planDuration);
-    tableMetricRegistry.register(
-        explicitMetricName("table_optimizing_status_executing_duration_seconds"),
-        executingDuration);
-    tableMetricRegistry.register(
-        explicitMetricName("table_optimizing_status_committing_duration_seconds"),
-        committingDuration);
+        define,
+        ImmutableList.of(
+            identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName()),
+        metric);
   }
 
   public void register(MetricRegistry registry) {
@@ -74,14 +102,6 @@ public class TableMetrics {
   public void stateChanged(OptimizingStatus state, long stateSetTimestamp) {
     this.state = state.name();
     this.stateSetTimestamp = stateSetTimestamp;
-  }
-
-  private MetricName explicitMetricName(String name) {
-    return new MetricName(
-        name,
-        ImmutableList.of("catalog", "database", "table_name"),
-        ImmutableList.of(
-            identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName()));
   }
 
   class StateDurationGauge implements Gauge<Integer> {

@@ -24,15 +24,15 @@ public interface MetricRegisterListener {
   /**
    * This method will be called when some metric is registered.
    *
-   * @param name metric name
+   * @param metricKey metric register key
    * @param metric metric object
    */
-  void onMetricRegistered(MetricName name, Metric metric);
+  void onMetricRegistered(RegisteredMetricKey metricKey, Metric metric);
 
   /**
    * This method will be called when some metric is unregistered.
    *
-   * @param name metric name
+   * @param metricKey metric register key
    */
-  void onMetricUnregistered(MetricName name);
+  void onMetricUnregistered(RegisteredMetricKey metricKey);
 }
