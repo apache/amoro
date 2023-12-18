@@ -20,6 +20,8 @@ package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.ActivePlugin;
 import com.netease.arctic.server.Environments;
+import com.netease.arctic.server.exception.AlreadyExistsException;
+import com.netease.arctic.server.exception.LoadingPluginException;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +46,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /**
@@ -96,16 +99,32 @@ public abstract class BasePluginManager<T extends ActivePlugin> {
         continue;
       }
       Map<String, String> props = pluginConfig.getProperties();
+      AtomicBoolean exists = new AtomicBoolean(true);
       installedPlugins.computeIfAbsent(
           pluginConfig.getName(),
           name -> {
             T plugin = foundedPlugins.get(name);
-            Preconditions.checkNotNull(
-                plugin, "Cannot find am implement class for plugin:%s", name);
+            if (plugin == null) {
+              throw new LoadingPluginException("Cannot find am implement class for plugin:" + name);
+            }
             plugin.open(props);
+            exists.set(false);
             return plugin;
           });
+      if (exists.get()) {
+        throw new AlreadyExistsException(
+            "Plugin: " + pluginConfig.getName() + " has been already installed");
+      }
     }
+  }
+
+  /** Close all active plugin */
+  public void close() {
+    callPlugins(
+        p -> {
+          p.close();
+          installedPlugins.remove(p.name());
+        });
   }
 
   /**
@@ -158,6 +177,9 @@ public abstract class BasePluginManager<T extends ActivePlugin> {
 
     try {
       Path pluginPath = Paths.get(pluginPath());
+      if (!Files.exists(pluginPath) || !Files.isDirectory(pluginPath)) {
+        return;
+      }
       Files.list(pluginPath)
           .map(Path::toFile)
           .forEach(
