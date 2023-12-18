@@ -32,13 +32,10 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
-
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
 
 public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
@@ -88,7 +85,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     if (isKeyedTable()) {
       return new TreeNodeTaskSplitter();
     } else {
-      return new BinPackingTaskSplitter();
+      return new BinPackingTaskSplitter(rewriteDataFiles, rewritePosDataFiles);
     }
   }
 
@@ -241,16 +238,15 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       rootTree.completeTree();
       List<FileTree> subTrees = Lists.newArrayList();
       rootTree.splitFileTree(subTrees, new SplitIfNoFileExists());
+      int taskCountForNode = Math.max(1, targetTaskCount / subTrees.size());
       for (FileTree subTree : subTrees) {
         Map<DataFile, List<ContentFile<?>>> rewriteDataFiles = Maps.newHashMap();
         Map<DataFile, List<ContentFile<?>>> rewritePosDataFiles = Maps.newHashMap();
-        Set<ContentFile<?>> deleteFiles = Sets.newHashSet();
         subTree.collectRewriteDataFiles(rewriteDataFiles);
         subTree.collectRewritePosDataFiles(rewritePosDataFiles);
-        rewriteDataFiles.forEach((f, deletes) -> deleteFiles.addAll(deletes));
-        rewritePosDataFiles.forEach((f, deletes) -> deleteFiles.addAll(deletes));
-        result.add(
-            new SplitTask(rewriteDataFiles.keySet(), rewritePosDataFiles.keySet(), deleteFiles));
+        BinPackingTaskSplitter binPacking =
+            new BinPackingTaskSplitter(rewriteDataFiles, rewritePosDataFiles);
+        result.addAll(binPacking.limitByTaskCount().splitTasks(taskCountForNode));
       }
       return result;
     }

@@ -274,6 +274,26 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
   protected class BinPackingTaskSplitter implements TaskSplitter {
 
+    private final Map<DataFile, List<ContentFile<?>>> rewriteDataFiles;
+    private final Map<DataFile, List<ContentFile<?>>> rewritePosDataFiles;
+    private boolean limitByTaskCount = false;
+
+    public BinPackingTaskSplitter(
+        Map<DataFile, List<ContentFile<?>>> rewriteDataFiles,
+        Map<DataFile, List<ContentFile<?>>> rewritePosDataFiles) {
+      this.rewriteDataFiles = rewriteDataFiles;
+      this.rewritePosDataFiles = rewritePosDataFiles;
+    }
+
+    /**
+     * In this mode, the number of tasks will be limited to avoid the high cost of excessive
+     * duplicate delete files reads.
+     */
+    public BinPackingTaskSplitter limitByTaskCount() {
+      limitByTaskCount = true;
+      return this;
+    }
+
     @Override
     public List<SplitTask> splitTasks(int targetTaskCount) {
       // bin-packing
@@ -283,11 +303,15 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       rewritePosDataFiles.forEach(
           (dataFile, deleteFiles) -> allDataFiles.add(new FileTask(dataFile, deleteFiles, false)));
 
+      long taskSize = Math.max(config.getTargetSize(), config.getMaxTaskSize());
+      if (limitByTaskCount) {
+        long totalSize =
+            allDataFiles.stream().map(f -> f.getFile().fileSizeInBytes()).reduce(0L, Long::sum);
+        taskSize = Math.max(taskSize, totalSize / targetTaskCount + 1);
+      }
+
       List<List<FileTask>> packed =
-          new BinPacking.ListPacker<FileTask>(
-                  Math.max(config.getTargetSize(), config.getMaxTaskSize()),
-                  Integer.MAX_VALUE,
-                  false)
+          new BinPacking.ListPacker<FileTask>(taskSize, Integer.MAX_VALUE, false)
               .pack(allDataFiles, f -> f.getFile().fileSizeInBytes());
 
       // collect
