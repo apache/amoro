@@ -36,9 +36,11 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -247,11 +249,29 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     public List<SplitTask> splitTasks(int targetTaskCount) {
       List<SplitTask> result = Lists.newArrayList();
       FileTree rootTree = FileTree.newTreeRoot();
+      undersizedSegmentFiles.forEach(rootTree::addRewriteDataFile);
+      for (SplitTask splitTask : genSplitTasks(rootTree)) {
+        if (splitTask.getRewriteDataFiles().size() > 1) {
+          result.add(splitTask);
+          continue;
+        }
+        Optional<DataFile> dataFile = splitTask.getRewriteDataFiles().stream().findFirst();
+        // When splitTask has only one segment file, it needs to be triggered again to determine
+        // whether to rewrite pos. If so, add it to rewritePosDataFiles and bin-packing together.
+        if (dataFile.isPresent()) {
+          DataFile rewriteDataFile = dataFile.get();
+          List<ContentFile<?>> deletes = new ArrayList<>(splitTask.getDeleteFiles());
+          if (evaluator().segmentShouldRewritePos(rewriteDataFile, deletes)) {
+            rewritePosDataFiles.put(rewriteDataFile, deletes);
+          } else {
+            reservedDeleteFiles(deletes);
+          }
+        }
+      }
+
+      rootTree = FileTree.newTreeRoot();
       rewritePosDataFiles.forEach(rootTree::addRewritePosDataFile);
       rewriteDataFiles.forEach(rootTree::addRewriteDataFile);
-      result.addAll(genSplitTasks(rootTree));
-      rootTree = FileTree.newTreeRoot();
-      undersizedSegmentFiles.forEach(rootTree::addRewriteDataFile);
       result.addAll(genSplitTasks(rootTree));
       return result;
     }
@@ -267,6 +287,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
         Set<ContentFile<?>> deleteFiles = Sets.newHashSet();
         subTree.collectRewriteDataFiles(rewriteDataFiles);
         subTree.collectRewritePosDataFiles(rewritePosDataFiles);
+        // A subTree will also be generated when there is no file, filter it
         if (rewriteDataFiles.size() == 0 && rewritePosDataFiles.size() == 0) {
           continue;
         }

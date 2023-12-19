@@ -129,7 +129,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   }
 
   /** If the Data file is not added, it's Delete files should not be removed from iceberg */
-  private void reservedDeleteFiles(List<ContentFile<?>> deletes) {
+  protected void reservedDeleteFiles(List<ContentFile<?>> deletes) {
     deletes.stream().map(delete -> delete.path().toString()).forEach(reservedDeleteFiles::add);
   }
 
