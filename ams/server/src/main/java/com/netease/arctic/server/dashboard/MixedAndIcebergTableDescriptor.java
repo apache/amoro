@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.dashboard;
 
+import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
+
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.DataFileType;
@@ -77,8 +79,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
 
 /** Descriptor for Mixed-Hive, Mixed-Iceberg, Iceberg format tables. */
 public class MixedAndIcebergTableDescriptor extends PersistentBase
