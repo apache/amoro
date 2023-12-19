@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.table;
 
-import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.METASTORE_URL;
+import static com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions.METASTORE_URL;
 
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.flink.InternalCatalogBuilder;

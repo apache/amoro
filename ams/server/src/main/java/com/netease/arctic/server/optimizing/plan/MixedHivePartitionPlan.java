@@ -163,6 +163,11 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     }
 
     @Override
+    protected boolean isUndersizedSegmentFile(DataFile dataFile) {
+      return !inHiveLocation(dataFile) && super.isUndersizedSegmentFile(dataFile);
+    }
+
+    @Override
     public boolean isFullNecessary() {
       if (!reachFullInterval() && !reachHiveRefreshInterval()) {
         return false;

@@ -35,6 +35,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import javax.annotation.Nonnull;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -149,6 +150,16 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
 
     @Override
+    protected boolean isUndersizedSegmentFile(DataFile dataFile) {
+      PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile;
+      if (file.type() == DataFileType.BASE_FILE) {
+        return dataFile.fileSizeInBytes() <= minTargetSize;
+      } else {
+        throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
+      }
+    }
+
+    @Override
     public boolean isMinorNecessary() {
       if (keyedTable) {
         int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
@@ -166,7 +177,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
 
     @Override
-    public boolean segmentFileShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
+    public boolean segmentShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
       if (deletes.stream()
           .anyMatch(
               delete ->
@@ -234,8 +245,24 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     public List<SplitTask> splitTasks(int targetTaskCount) {
       List<SplitTask> result = Lists.newArrayList();
       FileTree rootTree = FileTree.newTreeRoot();
+      undersizedSegmentFiles.forEach(rootTree::addRewriteDataFile);
+      for (SplitTask splitTask : genSplitTasks(rootTree)) {
+        if (splitTask.getRewriteDataFiles().size() > 1) {
+          result.add(splitTask);
+          continue;
+        }
+        disposeUndersizedSegmentFile(splitTask);
+      }
+
+      rootTree = FileTree.newTreeRoot();
       rewritePosDataFiles.forEach(rootTree::addRewritePosDataFile);
       rewriteDataFiles.forEach(rootTree::addRewriteDataFile);
+      result.addAll(genSplitTasks(rootTree));
+      return result;
+    }
+
+    private Collection<? extends SplitTask> genSplitTasks(FileTree rootTree) {
+      List<SplitTask> result = Lists.newArrayList();
       rootTree.completeTree();
       List<FileTree> subTrees = Lists.newArrayList();
       rootTree.splitFileTree(subTrees, new SplitIfNoFileExists());
@@ -245,9 +272,14 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
         Map<DataFile, List<ContentFile<?>>> rewritePosDataFiles = Maps.newHashMap();
         subTree.collectRewriteDataFiles(rewriteDataFiles);
         subTree.collectRewritePosDataFiles(rewritePosDataFiles);
-        BinPackingTaskSplitter binPacking =
-            new BinPackingTaskSplitter(rewriteDataFiles, rewritePosDataFiles);
-        result.addAll(binPacking.limitByTaskCount().splitTasks(taskCountForNode));
+        // A subTree will also be generated when there is no file, filter it
+        if (rewriteDataFiles.size() == 0 && rewritePosDataFiles.size() == 0) {
+          continue;
+        }
+        rewriteDataFiles.forEach((f, deletes) -> deleteFiles.addAll(deletes));
+        rewritePosDataFiles.forEach((f, deletes) -> deleteFiles.addAll(deletes));
+        result.add(
+            new SplitTask(rewriteDataFiles.keySet(), rewritePosDataFiles.keySet(), deleteFiles));
       }
       return result;
     }

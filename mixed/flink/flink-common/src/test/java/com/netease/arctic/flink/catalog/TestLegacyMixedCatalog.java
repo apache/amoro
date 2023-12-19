@@ -34,7 +34,7 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestBase;
-import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
+import com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
@@ -70,10 +70,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TestCatalog extends CatalogTestBase {
-  private static final Logger LOG = LoggerFactory.getLogger(TestCatalog.class);
+public class TestLegacyMixedCatalog extends CatalogTestBase {
+  private static final Logger LOG = LoggerFactory.getLogger(TestLegacyMixedCatalog.class);
 
-  public TestCatalog() {
+  public TestLegacyMixedCatalog() {
     super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG));
   }
 
@@ -89,8 +89,8 @@ public class TestCatalog extends CatalogTestBase {
   @Before
   public void before() throws Exception {
     props = Maps.newHashMap();
-    props.put("type", ArcticCatalogFactoryOptions.IDENTIFIER);
-    props.put(ArcticCatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
+    props.put("type", CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER);
+    props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
     sql("CREATE CATALOG " + CATALOG + " WITH %s", toWithClause(props));
     sql("USE CATALOG " + CATALOG);
     sql("CREATE DATABASE " + CATALOG + "." + DB);
@@ -417,11 +417,11 @@ public class TestCatalog extends CatalogTestBase {
 
     // create Table with compute columns under default catalog
     props = Maps.newHashMap();
-    props.put("connector", ArcticCatalogFactoryOptions.IDENTIFIER);
-    props.put(ArcticCatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
-    props.put(ArcticCatalogFactoryOptions.IDENTIFIER + ".catalog", CATALOG);
-    props.put(ArcticCatalogFactoryOptions.IDENTIFIER + ".database", DB);
-    props.put(ArcticCatalogFactoryOptions.IDENTIFIER + ".table", TABLE);
+    props.put("connector", CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER);
+    props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
+    props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".catalog", CATALOG);
+    props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".database", DB);
+    props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".table", TABLE);
 
     sql(
         "CREATE TABLE default_catalog.default_database."

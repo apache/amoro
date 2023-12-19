@@ -61,7 +61,7 @@ public class KeyedTableDataView extends AbstractTableDataView {
 
   private final StructLikeMap<Record> view;
 
-  private final List<RecordWithAction> changeLog = new ArrayList();
+  private final List<RecordWithAction> changeLog = new ArrayList<>();
 
   private final RandomRecordGenerator generator;
 
