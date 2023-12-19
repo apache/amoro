@@ -187,11 +187,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     if (config.isFullRewriteAllFiles()) {
       return true;
     }
-    if (isFragmentFile(dataFile)) {
-      return true;
-    }
-    // if a file is related any delete files or is not big enough, it should full optimizing
-    return !deleteFiles.isEmpty() || dataFile.fileSizeInBytes() < config.getTargetSize() * 0.9;
+    // If a file is related any delete files or is not big enough, it should full optimizing
+    return !deleteFiles.isEmpty() || isFragmentFile(dataFile) || isUndersizedSegmentFile(dataFile);
   }
 
   public boolean fileShouldRewrite(DataFile dataFile, List<ContentFile<?>> deletes) {
