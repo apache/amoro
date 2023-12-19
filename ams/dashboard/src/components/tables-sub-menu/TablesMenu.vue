@@ -119,7 +119,9 @@ export default defineComponent({
       loading: false,
       tableLoading: false,
       databaseList: [] as IMap<string>[],
-      tableList: [] as IMap<string>[]
+      tableList: [] as IMap<string>[],
+      allDatabaseListLoaded: [] as IMap<string>[],
+      allTableListLoaded: [] as IMap<string>[]
     })
     const storageTableKey = 'easylake-menu-catalog-db-table'
     const storageCataDBTable = JSON.parse(localStorage.getItem(storageTableKey) || '{}')
@@ -153,6 +155,7 @@ export default defineComponent({
       }
       state.database = item.id
       state.tableName = ''
+      state.allTableListLoaded.length = 0
       getAllTableList()
     }
 
@@ -167,6 +170,8 @@ export default defineComponent({
       state.curCatalog = value
       state.databaseList.length = 0
       state.tableList.length = 0
+      state.allDatabaseListLoaded.length = 0
+      state.allTableListLoaded.length = 0
       getAllDatabaseList()
     }
     const addDatabase = () => {
@@ -229,6 +234,13 @@ export default defineComponent({
       if (!state.curCatalog) {
         return
       }
+      if (state.allDatabaseListLoaded.length) {
+        state.databaseList = state.allDatabaseListLoaded.filter((ele) => {
+          return ele.label.includes(state.DBSearchInput)
+        })
+        return
+      }
+
       state.loading = true
       getDatabaseList({
         catalog: state.curCatalog,
@@ -238,11 +250,14 @@ export default defineComponent({
           id: ele,
           label: ele
         }))
-        if (state.databaseList.length && !isSearch) {
-          const index = state.databaseList.findIndex(ele => ele.id === storageCataDBTable.database)
-          // ISSUE 2413: If the current catalog is not the one in the query, the first db is selected by default.
-          state.database = index > -1 ? storageCataDBTable.database : state.curCatalog === (route.query?.catalog)?.toString() ? ((route.query?.db)?.toString() || state.databaseList[0].id || '') : state.databaseList[0].id || ''
-          getAllTableList()
+        if (!isSearch) {
+          state.allDatabaseListLoaded = [...state.databaseList]
+          if (state.databaseList.length) {
+            const index = state.databaseList.findIndex(ele => ele.id === storageCataDBTable.database)
+            // ISSUE 2413: If the current catalog is not the one in the query, the first db is selected by default.
+            state.database = index > -1 ? storageCataDBTable.database : state.curCatalog === (route.query?.catalog)?.toString() ? ((route.query?.db)?.toString() || state.databaseList[0].id || '') : state.databaseList[0].id || ''
+            getAllTableList()
+          }
         }
       }).finally(() => {
         state.loading = false
@@ -253,6 +268,13 @@ export default defineComponent({
       if (!state.curCatalog || !state.database) {
         return
       }
+      if (state.allTableListLoaded.length) {
+        state.tableList = state.allTableListLoaded.filter((ele) => {
+          return ele.label.includes(state.tableSearchInput)
+        })
+        return
+      }
+
       state.tableLoading = true
       state.tableList.length = 0
       getTableList({
@@ -265,10 +287,14 @@ export default defineComponent({
           label: ele.name,
           type: ele.type
         }))
+        if (state.tableSearchInput === '') {
+          state.allTableListLoaded = [...state.tableList]
+        }
       }).finally(() => {
         state.tableLoading = false
       })
     }
+
     onBeforeMount(() => {
       const { database, tableName } = storageCataDBTable
       state.database = database
