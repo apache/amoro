@@ -34,6 +34,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import javax.annotation.Nonnull;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
