@@ -197,11 +197,11 @@ ALTER TABLE test_db.test_log_store set tblproperties (
 
 ### Specify start time
 
-Amoro expire data since `CURRENT_SNAPSHOT` or `CURRENT_TIMESTAMP`. `CURRENT_SNAPSHOT` will follow the timestamp of the table's most recent snapshot as the start time of the expiration, which ensures that the table has `data-expire.retention-time` data; while `CURRENT_TIMESTAMP` will follow the current time of the service.
+Amoro expire data since `LAST_COMMIT_TIME` or `CURRENT_TIME`. `LAST_COMMIT_TIME` will follow the timestamp of the table's most recent snapshot as the start time of the expiration, which ensures that the table has `data-expire.retention-time` data; while `CURRENT_TIME` will follow the current time of the service.
 
 ```sql
 ALTER TABLE test_db.test_log_store set tblproperties (
-    'data-expire.since' = 'current_timestamp');
+    'data-expire.base-on-rule' = 'CURRENT_TIME');
 ```
 
 ## Delete table

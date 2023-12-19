@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.catalog;
 
 import static com.netease.arctic.ams.api.Constants.THRIFT_TABLE_SERVICE_NAME;
+import static com.netease.arctic.flink.catalog.factories.FlinkUnifiedCatalogFactory.SUPPORTED_FORMATS;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.TABLE_FORMAT;
 
 import com.netease.arctic.AlreadyExistsException;
@@ -26,10 +27,12 @@ import com.netease.arctic.AmoroTable;
 import com.netease.arctic.NoSuchDatabaseException;
 import com.netease.arctic.NoSuchTableException;
 import com.netease.arctic.UnifiedCatalog;
-import com.netease.arctic.UnifiedCatalogLoader;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
+import com.netease.arctic.flink.catalog.factories.iceberg.IcebergFlinkCatalogFactory;
+import com.netease.arctic.flink.catalog.factories.mixed.MixedCatalogFactory;
 import com.netease.arctic.flink.table.AmoroDynamicTableFactory;
+import com.netease.arctic.table.TableIdentifier;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
@@ -37,6 +40,7 @@ import org.apache.flink.table.catalog.CatalogDatabase;
 import org.apache.flink.table.catalog.CatalogFunction;
 import org.apache.flink.table.catalog.CatalogPartition;
 import org.apache.flink.table.catalog.CatalogPartitionSpec;
+import org.apache.flink.table.catalog.CatalogTable;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseAlreadyExistException;
@@ -52,6 +56,7 @@ import org.apache.flink.table.catalog.exceptions.TablePartitionedException;
 import org.apache.flink.table.catalog.stats.CatalogColumnStatistics;
 import org.apache.flink.table.catalog.stats.CatalogTableStatistics;
 import org.apache.flink.table.expressions.Expression;
+import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.Factory;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
@@ -62,7 +67,7 @@ import java.util.Optional;
 
 /** This is a Flink catalog wrap a unified catalog. */
 public class FlinkUnifiedCatalog extends AbstractCatalog {
-  private UnifiedCatalog unifiedCatalog;
+  private final UnifiedCatalog unifiedCatalog;
   private final String amsUri;
   private final String amoroCatalogName;
   /**
@@ -70,24 +75,28 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
    *
    * <p>May include: Iceberg, Mixed and Paimon Catalogs, etc.
    */
-  private final Map<TableFormat, AbstractCatalog> availableCatalogs;
+  private Map<TableFormat, AbstractCatalog> availableCatalogs;
+
+  private final CatalogFactory.Context context;
+  private final org.apache.hadoop.conf.Configuration hadoopConf;
 
   public FlinkUnifiedCatalog(
       String amsUri,
-      String name,
       String defaultDatabase,
-      Map<TableFormat, AbstractCatalog> availableCatalogs) {
-    super(name, defaultDatabase);
+      UnifiedCatalog unifiedCatalog,
+      CatalogFactory.Context context,
+      org.apache.hadoop.conf.Configuration hadoopConf) {
+    super(context.getName(), defaultDatabase);
     this.amsUri = amsUri;
     this.amoroCatalogName = ArcticThriftUrl.parse(amsUri, THRIFT_TABLE_SERVICE_NAME).catalogName();
-    this.availableCatalogs = availableCatalogs;
+    this.unifiedCatalog = unifiedCatalog;
+    this.context = context;
+    this.hadoopConf = hadoopConf;
   }
 
   @Override
   public void open() throws CatalogException {
-    unifiedCatalog =
-        UnifiedCatalogLoader.loadUnifiedCatalog(amsUri, amoroCatalogName, Maps.newHashMap());
-    availableCatalogs.forEach((tableFormat, catalog) -> catalog.open());
+    availableCatalogs = Maps.newHashMap();
   }
 
   @Override
@@ -158,16 +167,16 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
       throws TableNotExistException, CatalogException {
     AmoroTable<?> amoroTable =
         unifiedCatalog.loadTable(tablePath.getDatabaseName(), tablePath.getObjectName());
-    AbstractCatalog catalog = availableCatalogs.get(amoroTable.format());
-    if (catalog == null) {
-      throw new UnsupportedOperationException(
-          String.format(
-              "Unsupported operation: get table [%s], %s: %s.",
-              tablePath, TABLE_FORMAT.key(), amoroTable.format()));
-    }
-    CatalogBaseTable catalogBaseTable = catalog.getTable(tablePath);
-    catalogBaseTable.getOptions().put(TABLE_FORMAT.key(), amoroTable.format().toString());
-    return catalogBaseTable;
+    AbstractCatalog catalog = originalCatalog(amoroTable);
+    CatalogTable catalogTable = (CatalogTable) catalog.getTable(tablePath);
+    final Map<String, String> flinkProperties = Maps.newHashMap(catalogTable.getOptions());
+    flinkProperties.put(TABLE_FORMAT.key(), amoroTable.format().toString());
+
+    return CatalogTable.of(
+        catalogTable.getUnresolvedSchema(),
+        catalogTable.getComment(),
+        catalogTable.getPartitionKeys(),
+        flinkProperties);
   }
 
   @Override
@@ -194,10 +203,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   @Override
   public void renameTable(ObjectPath tablePath, String newTableName, boolean ignoreIfNotExists)
       throws TableNotExistException, TableAlreadyExistException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () -> new UnsupportedOperationException("Unsupported operation: rename table."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     catalog.renameTable(tablePath, newTableName, ignoreIfNotExists);
   }
 
@@ -207,32 +213,25 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
     Configuration configuration = new Configuration();
     table.getOptions().forEach(configuration::setString);
     TableFormat format = configuration.get(TABLE_FORMAT);
-    AbstractCatalog catalog = availableCatalogs.get(format);
-    if (catalog == null) {
-      throw new UnsupportedOperationException(
-          String.format(
-              "Unsupported operation: create table, %s: %s.", TABLE_FORMAT.key(), format));
-    }
+    TableIdentifier tableIdentifier =
+        TableIdentifier.of(
+            unifiedCatalog.name(), tablePath.getDatabaseName(), tablePath.getObjectName());
+    AbstractCatalog catalog =
+        getOriginalCatalog(format).orElseGet(() -> createOriginalCatalog(tableIdentifier, format));
     catalog.createTable(tablePath, table, ignoreIfExists);
   }
 
   @Override
   public void alterTable(ObjectPath tablePath, CatalogBaseTable newTable, boolean ignoreIfNotExists)
       throws TableNotExistException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () -> new UnsupportedOperationException("Unsupported operation: alter table."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     catalog.alterTable(tablePath, newTable, ignoreIfNotExists);
   }
 
   @Override
   public List<CatalogPartitionSpec> listPartitions(ObjectPath tablePath)
       throws TableNotExistException, TableNotPartitionedException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () -> new UnsupportedOperationException("Unsupported operation: list partitions."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     return catalog.listPartitions(tablePath);
   }
 
@@ -241,10 +240,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
       ObjectPath tablePath, CatalogPartitionSpec partitionSpec)
       throws TableNotExistException, TableNotPartitionedException, PartitionSpecInvalidException,
           CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () -> new UnsupportedOperationException("Unsupported operation: list partitions."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     return catalog.listPartitions(tablePath, partitionSpec);
   }
 
@@ -252,32 +248,22 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   public List<CatalogPartitionSpec> listPartitionsByFilter(
       ObjectPath tablePath, List<Expression> filters)
       throws TableNotExistException, TableNotPartitionedException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () ->
-                    new UnsupportedOperationException(
-                        "Unsupported operation: list partitions by filter."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     return catalog.listPartitionsByFilter(tablePath, filters);
   }
 
   @Override
   public CatalogPartition getPartition(ObjectPath tablePath, CatalogPartitionSpec partitionSpec)
       throws PartitionNotExistException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () -> new UnsupportedOperationException("Unsupported operation: get partition."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     return catalog.getPartition(tablePath, partitionSpec);
   }
 
   @Override
   public boolean partitionExists(ObjectPath tablePath, CatalogPartitionSpec partitionSpec)
       throws CatalogException {
-    return getOriginalCatalog(tablePath)
-        .map(catalog -> catalog.partitionExists(tablePath, partitionSpec))
-        .orElseThrow(
-            () -> new UnsupportedOperationException("Unsupported operation: partition exists."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
+    return catalog.partitionExists(tablePath, partitionSpec);
   }
 
   @Override
@@ -288,11 +274,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
       boolean ignoreIfExists)
       throws TableNotExistException, TableNotPartitionedException, PartitionSpecInvalidException,
           PartitionAlreadyExistsException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () ->
-                    new UnsupportedOperationException("Unsupported operation: create partition."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     catalog.createPartition(tablePath, partitionSpec, partition, ignoreIfExists);
   }
 
@@ -300,10 +282,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   public void dropPartition(
       ObjectPath tablePath, CatalogPartitionSpec partitionSpec, boolean ignoreIfNotExists)
       throws PartitionNotExistException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () -> new UnsupportedOperationException("Unsupported operation: drop partition."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     catalog.dropPartition(tablePath, partitionSpec, ignoreIfNotExists);
   }
 
@@ -314,10 +293,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
       CatalogPartition newPartition,
       boolean ignoreIfNotExists)
       throws PartitionNotExistException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () -> new UnsupportedOperationException("Unsupported operation: alter partition."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     catalog.alterPartition(tablePath, partitionSpec, newPartition, ignoreIfNotExists);
   }
 
@@ -361,24 +337,14 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   @Override
   public CatalogTableStatistics getTableStatistics(ObjectPath tablePath)
       throws TableNotExistException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () ->
-                    new UnsupportedOperationException(
-                        "Unsupported operation: get table statistics."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     return catalog.getTableStatistics(tablePath);
   }
 
   @Override
   public CatalogColumnStatistics getTableColumnStatistics(ObjectPath tablePath)
       throws TableNotExistException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () ->
-                    new UnsupportedOperationException(
-                        "Unsupported operation: get table column statistics."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     return catalog.getTableColumnStatistics(tablePath);
   }
 
@@ -386,12 +352,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   public CatalogTableStatistics getPartitionStatistics(
       ObjectPath tablePath, CatalogPartitionSpec partitionSpec)
       throws PartitionNotExistException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () ->
-                    new UnsupportedOperationException(
-                        "Unsupported operation: get partition statistics."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     return catalog.getPartitionStatistics(tablePath, partitionSpec);
   }
 
@@ -399,12 +360,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   public CatalogColumnStatistics getPartitionColumnStatistics(
       ObjectPath tablePath, CatalogPartitionSpec partitionSpec)
       throws PartitionNotExistException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () ->
-                    new UnsupportedOperationException(
-                        "Unsupported operation: get partition column statistics."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     return catalog.getPartitionColumnStatistics(tablePath, partitionSpec);
   }
 
@@ -412,12 +368,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   public void alterTableStatistics(
       ObjectPath tablePath, CatalogTableStatistics tableStatistics, boolean ignoreIfNotExists)
       throws TableNotExistException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () ->
-                    new UnsupportedOperationException(
-                        "Unsupported operation: alter table statistics."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     catalog.alterTableStatistics(tablePath, tableStatistics, ignoreIfNotExists);
   }
 
@@ -425,12 +376,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   public void alterTableColumnStatistics(
       ObjectPath tablePath, CatalogColumnStatistics columnStatistics, boolean ignoreIfNotExists)
       throws TableNotExistException, CatalogException, TablePartitionedException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () ->
-                    new UnsupportedOperationException(
-                        "Unsupported operation: alter table column statistics."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     catalog.alterTableColumnStatistics(tablePath, columnStatistics, ignoreIfNotExists);
   }
 
@@ -441,12 +387,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
       CatalogTableStatistics partitionStatistics,
       boolean ignoreIfNotExists)
       throws PartitionNotExistException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () ->
-                    new UnsupportedOperationException(
-                        "Unsupported operation: alter partition statistics."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     catalog.alterPartitionStatistics(
         tablePath, partitionSpec, partitionStatistics, ignoreIfNotExists);
   }
@@ -458,25 +399,71 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
       CatalogColumnStatistics columnStatistics,
       boolean ignoreIfNotExists)
       throws PartitionNotExistException, CatalogException {
-    AbstractCatalog catalog =
-        getOriginalCatalog(tablePath)
-            .orElseThrow(
-                () ->
-                    new UnsupportedOperationException(
-                        "Unsupported operation: alter partition column statistics."));
+    AbstractCatalog catalog = originalCatalog(tablePath);
     catalog.alterPartitionColumnStatistics(
         tablePath, partitionSpec, columnStatistics, ignoreIfNotExists);
   }
 
-  private Optional<AbstractCatalog> getOriginalCatalog(ObjectPath tablePath) {
-    TableFormat format = getTableFormat(tablePath);
-    return Optional.of(availableCatalogs.get(format));
+  /**
+   * Get the original flink catalog for the given table, if the flink catalog is not exists in the
+   * cache, would create a new original flink catalog for this table format.
+   *
+   * @param amoroTable amoroTable
+   * @return original Flink catalog
+   */
+  private AbstractCatalog originalCatalog(AmoroTable<?> amoroTable) {
+    TableFormat format = amoroTable.format();
+    TableIdentifier tableIdentifier = amoroTable.id();
+    return getOriginalCatalog(format)
+        .orElseGet(() -> createOriginalCatalog(tableIdentifier, format));
   }
 
-  private TableFormat getTableFormat(ObjectPath tablePath) {
-    AmoroTable<?> amoroTable =
-        unifiedCatalog.loadTable(tablePath.getDatabaseName(), tablePath.getObjectName());
-    return amoroTable.format();
+  private AbstractCatalog originalCatalog(ObjectPath tablePath) {
+    AmoroTable<?> amoroTable = loadAmoroTable(tablePath);
+    return originalCatalog(amoroTable);
+  }
+
+  private Optional<AbstractCatalog> getOriginalCatalog(TableFormat format) {
+    return Optional.ofNullable(availableCatalogs.get(format));
+  }
+
+  private AmoroTable<?> loadAmoroTable(ObjectPath tablePath) {
+    return unifiedCatalog.loadTable(tablePath.getDatabaseName(), tablePath.getObjectName());
+  }
+
+  private AbstractCatalog createOriginalCatalog(
+      TableIdentifier tableIdentifier, TableFormat tableFormat) {
+    CatalogFactory catalogFactory;
+
+    switch (tableFormat) {
+      case MIXED_ICEBERG:
+      case MIXED_HIVE:
+        catalogFactory = new MixedCatalogFactory();
+        break;
+      case ICEBERG:
+        catalogFactory = new IcebergFlinkCatalogFactory(hadoopConf);
+        break;
+      default:
+        throw new UnsupportedOperationException(
+            String.format(
+                "Unsupported table format: [%s] in the unified catalog, table identifier is [%s], the supported table formats are [%s].",
+                tableFormat, tableIdentifier, SUPPORTED_FORMATS));
+    }
+
+    AbstractCatalog originalCatalog;
+    try {
+      originalCatalog = (AbstractCatalog) catalogFactory.createCatalog(context);
+    } catch (CatalogException e) {
+      if (e.getMessage().contains("must implement createCatalog(Context)")) {
+        originalCatalog =
+            (AbstractCatalog) catalogFactory.createCatalog(context.getName(), context.getOptions());
+      } else {
+        throw e;
+      }
+    }
+    originalCatalog.open();
+    availableCatalogs.put(tableFormat, originalCatalog);
+    return originalCatalog;
   }
 
   @Override
