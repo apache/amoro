@@ -251,6 +251,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
         if (splitTask.getRewriteDataFiles().size() > 1) {
           result.add(splitTask);
         } else {
+          // If there are only one undersized segment file in the split task, it's meaningless to
+          // rewrite it.
           splitTask
               .getRewriteDataFiles()
               .forEach(MixedIcebergPartitionPlan.this::disposeUndersizedSegmentFile);

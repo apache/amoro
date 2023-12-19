@@ -351,6 +351,8 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
         if (splitTask.getRewriteDataFiles().size() > 1) {
           results.add(splitTask);
         } else {
+          // If there are only one undersized segment file in the split task, it's meaningless to
+          // rewrite it.
           splitTask
               .getRewriteDataFiles()
               .forEach(AbstractPartitionPlan.this::disposeUndersizedSegmentFile);
