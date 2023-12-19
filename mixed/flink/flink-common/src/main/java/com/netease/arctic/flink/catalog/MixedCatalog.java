@@ -27,7 +27,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 import com.google.common.base.Objects;
 import com.netease.arctic.NoSuchDatabaseException;
 import com.netease.arctic.flink.InternalCatalogBuilder;
-import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
+import com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions;
 import com.netease.arctic.flink.table.DynamicTableFactory;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.ArcticUtils;
@@ -92,8 +92,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/** Catalogs for arctic data lake. */
-public class ArcticCatalog extends AbstractCatalog {
+/** Catalogs for mixed table format(include mixed-iceberg and mixed-hive). */
+public class MixedCatalog extends AbstractCatalog {
   public static final String DEFAULT_DB = "default";
 
   /**
@@ -106,12 +106,12 @@ public class ArcticCatalog extends AbstractCatalog {
 
   private com.netease.arctic.catalog.ArcticCatalog internalCatalog;
 
-  public ArcticCatalog(String name, String defaultDatabase, InternalCatalogBuilder catalogBuilder) {
+  public MixedCatalog(String name, String defaultDatabase, InternalCatalogBuilder catalogBuilder) {
     super(name, defaultDatabase);
     this.catalogBuilder = catalogBuilder;
   }
 
-  public ArcticCatalog(ArcticCatalog copy) {
+  public MixedCatalog(MixedCatalog copy) {
     this(copy.getName(), copy.getDefaultDatabase(), copy.catalogBuilder);
   }
 
@@ -229,8 +229,7 @@ public class ArcticCatalog extends AbstractCatalog {
     properties.put(ArcticValidator.ARCTIC_CATALOG.key(), tableIdentifier.getCatalog());
     properties.put(ArcticValidator.ARCTIC_TABLE.key(), tableIdentifier.getTableName());
     properties.put(ArcticValidator.ARCTIC_DATABASE.key(), tableIdentifier.getDatabase());
-    properties.put(
-        ArcticCatalogFactoryOptions.METASTORE_URL.key(), catalogBuilder.getMetastoreUrl());
+    properties.put(CatalogFactoryOptions.METASTORE_URL.key(), catalogBuilder.getMetastoreUrl());
   }
 
   private static List<String> toPartitionKeys(PartitionSpec spec, Schema icebergSchema) {
