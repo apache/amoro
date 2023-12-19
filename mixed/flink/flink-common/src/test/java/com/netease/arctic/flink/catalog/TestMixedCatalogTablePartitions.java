@@ -51,11 +51,11 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-public class TestArcticCatalogTablePartitions extends FlinkTestBase {
+public class TestMixedCatalogTablePartitions extends FlinkTestBase {
   private final String tableName = "test_partition_table";
   private final String db = "test_partition_db";
 
-  public TestArcticCatalogTablePartitions() {
+  public TestMixedCatalogTablePartitions() {
     super(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(true, true));
@@ -83,20 +83,20 @@ public class TestArcticCatalogTablePartitions extends FlinkTestBase {
                 rows);
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixedCatalog WITH %s", toWithClause(props));
 
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixedCatalog."
             + db
             + "."
             + tableName
             + "("
             + " id INT, name STRING, dt STRING) PARTITIONED BY (dt)");
 
-    sql("INSERT INTO %s select * from input", "arcticCatalog." + db + "." + tableName);
+    sql("INSERT INTO %s select * from input", "mixedCatalog." + db + "." + tableName);
     ObjectPath objectPath = new ObjectPath(db, tableName);
-    ArcticCatalog arcticCatalog = (ArcticCatalog) getTableEnv().getCatalog("arcticCatalog").get();
-    List<CatalogPartitionSpec> list = arcticCatalog.listPartitions(objectPath);
+    MixedCatalog mixedCatalog = (MixedCatalog) getTableEnv().getCatalog("mixedCatalog").get();
+    List<CatalogPartitionSpec> list = mixedCatalog.listPartitions(objectPath);
 
     List<CatalogPartitionSpec> expected = Lists.newArrayList();
     CatalogPartitionSpec partitionSpec1 =
@@ -127,20 +127,20 @@ public class TestArcticCatalogTablePartitions extends FlinkTestBase {
 
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixedCatalog WITH %s", toWithClause(props));
 
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixedCatalog."
             + db
             + "."
             + tableName
             + "("
             + " id INT, name STRING, dt STRING, PRIMARY KEY (id) NOT ENFORCED) PARTITIONED BY (dt)");
 
-    sql("INSERT INTO %s select * from input", "arcticCatalog." + db + "." + tableName);
+    sql("INSERT INTO %s select * from input", "mixedCatalog." + db + "." + tableName);
     ObjectPath objectPath = new ObjectPath(db, tableName);
-    ArcticCatalog arcticCatalog = (ArcticCatalog) getTableEnv().getCatalog("arcticCatalog").get();
-    List<CatalogPartitionSpec> partitionList = arcticCatalog.listPartitions(objectPath);
+    MixedCatalog mixedCatalog = (MixedCatalog) getTableEnv().getCatalog("mixedCatalog").get();
+    List<CatalogPartitionSpec> partitionList = mixedCatalog.listPartitions(objectPath);
 
     List<CatalogPartitionSpec> expected = Lists.newArrayList();
     CatalogPartitionSpec partitionSpec1 =
@@ -174,15 +174,15 @@ public class TestArcticCatalogTablePartitions extends FlinkTestBase {
     Table input = getTableEnv().fromDataStream(rowData, $("id"), $("name"), $("dt"));
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixedCatalog WITH %s", toWithClause(props));
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixedCatalog."
             + db
             + "."
             + tableName
             + "("
             + " id INT, name STRING, dt STRING) PARTITIONED BY (dt,name)");
-    sql("INSERT INTO %s select * from input", "arcticCatalog." + db + "." + tableName);
+    sql("INSERT INTO %s select * from input", "mixedCatalog." + db + "." + tableName);
 
     ResolvedExpression dtRef = new FieldReferenceExpression("dt", DataTypes.STRING(), 0, 3);
     CallExpression callExpression =
@@ -192,9 +192,9 @@ public class TestArcticCatalogTablePartitions extends FlinkTestBase {
             DataTypes.BOOLEAN());
 
     ObjectPath objectPath = new ObjectPath(db, tableName);
-    ArcticCatalog arcticCatalog = (ArcticCatalog) getTableEnv().getCatalog("arcticCatalog").get();
+    MixedCatalog mixedCatalog = (MixedCatalog) getTableEnv().getCatalog("mixedCatalog").get();
     List<CatalogPartitionSpec> list =
-        arcticCatalog.listPartitionsByFilter(objectPath, singletonList(callExpression));
+        mixedCatalog.listPartitionsByFilter(objectPath, singletonList(callExpression));
 
     List<CatalogPartitionSpec> expected = Lists.newArrayList();
     CatalogPartitionSpec partitionSpec1 =
@@ -206,14 +206,14 @@ public class TestArcticCatalogTablePartitions extends FlinkTestBase {
     Assert.assertEquals("Should produce the expected catalog partition specs.", list, expected);
 
     List<CatalogPartitionSpec> listCatalogPartitionSpec =
-        arcticCatalog.listPartitions(
+        mixedCatalog.listPartitions(
             objectPath,
             new CatalogPartitionSpec(ImmutableMap.of("dt", "2023-10-01", "name", "Gerry")));
     Assert.assertEquals(
         "Should produce the expected catalog partition specs.", listCatalogPartitionSpec.size(), 1);
 
     try {
-      arcticCatalog.listPartitions(
+      mixedCatalog.listPartitions(
           objectPath,
           new CatalogPartitionSpec(ImmutableMap.of("dt", "2023-10-01", "name1", "Gerry")));
     } catch (Exception e) {

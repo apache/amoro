@@ -16,35 +16,39 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.catalog.factories;
+package com.netease.arctic.flink.catalog.factories.mixed;
 
-import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.DEFAULT_DATABASE;
-import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.METASTORE_URL;
+import static com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions.DEFAULT_DATABASE;
+import static com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions.FLINK_TABLE_FORMATS;
+import static com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions.METASTORE_URL;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaParams;
 import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
 
 import com.netease.arctic.flink.InternalCatalogBuilder;
-import com.netease.arctic.flink.catalog.ArcticCatalog;
+import com.netease.arctic.flink.catalog.MixedCatalog;
+import com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.FactoryUtil;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
-/** Factory for {@link ArcticCatalog} */
-public class ArcticCatalogFactory implements CatalogFactory {
+/** Factory for {@link MixedCatalog} */
+public class MixedCatalogFactory implements CatalogFactory {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticCatalogFactory.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MixedCatalogFactory.class);
 
   @Override
   public String factoryIdentifier() {
-    return ArcticCatalogFactoryOptions.IDENTIFIER;
+    return CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER;
   }
 
   @Override
@@ -57,13 +61,16 @@ public class ArcticCatalogFactory implements CatalogFactory {
     final String defaultDatabase = helper.getOptions().get(DEFAULT_DATABASE);
     String metastoreUrl = helper.getOptions().get(METASTORE_URL);
     final Map<String, String> arcticCatalogProperties = getKafkaParams(context.getOptions());
+    final Map<String, String> catalogProperties = Maps.newHashMap(arcticCatalogProperties);
 
-    return new ArcticCatalog(
+    Optional<String> tableFormatsOptional = helper.getOptions().getOptional(FLINK_TABLE_FORMATS);
+    tableFormatsOptional.ifPresent(
+        tableFormats -> catalogProperties.put(FLINK_TABLE_FORMATS.key(), tableFormats));
+
+    return new MixedCatalog(
         context.getName(),
         defaultDatabase,
-        InternalCatalogBuilder.builder()
-            .metastoreUrl(metastoreUrl)
-            .properties(arcticCatalogProperties));
+        InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl).properties(catalogProperties));
   }
 
   @Override
@@ -79,14 +86,16 @@ public class ArcticCatalogFactory implements CatalogFactory {
     options.add(DEFAULT_DATABASE);
 
     // authorization config
-    options.add(ArcticCatalogFactoryOptions.AUTH_AMS_CONFIGS_DISABLE);
-    options.add(ArcticCatalogFactoryOptions.AUTH_METHOD);
-    options.add(ArcticCatalogFactoryOptions.SIMPLE_USER_NAME);
-    options.add(ArcticCatalogFactoryOptions.KEYTAB_LOGIN_USER);
-    options.add(ArcticCatalogFactoryOptions.KRB5_CONF_PATH);
-    options.add(ArcticCatalogFactoryOptions.KRB5_CONF_ENCODE);
-    options.add(ArcticCatalogFactoryOptions.KEYTAB_PATH);
-    options.add(ArcticCatalogFactoryOptions.KEYTAB_ENCODE);
+    options.add(CatalogFactoryOptions.AUTH_AMS_CONFIGS_DISABLE);
+    options.add(CatalogFactoryOptions.AUTH_METHOD);
+    options.add(CatalogFactoryOptions.SIMPLE_USER_NAME);
+    options.add(CatalogFactoryOptions.KEYTAB_LOGIN_USER);
+    options.add(CatalogFactoryOptions.KRB5_CONF_PATH);
+    options.add(CatalogFactoryOptions.KRB5_CONF_ENCODE);
+    options.add(CatalogFactoryOptions.KEYTAB_PATH);
+    options.add(CatalogFactoryOptions.KEYTAB_ENCODE);
+
+    options.add(CatalogFactoryOptions.FLINK_TABLE_FORMATS);
     return options;
   }
 }

@@ -18,21 +18,23 @@
 
 package com.netease.arctic.flink.catalog.factories;
 
-import static com.netease.arctic.flink.catalog.ArcticCatalog.DEFAULT_DB;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
+import static com.netease.arctic.flink.catalog.MixedCatalog.DEFAULT_DB;
 
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.flink.catalog.ArcticCatalog;
+import com.netease.arctic.flink.catalog.FlinkUnifiedCatalog;
+import com.netease.arctic.flink.catalog.MixedCatalog;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.table.catalog.CommonCatalogOptions;
 
-/** {@link ConfigOption}s for {@link ArcticCatalog}. */
+/** {@link ConfigOption}s for {@link MixedCatalog} and {@link FlinkUnifiedCatalog}. */
 @Internal
-public class ArcticCatalogFactoryOptions {
+public class CatalogFactoryOptions {
   public static final String MIXED_ICEBERG_IDENTIFIER = "mixed_iceberg";
   public static final String MIXED_HIVE_IDENTIFIER = "mixed_hive";
-  @Deprecated public static final String IDENTIFIER = "arctic";
+  @Deprecated public static final String LEGACY_MIXED_IDENTIFIER = "arctic";
   public static final String UNIFIED_IDENTIFIER = "unified";
 
   public static final ConfigOption<String> DEFAULT_DATABASE =
@@ -81,4 +83,10 @@ public class ArcticCatalogFactoryOptions {
               PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_ENCODE)
           .stringType()
           .noDefaultValue();
+
+  public static final ConfigOption<String> FLINK_TABLE_FORMATS =
+      ConfigOptions.key(TABLE_FORMATS)
+          .stringType()
+          .noDefaultValue()
+          .withDescription("This illustrates the table format contained in the catalog.");
 }

@@ -16,18 +16,24 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.catalog.factories;
+package com.netease.arctic.flink.catalog.factories.iceberg;
 
-import com.netease.arctic.flink.catalog.ArcticCatalog;
+import org.apache.flink.table.catalog.Catalog;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.iceberg.flink.FlinkCatalogFactory;
 
-/**
- * The factory to create {@link ArcticCatalog} with {@link
- * ArcticCatalogFactoryOptions#MIXED_HIVE_IDENTIFIER} identifier.
- */
-public class MixedHiveCatalogFactory extends ArcticCatalogFactory {
+import java.util.Map;
+
+/** Creating Iceberg Catalog by the hadoop configuration which stored in the AMS. */
+public class IcebergFlinkCatalogFactory extends FlinkCatalogFactory {
+  private final Configuration hadoopConf;
+
+  public IcebergFlinkCatalogFactory(Configuration hadoopConf) {
+    this.hadoopConf = hadoopConf;
+  }
 
   @Override
-  public String factoryIdentifier() {
-    return ArcticCatalogFactoryOptions.MIXED_HIVE_IDENTIFIER;
+  public Catalog createCatalog(String name, Map<String, String> properties) {
+    return super.createCatalog(name, properties, hadoopConf);
   }
 }
