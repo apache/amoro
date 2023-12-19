@@ -68,6 +68,8 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
       // files not in hive location to hive location, so the files in the hive location should not
       // be optimizing.
       Preconditions.checkArgument(reservedDeleteFiles.isEmpty(), "delete files should be empty");
+      Preconditions.checkArgument(
+          undersizedSegmentFiles.isEmpty(), "undersized segment files should be empty");
       rewriteDataFiles.entrySet().removeIf(entry -> evaluator().inHiveLocation(entry.getKey()));
       rewritePosDataFiles.entrySet().removeIf(entry -> evaluator().inHiveLocation(entry.getKey()));
     }

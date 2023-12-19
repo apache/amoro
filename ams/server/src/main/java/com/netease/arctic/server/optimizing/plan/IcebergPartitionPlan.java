@@ -35,7 +35,8 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
   @Override
   protected TaskSplitter buildTaskSplitter() {
-    return new BinPackingTaskSplitter(rewriteDataFiles, rewritePosDataFiles);
+    return new BinPackingTaskSplitter(
+        rewriteDataFiles, rewritePosDataFiles, undersizedSegmentFiles);
   }
 
   @Override
