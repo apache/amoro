@@ -219,6 +219,24 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     return evaluator().getWeight();
   }
 
+  /**
+   * When splitTask has only one undersized segment file, it needs to be triggered again to
+   * determine whether to rewrite pos. If needed, add it to rewritePosDataFiles and bin-packing
+   * together, else reserved delete files.
+   */
+  protected void disposeUndersizedSegmentFile(SplitTask splitTask) {
+    Optional<DataFile> dataFile = splitTask.getRewriteDataFiles().stream().findFirst();
+    if (dataFile.isPresent()) {
+      DataFile rewriteDataFile = dataFile.get();
+      List<ContentFile<?>> deletes = new ArrayList<>(splitTask.getDeleteFiles());
+      if (evaluator().segmentShouldRewritePos(rewriteDataFile, deletes)) {
+        rewritePosDataFiles.put(rewriteDataFile, deletes);
+      } else {
+        reservedDeleteFiles(deletes);
+      }
+    }
+  }
+
   protected class SplitTask {
     private final Set<DataFile> rewriteDataFiles = Sets.newHashSet();
     private final Set<DataFile> rewritePosDataFiles = Sets.newHashSet();
@@ -310,18 +328,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
           results.add(splitTask);
           continue;
         }
-        Optional<DataFile> dataFile = splitTask.getRewriteDataFiles().stream().findFirst();
-        // When splitTask has only one segment file, it needs to be triggered again to determine
-        // whether to rewrite pos. If so, add it to rewritePosDataFiles and bin-packing together.
-        if (dataFile.isPresent()) {
-          DataFile rewriteDataFile = dataFile.get();
-          List<ContentFile<?>> deletes = new ArrayList<>(splitTask.getDeleteFiles());
-          if (evaluator().segmentShouldRewritePos(rewriteDataFile, deletes)) {
-            rewritePosDataFiles.put(rewriteDataFile, deletes);
-          } else {
-            reservedDeleteFiles(deletes);
-          }
-        }
+        disposeUndersizedSegmentFile(splitTask);
       }
 
       // bin-packing for fragment file and rewrite pos data file

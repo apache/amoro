@@ -36,11 +36,9 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -255,18 +253,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
           result.add(splitTask);
           continue;
         }
-        Optional<DataFile> dataFile = splitTask.getRewriteDataFiles().stream().findFirst();
-        // When splitTask has only one segment file, it needs to be triggered again to determine
-        // whether to rewrite pos. If so, add it to rewritePosDataFiles and bin-packing together.
-        if (dataFile.isPresent()) {
-          DataFile rewriteDataFile = dataFile.get();
-          List<ContentFile<?>> deletes = new ArrayList<>(splitTask.getDeleteFiles());
-          if (evaluator().segmentShouldRewritePos(rewriteDataFile, deletes)) {
-            rewritePosDataFiles.put(rewriteDataFile, deletes);
-          } else {
-            reservedDeleteFiles(deletes);
-          }
-        }
+        disposeUndersizedSegmentFile(splitTask);
       }
 
       rootTree = FileTree.newTreeRoot();
