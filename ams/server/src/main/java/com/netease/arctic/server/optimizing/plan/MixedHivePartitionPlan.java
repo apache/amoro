@@ -163,6 +163,11 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     }
 
     @Override
+    protected boolean isUndersizedSegmentFile(DataFile dataFile) {
+      return !inHiveLocation(dataFile) && super.isUndersizedSegmentFile(dataFile);
+    }
+
+    @Override
     public boolean isFullNecessary() {
       if (!reachFullInterval() && !reachHiveRefreshInterval()) {
         return false;
@@ -186,12 +191,12 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     }
 
     @Override
-    public boolean segmentShouldRewrite(DataFile dataFile, List<ContentFile<?>> deletes) {
+    public boolean fileShouldRewrite(DataFile dataFile, List<ContentFile<?>> deletes) {
       if (isFullOptimizing()) {
         return fileShouldFullOptimizing(dataFile, deletes);
       } else {
         // if it is not full optimizing, we only rewrite files not in hive location
-        return !inHiveLocation(dataFile) && super.segmentShouldRewrite(dataFile, deletes);
+        return !inHiveLocation(dataFile) && super.fileShouldRewrite(dataFile, deletes);
       }
     }
 

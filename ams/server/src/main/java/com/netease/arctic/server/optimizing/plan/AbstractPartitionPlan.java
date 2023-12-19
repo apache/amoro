@@ -112,11 +112,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   public boolean addFile(DataFile dataFile, List<ContentFile<?>> deletes) {
     boolean added = evaluator().addFile(dataFile, deletes);
     if (added) {
-      if (evaluator().isFragmentFile(dataFile)) {
-        rewriteDataFiles.put(dataFile, deletes);
-      } else if (evaluator().segmentShouldRewrite(dataFile, deletes)) {
-        // Segment files whose pos delete rate is greater than the value of
-        // `self-optimizing.major.trigger.duplicate-ratio`
+      if (evaluator().fileShouldRewrite(dataFile, deletes)) {
         rewriteDataFiles.put(dataFile, deletes);
       } else if (evaluator().isUndersizedSegmentFile(dataFile)) {
         undersizedSegmentFiles.put(dataFile, deletes);

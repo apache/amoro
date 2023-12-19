@@ -142,7 +142,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     for (ContentFile<?> delete : deletes) {
       addDelete(delete);
     }
-    if (segmentShouldRewrite(dataFile, deletes)) {
+    if (fileShouldRewrite(dataFile, deletes)) {
       rewriteSegmentFileSize += dataFile.fileSizeInBytes();
       rewriteSegmentFileCount++;
       return true;
@@ -162,7 +162,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   private boolean addTargetSizeReachedFile(DataFile dataFile, List<ContentFile<?>> deletes) {
-    if (segmentShouldRewrite(dataFile, deletes)) {
+    if (fileShouldRewrite(dataFile, deletes)) {
       rewriteSegmentFileSize += dataFile.fileSizeInBytes();
       rewriteSegmentFileCount++;
       for (ContentFile<?> delete : deletes) {
@@ -194,9 +194,12 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return !deleteFiles.isEmpty() || dataFile.fileSizeInBytes() < config.getTargetSize() * 0.9;
   }
 
-  public boolean segmentShouldRewrite(DataFile dataFile, List<ContentFile<?>> deletes) {
+  public boolean fileShouldRewrite(DataFile dataFile, List<ContentFile<?>> deletes) {
     if (isFullOptimizing()) {
       return fileShouldFullOptimizing(dataFile, deletes);
+    }
+    if (isFragmentFile(dataFile)) {
+      return true;
     }
     // When Upsert writing is enabled in the Flink engine, both INSERT and UPDATE_AFTER will
     // generate deletes files (Most are eq-delete), and eq-delete file will be associated
