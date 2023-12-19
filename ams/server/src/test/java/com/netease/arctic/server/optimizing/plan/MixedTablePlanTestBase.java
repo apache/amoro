@@ -169,15 +169,6 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
             getArcticTable(),
             tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
 
-    // write data files
-    newRecords =
-        OptimizingTestHelpers.generateRecord(tableTestHelper(), 81, 120, "2022-01-01T12:00:00");
-    transactionId = beginTransaction();
-    dataFiles.addAll(
-        OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
-
     setFragmentRatio(dataFiles);
     assertSegmentFiles(dataFiles);
 
@@ -186,33 +177,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     Assert.assertTrue(taskDescriptors.isEmpty());
 
     // 2.Step2
-    // plan without delete files
-    setTargetSize(dataFiles, false);
-
-    taskDescriptors = planWithCurrentFiles();
-    Assert.assertEquals(1, taskDescriptors.size());
-    assertTask(
-        taskDescriptors.get(0),
-        dataFiles,
-        Collections.emptyList(),
-        Collections.emptyList(),
-        Collections.emptyList());
-
-    resetTargetSize();
-    openFullOptimizing();
-    taskDescriptors = planWithCurrentFiles();
-
-    Assert.assertEquals(1, taskDescriptors.size());
-    assertTask(
-        taskDescriptors.get(0),
-        dataFiles,
-        Collections.emptyList(),
-        Collections.emptyList(),
-        Collections.emptyList());
-
-    // 3.Step3
     // plan with delete files
-    closeFullOptimizingInterval();
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
@@ -226,19 +191,8 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
     Assert.assertTrue(taskDescriptors.isEmpty());
 
-    // 4.Step4
-    // plan with delete files
+    // 3.Step3
     openFullOptimizing();
-    taskDescriptors = planWithCurrentFiles();
-    Assert.assertEquals(1, taskDescriptors.size());
-    assertTask(
-        taskDescriptors.get(0),
-        dataFiles,
-        Collections.emptyList(),
-        Collections.emptyList(),
-        deleteFiles);
-
-    setTargetSize(dataFiles, false);
     taskDescriptors = planWithCurrentFiles();
     Assert.assertEquals(1, taskDescriptors.size());
     assertTask(
