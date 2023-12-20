@@ -60,7 +60,8 @@ public class FlinkUnifiedCatalogITCase extends CatalogITCaseBase {
   public static Object[][] parameters() {
     return new Object[][] {
       {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf())},
-      {new HiveCatalogTestHelper(TableFormat.MIXED_ICEBERG, TEST_HMS.getHiveConf())}
+      {new HiveCatalogTestHelper(TableFormat.MIXED_ICEBERG, TEST_HMS.getHiveConf())},
+      {new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf())}
     };
   }
 
@@ -71,8 +72,10 @@ public class FlinkUnifiedCatalogITCase extends CatalogITCaseBase {
 
   @Before
   public void setup() throws Exception {
-    String catalog = "amoro";
-    exec("CREATE CATALOG %s WITH ('type'='amoro', 'metastore.url'='%s')", catalog, getCatalogUrl());
+    String catalog = "unified_catalog";
+    exec(
+        "CREATE CATALOG %s WITH ('type'='unified', 'metastore.url'='%s')",
+        catalog, getCatalogUrl());
     exec("USE CATALOG %s", catalog);
     exec("USE %s", tableTestHelper().id().getDatabase());
     Optional<Catalog> catalogOptional = getTableEnv().getCatalog(catalog);
