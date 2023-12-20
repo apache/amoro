@@ -23,6 +23,9 @@ import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
   protected IcebergPartitionPlan(
@@ -40,5 +43,18 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
     OptimizingInputProperties properties = new OptimizingInputProperties();
     properties.setExecutorFactoryImpl(IcebergRewriteExecutorFactory.class.getName());
     return properties;
+  }
+
+  @Override
+  protected List<SplitTask> filterSplitTasks(List<SplitTask> splitTasks) {
+    return splitTasks.stream().filter(this::enoughInputFiles).collect(Collectors.toList());
+  }
+
+  protected boolean enoughInputFiles(SplitTask splitTask) {
+    boolean only1DataFile =
+        splitTask.getRewriteDataFiles().size() == 1
+            && splitTask.getRewritePosDataFiles().size() == 0
+            && splitTask.getDeleteFiles().size() == 0;
+    return !only1DataFile;
   }
 }
