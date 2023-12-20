@@ -101,7 +101,10 @@ ams:
 #    cluster-name: default
 #    zookeeper-address: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
 
-
+# config plugins event listener
+event-listeners:
+  - name: logging-listener
+    enabled: false
 
 containers:
   - name: localContainer
