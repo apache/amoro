@@ -1,0 +1,62 @@
+package com.netease.arctic.ams.api.events;
+
+import org.apache.iceberg.metrics.MetricsReport;
+
+/** An event triggered when iceberg report metrics */
+public class IcebergReportEvent implements TableEvent {
+  private final MetricsReport report;
+  private final long timestamp;
+  private final String catalog;
+  private final String database;
+  private final String table;
+  private final boolean external;
+
+  public IcebergReportEvent(
+      String catalog, String database, String table, boolean external, MetricsReport report) {
+    this.report = report;
+    this.timestamp = System.currentTimeMillis();
+    this.catalog = catalog;
+    this.database = database;
+    this.table = table;
+    this.external = external;
+  }
+
+  @Override
+  public EventType type() {
+    return EventType.ICEBERG_REPORT;
+  }
+
+  @Override
+  public long eventTime() {
+    return timestamp;
+  }
+
+  @Override
+  public String catalog() {
+    return catalog;
+  }
+
+  @Override
+  public String database() {
+    return database;
+  }
+
+  @Override
+  public String table() {
+    return table;
+  }
+
+  @Override
+  public boolean external() {
+    return external;
+  }
+
+  /**
+   * Get iceberg metric report content
+   *
+   * @return Iceberg metric report content
+   */
+  public MetricsReport getReport() {
+    return report;
+  }
+}

@@ -18,7 +18,14 @@
 
 package com.netease.arctic.ams.api.events;
 
-/** Event types define */
-public enum EventType {
-  ICEBERG_REPORT
+/** An event associated with a table */
+public interface TableEvent extends Event {
+
+  String catalog();
+
+  String database();
+
+  String table();
+
+  boolean external();
 }
