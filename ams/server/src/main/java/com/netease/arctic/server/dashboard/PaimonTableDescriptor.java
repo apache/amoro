@@ -40,12 +40,14 @@ import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
+import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.util.Pair;
 import org.apache.paimon.AbstractFileStore;
+import org.apache.paimon.CoreOptions;
 import org.apache.paimon.Snapshot;
 import org.apache.paimon.data.BinaryRow;
 import org.apache.paimon.io.DataFileMeta;
@@ -347,6 +349,8 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     TableIdentifier tableIdentifier = amoroTable.id();
     FileStoreTable fileStoreTable = (FileStoreTable) amoroTable.originalTable();
     AbstractFileStore<?> store = (AbstractFileStore<?>) fileStoreTable.store();
+    boolean isPrimaryTable = !fileStoreTable.primaryKeys().isEmpty();
+    int maxLevel = CoreOptions.fromMap(fileStoreTable.options()).numLevels() - 1;
     int total;
     try {
       List<Snapshot> compactSnapshots =
@@ -373,17 +377,38 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
                     ManifestFile manifestFile = store.manifestFileFactory().create();
                     ManifestList manifestList = store.manifestListFactory().create();
                     List<ManifestFileMeta> manifestFileMetas = s.deltaManifests(manifestList);
+                    boolean hasMaxLevels = false;
+                    long minCreateTime = Long.MAX_VALUE;
+                    long maxCreateTime = Long.MIN_VALUE;
+                    Set<Integer> buckets = new HashSet<>();
                     for (ManifestFileMeta manifestFileMeta : manifestFileMetas) {
                       List<ManifestEntry> compactManifestEntries =
                           manifestFile.read(manifestFileMeta.fileName());
                       for (ManifestEntry compactManifestEntry : compactManifestEntries) {
+                        if (compactManifestEntry.file().level() == maxLevel) {
+                          hasMaxLevels = true;
+                        }
+                        buckets.add(compactManifestEntry.bucket());
                         if (compactManifestEntry.kind() == FileKind.DELETE) {
                           inputBuilder.addFile(compactManifestEntry.file().fileSize());
                         } else {
+                          minCreateTime = Math.min(minCreateTime,
+                              compactManifestEntry.file().creationTime().getMillisecond());
+                          maxCreateTime = Math.max(maxCreateTime,
+                              compactManifestEntry.file().creationTime().getMillisecond());
                           outputBuilder.addFile(compactManifestEntry.file().fileSize());
                         }
                       }
                     }
+                    if (isPrimaryTable && hasMaxLevels) {
+                      optimizingProcessInfo.setOptimizingType(OptimizingType.FULL);
+                    } else {
+                      optimizingProcessInfo.setOptimizingType(OptimizingType.MINOR);
+                    }
+                    optimizingProcessInfo.setSuccessTasks(buckets.size());
+                    optimizingProcessInfo.setTotalTasks(buckets.size());
+                    optimizingProcessInfo.setStartTime(minCreateTime);
+                    optimizingProcessInfo.setDuration(s.timeMillis() - minCreateTime);
                     optimizingProcessInfo.setInputFiles(inputBuilder.build());
                     optimizingProcessInfo.setOutputFiles(outputBuilder.build());
                     optimizingProcessInfo.setSummary(Collections.emptyMap());
