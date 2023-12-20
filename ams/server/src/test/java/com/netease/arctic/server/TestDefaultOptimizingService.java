@@ -20,11 +20,7 @@ package com.netease.arctic.server;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.OptimizerRegisterInfo;
-import com.netease.arctic.ams.api.OptimizingTask;
-import com.netease.arctic.ams.api.OptimizingTaskId;
-import com.netease.arctic.ams.api.OptimizingTaskResult;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.*;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.io.MixedDataTestHelpers;
@@ -45,7 +41,7 @@ import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,8 +49,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @RunWith(Parameterized.class)
 public class TestDefaultOptimizingService extends AMSTableTestBase {
@@ -340,6 +335,9 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
   private OptimizerRegisterInfo buildRegisterInfo() {
     OptimizerRegisterInfo registerInfo = new OptimizerRegisterInfo();
+    Map<String, String> registerProperties = Maps.newHashMap();
+    registerProperties.put(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL, "1000");
+    registerInfo.setProperties(registerProperties);
     registerInfo.setThreadCount(1);
     registerInfo.setMemoryMb(1024);
     registerInfo.setGroupName(defaultResourceGroup().getName());
