@@ -27,7 +27,7 @@ import java.util.Map;
 
 public class LoggingEventListener implements EventListener {
 
-  public static final String NAME = "log_event_emitter";
+  public static final String NAME = "logging-listener";
 
   private static final String METRIC_LOGGER = "amoro.event";
   private static final Logger LOG = LoggerFactory.getLogger(METRIC_LOGGER);
@@ -50,9 +50,6 @@ public class LoggingEventListener implements EventListener {
   @Override
   public void handleEvent(Event event) {
     LOG.info(
-        "Received event: {} timestamp: {} content: {}",
-        event.type(),
-        event.eventTime(),
-        event.toString());
+        "Received event: {} timestamp: {} content: {}", event.type(), event.eventTime(), event);
   }
 }
