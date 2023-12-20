@@ -43,6 +43,9 @@ public class OptimizingConfig {
   // self-optimizing.fragment-ratio
   private int fragmentRatio;
 
+  // self-optimizing.min-target-size-ratio
+  private double minTargetSizeRatio;
+
   // self-optimizing.minor.trigger.file-count
   private int minorLeastFileCount;
 
@@ -157,6 +160,10 @@ public class OptimizingConfig {
     return fragmentRatio;
   }
 
+  public double getMinTargetSizeRatio() {
+    return minTargetSizeRatio;
+  }
+
   public long maxFragmentSize() {
     return targetSize / fragmentRatio;
   }
@@ -167,6 +174,11 @@ public class OptimizingConfig {
 
   public OptimizingConfig setFragmentRatio(int fragmentRatio) {
     this.fragmentRatio = fragmentRatio;
+    return this;
+  }
+
+  public OptimizingConfig setMinTargetSizeRatio(double minTargetSizeRatio) {
+    this.minTargetSizeRatio = minTargetSizeRatio;
     return this;
   }
 
@@ -256,6 +268,7 @@ public class OptimizingConfig {
         && maxFileCount == that.maxFileCount
         && openFileCost == that.openFileCost
         && fragmentRatio == that.fragmentRatio
+        && Double.compare(minTargetSizeRatio, that.minTargetSizeRatio) == 0
         && minorLeastFileCount == that.minorLeastFileCount
         && minorLeastInterval == that.minorLeastInterval
         && Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0
@@ -280,6 +293,7 @@ public class OptimizingConfig {
         maxFileCount,
         openFileCost,
         fragmentRatio,
+        minTargetSizeRatio,
         minorLeastFileCount,
         minorLeastInterval,
         majorDuplicateRatio,
@@ -336,6 +350,11 @@ public class OptimizingConfig {
                 properties,
                 TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
                 TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT))
+        .setMinTargetSizeRatio(
+            CompatiblePropertyUtil.propertyAsDouble(
+                properties,
+                TableProperties.SELF_OPTIMIZING_MIN_TARGET_SIZE_RATIO,
+                TableProperties.SELF_OPTIMIZING_MIN_TARGET_SIZE_RATIO_DEFAULT))
         .setMaxFileCount(
             CompatiblePropertyUtil.propertyAsInt(
                 properties,

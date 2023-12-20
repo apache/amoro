@@ -16,8 +16,8 @@
 # limitations under the License.
 #
 
-com.netease.arctic.flink.catalog.factories.MixedIcebergCatalogFactory
-com.netease.arctic.flink.catalog.factories.MixedHiveCatalogFactory
-com.netease.arctic.flink.catalog.factories.ArcticCatalogFactory
-com.netease.arctic.flink.catalog.factories.FlinkCatalogFactory
+com.netease.arctic.flink.catalog.factories.mixed.MixedIcebergCatalogFactory
+com.netease.arctic.flink.catalog.factories.mixed.MixedHiveCatalogFactory
+com.netease.arctic.flink.catalog.factories.mixed.MixedCatalogFactory
+com.netease.arctic.flink.catalog.factories.FlinkUnifiedCatalogFactory
 com.netease.arctic.flink.table.DynamicTableFactory
