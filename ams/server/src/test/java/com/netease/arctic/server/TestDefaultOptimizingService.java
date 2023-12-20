@@ -38,6 +38,7 @@ import com.netease.arctic.server.table.executor.TableRuntimeRefreshExecutor;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.SerializationUtil;
+import java.util.*;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
@@ -48,8 +49,6 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.util.*;
 
 @RunWith(Parameterized.class)
 public class TestDefaultOptimizingService extends AMSTableTestBase {
@@ -336,7 +335,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   private OptimizerRegisterInfo buildRegisterInfo() {
     OptimizerRegisterInfo registerInfo = new OptimizerRegisterInfo();
     Map<String, String> registerProperties = Maps.newHashMap();
-    registerProperties.put(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL, "1000");
+    registerProperties.put(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL, "100");
     registerInfo.setProperties(registerProperties);
     registerInfo.setThreadCount(1);
     registerInfo.setMemoryMb(1024);
