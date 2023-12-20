@@ -26,18 +26,14 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-/**
- * This class is used to trigger various events in the process and notify event emitter plugins.
- */
+/** This class is used to trigger various events in the process and notify event emitter plugins. */
 public class EventsManager extends BasePluginManager<EventListener> {
 
   private static final Logger LOG = LoggerFactory.getLogger(EventsManager.class);
   public static final String PLUGIN_TYPE = "events";
   private static volatile EventsManager INSTANCE;
 
-  /**
-   * @return Get the singleton object.
-   */
+  /** @return Get the singleton object. */
   public static EventsManager getInstance() {
     if (INSTANCE == null) {
       synchronized (EventsManager.class) {

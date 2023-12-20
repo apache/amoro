@@ -25,17 +25,13 @@ import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTest
 
 import java.util.List;
 
-/**
- * Metric plugins manager and registry
- */
+/** Metric plugins manager and registry */
 public class MetricManager extends BasePluginManager<MetricReporter> {
 
   public static final String PLUGIN_CONFIG_KEY = "metric-reporters";
   private static volatile MetricManager INSTANCE;
 
-  /**
-   * @return Get the singleton object.
-   */
+  /** @return Get the singleton object. */
   public static MetricManager getInstance() {
     if (INSTANCE == null) {
       synchronized (MetricManager.class) {
