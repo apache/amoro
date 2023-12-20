@@ -22,12 +22,7 @@ ams:
 ```
 
 ## Kerberos Authentication
-If you need to authenticate the connection to Kyuubi using Kerberos information from the catalog, you need to add the 
-configuration `kerberosAuthType=fromSubject` to the Kyuubi JDBC URL, for example:
-```
-jdbc:kyuubi://host:port/schema;kyuubiServerPrincipal=<serverPrincipal>;kerberosAuthType=fromSubject
-```
-Other Kerberos authentication configurations can be found in the official Kyuubi documentation (https://kyuubi.readthedocs.io/en/master/client/jdbc/kyuubi_jdbc.html?highlight=Kerberos#kerberos-authentication).
+Amoro terminal uses the Kerberos authentication information from the catalog to connect to Kyuubi. When configuring the Kyuubi JDBC URL, you only need to configure the connection information and do not need to configure Kerberos authentication information (e.g. principal).
 
 Without configuring Kyuubi, Terminal executes in memory in AMS.
 
