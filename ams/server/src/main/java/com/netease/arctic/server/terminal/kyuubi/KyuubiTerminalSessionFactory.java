@@ -114,7 +114,7 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     List<String> logs = Lists.newArrayList();
     JdbcConnectionParams connectionParams = new JdbcConnectionParams(this.params);
     if (metaStore.isKerberosAuthMethod()) {
-      fillAnsCheckKerberosInfo(connectionParams, metaStore);
+      checkAndFillKerberosInfo(connectionParams, metaStore);
     }
 
     Map<String, String> sparkConf = SparkContextUtil.getSparkConf(configuration);
@@ -167,11 +167,15 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     LOG.info(message);
   }
 
-  private void fillAnsCheckKerberosInfo(JdbcConnectionParams connectionParams, TableMetaStore metaStore) {
+  private void checkAndFillKerberosInfo(
+      JdbcConnectionParams connectionParams, TableMetaStore metaStore) {
     if (connectionParams.getSessionVars().containsKey(AUTH_PRINCIPAL)) {
-      throw new RuntimeException("jdbc url should not contain principal when kyuubi kerberos enable");
+      throw new RuntimeException(
+          "jdbc url should not contain principal when kyuubi kerberos enable");
     }
-    connectionParams.getSessionVars().put(AUTH_KERBEROS_AUTH_TYPE, AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT);
+    connectionParams
+        .getSessionVars()
+        .put(AUTH_KERBEROS_AUTH_TYPE, AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT);
     connectionParams.getSessionVars().put(AUTH_PRINCIPAL, metaStore.getKrbPrincipal());
   }
 }
