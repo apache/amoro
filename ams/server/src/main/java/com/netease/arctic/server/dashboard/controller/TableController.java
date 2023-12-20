@@ -650,12 +650,16 @@ public class TableController {
             TableIdentifier.of(catalog, db, table).buildTableIdentifier());
     TableRuntime tableRuntime =
         serverTableIdentifier != null ? tableService.getRuntime(serverTableIdentifier) : null;
-    if (tableRuntime != null
-        && tableRuntime.getOptimizingProcess() != null
-        && Objects.equals(
-            tableRuntime.getOptimizingProcess().getProcessId(), Long.parseLong(processId))) {
-      tableRuntime.getOptimizingProcess().close();
-    }
+
+    Preconditions.checkArgument(
+        tableRuntime != null
+            && tableRuntime.getOptimizingProcess() != null
+            && Objects.equals(
+                tableRuntime.getOptimizingProcess().getProcessId(), Long.parseLong(processId)),
+        "Can't cancel optimizing process %s",
+        processId);
+
+    tableRuntime.getOptimizingProcess().close();
     ctx.json(OkResponse.ok());
   }
 
