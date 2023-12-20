@@ -102,4 +102,4 @@ ams/dashboard
   - [src/App.vue](ams/dashboard/src/main.tsx): The entrance of this project.
 - [vite.config.ts](/ams/dashboard/vite.config.ts): The configuration file of vue3.
 - [package.json](ams/dashboard/package.json): The project build files and package management, it defines the scripts/tasks and the dependent packages for this project.
-- [yarn.lock](ams/dashboard/yarn.lock): The package management yarn lock file.
+- [pnpm-lock.yaml](ams/dashboard/pnpm-lock.yaml): The package management pnpm lock file.
