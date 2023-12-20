@@ -23,12 +23,12 @@ import com.netease.arctic.ams.api.metrics.MetricReporter;
 import com.netease.arctic.server.metrics.MetricRegistry;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
-import java.util.List;
+import java.io.IOException;
 
 /** Metric plugins manager and registry */
-public class MetricManager extends BasePluginManager<MetricReporter> {
+public class MetricManager extends AbstractPluginManager<MetricReporter> {
 
-  public static final String PLUGIN_CONFIG_KEY = "metric-reporters";
+  public static final String PLUGIN_CATEGORY = "metric-reporters";
   private static volatile MetricManager INSTANCE;
 
   /** @return Get the singleton object. */
@@ -36,21 +36,16 @@ public class MetricManager extends BasePluginManager<MetricReporter> {
     if (INSTANCE == null) {
       synchronized (MetricManager.class) {
         if (INSTANCE == null) {
-          throw new IllegalStateException("MetricManager is not initialized");
+          INSTANCE = new MetricManager();
+          try {
+            INSTANCE.initialize();
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
         }
       }
     }
     return INSTANCE;
-  }
-
-  public static void initialize(List<PluginConfiguration> pluginConfigurations) {
-    synchronized (MetricManager.class) {
-      if (INSTANCE != null) {
-        throw new IllegalStateException("MetricManger has been already initialized.");
-      }
-      INSTANCE = new MetricManager(pluginConfigurations);
-      INSTANCE.initialize();
-    }
   }
 
   @VisibleForTesting
@@ -63,8 +58,8 @@ public class MetricManager extends BasePluginManager<MetricReporter> {
     }
   }
 
-  protected MetricManager(List<PluginConfiguration> pluginConfigurations) {
-    super(pluginConfigurations);
+  protected MetricManager() {
+    super(PLUGIN_CATEGORY);
   }
 
   private final MetricRegistry globalRegistry = new MetricRegistry();
@@ -74,12 +69,7 @@ public class MetricManager extends BasePluginManager<MetricReporter> {
   }
 
   @Override
-  protected String pluginCategory() {
-    return PLUGIN_CONFIG_KEY;
-  }
-
-  @Override
-  public void initialize() {
+  public void initialize() throws IOException {
     super.initialize();
     callPlugins(
         l -> {

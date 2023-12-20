@@ -18,15 +18,22 @@
 
 package com.netease.arctic.server.manager;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.ActivePlugin;
 import com.netease.arctic.server.Environments;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.LoadingPluginException;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -36,11 +43,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.ServiceLoader;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -55,25 +58,24 @@ import java.util.function.Consumer;
  *
  * @param <T> The plugin types.
  */
-public abstract class BasePluginManager<T extends ActivePlugin> {
-  private static final Logger LOG = LoggerFactory.getLogger(BasePluginManager.class);
+public abstract class AbstractPluginManager<T extends ActivePlugin> {
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractPluginManager.class);
+  private static final String PLUGIN_CONFIG_DIR_NAME = "plugins";
 
   private final Map<String, T> installedPlugins = new ConcurrentHashMap<>();
   private final Map<String, T> foundedPlugins = new ConcurrentHashMap<>();
-
-  private final List<PluginConfiguration> pluginConfigurations;
-
+  private final String pluginCategory;
   private final Class<T> pluginType;
 
   private final Executor pluginExecutorPool;
 
   @SuppressWarnings("unchecked")
-  public BasePluginManager(List<PluginConfiguration> pluginConfigurations) {
+  public AbstractPluginManager(String pluginCategory) {
+    this.pluginCategory = pluginCategory;
     Type superclass = this.getClass().getGenericSuperclass();
     Preconditions.checkArgument(
         superclass instanceof ParameterizedType, "%s isn't parameterized", superclass);
     pluginType = (Class<T>) ((ParameterizedType) superclass).getActualTypeArguments()[0];
-    this.pluginConfigurations = pluginConfigurations;
 
     // single thread pool, and min thread size is 1.
     this.pluginExecutorPool =
@@ -92,9 +94,10 @@ public abstract class BasePluginManager<T extends ActivePlugin> {
   }
 
   /** Initialize the plugin manager, and install all plugins. */
-  public void initialize() {
+  public void initialize() throws IOException {
+    Map<String, PluginConfiguration> pluginConfigs = loadPluginConfigurations();
     foundAvailablePlugins();
-    for (PluginConfiguration pluginConfig : pluginConfigurations) {
+    for (PluginConfiguration pluginConfig : pluginConfigs.values()) {
       if (!pluginConfig.isEnabled()) {
         continue;
       }
@@ -132,7 +135,9 @@ public abstract class BasePluginManager<T extends ActivePlugin> {
    *
    * @return Category name of plugins.
    */
-  protected abstract String pluginCategory();
+  protected String pluginCategory() {
+    return pluginCategory;
+  }
 
   /**
    * Jars path for this plugin manager.
@@ -141,6 +146,16 @@ public abstract class BasePluginManager<T extends ActivePlugin> {
    */
   protected String pluginPath() {
     return Environments.getPluginPath() + "/" + pluginCategory();
+  }
+
+  /**
+   * Get plugin manger config file path
+   *
+   * @return path of plugin manger config path
+   */
+  protected Path pluginManagerConfigFilePath() {
+    return Paths.get(
+        Environments.getConfigPath(), PLUGIN_CONFIG_DIR_NAME, pluginCategory() + ".yaml");
   }
 
   /**
@@ -218,6 +233,33 @@ public abstract class BasePluginManager<T extends ActivePlugin> {
       ServiceLoader<T> loader = ServiceLoader.load(pluginType, pluginClassLoader);
       addToFoundedPlugin(loader);
     }
+  }
+
+  @VisibleForTesting
+  protected Map<String, PluginConfiguration> loadPluginConfigurations() throws IOException {
+    JSONObject yamlConfig = null;
+    Path mangerConfigPath = pluginManagerConfigFilePath();
+    try {
+      yamlConfig =
+          new JSONObject(new Yaml().loadAs(Files.newInputStream(mangerConfigPath), Map.class));
+    } catch (FileNotFoundException e) {
+      LOG.warn("Plugin manger config path is not founded");
+      return ImmutableMap.of();
+    }
+
+    LOG.info("initializing plugin configuration for: " + pluginCategory());
+    String pluginListKey = pluginCategory();
+
+    JSONArray pluginConfigList = yamlConfig.getJSONArray(pluginListKey);
+    Map<String, PluginConfiguration> configs = Maps.newLinkedHashMap();
+    if (pluginConfigList != null && !pluginConfigList.isEmpty()) {
+      for (int i = 0; i < pluginConfigList.size(); i++) {
+        JSONObject pluginConfiguration = pluginConfigList.getJSONObject(i);
+        PluginConfiguration configuration = PluginConfiguration.fromJSONObject(pluginConfiguration);
+        configs.put(configuration.getName(), configuration);
+      }
+    }
+    return configs;
   }
 
   private URL fileToURL(File file) {

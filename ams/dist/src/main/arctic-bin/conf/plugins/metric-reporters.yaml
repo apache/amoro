@@ -1,0 +1,6 @@
+# This file is config file for plugin metric reporter
+# configurations of metric reporters
+
+#metric-reporters:
+#  - name: prometheus-exporter
+#    enabled: false

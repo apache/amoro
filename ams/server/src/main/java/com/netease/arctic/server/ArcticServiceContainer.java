@@ -33,7 +33,6 @@ import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.manager.EventsManager;
 import com.netease.arctic.server.manager.MetricManager;
-import com.netease.arctic.server.manager.PluginConfiguration;
 import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.OptimizerManager;
@@ -52,7 +51,6 @@ import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.SystemProperties;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -97,8 +95,6 @@ public class ArcticServiceContainer {
   private TServer tableManagementServer;
   private TServer optimizingServiceServer;
   private Javalin httpServer;
-  private List<PluginConfiguration> metricPluginConfigs = Lists.newArrayList();
-  private List<PluginConfiguration> eventPluginConfigs = Lists.newArrayList();
 
   public ArcticServiceContainer() throws Exception {
     initConfig();
@@ -134,8 +130,8 @@ public class ArcticServiceContainer {
   }
 
   public void startService() throws Exception {
-    EventsManager.initialize(eventPluginConfigs);
-    MetricManager.initialize(metricPluginConfigs);
+    EventsManager.getInstance();
+    MetricManager.getInstance();
 
     tableService = new DefaultTableService(serviceConfig);
     optimizingService = new DefaultOptimizingService(serviceConfig, tableService);
@@ -385,7 +381,6 @@ public class ArcticServiceContainer {
       initServiceConfig(envConfig);
       setIcebergSystemProperties();
       initContainerConfig();
-      initPluginConfig();
     }
 
     @SuppressWarnings("unchecked")
@@ -523,27 +518,6 @@ public class ArcticServiceContainer {
         }
       }
       ResourceContainers.init(containerList);
-    }
-
-    private void initPluginConfig() {
-      LOG.info("initializing plugins configuration...");
-      eventPluginConfigs = initPluginConfig(ArcticManagementConf.EVENT_LISTENERS);
-      metricPluginConfigs = initPluginConfig(ArcticManagementConf.METRIC_REPORTERS);
-    }
-
-    private List<PluginConfiguration> initPluginConfig(String key) {
-      LOG.info("initializing plugin configuration for: " + key);
-      JSONArray pluginConfigList = yamlConfig.getJSONArray(key);
-      List<PluginConfiguration> configs = Lists.newArrayList();
-      if (pluginConfigList != null && !pluginConfigList.isEmpty()) {
-        for (int i = 0; i < pluginConfigList.size(); i++) {
-          JSONObject pluginConfiguration = pluginConfigList.getJSONObject(i);
-          PluginConfiguration configuration =
-              PluginConfiguration.fromJSONObject(pluginConfiguration);
-          configs.add(configuration);
-        }
-      }
-      return configs;
     }
   }
 

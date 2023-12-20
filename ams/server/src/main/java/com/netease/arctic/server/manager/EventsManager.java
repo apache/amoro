@@ -21,16 +21,13 @@ package com.netease.arctic.server.manager;
 import com.netease.arctic.ams.api.events.Event;
 import com.netease.arctic.ams.api.events.EventListener;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.io.IOException;
 
 /** This class is used to trigger various events in the process and notify event emitter plugins. */
-public class EventsManager extends BasePluginManager<EventListener> {
+public class EventsManager extends AbstractPluginManager<EventListener> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(EventsManager.class);
-  public static final String PLUGIN_TYPE = "events";
+  public static final String PLUGIN_TYPE = "event-listeners";
   private static volatile EventsManager INSTANCE;
 
   /** @return Get the singleton object. */
@@ -38,21 +35,16 @@ public class EventsManager extends BasePluginManager<EventListener> {
     if (INSTANCE == null) {
       synchronized (EventsManager.class) {
         if (INSTANCE == null) {
-          throw new IllegalStateException("MetricManager is not initialized");
+          try {
+            INSTANCE = new EventsManager();
+            INSTANCE.initialize();
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
         }
       }
     }
     return INSTANCE;
-  }
-
-  public static void initialize(List<PluginConfiguration> pluginConfigurations) {
-    synchronized (EventsManager.class) {
-      if (INSTANCE != null) {
-        throw new IllegalStateException("MetricManger has been already initialized.");
-      }
-      INSTANCE = new EventsManager(pluginConfigurations);
-      INSTANCE.initialize();
-    }
   }
 
   @VisibleForTesting
@@ -65,8 +57,8 @@ public class EventsManager extends BasePluginManager<EventListener> {
     }
   }
 
-  public EventsManager(List<PluginConfiguration> pluginConfigurations) {
-    super(pluginConfigurations);
+  public EventsManager() {
+    super(PLUGIN_TYPE);
   }
 
   @Override

@@ -1,2 +1,2 @@
-com.netease.arctic.server.manager.TestBasePluginManager$TestPluginImplA
-com.netease.arctic.server.manager.TestBasePluginManager$TestPluginImplB
+com.netease.arctic.server.manager.TestAbstractPluginManager$TestPluginImplA
+com.netease.arctic.server.manager.TestAbstractPluginManager$TestPluginImplB

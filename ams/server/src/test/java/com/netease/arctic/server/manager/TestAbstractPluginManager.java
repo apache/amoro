@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.manager;
 
+import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.ams.api.ActivePlugin;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.LoadingPluginException;
@@ -29,12 +30,15 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TestBasePluginManager {
+public class TestAbstractPluginManager {
 
   public interface TestPlugin extends ActivePlugin {
     @Override
@@ -69,14 +73,22 @@ public class TestBasePluginManager {
     }
   }
 
-  static class TestPluginManager extends BasePluginManager<TestPlugin> {
-    public TestPluginManager(List<PluginConfiguration> pluginConfigurations) {
-      super(pluginConfigurations);
+  static class TestPluginManager extends AbstractPluginManager<TestPlugin> {
+
+    List<PluginConfiguration> configs = Lists.newArrayList();
+
+    public TestPluginManager() {
+      super("test-plugins");
+    }
+
+    public void setConfigs(List<PluginConfiguration> configs) {
+      this.configs = configs;
     }
 
     @Override
-    protected String pluginCategory() {
-      return "test-plugins";
+    protected Map<String, PluginConfiguration> loadPluginConfigurations() {
+      return configs.stream()
+          .collect(Collectors.toMap(PluginConfiguration::getName, Function.identity()));
     }
 
     public int activePlugins() {
@@ -107,8 +119,10 @@ public class TestBasePluginManager {
 
   @ParameterizedTest
   @MethodSource
-  public void testInstall(List<PluginConfiguration> configs, int expectActivePlugins) {
-    TestPluginManager manager = new TestPluginManager(configs);
+  public void testInstall(List<PluginConfiguration> configs, int expectActivePlugins)
+      throws IOException {
+    TestPluginManager manager = new TestPluginManager();
+    manager.setConfigs(configs);
     manager.initialize();
 
     Assertions.assertEquals(expectActivePlugins, manager.activePlugins());
@@ -124,7 +138,8 @@ public class TestBasePluginManager {
             new PluginConfiguration("test-A", true, Maps.newHashMap()),
             new PluginConfiguration("test-B", true, Maps.newHashMap()),
             new PluginConfiguration("test-C", true, Maps.newHashMap()));
-    TestPluginManager manager = new TestPluginManager(configs);
+    TestPluginManager manager = new TestPluginManager();
+    manager.setConfigs(configs);
 
     Assertions.assertThrows(LoadingPluginException.class, manager::initialize);
   }
@@ -136,7 +151,8 @@ public class TestBasePluginManager {
             new PluginConfiguration("test-A", true, Maps.newHashMap()),
             new PluginConfiguration("test-B", true, Maps.newHashMap()),
             new PluginConfiguration("test-B", true, Maps.newHashMap()));
-    TestPluginManager manager = new TestPluginManager(configs);
+    TestPluginManager manager = new TestPluginManager();
+    manager.setConfigs(configs);
 
     Assertions.assertThrows(AlreadyExistsException.class, manager::initialize);
   }
