@@ -32,7 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-class TestFlinkCatalogs {
+class TestFlinkUnifiedCatalogs {
   static FlinkCatalogContext flinkCatalogContext = new FlinkCatalogContext();
 
   @BeforeAll
@@ -80,8 +80,8 @@ class TestFlinkCatalogs {
       flinkUnifiedCatalog.alterDatabase(
           "default", new CatalogDatabaseImpl(Collections.emptyMap(), "default"), false);
     } catch (UnsupportedOperationException e) {
-      // Mixed-format catalog does not support altering database.
-      if (tableFormat != TableFormat.MIXED_HIVE && tableFormat != TableFormat.MIXED_ICEBERG) {
+      // Mixed-format and Iceebrg catalog does not support altering database.
+      if (!tableFormat.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG)) {
         throw e;
       }
     }
@@ -134,7 +134,9 @@ class TestFlinkCatalogs {
         flinkUnifiedCatalog.alterTable(flinkCatalogContext.objectPath, newTable, false);
       } catch (UnsupportedOperationException e) {
         // https://github.com/NetEase/amoro/issues/2 altering Mixed format table is not supported.
-        if (tableFormat != TableFormat.MIXED_HIVE && tableFormat != TableFormat.MIXED_ICEBERG) {
+        // Altering Iceberg schema is also not supported yet.
+        if (!tableFormat.in(
+            TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE, TableFormat.ICEBERG)) {
           throw e;
         }
       }
