@@ -55,6 +55,8 @@ public abstract class TableServiceTestBase {
   @AfterClass
   public static void disposeTableService() {
     TABLE_SERVICE.dispose();
+    MetricManager.dispose();
+    EventsManager.uninstall();
   }
 
   protected DefaultTableService tableService() {

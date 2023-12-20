@@ -20,19 +20,24 @@ package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.events.Event;
 import com.netease.arctic.ams.api.events.EventListener;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-/** This class is used to trigger various events in the process and notify event emitter plugins. */
+/**
+ * This class is used to trigger various events in the process and notify event emitter plugins.
+ */
 public class EventsManager extends BasePluginManager<EventListener> {
 
   private static final Logger LOG = LoggerFactory.getLogger(EventsManager.class);
   public static final String PLUGIN_TYPE = "events";
   private static volatile EventsManager INSTANCE;
 
-  /** @return Get the singleton object. */
+  /**
+   * @return Get the singleton object.
+   */
   public static EventsManager getInstance() {
     if (INSTANCE == null) {
       synchronized (EventsManager.class) {
@@ -45,12 +50,22 @@ public class EventsManager extends BasePluginManager<EventListener> {
   }
 
   public static void initialize(List<PluginConfiguration> pluginConfigurations) {
-    synchronized (MetricManager.class) {
+    synchronized (EventsManager.class) {
       if (INSTANCE != null) {
         throw new IllegalStateException("MetricManger has been already initialized.");
       }
       INSTANCE = new EventsManager(pluginConfigurations);
       INSTANCE.initialize();
+    }
+  }
+
+  @VisibleForTesting
+  public static void uninstall() {
+    synchronized (EventsManager.class) {
+      if (INSTANCE != null) {
+        INSTANCE.close();
+      }
+      INSTANCE = null;
     }
   }
 
