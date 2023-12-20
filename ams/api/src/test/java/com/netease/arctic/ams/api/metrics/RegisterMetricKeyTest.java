@@ -34,8 +34,7 @@ public class RegisterMetricKeyTest {
 
   @ParameterizedTest
   @MethodSource("provideRegisteredMetricKeysForEquality")
-  void testEqualsAndHashCode(
-      RegisteredMetricKey key1, RegisteredMetricKey key2, boolean expectedEquality) {
+  void testEqualsAndHashCode(MetricKey key1, MetricKey key2, boolean expectedEquality) {
     if (expectedEquality) {
       assertEquals(key1, key2, "RegisteredMetricKeys should be equal");
       assertEquals(
@@ -67,17 +66,10 @@ public class RegisterMetricKeyTest {
 
     return Stream.of(
         // Same MetricDefine and tag values in different order
-        Arguments.of(
-            new RegisteredMetricKey(define1, tags1), new RegisteredMetricKey(define2, tags2), true),
+        Arguments.of(new MetricKey(define1, tags1), new MetricKey(define2, tags2), true),
         // Different MetricDefine
-        Arguments.of(
-            new RegisteredMetricKey(define1, tags1),
-            new RegisteredMetricKey(define3, tags1),
-            false),
+        Arguments.of(new MetricKey(define1, tags1), new MetricKey(define3, tags1), false),
         // Same MetricDefine, different tag values
-        Arguments.of(
-            new RegisteredMetricKey(define1, tags1),
-            new RegisteredMetricKey(define2, tags3),
-            false));
+        Arguments.of(new MetricKey(define1, tags1), new MetricKey(define2, tags3), false));
   }
 }

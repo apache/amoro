@@ -28,5 +28,5 @@ public interface MetricSet {
    *
    * @return all metrics
    */
-  Map<RegisteredMetricKey, Metric> getMetrics();
+  Map<MetricKey, Metric> getMetrics();
 }

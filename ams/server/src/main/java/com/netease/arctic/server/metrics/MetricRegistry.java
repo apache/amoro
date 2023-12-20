@@ -18,14 +18,8 @@
 
 package com.netease.arctic.server.metrics;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.netease.arctic.ams.api.metrics.Metric;
-import com.netease.arctic.ams.api.metrics.MetricDefine;
-import com.netease.arctic.ams.api.metrics.MetricRegisterListener;
-import com.netease.arctic.ams.api.metrics.MetricSet;
-import com.netease.arctic.ams.api.metrics.MetricType;
-import com.netease.arctic.ams.api.metrics.RegisteredMetricKey;
+import com.netease.arctic.ams.api.metrics.*;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.Collections;
@@ -40,8 +34,7 @@ public class MetricRegistry implements MetricSet {
 
   private final List<MetricRegisterListener> listeners = new CopyOnWriteArrayList<>();
 
-  private final ConcurrentMap<RegisteredMetricKey, Metric> registeredMetrics =
-      Maps.newConcurrentMap();
+  private final ConcurrentMap<MetricKey, Metric> registeredMetrics = Maps.newConcurrentMap();
   private final Map<String, MetricDefine> definedMetric = Maps.newConcurrentMap();
 
   /**
@@ -54,30 +47,6 @@ public class MetricRegistry implements MetricSet {
   }
 
   /**
-   * Define a new metric. A metric name could only be defined once.
-   *
-   * @param name metric name
-   * @param type metric type
-   * @param description metric descriptions
-   * @param tags support tags
-   * @return metric define.
-   * @throws IllegalArgumentException if a metric define with same name exists and not equal to this
-   *     one.
-   */
-  public MetricDefine defineMetric(
-      String name, MetricType type, String description, String... tags) {
-    MetricDefine define = new MetricDefine(name, Lists.newArrayList(tags), type, description);
-
-    MetricDefine exists = definedMetric.computeIfAbsent(name, n -> define);
-    Preconditions.checkArgument(
-        exists.equals(define),
-        "The metric define with name: %s has been already exists, but the define is different.",
-        name,
-        exists);
-    return define;
-  }
-
-  /**
    * Register a metric
    *
    * @param define metric define
@@ -86,13 +55,21 @@ public class MetricRegistry implements MetricSet {
    */
   public <T extends Metric> void register(MetricDefine define, List<String> tags, T metric) {
     Preconditions.checkNotNull(metric, "Metric must not be null");
+    Preconditions.checkNotNull(define, "Metric define must not be null");
     Preconditions.checkArgument(
         define.getType().isType(metric),
-        "Metric type miss-match, required：%s, but found:%s ",
+        "Metric type miss-match, required：%s, but found implement:%s ",
         define.getType(),
         metric.getClass().getName());
 
-    RegisteredMetricKey key = RegisteredMetricKey.buildRegisteredMetricKey(define, tags);
+    MetricDefine exists = definedMetric.computeIfAbsent(define.getName(), n -> define);
+    Preconditions.checkArgument(
+        exists.equals(define),
+        "The metric define with name: %s has been already exists, but the define is different.",
+        define.getName(),
+        exists);
+
+    MetricKey key = MetricKey.buildRegisteredMetricKey(define, tags);
 
     definedMetric.computeIfPresent(
         define.getName(),
@@ -115,7 +92,7 @@ public class MetricRegistry implements MetricSet {
    *
    * @param key registered metric key
    */
-  public void unregister(RegisteredMetricKey key) {
+  public void unregister(MetricKey key) {
     Metric exists = registeredMetrics.remove(key);
     if (exists != null) {
       callListener(l -> l.onMetricUnregistered(key));
@@ -132,7 +109,7 @@ public class MetricRegistry implements MetricSet {
   }
 
   @Override
-  public Map<RegisteredMetricKey, Metric> getMetrics() {
+  public Map<MetricKey, Metric> getMetrics() {
     return Collections.unmodifiableMap(registeredMetrics);
   }
 

@@ -30,14 +30,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /** MapKey define of registered metric */
-public class RegisteredMetricKey {
+public class MetricKey {
 
   private final MetricDefine define;
   private final Map<String, String> valueOfTags;
-  private final String explicitTagValues;
 
-  public static RegisteredMetricKey buildRegisteredMetricKey(
-      MetricDefine define, List<String> tags) {
+  public static MetricKey buildRegisteredMetricKey(MetricDefine define, List<String> tags) {
     Preconditions.checkNotNull(define);
     Preconditions.checkNotNull(tags, "Tags cannot be null");
     Preconditions.checkArgument(
@@ -48,10 +46,10 @@ public class RegisteredMetricKey {
         IntStream.range(0, define.getTags().size())
             .boxed()
             .collect(Collectors.toMap(define.getTags()::get, tags::get));
-    return new RegisteredMetricKey(define, ImmutableMap.copyOf(tagValues));
+    return new MetricKey(define, ImmutableMap.copyOf(tagValues));
   }
 
-  public RegisteredMetricKey(MetricDefine define, Map<String, String> tagValues) {
+  public MetricKey(MetricDefine define, Map<String, String> tagValues) {
     Preconditions.checkNotNull(define);
     this.valueOfTags = tagValues == null ? ImmutableMap.of() : tagValues;
     if (define.getTags().size() != this.valueOfTags.size()) {
@@ -69,10 +67,6 @@ public class RegisteredMetricKey {
                 Preconditions.checkArgument(
                     this.valueOfTags.containsKey(t), "The value of tag: %s is missed", t));
     this.define = define;
-
-    explicitTagValues =
-        Joiner.on(",")
-            .join(define.getTags().stream().sorted().map(this.valueOfTags::get).iterator());
   }
 
   public MetricDefine getDefine() {
@@ -97,13 +91,13 @@ public class RegisteredMetricKey {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    RegisteredMetricKey that = (RegisteredMetricKey) o;
+    MetricKey that = (MetricKey) o;
     return Objects.equals(this.define, that.define)
-        && Objects.equals(this.explicitTagValues, that.explicitTagValues);
+        && Objects.equals(this.valueOfTags, that.valueOfTags);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(this.define, this.explicitTagValues);
+    return Objects.hash(this.define, this.valueOfTags);
   }
 }
