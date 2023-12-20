@@ -37,7 +37,7 @@ import com.netease.arctic.server.optimizerlegacy.TableFileScanHelper;
 import com.netease.arctic.server.optimizerlegacy.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.process.maintain.IcebergTableMaintainer;
 import com.netease.arctic.server.process.maintain.MixedTableMaintainer;
-import com.netease.arctic.server.table.DataExpirationConfig;
+import com.netease.arctic.ams.api.config.DataExpirationConfig;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.executor.ExecutorTestBase;
 import com.netease.arctic.server.utils.IcebergTableUtil;

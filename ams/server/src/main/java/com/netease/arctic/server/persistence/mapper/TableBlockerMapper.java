@@ -21,7 +21,7 @@ package com.netease.arctic.server.persistence.mapper;
 import com.netease.arctic.server.persistence.converter.List2StringConverter;
 import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
-import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableBlocker;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;

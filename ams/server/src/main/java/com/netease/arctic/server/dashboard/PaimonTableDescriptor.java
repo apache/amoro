@@ -39,6 +39,7 @@ import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
+import com.netease.arctic.ams.api.process.ProcessStatus;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -365,7 +366,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
                     optimizingProcessInfo.setCatalogName(tableIdentifier.getCatalog());
                     optimizingProcessInfo.setDbName(tableIdentifier.getDatabase());
                     optimizingProcessInfo.setTableName(tableIdentifier.getTableName());
-                    optimizingProcessInfo.setStatus(OptimizingProcess.Status.SUCCESS);
+                    optimizingProcessInfo.setStatus(ProcessStatus.SUCCESS);
                     optimizingProcessInfo.setFinishTime(s.timeMillis());
                     FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
                     FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();

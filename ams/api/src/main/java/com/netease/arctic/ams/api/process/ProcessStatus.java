@@ -18,29 +18,12 @@
  *
  */
 
-package com.netease.arctic.server.process;
+package com.netease.arctic.ams.api.process;
 
-import com.netease.arctic.ams.api.Action;
-
-public interface ProcessState {
-
-  long getId();
-
-  String getName();
-
-  long getStartTime();
-
-  Action getAction();
-
-  ProcessStatus getStatus();
-
-  String getSummary();
-
-  String getFailedReason();
-
-  long getQuotaRuntime();
-
-  default double getQuotaValue() {
-    return (double) getQuotaRuntime() / (System.currentTimeMillis() - getStartTime());
-  }
+public enum ProcessStatus {
+  UNKNOWN,
+  RUNNING,
+  SUCCESS,
+  CLOSED,
+  FAILED
 }

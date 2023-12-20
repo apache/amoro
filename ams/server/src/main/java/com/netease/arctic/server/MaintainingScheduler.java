@@ -1,17 +1,17 @@
 package com.netease.arctic.server;
 
 import com.netease.arctic.ams.api.Action;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.ams.api.TableRuntime;
+import com.netease.arctic.ams.api.process.AmoroProcess;
+import com.netease.arctic.ams.api.process.ProcessStatus;
+import com.netease.arctic.ams.api.process.TableState;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
-import com.netease.arctic.server.process.AmoroProcess;
 import com.netease.arctic.server.process.ArbitraryProcess;
-import com.netease.arctic.server.process.ProcessStatus;
 import com.netease.arctic.server.process.TableProcess;
-import com.netease.arctic.server.process.TableState;
 import com.netease.arctic.server.process.TaskRuntime;
-import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class MaintainingScheduler extends AbstractScheduler<TableState> {
+public class MaintainingScheduler extends TaskScheduler<TableState> {
 
   private final Set<Action> targetActions;
   private final Queue<TableMaintenance> tableQueue = new PriorityQueue<>();
@@ -40,15 +40,15 @@ public class MaintainingScheduler extends AbstractScheduler<TableState> {
   }
 
   @Override
-  protected TableProcess<TableState> createProcess(TableRuntime tableRuntime, Action action) {
-    if (tableActionMap.get(tableRuntime.getTableIdentifier()) == action) {
-      tableActionMap.remove(tableRuntime.getTableIdentifier());
-    }
-    return new ArbitraryProcess(maxProcessId.incrementAndGet(), action, tableRuntime, buildTaskRuntime());
+  protected TableProcess<TableState> createProcess(
+      DefaultTableRuntime tableRuntime, Action action) {
+    return new ArbitraryProcess(
+        maxProcessId.incrementAndGet(), action, tableRuntime, buildTaskRuntime());
   }
 
   @Override
-  protected TableProcess<TableState> recoverProcess(TableRuntime tableRuntime, Action action, TableState state) {
+  protected TableProcess<TableState> recoverProcess(
+      DefaultTableRuntime tableRuntime, Action action, TableState state) {
     maxProcessId.set(Math.max(maxProcessId.get(), state.getId()));
     if (state.getStatus() == ProcessStatus.RUNNING) {
       if (tableActionMap.get(tableRuntime.getTableIdentifier()) != action) {
@@ -61,18 +61,21 @@ public class MaintainingScheduler extends AbstractScheduler<TableState> {
   }
 
   @Override
-  public Pair<TableRuntime, Action> scheduleTable() {
+  public Pair<DefaultTableRuntime, Action> scheduleTable() {
     return Optional.ofNullable(tableQueue.poll())
-        .map(maintenance -> Pair.of(
-            maintenance.getTableRuntime(), maintenance.getAction()))
+        .map(maintenance -> Pair.of(maintenance.getTableRuntime(), maintenance.getAction()))
         .orElse(null);
   }
 
   @Override
-  public void refreshTable(TableRuntime tableRuntime) {
+  public void refreshTable(DefaultTableRuntime tableRuntime) {
     schedulerLock.lock();
     try {
-      releaseTable(tableRuntime);
+      if (tableActionMap.containsKey(tableRuntime.getTableIdentifier())
+          && tableProcessQueue.stream()
+              .noneMatch(process -> process.getTableRuntime() == tableRuntime)) {
+        tableActionMap.remove(tableRuntime.getTableIdentifier());
+      }
       TableMaintenance maintenance = tryCreateMaintenance(tableRuntime);
       if (maintenance != null) {
         tableQueue.add(maintenance);
@@ -84,7 +87,7 @@ public class MaintainingScheduler extends AbstractScheduler<TableState> {
   }
 
   @Override
-  public void releaseTable(TableRuntime tableRuntime) {
+  public void releaseTable(DefaultTableRuntime tableRuntime) {
     schedulerLock.lock();
     try {
       if (tableActionMap.remove(tableRuntime.getTableIdentifier()) != null) {
@@ -108,7 +111,7 @@ public class MaintainingScheduler extends AbstractScheduler<TableState> {
   @Override
   public List<TableRuntime> listTables() {
     return Stream.concat(
-        tableQueue.stream().map(TableMaintenance::getTableRuntime),
+            tableQueue.stream().map(TableMaintenance::getTableRuntime),
             tableProcessQueue.stream().map(TableProcess::getTableRuntime))
         .collect(Collectors.toList());
   }
@@ -117,29 +120,27 @@ public class MaintainingScheduler extends AbstractScheduler<TableState> {
     return null;
   }
 
-  private TableMaintenance tryCreateMaintenance(TableRuntime tableRuntime) {
-    Map<Action, Long> minTriggerIntervals = tableRuntime.getTableConfiguration()
-        .getActionMinIntervals(targetActions);
-    Map<Action, Long> nextTriggerTimes = tableRuntime.getLastCompletedTimes(minTriggerIntervals.keySet()).entrySet()
-        .stream()
-        .collect(
-            Collectors.toMap(
-                Map.Entry::getKey,
-                entry -> entry.getValue() + minTriggerIntervals.get(entry.getKey())));
-    return nextTriggerTimes.entrySet()
-        .stream()
+  private TableMaintenance tryCreateMaintenance(DefaultTableRuntime tableRuntime) {
+    Map<Action, Long> minTriggerIntervals =
+        tableRuntime.getTableConfiguration().getActionMinIntervals(targetActions);
+    Map<Action, Long> nextTriggerTimes =
+        tableRuntime.getLastCompletedTimes(minTriggerIntervals.keySet()).entrySet().stream()
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry -> entry.getValue() + minTriggerIntervals.get(entry.getKey())));
+    return nextTriggerTimes.entrySet().stream()
         .min(Map.Entry.comparingByValue())
         .map(entry -> new TableMaintenance(tableRuntime, entry.getKey(), entry.getValue()))
         .orElse(null);
   }
 
-
   private static class TableMaintenance implements Delayed {
-    private final TableRuntime tableRuntime;
+    private final DefaultTableRuntime tableRuntime;
     private final Action action;
     private final long delayActionTime;
 
-    public TableMaintenance(TableRuntime tableRuntime, Action action, long delayActionTime) {
+    public TableMaintenance(DefaultTableRuntime tableRuntime, Action action, long delayActionTime) {
       this.tableRuntime = tableRuntime;
       this.action = action;
       this.delayActionTime = delayActionTime;
@@ -153,7 +154,7 @@ public class MaintainingScheduler extends AbstractScheduler<TableState> {
       return tableRuntime.runAction(action);
     }
 
-    public TableRuntime getTableRuntime() {
+    public DefaultTableRuntime getTableRuntime() {
       return tableRuntime;
     }
 

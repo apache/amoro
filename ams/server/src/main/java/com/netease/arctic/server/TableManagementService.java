@@ -28,7 +28,7 @@ import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.InternalTableUtil;

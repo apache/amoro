@@ -1,11 +1,12 @@
 package com.netease.arctic.server.persistence;
 
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.server.process.ProcessStatus;
+import com.netease.arctic.ams.api.process.ProcessStatus;
 import com.netease.arctic.server.process.optimizing.OptimizingStage;
 import com.netease.arctic.server.process.optimizing.OptimizingType;
-import com.netease.arctic.server.table.TableConfiguration;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.ams.api.process.PendingInput;
+import com.netease.arctic.ams.api.config.TableConfiguration;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 
 public class TableRuntimePersistency {
   private long tableId;
@@ -24,7 +25,7 @@ public class TableRuntimePersistency {
   private long currentStatusStartTime;
   private String optimizerGroup;
   private TableConfiguration tableConfig;
-  private OptimizingEvaluator.PendingInput pendingInput;
+  private PendingInput pendingInput;
   private long optimizingProcessId = 0;
   private ProcessStatus processStatus;
   private OptimizingType optimizingType;
@@ -34,7 +35,7 @@ public class TableRuntimePersistency {
   private long endTime;
   private String failReason;
   private String summary;
-  private TableRuntime tableRuntime;
+  private DefaultTableRuntime tableRuntime;
 
   public TableRuntimePersistency() {}
 

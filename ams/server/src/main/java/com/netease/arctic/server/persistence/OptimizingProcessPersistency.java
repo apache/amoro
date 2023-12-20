@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.persistence;
 
+import com.netease.arctic.ams.api.process.ProcessStatus;
 import com.netease.arctic.server.process.optimizing.OptimizingSummary;
 import com.netease.arctic.server.process.optimizing.OptimizingType;
 
@@ -33,7 +34,7 @@ public class OptimizingProcessPersistency {
   private String tableName;
   private Long targetSnapshotId;
   private Long targetChangeSnapshotId;
-  private OptimizingProcess.Status status;
+  private ProcessStatus status;
   private OptimizingType optimizingType;
   private long planTime;
   private long endTime;
@@ -92,11 +93,11 @@ public class OptimizingProcessPersistency {
     this.targetSnapshotId = targetSnapshotId;
   }
 
-  public OptimizingProcess.Status getStatus() {
+  public ProcessStatus getStatus() {
     return status;
   }
 
-  public void setStatus(OptimizingProcess.Status status) {
+  public void setStatus(ProcessStatus status) {
     this.status = status;
   }
 

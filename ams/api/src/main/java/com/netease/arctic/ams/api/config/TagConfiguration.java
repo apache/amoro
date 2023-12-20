@@ -16,19 +16,15 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.table;
+package com.netease.arctic.ams.api.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Objects;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.Locale;
-import java.util.Map;
 
 /** Configuration for auto creating tags. */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -73,38 +69,6 @@ public class TagConfiguration {
      * offset is set to be 5 min, the idea trigger time is 2022-08-08 00:05:00.
      */
     public abstract long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes);
-  }
-
-  public static TagConfiguration parse(Map<String, String> tableProperties) {
-    TagConfiguration tagConfig = new TagConfiguration();
-    tagConfig.setAutoCreateTag(
-        CompatiblePropertyUtil.propertyAsBoolean(
-            tableProperties,
-            TableProperties.ENABLE_AUTO_CREATE_TAG,
-            TableProperties.ENABLE_AUTO_CREATE_TAG_DEFAULT));
-    tagConfig.setTagFormat(
-        CompatiblePropertyUtil.propertyAsString(
-            tableProperties,
-            TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT,
-            TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT_DEFAULT));
-    tagConfig.setTriggerPeriod(
-        Period.valueOf(
-            CompatiblePropertyUtil.propertyAsString(
-                    tableProperties,
-                    TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD,
-                    TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD_DEFAULT)
-                .toUpperCase(Locale.ROOT)));
-    tagConfig.setTriggerOffsetMinutes(
-        CompatiblePropertyUtil.propertyAsInt(
-            tableProperties,
-            TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES,
-            TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES_DEFAULT));
-    tagConfig.setMaxDelayMinutes(
-        CompatiblePropertyUtil.propertyAsInt(
-            tableProperties,
-            TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES,
-            TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES_DEFAULT));
-    return tagConfig;
   }
 
   public boolean isAutoCreateTag() {

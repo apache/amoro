@@ -1,10 +1,8 @@
-package com.netease.arctic.server.process.optimizing;
+package com.netease.arctic.ams.api.process;
 
-import com.netease.arctic.server.ArcticServiceConstants;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
-import java.util.Collection;
 import java.util.Set;
 
 public class PendingInput {
@@ -22,16 +20,20 @@ public class PendingInput {
 
   public PendingInput() {}
 
-  public PendingInput(Collection<PartitionEvaluator> evaluators) {
-    for (PartitionEvaluator evaluator : evaluators) {
-      partitions.add(evaluator.getPartition());
-      dataFileCount += evaluator.getFragmentFileCount() + evaluator.getSegmentFileCount();
-      dataFileSize += evaluator.getFragmentFileSize() + evaluator.getSegmentFileSize();
-      positionalDeleteBytes += evaluator.getPosDeleteFileSize();
-      positionalDeleteFileCount += evaluator.getPosDeleteFileCount();
-      equalityDeleteBytes += evaluator.getEqualityDeleteFileSize();
-      equalityDeleteFileCount += evaluator.getEqualityDeleteFileCount();
-    }
+  public PendingInput(Set<String> partitions,
+                      int dataFileCount,
+                      long dataFileSize,
+                      int equalityDeleteFileCount,
+                      int positionalDeleteFileCount,
+                      long positionalDeleteBytes,
+                      long equalityDeleteBytes) {
+    this.partitions.addAll(partitions);
+    this.dataFileCount = dataFileCount;
+    this.dataFileSize = dataFileSize;
+    this.equalityDeleteFileCount = equalityDeleteFileCount;
+    this.positionalDeleteFileCount = positionalDeleteFileCount;
+    this.positionalDeleteBytes = positionalDeleteBytes;
+    this.equalityDeleteBytes = equalityDeleteBytes;
   }
 
   public Set<String> getPartitions() {

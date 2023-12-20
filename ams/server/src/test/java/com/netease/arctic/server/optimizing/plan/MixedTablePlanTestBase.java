@@ -29,12 +29,12 @@ import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
-import com.netease.arctic.server.process.optimizing.OptimizingConfig;
+import com.netease.arctic.ams.api.config.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.optimizerlegacy.TableFileScanHelper;
 import com.netease.arctic.server.process.optimizing.TaskDescriptor;
-import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -63,7 +63,7 @@ import java.util.stream.Collectors;
 
 public abstract class MixedTablePlanTestBase extends TableTestBase {
 
-  protected TableRuntime tableRuntime;
+  protected DefaultTableRuntime tableRuntime;
 
   public MixedTablePlanTestBase(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -72,7 +72,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   @Before
   public void mock() {
-    tableRuntime = Mockito.mock(TableRuntime.class);
+    tableRuntime = Mockito.mock(DefaultTableRuntime.class);
     ServerTableIdentifier id =
         ServerTableIdentifier.of(AmsUtil.toTableIdentifier(getArcticTable().id()), getTestFormat());
     id.setId(0L);
@@ -530,7 +530,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     }
   }
 
-  protected TableRuntime getTableRuntime() {
+  protected DefaultTableRuntime getTableRuntime() {
     return tableRuntime;
   }
 

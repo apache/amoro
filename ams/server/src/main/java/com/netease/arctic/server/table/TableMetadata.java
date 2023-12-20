@@ -22,6 +22,7 @@ import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DE
 
 import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;

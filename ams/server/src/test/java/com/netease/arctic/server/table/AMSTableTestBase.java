@@ -22,6 +22,7 @@ import com.netease.arctic.CommonUnifiedCatalog;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
@@ -253,7 +254,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
         tableTestHelper().primaryKeySpec().primaryKeyExisted(), arcticTable.isKeyedTable());
   }
 
-  protected void validateTableRuntime(TableRuntime tableRuntime) {
+  protected void validateTableRuntime(DefaultTableRuntime tableRuntime) {
     Assert.assertEquals(serverTableIdentifier(), tableRuntime.getTableIdentifier());
   }
 }

@@ -25,8 +25,8 @@ import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.TableEntriesScan;
-import com.netease.arctic.server.table.DataExpirationConfig;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.ams.api.config.DataExpirationConfig;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -121,7 +121,7 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void cleanOrphanFiles(TableRuntime tableRuntime) {
+  public void cleanOrphanFiles(DefaultTableRuntime tableRuntime) {
     if (changeMaintainer != null) {
       changeMaintainer.cleanOrphanFiles(tableRuntime);
     }
@@ -129,7 +129,7 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void expireSnapshots(TableRuntime tableRuntime) {
+  public void expireSnapshots(DefaultTableRuntime tableRuntime) {
     if (changeMaintainer != null) {
       changeMaintainer.expireSnapshots(tableRuntime);
     }
@@ -145,7 +145,7 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void expireData(TableRuntime tableRuntime) {
+  public void expireData(DefaultTableRuntime tableRuntime) {
     try {
       DataExpirationConfig expirationConfig =
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
@@ -268,7 +268,7 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void autoCreateTags(TableRuntime tableRuntime) {
+  public void autoCreateTags(DefaultTableRuntime tableRuntime) {
     throw new UnsupportedOperationException("Mixed table doesn't support auto create tags");
   }
 
@@ -325,7 +325,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     @Override
-    public void expireSnapshots(TableRuntime tableRuntime) {
+    public void expireSnapshots(DefaultTableRuntime tableRuntime) {
       if (!expireSnapshotEnabled(tableRuntime)) {
         return;
       }
@@ -335,7 +335,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     @Override
-    protected long mustOlderThan(TableRuntime tableRuntime, long now) {
+    protected long mustOlderThan(DefaultTableRuntime tableRuntime, long now) {
       return min(
           // The change data ttl time
           now - snapshotsKeepTime(tableRuntime),
@@ -349,7 +349,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     @Override
-    protected long snapshotsKeepTime(TableRuntime tableRuntime) {
+    protected long snapshotsKeepTime(DefaultTableRuntime tableRuntime) {
       return tableRuntime.getTableConfiguration().getChangeDataTTLMinutes() * 60 * 1000;
     }
 
@@ -480,7 +480,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     @Override
-    protected long mustOlderThan(TableRuntime tableRuntime, long now) {
+    protected long mustOlderThan(DefaultTableRuntime tableRuntime, long now) {
       return min(
           // The snapshots keep time for base store
           now - snapshotsKeepTime(tableRuntime),

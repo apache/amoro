@@ -2,8 +2,9 @@ package com.netease.arctic.server.process;
 
 import com.netease.arctic.ams.api.Action;
 import com.netease.arctic.ams.api.OptimizingTaskId;
+import com.netease.arctic.ams.api.TableRuntime;
+import com.netease.arctic.ams.api.process.TableState;
 import com.netease.arctic.server.persistence.PersistentBase;
-import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
@@ -18,7 +19,8 @@ public class ArbitraryProcess extends TableProcess<TableState> {
   private volatile String summary;
   private volatile boolean isTaskAvailable = false;
 
-  public ArbitraryProcess(long id, Action action, TableRuntime tableRuntime, TaskRuntime<?, ?> taskRuntime) {
+  public ArbitraryProcess(
+      long id, Action action, TableRuntime tableRuntime, TaskRuntime<?, ?> taskRuntime) {
     super(new TableState(id, action, tableRuntime.getTableIdentifier()), tableRuntime);
     this.taskRuntime = taskRuntime;
   }
@@ -42,7 +44,7 @@ public class ArbitraryProcess extends TableProcess<TableState> {
 
   @Override
   public void closeInternal() {
-    //TODO close persistency
+    // TODO close persistency
   }
 
   @Override

@@ -20,13 +20,14 @@ package com.netease.arctic.server;
 
 import com.netease.arctic.ams.api.Action;
 import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.ams.api.TableRuntime;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.process.TableProcess;
 import com.netease.arctic.server.process.optimizing.DefaultOptimizingProcess;
 import com.netease.arctic.server.process.optimizing.DefaultOptimizingState;
 import com.netease.arctic.server.process.optimizing.OptimizingStage;
-import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -40,38 +41,41 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class OptimizingScheduler extends AbstractScheduler<DefaultOptimizingState> {
+public class OptimizingScheduler extends TaskScheduler<DefaultOptimizingState> {
 
-  private static final Map<String, Comparator<TableRuntime>> OPTIMIZING_POLICIES = ImmutableMap.of(
-      ArcticServiceConstants.SCHEDULING_POLICY_QUOTA, new QuotaOccupySorter(),
-      ArcticServiceConstants.SCHEDULING_POLICY_BALANCED, new BalancedSorter()
-  );
+  private static final Map<String, Comparator<DefaultTableRuntime>> OPTIMIZING_POLICIES =
+      ImmutableMap.of(
+          ArcticServiceConstants.SCHEDULING_POLICY_QUOTA, new QuotaOccupySorter(),
+          ArcticServiceConstants.SCHEDULING_POLICY_BALANCED, new BalancedSorter());
 
   private final int maxPlanningParallelism;
-  private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap = new HashMap<>();
-  private final Comparator<TableRuntime> tableSorter;
+  private final Map<ServerTableIdentifier, DefaultTableRuntime> tableRuntimeMap = new HashMap<>();
+  private final Comparator<DefaultTableRuntime> tableSorter;
 
-  public OptimizingScheduler(
-      ResourceGroup optimizerGroup,
-      int maxPlanningParallelism) {
+  public OptimizingScheduler(ResourceGroup optimizerGroup, int maxPlanningParallelism) {
     super(optimizerGroup);
     this.maxPlanningParallelism = maxPlanningParallelism;
     this.tableSorter = OPTIMIZING_POLICIES.get(getPolicyName(optimizerGroup));
   }
 
   private String getPolicyName(ResourceGroup resourceGroup) {
-    String policy = Optional.ofNullable(resourceGroup.getProperties()).map(
-        props -> props.getOrDefault(
-            ArcticServiceConstants.SCHEDULING_POLICY_PROPERTY_NAME,
-            ArcticServiceConstants.SCHEDULING_POLICY_QUOTA))
-        .orElse(ArcticServiceConstants.SCHEDULING_POLICY_QUOTA);
-    return OPTIMIZING_POLICIES.containsKey(policy) ? policy : ArcticServiceConstants.SCHEDULING_POLICY_QUOTA;
+    String policy =
+        Optional.ofNullable(resourceGroup.getProperties())
+            .map(
+                props ->
+                    props.getOrDefault(
+                        ArcticServiceConstants.SCHEDULING_POLICY_PROPERTY_NAME,
+                        ArcticServiceConstants.SCHEDULING_POLICY_QUOTA))
+            .orElse(ArcticServiceConstants.SCHEDULING_POLICY_QUOTA);
+    return OPTIMIZING_POLICIES.containsKey(policy)
+        ? policy
+        : ArcticServiceConstants.SCHEDULING_POLICY_QUOTA;
   }
 
-  public void refreshTable(TableRuntime tableRuntime) {
+  public void refreshTable(DefaultTableRuntime tableRuntime) {
     schedulerLock.lock();
     try {
-      if (tableRuntime.isOptimizingEnabled()) {
+      if (tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()) {
         tableRuntimeMap.put(tableRuntime.getTableIdentifier(), tableRuntime);
         LOG.info(
             "Bind queue {} success with table {}",
@@ -83,7 +87,7 @@ public class OptimizingScheduler extends AbstractScheduler<DefaultOptimizingStat
     }
   }
 
-  public void releaseTable(TableRuntime tableRuntime) {
+  public void releaseTable(DefaultTableRuntime tableRuntime) {
     schedulerLock.lock();
     try {
       tableRuntimeMap.remove(tableRuntime.getTableIdentifier());
@@ -119,14 +123,15 @@ public class OptimizingScheduler extends AbstractScheduler<DefaultOptimizingStat
   }
 
   @Override
-  protected TableProcess<DefaultOptimizingState> createProcess(TableRuntime tableRuntime, Action action) {
+  protected TableProcess<DefaultOptimizingState> createProcess(
+      DefaultTableRuntime tableRuntime, Action action) {
     Preconditions.checkState(action == Action.OPTIMIZING);
     return new DefaultOptimizingProcess(tableRuntime, false);
   }
 
   @Override
   protected TableProcess<DefaultOptimizingState> recoverProcess(
-      TableRuntime tableRuntime, Action action, DefaultOptimizingState state) {
+      DefaultTableRuntime tableRuntime, Action action, DefaultOptimizingState state) {
     Preconditions.checkState(action == Action.OPTIMIZING);
     if (state.getStage().isOptimizing()) {
       return new DefaultOptimizingProcess(tableRuntime, true);
@@ -136,25 +141,27 @@ public class OptimizingScheduler extends AbstractScheduler<DefaultOptimizingStat
   }
 
   @Override
-  public Pair<TableRuntime, Action> scheduleTable() {
-    int planningCount = tableProcessQueue.stream()
-        .map(TableProcess::getState)
-        .filter(state -> state.getStage().isOptimizing())
-        .mapToInt(state -> 1)
-        .sum();
-    TableRuntime targetTable = planningCount < maxPlanningParallelism ? scheduleInternal() : null;
+  public Pair<DefaultTableRuntime, Action> scheduleTable() {
+    int planningCount =
+        tableProcessQueue.stream()
+            .map(TableProcess::getState)
+            .filter(state -> state.getStage().isOptimizing())
+            .mapToInt(state -> 1)
+            .sum();
+    DefaultTableRuntime targetTable =
+        planningCount < maxPlanningParallelism ? scheduleInternal() : null;
     return targetTable != null ? Pair.of(scheduleInternal(), Action.OPTIMIZING) : null;
   }
 
-  public TableRuntime scheduleInternal() {
-    Set<TableRuntime> skipSet = fillSkipSet();
+  public DefaultTableRuntime scheduleInternal() {
+    Set<DefaultTableRuntime> skipSet = fillSkipSet();
     return tableRuntimeMap.values().stream()
         .filter(tableRuntime -> !skipSet.contains(tableRuntime))
         .min(tableSorter)
         .orElse(null);
   }
 
-  private Set<TableRuntime> fillSkipSet() {
+  private Set<DefaultTableRuntime> fillSkipSet() {
     long currentTime = System.currentTimeMillis();
     return tableRuntimeMap.values().stream()
         .filter(
@@ -162,33 +169,38 @@ public class OptimizingScheduler extends AbstractScheduler<DefaultOptimizingStat
                 !isTablePending(tableRuntime)
                     || tableRuntime.getBlockerRuntime().isBlocked(BlockableOperation.OPTIMIZE)
                     || currentTime - tableRuntime.getDefaultOptimizingState().getStartTime()
-                    < tableRuntime.getOptimizingConfig().getMinPlanInterval())
+                        < tableRuntime
+                            .getTableConfiguration()
+                            .getOptimizingConfig()
+                            .getMinPlanInterval())
         .collect(Collectors.toSet());
   }
 
-  private boolean isTablePending(TableRuntime tableRuntime) {
+  private boolean isTablePending(DefaultTableRuntime tableRuntime) {
     DefaultOptimizingState state = tableRuntime.getDefaultOptimizingState();
     return state.getStage() == OptimizingStage.PENDING
         && (state.getTargetSnapshotId() != state.getLastOptimizedSnapshotId()
-        || state.getLastOptimizedChangeSnapshotId() != state.getTargetChangeSnapshotId());
+            || state.getLastOptimizedChangeSnapshotId() != state.getTargetChangeSnapshotId());
   }
 
-  private static class QuotaOccupySorter implements Comparator<TableRuntime> {
+  private static class QuotaOccupySorter implements Comparator<DefaultTableRuntime> {
 
     @Override
-    public int compare(TableRuntime one, TableRuntime another) {
-      return Double.compare(one.getDefaultOptimizingState().getQuotaOccupy(),
+    public int compare(DefaultTableRuntime one, DefaultTableRuntime another) {
+      return Double.compare(
+          one.getDefaultOptimizingState().getQuotaOccupy(),
           another.getDefaultOptimizingState().getQuotaOccupy());
     }
   }
 
-  private static class BalancedSorter implements Comparator<TableRuntime> {
+  private static class BalancedSorter implements Comparator<DefaultTableRuntime> {
     @Override
-    public int compare(TableRuntime one, TableRuntime another) {
+    public int compare(DefaultTableRuntime one, DefaultTableRuntime another) {
       return Long.compare(
           Math.max(
               one.getDefaultOptimizingState().getLastFullOptimizingTime(),
-              Math.max(one.getDefaultOptimizingState().getLastMinorOptimizingTime(),
+              Math.max(
+                  one.getDefaultOptimizingState().getLastMinorOptimizingTime(),
                   one.getDefaultOptimizingState().getLastMajorOptimizingTime())),
           Math.max(
               another.getDefaultOptimizingState().getLastFullOptimizingTime(),

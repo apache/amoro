@@ -7,6 +7,7 @@ import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.ArcticManagementConf;
@@ -58,7 +59,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private final Map<String, InternalCatalog> internalCatalogMap = new ConcurrentHashMap<>();
   private final Map<String, ExternalCatalog> externalCatalogMap = new ConcurrentHashMap<>();
 
-  private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap =
+  private final Map<ServerTableIdentifier, DefaultTableRuntime> tableRuntimeMap =
       new ConcurrentHashMap<>();
 
   private final List<TableWatcher> tableWatchers = Lists.newArrayList();
@@ -87,7 +88,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
     tableRuntimePersistencyList.forEach(
         tableRuntimeMeta -> {
-          TableRuntime tableRuntime = new TableRuntime(tableRuntimeMeta, this);
+          DefaultTableRuntime tableRuntime = new DefaultTableRuntime(tableRuntimeMeta, this);
           tableRuntimeMap.put(tableRuntime.getTableIdentifier(), tableRuntime);
         });
   }
@@ -331,7 +332,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                   .build());
     }
 
-    tableRuntimeMap.values().forEach(TableRuntime::recover);
+    tableRuntimeMap.values().forEach(DefaultTableRuntime::recover);
     tableExplorerScheduler.scheduleAtFixedRate(
         this::exploreExternalCatalog, 0, externalCatalogRefreshingInterval, TimeUnit.MILLISECONDS);
     initialized.complete(true);
@@ -339,7 +340,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
   private TableBlockerRuntime getTableBlockerRuntime(ServerTableIdentifier tableIdentifier) {
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier cannot be null");
-    TableRuntime tableRuntime = getRuntime(tableIdentifier);
+    DefaultTableRuntime tableRuntime = getRuntime(tableIdentifier);
     if (tableRuntime == null) {
       throw new ObjectNotExistsException(tableIdentifier);
     }
@@ -375,13 +376,13 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public TableRuntime getRuntime(ServerTableIdentifier tableIdentifier) {
+  public DefaultTableRuntime getRuntime(ServerTableIdentifier tableIdentifier) {
     checkStarted();
     return tableRuntimeMap.get(tableIdentifier);
   }
 
   @Override
-  public List<TableRuntime> listTableRuntimes() {
+  public List<DefaultTableRuntime> listTableRuntimes() {
     return new ArrayList<>(tableRuntimeMap.values());
   }
 
@@ -504,7 +505,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     // consistent.
     Set<String> catalogNames =
         listCatalogMetas().stream().map(CatalogMeta::getCatalogName).collect(Collectors.toSet());
-    for (TableRuntime tableRuntime : tableRuntimeMap.values()) {
+    for (DefaultTableRuntime tableRuntime : tableRuntimeMap.values()) {
       if (!catalogNames.contains(tableRuntime.getTableIdentifier().getCatalog())) {
         disposeTable(tableRuntime.getTableIdentifier());
       }
@@ -593,7 +594,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         return false;
       }
     }
-    TableRuntime tableRuntime = new TableRuntime(serverTableIdentifier, this, table.properties());
+    DefaultTableRuntime tableRuntime = new DefaultTableRuntime(serverTableIdentifier, this, table.properties());
     tableRuntimeMap.put(serverTableIdentifier, tableRuntime);
     tableWatchers.forEach(tableWatcher -> tableWatcher.tableAdded(tableRuntime, table));
     return true;

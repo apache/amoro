@@ -21,6 +21,8 @@ package com.netease.arctic.server.dashboard.model;
 import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
 import com.netease.arctic.server.persistence.OptimizingProcessPersistency;
 import com.netease.arctic.server.persistence.TaskRuntimePersistency;
+import com.netease.arctic.ams.api.process.ProcessStatus;
+import com.netease.arctic.server.process.optimizing.OptimizingSummary;
 import com.netease.arctic.server.process.optimizing.OptimizingType;
 
 import java.util.List;
@@ -34,7 +36,7 @@ public class OptimizingProcessInfo {
   private Long processId;
   private long startTime;
   private OptimizingType optimizingType;
-  private OptimizingProcess.Status status;
+  private ProcessStatus status;
   private String failReason;
   private long duration;
   private int successTasks;
@@ -102,11 +104,11 @@ public class OptimizingProcessInfo {
     this.optimizingType = optimizingType;
   }
 
-  public OptimizingProcess.Status getStatus() {
+  public ProcessStatus getStatus() {
     return status;
   }
 
-  public void setStatus(OptimizingProcess.Status status) {
+  public void setStatus(ProcessStatus status) {
     this.status = status;
   }
 

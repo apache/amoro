@@ -1,8 +1,11 @@
 package com.netease.arctic.server.process;
 
+import com.netease.arctic.ams.api.TableRuntime;
+import com.netease.arctic.ams.api.process.AmoroProcess;
+import com.netease.arctic.ams.api.process.ProcessStatus;
+import com.netease.arctic.ams.api.process.SimpleFuture;
+import com.netease.arctic.ams.api.process.TableState;
 import com.netease.arctic.server.exception.OptimizingClosedException;
-import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.utils.SimpleFuture;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,8 +87,8 @@ public abstract class TableProcess<T extends TableState> implements AmoroProcess
             if (taskRuntime.getStatus() == TaskRuntime.Status.SUCCESS && completedAction != null) {
               completedAction.run();
             } else {
-              retryTaskOrTerminateProcess(taskRuntime,
-                  () -> handleAsyncTask(taskRuntime, completedAction));
+              retryTaskOrTerminateProcess(
+                  taskRuntime, () -> handleAsyncTask(taskRuntime, completedAction));
             }
           } catch (Throwable throwable) {
             if (state.getFailedReason() == null) {
@@ -97,7 +100,8 @@ public abstract class TableProcess<T extends TableState> implements AmoroProcess
     submitTask(taskRuntime);
   }
 
-  private void retryTaskOrTerminateProcess(TaskRuntime<?, ?> taskRuntime, Runnable completedAction) {
+  private void retryTaskOrTerminateProcess(
+      TaskRuntime<?, ?> taskRuntime, Runnable completedAction) {
     Preconditions.checkState(taskRuntime.getStatus() == TaskRuntime.Status.FAILED);
     if (taskRuntime.getRetry() < tableRuntime.getMaxExecuteRetryCount()) {
       taskRuntime.whenCompleted(completedAction);

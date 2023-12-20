@@ -3,7 +3,7 @@ package com.netease.arctic.server.dashboard.utils;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.TableOptimizingInfo;
 import com.netease.arctic.server.process.optimizing.OptimizingStage;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import org.apache.iceberg.ContentFile;
 
 public class OptimizingUtil {
@@ -13,7 +13,7 @@ public class OptimizingUtil {
    *
    * @return TableOptimizeInfo
    */
-  public static TableOptimizingInfo buildTableOptimizeInfo(TableRuntime optimizingTableRuntime) {
+  public static TableOptimizingInfo buildTableOptimizeInfo(DefaultTableRuntime optimizingTableRuntime) {
     OptimizingProcess process = optimizingTableRuntime.getOptimizingProcess();
     TableOptimizingInfo tableOptimizeInfo =
         new TableOptimizingInfo(optimizingTableRuntime.getTableIdentifier());

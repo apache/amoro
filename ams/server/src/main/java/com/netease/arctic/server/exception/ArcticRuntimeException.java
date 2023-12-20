@@ -7,7 +7,7 @@ import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
 import org.apache.thrift.TException;
 
 import java.util.HashMap;

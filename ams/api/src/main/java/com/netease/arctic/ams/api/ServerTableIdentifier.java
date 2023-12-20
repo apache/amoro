@@ -1,7 +1,4 @@
-package com.netease.arctic.server.table;
-
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.TableIdentifier;
+package com.netease.arctic.ams.api;
 
 import java.util.Objects;
 

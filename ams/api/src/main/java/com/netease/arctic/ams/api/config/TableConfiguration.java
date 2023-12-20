@@ -1,14 +1,10 @@
-package com.netease.arctic.server.table;
+package com.netease.arctic.ams.api.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Objects;
 import com.netease.arctic.ams.api.Action;
-import com.netease.arctic.server.process.optimizing.OptimizingConfig;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -150,42 +146,5 @@ public class TableConfiguration {
         optimizingConfig,
         expiringDataConfig,
         tagConfiguration);
-  }
-
-  public static TableConfiguration parseConfig(Map<String, String> properties) {
-    return new TableConfiguration()
-        .setExpireSnapshotEnabled(
-            CompatiblePropertyUtil.propertyAsBoolean(
-                properties,
-                TableProperties.ENABLE_TABLE_EXPIRE,
-                TableProperties.ENABLE_TABLE_EXPIRE_DEFAULT))
-        .setSnapshotTTLMinutes(
-            CompatiblePropertyUtil.propertyAsLong(
-                properties,
-                TableProperties.BASE_SNAPSHOT_KEEP_MINUTES,
-                TableProperties.BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT))
-        .setChangeDataTTLMinutes(
-            CompatiblePropertyUtil.propertyAsLong(
-                properties,
-                TableProperties.CHANGE_DATA_TTL,
-                TableProperties.CHANGE_DATA_TTL_DEFAULT))
-        .setCleanOrphanEnabled(
-            CompatiblePropertyUtil.propertyAsBoolean(
-                properties,
-                TableProperties.ENABLE_ORPHAN_CLEAN,
-                TableProperties.ENABLE_ORPHAN_CLEAN_DEFAULT))
-        .setOrphanExistingMinutes(
-            CompatiblePropertyUtil.propertyAsLong(
-                properties,
-                TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME,
-                TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT))
-        .setDeleteDanglingDeleteFilesEnabled(
-            CompatiblePropertyUtil.propertyAsBoolean(
-                properties,
-                TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN,
-                TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT))
-        .setOptimizingConfig(OptimizingConfig.parseOptimizingConfig(properties))
-        .setExpiringDataConfig(DataExpirationConfig.parse(properties))
-        .setTagConfiguration(TagConfiguration.parse(properties));
   }
 }

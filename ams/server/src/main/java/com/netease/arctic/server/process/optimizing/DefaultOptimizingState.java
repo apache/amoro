@@ -20,17 +20,20 @@
 
 package com.netease.arctic.server.process.optimizing;
 
+import com.netease.arctic.ams.api.Action;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.ams.api.process.OptimizingState;
+import com.netease.arctic.ams.api.process.PendingInput;
+import com.netease.arctic.ams.api.process.ProcessStatus;
+import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.TableRuntimePersistency;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
-import com.netease.arctic.ams.api.Action;
-import com.netease.arctic.server.process.OptimizingState;
-import com.netease.arctic.server.process.ProcessStatus;
-import com.netease.arctic.server.process.TableState;
-import com.netease.arctic.server.table.ServerTableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
-public class DefaultOptimizingState extends TableState implements OptimizingState {
+public class DefaultOptimizingState extends OptimizingState {
+
+  private final PersistenceHelper persistenceHelper = new PersistenceHelper();
 
   private volatile long targetSnapshotId;
   private volatile long targetChangeSnapshotId;
@@ -48,8 +51,8 @@ public class DefaultOptimizingState extends TableState implements OptimizingStat
   private volatile int quotaTarget;
   private volatile PendingInput pendingInput;
 
-  public DefaultOptimizingState(ServerTableIdentifier tableIdentifier,
-                         TableRuntimePersistency tableRuntimePersistency) {
+  public DefaultOptimizingState(
+      ServerTableIdentifier tableIdentifier, TableRuntimePersistency tableRuntimePersistency) {
     super(Action.OPTIMIZING, tableIdentifier);
     this.targetSnapshotId = tableRuntimePersistency.getCurrentSnapshotId();
     this.targetChangeSnapshotId = tableRuntimePersistency.getCurrentChangeSnapshotId();
@@ -102,7 +105,6 @@ public class DefaultOptimizingState extends TableState implements OptimizingStat
     return stage;
   }
 
-
   public long getTargetSnapshotId() {
     return targetSnapshotId;
   }
@@ -145,15 +147,14 @@ public class DefaultOptimizingState extends TableState implements OptimizingStat
 
   protected void saveProcessCreated(DefaultOptimizingProcess process) {
     Preconditions.checkState(stage == OptimizingStage.PENDING);
-    invokeConsisitency(
+    persistenceHelper.invoke(
         () -> {
           setId(process.getId());
           setStatus(ProcessStatus.RUNNING);
           optimizingProcess = process;
           savePlanningStage();
           process.whenCompleted(() -> saveProcessCompleted(process));
-        }
-    );
+        });
   }
 
   protected void saveProcessRecoverd(DefaultOptimizingProcess process) {
@@ -164,8 +165,8 @@ public class DefaultOptimizingState extends TableState implements OptimizingStat
   private void savePlanningStage() {
     setStage(OptimizingStage.PLANNING);
     setStartTime(currentStageStartTime);
-    persistProcessCreated();
-    persistRuntimeStage();
+    persistenceHelper.persistProcessCreated();
+    persistenceHelper.persistRuntimeStage();
   }
 
   protected void saveProcessCompleted(DefaultOptimizingProcess process) {
@@ -179,7 +180,7 @@ public class DefaultOptimizingState extends TableState implements OptimizingStat
   }
 
   public void savePendingInput(PendingInput input) {
-    invokeConsisitency(
+    persistenceHelper.invoke(
         () -> {
           targetSnapshotId = input.getCurrentSnapshotId();
           targetChangeSnapshotId = input.getCurrentChangeSnapshotId();
@@ -187,23 +188,21 @@ public class DefaultOptimizingState extends TableState implements OptimizingStat
           if (stage != OptimizingStage.PENDING) {
             setStage(OptimizingStage.PENDING);
           }
-          persistRuntimeStage();
-        }
-    );
+          persistenceHelper.persistRuntimeStage();
+        });
   }
 
   protected void saveCommittingStage() {
-    invokeConsisitency(
-        () ->  {
+    persistenceHelper.invoke(
+        () -> {
           setStage(OptimizingStage.COMMITTING);
-          persistRuntimeStage();
-        }
-    );
+          persistenceHelper.persistRuntimeStage();
+        });
   }
 
   protected void saveOptimizingStage(OptimizingType optimizingType, int taskCount, String summary) {
-    invokeConsisitency(
-        () ->  {
+    persistenceHelper.invoke(
+        () -> {
           this.optimizingType = optimizingType;
           this.taskCount = taskCount;
           if (optimizingType == OptimizingType.MINOR) {
@@ -214,41 +213,37 @@ public class DefaultOptimizingState extends TableState implements OptimizingStat
             lastFullOptimizingTime = getStartTime();
           }
           setStage(optimizingType.getStatus());
-          persistRuntimeStage();
-          persistProcessSummary(summary);
-        }
-    );
+          persistenceHelper.persistRuntimeStage();
+          persistenceHelper.persistProcessSummary(summary);
+        });
   }
 
   private void saveStatusSuccess(String summary) {
-    invokeConsisitency(
+    persistenceHelper.invoke(
         () -> {
-          persistRuntimeSuccess();
-          persistProcessSummary(summary);
-        }
-    );
+          persistenceHelper.persistRuntimeSuccess();
+          persistenceHelper.persistProcessSummary(summary);
+        });
   }
 
   private void saveStatusClosed() {
-    Preconditions.checkState(getStatus() != ProcessStatus.SUCCESS,
-        "Use saveStatusSuccess instead.");
-    invokeConsisitency(
+    Preconditions.checkState(
+        getStatus() != ProcessStatus.SUCCESS, "Use saveStatusSuccess instead.");
+    persistenceHelper.invoke(
         () -> {
           setStatus(ProcessStatus.CLOSED);
-          persistProcessStatus();
-          persistRuntimeStage();
-        }
-    );
+          persistenceHelper.persistProcessStatus();
+          persistenceHelper.persistRuntimeStage();
+        });
   }
 
   private void saveStatusFailed(String failedReason) {
-    invokeConsisitency(
+    persistenceHelper.invoke(
         () -> {
           setFailedReason(failedReason);
-          persistProcessStatus();
-          persistRuntimeStage();
-        }
-    );
+          persistenceHelper.persistProcessStatus();
+          persistenceHelper.persistRuntimeStage();
+        });
   }
 
   private void setStage(OptimizingStage stage) {
@@ -270,74 +265,76 @@ public class DefaultOptimizingState extends TableState implements OptimizingStat
     this.currentStageStartTime = System.currentTimeMillis();
   }
 
-  private void persistProcessCreated() {
-    doAs(
-        OptimizingMapper.class,
-        mapper ->
-            mapper.insertOptimizingProcess(
-                getTableIdentifier(),
-                getId(),
-                targetSnapshotId,
-                targetChangeSnapshotId,
-                getStatus(),
-                null,
-                getStartTime(),
-                null));
-  }
+  private class PersistenceHelper extends StatedPersistentBase {
 
-  private void persistProcessStatus() {
-    doAs(
-        OptimizingMapper.class,
-        mapper ->
-            mapper.updateOptimizingProcess(
-                getTableIdentifier().getId(),
-                getId(),
-                getStatus(),
-                getEndTime(),
-                getFailedReason()));
-  }
+    public void invoke(Runnable runnable) {
+      persistenceHelper.invoke(runnable);
+    }
 
-  private void persistProcessSummary(String summary) {
-    doAs(
-        OptimizingMapper.class,
-        mapper ->
-            mapper.updateOptimizingProcess(
-                getTableIdentifier().getId(),
-                getId(),
-                optimizingType,
-                getEndTime(),
-                getStatus(),
-                taskCount,
-                summary,
-                getFailedReason()));
-  }
+    public void persistProcessCreated() {
+      doAs(
+          OptimizingMapper.class,
+          mapper ->
+              mapper.insertOptimizingProcess(
+                  getTableIdentifier(),
+                  getId(),
+                  targetSnapshotId,
+                  targetChangeSnapshotId,
+                  getStatus(),
+                  null,
+                  getStartTime(),
+                  null));
+    }
 
-  private void persistRuntimeSuccess() {
-    doAs(
-        TableMetaMapper.class,
-        mapper ->
-            mapper.updateTableOptimizingSuccess(
-                getTableIdentifier().getId(),
-                getId(),
-                stage,
-                lastOptimizedSnapshotId,
-                lastOptimizedChangeSnapshotId,
-                lastMinorOptimizingTime,
-                lastMajorOptimizingTime,
-                lastFullOptimizingTime,
-                getStartTime())
-    );
-  }
+    public void persistProcessStatus() {
+      doAs(
+          OptimizingMapper.class,
+          mapper ->
+              mapper.updateOptimizingProcess(
+                  getTableIdentifier().getId(),
+                  getId(),
+                  getStatus(),
+                  getEndTime(),
+                  getFailedReason()));
+    }
 
-  private void persistRuntimeStage() {
-    doAs(
-        TableMetaMapper.class,
-        mapper ->
-            mapper.updateTableStage(
-                getTableIdentifier().getId(),
-                getId(),
-                stage,
-                currentStageStartTime)
-    );
+    public void persistProcessSummary(String summary) {
+      doAs(
+          OptimizingMapper.class,
+          mapper ->
+              mapper.updateOptimizingProcess(
+                  getTableIdentifier().getId(),
+                  getId(),
+                  optimizingType,
+                  getEndTime(),
+                  getStatus(),
+                  taskCount,
+                  summary,
+                  getFailedReason()));
+    }
+
+    public void persistRuntimeSuccess() {
+      doAs(
+          TableMetaMapper.class,
+          mapper ->
+              mapper.updateTableOptimizingSuccess(
+                  getTableIdentifier().getId(),
+                  getId(),
+                  stage,
+                  lastOptimizedSnapshotId,
+                  lastOptimizedChangeSnapshotId,
+                  lastMinorOptimizingTime,
+                  lastMajorOptimizingTime,
+                  lastFullOptimizingTime,
+                  getStartTime()));
+    }
+
+    public void persistRuntimeStage() {
+      doAs(
+          TableMetaMapper.class,
+          mapper ->
+              mapper.updateTableStage(
+                  getTableIdentifier().getId(), getId(), stage, currentStageStartTime));
+    }
   }
 }

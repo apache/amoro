@@ -33,8 +33,8 @@ import com.netease.arctic.server.dashboard.utils.OptimizingUtil;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.ResourceContainers;
-import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.table.TableService;
 import io.javalin.http.Context;
 
@@ -64,10 +64,10 @@ public class OptimizerController {
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
     int offset = (page - 1) * pageSize;
 
-    List<TableRuntime> tableRuntimes = new ArrayList<>();
+    List<DefaultTableRuntime> tableRuntimes = new ArrayList<>();
     List<ServerTableIdentifier> tables = tableService.listManagedTables();
     for (ServerTableIdentifier identifier : tables) {
-      TableRuntime tableRuntime = tableService.getRuntime(identifier);
+      DefaultTableRuntime tableRuntime = tableService.getRuntime(identifier);
       if (tableRuntime == null) {
         continue;
       }

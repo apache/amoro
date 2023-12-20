@@ -50,8 +50,8 @@ import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.CommonUtil;
-import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableIdentifier;
@@ -648,7 +648,7 @@ public class TableController {
     ServerTableIdentifier serverTableIdentifier =
         tableService.getServerTableIdentifier(
             TableIdentifier.of(catalog, db, table).buildTableIdentifier());
-    TableRuntime tableRuntime =
+    DefaultTableRuntime tableRuntime =
         serverTableIdentifier != null ? tableService.getRuntime(serverTableIdentifier) : null;
     if (tableRuntime != null
         && tableRuntime.getOptimizingProcess() != null

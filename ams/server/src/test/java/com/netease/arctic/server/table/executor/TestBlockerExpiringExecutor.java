@@ -22,9 +22,9 @@ import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
-import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableManager;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.table.TableServiceTestBase;
 import com.netease.arctic.server.table.TableBlocker;
 import org.junit.Assert;
@@ -41,12 +41,12 @@ public class TestBlockerExpiringExecutor extends TableServiceTestBase {
           0L, "test_catalog", "test_db", "test_table_blocker", TableFormat.MIXED_ICEBERG);
 
   private final Persistency persistency = new Persistency();
-  private TableRuntime tableRuntime;
+  private DefaultTableRuntime tableRuntime;
   private TableManager tableManager;
 
   @Before
   public void mock() {
-    tableRuntime = Mockito.mock(TableRuntime.class);
+    tableRuntime = Mockito.mock(DefaultTableRuntime.class);
     tableManager = Mockito.mock(TableManager.class);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(tableIdentifier);
   }

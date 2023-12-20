@@ -23,9 +23,9 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
-import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
@@ -113,13 +113,13 @@ public abstract class RestCatalogServiceTestBase {
     return metadata.getTableIdentifier();
   }
 
-  protected TableRuntime getTableRuntime(TableIdentifier identifier) {
+  protected DefaultTableRuntime getTableRuntime(TableIdentifier identifier) {
     ServerTableIdentifier serverTableIdentifier = getServerTableIdentifier(identifier);
     return tableService.getRuntime(serverTableIdentifier);
   }
 
   protected void assertTableRuntime(TableIdentifier identifier, TableFormat format) {
-    TableRuntime runtime = getTableRuntime(identifier);
+    DefaultTableRuntime runtime = getTableRuntime(identifier);
     Assertions.assertNotNull(runtime, "table runtime is not exists after created");
     Assertions.assertEquals(format, runtime.getFormat());
   }

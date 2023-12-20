@@ -18,10 +18,9 @@
  *
  */
 
-package com.netease.arctic.server.process;
+package com.netease.arctic.ams.api.process;
 
 import com.netease.arctic.ams.api.Action;
-import com.netease.arctic.server.utils.SimpleFuture;
 
 public interface AmoroProcess<T extends ProcessState> {
 

@@ -20,6 +20,7 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
@@ -91,7 +92,7 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
 
   @Test
   public void testTableRuntime() {
-    TableRuntime tableRuntime = tableService().getRuntime(serverTableIdentifier());
+    DefaultTableRuntime tableRuntime = tableService().getRuntime(serverTableIdentifier());
     validateTableRuntime(tableRuntime);
   }
 }

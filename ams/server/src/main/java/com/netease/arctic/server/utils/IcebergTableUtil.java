@@ -23,7 +23,7 @@ import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.table.BasicTableSnapshot;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableFileUtil;
@@ -62,7 +62,7 @@ public class IcebergTableUtil {
     }
   }
 
-  public static TableSnapshot getSnapshot(ArcticTable arcticTable, TableRuntime tableRuntime) {
+  public static TableSnapshot getSnapshot(ArcticTable arcticTable, DefaultTableRuntime tableRuntime) {
     if (arcticTable.isUnkeyedTable()) {
       return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
     } else {

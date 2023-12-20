@@ -35,7 +35,7 @@ import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.process.optimizing.OptimizingStage;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.table.AMSTableTestBase;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.table.executor.TableRuntimeRefreshExecutor;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
@@ -109,7 +109,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     appendData(arcticTable.asUnkeyedTable(), 1);
     appendData(arcticTable.asUnkeyedTable(), 2);
-    TableRuntime runtime = tableService().getRuntime(serverTableIdentifier());
+    DefaultTableRuntime runtime = tableService().getRuntime(serverTableIdentifier());
 
     runtime.refresh(tableService().loadTable(serverTableIdentifier()));
   }

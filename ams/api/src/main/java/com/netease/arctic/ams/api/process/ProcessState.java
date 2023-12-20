@@ -18,19 +18,29 @@
  *
  */
 
-package com.netease.arctic.server.process.task;
+package com.netease.arctic.ams.api.process;
 
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.server.optimizing.TaskRuntime;
-import com.netease.arctic.server.optimizing.TaskSummary;
-import com.netease.arctic.server.process.TaskRuntime;
-import com.netease.arctic.server.process.TaskSummary;
+import com.netease.arctic.ams.api.Action;
 
-public class OptimizingTaskBuilder implements TaskSummary<RewriteFilesInput> {
+public interface ProcessState {
 
+  long getId();
 
-  @Override
-  public <O> TaskRuntime<RewriteFilesInput, O> build() {
-    return null;
+  String getName();
+
+  long getStartTime();
+
+  Action getAction();
+
+  ProcessStatus getStatus();
+
+  String getSummary();
+
+  String getFailedReason();
+
+  long getQuotaRuntime();
+
+  default double getQuotaValue() {
+    return (double) getQuotaRuntime() / (System.currentTimeMillis() - getStartTime());
   }
 }

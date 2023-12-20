@@ -38,7 +38,6 @@ import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
 import com.netease.arctic.server.table.TableService;
-import com.netease.arctic.server.table.executor.AsyncTableExecutors;
 import com.netease.arctic.server.terminal.TerminalManager;
 import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.ConfigurationUtil;
@@ -130,9 +129,6 @@ public class ArcticServiceContainer {
   public void startService() throws Exception {
     tableService = new DefaultTableService(serviceConfig);
     optimizingService = new DefaultOptimizingService(serviceConfig, tableService);
-
-    LOG.info("Setting up AMS table executors...");
-    AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
 
     tableService.initialize();
     LOG.info("AMS table service have been initialized");

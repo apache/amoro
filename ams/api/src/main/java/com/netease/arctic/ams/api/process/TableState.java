@@ -18,13 +18,12 @@
  *
  */
 
-package com.netease.arctic.server.process;
+package com.netease.arctic.ams.api.process;
 
 import com.netease.arctic.ams.api.Action;
-import com.netease.arctic.server.persistence.StatedPersistentBase;
-import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
 
-public class TableState extends StatedPersistentBase implements ProcessState {
+public class TableState implements ProcessState {
 
   private volatile long id;
   private Action action;
@@ -37,12 +36,12 @@ public class TableState extends StatedPersistentBase implements ProcessState {
 
   private TableState() {}
 
-  protected TableState(Action action, ServerTableIdentifier tableIdentifier) {
+  public TableState(Action action, ServerTableIdentifier tableIdentifier) {
     this.action = action;
     this.tableIdentifier = tableIdentifier;
   }
 
-  protected TableState(long id, Action action, ServerTableIdentifier tableIdentifier) {
+  public TableState(long id, Action action, ServerTableIdentifier tableIdentifier) {
     this.id = id;
     this.action = action;
     this.tableIdentifier = tableIdentifier;
@@ -105,7 +104,8 @@ public class TableState extends StatedPersistentBase implements ProcessState {
   }
 
   protected void setStatus(ProcessStatus status) {
-    if (status == ProcessStatus.SUCCESS || status == ProcessStatus.FAILED
+    if (status == ProcessStatus.SUCCESS
+        || status == ProcessStatus.FAILED
         || status == ProcessStatus.CLOSED) {
       endTime = System.currentTimeMillis();
     } else if (this.status != ProcessStatus.RUNNING && status == ProcessStatus.RUNNING) {

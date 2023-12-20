@@ -6,10 +6,10 @@ import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
 import com.netease.arctic.server.persistence.converter.MapLong2StringConverter;
 import com.netease.arctic.server.process.optimizing.OptimizingStage;
-import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableConfiguration;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.ams.api.config.TableConfiguration;
 import com.netease.arctic.server.table.TableMetadata;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
@@ -359,7 +359,7 @@ public interface TableMetaMapper {
           + " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter},"
           + " #{runtime.pendingInput, jdbcType=VARCHAR,"
           + " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter})")
-  void insertTableRuntime(@Param("runtime") TableRuntime runtime);
+  void insertTableRuntime(@Param("runtime") DefaultTableRuntime runtime);
 
   @Update(
       "UPDATE table_runtime SET"

@@ -23,7 +23,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.server.process.maintain.AutoCreateIcebergTagAction;
-import com.netease.arctic.server.table.TagConfiguration;
+import com.netease.arctic.ams.api.config.TagConfiguration;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotRef;

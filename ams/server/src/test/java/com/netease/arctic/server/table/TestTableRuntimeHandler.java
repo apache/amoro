@@ -21,6 +21,8 @@ package com.netease.arctic.server.table;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.ams.api.config.TableConfiguration;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
@@ -124,32 +126,32 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
   static class TestHandler extends RuntimeHandlerChain {
 
     private final List<TableRuntimePersistency> initTables = Lists.newArrayList();
-    private final List<Pair<TableRuntime, OptimizingStage>> statusChangedTables =
+    private final List<Pair<DefaultTableRuntime, OptimizingStage>> statusChangedTables =
         Lists.newArrayList();
-    private final List<Pair<TableRuntime, TableConfiguration>> configChangedTables =
+    private final List<Pair<DefaultTableRuntime, TableConfiguration>> configChangedTables =
         Lists.newArrayList();
-    private final List<Pair<ArcticTable, TableRuntime>> addedTables = Lists.newArrayList();
-    private final List<TableRuntime> removedTables = Lists.newArrayList();
+    private final List<Pair<ArcticTable, DefaultTableRuntime>> addedTables = Lists.newArrayList();
+    private final List<DefaultTableRuntime> removedTables = Lists.newArrayList();
     private boolean disposed = false;
 
     @Override
-    protected void handleStatusChanged(TableRuntime tableRuntime, OptimizingStage originalStatus) {
+    protected void handleStatusChanged(DefaultTableRuntime tableRuntime, OptimizingStage originalStatus) {
       statusChangedTables.add(Pair.of(tableRuntime, originalStatus));
     }
 
     @Override
     protected void handleConfigChanged(
-        TableRuntime tableRuntime, TableConfiguration originalConfig) {
+        DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
       configChangedTables.add(Pair.of(tableRuntime, originalConfig));
     }
 
     @Override
-    protected void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
+    protected void handleTableAdded(AmoroTable<?> table, DefaultTableRuntime tableRuntime) {
       addedTables.add(Pair.of((ArcticTable) table.originalTable(), tableRuntime));
     }
 
     @Override
-    protected void handleTableRemoved(TableRuntime tableRuntime) {
+    protected void handleTableRemoved(DefaultTableRuntime tableRuntime) {
       removedTables.add(tableRuntime);
     }
 
@@ -167,19 +169,19 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
       return initTables;
     }
 
-    public List<Pair<TableRuntime, OptimizingStage>> getStatusChangedTables() {
+    public List<Pair<DefaultTableRuntime, OptimizingStage>> getStatusChangedTables() {
       return statusChangedTables;
     }
 
-    public List<Pair<TableRuntime, TableConfiguration>> getConfigChangedTables() {
+    public List<Pair<DefaultTableRuntime, TableConfiguration>> getConfigChangedTables() {
       return configChangedTables;
     }
 
-    public List<Pair<ArcticTable, TableRuntime>> getAddedTables() {
+    public List<Pair<ArcticTable, DefaultTableRuntime>> getAddedTables() {
       return addedTables;
     }
 
-    public List<TableRuntime> getRemovedTables() {
+    public List<DefaultTableRuntime> getRemovedTables() {
       return removedTables;
     }
 

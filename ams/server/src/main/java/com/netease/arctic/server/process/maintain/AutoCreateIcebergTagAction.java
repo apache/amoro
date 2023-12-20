@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.process.maintain;
 
-import com.netease.arctic.server.table.TagConfiguration;
+import com.netease.arctic.ams.api.config.TagConfiguration;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.slf4j.Logger;

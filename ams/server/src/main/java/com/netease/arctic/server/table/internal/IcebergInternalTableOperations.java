@@ -23,7 +23,7 @@ import static com.netease.arctic.server.table.internal.InternalTableConstants.PR
 
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
-import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.server.utils.InternalTableUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.LocationProviders;

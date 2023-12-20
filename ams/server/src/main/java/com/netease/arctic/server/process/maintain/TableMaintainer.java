@@ -20,7 +20,7 @@ package com.netease.arctic.server.process.maintain;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.Table;
 
@@ -34,13 +34,13 @@ import org.apache.iceberg.Table;
 public interface TableMaintainer {
 
   /** Clean table orphan files. Includes: data files, metadata files, dangling delete files. */
-  void cleanOrphanFiles(TableRuntime tableRuntime);
+  void cleanOrphanFiles(DefaultTableRuntime tableRuntime);
 
   /**
    * Expire snapshots. The optimizing based on the snapshot that the current table relies on will
    * not expire according to TableRuntime.
    */
-  void expireSnapshots(TableRuntime tableRuntime);
+  void expireSnapshots(DefaultTableRuntime tableRuntime);
 
   /**
    * Expire historical data based on the expiration field, and data that exceeds the retention
@@ -48,10 +48,10 @@ public interface TableMaintainer {
    *
    * @param tableRuntime TableRuntime
    */
-  void expireData(TableRuntime tableRuntime);
+  void expireData(DefaultTableRuntime tableRuntime);
 
   /** Auto create tags for table. */
-  void autoCreateTags(TableRuntime tableRuntime);
+  void autoCreateTags(DefaultTableRuntime tableRuntime);
 
   static TableMaintainer ofTable(AmoroTable<?> amoroTable) {
     TableFormat format = amoroTable.format();

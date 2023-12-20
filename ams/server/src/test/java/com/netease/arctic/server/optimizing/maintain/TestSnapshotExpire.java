@@ -30,9 +30,9 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.process.maintain.MixedTableMaintainer;
 import com.netease.arctic.server.process.optimizing.OptimizingStage;
-import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableConfiguration;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.ams.api.config.TableConfiguration;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.table.executor.ExecutorTestBase;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
@@ -200,7 +200,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Snapshot lastSnapshot = testKeyedTable.changeTable().currentSnapshot();
 
     testKeyedTable.updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
-    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
+    DefaultTableRuntime tableRuntime = Mockito.mock(DefaultTableRuntime.class);
     Mockito.when(tableRuntime.getTableIdentifier())
         .thenReturn(
             ServerTableIdentifier.of(
@@ -244,7 +244,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Snapshot lastSnapshot = table.currentSnapshot();
 
     table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
-    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
+    DefaultTableRuntime tableRuntime = Mockito.mock(DefaultTableRuntime.class);
     Mockito.when(tableRuntime.getTableIdentifier())
         .thenReturn(
             ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id()), getTestFormat()));
@@ -284,7 +284,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Snapshot lastSnapshot = table.currentSnapshot();
 
     table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
-    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
+    DefaultTableRuntime tableRuntime = Mockito.mock(DefaultTableRuntime.class);
     Mockito.when(tableRuntime.getTableIdentifier())
         .thenReturn(
             ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id()), getTestFormat()));
@@ -315,7 +315,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     table.newAppend().commit();
     table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
 
-    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
+    DefaultTableRuntime tableRuntime = Mockito.mock(DefaultTableRuntime.class);
     Mockito.when(tableRuntime.getTableIdentifier())
         .thenReturn(
             ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id()), getTestFormat()));

@@ -31,11 +31,11 @@ import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.process.task.KeyedTableCommit;
-import com.netease.arctic.server.process.optimizing.OptimizingConfig;
+import com.netease.arctic.ams.api.config.OptimizingConfig;
 import com.netease.arctic.server.process.optimizing.TaskDescriptor;
-import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableConfiguration;
-import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.ams.api.config.TableConfiguration;
+import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticDataFiles;
@@ -167,7 +167,7 @@ public class CompleteOptimizingFlow {
 
   private OptimizingPlanner planner() {
     table.refresh();
-    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
+    DefaultTableRuntime tableRuntime = Mockito.mock(DefaultTableRuntime.class);
     Mockito.when(tableRuntime.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
     Mockito.when(tableRuntime.getCurrentChangeSnapshotId())
         .thenAnswer(f -> getCurrentChangeSnapshotId());

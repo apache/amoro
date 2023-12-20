@@ -18,13 +18,11 @@
  *
  */
 
-package com.netease.arctic.server.utils;
+package com.netease.arctic.ams.api.process;
 
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class SimpleFuture {
 
