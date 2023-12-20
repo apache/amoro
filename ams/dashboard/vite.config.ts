@@ -28,6 +28,9 @@ const css = {
 // https://vitejs.dev/config/
 export default defineConfig({
   css,
+  build: {
+    outDir: './src/main/resources/static',
+  },
   plugins: [
     vue(),
     viteMockServe({
@@ -37,11 +40,19 @@ export default defineConfig({
   ],
   server: {
     port: 8080,
+
+    /**
+     * If you run the server on you local backend
+     * Maybe you need to open the Proxy
+     */
     // proxy: {
     //   '^/ams': {
-    //     target: ENV_HOST[ENV],
+    //     // change the target to your backend server
+    //     // Such as target: 'http://127.0.0.1:xxx',
+    //     target: 'http://127.0.0.1:8080',
     //     changeOrigin: true,
-    //     configure(proxy, options) {
+    //     configure(_, options) {
+    //       // configure proxy header here
     //       options.headers = {
     //         'cookie': 'JSESSIONID=node07rhpm05aujgi1amdr8stpj9xa4.node0',
     //         'Access-Control-Allow-Origin': '*',
