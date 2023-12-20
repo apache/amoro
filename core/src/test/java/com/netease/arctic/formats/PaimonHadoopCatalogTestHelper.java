@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.formats.paimon.PaimonCatalogFactory;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.options.CatalogOptions;
@@ -62,13 +63,19 @@ public class PaimonHadoopCatalogTestHelper extends AbstractFormatCatalogTestHelp
   public AmoroCatalog amoroCatalog() {
     PaimonCatalogFactory paimonCatalogFactory = new PaimonCatalogFactory();
     TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
+    Map<String, String> paimonCatalogProperties =
+        paimonCatalogFactory.convertCatalogProperties(
+            catalogName, getMetastoreType(), getCatalogMeta().getCatalogProperties());
     return paimonCatalogFactory.create(
-        catalogName, getMetastoreType(), catalogProperties, metaStore);
+        catalogName, getMetastoreType(), paimonCatalogProperties, metaStore);
   }
 
   @Override
   public Catalog originalCatalog() {
-    return PaimonCatalogFactory.paimonCatalog(getMetastoreType(), catalogProperties, null);
+    PaimonCatalogFactory factory = new PaimonCatalogFactory();
+    Map<String, String> properties =
+        factory.convertCatalogProperties(catalogName, getMetastoreType(), catalogProperties);
+    return PaimonCatalogFactory.paimonCatalog(properties, new Configuration());
   }
 
   @Override

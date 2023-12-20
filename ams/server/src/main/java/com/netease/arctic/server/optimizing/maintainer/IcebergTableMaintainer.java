@@ -55,7 +55,6 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.base.Optional;
 import org.apache.iceberg.relocated.com.google.common.base.Strings;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -79,6 +78,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.LinkedTransferQueue;
@@ -127,13 +127,16 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
     // clear metadata files
     cleanMetadata(System.currentTimeMillis() - keepTime);
+  }
+
+  @Override
+  public void cleanDanglingDeleteFiles(TableRuntime tableRuntime) {
+    TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
 
     if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
       return;
     }
 
-    // refresh
-    table.refresh();
     Snapshot currentSnapshot = table.currentSnapshot();
     java.util.Optional<String> totalDeleteFiles =
         java.util.Optional.ofNullable(
@@ -213,19 +216,30 @@ public class IcebergTableMaintainer implements TableMaintainer {
       if (!expirationConfig.isValid(field, table.name())) {
         return;
       }
-      Instant startInstant;
-      if (expirationConfig.getSince() == DataExpirationConfig.Since.CURRENT_TIMESTAMP) {
-        startInstant = Instant.now().atZone(getDefaultZoneId(field)).toInstant();
-      } else {
-        startInstant =
-            Instant.ofEpochMilli(fetchLatestNonOptimizedSnapshotTime(table))
-                .atZone(getDefaultZoneId(field))
-                .toInstant();
-      }
 
-      expireDataFrom(expirationConfig, startInstant);
+      expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig, field));
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
+    }
+  }
+
+  protected Instant expireBaseOnRule(
+      DataExpirationConfig expirationConfig, Types.NestedField field) {
+    switch (expirationConfig.getBaseOnRule()) {
+      case CURRENT_TIME:
+        return Instant.now().atZone(getDefaultZoneId(field)).toInstant();
+      case LAST_COMMIT_TIME:
+        long lastCommitTimestamp = fetchLatestNonOptimizedSnapshotTime(getTable());
+        // if the table does not exist any non-optimized snapshots, should skip the expiration
+        if (lastCommitTimestamp != Long.MAX_VALUE) {
+          // snapshot timestamp should be UTC
+          return Instant.ofEpochMilli(lastCommitTimestamp);
+        } else {
+          return Instant.MIN;
+        }
+      default:
+        throw new IllegalArgumentException(
+            "Cannot expire data base on " + expirationConfig.getBaseOnRule().name());
     }
   }
 
@@ -238,6 +252,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
    */
   @VisibleForTesting
   public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+    if (instant.equals(Instant.MIN)) {
+      return;
+    }
+
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
     LOG.info(
         "Expiring data older than {} in table {} ",
@@ -425,17 +443,17 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   /**
-   * When expiring historic data and `data-expire.since` is `CURRENT_SNAPSHOT`, the latest snapshot
-   * should not be produced by Amoro.
+   * When expiring historic data and `data-expire.base-on-rule` is `LAST_COMMIT_TIME`, the latest
+   * snapshot should not be produced by Amoro optimizing.
    *
    * @param table iceberg table
    * @return the latest non-optimized snapshot timestamp
    */
   public static long fetchLatestNonOptimizedSnapshotTime(Table table) {
     Optional<Snapshot> snapshot =
-        IcebergTableUtil.findSnapshot(
-            table, s -> s.summary().containsValue(CommitMetaProducer.OPTIMIZE.name()));
-    return snapshot.isPresent() ? snapshot.get().timestampMillis() : Long.MAX_VALUE;
+        IcebergTableUtil.findFirstMatchSnapshot(
+            table, s -> !s.summary().containsValue(CommitMetaProducer.OPTIMIZE.name()));
+    return snapshot.map(Snapshot::timestampMillis).orElse(Long.MAX_VALUE);
   }
 
   private static int deleteInvalidFilesInFs(
@@ -595,8 +613,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
     Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
     return CloseableIterable.transform(
-        CloseableIterable.withNoopClose(
-            com.google.common.collect.Iterables.concat(dataFiles, deleteFiles)),
+        CloseableIterable.withNoopClose(Iterables.concat(dataFiles, deleteFiles)),
         contentFile -> {
           Literal<Long> literal =
               getExpireTimestampLiteral(

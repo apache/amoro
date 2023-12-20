@@ -295,7 +295,7 @@ export default defineComponent({
         clearTimeout(logInterval.value)
         loading.value = true
         const res: string = await getExampleSqlCode(code)
-        sqlSource.value = res
+        sqlSource.value = sqlSource.value + '\n-- SQL shortcut generated\n' + res
         showDebug.value = false
         runStatus.value = ''
         resetResult()

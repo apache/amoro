@@ -95,6 +95,10 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_FRAGMENT_RATIO = "self-optimizing.fragment-ratio";
   public static final int SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT = 8;
 
+  public static final String SELF_OPTIMIZING_MIN_TARGET_SIZE_RATIO =
+      "self-optimizing.min-target-size-ratio";
+  public static final double SELF_OPTIMIZING_MIN_TARGET_SIZE_RATIO_DEFAULT = 0.75;
+
   public static final String SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT =
       "self-optimizing.minor.trigger.file-count";
   public static final int SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT = 12;
@@ -162,8 +166,8 @@ public class TableProperties {
       "data-expire.datetime-number-format";
   public static final String DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT = "TIMESTAMP_MS";
   public static final String DATA_EXPIRATION_RETENTION_TIME = "data-expire.retention-time";
-  public static final String DATA_EXPIRATION_SINCE = "data-expire.since";
-  public static final String DATA_EXPIRATION_SINCE_DEFAULT = "LATEST_SNAPSHOT";
+  public static final String DATA_EXPIRATION_BASE_ON_RULE = "data-expire.base-on-rule";
+  public static final String DATA_EXPIRATION_BASE_ON_RULE_DEFAULT = "LAST_COMMIT_TIME";
 
   public static final String ENABLE_DANGLING_DELETE_FILES_CLEAN =
       "clean-dangling-delete-files.enabled";

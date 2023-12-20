@@ -16,5 +16,5 @@
 # limitations under the License.
 #
 
-com.netease.arctic.flink.catalog.factories.ArcticCatalogFactory
+com.netease.arctic.flink.catalog.factories.mixed.MixedCatalogFactory
 com.netease.arctic.flink.table.DynamicTableFactory
