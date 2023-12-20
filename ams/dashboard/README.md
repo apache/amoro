@@ -35,11 +35,7 @@ After completing the [Installing Dependencies](#Installing Dependencies) step, y
 
 <b>If You are a frontend developer</b>
 
-You can in the `/ams/dashboard/src/utils/request.ts`
-
-change the `export const baseURL = '/'` to the `export const baseURL = '/mock'`
-
-In the `ams/dashboard` directory, run `pnpm dev` to start a development server for the dashboard app at `http://127.0.0.1:8080`.
+In the `ams/dashboard` directory, run `pnpm dev:mock` to start a development server for the dashboard app at `http://127.0.0.1:8080`.
 
 <b>If You not. You just running `pnpm dev`</b>
 
