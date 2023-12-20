@@ -20,14 +20,14 @@ package com.netease.arctic.server.manager;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.ActivePlugin;
 import com.netease.arctic.server.Environments;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.LoadingPluginException;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -95,9 +95,9 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> {
 
   /** Initialize the plugin manager, and install all plugins. */
   public void initialize() throws IOException {
-    Map<String, PluginConfiguration> pluginConfigs = loadPluginConfigurations();
+    List<PluginConfiguration> pluginConfigs = loadPluginConfigurations();
     foundAvailablePlugins();
-    for (PluginConfiguration pluginConfig : pluginConfigs.values()) {
+    for (PluginConfiguration pluginConfig : pluginConfigs) {
       if (!pluginConfig.isEnabled()) {
         continue;
       }
@@ -236,7 +236,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> {
   }
 
   @VisibleForTesting
-  protected Map<String, PluginConfiguration> loadPluginConfigurations() throws IOException {
+  protected List<PluginConfiguration> loadPluginConfigurations() throws IOException {
     JSONObject yamlConfig = null;
     Path mangerConfigPath = pluginManagerConfigFilePath();
     try {
@@ -244,19 +244,19 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> {
           new JSONObject(new Yaml().loadAs(Files.newInputStream(mangerConfigPath), Map.class));
     } catch (FileNotFoundException e) {
       LOG.warn("Plugin manger config path is not founded");
-      return ImmutableMap.of();
+      return ImmutableList.of();
     }
 
     LOG.info("initializing plugin configuration for: " + pluginCategory());
     String pluginListKey = pluginCategory();
 
     JSONArray pluginConfigList = yamlConfig.getJSONArray(pluginListKey);
-    Map<String, PluginConfiguration> configs = Maps.newLinkedHashMap();
+    List<PluginConfiguration> configs = Lists.newArrayList();
     if (pluginConfigList != null && !pluginConfigList.isEmpty()) {
       for (int i = 0; i < pluginConfigList.size(); i++) {
         JSONObject pluginConfiguration = pluginConfigList.getJSONObject(i);
         PluginConfiguration configuration = PluginConfiguration.fromJSONObject(pluginConfiguration);
-        configs.put(configuration.getName(), configuration);
+        configs.add(configuration);
       }
     }
     return configs;
