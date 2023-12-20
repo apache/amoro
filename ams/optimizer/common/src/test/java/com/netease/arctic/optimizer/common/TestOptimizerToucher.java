@@ -1,11 +1,11 @@
 package com.netease.arctic.optimizer.common;
 
-import com.netease.arctic.ams.api.OptimizerRegisterInfo;
+import com.google.common.collect.*;
+import com.netease.arctic.ams.api.*;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -26,10 +26,11 @@ public class TestOptimizerToucher extends OptimizerTestBase {
     tokenChangeListener.waitForTokenChange();
     Assert.assertEquals(1, tokenChangeListener.tokenList().size());
     Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
+    Map<String, String> optimizerProperties = Maps.newHashMap();
+    optimizerProperties.put("test_k", "test_v");
+    optimizerProperties.put(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL, "1000");
     validateRegisteredOptimizer(
-        tokenChangeListener.tokenList().get(0),
-        optimizerConfig,
-        Collections.singletonMap("test_k", "test_v"));
+        tokenChangeListener.tokenList().get(0), optimizerConfig, optimizerProperties);
 
     // clear all optimizer, toucher will register again
     TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().clear();
@@ -37,9 +38,7 @@ public class TestOptimizerToucher extends OptimizerTestBase {
     Assert.assertEquals(2, tokenChangeListener.tokenList().size());
     Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
     validateRegisteredOptimizer(
-        tokenChangeListener.tokenList().get(1),
-        optimizerConfig,
-        Collections.singletonMap("test_k", "test_v"));
+        tokenChangeListener.tokenList().get(1), optimizerConfig, optimizerProperties);
 
     optimizerToucher.stop();
   }
