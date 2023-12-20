@@ -52,13 +52,6 @@ import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableProperties;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +65,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * DefaultOptimizingService is implementing the OptimizerManager Thrift service, which manages the
@@ -238,9 +237,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
               if (Long.parseLong(interval) >= optimizerTouchTimeout) {
                 throw new ForbiddenException(
                     String.format(
-                        "The %s configuration should be less than AMS's %s",
-                        OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL,
-                        ArcticManagementConf.OPTIMIZER_HB_TIMEOUT.key()));
+                        "The %s:%s configuration should be less than AMS's %s:%s",
+                        OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL, interval,
+                        ArcticManagementConf.OPTIMIZER_HB_TIMEOUT.key(), optimizerTouchTimeout));
               }
             });
 
