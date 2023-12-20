@@ -21,7 +21,6 @@ package com.netease.arctic.server.optimizing.maintainer;
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 import com.google.common.base.Strings;
-import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
 import com.netease.arctic.io.SupportsFileSystemOperations;
@@ -41,11 +40,6 @@ import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.base.Optional;
-import org.apache.iceberg.relocated.com.google.common.base.Strings;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -192,8 +186,6 @@ public class IcebergTableMaintainer implements TableMaintainer {
         now - snapshotsKeepTime(tableRuntime),
         // The snapshot optimizing plan based should not be expired for committing
         fetchOptimizingPlanSnapshotTime(table, tableRuntime),
-        // The latest non-optimized snapshot should not be expired for data expiring
-        fetchLatestNonOptimizedSnapshotTime(table),
         // The latest flink committed snapshot should not be expired for recovering flink job
         fetchLatestFlinkCommittedSnapshotTime(table));
   }
@@ -326,20 +318,6 @@ public class IcebergTableMaintainer implements TableMaintainer {
       }
     }
     return latestSnapshot;
-  }
-
-  /**
-   * When expiring historic data and `data-expire.since` is `CURRENT_SNAPSHOT`, the latest snapshot
-   * should not be produced by Amoro.
-   *
-   * @param table iceberg table
-   * @return the latest non-optimized snapshot timestamp
-   */
-  public static long fetchLatestNonOptimizedSnapshotTime(Table table) {
-    Optional<Snapshot> snapshot =
-        IcebergTableUtil.findSnapshot(
-            table, s -> s.summary().containsValue(CommitMetaProducer.OPTIMIZE.name()));
-    return snapshot.isPresent() ? snapshot.get().timestampMillis() : Long.MAX_VALUE;
   }
 
   private static int deleteInvalidFilesInFs(

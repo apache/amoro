@@ -41,15 +41,10 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -349,8 +344,6 @@ public class MixedTableMaintainer implements TableMaintainer {
           now - snapshotsKeepTime(tableRuntime),
           // The snapshot optimizing plan based should not be expired for committing
           fetchOptimizingPlanSnapshotTime(table, tableRuntime),
-          // The latest non-optimized snapshot should not be expired for data expiring
-          fetchLatestNonOptimizedSnapshotTime(table),
           // The latest flink committed snapshot should not be expired for recovering flink job
           fetchLatestFlinkCommittedSnapshotTime(table),
           // The latest snapshot contains the optimized sequence should not be expired for MOR
