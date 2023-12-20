@@ -392,10 +392,14 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
                         if (compactManifestEntry.kind() == FileKind.DELETE) {
                           inputBuilder.addFile(compactManifestEntry.file().fileSize());
                         } else {
-                          minCreateTime = Math.min(minCreateTime,
-                              compactManifestEntry.file().creationTime().getMillisecond());
-                          maxCreateTime = Math.max(maxCreateTime,
-                              compactManifestEntry.file().creationTime().getMillisecond());
+                          minCreateTime =
+                              Math.min(
+                                  minCreateTime,
+                                  compactManifestEntry.file().creationTime().getMillisecond());
+                          maxCreateTime =
+                              Math.max(
+                                  maxCreateTime,
+                                  compactManifestEntry.file().creationTime().getMillisecond());
                           outputBuilder.addFile(compactManifestEntry.file().fileSize());
                         }
                       }
