@@ -68,8 +68,8 @@ public class KyuubiSession implements TerminalSession {
       try {
         connection.setCatalog(useCatalog);
       } catch (SQLException e) {
-        throw new RuntimeException(String.format("Failed to set catalog %s on the connection",
-                useCatalog), e);
+        throw new RuntimeException(
+            String.format("Failed to set catalog %s on the connection", useCatalog), e);
       }
       this.currentCatalog = catalog;
     }
