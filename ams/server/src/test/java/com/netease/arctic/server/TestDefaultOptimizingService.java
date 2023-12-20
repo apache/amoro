@@ -18,9 +18,15 @@
 
 package com.netease.arctic.server;
 
+import com.google.common.collect.Maps;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.*;
+import com.netease.arctic.ams.api.OptimizerProperties;
+import com.netease.arctic.ams.api.OptimizerRegisterInfo;
+import com.netease.arctic.ams.api.OptimizingTask;
+import com.netease.arctic.ams.api.OptimizingTaskId;
+import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.io.MixedDataTestHelpers;
@@ -38,17 +44,20 @@ import com.netease.arctic.server.table.executor.TableRuntimeRefreshExecutor;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.SerializationUtil;
-import java.util.*;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.relocated.com.google.common.collect.*;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @RunWith(Parameterized.class)
 public class TestDefaultOptimizingService extends AMSTableTestBase {
