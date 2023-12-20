@@ -6,6 +6,7 @@ import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
@@ -15,12 +16,15 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class ExternalCatalog extends ServerCatalog {
 
   UnifiedCatalog unifiedCatalog;
   TableMetaStore tableMetaStore;
+  private Pattern tableFilterPattern;
+  private Pattern databaseFilterPattern;
 
   protected ExternalCatalog(CatalogMeta metadata) {
     super(metadata);
@@ -28,6 +32,8 @@ public class ExternalCatalog extends ServerCatalog {
     this.unifiedCatalog =
         this.tableMetaStore.doAs(
             () -> new CommonUnifiedCatalog(this::getMetadata, Maps.newHashMap()));
+    updateTableFilter(metadata);
+    updateDatabaseFilter(metadata);
   }
 
   public void syncTable(String database, String tableName, TableFormat format) {
@@ -54,6 +60,8 @@ public class ExternalCatalog extends ServerCatalog {
     super.updateMetadata(metadata);
     this.tableMetaStore = CatalogUtil.buildMetaStore(metadata);
     this.unifiedCatalog.refresh();
+    updateDatabaseFilter(metadata);
+    updateTableFilter(metadata);
   }
 
   @Override
@@ -68,7 +76,14 @@ public class ExternalCatalog extends ServerCatalog {
 
   @Override
   public List<String> listDatabases() {
-    return doAs(() -> unifiedCatalog.listDatabases());
+    return doAs(
+        () ->
+            unifiedCatalog.listDatabases().stream()
+                .filter(
+                    database ->
+                        databaseFilterPattern == null
+                            || databaseFilterPattern.matcher(database).matches())
+                .collect(Collectors.toList()));
   }
 
   @Override
@@ -83,12 +98,45 @@ public class ExternalCatalog extends ServerCatalog {
 
   @Override
   public List<TableIDWithFormat> listTables(String database) {
-    return doAs(() -> new ArrayList<>(unifiedCatalog.listTables(database)));
+    return doAs(
+        () ->
+            new ArrayList<>(
+                unifiedCatalog.listTables(database).stream()
+                    .filter(
+                        tableIDWithFormat ->
+                            tableFilterPattern == null
+                                || tableFilterPattern
+                                    .matcher(
+                                        (database
+                                            + "."
+                                            + tableIDWithFormat.getIdentifier().getTableName()))
+                                    .matches())
+                    .collect(Collectors.toList())));
   }
 
   @Override
   public AmoroTable<?> loadTable(String database, String tableName) {
     return doAs(() -> unifiedCatalog.loadTable(database, tableName));
+  }
+
+  private void updateDatabaseFilter(CatalogMeta metadata) {
+    String databaseFilter =
+        metadata.getCatalogProperties().get(CatalogMetaProperties.KEY_DATABASE_FILTER);
+    if (databaseFilter != null) {
+      databaseFilterPattern = Pattern.compile(databaseFilter);
+    } else {
+      databaseFilterPattern = null;
+    }
+  }
+
+  private void updateTableFilter(CatalogMeta metadata) {
+    String tableFilter =
+        metadata.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
+    if (tableFilter != null) {
+      tableFilterPattern = Pattern.compile(tableFilter);
+    } else {
+      tableFilterPattern = null;
+    }
   }
 
   private <T> T doAs(Callable<T> callable) {
