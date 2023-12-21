@@ -82,6 +82,7 @@
         <maven-spotless-plugin.version>2.27.2</maven-spotless-plugin.version>
         <maven-thrift-plugin.version>0.1.11</maven-thrift-plugin.version>
         <maven-build-helper-plugin.version>3.2.0</maven-build-helper-plugin.version>
+        <maven-apache-rat-lugin.version>0.15</maven-apache-rat-lugin.version>
 
         <iceberg.version>1.3.0</iceberg.version>
         <paimon.version>0.5.0-incubating</paimon.version>
@@ -937,6 +938,31 @@
                         </scala>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.rat</groupId>
+                    <artifactId>apache-rat-plugin</artifactId>
+                    <version>${maven-apache-rat-lugin.version}</version>
+                    <inherited>true</inherited>
+                    <configuration>
+                        <excludeSubProjects>false</excludeSubProjects>
+                        <numUnapprovedLicenses>0</numUnapprovedLicenses>
+                        <licenseFamilies>
+                            <licenseFamily
+                                    implementation="org.apache.rat.license.SimpleLicenseFamily">
+                                <familyName>Apache License 2.0</familyName>
+                            </licenseFamily>
+                        </licenseFamilies>
+                        <excludesFile>.rat-excludes</excludesFile>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>verify</phase>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -952,6 +978,10 @@
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

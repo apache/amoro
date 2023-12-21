@@ -1,4 +1,3 @@
-package com.netease.arctic.flink.table;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,6 +15,8 @@ package com.netease.arctic.flink.table;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package com.netease.arctic.flink.table;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 
