@@ -18,39 +18,5 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-import static com.netease.arctic.ams.api.metrics.MetricDefine.defineGauge;
-
 /** All metric defines. */
-public class MetricDefines {
-
-  // table optimizing status duration metrics
-  public static final MetricDefine TABLE_OPTIMIZING_STATE_IDLE_DURATION =
-      defineGauge("table_optimizing_status_idle_duration_seconds")
-          .withDescription("Duration in seconds after table be in idle state")
-          .withTags("catalog", "database", "table")
-          .build();
-
-  public static final MetricDefine TABLE_OPTIMIZING_STATE_PENDING_DURATION =
-      defineGauge("table_optimizing_status_pending_duration_seconds")
-          .withDescription("Duration in seconds after table be in pending state")
-          .withTags("catalog", "database", "table")
-          .build();
-
-  public static final MetricDefine TABLE_OPTIMIZING_STATE_PLANNING_DURATION =
-      defineGauge("table_optimizing_status_planning_duration_seconds")
-          .withDescription("Duration in seconds after table be in planning state")
-          .withTags("catalog", "database", "table")
-          .build();
-
-  public static final MetricDefine TABLE_OPTIMIZING_STATE_EXECUTING_DURATION =
-      defineGauge("table_optimizing_status_executing_duration_seconds")
-          .withDescription("Duration in seconds after table be in executing state")
-          .withTags("catalog", "database", "table")
-          .build();
-
-  public static final MetricDefine TABLE_OPTIMIZING_STATE_COMMITTING_DURATION =
-      defineGauge("table_optimizing_status_committing_duration_seconds")
-          .withDescription("Duration in seconds after table be in committing state")
-          .withTags("catalog", "database", "table")
-          .build();
-}
+public class MetricDefines {}

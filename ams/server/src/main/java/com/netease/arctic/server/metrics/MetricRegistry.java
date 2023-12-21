@@ -53,7 +53,7 @@ public class MetricRegistry implements MetricSet {
    * @param tags values of tag
    * @param metric metric
    */
-  public <T extends Metric> void register(MetricDefine define, List<String> tags, T metric) {
+  public <T extends Metric> MetricKey register(MetricDefine define, List<String> tags, T metric) {
     Preconditions.checkNotNull(metric, "Metric must not be null");
     Preconditions.checkNotNull(define, "Metric define must not be null");
     Preconditions.checkArgument(
@@ -85,6 +85,7 @@ public class MetricRegistry implements MetricSet {
         });
 
     callListener(l -> l.onMetricRegistered(key, metric));
+    return key;
   }
 
   /**

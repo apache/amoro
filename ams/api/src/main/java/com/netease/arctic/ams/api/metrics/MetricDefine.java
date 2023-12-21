@@ -114,11 +114,11 @@ public class MetricDefine {
     return new Builder(name, MetricType.Counter);
   }
 
-  static Builder defineGauge(String name) {
+  public static Builder defineGauge(String name) {
     return new Builder(name, MetricType.Gauge);
   }
 
-  static class Builder {
+  public static class Builder {
     private final String name;
     private List<String> tags;
     private final MetricType type;
