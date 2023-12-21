@@ -156,14 +156,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     if (!expireSnapshotEnabled(tableRuntime)) {
       return;
     }
-    for (int i = 0; i < 20; i++) {
-      LOG.info("Mock expire snapshot {} : {}", tableRuntime.getTableIdentifier().getTableName(), i);
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    }
+    expireSnapshots(mustOlderThan(tableRuntime, System.currentTimeMillis()));
   }
 
   protected boolean expireSnapshotEnabled(TableRuntime tableRuntime) {
