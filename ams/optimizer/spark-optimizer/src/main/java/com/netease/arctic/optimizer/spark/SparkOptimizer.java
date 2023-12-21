@@ -28,6 +28,7 @@ import org.apache.spark.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -75,14 +76,15 @@ public class SparkOptimizer {
             TimeUnit.SECONDS,
             new ArrayBlockingQueue<>(config.getExecutionParallel()),
             executorFactory);
+    SparkOptimizingTaskSubmitter[] submitters =
+        new SparkOptimizingTaskSubmitter[config.getExecutionParallel()];
     IntStream.range(0, config.getExecutionParallel())
         .forEach(
             i -> {
               SparkOptimizingTaskSubmitter sparkOptimizingTaskSubmitter =
                   new SparkOptimizingTaskSubmitter(jsc, config, i);
-              executorService.submit(sparkOptimizingTaskSubmitter);
-              toucher.withTokenChangeListener(
-                  newToken -> sparkOptimizingTaskSubmitter.setToken(newToken));
+              executorService.execute(sparkOptimizingTaskSubmitter);
+              submitters[i] = sparkOptimizingTaskSubmitter;
             });
 
     // check whether the spark driver can exit normally in the current schedule time
@@ -98,6 +100,12 @@ public class SparkOptimizer {
         1,
         TimeUnit.MINUTES);
 
-    toucher.start();
+    toucher
+        .withTokenChangeListener(
+            newToken -> {
+              Arrays.stream(submitters)
+                  .forEach(optimizerExecutor -> optimizerExecutor.setToken(newToken));
+            })
+        .start();
   }
 }
