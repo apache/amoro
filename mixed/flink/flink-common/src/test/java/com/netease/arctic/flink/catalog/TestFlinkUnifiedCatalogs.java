@@ -66,8 +66,7 @@ class TestFlinkUnifiedCatalogs {
   @ParameterizedTest
   @MethodSource("com.netease.arctic.flink.catalog.FlinkCatalogContext#getFlinkCatalogAndTable")
   void testListDatabases(FlinkUnifiedCatalog flinkUnifiedCatalog) throws TException {
-    List<String> expects =
-        flinkCatalogContext.getHMSClient().getAlParquetMetadataConverterUtillDatabases();
+    List<String> expects = flinkCatalogContext.getHMSClient().getAllDatabases();
     assertEquals(expects, flinkUnifiedCatalog.listDatabases());
   }
 
@@ -99,7 +98,7 @@ class TestFlinkUnifiedCatalogs {
       flinkUnifiedCatalog.alterDatabase(
           "default", new CatalogDatabaseImpl(Collections.emptyMap(), "default"), false);
     } catch (UnsupportedOperationException e) {
-      // Mixed-format and Iceebrg catalog does not support altering database.
+      // Mixed-format and Iceberg catalog does not support altering database.
       if (!tableFormat.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG)) {
         throw e;
       }
