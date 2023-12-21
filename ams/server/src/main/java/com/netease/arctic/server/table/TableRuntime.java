@@ -25,6 +25,7 @@ import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.manager.MetricManager;
+import com.netease.arctic.server.metrics.MetricRegistry;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
@@ -106,7 +107,6 @@ public class TableRuntime extends StatedPersistentBase {
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
     metrics = new TableMetrics(tableIdentifier);
-    metrics.register(MetricManager.getInstance().getGlobalRegistry());
   }
 
   protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
@@ -136,7 +136,6 @@ public class TableRuntime extends StatedPersistentBase {
             : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
     metrics = new TableMetrics(tableIdentifier);
-    metrics.register(MetricManager.getInstance().getGlobalRegistry());
     metrics.stateChanged(optimizingStatus, this.currentStatusStartTime);
   }
 
@@ -146,6 +145,10 @@ public class TableRuntime extends StatedPersistentBase {
       throw new IllegalStateException("Table runtime and processing are not matched!");
     }
     this.optimizingProcess = optimizingProcess;
+  }
+
+  public void registerMetric(MetricRegistry metricRegistry) {
+    this.metrics.register(metricRegistry);
   }
 
   public void dispose() {
