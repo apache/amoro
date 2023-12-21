@@ -21,6 +21,7 @@ package com.netease.arctic.server.table.executor;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.RuntimeHandlerChain;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
@@ -32,8 +33,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public abstract class BaseTableExecutor extends RuntimeHandlerChain {
@@ -44,6 +47,8 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
 
   private final ScheduledExecutorService executor;
   private final TableManager tableManager;
+  private final ConcurrentHashMap<ServerTableIdentifier, ScheduledFuture<?>> scheduledTasks =
+      new ConcurrentHashMap<>();
 
   protected BaseTableExecutor(TableManager tableManager, int poolSize) {
     this.tableManager = tableManager;
@@ -62,25 +67,36 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
         .map(tableRuntimeMeta -> tableRuntimeMeta.getTableRuntime())
         .filter(tableRuntime -> enabled(tableRuntime))
         .forEach(
-            tableRuntime ->
-                executor.schedule(
-                    () -> executeTask(tableRuntime), getStartDelay(), TimeUnit.MILLISECONDS));
+            tableRuntime -> {
+              ScheduledFuture<?> scheduledFuture =
+                  executor.scheduleWithFixedDelay(
+                      () -> executeTask(tableRuntime),
+                      getStartDelay(),
+                      getNextExecutingTime(tableRuntime),
+                      TimeUnit.MILLISECONDS);
+              scheduledTasks.put(tableRuntime.getTableIdentifier(), scheduledFuture);
+            });
     logger.info("Table executor {} initialized", getClass().getSimpleName());
   }
 
   private void executeTask(TableRuntime tableRuntime) {
     if (isExecutable(tableRuntime)) {
-      try {
-        execute(tableRuntime);
-      } finally {
-        scheduleIfNecessary(tableRuntime, getNextExecutingTime(tableRuntime));
-      }
+      execute(tableRuntime);
     }
   }
 
   protected final void scheduleIfNecessary(TableRuntime tableRuntime, long millisecondsTime) {
     if (isExecutable(tableRuntime)) {
-      executor.schedule(() -> executeTask(tableRuntime), millisecondsTime, TimeUnit.MILLISECONDS);
+      if (scheduledTasks.containsKey(tableRuntime.getTableIdentifier())) {
+        scheduledTasks.remove(tableRuntime.getTableIdentifier()).cancel(true);
+      }
+      ScheduledFuture<?> scheduledFuture =
+          executor.scheduleWithFixedDelay(
+              () -> executeTask(tableRuntime),
+              millisecondsTime,
+              getNextExecutingTime(tableRuntime),
+              TimeUnit.MILLISECONDS);
+      scheduledTasks.put(tableRuntime.getTableIdentifier(), scheduledFuture);
     }
   }
 
