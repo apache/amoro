@@ -54,7 +54,7 @@ public class TestSessionCatalog extends MixedTableTestBase {
         SparkTestContext.SESSION_CATALOG_IMPL,
         "spark.sql.catalog.spark_catalog.url",
         context.amsCatalogUrl(TableFormat.MIXED_ICEBERG));
-  }RewritePartitions
+  }
 
   @Test
   public void testLoadTables() throws NoSuchTableException {

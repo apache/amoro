@@ -18,6 +18,10 @@
 
 package com.netease.arctic.spark.writer;
 
+import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
+
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
@@ -69,10 +73,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
 
 public class TestMixedWriter extends MixedTableTestBase {
 

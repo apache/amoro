@@ -18,6 +18,10 @@
 
 package com.netease.arctic.spark.util;
 
+import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE;
+import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
+import static org.apache.iceberg.spark.Spark3Util.toTransforms;
+
 import com.netease.arctic.spark.table.ArcticSparkTable;
 import com.netease.arctic.table.DistributionHashMode;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -50,10 +54,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE;
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
-import static org.apache.iceberg.spark.Spark3Util.toTransforms;
 
 public class ArcticSparkUtils {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkUtils.class);
