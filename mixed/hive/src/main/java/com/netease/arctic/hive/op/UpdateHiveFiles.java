@@ -78,6 +78,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   protected final StructLikeMap<Partition> partitionToAlter;
   protected final StructLikeMap<Partition> partitionToAlterLocation;
   protected String unpartitionTableLocation;
+  private String hiveLocation = null;
   protected Long txId = null;
   protected boolean validateLocation = true;
   protected boolean checkOrphanFiles = false;
@@ -109,6 +110,13 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     this.partitionToCreate = StructLikeMap.create(table.spec().partitionType());
     this.partitionToDelete = StructLikeMap.create(table.spec().partitionType());
     this.partitionToAlterLocation = StructLikeMap.create(table.spec().partitionType());
+  }
+
+  private String hiveLocation() {
+    if (hiveLocation == null) {
+      hiveLocation = table.hiveLocation();
+    }
+    return hiveLocation;
   }
 
   protected abstract void postHiveDataCommitted(List<DataFile> committedDataFile);
@@ -505,7 +513,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     String newLocation;
     newLocation =
         HiveTableUtil.newHiveDataLocation(
-            table.hiveLocation(),
+            hiveLocation(),
             table.spec(),
             null,
             txId != null
@@ -548,7 +556,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   }
 
   protected boolean isHiveDataFile(DataFile dataFile) {
-    String hiveLocation = table.hiveLocation();
+    String hiveLocation = hiveLocation();
     String dataFileLocation = dataFile.path().toString();
     return dataFileLocation.toLowerCase().contains(hiveLocation.toLowerCase());
   }
