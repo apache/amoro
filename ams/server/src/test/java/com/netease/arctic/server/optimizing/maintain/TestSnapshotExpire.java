@@ -18,20 +18,17 @@
 
 package com.netease.arctic.server.optimizing.maintain;
 
-import static com.netease.arctic.server.process.maintain.IcebergTableMaintainer.FLINK_MAX_COMMITTED_CHECKPOINT_ID;
-import static com.netease.arctic.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
-
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.config.TableConfiguration;
+import com.netease.arctic.ams.api.process.OptimizingStage;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.process.maintain.MixedTableMaintainer;
-import com.netease.arctic.server.process.optimizing.OptimizingStage;
-import com.netease.arctic.ams.api.ServerTableIdentifier;
-import com.netease.arctic.ams.api.config.TableConfiguration;
 import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.table.executor.ExecutorTestBase;
 import com.netease.arctic.table.BaseTable;
@@ -63,6 +60,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.server.process.maintain.IcebergTableMaintainer.FLINK_MAX_COMMITTED_CHECKPOINT_ID;
+import static com.netease.arctic.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
 
 @RunWith(Parameterized.class)
 public class TestSnapshotExpire extends ExecutorTestBase {

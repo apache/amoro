@@ -1,4 +1,4 @@
-package com.netease.arctic.server.exception;
+package com.netease.arctic.ams.api.exception;
 
 import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.ErrorCodes;
@@ -6,8 +6,8 @@ import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OperationConflictException;
-import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.ams.api.TableIdentifier;
 import org.apache.thrift.TException;
 
 import java.util.HashMap;

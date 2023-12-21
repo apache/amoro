@@ -1,15 +1,15 @@
 package com.netease.arctic.server.persistence.mapper;
 
+import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.ams.api.config.TableConfiguration;
+import com.netease.arctic.ams.api.process.OptimizingStage;
 import com.netease.arctic.server.persistence.TableRuntimePersistency;
 import com.netease.arctic.server.persistence.converter.JsonObjectConverter;
 import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
 import com.netease.arctic.server.persistence.converter.MapLong2StringConverter;
-import com.netease.arctic.server.process.optimizing.OptimizingStage;
-import com.netease.arctic.ams.api.ServerTableIdentifier;
-import com.netease.arctic.ams.api.config.TableConfiguration;
-import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.DefaultTableRuntime;
+import com.netease.arctic.server.table.TableMetadata;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
@@ -57,28 +57,28 @@ public interface TableMetaMapper {
           + "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version "
           + "FROM table_metadata m INNER JOIN table_identifier i ON m.table_id = i.table_id ")
   @Results({
-      @Result(property = "tableIdentifier.id", column = "table_id"),
-      @Result(property = "tableIdentifier.tableName", column = "table_name"),
-      @Result(property = "tableIdentifier.database", column = "db_name"),
-      @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
-      @Result(property = "tableIdentifier.format", column = "format"),
-      @Result(property = "primaryKey", column = "primary_key"),
-      @Result(property = "tableLocation", column = "table_location"),
-      @Result(property = "baseLocation", column = "base_location"),
-      @Result(property = "changeLocation", column = "change_location"),
-      @Result(property = "metaStoreSite", column = "meta_store_site"),
-      @Result(property = "hdfsSite", column = "hdfs_site"),
-      @Result(property = "coreSite", column = "core_site"),
-      @Result(property = "authMethod", column = "auth_method"),
-      @Result(property = "hadoopUsername", column = "hadoop_username"),
-      @Result(property = "krbKeytab", column = "krb_keytab"),
-      @Result(property = "krbConf", column = "krb_conf"),
-      @Result(property = "krbPrincipal", column = "krb_principal"),
-      @Result(
-          property = "properties",
-          column = "properties",
-          typeHandler = Map2StringConverter.class),
-      @Result(property = "metaVersion", column = "meta_version")
+    @Result(property = "tableIdentifier.id", column = "table_id"),
+    @Result(property = "tableIdentifier.tableName", column = "table_name"),
+    @Result(property = "tableIdentifier.database", column = "db_name"),
+    @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
+    @Result(property = "tableIdentifier.format", column = "format"),
+    @Result(property = "primaryKey", column = "primary_key"),
+    @Result(property = "tableLocation", column = "table_location"),
+    @Result(property = "baseLocation", column = "base_location"),
+    @Result(property = "changeLocation", column = "change_location"),
+    @Result(property = "metaStoreSite", column = "meta_store_site"),
+    @Result(property = "hdfsSite", column = "hdfs_site"),
+    @Result(property = "coreSite", column = "core_site"),
+    @Result(property = "authMethod", column = "auth_method"),
+    @Result(property = "hadoopUsername", column = "hadoop_username"),
+    @Result(property = "krbKeytab", column = "krb_keytab"),
+    @Result(property = "krbConf", column = "krb_conf"),
+    @Result(property = "krbPrincipal", column = "krb_principal"),
+    @Result(
+        property = "properties",
+        column = "properties",
+        typeHandler = Map2StringConverter.class),
+    @Result(property = "metaVersion", column = "meta_version")
   })
   List<TableMetadata> selectTableMetas();
 
@@ -92,28 +92,28 @@ public interface TableMetaMapper {
           + "WHERE "
           + "table_identifier.catalog_name=#{catalogName} AND table_identifier.db_name=#{database}")
   @Results({
-      @Result(property = "tableIdentifier.id", column = "table_id"),
-      @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
-      @Result(property = "tableIdentifier.database", column = "db_name"),
-      @Result(property = "tableIdentifier.tableName", column = "table_name"),
-      @Result(property = "tableIdentifier.format", column = "format"),
-      @Result(property = "primaryKey", column = "primary_key"),
-      @Result(property = "tableLocation", column = "table_location"),
-      @Result(property = "baseLocation", column = "base_location"),
-      @Result(property = "changeLocation", column = "change_location"),
-      @Result(property = "metaStoreSite", column = "meta_store_site"),
-      @Result(property = "hdfsSite", column = "hdfs_site"),
-      @Result(property = "coreSite", column = "core_site"),
-      @Result(property = "authMethod", column = "auth_method"),
-      @Result(property = "hadoopUsername", column = "hadoop_username"),
-      @Result(property = "krbKeytab", column = "krb_keytab"),
-      @Result(property = "krbConf", column = "krb_conf"),
-      @Result(property = "krbPrincipal", column = "krb_principal"),
-      @Result(
-          property = "properties",
-          column = "properties",
-          typeHandler = Map2StringConverter.class),
-      @Result(property = "metaVersion", column = "meta_version")
+    @Result(property = "tableIdentifier.id", column = "table_id"),
+    @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
+    @Result(property = "tableIdentifier.database", column = "db_name"),
+    @Result(property = "tableIdentifier.tableName", column = "table_name"),
+    @Result(property = "tableIdentifier.format", column = "format"),
+    @Result(property = "primaryKey", column = "primary_key"),
+    @Result(property = "tableLocation", column = "table_location"),
+    @Result(property = "baseLocation", column = "base_location"),
+    @Result(property = "changeLocation", column = "change_location"),
+    @Result(property = "metaStoreSite", column = "meta_store_site"),
+    @Result(property = "hdfsSite", column = "hdfs_site"),
+    @Result(property = "coreSite", column = "core_site"),
+    @Result(property = "authMethod", column = "auth_method"),
+    @Result(property = "hadoopUsername", column = "hadoop_username"),
+    @Result(property = "krbKeytab", column = "krb_keytab"),
+    @Result(property = "krbConf", column = "krb_conf"),
+    @Result(property = "krbPrincipal", column = "krb_principal"),
+    @Result(
+        property = "properties",
+        column = "properties",
+        typeHandler = Map2StringConverter.class),
+    @Result(property = "metaVersion", column = "meta_version")
   })
   List<TableMetadata> selectTableMetasByDb(
       @Param("catalogName") String catalogName, @Param("database") String database);
@@ -162,28 +162,28 @@ public interface TableMetaMapper {
           + "table_metadata m INNER JOIN table_identifier i ON m.table_id = i.table_id "
           + "WHERE m.table_id = #{tableId}")
   @Results({
-      @Result(property = "tableIdentifier.id", column = "table_id"),
-      @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
-      @Result(property = "tableIdentifier.database", column = "db_name"),
-      @Result(property = "tableIdentifier.tableName", column = "table_name"),
-      @Result(property = "tableIdentifier.format", column = "format"),
-      @Result(property = "primaryKey", column = "primary_key"),
-      @Result(property = "tableLocation", column = "table_location"),
-      @Result(property = "baseLocation", column = "base_location"),
-      @Result(property = "changeLocation", column = "change_location"),
-      @Result(property = "metaStoreSite", column = "meta_store_site"),
-      @Result(property = "hdfsSite", column = "hdfs_site"),
-      @Result(property = "coreSite", column = "core_site"),
-      @Result(property = "authMethod", column = "auth_method"),
-      @Result(property = "hadoopUsername", column = "hadoop_username"),
-      @Result(property = "krbKeytab", column = "krb_keytab"),
-      @Result(property = "krbConf", column = "krb_conf"),
-      @Result(property = "krbPrincipal", column = "krb_principal"),
-      @Result(
-          property = "properties",
-          column = "properties",
-          typeHandler = Map2StringConverter.class),
-      @Result(property = "metaVersion", column = "meta_version")
+    @Result(property = "tableIdentifier.id", column = "table_id"),
+    @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
+    @Result(property = "tableIdentifier.database", column = "db_name"),
+    @Result(property = "tableIdentifier.tableName", column = "table_name"),
+    @Result(property = "tableIdentifier.format", column = "format"),
+    @Result(property = "primaryKey", column = "primary_key"),
+    @Result(property = "tableLocation", column = "table_location"),
+    @Result(property = "baseLocation", column = "base_location"),
+    @Result(property = "changeLocation", column = "change_location"),
+    @Result(property = "metaStoreSite", column = "meta_store_site"),
+    @Result(property = "hdfsSite", column = "hdfs_site"),
+    @Result(property = "coreSite", column = "core_site"),
+    @Result(property = "authMethod", column = "auth_method"),
+    @Result(property = "hadoopUsername", column = "hadoop_username"),
+    @Result(property = "krbKeytab", column = "krb_keytab"),
+    @Result(property = "krbConf", column = "krb_conf"),
+    @Result(property = "krbPrincipal", column = "krb_principal"),
+    @Result(
+        property = "properties",
+        column = "properties",
+        typeHandler = Map2StringConverter.class),
+    @Result(property = "metaVersion", column = "meta_version")
   })
   TableMetadata selectTableMetaById(@Param("tableId") long tableId);
 
@@ -197,28 +197,28 @@ public interface TableMetaMapper {
           + " WHERE table_identifier.catalog_name = #{catalogName} and table_identifier.db_name = #{databaseName}"
           + " AND table_identifier.table_name = #{tableName}")
   @Results({
-      @Result(property = "tableIdentifier.id", column = "table_id"),
-      @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
-      @Result(property = "tableIdentifier.database", column = "db_name"),
-      @Result(property = "tableIdentifier.tableName", column = "table_name"),
-      @Result(property = "tableIdentifier.format", column = "format"),
-      @Result(property = "primaryKey", column = "primary_key"),
-      @Result(property = "tableLocation", column = "table_location"),
-      @Result(property = "baseLocation", column = "base_location"),
-      @Result(property = "changeLocation", column = "change_location"),
-      @Result(property = "metaStoreSite", column = "meta_store_site"),
-      @Result(property = "hdfsSite", column = "hdfs_site"),
-      @Result(property = "coreSite", column = "core_site"),
-      @Result(property = "authMethod", column = "auth_method"),
-      @Result(property = "hadoopUsername", column = "hadoop_username"),
-      @Result(property = "krbKeytab", column = "krb_keytab"),
-      @Result(property = "krbConf", column = "krb_conf"),
-      @Result(property = "krbPrincipal", column = "krb_principal"),
-      @Result(
-          property = "properties",
-          column = "properties",
-          typeHandler = Map2StringConverter.class),
-      @Result(property = "metaVersion", column = "meta_version")
+    @Result(property = "tableIdentifier.id", column = "table_id"),
+    @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
+    @Result(property = "tableIdentifier.database", column = "db_name"),
+    @Result(property = "tableIdentifier.tableName", column = "table_name"),
+    @Result(property = "tableIdentifier.format", column = "format"),
+    @Result(property = "primaryKey", column = "primary_key"),
+    @Result(property = "tableLocation", column = "table_location"),
+    @Result(property = "baseLocation", column = "base_location"),
+    @Result(property = "changeLocation", column = "change_location"),
+    @Result(property = "metaStoreSite", column = "meta_store_site"),
+    @Result(property = "hdfsSite", column = "hdfs_site"),
+    @Result(property = "coreSite", column = "core_site"),
+    @Result(property = "authMethod", column = "auth_method"),
+    @Result(property = "hadoopUsername", column = "hadoop_username"),
+    @Result(property = "krbKeytab", column = "krb_keytab"),
+    @Result(property = "krbConf", column = "krb_conf"),
+    @Result(property = "krbPrincipal", column = "krb_principal"),
+    @Result(
+        property = "properties",
+        column = "properties",
+        typeHandler = Map2StringConverter.class),
+    @Result(property = "metaVersion", column = "meta_version")
   })
   TableMetadata selectTableMetaByName(
       @Param("catalogName") String catalogName,
@@ -247,11 +247,11 @@ public interface TableMetaMapper {
       "SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier"
           + " WHERE catalog_name = #{catalogName} AND db_name = #{databaseName} AND table_name = #{tableName}")
   @Results({
-      @Result(property = "id", column = "table_id"),
-      @Result(property = "tableName", column = "table_name"),
-      @Result(property = "database", column = "db_name"),
-      @Result(property = "catalog", column = "catalog_name"),
-      @Result(property = "format", column = "format"),
+    @Result(property = "id", column = "table_id"),
+    @Result(property = "tableName", column = "table_name"),
+    @Result(property = "database", column = "db_name"),
+    @Result(property = "catalog", column = "catalog_name"),
+    @Result(property = "format", column = "format"),
   })
   ServerTableIdentifier selectTableIdentifier(
       @Param("catalogName") String catalogName,
@@ -262,11 +262,11 @@ public interface TableMetaMapper {
       "SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier"
           + " WHERE catalog_name = #{catalogName} AND db_name = #{databaseName}")
   @Results({
-      @Result(property = "id", column = "table_id"),
-      @Result(property = "catalog", column = "catalog_name"),
-      @Result(property = "database", column = "db_name"),
-      @Result(property = "tableName", column = "table_name"),
-      @Result(property = "format", column = "format")
+    @Result(property = "id", column = "table_id"),
+    @Result(property = "catalog", column = "catalog_name"),
+    @Result(property = "database", column = "db_name"),
+    @Result(property = "tableName", column = "table_name"),
+    @Result(property = "format", column = "format")
   })
   List<ServerTableIdentifier> selectTableIdentifiersByDb(
       @Param("catalogName") String catalogName, @Param("databaseName") String databaseName);
@@ -275,22 +275,22 @@ public interface TableMetaMapper {
       "SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier"
           + " WHERE catalog_name = #{catalogName}")
   @Results({
-      @Result(property = "id", column = "table_id"),
-      @Result(property = "catalog", column = "catalog_name"),
-      @Result(property = "database", column = "db_name"),
-      @Result(property = "tableName", column = "table_name"),
-      @Result(property = "format", column = "format")
+    @Result(property = "id", column = "table_id"),
+    @Result(property = "catalog", column = "catalog_name"),
+    @Result(property = "database", column = "db_name"),
+    @Result(property = "tableName", column = "table_name"),
+    @Result(property = "format", column = "format")
   })
   List<ServerTableIdentifier> selectTableIdentifiersByCatalog(
       @Param("catalogName") String catalogName);
 
   @Select("SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier")
   @Results({
-      @Result(property = "id", column = "table_id"),
-      @Result(property = "catalog", column = "catalog_name"),
-      @Result(property = "database", column = "db_name"),
-      @Result(property = "tableName", column = "table_name"),
-      @Result(property = "format", column = "format")
+    @Result(property = "id", column = "table_id"),
+    @Result(property = "catalog", column = "catalog_name"),
+    @Result(property = "database", column = "db_name"),
+    @Result(property = "tableName", column = "table_name"),
+    @Result(property = "format", column = "format")
   })
   List<ServerTableIdentifier> selectAllTableIdentifiers();
 
@@ -301,10 +301,11 @@ public interface TableMetaMapper {
           + " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
           + " optimizing_process_id = #{processId},"
           + " WHERE table_id = #{tableId}")
-  void updateTableStage(@Param("tableId") long tableId,
-                        @Param("processId") long processId,
-                        @Param("stage") OptimizingStage stage,
-                        @Param("startTime") long currentStatusStartTime);
+  void updateTableStage(
+      @Param("tableId") long tableId,
+      @Param("processId") long processId,
+      @Param("stage") OptimizingStage stage,
+      @Param("startTime") long currentStatusStartTime);
 
   @Update(
       "UPDATE table_runtime SET"
@@ -322,15 +323,16 @@ public interface TableMetaMapper {
           + " optimizing_process_id = #{processId},"
           + " pending_input = null"
           + " WHERE table_id = #{tableId}")
-  void updateTableOptimizingSuccess(@Param("tableId") long tableId,
-                                    @Param("processId") long processId,
-                                    @Param("stage") OptimizingStage stage,
-                                    @Param("lastOptimizedSnapshotId") long lastOptimizedSnapshotId,
-                                    @Param("lastOptimizedChangeSnapshotId") long lastOptimizedChangeSnapshotId,
-                                    @Param("lastMinorOptimizingTime") long lastMinorOptimizingTime,
-                                    @Param("lastMajorOptimizingTime") long lastMajorOptimizingTime,
-                                    @Param("lastFullOptimizingTime") long lastFullOptimizingTime,
-                                    @Param("currentStatusStartTime") long currentStatusStartTime);
+  void updateTableOptimizingSuccess(
+      @Param("tableId") long tableId,
+      @Param("processId") long processId,
+      @Param("stage") OptimizingStage stage,
+      @Param("lastOptimizedSnapshotId") long lastOptimizedSnapshotId,
+      @Param("lastOptimizedChangeSnapshotId") long lastOptimizedChangeSnapshotId,
+      @Param("lastMinorOptimizingTime") long lastMinorOptimizingTime,
+      @Param("lastMajorOptimizingTime") long lastMajorOptimizingTime,
+      @Param("lastFullOptimizingTime") long lastFullOptimizingTime,
+      @Param("currentStatusStartTime") long currentStatusStartTime);
 
   @Delete("DELETE FROM table_runtime WHERE table_id = #{tableId}")
   void deleteOptimizingRuntime(@Param("tableId") long tableId);
@@ -378,56 +380,56 @@ public interface TableMetaMapper {
           + " INNER JOIN table_identifier i ON a.table_id = i.table_id "
           + " LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id")
   @Results({
-      @Result(property = "tableId", column = "table_id"),
-      @Result(property = "catalogName", column = "catalog_name"),
-      @Result(property = "dbName", column = "db_name"),
-      @Result(property = "tableName", column = "table_name"),
-      @Result(property = "format", column = "format"),
-      @Result(property = "currentSnapshotId", column = "current_snapshot_id"),
-      @Result(property = "currentChangeSnapshotId", column = "current_change_snapshotId"),
-      @Result(property = "lastOptimizedSnapshotId", column = "last_optimized_snapshotId"),
-      @Result(
-          property = "lastOptimizedChangeSnapshotId",
-          column = "last_optimized_change_snapshotId"),
-      @Result(
-          property = "lastMajorOptimizingTime",
-          column = "last_major_optimizing_time",
-          typeHandler = Long2TsConverter.class),
-      @Result(
-          property = "lastMinorOptimizingTime",
-          column = "last_minor_optimizing_time",
-          typeHandler = Long2TsConverter.class),
-      @Result(
-          property = "lastFullOptimizingTime",
-          column = "last_full_optimizing_time",
-          typeHandler = Long2TsConverter.class),
-      @Result(property = "tableStatus", column = "optimizing_status"),
-      @Result(
-          property = "currentStatusStartTime",
-          column = "optimizing_status_start_time",
-          typeHandler = Long2TsConverter.class),
-      @Result(property = "optimizingProcessId", column = "optimizing_process_id"),
-      @Result(property = "optimizerGroup", column = "optimizer_group"),
-      @Result(
-          property = "tableConfig",
-          column = "table_config",
-          typeHandler = JsonObjectConverter.class),
-      @Result(
-          property = "pendingInput",
-          column = "pending_input",
-          typeHandler = JsonObjectConverter.class),
-      @Result(property = "optimizingType", column = "optimizing_type"),
-      @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
-      @Result(property = "targetChangeSnapshotId", column = "target_change_napshot_id"),
-      @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
-      @Result(
-          property = "fromSequence",
-          column = "from_sequence",
-          typeHandler = MapLong2StringConverter.class),
-      @Result(
-          property = "toSequence",
-          column = "to_sequence",
-          typeHandler = MapLong2StringConverter.class)
+    @Result(property = "tableId", column = "table_id"),
+    @Result(property = "catalogName", column = "catalog_name"),
+    @Result(property = "dbName", column = "db_name"),
+    @Result(property = "tableName", column = "table_name"),
+    @Result(property = "format", column = "format"),
+    @Result(property = "currentSnapshotId", column = "current_snapshot_id"),
+    @Result(property = "currentChangeSnapshotId", column = "current_change_snapshotId"),
+    @Result(property = "lastOptimizedSnapshotId", column = "last_optimized_snapshotId"),
+    @Result(
+        property = "lastOptimizedChangeSnapshotId",
+        column = "last_optimized_change_snapshotId"),
+    @Result(
+        property = "lastMajorOptimizingTime",
+        column = "last_major_optimizing_time",
+        typeHandler = Long2TsConverter.class),
+    @Result(
+        property = "lastMinorOptimizingTime",
+        column = "last_minor_optimizing_time",
+        typeHandler = Long2TsConverter.class),
+    @Result(
+        property = "lastFullOptimizingTime",
+        column = "last_full_optimizing_time",
+        typeHandler = Long2TsConverter.class),
+    @Result(property = "tableStatus", column = "optimizing_status"),
+    @Result(
+        property = "currentStatusStartTime",
+        column = "optimizing_status_start_time",
+        typeHandler = Long2TsConverter.class),
+    @Result(property = "optimizingProcessId", column = "optimizing_process_id"),
+    @Result(property = "optimizerGroup", column = "optimizer_group"),
+    @Result(
+        property = "tableConfig",
+        column = "table_config",
+        typeHandler = JsonObjectConverter.class),
+    @Result(
+        property = "pendingInput",
+        column = "pending_input",
+        typeHandler = JsonObjectConverter.class),
+    @Result(property = "optimizingType", column = "optimizing_type"),
+    @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
+    @Result(property = "targetChangeSnapshotId", column = "target_change_napshot_id"),
+    @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
+    @Result(
+        property = "fromSequence",
+        column = "from_sequence",
+        typeHandler = MapLong2StringConverter.class),
+    @Result(
+        property = "toSequence",
+        column = "to_sequence",
+        typeHandler = MapLong2StringConverter.class)
   })
   List<TableRuntimePersistency> selectTableRuntimeMetas();
 }

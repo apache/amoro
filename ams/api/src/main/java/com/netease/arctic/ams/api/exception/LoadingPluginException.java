@@ -16,11 +16,15 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.exception;
+package com.netease.arctic.ams.api.exception;
 
-public class BlockerConflictException extends ArcticRuntimeException {
+public class LoadingPluginException extends ArcticRuntimeException {
 
-  public BlockerConflictException(String message) {
+  public LoadingPluginException(String message) {
     super(message);
+  }
+
+  public LoadingPluginException(String message, Throwable cause) {
+    super(message, cause);
   }
 }

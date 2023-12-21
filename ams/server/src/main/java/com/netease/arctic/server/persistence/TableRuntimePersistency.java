@@ -1,11 +1,11 @@
 package com.netease.arctic.server.persistence;
 
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.process.ProcessStatus;
-import com.netease.arctic.server.process.optimizing.OptimizingStage;
-import com.netease.arctic.server.process.optimizing.OptimizingType;
-import com.netease.arctic.ams.api.process.PendingInput;
 import com.netease.arctic.ams.api.config.TableConfiguration;
+import com.netease.arctic.ams.api.process.OptimizingStage;
+import com.netease.arctic.ams.api.process.PendingInput;
+import com.netease.arctic.ams.api.process.ProcessStatus;
+import com.netease.arctic.server.process.optimizing.OptimizingType;
 import com.netease.arctic.server.table.DefaultTableRuntime;
 
 public class TableRuntimePersistency {
@@ -99,7 +99,7 @@ public class TableRuntimePersistency {
     return lastFullOptimizingTime;
   }
 
-  public OptimizingStage getTableStatus() {
+  public OptimizingStage getOptimizingStage() {
     return tableStatus;
   }
 

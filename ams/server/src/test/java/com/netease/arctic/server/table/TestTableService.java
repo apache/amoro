@@ -18,9 +18,6 @@
 
 package com.netease.arctic.server.table;
 
-import static com.netease.arctic.TableTestHelper.TEST_DB_NAME;
-import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
-
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.TableTestHelper;
@@ -29,13 +26,13 @@ import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.ams.api.exception.AlreadyExistsException;
+import com.netease.arctic.ams.api.exception.BlockerConflictException;
+import com.netease.arctic.ams.api.exception.ObjectNotExistsException;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.server.ArcticManagementConf;
-import com.netease.arctic.server.exception.AlreadyExistsException;
-import com.netease.arctic.server.exception.BlockerConflictException;
-import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.table.blocker.RenewableBlocker;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,6 +43,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.netease.arctic.TableTestHelper.TEST_DB_NAME;
+import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
 
 @RunWith(Parameterized.class)
 public class TestTableService extends AMSTableTestBase {

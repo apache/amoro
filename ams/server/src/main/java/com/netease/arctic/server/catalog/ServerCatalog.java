@@ -3,7 +3,7 @@ package com.netease.arctic.server.catalog;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.server.exception.IllegalMetadataException;
+import com.netease.arctic.ams.api.exception.IllegalMetadataException;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
 

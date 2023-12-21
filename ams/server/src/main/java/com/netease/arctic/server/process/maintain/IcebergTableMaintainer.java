@@ -18,15 +18,13 @@
 
 package com.netease.arctic.server.process.maintain;
 
-import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
-
 import com.netease.arctic.ams.api.CommitMetaProducer;
+import com.netease.arctic.ams.api.config.DataExpirationConfig;
+import com.netease.arctic.ams.api.config.TableConfiguration;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
 import com.netease.arctic.io.SupportsFileSystemOperations;
 import com.netease.arctic.server.ArcticServiceConstants;
-import com.netease.arctic.ams.api.config.DataExpirationConfig;
-import com.netease.arctic.ams.api.config.TableConfiguration;
 import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.utils.TableFileUtil;
@@ -87,6 +85,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 /** Table maintainer for iceberg tables. */
 public class IcebergTableMaintainer implements TableMaintainer {
@@ -401,9 +401,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
    * @return time of snapshot for optimizing process planned based, return Long.MAX_VALUE if no
    *     optimizing process exists
    */
-  public static long fetchOptimizingPlanSnapshotTime(Table table, DefaultTableRuntime tableRuntime) {
+  public static long fetchOptimizingPlanSnapshotTime(
+      Table table, DefaultTableRuntime tableRuntime) {
     if (tableRuntime.getDefaultOptimizingState().getStage().isOptimizing()) {
-      long fromSnapshotId = tableRuntime.getOptimizingProcess().getTargetSnapshotId();
+      long fromSnapshotId = tableRuntime.getDefaultOptimizingState().getTargetSnapshotId();
 
       for (Snapshot snapshot : table.snapshots()) {
         if (snapshot.snapshotId() == fromSnapshotId) {

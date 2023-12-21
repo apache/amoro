@@ -22,11 +22,11 @@ import com.netease.arctic.ams.api.Action;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.TableRuntime;
+import com.netease.arctic.ams.api.process.OptimizingStage;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.process.TableProcess;
 import com.netease.arctic.server.process.optimizing.DefaultOptimizingProcess;
 import com.netease.arctic.server.process.optimizing.DefaultOptimizingState;
-import com.netease.arctic.server.process.optimizing.OptimizingStage;
 import com.netease.arctic.server.table.DefaultTableRuntime;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -51,6 +51,7 @@ public class OptimizingScheduler extends TaskScheduler<DefaultOptimizingState> {
   private final int maxPlanningParallelism;
   private final Map<ServerTableIdentifier, DefaultTableRuntime> tableRuntimeMap = new HashMap<>();
   private final Comparator<DefaultTableRuntime> tableSorter;
+  private double allTargetQuota = 0;
 
   public OptimizingScheduler(ResourceGroup optimizerGroup, int maxPlanningParallelism) {
     super(optimizerGroup);
@@ -77,6 +78,8 @@ public class OptimizingScheduler extends TaskScheduler<DefaultOptimizingState> {
     try {
       if (tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()) {
         tableRuntimeMap.put(tableRuntime.getTableIdentifier(), tableRuntime);
+        allTargetQuota +=
+            tableRuntime.getTableConfiguration().getOptimizingConfig().getTargetQuota();
         LOG.info(
             "Bind queue {} success with table {}",
             optimizerGroup.getName(),
@@ -159,6 +162,23 @@ public class OptimizingScheduler extends TaskScheduler<DefaultOptimizingState> {
         .filter(tableRuntime -> !skipSet.contains(tableRuntime))
         .min(tableSorter)
         .orElse(null);
+  }
+
+  @Override
+  public void setAvailableQuota(long availableQuota) {
+    schedulerLock.lock();
+    try {
+      tableRuntimeMap
+          .values()
+          .forEach(
+              tableRuntime ->
+                  tableRuntime.setTargetQuota(
+                      tableRuntime.getTableConfiguration().getOptimizingConfig().getTargetQuota()
+                          * availableQuota
+                          / allTargetQuota));
+    } finally {
+      schedulerLock.unlock();
+    }
   }
 
   private Set<DefaultTableRuntime> fillSkipSet() {

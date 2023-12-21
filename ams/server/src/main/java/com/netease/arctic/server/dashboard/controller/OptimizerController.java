@@ -21,6 +21,7 @@ package com.netease.arctic.server.dashboard.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.base.Preconditions;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.ams.api.resource.ResourceType;
@@ -29,17 +30,15 @@ import com.netease.arctic.server.dashboard.model.OptimizerResourceInfo;
 import com.netease.arctic.server.dashboard.model.TableOptimizingInfo;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
-import com.netease.arctic.server.dashboard.utils.OptimizingUtil;
+import com.netease.arctic.server.process.optimizing.DefaultOptimizingState;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.ResourceContainers;
-import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.table.TableService;
 import io.javalin.http.Context;
 
 import javax.ws.rs.BadRequestException;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -78,18 +77,26 @@ public class OptimizerController {
     }
     tableRuntimes.sort(
         (o1, o2) -> {
+          DefaultOptimizingState stat1 = o1.getDefaultOptimizingState();
+          DefaultOptimizingState stat2 = o2.getDefaultOptimizingState();
           // first we compare the status , and then we compare the start time when status are equal;
-          int statDiff = o1.getOptimizingStatus().compareTo(o2.getOptimizingStatus());
+          int statDiff = stat1.getStage().compareTo(stat2.getStage());
           // status order is asc, startTime order is desc
           if (statDiff == 0) {
-            long timeDiff = o1.getCurrentStatusStartTime() - o2.getCurrentStatusStartTime();
+            long timeDiff = stat1.getCurrentStageStartTime() - stat2.getCurrentStageStartTime();
             return timeDiff >= 0 ? (timeDiff == 0 ? 0 : -1) : 1;
           } else {
             return statDiff;
           }
         });
     PageResult<TableOptimizingInfo> amsPageResult =
-        PageResult.of(tableRuntimes, offset, pageSize, OptimizingUtil::buildTableOptimizeInfo);
+        PageResult.of(
+            tableRuntimes,
+            offset,
+            pageSize,
+            tableRuntime ->
+                new TableOptimizingInfo(
+                    tableRuntime.getDefaultOptimizingState(), tableRuntime.getOptimizerGroup()));
     ctx.json(OkResponse.of(amsPageResult));
   }
 
@@ -164,11 +171,7 @@ public class OptimizerController {
     ctx.json(OkResponse.of(optimizerResourceInfo));
   }
 
-  /**
-   * release optimizer.
-   *
-   * @pathParam jobId
-   */
+  /** release optimizer. */
   public void releaseOptimizer(Context ctx) {
     String resourceId = ctx.pathParam("jobId");
     Preconditions.checkArgument(
@@ -191,6 +194,7 @@ public class OptimizerController {
   }
 
   /** scale out optimizers, url:/optimizerGroups/{optimizerGroup}/optimizers. */
+  @SuppressWarnings("unchecked")
   public void scaleOutOptimizer(Context ctx) {
     String optimizerGroup = ctx.pathParam("optimizerGroup");
     Map<String, Integer> map = ctx.bodyAsClass(Map.class);
@@ -234,11 +238,12 @@ public class OptimizerController {
    * create optimizeGroup: name, container, schedulePolicy, properties url =
    * /optimize/resourceGroups/create
    */
+  @SuppressWarnings("unchecked")
   public void createResourceGroup(Context ctx) {
     Map<String, Object> map = ctx.bodyAsClass(Map.class);
     String name = (String) map.get("name");
     String container = (String) map.get("container");
-    Map<String, String> properties = (Map) map.get("properties");
+    Map<String, String> properties = (Map<String, String>) map.get("properties");
     if (optimizerManager.getResourceGroup(name) != null) {
       throw new BadRequestException(String.format("Optimizer group:%s already existed.", name));
     }
@@ -252,11 +257,12 @@ public class OptimizerController {
    * update optimizeGroup: name, container, schedulePolicy, properties url =
    * /optimize/resourceGroups/update
    */
+  @SuppressWarnings("unchecked")
   public void updateResourceGroup(Context ctx) {
     Map<String, Object> map = ctx.bodyAsClass(Map.class);
     String name = (String) map.get("name");
     String container = (String) map.get("container");
-    Map<String, String> properties = (Map) map.get("properties");
+    Map<String, String> properties = (Map<String, String>) map.get("properties");
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
     optimizerManager.updateResourceGroup(builder.build());

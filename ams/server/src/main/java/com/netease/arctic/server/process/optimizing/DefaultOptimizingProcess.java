@@ -21,6 +21,7 @@
 package com.netease.arctic.server.process.optimizing;
 
 import com.netease.arctic.ams.api.OptimizingTaskId;
+import com.netease.arctic.ams.api.process.OptimizingStage;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.persistence.PersistentBase;

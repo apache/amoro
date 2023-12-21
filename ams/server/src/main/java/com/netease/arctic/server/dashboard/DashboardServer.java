@@ -18,13 +18,9 @@
 
 package com.netease.arctic.server.dashboard;
 
-import static io.javalin.apibuilder.ApiBuilder.delete;
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.path;
-import static io.javalin.apibuilder.ApiBuilder.post;
-import static io.javalin.apibuilder.ApiBuilder.put;
-
 import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.api.exception.ForbiddenException;
+import com.netease.arctic.ams.api.exception.SignatureCheckException;
 import com.netease.arctic.server.DefaultOptimizingService;
 import com.netease.arctic.server.RestCatalogService;
 import com.netease.arctic.server.dashboard.controller.CatalogController;
@@ -38,8 +34,6 @@ import com.netease.arctic.server.dashboard.controller.TerminalController;
 import com.netease.arctic.server.dashboard.controller.VersionController;
 import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.utils.ParamSignatureCalculator;
-import com.netease.arctic.server.exception.ForbiddenException;
-import com.netease.arctic.server.exception.SignatureCheckException;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.terminal.TerminalManager;
 import com.netease.arctic.server.utils.Configurations;
@@ -62,6 +56,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import static io.javalin.apibuilder.ApiBuilder.delete;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.path;
+import static io.javalin.apibuilder.ApiBuilder.post;
+import static io.javalin.apibuilder.ApiBuilder.put;
 
 public class DashboardServer {
 

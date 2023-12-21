@@ -1,5 +1,7 @@
 package com.netease.arctic.server.process.optimizing;
 
+import com.netease.arctic.ams.api.process.OptimizingStage;
+
 public enum OptimizingType {
   MINOR(OptimizingStage.MINOR_OPTIMIZING),
   MAJOR(OptimizingStage.MAJOR_OPTIMIZING),

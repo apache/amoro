@@ -98,10 +98,8 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
   private void initActionRunners() {}
 
   @SuppressWarnings("unchecked")
-  public void register(ProcessFactory<DefaultOptimizingState> defaultOptimizingFactory) {
-    optimizingRunner.install(
-        (ProcessFactory<OptimizingState>)
-            (ProcessFactory<? extends OptimizingState>) defaultOptimizingFactory);
+  public void register(ProcessFactory<? extends OptimizingState> defaultOptimizingFactory) {
+    optimizingRunner.install((ProcessFactory<OptimizingState>) defaultOptimizingFactory);
   }
 
   public void register(Set<Action> actions, ProcessFactory<TableState> processFactory) {
@@ -126,6 +124,11 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
       Action action, ProcessFactory<TableState> processFactory) {
     Preconditions.checkState(action != null && action != Action.OPTIMIZING);
     return arbitraryRunnerMap.get(action).run(processFactory);
+  }
+
+  public void closeProcess(long processId) {
+    optimizingRunner.close(processId);
+    arbitraryRunnerMap.values().forEach(runner -> runner.close(processId));
   }
 
   public Map<Action, Long> getLastCompletedTimes(Set<Action> actions) {
@@ -234,6 +237,10 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
         .add("tableIdentifier", tableIdentifier)
         .add("tableConfiguration", tableConfiguration)
         .toString();
+  }
+
+  public void setTargetQuota(double targetQuota) {
+    optimizingState.setTargetQuota(targetQuota);
   }
 
   private class SingletonActionRunner<T extends ProcessState> {
@@ -354,6 +361,22 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
       try {
         closeDefaultProcess();
         externalProcesses.forEach(AmoroProcess::close);
+      } finally {
+        lock.unlock();
+      }
+    }
+
+    public void close(long processId) {
+      lock.lock();
+      try {
+        if (process != null && process.getId() == processId) {
+          closeDefaultProcess();
+        } else {
+          externalProcesses.stream()
+              .filter(p -> p.getId() == processId)
+              .findFirst()
+              .ifPresent(AmoroProcess::close);
+        }
       } finally {
         lock.unlock();
       }

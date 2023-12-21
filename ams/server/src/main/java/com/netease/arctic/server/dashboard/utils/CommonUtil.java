@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.dashboard.utils;
 
-import com.netease.arctic.server.exception.SignatureCheckException;
+import com.netease.arctic.ams.api.exception.SignatureCheckException;
 import io.javalin.http.Context;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.telnet.TelnetClient;

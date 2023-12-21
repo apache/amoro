@@ -28,14 +28,12 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
-import org.apache.iceberg.Table;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -109,15 +107,6 @@ public class TableStatCollector {
             .addFilesStatistics(baseFs)
             .build());
     return overview;
-  }
-
-  public static SnapshotInfo buildBaseTableSnapshotInfo(Table baseTable) {
-    Snapshot currentSnapshot = baseTable.currentSnapshot();
-    SnapshotInfo snapshotInfo = new SnapshotInfo();
-    if (currentSnapshot != null) {
-      fillSnapshotInfo(snapshotInfo, currentSnapshot);
-    }
-    return snapshotInfo;
   }
 
   private static void fillSnapshotInfo(SnapshotInfo info, @Nonnull Snapshot snapshot) {

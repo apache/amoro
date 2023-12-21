@@ -28,12 +28,12 @@ import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
 import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.config.TableConfiguration;
+import com.netease.arctic.ams.api.exception.ObjectNotExistsException;
+import com.netease.arctic.ams.api.exception.PluginRetryAuthException;
+import com.netease.arctic.ams.api.exception.TaskNotFoundException;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
-import com.netease.arctic.server.exception.ObjectNotExistsException;
-import com.netease.arctic.server.exception.PluginRetryAuthException;
-import com.netease.arctic.server.exception.TaskNotFoundException;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.ResourceMapper;
@@ -41,7 +41,6 @@ import com.netease.arctic.server.process.TaskRuntime;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.OptimizerThread;
-import com.netease.arctic.server.resource.QuotaProvider;
 import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.table.DefaultTableService;
 import com.netease.arctic.server.table.TableService;
@@ -78,7 +77,7 @@ import java.util.stream.Collectors;
  * suspending tasks.
  */
 public class DefaultOptimizingService extends StatedPersistentBase
-    implements OptimizingService.Iface, OptimizerManager, QuotaProvider {
+    implements OptimizingService.Iface, OptimizerManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultOptimizingService.class);
   private static final Set<Action> MAINTAINING_ACTIONS =
@@ -136,9 +135,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
   }
 
   private void registerOptimizer(OptimizerInstance optimizer) {
+    TaskScheduler<?> scheduler = getSchedulerByGroup(optimizer.getGroupName());
     authOptimizers.put(optimizer.getToken(), optimizer);
-    schedulersByToken.put(optimizer.getToken(), schedulersByGroup.get(optimizer.getGroupName()));
+    schedulersByToken.put(optimizer.getToken(), scheduler);
     optimizerKeeper.keepInTouch(optimizer);
+    scheduler.setAvailableQuota(getAvailableQuota(optimizer.getGroupName()));
   }
 
   private void unregisterOptimizer(String token) {
@@ -151,7 +152,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   public void ping() {}
 
   public List<TaskRuntime<?, ?>> listTasks(String optimizerGroup) {
-    return getQueueByGroup(optimizerGroup).collectTasks();
+    return getSchedulerByGroup(optimizerGroup).collectTasks();
   }
 
   @Override
@@ -215,7 +216,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   @Override
   public String authenticate(OptimizerRegisterInfo registerInfo) {
     LOG.info("Register optimizer {}.", registerInfo);
-    TaskScheduler<?> scheduler = getQueueByGroup(registerInfo.getGroupName());
+    TaskScheduler<?> scheduler = getSchedulerByGroup(registerInfo.getGroupName());
     OptimizerInstance optimizer = new OptimizerInstance(registerInfo, scheduler.getContainerName());
     doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
     registerOptimizer(optimizer);
@@ -227,7 +228,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
    *
    * @return OptimizeQueueItem
    */
-  private TaskScheduler<?> getQueueByGroup(String optimizerGroup) {
+  private TaskScheduler<?> getSchedulerByGroup(String optimizerGroup) {
     return getOptionalQueueByGroup(optimizerGroup)
         .orElseThrow(() -> new ObjectNotExistsException("Optimizer group " + optimizerGroup));
   }
@@ -370,8 +371,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     return true;
   }
 
-  @Override
-  public int getTotalQuota(String resourceGroup) {
+  private int getAvailableQuota(String resourceGroup) {
     return authOptimizers.values().stream()
         .filter(optimizer -> optimizer.getGroupName().equals(resourceGroup))
         .mapToInt(OptimizerInstance::getThreadCount)

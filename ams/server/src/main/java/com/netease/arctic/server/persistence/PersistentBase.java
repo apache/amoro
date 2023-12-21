@@ -19,8 +19,8 @@
 package com.netease.arctic.server.persistence;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.netease.arctic.server.exception.ArcticRuntimeException;
-import com.netease.arctic.server.exception.PersistenceException;
+import com.netease.arctic.ams.api.exception.ArcticRuntimeException;
+import com.netease.arctic.ams.api.exception.PersistenceException;
 import org.apache.ibatis.session.TransactionIsolationLevel;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 

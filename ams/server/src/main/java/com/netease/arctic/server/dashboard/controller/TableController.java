@@ -21,6 +21,7 @@ package com.netease.arctic.server.dashboard.controller;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.Constants;
+import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HiveTableProperties;
@@ -50,7 +51,6 @@ import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.CommonUtil;
-import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
@@ -650,11 +650,8 @@ public class TableController {
             TableIdentifier.of(catalog, db, table).buildTableIdentifier());
     DefaultTableRuntime tableRuntime =
         serverTableIdentifier != null ? tableService.getRuntime(serverTableIdentifier) : null;
-    if (tableRuntime != null
-        && tableRuntime.getOptimizingProcess() != null
-        && Objects.equals(
-            tableRuntime.getOptimizingProcess().getProcessId(), Long.parseLong(processId))) {
-      tableRuntime.getOptimizingProcess().close();
+    if (tableRuntime != null) {
+      tableRuntime.closeProcess(Long.parseLong(processId));
     }
     ctx.json(OkResponse.ok());
   }

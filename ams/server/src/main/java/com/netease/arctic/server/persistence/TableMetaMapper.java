@@ -1,13 +1,13 @@
 package com.netease.arctic.server.persistence;
 
+import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.ams.api.process.OptimizingStage;
 import com.netease.arctic.server.persistence.converter.JsonObjectConverter;
 import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
 import com.netease.arctic.server.persistence.converter.MapLong2StringConverter;
-import com.netease.arctic.server.process.optimizing.OptimizingStage;
-import com.netease.arctic.ams.api.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.DefaultTableRuntime;
+import com.netease.arctic.server.table.TableMetadata;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
@@ -299,10 +299,11 @@ public interface TableMetaMapper {
           + " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
           + " optimizing_process_id = #{processId},"
           + " WHERE table_id = #{tableId}")
-  void updateTableStage(@Param("tableId") long tableId,
-                          @Param("processId") long processId,
-                          @Param("stage") OptimizingStage stage,
-                          @Param("startTime") long currentStatusStartTime);
+  void updateTableStage(
+      @Param("tableId") long tableId,
+      @Param("processId") long processId,
+      @Param("stage") OptimizingStage stage,
+      @Param("startTime") long currentStatusStartTime);
 
   @Update(
       "UPDATE table_runtime SET"
@@ -320,15 +321,16 @@ public interface TableMetaMapper {
           + " optimizing_process_id = #{processId},"
           + " pending_input = null"
           + " WHERE table_id = #{tableId}")
-void updateTableOptimizingSuccess(@Param("tableId") long tableId,
-                                  @Param("processId") long processId,
-                                  @Param("optimizingStatus") OptimizingStage optimizingStatus,
-                                  @Param("lastOptimizedSnapshotId") long lastOptimizedSnapshotId,
-                                  @Param("lastOptimizedChangeSnapshotId") long lastOptimizedChangeSnapshotId,
-                                  @Param("lastMinorOptimizingTime") long lastMinorOptimizingTime,
-                                  @Param("lastMajorOptimizingTime") long lastMajorOptimizingTime,
-                                  @Param("lastFullOptimizingTime") long lastFullOptimizingTime,
-                                  @Param("currentStatusStartTime") long currentStatusStartTime);
+  void updateTableOptimizingSuccess(
+      @Param("tableId") long tableId,
+      @Param("processId") long processId,
+      @Param("optimizingStatus") OptimizingStage optimizingStatus,
+      @Param("lastOptimizedSnapshotId") long lastOptimizedSnapshotId,
+      @Param("lastOptimizedChangeSnapshotId") long lastOptimizedChangeSnapshotId,
+      @Param("lastMinorOptimizingTime") long lastMinorOptimizingTime,
+      @Param("lastMajorOptimizingTime") long lastMajorOptimizingTime,
+      @Param("lastFullOptimizingTime") long lastFullOptimizingTime,
+      @Param("currentStatusStartTime") long currentStatusStartTime);
 
   @Delete("DELETE FROM table_runtime WHERE table_id = #{tableId}")
   void deleteOptimizingRuntime(@Param("tableId") long tableId);

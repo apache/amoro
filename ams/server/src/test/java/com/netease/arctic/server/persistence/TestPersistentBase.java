@@ -1,14 +1,14 @@
 package com.netease.arctic.server.persistence;
 
-import static org.mockito.Mockito.never;
-
-import com.netease.arctic.server.exception.UndefinedException;
+import com.netease.arctic.ams.api.exception.UndefinedException;
 import org.apache.ibatis.session.SqlSession;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import static org.mockito.Mockito.never;
 
 public class TestPersistentBase {
 

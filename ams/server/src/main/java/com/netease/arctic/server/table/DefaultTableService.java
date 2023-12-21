@@ -10,14 +10,14 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.ams.api.exception.AlreadyExistsException;
+import com.netease.arctic.ams.api.exception.IllegalMetadataException;
+import com.netease.arctic.ams.api.exception.ObjectNotExistsException;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.CatalogBuilder;
 import com.netease.arctic.server.catalog.ExternalCatalog;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
-import com.netease.arctic.server.exception.AlreadyExistsException;
-import com.netease.arctic.server.exception.IllegalMetadataException;
-import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.TableRuntimePersistency;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
@@ -288,12 +288,14 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
   @Override
   public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) {
-   return getTableBlockerRuntime(getServerTableIdentifier(tableIdentifier)).renew(blockerId, blockerTimeout);
+    return getTableBlockerRuntime(getServerTableIdentifier(tableIdentifier))
+        .renew(blockerId, blockerTimeout);
   }
 
   @Override
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
-    return getTableBlockerRuntime(getOrSyncServerTableIdentifier(tableIdentifier)).getBlockers().stream()
+    return getTableBlockerRuntime(getOrSyncServerTableIdentifier(tableIdentifier)).getBlockers()
+        .stream()
         .map(TableBlocker::buildBlocker)
         .collect(Collectors.toList());
   }
@@ -335,6 +337,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     tableRuntimeMap.values().forEach(DefaultTableRuntime::recover);
     tableExplorerScheduler.scheduleAtFixedRate(
         this::exploreExternalCatalog, 0, externalCatalogRefreshingInterval, TimeUnit.MILLISECONDS);
+    tableWatchers.forEach(TableWatcher::start);
     initialized.complete(true);
   }
 
@@ -594,7 +597,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         return false;
       }
     }
-    DefaultTableRuntime tableRuntime = new DefaultTableRuntime(serverTableIdentifier, this, table.properties());
+    DefaultTableRuntime tableRuntime =
+        new DefaultTableRuntime(serverTableIdentifier, this, table.properties());
     tableRuntimeMap.put(serverTableIdentifier, tableRuntime);
     tableWatchers.forEach(tableWatcher -> tableWatcher.tableAdded(tableRuntime, table));
     return true;

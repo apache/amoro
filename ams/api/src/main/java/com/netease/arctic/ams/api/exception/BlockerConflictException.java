@@ -16,7 +16,11 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.exception;
+package com.netease.arctic.ams.api.exception;
 
-/** forbiddenException */
-public class ForbiddenException extends ArcticRuntimeException {}
+public class BlockerConflictException extends ArcticRuntimeException {
+
+  public BlockerConflictException(String message) {
+    super(message);
+  }
+}

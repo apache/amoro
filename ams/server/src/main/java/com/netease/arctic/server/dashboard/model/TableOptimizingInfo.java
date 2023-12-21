@@ -18,16 +18,15 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.netease.arctic.server.process.optimizing.OptimizingStage;
 import com.netease.arctic.ams.api.ServerTableIdentifier;
-import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.server.process.optimizing.DefaultOptimizingState;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 /** Current optimize state of an ArcticTable. */
 public class TableOptimizingInfo {
 
-  public TableOptimizingInfo(ServerTableIdentifier tableIdentifier) {
-    this.tableIdentifier = tableIdentifier;
+  public TableOptimizingInfo(DefaultOptimizingState optimizingState, String resourceGroup) {
+    this.tableIdentifier = optimizingState.getTableIdentifier();
     this.tableName =
         tableIdentifier
             .getCatalog()
@@ -35,18 +34,24 @@ public class TableOptimizingInfo {
             .concat(tableIdentifier.getDatabase())
             .concat(".")
             .concat(tableIdentifier.getTableName());
+    this.stage = optimizingState.getName();
+    this.duration = optimizingState.getDuration();
+    this.fileCount = optimizingState.getPendingInput().getInputFileCount();
+    this.fileSize = optimizingState.getPendingInput().getInputFileSize();
+    this.quota = optimizingState.getTargetQuota();
+    this.quotaOccupation = optimizingState.getQuotaOccupy();
+    this.groupName = resourceGroup;
   }
 
   private final ServerTableIdentifier tableIdentifier;
-  private String tableName;
-  private String optimizeStatus = OptimizingStage.IDLE.displayValue();
-  private long duration = 0;
-  private long fileCount = 0;
-  private long fileSize = 0;
-  private double quota = 0.0;
-  private double quotaOccupation = 0.0;
-
-  private String groupName = TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT;
+  private final String tableName;
+  private final String stage;
+  private final long duration;
+  private final long fileCount;
+  private final long fileSize;
+  private final double quota;
+  private final double quotaOccupation;
+  private final String groupName;
 
   public ServerTableIdentifier getTableIdentifier() {
     return tableIdentifier;
@@ -56,64 +61,32 @@ public class TableOptimizingInfo {
     return tableName;
   }
 
-  public String getOptimizeStatus() {
-    return optimizeStatus;
-  }
-
-  public void setOptimizeStatus(String optimizeStatus) {
-    this.optimizeStatus = optimizeStatus;
+  public String getOptimizingStage() {
+    return stage;
   }
 
   public long getDuration() {
     return duration;
   }
 
-  public void setDuration(long duration) {
-    this.duration = duration;
-  }
-
   public long getFileCount() {
     return fileCount;
-  }
-
-  public void setFileCount(long fileCount) {
-    this.fileCount = fileCount;
   }
 
   public long getFileSize() {
     return fileSize;
   }
 
-  public void setFileSize(long fileSize) {
-    this.fileSize = fileSize;
-  }
-
   public double getQuota() {
     return quota;
-  }
-
-  public void setQuota(double quota) {
-    this.quota = quota;
   }
 
   public double getQuotaOccupation() {
     return quotaOccupation;
   }
 
-  public void setQuotaOccupation(double quotaOccupation) {
-    this.quotaOccupation = quotaOccupation;
-  }
-
-  public void setTableName(String tableName) {
-    this.tableName = tableName;
-  }
-
   public String getGroupName() {
     return groupName;
-  }
-
-  public void setGroupName(String groupName) {
-    this.groupName = groupName;
   }
 
   @Override
@@ -121,7 +94,7 @@ public class TableOptimizingInfo {
     return MoreObjects.toStringHelper(this)
         .add("tableIdentifier", tableIdentifier)
         .add("tableName", tableName)
-        .add("optimizeStatus", optimizeStatus)
+        .add("optimizingStage", stage)
         .add("duration", duration)
         .add("fileCount", fileCount)
         .add("fileSize", fileSize)

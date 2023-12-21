@@ -16,16 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.resource;
+package com.netease.arctic.ams.api.exception;
 
-/** Quota information provider, used for optimizing plan */
-public interface QuotaProvider {
-
-  /**
-   * Get the total available quota of a specific resource group
-   *
-   * @param resourceGroup resource group name
-   * @return quota of the resource group
-   */
-  int getTotalQuota(String resourceGroup);
-}
+/** SignatureCheckException */
+public class SignatureCheckException extends ArcticRuntimeException {}

@@ -40,6 +40,8 @@ public abstract class TaskScheduler<T extends TableState>
     this.optimizerGroup = optimizerGroup;
   }
 
+  public abstract void setAvailableQuota(long quota);
+
   public String getContainerName() {
     return optimizerGroup.getContainer();
   }
@@ -106,7 +108,7 @@ public abstract class TaskScheduler<T extends TableState>
   protected abstract TableProcess<T> createProcess(DefaultTableRuntime tableRuntime, Action action);
 
   protected abstract TableProcess<T> recoverProcess(
-      DefaultTableRuntime tableRuntime, Action action, T state);
+      DefaultTableRuntime tableRuntime, Action action, T package$);
 
   @Override
   public AmoroProcess<T> create(TableRuntime tableRuntime, Action action) {

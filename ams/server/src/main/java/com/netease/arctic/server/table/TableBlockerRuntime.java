@@ -2,8 +2,8 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.ServerTableIdentifier;
-import com.netease.arctic.server.exception.BlockerConflictException;
-import com.netease.arctic.server.exception.ObjectNotExistsException;
+import com.netease.arctic.ams.api.exception.BlockerConflictException;
+import com.netease.arctic.ams.api.exception.ObjectNotExistsException;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.table.blocker.RenewableBlocker;

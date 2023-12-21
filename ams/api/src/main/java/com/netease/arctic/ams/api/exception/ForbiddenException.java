@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.exception;
+package com.netease.arctic.ams.api.exception;
 
-/** SignatureCheckException */
-public class SignatureCheckException extends ArcticRuntimeException {}
+/** forbiddenException */
+public class ForbiddenException extends ArcticRuntimeException {}

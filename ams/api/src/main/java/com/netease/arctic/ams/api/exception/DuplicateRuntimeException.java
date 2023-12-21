@@ -1,4 +1,4 @@
-package com.netease.arctic.server.exception;
+package com.netease.arctic.ams.api.exception;
 
 public class DuplicateRuntimeException extends ArcticRuntimeException {
 

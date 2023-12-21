@@ -22,14 +22,14 @@ import com.netease.arctic.AmoroTable;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.ServerTableIdentifier;
-import com.netease.arctic.ams.api.config.TableConfiguration;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.config.TableConfiguration;
+import com.netease.arctic.ams.api.process.OptimizingStage;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.server.persistence.TableRuntimePersistency;
-import com.netease.arctic.server.process.optimizing.OptimizingStage;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
@@ -135,7 +135,8 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     private boolean disposed = false;
 
     @Override
-    protected void handleStatusChanged(DefaultTableRuntime tableRuntime, OptimizingStage originalStatus) {
+    protected void handleStatusChanged(
+        DefaultTableRuntime tableRuntime, OptimizingStage originalStatus) {
       statusChangedTables.add(Pair.of(tableRuntime, originalStatus));
     }
 

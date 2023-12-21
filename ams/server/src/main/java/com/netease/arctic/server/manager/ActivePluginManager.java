@@ -20,8 +20,8 @@ package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.ActivePlugin;
 import com.netease.arctic.ams.api.PluginManager;
-import com.netease.arctic.server.exception.LoadingPluginException;
-import com.netease.arctic.server.exception.UndefinedException;
+import com.netease.arctic.ams.api.exception.LoadingPluginException;
+import com.netease.arctic.ams.api.exception.UndefinedException;
 import com.netease.arctic.server.utils.PreconditionUtils;
 import org.jetbrains.annotations.NotNull;
 

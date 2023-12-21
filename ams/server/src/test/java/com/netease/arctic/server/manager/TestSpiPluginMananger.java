@@ -19,8 +19,8 @@
 package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.AmoroPlugin;
-import com.netease.arctic.server.exception.AlreadyExistsException;
-import com.netease.arctic.server.exception.ObjectNotExistsException;
+import com.netease.arctic.ams.api.exception.AlreadyExistsException;
+import com.netease.arctic.ams.api.exception.ObjectNotExistsException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

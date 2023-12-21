@@ -1,4 +1,4 @@
-package com.netease.arctic.server.process.optimizing;
+package com.netease.arctic.ams.api.process;
 
 public enum OptimizingStage {
   FULL_OPTIMIZING("full", true),
@@ -7,18 +7,21 @@ public enum OptimizingStage {
   COMMITTING("committing", true),
   PLANNING("planning", false),
   PENDING("pending", false),
-  IDLE("idle", false);
+  IDLE("idle", false),
+  SUSPENDING("suspending", false),
+  SUBMITTING("submitting", false);
+
   private final String displayValue;
 
-  private final boolean isProcessing;
+  private final boolean isOptimizing;
 
   OptimizingStage(String displayValue, boolean isProcessing) {
     this.displayValue = displayValue;
-    this.isProcessing = isProcessing;
+    this.isOptimizing = isProcessing;
   }
 
   public boolean isOptimizing() {
-    return isProcessing;
+    return isOptimizing;
   }
 
   public String displayValue() {

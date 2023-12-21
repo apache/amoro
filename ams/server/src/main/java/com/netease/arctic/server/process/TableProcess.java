@@ -1,11 +1,11 @@
 package com.netease.arctic.server.process;
 
 import com.netease.arctic.ams.api.TableRuntime;
+import com.netease.arctic.ams.api.exception.OptimizingClosedException;
 import com.netease.arctic.ams.api.process.AmoroProcess;
 import com.netease.arctic.ams.api.process.ProcessStatus;
 import com.netease.arctic.ams.api.process.SimpleFuture;
 import com.netease.arctic.ams.api.process.TableState;
-import com.netease.arctic.server.exception.OptimizingClosedException;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.utils;
 
-import com.netease.arctic.server.exception.AlreadyExistsException;
-import com.netease.arctic.server.exception.ObjectNotExistsException;
+import com.netease.arctic.ams.api.exception.AlreadyExistsException;
+import com.netease.arctic.ams.api.exception.ObjectNotExistsException;
 
 public class PreconditionUtils {
 

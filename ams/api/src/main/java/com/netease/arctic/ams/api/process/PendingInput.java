@@ -20,13 +20,14 @@ public class PendingInput {
 
   public PendingInput() {}
 
-  public PendingInput(Set<String> partitions,
-                      int dataFileCount,
-                      long dataFileSize,
-                      int equalityDeleteFileCount,
-                      int positionalDeleteFileCount,
-                      long positionalDeleteBytes,
-                      long equalityDeleteBytes) {
+  public PendingInput(
+      Set<String> partitions,
+      int dataFileCount,
+      long dataFileSize,
+      int equalityDeleteFileCount,
+      int positionalDeleteFileCount,
+      long positionalDeleteBytes,
+      long equalityDeleteBytes) {
     this.partitions.addAll(partitions);
     this.dataFileCount = dataFileCount;
     this.dataFileSize = dataFileSize;
@@ -34,6 +35,14 @@ public class PendingInput {
     this.positionalDeleteFileCount = positionalDeleteFileCount;
     this.positionalDeleteBytes = positionalDeleteBytes;
     this.equalityDeleteBytes = equalityDeleteBytes;
+  }
+
+  public int getInputFileCount() {
+    return dataFileCount + equalityDeleteFileCount + positionalDeleteFileCount;
+  }
+
+  public long getInputFileSize() {
+    return dataFileSize + equalityDeleteBytes + positionalDeleteBytes;
   }
 
   public Set<String> getPartitions() {
