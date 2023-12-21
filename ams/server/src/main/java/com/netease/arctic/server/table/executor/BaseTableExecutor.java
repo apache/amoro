@@ -83,8 +83,8 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
     }
     try {
       execute(tableRuntime);
-      scheduledTables.remove(tableRuntime.getTableIdentifier());
     } finally {
+      scheduledTables.remove(tableRuntime.getTableIdentifier());
       scheduleIfNecessary(tableRuntime, getNextExecutingTime(tableRuntime));
     }
   }
