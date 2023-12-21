@@ -18,24 +18,25 @@
 
 package com.netease.arctic.optimizer.spark;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.netease.arctic.ams.api.OptimizingTask;
-import com.netease.arctic.ams.api.PropertyNames;
+import com.netease.arctic.ams.api.OptimizerProperties;
 import com.netease.arctic.ams.api.resource.Resource;
-import com.netease.arctic.optimizer.common.AbstractOptimizerOperator;
 import com.netease.arctic.optimizer.common.OptimizerToucher;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.util.Utils;
-import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
+/** The {@code SparkOptimizer} acts as an entrypoint of the spark program */
 public class SparkOptimizer {
   private static final Logger LOG = LoggerFactory.getLogger(SparkOptimizer.class);
   private static final String APP_NAME = "amoro-spark-optimizer";
@@ -56,106 +57,47 @@ public class SparkOptimizer {
 
     OptimizerToucher toucher = new OptimizerToucher(config);
     if (config.getResourceId() != null) {
-      toucher.withRegisterProperty(PropertyNames.RESOURCE_ID, config.getResourceId());
+      toucher.withRegisterProperty(OptimizerProperties.RESOURCE_ID, config.getResourceId());
     }
     toucher.withRegisterProperty(Resource.PROPERTY_JOB_ID, spark.sparkContext().applicationId());
     LOG.info("Starting optimizer with configuration:{}", config);
 
-    int threadId = Thread.currentThread().hashCode();
-    SparkExecutor sparkExecutor = new SparkExecutor(jsc, config, threadId);
-    ThreadFactory consumerFactory =
+    ThreadFactory executorFactory =
         new ThreadFactoryBuilder()
             .setDaemon(false)
-            .setNameFormat("spark-optimizing-puller-%d")
+            .setNameFormat("spark-optimizer-task-submitter-%d")
             .build();
-    ExecutorService pullerService = Executors.newSingleThreadExecutor(consumerFactory);
-    TaskPuller puller = new TaskPuller(config, threadId, sparkExecutor);
-    pullerService.execute(puller);
-    toucher
-        .withTokenChangeListener(
-            newToken -> {
-              puller.setToken(newToken);
-              sparkExecutor.setToken(newToken);
-            })
-        .start();
-  }
-
-  static class TaskPuller extends AbstractOptimizerOperator implements Runnable {
-    private final SparkExecutor sparkExecutor;
-    private final SparkOptimizerConfig config;
-    private final int threadId;
-
-    private TaskPuller(SparkOptimizerConfig config, int threadId, SparkExecutor sparkExecutor) {
-      super(config);
-      this.config = config;
-      this.threadId = threadId;
-      this.sparkExecutor = sparkExecutor;
-    }
-
-    @Override
-    public void run() {
-      try {
-        ThreadPoolExecutor executorService = sparkExecutor.getExecutorService();
-        LOG.info("Starting to poll optimizing tasks.");
-        while (true) {
-          int activeCount = executorService.getActiveCount();
-          if (activeCount >= executorService.getMaximumPoolSize()) {
-            LOG.info("Polled {} tasks, the queue is full", activeCount);
-            waitAShortTime();
-          } else {
-            OptimizingTask task = pollTask();
-            if (task != null && ackTask(task)) {
-              sparkExecutor.submitOptimizingTask(task);
-              LOG.info("Polled and submitted the task {}", task);
-            }
-          }
-        }
-      } catch (Throwable e) {
-        LOG.error("Failed to poll task", e);
-      }
-    }
-
-    private boolean ackTask(OptimizingTask task) {
-      try {
-        callAuthenticatedAms(
-            (client, token) -> {
-              client.ackTask(token, threadId, task.getTaskId());
-              return null;
+    ThreadPoolExecutor executorService =
+        new ThreadPoolExecutor(
+            config.getExecutionParallel(),
+            config.getExecutionParallel(),
+            30L,
+            TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(config.getExecutionParallel()),
+            executorFactory);
+    IntStream.range(0, config.getExecutionParallel())
+        .forEach(
+            i -> {
+              SparkOptimizingTaskSubmitter sparkOptimizingTaskSubmitter =
+                  new SparkOptimizingTaskSubmitter(jsc, config, i);
+              executorService.submit(sparkOptimizingTaskSubmitter);
+              toucher.withTokenChangeListener(
+                  newToken -> sparkOptimizingTaskSubmitter.setToken(newToken));
             });
-        LOG.info("Optimizer executor[{}] acknowledged task[{}] to ams", threadId, task.getTaskId());
-        return true;
-      } catch (TException exception) {
-        LOG.error(
-            "Optimizer executor[{}] acknowledged task[{}] failed",
-            threadId,
-            task.getTaskId(),
-            exception);
-        return false;
-      }
-    }
 
-    private OptimizingTask pollTask() {
-      OptimizingTask task = null;
-      long startTime = System.currentTimeMillis();
-      while (isStarted()) {
-        try {
-          task = callAuthenticatedAms((client, token) -> client.pollTask(token, threadId));
-        } catch (TException exception) {
-          LOG.error("Optimizer executor[{}] polled task failed", threadId, exception);
-        }
-        if (task != null) {
-          LOG.info("Optimizer executor[{}] polled task[{}] from ams", threadId, task.getTaskId());
-          break;
-        } else {
-          waitAShortTime();
-        }
-        if (System.currentTimeMillis() - startTime > config.getPollingTimeout()
-            && sparkExecutor.getExecutorService().getActiveCount() == 0) {
-          LOG.warn("Waited for {} s, the optimizer will exit", config.getPollingTimeout());
-          System.exit(0);
-        }
-      }
-      return task;
-    }
+    // check whether the spark driver can exit normally in the current schedule time
+    ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    scheduler.scheduleAtFixedRate(
+        () -> {
+          if (executorService.getActiveCount() == 0) {
+            executorService.shutdown();
+            System.exit(0);
+          }
+        },
+        0,
+        1,
+        TimeUnit.MINUTES);
+
+    toucher.start();
   }
 }

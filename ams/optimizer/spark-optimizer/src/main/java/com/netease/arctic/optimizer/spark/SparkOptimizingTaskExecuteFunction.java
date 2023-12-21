@@ -33,12 +33,18 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 
-public class SparkFunction implements Function<OptimizingTask, OptimizingTaskResult> {
-  private static final Logger LOG = LoggerFactory.getLogger(SparkFunction.class);
+/**
+ * The {@code SparkOptimizingTaskExecuteFunction} defines the whole processing logic that how to
+ * execute {@code OptimizingTask}
+ */
+public class SparkOptimizingTaskExecuteFunction
+    implements Function<OptimizingTask, OptimizingTaskResult> {
+  private static final Logger LOG =
+      LoggerFactory.getLogger(SparkOptimizingTaskExecuteFunction.class);
   private final SparkOptimizerConfig config;
   private final int threadId;
 
-  public SparkFunction(SparkOptimizerConfig config, int threadId) {
+  public SparkOptimizingTaskExecuteFunction(SparkOptimizerConfig config, int threadId) {
     this.config = config;
     this.threadId = threadId;
   }

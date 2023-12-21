@@ -19,19 +19,24 @@
 package com.netease.arctic.optimizer.spark;
 
 import com.netease.arctic.optimizer.common.OptimizerConfig;
-import org.apache.iceberg.relocated.com.google.common.base.*;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Option;
 
+/**
+ * The {@code SparkOptimizerConfig} contains extra parameters besides which in {@code
+ * OptimizerConfig}
+ */
 public class SparkOptimizerConfig extends OptimizerConfig {
-  private final String AMS_POLLING_TIMEOUT = "polling-timeout";
+  private final String AMS_TASK_POLLING_TIMEOUT =
+      "task-polling-timeout"; // the time interval since the last time we polled an optimizing task
 
   @Option(
-      name = "-pt",
-      aliases = "--" + AMS_POLLING_TIMEOUT,
+      name = "-tpt",
+      aliases = "--" + AMS_TASK_POLLING_TIMEOUT,
       usage = "The task polling timeout, default 10min",
       required = true)
-  private long pollingTimeout = 600000; // 10min
+  private long taskPollingTimeout = 600000; // 10min
 
   public SparkOptimizerConfig() {}
 
@@ -39,12 +44,12 @@ public class SparkOptimizerConfig extends OptimizerConfig {
     super(args);
   }
 
-  public long getPollingTimeout() {
-    return pollingTimeout;
+  public long getTaskPollingTimeout() {
+    return taskPollingTimeout;
   }
 
-  public void setPollingTimeout(long pollingTimeout) {
-    this.pollingTimeout = pollingTimeout;
+  public void setTaskPollingTimeout(long taskPollingTimeout) {
+    this.taskPollingTimeout = taskPollingTimeout;
   }
 
   public String toString() {
@@ -58,7 +63,7 @@ public class SparkOptimizerConfig extends OptimizerConfig {
         .add("rocksDBBasePath", getDiskStoragePath())
         .add("memoryStorageSize", getMemoryStorageSize())
         .add("resourceId", getResourceId())
-        .add("pollingTimeout", getPollingTimeout())
+        .add("taskPollingTimeout", getTaskPollingTimeout())
         .toString();
   }
 }
