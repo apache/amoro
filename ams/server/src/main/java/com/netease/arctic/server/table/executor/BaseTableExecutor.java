@@ -31,12 +31,13 @@ import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFact
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public abstract class BaseTableExecutor extends RuntimeHandlerChain {
@@ -47,8 +48,8 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
 
   private final ScheduledExecutorService executor;
   private final TableManager tableManager;
-  private final ConcurrentHashMap<ServerTableIdentifier, ScheduledFuture<?>> scheduledTasks =
-      new ConcurrentHashMap<>();
+  private final Set<ServerTableIdentifier> scheduledTables =
+      Collections.synchronizedSet(new HashSet<>());
 
   protected BaseTableExecutor(TableManager tableManager, int poolSize) {
     this.tableManager = tableManager;
@@ -68,35 +69,32 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
         .filter(tableRuntime -> enabled(tableRuntime))
         .forEach(
             tableRuntime -> {
-              ScheduledFuture<?> scheduledFuture =
-                  executor.scheduleWithFixedDelay(
-                      () -> executeTask(tableRuntime),
-                      getStartDelay(),
-                      getNextExecutingTime(tableRuntime),
-                      TimeUnit.MILLISECONDS);
-              scheduledTasks.put(tableRuntime.getTableIdentifier(), scheduledFuture);
+              executor.schedule(
+                  () -> executeTask(tableRuntime), getStartDelay(), TimeUnit.MILLISECONDS);
+              scheduledTables.add(tableRuntime.getTableIdentifier());
             });
+
     logger.info("Table executor {} initialized", getClass().getSimpleName());
   }
 
   private void executeTask(TableRuntime tableRuntime) {
-    if (isExecutable(tableRuntime)) {
+    if (!isExecutable(tableRuntime)) {
+      scheduledTables.remove(tableRuntime.getTableIdentifier());
+    }
+    try {
       execute(tableRuntime);
+      scheduledTables.remove(tableRuntime.getTableIdentifier());
+    } finally {
+      scheduleIfNecessary(tableRuntime, getNextExecutingTime(tableRuntime));
     }
   }
 
   protected final void scheduleIfNecessary(TableRuntime tableRuntime, long millisecondsTime) {
     if (isExecutable(tableRuntime)) {
-      if (scheduledTasks.containsKey(tableRuntime.getTableIdentifier())) {
-        scheduledTasks.remove(tableRuntime.getTableIdentifier()).cancel(true);
+      if (!scheduledTables.contains(tableRuntime.getTableIdentifier())) {
+        executor.schedule(() -> executeTask(tableRuntime), millisecondsTime, TimeUnit.MILLISECONDS);
+        scheduledTables.add(tableRuntime.getTableIdentifier());
       }
-      ScheduledFuture<?> scheduledFuture =
-          executor.scheduleWithFixedDelay(
-              () -> executeTask(tableRuntime),
-              millisecondsTime,
-              getNextExecutingTime(tableRuntime),
-              TimeUnit.MILLISECONDS);
-      scheduledTasks.put(tableRuntime.getTableIdentifier(), scheduledFuture);
     }
   }
 

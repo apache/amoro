@@ -437,7 +437,9 @@ public class DashboardServer {
     "/hive-tables",
     "/index.html",
     "/favicon.ico",
-    "/assets/*",
+    "/js/*",
+    "/img/*",
+    "/css/*",
     RestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
   };
 
