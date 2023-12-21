@@ -18,36 +18,6 @@
 
 package io.trino.parquet.reader;
 
-import io.trino.memory.context.AggregatedMemoryContext;
-import io.trino.memory.context.LocalMemoryContext;
-import io.trino.parquet.PrimitiveField;
-import io.trino.parquet.reader.decoders.TransformingValueDecoders;
-import io.trino.parquet.reader.decoders.ValueDecoders;
-import io.trino.parquet.reader.flat.FlatColumnReader;
-import io.trino.spi.TrinoException;
-import io.trino.spi.type.AbstractIntType;
-import io.trino.spi.type.AbstractLongType;
-import io.trino.spi.type.AbstractVariableWidthType;
-import io.trino.spi.type.CharType;
-import io.trino.spi.type.DecimalType;
-import io.trino.spi.type.TimeType;
-import io.trino.spi.type.TimestampType;
-import io.trino.spi.type.TimestampWithTimeZoneType;
-import io.trino.spi.type.Type;
-import io.trino.spi.type.VarcharType;
-import org.apache.parquet.schema.LogicalTypeAnnotation;
-import org.apache.parquet.schema.LogicalTypeAnnotation.DateLogicalTypeAnnotation;
-import org.apache.parquet.schema.LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
-import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
-import org.apache.parquet.schema.LogicalTypeAnnotation.LogicalTypeAnnotationVisitor;
-import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
-import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
-import org.apache.parquet.schema.LogicalTypeAnnotation.UUIDLogicalTypeAnnotation;
-import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
-import org.joda.time.DateTimeZone;
-
-import java.util.Optional;
-
 import static io.trino.parquet.ParquetTypeUtils.createDecimalType;
 import static io.trino.parquet.reader.decoders.TransformingValueDecoders.getInt96ToLongTimestampDecoder;
 import static io.trino.parquet.reader.decoders.TransformingValueDecoders.getInt96ToShortTimestampDecoder;
@@ -80,6 +50,36 @@ import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.FLOAT;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.INT32;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.INT64;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.INT96;
+
+import io.trino.memory.context.AggregatedMemoryContext;
+import io.trino.memory.context.LocalMemoryContext;
+import io.trino.parquet.PrimitiveField;
+import io.trino.parquet.reader.decoders.TransformingValueDecoders;
+import io.trino.parquet.reader.decoders.ValueDecoders;
+import io.trino.parquet.reader.flat.FlatColumnReader;
+import io.trino.spi.TrinoException;
+import io.trino.spi.type.AbstractIntType;
+import io.trino.spi.type.AbstractLongType;
+import io.trino.spi.type.AbstractVariableWidthType;
+import io.trino.spi.type.CharType;
+import io.trino.spi.type.DecimalType;
+import io.trino.spi.type.TimeType;
+import io.trino.spi.type.TimestampType;
+import io.trino.spi.type.TimestampWithTimeZoneType;
+import io.trino.spi.type.Type;
+import io.trino.spi.type.VarcharType;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.DateLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.LogicalTypeAnnotationVisitor;
+import org.apache.parquet.schema.LogicalTypeAnnotation.TimeLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.UUIDLogicalTypeAnnotation;
+import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
+import org.joda.time.DateTimeZone;
+
+import java.util.Optional;
 
 /** Copy from trino-parquet ColumnReaderFactory and do some change to adapt Arctic */
 public final class ColumnReaderFactory {
