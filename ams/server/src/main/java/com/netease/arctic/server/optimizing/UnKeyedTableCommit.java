@@ -48,9 +48,10 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RewriteFiles;
+import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.exceptions.ValidationException;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.SnapshotUtil;
 import org.apache.iceberg.util.StructLikeMap;
@@ -211,43 +212,77 @@ public class UnKeyedTableCommit {
       }
     }
 
-    UnkeyedTable icebergTable = table.asUnkeyedTable();
-
-    rewriteFiles(icebergTable, removedDataFiles, addedDataFiles, removedDeleteFiles, addedDeleteFiles);
-  }
-
-  protected void rewriteFiles(
-      UnkeyedTable icebergTable,
-      Set<DataFile> removedDataFiles,
-      Set<DataFile> addedDataFiles,
-      Set<DeleteFile> removedDeleteFiles,
-      Set<DeleteFile> addDeleteFiles)
-      throws OptimizingCommitException {
     try {
-      RewriteFiles rewriteFiles = icebergTable.newRewrite();
-      if (targetSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
-        long sequenceNumber = table.asUnkeyedTable().snapshot(targetSnapshotId).sequenceNumber();
-        rewriteFiles.validateFromSnapshot(targetSnapshotId).dataSequenceNumber(sequenceNumber);
+      Transaction transaction = table.asUnkeyedTable().newTransaction();
+      if (removedDeleteFiles.isEmpty() && !addedDeleteFiles.isEmpty()) {
+        /* In order to avoid the validation in
+        {@link org.apache.iceberg.BaseRewriteFiles#validateReplacedAndAddedFiles} which will throw
+        an error "Delete files to add must be empty because there's no delete file to be rewritten",
+        we split the rewrite into 2 steps, first rewrite the data files, then add the delete files.
+         */
+        rewriteDataFiles(transaction, removedDataFiles, addedDataFiles);
+        addDeleteFiles(transaction, addedDeleteFiles);
+      } else {
+        rewriteFiles(
+            transaction, removedDataFiles, addedDataFiles, removedDeleteFiles, addedDeleteFiles);
       }
-      removedDataFiles.forEach(rewriteFiles::deleteFile);
-      addedDataFiles.forEach(rewriteFiles::addFile);
-      removedDeleteFiles.forEach(rewriteFiles::deleteFile);
-      addDeleteFiles.forEach(rewriteFiles::addFile);
-      rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-      if (TableTypeUtil.isHive(table)) {
-        if (!needMoveFile2Hive()) {
-          rewriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
-        }
-        rewriteFiles.set(SYNC_DATA_TO_HIVE, "true");
-      }
-      rewriteFiles.commit();
+      transaction.commitTransaction();
     } catch (Exception e) {
       if (needMoveFile2Hive()) {
-        correctHiveData(addedDataFiles, addDeleteFiles);
+        correctHiveData(addedDataFiles, addedDeleteFiles);
       }
       LOG.warn("Optimize commit table {} failed, give up commit.", table.id(), e);
       throw new OptimizingCommitException("unexpected commit error ", e);
     }
+  }
+
+  private void rewriteDataFiles(
+      Transaction transaction, Set<DataFile> removedDataFiles, Set<DataFile> addedDataFiles) {
+    rewriteFiles(
+        transaction,
+        removedDataFiles,
+        addedDataFiles,
+        Collections.emptySet(),
+        Collections.emptySet());
+  }
+
+  private void rewriteFiles(
+      Transaction transaction,
+      Set<DataFile> removedDataFiles,
+      Set<DataFile> addedDataFiles,
+      Set<DeleteFile> removedDeleteFiles,
+      Set<DeleteFile> addedDeleteFiles) {
+    if (removedDataFiles.isEmpty()
+        && addedDataFiles.isEmpty()
+        && removedDeleteFiles.isEmpty()
+        && addedDeleteFiles.isEmpty()) {
+      return;
+    }
+
+    RewriteFiles rewriteFiles = transaction.newRewrite();
+    if (targetSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+      long sequenceNumber = table.asUnkeyedTable().snapshot(targetSnapshotId).sequenceNumber();
+      rewriteFiles.validateFromSnapshot(targetSnapshotId).dataSequenceNumber(sequenceNumber);
+    }
+    removedDataFiles.forEach(rewriteFiles::deleteFile);
+    addedDataFiles.forEach(rewriteFiles::addFile);
+    removedDeleteFiles.forEach(rewriteFiles::deleteFile);
+    addedDeleteFiles.forEach(rewriteFiles::addFile);
+    rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+    if (TableTypeUtil.isHive(table)) {
+      if (!needMoveFile2Hive()) {
+        rewriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
+      }
+      rewriteFiles.set(SYNC_DATA_TO_HIVE, "true");
+    }
+    rewriteFiles.commit();
+  }
+
+  private void addDeleteFiles(Transaction transaction, Set<DeleteFile> addDeleteFiles) {
+    RowDelta rowDelta = transaction.newRowDelta();
+    addDeleteFiles.forEach(rowDelta::addDeletes);
+    rowDelta.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+    rowDelta.commit();
   }
 
   protected boolean needMoveFile2Hive() {
