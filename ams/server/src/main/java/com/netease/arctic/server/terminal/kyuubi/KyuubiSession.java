@@ -50,6 +50,7 @@ public class KyuubiSession implements TerminalSession {
   @Override
   public ResultSet executeStatement(String catalog, String statement) {
     if (currentCatalog == null || !currentCatalog.equalsIgnoreCase(catalog)) {
+      String useCatalog;
       if (TerminalSession.canUseSparkSessionCatalog(sessionConf, catalog)) {
         logs.add(
             String.format(
@@ -57,12 +58,18 @@ public class KyuubiSession implements TerminalSession {
                     + "since it's a hive type catalog and can use spark session catalog, "
                     + "switch to spark_catalog before execution",
                 currentCatalog));
-        execute("use `spark_catalog`");
+        useCatalog = "spark_catalog";
       } else {
         logs.add(
             String.format(
                 "current catalog is %s, switch to %s before execution", currentCatalog, catalog));
-        execute("use `" + catalog + "`");
+        useCatalog = catalog;
+      }
+      try {
+        connection.setCatalog(useCatalog);
+      } catch (SQLException e) {
+        throw new RuntimeException(
+            String.format("Failed to set catalog %s on the connection", useCatalog), e);
       }
       this.currentCatalog = catalog;
     }
