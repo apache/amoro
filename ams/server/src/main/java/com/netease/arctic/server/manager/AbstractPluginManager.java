@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -239,13 +238,11 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> {
   protected List<PluginConfiguration> loadPluginConfigurations() throws IOException {
     JSONObject yamlConfig = null;
     Path mangerConfigPath = pluginManagerConfigFilePath();
-    try {
-      yamlConfig =
-          new JSONObject(new Yaml().loadAs(Files.newInputStream(mangerConfigPath), Map.class));
-    } catch (FileNotFoundException e) {
-      LOG.warn("Plugin manger config path is not founded");
+    if (!Files.exists(mangerConfigPath)) {
       return ImmutableList.of();
     }
+    yamlConfig =
+        new JSONObject(new Yaml().loadAs(Files.newInputStream(mangerConfigPath), Map.class));
 
     LOG.info("initializing plugin configuration for: " + pluginCategory());
     String pluginListKey = pluginCategory();

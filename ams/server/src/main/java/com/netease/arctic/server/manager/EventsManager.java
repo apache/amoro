@@ -48,7 +48,7 @@ public class EventsManager extends AbstractPluginManager<EventListener> {
   }
 
   @VisibleForTesting
-  public static void uninstall() {
+  public static void dispose() {
     synchronized (EventsManager.class) {
       if (INSTANCE != null) {
         INSTANCE.close();

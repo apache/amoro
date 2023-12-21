@@ -53,7 +53,7 @@ public abstract class TableServiceTestBase {
   public static void disposeTableService() {
     TABLE_SERVICE.dispose();
     MetricManager.dispose();
-    EventsManager.uninstall();
+    EventsManager.dispose();
   }
 
   protected DefaultTableService tableService() {
