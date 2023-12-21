@@ -287,7 +287,7 @@ public class TaskRuntime<I, O> extends StatedPersistentBase {
 
     public void accept(Status targetStatus) {
       if (!getNext().contains(targetStatus)) {
-        throw new IllegalTaskStateException(taskId, status, targetStatus);
+        throw new IllegalTaskStateException(taskId, status.name(), targetStatus.name());
       }
       status = targetStatus;
     }
