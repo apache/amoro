@@ -25,9 +25,7 @@ import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
@@ -37,7 +35,7 @@ import java.util.Map;
 public class TagConfiguration {
   // tag.auto-create.enabled
   private boolean autoCreateTag = false;
-  // tag.auto-create.daily.tag-format
+  // tag.auto-create.tag-format
   private String tagFormat;
   // tag.auto-create.trigger.period
   private Period triggerPeriod;
@@ -50,7 +48,7 @@ public class TagConfiguration {
   public enum Period {
     DAILY("daily") {
       @Override
-      protected Duration onePeriodSize() {
+      protected Duration periodDuration() {
         return Duration.ofDays(1);
       }
 
@@ -64,7 +62,7 @@ public class TagConfiguration {
     },
     HOURLY("hourly") {
       @Override
-      protected Duration onePeriodSize() {
+      protected Duration periodDuration() {
         return Duration.ofHours(1);
       }
 
@@ -87,7 +85,7 @@ public class TagConfiguration {
       return propertyName;
     }
 
-    protected abstract Duration onePeriodSize();
+    protected abstract Duration periodDuration();
 
     /**
      * Obtain the trigger time for creating a tag, which is the ideal time of the last tag before
@@ -104,10 +102,8 @@ public class TagConfiguration {
     public abstract LocalDateTime getTagTriggerTime(
         LocalDateTime checkTime, int triggerOffsetMinutes);
 
-    public LocalDateTime normalizeToTagTime(long triggerTime, int triggerOffsetMinutes) {
-      return LocalDateTime.ofInstant(Instant.ofEpochMilli(triggerTime), ZoneId.systemDefault())
-          .minus(triggerOffsetMinutes, ChronoUnit.MINUTES)
-          .minus(onePeriodSize());
+    public LocalDateTime normalizeToTagTime(LocalDateTime triggerTime, int triggerOffsetMinutes) {
+      return triggerTime.minus(triggerOffsetMinutes, ChronoUnit.MINUTES).minus(periodDuration());
     }
   }
 
@@ -140,7 +136,7 @@ public class TagConfiguration {
     }
     tagConfig.setTagFormat(
         CompatiblePropertyUtil.propertyAsString(
-            tableProperties, TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT, defaultFormat));
+            tableProperties, TableProperties.AUTO_CREATE_TAG_FORMAT, defaultFormat));
     tagConfig.setTriggerOffsetMinutes(
         CompatiblePropertyUtil.propertyAsInt(
             tableProperties,

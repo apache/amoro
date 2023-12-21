@@ -244,7 +244,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
         .commit();
     table
         .updateProperties()
-        .set(TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT, "'custom-tag-'yyyyMMdd'-auto'")
+        .set(TableProperties.AUTO_CREATE_TAG_FORMAT, "'custom-tag-'yyyyMMdd'-auto'")
         .commit();
     table.newAppend().commit();
     checkSnapshots(table, 1);

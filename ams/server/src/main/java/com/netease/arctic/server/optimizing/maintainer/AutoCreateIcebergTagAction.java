@@ -73,10 +73,10 @@ public class AutoCreateIcebergTagAction {
   }
 
   private boolean createTag() {
-    long tagTriggerTime = getTagTriggerTime();
-    Snapshot snapshot = findSnapshot(table, tagTriggerTime);
+    long tagTriggerTimestampMillis = getTagTriggerTimestampMillis();
+    Snapshot snapshot = findSnapshot(table, tagTriggerTimestampMillis);
     if (snapshot == null) {
-      LOG.info("Found no snapshot at {} for {}", tagTriggerTime, table.name());
+      LOG.info("Found no snapshot at {} for {}", tagTriggerTimestampMillis, table.name());
       return false;
     }
     if (exceedMaxDelay(snapshot)) {
@@ -86,7 +86,7 @@ public class AutoCreateIcebergTagAction {
           snapshot.snapshotId(),
           snapshot.timestampMillis(),
           tagConfig.getMaxDelayMinutes(),
-          getTagTriggerTime());
+          tagTriggerTimestampMillis);
       return false;
     }
     String newTagName = generateTagName();
@@ -104,7 +104,7 @@ public class AutoCreateIcebergTagAction {
     if (tagConfig.getMaxDelayMinutes() <= 0) {
       return false;
     }
-    long delay = snapshot.timestampMillis() - getTagTriggerTime();
+    long delay = snapshot.timestampMillis() - getTagTriggerTimestampMillis();
     return delay > tagConfig.getMaxDelayMinutes() * 60_000L;
   }
 
@@ -112,12 +112,16 @@ public class AutoCreateIcebergTagAction {
     LocalDateTime tagTime =
         tagConfig
             .getTriggerPeriod()
-            .normalizeToTagTime(getTagTriggerTime(), tagConfig.getTriggerOffsetMinutes());
+            .normalizeToTagTime(
+                tagConfig
+                    .getTriggerPeriod()
+                    .getTagTriggerTime(now, tagConfig.getTriggerOffsetMinutes()),
+                tagConfig.getTriggerOffsetMinutes());
     String tagFormat = tagConfig.getTagFormat();
     return tagTime.format(DateTimeFormatter.ofPattern(tagFormat));
   }
 
-  private long getTagTriggerTime() {
+  private long getTagTriggerTimestampMillis() {
     LocalDateTime tagTriggerTime =
         tagConfig.getTriggerPeriod().getTagTriggerTime(now, tagConfig.getTriggerOffsetMinutes());
     return tagTriggerTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
