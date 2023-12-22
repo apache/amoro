@@ -31,6 +31,7 @@ import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
+import com.netease.arctic.server.dashboard.model.OperationType;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
@@ -72,11 +73,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /** Descriptor for Paimon format tables. */
@@ -171,23 +174,32 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable, String ref) {
-    if (ref != null) {
-      throw new UnsupportedOperationException("Paimon not support tag and branch");
-    }
+  public List<AmoroSnapshotsOfTable> getSnapshots(
+      AmoroTable<?> amoroTable, String ref, OperationType operationType) {
     FileStoreTable table = getTable(amoroTable);
     List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
     Iterator<Snapshot> snapshots;
-    try {
-      snapshots = table.snapshotManager().snapshots();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    if ("main".equals(ref)) {
+      try {
+        snapshots = table.snapshotManager().snapshots();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      snapshots = Collections.singleton(table.tagManager().taggedSnapshot(ref)).iterator();
     }
+
     AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
     List<CompletableFuture<AmoroSnapshotsOfTable>> futures = new ArrayList<>();
+    Predicate<Snapshot> predicate =
+        operationType == OperationType.ALL
+            ? s -> true
+            : operationType == OperationType.OPTIMIZING
+                ? s -> s.commitKind() == Snapshot.CommitKind.COMPACT
+                : s -> s.commitKind() != Snapshot.CommitKind.COMPACT;
     while (snapshots.hasNext()) {
       Snapshot snapshot = snapshots.next();
-      if (snapshot.commitKind() == Snapshot.CommitKind.COMPACT) {
+      if (!predicate.test(snapshot)) {
         continue;
       }
       futures.add(
@@ -485,7 +497,12 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable) {
-    return Collections.emptyList();
+    FileStoreTable table = getTable(amoroTable);
+    SortedMap<Snapshot, String> tags = table.tagManager().tags();
+    return tags.entrySet().stream()
+        .map(
+            e -> new TagOrBranchInfo(e.getValue(), e.getKey().id(), 0, 0L, 0L, TagOrBranchInfo.TAG))
+        .collect(Collectors.toList());
   }
 
   @Override
