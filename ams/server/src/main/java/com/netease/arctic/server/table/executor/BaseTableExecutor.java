@@ -69,20 +69,20 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
         .filter(tableRuntime -> enabled(tableRuntime))
         .forEach(
             tableRuntime -> {
-              executor.schedule(
-                  () -> executeTask(tableRuntime), getStartDelay(), TimeUnit.MILLISECONDS);
-              scheduledTables.add(tableRuntime.getTableIdentifier());
+              if (scheduledTables.add(tableRuntime.getTableIdentifier())) {
+                executor.schedule(
+                    () -> executeTask(tableRuntime), getStartDelay(), TimeUnit.MILLISECONDS);
+              }
             });
 
     logger.info("Table executor {} initialized", getClass().getSimpleName());
   }
 
   private void executeTask(TableRuntime tableRuntime) {
-    if (!isExecutable(tableRuntime)) {
-      scheduledTables.remove(tableRuntime.getTableIdentifier());
-    }
     try {
-      execute(tableRuntime);
+      if (isExecutable(tableRuntime)) {
+        execute(tableRuntime);
+      }
     } finally {
       scheduledTables.remove(tableRuntime.getTableIdentifier());
       scheduleIfNecessary(tableRuntime, getNextExecutingTime(tableRuntime));
@@ -91,9 +91,8 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
 
   protected final void scheduleIfNecessary(TableRuntime tableRuntime, long millisecondsTime) {
     if (isExecutable(tableRuntime)) {
-      if (!scheduledTables.contains(tableRuntime.getTableIdentifier())) {
+      if (scheduledTables.add(tableRuntime.getTableIdentifier())) {
         executor.schedule(() -> executeTask(tableRuntime), millisecondsTime, TimeUnit.MILLISECONDS);
-        scheduledTables.add(tableRuntime.getTableIdentifier());
       }
     }
   }
