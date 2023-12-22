@@ -102,6 +102,14 @@ public class TagConfiguration {
     public abstract LocalDateTime getTagTriggerTime(
         LocalDateTime checkTime, int triggerOffsetMinutes);
 
+    /**
+     * Normalize the trigger time to the tag time by subtracting the trigger offset minutes and the
+     * duration of the period.
+     *
+     * <p>For example, if the trigger time is 2022-08-08 00:05:00 and the trigger offset is set to
+     * be 5 minutes, and the period is set to be daily, the ideal tag time will be 2022-08-07
+     * 00:00:00.
+     */
     public LocalDateTime normalizeToTagTime(LocalDateTime triggerTime, int triggerOffsetMinutes) {
       return triggerTime.minus(triggerOffsetMinutes, ChronoUnit.MINUTES).minus(periodDuration());
     }
@@ -125,10 +133,10 @@ public class TagConfiguration {
     String defaultFormat;
     switch (tagConfig.getTriggerPeriod()) {
       case DAILY:
-        defaultFormat = TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT_DAILY_DEFAULT;
+        defaultFormat = TableProperties.AUTO_CREATE_TAG_FORMAT_DAILY_DEFAULT;
         break;
       case HOURLY:
-        defaultFormat = TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT_HOURLY_DEFAULT;
+        defaultFormat = TableProperties.AUTO_CREATE_TAG_FORMAT_HOURLY_DEFAULT;
         break;
       default:
         throw new IllegalArgumentException(
