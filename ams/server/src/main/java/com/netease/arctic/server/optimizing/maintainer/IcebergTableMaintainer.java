@@ -138,6 +138,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
     }
 
     Snapshot currentSnapshot = table.currentSnapshot();
+    if (currentSnapshot == null) {
+      return;
+    }
     java.util.Optional<String> totalDeleteFiles =
         java.util.Optional.ofNullable(
             currentSnapshot.summary().get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
@@ -588,6 +591,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
     CloseableIterable<FileScanTask> tasks;
     Snapshot snapshot = IcebergTableUtil.getSnapshot(table, false);
+    if (snapshot == null) {
+      return CloseableIterable.empty();
+    }
     long snapshotId = snapshot.snapshotId();
     if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
       tasks = tableScan.planFiles();
