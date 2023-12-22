@@ -1,0 +1,27 @@
+**/.*/**
+**/*.log
+**/*.prefs
+**/*.md
+**/*.iml
+**/target/**
+**/scalastyle-output.xml
+docs/**
+**/dependency-reduced-pom.xml
+**/arctic_krb_conf/**
+**/metastore_db/**
+**/gen-antlr/**
+**/unit_test_base_tmp/**
+**/Chart.lock
+**/dependency-reduced-pom.xml
+
+**/node_modules/**
+**/pnpm-lock.yaml
+**/src/main/resources/static/**
+
+# After the ams-dashboard module has been supplemented with the copyright information, these configurations should be removed.
+**/*.ts
+**/*.js
+**/*.vue
+**/*.svg
+**/*.less
+**/index.html
