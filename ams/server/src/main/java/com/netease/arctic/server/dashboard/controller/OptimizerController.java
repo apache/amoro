@@ -30,7 +30,7 @@ import com.netease.arctic.server.dashboard.model.OptimizerResourceInfo;
 import com.netease.arctic.server.dashboard.model.TableOptimizingInfo;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
-import com.netease.arctic.server.process.optimizing.DefaultOptimizingState;
+import com.netease.arctic.server.process.DefaultOptimizingState;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.ResourceContainers;

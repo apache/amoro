@@ -26,15 +26,13 @@ import com.netease.arctic.ams.api.ServerTableIdentifier;
 public class TableState implements ProcessState {
 
   private volatile long id;
-  private Action action;
+  private final Action action;
+  private final ServerTableIdentifier tableIdentifier;
   private long startTime;
-  private ServerTableIdentifier tableIdentifier;
   private long endTime = -1L;
   private ProcessStatus status = ProcessStatus.RUNNING;
   private volatile String failedReason;
   private volatile String summary;
-
-  private TableState() {}
 
   public TableState(Action action, ServerTableIdentifier tableIdentifier) {
     this.action = action;

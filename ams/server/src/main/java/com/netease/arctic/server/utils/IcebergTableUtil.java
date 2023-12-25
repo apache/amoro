@@ -21,7 +21,7 @@ package com.netease.arctic.server.utils;
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
-import com.netease.arctic.server.process.optimizing.DefaultOptimizingState;
+import com.netease.arctic.server.process.DefaultOptimizingState;
 import com.netease.arctic.server.table.BasicTableSnapshot;
 import com.netease.arctic.server.table.DefaultTableRuntime;
 import com.netease.arctic.server.table.KeyedTableSnapshot;

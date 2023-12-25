@@ -22,7 +22,7 @@ import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.server.persistence.OptimizingProcessPersistency;
-import com.netease.arctic.server.process.optimizing.OptimizingType;
+import com.netease.arctic.server.process.OptimizingType;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;

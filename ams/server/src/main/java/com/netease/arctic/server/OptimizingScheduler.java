@@ -23,10 +23,11 @@ import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.TableRuntime;
 import com.netease.arctic.ams.api.process.OptimizingStage;
+import com.netease.arctic.ams.api.process.TableProcess;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
-import com.netease.arctic.server.process.TableProcess;
-import com.netease.arctic.server.process.optimizing.DefaultOptimizingProcess;
-import com.netease.arctic.server.process.optimizing.DefaultOptimizingState;
+import com.netease.arctic.server.process.DefaultOptimizingProcess;
+import com.netease.arctic.server.process.DefaultOptimizingState;
+import com.netease.arctic.server.process.ManagedProcess;
 import com.netease.arctic.server.table.DefaultTableRuntime;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -126,14 +127,14 @@ public class OptimizingScheduler extends TaskScheduler<DefaultOptimizingState> {
   }
 
   @Override
-  protected TableProcess<DefaultOptimizingState> createProcess(
+  protected ManagedProcess<DefaultOptimizingState> createProcess(
       DefaultTableRuntime tableRuntime, Action action) {
     Preconditions.checkState(action == Action.OPTIMIZING);
     return new DefaultOptimizingProcess(tableRuntime, false);
   }
 
   @Override
-  protected TableProcess<DefaultOptimizingState> recoverProcess(
+  protected ManagedProcess<DefaultOptimizingState> recoverProcess(
       DefaultTableRuntime tableRuntime, Action action, DefaultOptimizingState state) {
     Preconditions.checkState(action == Action.OPTIMIZING);
     if (state.getStage().isOptimizing()) {

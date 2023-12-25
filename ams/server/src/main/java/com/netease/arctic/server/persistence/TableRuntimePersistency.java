@@ -5,7 +5,7 @@ import com.netease.arctic.ams.api.config.TableConfiguration;
 import com.netease.arctic.ams.api.process.OptimizingStage;
 import com.netease.arctic.ams.api.process.PendingInput;
 import com.netease.arctic.ams.api.process.ProcessStatus;
-import com.netease.arctic.server.process.optimizing.OptimizingType;
+import com.netease.arctic.server.process.OptimizingType;
 import com.netease.arctic.server.table.DefaultTableRuntime;
 
 public class TableRuntimePersistency {

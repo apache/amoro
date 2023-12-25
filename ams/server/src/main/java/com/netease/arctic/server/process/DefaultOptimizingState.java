@@ -18,7 +18,7 @@
  *
  */
 
-package com.netease.arctic.server.process.optimizing;
+package com.netease.arctic.server.process;
 
 import com.netease.arctic.ams.api.Action;
 import com.netease.arctic.ams.api.ServerTableIdentifier;
@@ -36,7 +36,7 @@ public class DefaultOptimizingState extends OptimizingState {
 
   private final PersistenceHelper persistenceHelper = new PersistenceHelper();
 
-  private volatile long lastOptimizedSnapshotId;
+  @StatedPersistentBase.StateField private volatile long lastOptimizedSnapshotId;
   private volatile long lastOptimizedChangeSnapshotId;
   private volatile long lastMinorOptimizingTime;
   private volatile long lastMajorOptimizingTime;

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.optimizing.flow.checker;
 
-import com.netease.arctic.server.process.optimizing.OptimizingType;
+import com.netease.arctic.server.process.OptimizingType;
 import com.netease.arctic.server.process.optimizing.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.collections.CollectionUtils;

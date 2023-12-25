@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class ArbitraryProcess extends TableProcess<TableState> {
+public class ArbitraryProcess extends ManagedProcess<TableState> {
 
   private final Lock lock = new ReentrantLock();
   private final TaskRuntime<?, ?> taskRuntime;

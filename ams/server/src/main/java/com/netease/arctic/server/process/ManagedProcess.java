@@ -2,81 +2,20 @@ package com.netease.arctic.server.process;
 
 import com.netease.arctic.ams.api.TableRuntime;
 import com.netease.arctic.ams.api.exception.OptimizingClosedException;
-import com.netease.arctic.ams.api.process.AmoroProcess;
 import com.netease.arctic.ams.api.process.ProcessStatus;
-import com.netease.arctic.ams.api.process.SimpleFuture;
+import com.netease.arctic.ams.api.process.TableProcess;
 import com.netease.arctic.ams.api.process.TableState;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class TableProcess<T extends TableState> implements AmoroProcess<T>, TaskQueue {
+public abstract class ManagedProcess<T extends TableState> extends TableProcess<T>
+    implements TaskQueue {
 
-  protected static final Logger LOG = LoggerFactory.getLogger(TableProcess.class);
+  protected static final Logger LOG = LoggerFactory.getLogger(ManagedProcess.class);
 
-  protected final T state;
-  protected final TableRuntime tableRuntime;
-  private final SimpleFuture submitFuture = new SimpleFuture();
-  private final SimpleFuture completeFuture = new SimpleFuture();
-  private volatile ProcessStatus status = ProcessStatus.RUNNING;
-  private volatile String failedReason;
-
-  protected TableProcess(T state, TableRuntime tableRuntime) {
-    this.state = state;
-    this.tableRuntime = tableRuntime;
-  }
-
-  protected void completeSubmitting() {
-    submitFuture.complete();
-  }
-
-  protected void complete() {
-    status = ProcessStatus.SUCCESS;
-    completeFuture.complete();
-  }
-
-  protected void complete(String errorMessage) {
-    status = ProcessStatus.FAILED;
-    failedReason = errorMessage;
-    completeFuture.complete();
-  }
-
-  public TableRuntime getTableRuntime() {
-    return tableRuntime;
-  }
-
-  @Override
-  public T getState() {
-    return state;
-  }
-
-  @Override
-  public void close() {
-    status = ProcessStatus.CLOSED;
-    closeInternal();
-    complete();
-  }
-
-  @Override
-  public ProcessStatus getStatus() {
-    return status;
-  }
-
-  @Override
-  public String getFailedReason() {
-    return failedReason;
-  }
-
-  protected abstract void closeInternal();
-
-  @Override
-  public SimpleFuture getSubmitFuture() {
-    return submitFuture.anyOf(completeFuture);
-  }
-
-  @Override
-  public SimpleFuture getCompleteFuture() {
-    return completeFuture;
+  protected ManagedProcess(T state, TableRuntime tableRuntime) {
+    super(state, tableRuntime);
   }
 
   protected void handleAsyncTask(TaskRuntime<?, ?> taskRuntime, Runnable completedAction) {

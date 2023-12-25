@@ -94,6 +94,7 @@ CREATE TABLE `table_metadata`
     PRIMARY KEY (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table metadata';
 
+
 CREATE TABLE `table_runtime`
 (
     `table_id`                      bigint(20) NOT NULL,
@@ -118,9 +119,32 @@ CREATE TABLE `table_runtime`
     UNIQUE KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize running information of each table';
 
+CREATE TABLE `table_live_process`
+(
+    `table_id`              bigint(20) NOT NULL COMMENT 'table id',
+    `table_action`          tinyint(4) DEFAULT 0 COMMENT 'action like OPTIMIZING、EXPIRE_SNAPSHOTS',
+    `process_id`            bigint(20) NOT NULL default 0 COMMENT 'related process id, 0 means no process running',
+    `retry_num`             int(11)  NOT NULL default 0 COMMENT 'retry count, 0 means no retry',
+    PRIMARY KEY (`table_id`, `table_action`, `process_id`),
+);
+
+CREATE TABLE `table_arbitrary_process`
+(
+    `process_id`                    bigint(20) NOT NULL COMMENT 'optimizing_procedure id, unique in one table',
+    `table_id`                      bigint(20) NOT NULL,
+    `process_name`                  varchar(10) NOT NULL, COMMENT 'Process name as action name or customized',
+    `status`                        varchar(10) NOT NULL COMMENT 'Direct to TableOptimizingStatus',
+    `start_time`                    timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
+    `end_time`                      timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
+    `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
+    `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
+    PRIMARY KEY (`process_id`),
+    KEY  `table_index` (`table_id`, `start_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
+
 CREATE TABLE `table_optimizing_process`
 (
-    `process_id`                    bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
+    `process_id`                    bigint(20) NOT NULL COMMENT 'optimizing_procedure unique id in one table',
     `table_id`                      bigint(20) NOT NULL,
     `catalog_name`                  varchar(64) NOT NULL COMMENT 'Catalog name',
     `db_name`                       varchar(128) NOT NULL COMMENT 'Database name',

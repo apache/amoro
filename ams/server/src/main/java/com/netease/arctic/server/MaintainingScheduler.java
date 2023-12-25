@@ -5,10 +5,11 @@ import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.TableRuntime;
 import com.netease.arctic.ams.api.process.AmoroProcess;
 import com.netease.arctic.ams.api.process.ProcessStatus;
+import com.netease.arctic.ams.api.process.TableProcess;
 import com.netease.arctic.ams.api.process.TableState;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.process.ArbitraryProcess;
-import com.netease.arctic.server.process.TableProcess;
+import com.netease.arctic.server.process.ManagedProcess;
 import com.netease.arctic.server.process.TaskRuntime;
 import com.netease.arctic.server.table.DefaultTableRuntime;
 import org.apache.commons.lang3.tuple.Pair;
@@ -40,14 +41,17 @@ public class MaintainingScheduler extends TaskScheduler<TableState> {
   }
 
   @Override
-  protected TableProcess<TableState> createProcess(
+  public void setAvailableQuota(long quota) {}
+
+  @Override
+  protected ManagedProcess<TableState> createProcess(
       DefaultTableRuntime tableRuntime, Action action) {
     return new ArbitraryProcess(
         maxProcessId.incrementAndGet(), action, tableRuntime, buildTaskRuntime());
   }
 
   @Override
-  protected TableProcess<TableState> recoverProcess(
+  protected ManagedProcess<TableState> recoverProcess(
       DefaultTableRuntime tableRuntime, Action action, TableState state) {
     maxProcessId.set(Math.max(maxProcessId.get(), state.getId()));
     if (state.getStatus() == ProcessStatus.RUNNING) {

@@ -334,7 +334,6 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                   .build());
     }
 
-    tableRuntimeMap.values().forEach(DefaultTableRuntime::recover);
     tableExplorerScheduler.scheduleAtFixedRate(
         this::exploreExternalCatalog, 0, externalCatalogRefreshingInterval, TimeUnit.MILLISECONDS);
     tableWatchers.forEach(TableWatcher::start);

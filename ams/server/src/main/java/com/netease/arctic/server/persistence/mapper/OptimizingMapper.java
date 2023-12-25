@@ -1,5 +1,7 @@
 package com.netease.arctic.server.persistence.mapper;
 
+import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.ams.api.process.ProcessStatus;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.persistence.OptimizingProcessPersistency;
@@ -9,11 +11,9 @@ import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
 import com.netease.arctic.server.persistence.converter.MapLong2StringConverter;
 import com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert;
-import com.netease.arctic.ams.api.process.ProcessStatus;
-import com.netease.arctic.server.process.optimizing.OptimizingSummary;
-import com.netease.arctic.server.process.optimizing.OptimizingType;
+import com.netease.arctic.server.process.OptimizingSummary;
+import com.netease.arctic.server.process.OptimizingType;
 import com.netease.arctic.server.process.TaskRuntime;
-import com.netease.arctic.ams.api.ServerTableIdentifier;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -191,7 +191,7 @@ public interface OptimizingMapper {
           + " typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}"
           + " WHERE process_id = #{taskRuntime.taskId.processId} AND "
           + "task_id = #{taskRuntime.taskId.taskId}")
-  void  updateTaskRuntime(@Param("taskRuntime") TaskRuntime taskRuntime);
+  void updateTaskRuntime(@Param("taskRuntime") TaskRuntime taskRuntime);
 
   @Update(
       "UPDATE task_runtime SET status = #{status} WHERE process_id = #{taskRuntime.taskId.processId} AND "

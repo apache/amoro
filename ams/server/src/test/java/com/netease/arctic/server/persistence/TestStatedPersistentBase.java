@@ -1,11 +1,11 @@
 package com.netease.arctic.server.persistence;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
 
 import java.util.UUID;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TestStatedPersistentBase {
 
@@ -27,7 +27,7 @@ public class TestStatedPersistentBase {
   public void testStateField() throws Throwable {
     ExtendedPersistency proxy = new ExtendedPersistency();
     try {
-      proxy.invokeConsisitency(
+      proxy.invokeConsistency(
           () -> {
             proxy.stringState = "test";
             proxy.intState = 42;
@@ -45,7 +45,7 @@ public class TestStatedPersistentBase {
   public void testNormalField() throws Throwable {
     ExtendedPersistency proxy = new ExtendedPersistency();
     try {
-      proxy.invokeConsisitency(
+      proxy.invokeConsistency(
           () -> {
             proxy.booleanField = true;
             proxy.longField = 123456789L;

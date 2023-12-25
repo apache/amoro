@@ -25,7 +25,7 @@ import com.netease.arctic.server.RestCatalogService;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.persistence.OptimizingProcessPersistency;
-import com.netease.arctic.server.process.optimizing.OptimizingType;
+import com.netease.arctic.server.process.OptimizingType;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.CatalogUtil;

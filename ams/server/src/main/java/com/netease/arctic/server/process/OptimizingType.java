@@ -1,4 +1,4 @@
-package com.netease.arctic.server.process.optimizing;
+package com.netease.arctic.server.process;
 
 import com.netease.arctic.ams.api.process.OptimizingStage;
 

@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.persistence;
 
+import com.netease.arctic.server.process.OptimizingSummary;
 import com.netease.arctic.server.process.TaskRuntime;
-import com.netease.arctic.server.process.optimizing.OptimizingSummary;
 
 import java.util.Map;
 

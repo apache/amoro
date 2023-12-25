@@ -18,7 +18,7 @@
  *
  */
 
-package com.netease.arctic.server.process.optimizing;
+package com.netease.arctic.server.process;
 
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.process.OptimizingStage;
@@ -27,9 +27,6 @@ import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
-import com.netease.arctic.server.process.TableProcess;
-import com.netease.arctic.server.process.TaskBuilder;
-import com.netease.arctic.server.process.TaskRuntime;
 import com.netease.arctic.server.process.task.TableCommitInput;
 import com.netease.arctic.server.process.task.TableCommitOutput;
 import com.netease.arctic.server.process.task.TablePlanInput;
@@ -45,7 +42,7 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class DefaultOptimizingProcess extends TableProcess<DefaultOptimizingState> {
+public class DefaultOptimizingProcess extends ManagedProcess<DefaultOptimizingState> {
 
   private static final int COMMMIT_TASK_SEQUENCE = Integer.MAX_VALUE;
 

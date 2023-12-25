@@ -20,8 +20,7 @@
 
 package com.netease.arctic.server.process.task;
 
-
-import com.netease.arctic.server.process.optimizing.OptimizingType;
+import com.netease.arctic.server.process.OptimizingType;
 
 public class TablePlanOutput {
 

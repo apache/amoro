@@ -19,14 +19,13 @@
 package com.netease.arctic.server.optimizing.flow.checker;
 
 import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.server.process.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.flow.view.TableDataView;
+import com.netease.arctic.server.process.OptimizingType;
 import com.netease.arctic.server.process.optimizing.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.collections.CollectionUtils;
 
 import javax.annotation.Nullable;
-
 import java.util.List;
 
 public class FullOptimizingMove2HiveChecker extends AbstractHiveChecker {

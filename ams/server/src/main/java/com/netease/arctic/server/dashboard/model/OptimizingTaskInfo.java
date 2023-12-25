@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.netease.arctic.server.process.optimizing.OptimizingSummary;
+import com.netease.arctic.server.process.OptimizingSummary;
 import com.netease.arctic.server.process.TaskRuntime;
 
 import java.util.Map;

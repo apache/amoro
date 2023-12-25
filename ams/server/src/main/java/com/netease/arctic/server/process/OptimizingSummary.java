@@ -1,4 +1,4 @@
-package com.netease.arctic.server.process.optimizing;
+package com.netease.arctic.server.process;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.netease.arctic.optimizing.RewriteFilesInput;
@@ -70,30 +70,30 @@ public class OptimizingSummary {
 
   public OptimizingSummary(Collection<OptimizingSummary> summaries) {
     summaries.forEach(
-            metrics -> {
-              newDataFileCnt += metrics.getNewDataFileCnt();
-              newDataSize += metrics.getNewDataSize();
-              newDataRecordCnt += metrics.getNewDataRecordCnt();
-              newDeleteSize += metrics.getNewDeleteSize();
-              newDeleteFileCnt += metrics.getNewDeleteFileCnt();
-              newDeleteRecordCnt += metrics.getNewDeleteRecordCnt();
-              rewriteDataFileCnt += metrics.getRewriteDataFileCnt();
-              reRowDeletedDataFileCnt += metrics.getReRowDeletedDataFileCnt();
-              rewritePosDataFileCnt += metrics.getRewritePosDataFileCnt();
-              rewriteDataSize += metrics.getRewriteDataSize();
-              rewritePosDataSize += metrics.getRewritePosDataSize();
-              posDeleteFileCnt += metrics.getPosDeleteFileCnt();
-              positionalDeleteSize += metrics.getPositionalDeleteSize();
-              positionDeleteSize += metrics.getPositionDeleteSize();
-              eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
-              equalityDeleteSize += metrics.getEqualityDeleteSize();
-              rewriteDataRecordCnt += metrics.getRewriteDataRecordCnt();
-              rewritePosDataRecordCnt += metrics.getRewritePosDataRecordCnt();
-              eqDeleteRecordCnt += metrics.getEqDeleteRecordCnt();
-              posDeleteRecordCnt += metrics.getPosDeleteRecordCnt();
-              newFileCnt += metrics.getNewFileCnt();
-              newFileSize += metrics.getNewFileSize();
-            });
+        metrics -> {
+          newDataFileCnt += metrics.getNewDataFileCnt();
+          newDataSize += metrics.getNewDataSize();
+          newDataRecordCnt += metrics.getNewDataRecordCnt();
+          newDeleteSize += metrics.getNewDeleteSize();
+          newDeleteFileCnt += metrics.getNewDeleteFileCnt();
+          newDeleteRecordCnt += metrics.getNewDeleteRecordCnt();
+          rewriteDataFileCnt += metrics.getRewriteDataFileCnt();
+          reRowDeletedDataFileCnt += metrics.getReRowDeletedDataFileCnt();
+          rewritePosDataFileCnt += metrics.getRewritePosDataFileCnt();
+          rewriteDataSize += metrics.getRewriteDataSize();
+          rewritePosDataSize += metrics.getRewritePosDataSize();
+          posDeleteFileCnt += metrics.getPosDeleteFileCnt();
+          positionalDeleteSize += metrics.getPositionalDeleteSize();
+          positionDeleteSize += metrics.getPositionDeleteSize();
+          eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
+          equalityDeleteSize += metrics.getEqualityDeleteSize();
+          rewriteDataRecordCnt += metrics.getRewriteDataRecordCnt();
+          rewritePosDataRecordCnt += metrics.getRewritePosDataRecordCnt();
+          eqDeleteRecordCnt += metrics.getEqDeleteRecordCnt();
+          posDeleteRecordCnt += metrics.getPosDeleteRecordCnt();
+          newFileCnt += metrics.getNewFileCnt();
+          newFileSize += metrics.getNewFileSize();
+        });
   }
 
   public long getNewFileSize() {
