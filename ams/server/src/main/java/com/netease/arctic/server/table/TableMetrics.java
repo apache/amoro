@@ -77,7 +77,7 @@ public class TableMetrics {
 
   private final ServerTableIdentifier identifier;
 
-  private String state = STATE_IDLE;
+  private OptimizingStatus optimizingStatus;
   private long stateSetTimestamp = System.currentTimeMillis();
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
   private MetricRegistry globalRegistry;
@@ -124,8 +124,8 @@ public class TableMetrics {
     globalRegistry = null;
   }
 
-  public void stateChanged(OptimizingStatus state, long stateSetTimestamp) {
-    this.state = state.name();
+  public void stateChanged(OptimizingStatus optimizingStatus, long stateSetTimestamp) {
+    this.optimizingStatus = optimizingStatus;
     this.stateSetTimestamp = stateSetTimestamp;
   }
 
@@ -138,10 +138,30 @@ public class TableMetrics {
 
     @Override
     public Integer getValue() {
+      String state = optimizingStatusToMetricState(optimizingStatus);
       if (targetState.equals(state)) {
         return stateDuration();
       }
       return 0;
+    }
+
+    private String optimizingStatusToMetricState(OptimizingStatus status) {
+      switch (status) {
+        case IDLE:
+          return STATE_IDLE;
+        case PENDING:
+          return STATE_PENDING;
+        case PLANNING:
+          return STATE_PLANING;
+        case FULL_OPTIMIZING:
+        case MAJOR_OPTIMIZING:
+        case MINOR_OPTIMIZING:
+          return STATE_EXECUTING;
+        case COMMITTING:
+          return STATE_COMMITTING;
+        default:
+          return status.name();
+      }
     }
 
     private Integer stateDuration() {
