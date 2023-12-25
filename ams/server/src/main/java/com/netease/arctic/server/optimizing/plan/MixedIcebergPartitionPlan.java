@@ -166,7 +166,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       if (keyedTable) {
         int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
         int baseSplitCount = getBaseSplitCount();
-        if (smallFileCount >= Math.max(baseSplitCount, config.getMinorLeastFileCount())) {
+        if (smallFileCount >= Math.max(baseSplitCount + 1, config.getMinorLeastFileCount())) {
           return true;
         } else if ((smallFileCount > baseSplitCount || hasChangeFiles) && reachMinorInterval()) {
           return true;
