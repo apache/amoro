@@ -43,7 +43,7 @@ const tsLicenses = `
   */
 `
 
-const cssLicenses = `
+const lessLicenses = `
 //
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
@@ -105,14 +105,14 @@ function write(data, fPath) {
 
   const fileName = path.basename(fPath);
   let license;
-  if (fileName.endsWith('.ts') || fileName.endsWith('.js')) {
+  if (fileName.endsWith('.ts') || fileName.endsWith('.js') || fileName.endsWith('.css')) {
     license = tsLicenses
   }
   if (fileName.endsWith('.vue') || fileName.endsWith('.html') || fileName.endsWith('.svg')) {
     license = xmlLicenses
   }
-  if (fileName.endsWith('.css') || fileName.endsWith('.less')) {
-    license = cssLicenses
+  if (fileName.endsWith('.less')) {
+    license = lessLicenses
   }
 
   if (license) {
