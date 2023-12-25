@@ -7,7 +7,6 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Transaction;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -29,15 +28,15 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
   }
 
   @Override
+  @Deprecated
   public RewriteFiles rewriteFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd) {
-    filesToDelete.forEach(delegate::deleteFile);
-    // only add datafile not in hive location
-    filesToAdd.stream().filter(dataFile -> !isHiveDataFile(dataFile)).forEach(delegate::addFile);
-    markHiveFiles(filesToDelete, filesToAdd);
+    filesToDelete.forEach(this::deleteFile);
+    filesToAdd.forEach(this::addFile);
     return this;
   }
 
   @Override
+  @Deprecated
   public RewriteFiles rewriteFiles(
       Set<DataFile> filesToDelete, Set<DataFile> filesToAdd, long sequenceNumber) {
     delegate.dataSequenceNumber(sequenceNumber);
@@ -54,25 +53,67 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
       Set<DeleteFile> deleteFilesToReplace,
       Set<DataFile> dataFilesToAdd,
       Set<DeleteFile> deleteFilesToAdd) {
-    dataFilesToReplace.forEach(delegate::deleteFile);
-    deleteFilesToReplace.forEach(delegate::deleteFile);
-    deleteFilesToAdd.forEach(delegate::addFile);
-    // only add datafile not in hive location
-    dataFilesToAdd.stream()
-        .filter(dataFile -> !isHiveDataFile(dataFile))
-        .forEach(delegate::addFile);
-    markHiveFiles(dataFilesToReplace, dataFilesToAdd);
-
+    dataFilesToReplace.forEach(this::deleteFile);
+    deleteFilesToReplace.forEach(this::deleteFile);
+    dataFilesToAdd.forEach(this::addFile);
+    deleteFilesToAdd.forEach(this::addFile);
     return this;
   }
 
-  private void markHiveFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd) {
-    String hiveLocationRoot = table.hiveLocation();
-    // handle filesToAdd, only handle file in hive location
-    this.addFiles.addAll(getDataFilesInHiveLocation(filesToAdd, hiveLocationRoot));
+  @Override
+  public RewriteFiles deleteFile(DataFile dataFile) {
+    delegate.deleteFile(dataFile);
+    markDeletedHiveFile(dataFile);
+    return this;
+  }
 
-    // handle filesToDelete, only handle file in hive location
-    this.deleteFiles.addAll(getDataFilesInHiveLocation(filesToDelete, hiveLocationRoot));
+  @Override
+  public RewriteFiles deleteFile(DeleteFile deleteFile) {
+    delegate.deleteFile(deleteFile);
+    return this;
+  }
+
+  @Override
+  public RewriteFiles addFile(DataFile dataFile) {
+    if (isHiveDataFile(dataFile)) {
+      markAddedHiveFile(dataFile);
+    } else {
+      // Only add data file not in hive location
+      delegate.addFile(dataFile);
+    }
+    return this;
+  }
+
+  @Override
+  public RewriteFiles addFile(DeleteFile deleteFile) {
+    delegate.addFile(deleteFile);
+    return this;
+  }
+
+  @Override
+  public RewriteFiles dataSequenceNumber(long sequenceNumber) {
+    delegate.dataSequenceNumber(sequenceNumber);
+    return this;
+  }
+
+  private void markAddedHiveFile(DataFile dataFile) {
+    if (isHiveDataFile(dataFile)) {
+      this.addFiles.add(dataFile);
+    }
+  }
+
+  private void markDeletedHiveFile(DataFile dataFile) {
+    if (isHiveDataFile(dataFile)) {
+      this.deleteFiles.add(dataFile);
+    }
+  }
+
+  private void markHiveFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd) {
+    // Handle files to add, only handle file in hive location
+    filesToAdd.forEach(this::markAddedHiveFile);
+
+    // Handle files to delete, only handle file in hive location
+    filesToDelete.forEach(this::markDeletedHiveFile);
   }
 
   @Override
@@ -89,18 +130,5 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
   @Override
   protected RewriteFiles self() {
     return this;
-  }
-
-  private List<DataFile> getDataFilesInHiveLocation(Set<DataFile> dataFiles, String hiveLocation) {
-    List<DataFile> result = new ArrayList<>();
-    for (DataFile dataFile : dataFiles) {
-      String dataFileLocation = dataFile.path().toString();
-      if (dataFileLocation.toLowerCase().contains(hiveLocation.toLowerCase())) {
-        // only handle file in hive location
-        result.add(dataFile);
-      }
-    }
-
-    return result;
   }
 }
