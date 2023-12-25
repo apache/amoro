@@ -28,6 +28,8 @@ import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTest
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -57,15 +59,15 @@ import java.util.function.Consumer;
  *
  * @param <T> The plugin types.
  */
-public abstract class AbstractPluginManager<T extends ActivePlugin> {
+public abstract class AbstractPluginManager<T extends ActivePlugin> implements PluginManager<T> {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractPluginManager.class);
   private static final String PLUGIN_CONFIG_DIR_NAME = "plugins";
 
   private final Map<String, T> installedPlugins = new ConcurrentHashMap<>();
   private final Map<String, T> foundedPlugins = new ConcurrentHashMap<>();
+  private final Map<String, PluginConfiguration> pluginConfigs = Maps.newConcurrentMap();
   private final String pluginCategory;
   private final Class<T> pluginType;
-
   private final Executor pluginExecutorPool;
 
   @SuppressWarnings("unchecked")
@@ -95,38 +97,85 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> {
   /** Initialize the plugin manager, and install all plugins. */
   public void initialize() throws IOException {
     List<PluginConfiguration> pluginConfigs = loadPluginConfigurations();
+    pluginConfigs.forEach(
+        f -> {
+          PluginConfiguration exists = this.pluginConfigs.putIfAbsent(f.getName(), f);
+          Preconditions.checkArgument(
+              exists == null, "Duplicate plugin name found: %s", f.getName());
+        });
+
     foundAvailablePlugins();
     for (PluginConfiguration pluginConfig : pluginConfigs) {
       if (!pluginConfig.isEnabled()) {
         continue;
       }
-      Map<String, String> props = pluginConfig.getProperties();
-      AtomicBoolean exists = new AtomicBoolean(true);
-      installedPlugins.computeIfAbsent(
-          pluginConfig.getName(),
-          name -> {
-            T plugin = foundedPlugins.get(name);
-            if (plugin == null) {
-              throw new LoadingPluginException("Cannot find am implement class for plugin:" + name);
-            }
-            plugin.open(props);
-            exists.set(false);
-            return plugin;
-          });
-      if (exists.get()) {
-        throw new AlreadyExistsException(
-            "Plugin: " + pluginConfig.getName() + " has been already installed");
-      }
+      install(pluginConfig.getName());
     }
   }
 
-  /** Close all active plugin */
-  public void close() {
-    callPlugins(
-        p -> {
-          p.close();
-          installedPlugins.remove(p.name());
+  @Override
+  public void install(String pluginName) {
+    PluginConfiguration pluginConfig = this.pluginConfigs.get(pluginName);
+    Preconditions.checkArgument(
+        pluginConfig != null, "Plugin configuration is not found for %s", pluginName);
+
+    AtomicBoolean exists = new AtomicBoolean(true);
+    installedPlugins.computeIfAbsent(
+        pluginConfig.getName(),
+        name -> {
+          T plugin = foundedPlugins.get(name);
+          if (plugin == null) {
+            throw new LoadingPluginException("Cannot find am implement class for plugin:" + name);
+          }
+          plugin.open(pluginConfig.getProperties());
+          exists.set(false);
+          return plugin;
         });
+    if (exists.get()) {
+      throw new AlreadyExistsException(
+          "Plugin: " + pluginConfig.getName() + " has been already installed");
+    }
+  }
+
+  @Override
+  public void uninstall(String pluginName) {
+    installedPlugins.computeIfPresent(
+        pluginName,
+        (name, plugin) -> {
+          plugin.close();
+          return null;
+        });
+  }
+
+  @Override
+  public T get(String pluginName) {
+    return installedPlugins.get(pluginName);
+  }
+
+  /** Close all active plugin */
+  @Override
+  public void close() {
+    forEach(p ->  uninstall(p.name()));
+  }
+
+  @NotNull
+  @Override
+  public Iterator<T> iterator() {
+    return this.installedPlugins.values().iterator();
+  }
+
+  @Override
+  public void forEach(Consumer<? super T> action) {
+    this.installedPlugins
+        .values()
+        .forEach(
+            p -> {
+              try (ClassLoaderContext ignored = new ClassLoaderContext(p)) {
+                action.accept(p);
+              } catch (Throwable throwable) {
+                LOG.error("Error when call plugin: " + p.name(), throwable);
+              }
+            });
   }
 
   /**
@@ -158,30 +207,12 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> {
   }
 
   /**
-   * Visit all installed plugins
-   *
-   * @param visitor function to visit all installed plugins.
-   */
-  protected void callPlugins(Consumer<T> visitor) {
-    this.installedPlugins
-        .values()
-        .forEach(
-            p -> {
-              try (ClassLoaderContext ignored = new ClassLoaderContext(p)) {
-                visitor.accept(p);
-              } catch (Throwable throwable) {
-                LOG.error("Error when call plugin: " + p.name(), throwable);
-              }
-            });
-  }
-
-  /**
    * Visit all installed plugins and non-block the current thread.
    *
    * @param visitor function to visit all installed plugins.
    */
   protected void callPluginsAsync(Consumer<T> visitor) {
-    pluginExecutorPool.execute(() -> callPlugins(visitor));
+    pluginExecutorPool.execute(() -> forEach(visitor));
   }
 
   private void foundAvailablePlugins() {

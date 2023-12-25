@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api;
+package com.netease.arctic.server.manager;
 
+import com.netease.arctic.ams.api.AmoroPlugin;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;

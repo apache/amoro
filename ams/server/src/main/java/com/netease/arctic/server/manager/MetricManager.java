@@ -71,7 +71,7 @@ public class MetricManager extends AbstractPluginManager<MetricReporter> {
   @Override
   public void initialize() throws IOException {
     super.initialize();
-    callPlugins(
+    forEach(
         l -> {
           l.setGlobalMetricSet(globalRegistry);
           if (l instanceof MetricRegisterListener) {

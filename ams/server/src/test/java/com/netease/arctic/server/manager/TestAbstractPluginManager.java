@@ -90,7 +90,7 @@ public class TestAbstractPluginManager {
 
     public int activePlugins() {
       AtomicInteger count = new AtomicInteger();
-      callPlugins(t -> count.incrementAndGet());
+      forEach(t -> count.incrementAndGet());
       return count.get();
     }
   }
