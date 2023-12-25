@@ -22,7 +22,7 @@ import useStore from '@/store'
 import router from '@/router'
 
 // http://10.196.98.23:19111/
-export const baseURL = '/'
+export const baseURL = import.meta.env.MODE === 'mock' ? '/mock' : '/'
 
 // Used to store request identification information whose current status is pending
 export const pendingRequest: {

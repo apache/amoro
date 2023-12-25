@@ -165,8 +165,12 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   @Override
   public CatalogBaseTable getTable(ObjectPath tablePath)
       throws TableNotExistException, CatalogException {
-    AmoroTable<?> amoroTable =
-        unifiedCatalog.loadTable(tablePath.getDatabaseName(), tablePath.getObjectName());
+    AmoroTable<?> amoroTable;
+    try {
+      amoroTable = unifiedCatalog.loadTable(tablePath.getDatabaseName(), tablePath.getObjectName());
+    } catch (NoSuchTableException e) {
+      throw new TableNotExistException(getName(), tablePath, e);
+    }
     AbstractCatalog catalog = originalCatalog(amoroTable);
     CatalogTable catalogTable = (CatalogTable) catalog.getTable(tablePath);
     final Map<String, String> flinkProperties = Maps.newHashMap(catalogTable.getOptions());
