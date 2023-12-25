@@ -1,44 +1,44 @@
-
-<template>
-  <div v-show="visible" v-if="visible" ref="loadingRef" class="u-loading" :class="{'fullscreen': fullscreen}" >
-    <a-spin :tip="loadingText" />
-  </div>
-</template>
-
-<script lang="ts">
+<script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue'
 
-export default ({
-  name: 'ULoading',
-  props: {
-    loadingText: {
-      type: String,
-      default: 'Loading'
-    },
-    fullscreen: {
-      type: Boolean,
-      default: false
-    }
+// name: 'ULoading',
+// props: {
+//   loadingText: {
+//     type: String,
+//     default: 'Loading'
+//   },
+//   fullscreen: {
+//     type: Boolean,
+//     default: false
+//   }
+// },
+const props = defineProps({
+  loadingText: {
+    type: String,
+    default: 'Loading'
   },
-  setup() {
-    const visible = ref<boolean>(true)
-
-    const hide = () => {
-      visible.value = false
-    }
-
-    onBeforeUnmount(() => {
-      visible.value = false
-    })
-
-    return {
-      visible,
-      hide
-    }
+  fullscreen: {
+    type: Boolean,
+    default: false
   }
+})
+const visible = ref<boolean>(true)
+
+const hide = () => {
+  visible.value = false
+}
+
+onBeforeUnmount(() => {
+  visible.value = false;
 })
 
 </script>
+
+<template>
+  <div v-show="visible" v-if="visible" ref="loadingRef" class="u-loading" :class="{ 'fullscreen': props.fullscreen }">
+    <a-spin :tip="props.loadingText" />
+  </div>
+</template>
 
 <style lang="less" scoped>
 .u-loading {
@@ -53,17 +53,19 @@ export default ({
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, .2);
+
   &.fullscreen {
     position: fixed;
   }
+
   &-img {
     width: 30px;
     height: 30px;
   }
+
   &-text {
     margin-top: 8px;
     user-select: none;
     color: #fff;
   }
-}
-</style>
+}</style>
