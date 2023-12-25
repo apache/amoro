@@ -24,7 +24,6 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
-import com.netease.arctic.server.manager.MetricManager;
 import com.netease.arctic.server.metrics.MetricRegistry;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
@@ -92,8 +91,7 @@ public class TableRuntime extends StatedPersistentBase {
   @StateField private volatile long processId;
   @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
   private volatile long lastPlanTime;
-  private volatile TableMetrics metrics;
-
+  private final TableMetrics metrics;
   private final ReentrantLock blockerLock = new ReentrantLock();
 
   protected TableRuntime(
@@ -161,8 +159,7 @@ public class TableRuntime extends StatedPersistentBase {
                       TableMetaMapper.class,
                       mapper -> mapper.deleteOptimizingRuntime(tableIdentifier.getId())));
         });
-    metrics = new TableMetrics(tableIdentifier);
-    metrics.unregister(MetricManager.getInstance().getGlobalRegistry());
+    metrics.unregister();
   }
 
   public void beginPlanning() {

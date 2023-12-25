@@ -62,7 +62,7 @@ public class TableMetrics {
   private String state = STATE_IDLE;
   private long stateSetTimestamp = System.currentTimeMillis();
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
-  private boolean register = false;
+  private MetricRegistry globalRegistry;
 
   public TableMetrics(ServerTableIdentifier identifier) {
     this.identifier = identifier;
@@ -79,7 +79,7 @@ public class TableMetrics {
   }
 
   public void register(MetricRegistry registry) {
-    if (!register) {
+    if (globalRegistry == null) {
       registerMetric(
           registry, TABLE_OPTIMIZING_STATE_IDLE_DURATION, new StateDurationGauge(STATE_IDLE));
       registerMetric(
@@ -96,13 +96,14 @@ public class TableMetrics {
           registry,
           TABLE_OPTIMIZING_STATE_COMMITTING_DURATION,
           new StateDurationGauge(STATE_COMMITTING));
-      register = true;
+      globalRegistry = registry;
     }
   }
 
-  public void unregister(MetricRegistry registry) {
-    registeredMetricKeys.forEach(registry::unregister);
+  public void unregister() {
+    registeredMetricKeys.forEach(globalRegistry::unregister);
     registeredMetricKeys.clear();
+    globalRegistry = null;
   }
 
   public void stateChanged(OptimizingStatus state, long stateSetTimestamp) {
