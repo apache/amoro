@@ -135,8 +135,8 @@ Amoro is built using Maven with Java 1.8 and Java 17(only for `mixed/trino` modu
 * To skip tests: `mvn -DskipTests package -P toolchain`
 * To package without trino module and JAVA 17 dependency: `mvn clean package -DskipTests -pl '!mixed/trino'`
 * To build with hadoop 2.x(the default is 3.x) `mvn clean package -DskipTests -Dhadoop=v2`
-* To indicate flink version for optimizer(the default is 1.14, 1.15 and 1.16 are available)
-  `mvn clean package -DskipTests -Doptimizer.flink=1.15`
+* To indicate flink version for optimizer(the default is 1.18.1,example for compiled is lower than 1.15)
+  `mvn clean package -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6 -DskipTests`
 
 >Spotless is skipped by default in `trino` module. So if you want to perform checkstyle when building `trino` module, you must be in a Java 17 environment.
 
