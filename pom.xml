@@ -127,7 +127,6 @@
         <trino.version>406</trino.version>
         <lucene.version>8.11.2</lucene.version>
         <bitmap.version>0.9.44</bitmap.version>
-        <spotless.delimiter>package</spotless.delimiter>
     </properties>
 
     <dependencyManagement>
@@ -932,7 +931,6 @@
                             </importOrder>
                             <licenseHeader>
                                 <file>copyright.txt</file>
-                                <delimiter>${spotless.delimiter}</delimiter>
                             </licenseHeader>
                         </java>
                         <scala>
@@ -942,7 +940,6 @@
                             </scalafmt>
                             <licenseHeader>
                                 <file>copyright.txt</file>
-                                <delimiter>${spotless.delimiter}</delimiter>
                             </licenseHeader>
                         </scala>
                     </configuration>
