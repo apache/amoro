@@ -25,6 +25,7 @@ package com.netease.arctic.ams.api.metrics;
  *
  * @param <T> – the type of the metric's value
  */
+@FunctionalInterface
 public interface Gauge<T extends Number> extends Metric {
   /** @return The current value of metric */
   T getValue();

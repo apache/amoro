@@ -110,7 +110,7 @@ public class MetricDefine {
     return builder.toString();
   }
 
-  static Builder defineCounter(String name) {
+  public static Builder defineCounter(String name) {
     return new Builder(name, MetricType.Counter);
   }
 

@@ -20,11 +20,14 @@ package com.netease.arctic.server.metrics;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.metrics.*;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -35,7 +38,7 @@ public class MetricRegistry implements MetricSet {
   private final List<MetricRegisterListener> listeners = new CopyOnWriteArrayList<>();
 
   private final ConcurrentMap<MetricKey, Metric> registeredMetrics = Maps.newConcurrentMap();
-  private final Map<String, MetricDefine> definedMetric = Maps.newConcurrentMap();
+  private final Map<String, Pair<MetricDefine, Integer>> definedMetric = Maps.newConcurrentMap();
 
   /**
    * Add metric registry listener
@@ -63,9 +66,10 @@ public class MetricRegistry implements MetricSet {
         define.getType(),
         metric.getClass().getName());
 
-    MetricDefine exists = definedMetric.computeIfAbsent(define.getName(), n -> define);
+    Pair<MetricDefine, Integer> exists =
+        definedMetric.computeIfAbsent(define.getName(), n -> Pair.of(define, 0));
     Preconditions.checkArgument(
-        exists.equals(define),
+        exists.getKey().equals(define),
         "The metric define with name: %s has been already exists, but the define is different.",
         define.getName(),
         exists);
@@ -76,13 +80,13 @@ public class MetricRegistry implements MetricSet {
         define.getName(),
         (name, existsDefine) -> {
           Preconditions.checkArgument(
-              define.equals(existsDefine),
+              define.equals(existsDefine.getKey()),
               "Metric define:%s is not equal to existed define:%s",
               define,
               existsDefine);
           Metric existedMetric = registeredMetrics.putIfAbsent(key, metric);
           Preconditions.checkArgument(existedMetric == null, "Metric is already been registered.");
-          return existsDefine;
+          return Pair.of(existsDefine.getKey(), existsDefine.getRight() + 1);
         });
 
     callListener(l -> l.onMetricRegistered(key, metric));
@@ -99,6 +103,23 @@ public class MetricRegistry implements MetricSet {
     if (exists != null) {
       callListener(l -> l.onMetricUnregistered(key));
     }
+    definedMetric.computeIfPresent(
+        key.getDefine().getName(),
+        (n, p) -> {
+          int count = p.getRight() - 1;
+          if (count <= 0) {
+            return null;
+          } else {
+            return Pair.of(p.getKey(), count);
+          }
+        });
+  }
+
+  @VisibleForTesting
+  int metricDefineCount(String name) {
+    return Optional.ofNullable(definedMetric.getOrDefault(name, null))
+        .map(Pair::getRight)
+        .orElseGet(() -> 0);
   }
 
   @Override
