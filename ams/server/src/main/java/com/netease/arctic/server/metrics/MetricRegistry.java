@@ -67,7 +67,7 @@ public class MetricRegistry implements MetricSet {
         metric.getClass().getName());
 
     Pair<MetricDefine, Integer> exists =
-        definedMetrics.computeIfAbsent(define.getName(), n -> Pair.of(define, 0));
+        definedMetrics.computeIfAbsent(define.getName(), name -> Pair.of(define, 0));
     Preconditions.checkArgument(
         exists.getLeft().equals(define),
         "The metric define with name: %s has been already exists, but the define is different.",
@@ -88,7 +88,7 @@ public class MetricRegistry implements MetricSet {
           return Pair.of(existsDefine.getLeft(), existsDefine.getRight() + 1);
         });
 
-    callListener(l -> l.onMetricRegistered(key, metric));
+    callListener(listener -> listener.onMetricRegistered(key, metric));
     return key;
   }
 
@@ -100,16 +100,16 @@ public class MetricRegistry implements MetricSet {
   public void unregister(MetricKey key) {
     Metric exists = registeredMetrics.remove(key);
     if (exists != null) {
-      callListener(l -> l.onMetricUnregistered(key));
+      callListener(listener -> listener.onMetricUnregistered(key));
     }
     definedMetrics.computeIfPresent(
         key.getDefine().getName(),
-        (n, p) -> {
-          int count = p.getRight() - 1;
+        (name, pair) -> {
+          int count = pair.getRight() - 1;
           if (count <= 0) {
             return null;
           } else {
-            return Pair.of(p.getLeft(), count);
+            return Pair.of(pair.getLeft(), count);
           }
         });
   }
