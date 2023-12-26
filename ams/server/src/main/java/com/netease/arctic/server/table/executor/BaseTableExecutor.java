@@ -21,6 +21,7 @@ package com.netease.arctic.server.table.executor;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.RuntimeHandlerChain;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
@@ -30,8 +31,11 @@ import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFact
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +48,8 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
 
   private final ScheduledExecutorService executor;
   private final TableManager tableManager;
+  private final Set<ServerTableIdentifier> scheduledTables =
+      Collections.synchronizedSet(new HashSet<>());
 
   protected BaseTableExecutor(TableManager tableManager, int poolSize) {
     this.tableManager = tableManager;
@@ -62,25 +68,32 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
         .map(tableRuntimeMeta -> tableRuntimeMeta.getTableRuntime())
         .filter(tableRuntime -> enabled(tableRuntime))
         .forEach(
-            tableRuntime ->
+            tableRuntime -> {
+              if (scheduledTables.add(tableRuntime.getTableIdentifier())) {
                 executor.schedule(
-                    () -> executeTask(tableRuntime), getStartDelay(), TimeUnit.MILLISECONDS));
+                    () -> executeTask(tableRuntime), getStartDelay(), TimeUnit.MILLISECONDS);
+              }
+            });
+
     logger.info("Table executor {} initialized", getClass().getSimpleName());
   }
 
   private void executeTask(TableRuntime tableRuntime) {
-    if (isExecutable(tableRuntime)) {
-      try {
+    try {
+      if (isExecutable(tableRuntime)) {
         execute(tableRuntime);
-      } finally {
-        scheduleIfNecessary(tableRuntime, getNextExecutingTime(tableRuntime));
       }
+    } finally {
+      scheduledTables.remove(tableRuntime.getTableIdentifier());
+      scheduleIfNecessary(tableRuntime, getNextExecutingTime(tableRuntime));
     }
   }
 
   protected final void scheduleIfNecessary(TableRuntime tableRuntime, long millisecondsTime) {
     if (isExecutable(tableRuntime)) {
-      executor.schedule(() -> executeTask(tableRuntime), millisecondsTime, TimeUnit.MILLISECONDS);
+      if (scheduledTables.add(tableRuntime.getTableIdentifier())) {
+        executor.schedule(() -> executeTask(tableRuntime), millisecondsTime, TimeUnit.MILLISECONDS);
+      }
     }
   }
 

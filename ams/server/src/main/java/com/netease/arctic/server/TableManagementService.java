@@ -98,7 +98,8 @@ public class TableManagementService implements ArcticTableMetastore.Iface {
   @Override
   public TableMeta getTable(TableIdentifier tableIdentifier) {
     TableMetadata tableMetadata = tableService.loadTableMetadata(tableIdentifier);
-    if (!InternalTableUtil.isLegacyMixedIceberg(tableMetadata)) {
+    if (tableMetadata.getFormat() == TableFormat.MIXED_ICEBERG
+        && !InternalTableUtil.isLegacyMixedIceberg(tableMetadata)) {
       throw new IllegalArgumentException(
           "The table "
               + tableIdentifier.toString()
