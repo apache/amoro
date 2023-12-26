@@ -21,7 +21,6 @@ package com.netease.arctic.server.manager;
 import com.netease.arctic.ams.api.metrics.MetricRegisterListener;
 import com.netease.arctic.ams.api.metrics.MetricReporter;
 import com.netease.arctic.server.metrics.MetricRegistry;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
 import java.io.IOException;
 
@@ -48,7 +47,7 @@ public class MetricManager extends AbstractPluginManager<MetricReporter> {
     return INSTANCE;
   }
 
-  @VisibleForTesting
+  /** Close the manager */
   public static void dispose() {
     synchronized (MetricManager.class) {
       if (INSTANCE != null) {

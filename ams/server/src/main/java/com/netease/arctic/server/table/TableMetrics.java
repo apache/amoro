@@ -20,10 +20,13 @@ package com.netease.arctic.server.table;
 
 import static com.netease.arctic.ams.api.metrics.MetricDefine.defineGauge;
 
-import com.netease.arctic.ams.api.metrics.*;
+import com.netease.arctic.ams.api.metrics.Gauge;
+import com.netease.arctic.ams.api.metrics.Metric;
+import com.netease.arctic.ams.api.metrics.MetricDefine;
+import com.netease.arctic.ams.api.metrics.MetricKey;
 import com.netease.arctic.server.metrics.MetricRegistry;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
@@ -90,8 +93,13 @@ public class TableMetrics {
     MetricKey key =
         registry.register(
             define,
-            ImmutableList.of(
-                identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName()),
+            ImmutableMap.of(
+                "catalog",
+                identifier.getCatalog(),
+                "database",
+                identifier.getDatabase(),
+                "table",
+                identifier.getTableName()),
             metric);
     registeredMetricKeys.add(key);
   }

@@ -107,13 +107,11 @@ public class RestCatalogService extends PersistentBase {
   private final JavalinJackson jsonMapper;
 
   private final TableService tableService;
-  private final EventsManager eventsManager;
 
   public RestCatalogService(TableService tableService) {
     this.tableService = tableService;
     ObjectMapper objectMapper = jsonMapper();
     this.jsonMapper = new JavalinJackson(objectMapper);
-    this.eventsManager = EventsManager.getInstance();
   }
 
   public EndpointGroup endpoints() {
@@ -377,7 +375,7 @@ public class RestCatalogService extends PersistentBase {
                   identifier.getTableName(),
                   false,
                   metricsRequest.report());
-          eventsManager.emit(event);
+          EventsManager.getInstance().emit(event);
           return null;
         });
   }

@@ -185,6 +185,9 @@ public class ArcticServiceContainer {
       terminalManager = null;
     }
     optimizingService = null;
+
+    EventsManager.dispose();
+    MetricManager.dispose();
   }
 
   private void initConfig() throws IOException {

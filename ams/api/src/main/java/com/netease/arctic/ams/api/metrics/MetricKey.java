@@ -27,27 +27,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /** MapKey define of registered metric */
 public class MetricKey {
 
   private final MetricDefine define;
   private final Map<String, String> valueOfTags;
-
-  public static MetricKey buildRegisteredMetricKey(MetricDefine define, List<String> tags) {
-    Preconditions.checkNotNull(define);
-    Preconditions.checkNotNull(tags, "Tags cannot be null");
-    Preconditions.checkArgument(
-        define.getTags().size() == tags.size(),
-        "The number of tags is not equal to the number of defined tags.");
-
-    Map<String, String> tagValues =
-        IntStream.range(0, define.getTags().size())
-            .boxed()
-            .collect(Collectors.toMap(define.getTags()::get, tags::get));
-    return new MetricKey(define, ImmutableMap.copyOf(tagValues));
-  }
 
   public MetricKey(MetricDefine define, Map<String, String> tagValues) {
     Preconditions.checkNotNull(define);
@@ -99,5 +84,18 @@ public class MetricKey {
   @Override
   public int hashCode() {
     return Objects.hash(this.define, this.valueOfTags);
+  }
+
+  @Override
+  public String toString() {
+    String desc = define.getName() + ":" + define.getType().name();
+    if (!define.getTags().isEmpty()) {
+      String tagDesc =
+          define.getTags().stream()
+              .map(t -> t + "=" + valueOfTag(t))
+              .collect(Collectors.joining(","));
+      desc = "<" + tagDesc + ">";
+    }
+    return desc;
   }
 }

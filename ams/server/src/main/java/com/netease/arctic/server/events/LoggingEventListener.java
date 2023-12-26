@@ -50,6 +50,9 @@ public class LoggingEventListener implements EventListener {
   @Override
   public void handleEvent(Event event) {
     LOG.info(
-        "Received event: {} timestamp: {} content: {}", event.type(), event.eventTime(), event);
+        "Received event: {} timestamp: {} content: {}",
+        event.type(),
+        event.timestampMillis(),
+        event);
   }
 }

@@ -30,7 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class RegisterMetricKeyTest {
+public class TestMetricKey {
 
   @ParameterizedTest
   @MethodSource("provideRegisteredMetricKeysForEquality")

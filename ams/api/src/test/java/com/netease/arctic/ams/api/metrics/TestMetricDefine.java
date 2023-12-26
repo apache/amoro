@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-public class MetricDefineTest {
+public class TestMetricDefine {
 
   @ParameterizedTest
   @MethodSource("provideMetricNamesForEquality")

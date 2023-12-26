@@ -45,7 +45,7 @@ public class IcebergReportEvent implements TableEvent {
   }
 
   @Override
-  public long eventTime() {
+  public long timestampMillis() {
     return timestamp;
   }
 
@@ -65,7 +65,7 @@ public class IcebergReportEvent implements TableEvent {
   }
 
   @Override
-  public boolean external() {
+  public boolean isExternal() {
     return external;
   }
 

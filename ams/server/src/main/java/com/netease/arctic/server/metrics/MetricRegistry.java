@@ -53,7 +53,8 @@ public class MetricRegistry implements MetricSet {
    * @param tags values of tag
    * @param metric metric
    */
-  public <T extends Metric> MetricKey register(MetricDefine define, List<String> tags, T metric) {
+  public <T extends Metric> MetricKey register(
+      MetricDefine define, Map<String, String> tags, T metric) {
     Preconditions.checkNotNull(metric, "Metric must not be null");
     Preconditions.checkNotNull(define, "Metric define must not be null");
     Preconditions.checkArgument(
@@ -69,7 +70,7 @@ public class MetricRegistry implements MetricSet {
         define.getName(),
         exists);
 
-    MetricKey key = MetricKey.buildRegisteredMetricKey(define, tags);
+    MetricKey key = new MetricKey(define, tags);
 
     definedMetric.computeIfPresent(
         define.getName(),
@@ -98,15 +99,6 @@ public class MetricRegistry implements MetricSet {
     if (exists != null) {
       callListener(l -> l.onMetricUnregistered(key));
     }
-  }
-
-  /**
-   * Register a metric set
-   *
-   * @param metrics metric set
-   */
-  public void registerAll(MetricSet metrics) {
-    metrics.getMetrics().forEach((k, m) -> this.register(k.getDefine(), k.valueOfTags(), m));
   }
 
   @Override

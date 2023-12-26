@@ -20,7 +20,6 @@ package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.events.Event;
 import com.netease.arctic.ams.api.events.EventListener;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
 import java.io.IOException;
 
@@ -47,7 +46,7 @@ public class EventsManager extends AbstractPluginManager<EventListener> {
     return INSTANCE;
   }
 
-  @VisibleForTesting
+  /** Close the manager */
   public static void dispose() {
     synchronized (EventsManager.class) {
       if (INSTANCE != null) {
@@ -67,6 +66,6 @@ public class EventsManager extends AbstractPluginManager<EventListener> {
   }
 
   public void emit(Event event) {
-    callPluginsAsync(listener -> listener.handleEvent(event));
+    forEachAsync(listener -> listener.handleEvent(event));
   }
 }

@@ -20,8 +20,8 @@ package com.netease.arctic.server.manager;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 
 import java.util.Collections;
 import java.util.Map;

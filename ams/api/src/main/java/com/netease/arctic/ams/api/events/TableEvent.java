@@ -21,11 +21,31 @@ package com.netease.arctic.ams.api.events;
 /** An event associated with a table */
 public interface TableEvent extends Event {
 
+  /**
+   * The catalog name that this event source related to.
+   *
+   * @return Catalog name
+   */
   String catalog();
 
+  /**
+   * The database name that this event source related to.
+   *
+   * @return Database name
+   */
   String database();
 
+  /**
+   * The table name that this event source related to.
+   *
+   * @return Table name
+   */
   String table();
 
-  boolean external();
+  /**
+   * External or Internal Catalog that this event source related to.
+   *
+   * @return True if event source from an external catalog.
+   */
+  boolean isExternal();
 }

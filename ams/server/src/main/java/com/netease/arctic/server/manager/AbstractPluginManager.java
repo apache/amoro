@@ -29,7 +29,6 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -88,7 +87,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
             new LinkedBlockingQueue<Runnable>(),
             r -> {
               Thread thread = new Thread(r);
-              thread.setName("Plugin-" + pluginCategory() + "-0");
+              thread.setName("PluginVisitor-" + pluginCategory() + "-0");
               thread.setDaemon(true);
               return thread;
             });
@@ -155,27 +154,12 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
   /** Close all active plugin */
   @Override
   public void close() {
-    forEach(p ->  uninstall(p.name()));
-  }
-
-  @NotNull
-  @Override
-  public Iterator<T> iterator() {
-    return this.installedPlugins.values().iterator();
+    forEach(p -> uninstall(p.name()));
   }
 
   @Override
-  public void forEach(Consumer<? super T> action) {
-    this.installedPlugins
-        .values()
-        .forEach(
-            p -> {
-              try (ClassLoaderContext ignored = new ClassLoaderContext(p)) {
-                action.accept(p);
-              } catch (Throwable throwable) {
-                LOG.error("Error when call plugin: " + p.name(), throwable);
-              }
-            });
+  public List<T> installedPlugins() {
+    return new ArrayList<>(this.installedPlugins.values());
   }
 
   /**
@@ -207,11 +191,29 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
   }
 
   /**
+   * Visit all installed plugins.
+   *
+   * @param visitor function to visit all installed plugins.
+   */
+  protected void forEach(Consumer<? super T> visitor) {
+    this.installedPlugins
+        .values()
+        .forEach(
+            p -> {
+              try (ClassLoaderContext ignored = new ClassLoaderContext(p)) {
+                visitor.accept(p);
+              } catch (Throwable throwable) {
+                LOG.error("Error when call plugin: " + p.name(), throwable);
+              }
+            });
+  }
+
+  /**
    * Visit all installed plugins and non-block the current thread.
    *
    * @param visitor function to visit all installed plugins.
    */
-  protected void callPluginsAsync(Consumer<T> visitor) {
+  protected void forEachAsync(Consumer<T> visitor) {
     pluginExecutorPool.execute(() -> forEach(visitor));
   }
 

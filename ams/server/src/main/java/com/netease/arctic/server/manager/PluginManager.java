@@ -19,7 +19,6 @@
 package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.AmoroPlugin;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
 
@@ -28,7 +27,7 @@ import java.util.List;
  *
  * @param <T> plugin type
  */
-public interface PluginManager<T extends AmoroPlugin> extends Iterable<T> {
+public interface PluginManager<T extends AmoroPlugin> {
 
   /**
    * Install a plugin
@@ -57,9 +56,7 @@ public interface PluginManager<T extends AmoroPlugin> extends Iterable<T> {
    *
    * @return all installed plugins
    */
-  default List<T> list() {
-    return Lists.newArrayList(this);
-  }
+  List<T> installedPlugins();
 
   /** Close the plugin manager and trigger all plugins to close if necessary */
   void close();

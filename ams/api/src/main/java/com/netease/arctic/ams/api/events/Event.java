@@ -33,5 +33,5 @@ public interface Event {
    *
    * @return event created time.
    */
-  long eventTime();
+  long timestampMillis();
 }
