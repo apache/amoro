@@ -31,6 +31,8 @@ import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.SocketException;
+
 /**
  * Extended implementation of {@link ClientPoolImpl} with {@link TableMetaStore} to support
  * authenticated hive cluster.
@@ -113,7 +115,8 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> 
         || (e != null
             && e instanceof MetaException
             && e.getMessage()
-                .contains("Got exception: org.apache.thrift.transport.TTransportException"));
+                .contains("Got exception: org.apache.thrift.transport.TTransportException"))
+        || e instanceof SocketException;
   }
 
   @Override
