@@ -142,7 +142,7 @@ public class TestAbstractPluginManager {
   }
 
   @Test
-  public void testPluginDuplicateInstall() {
+  public void testPluginDuplicateConfigs() {
     List<PluginConfiguration> configs =
         ImmutableList.of(
             new PluginConfiguration("test-A", true, Maps.newHashMap()),
@@ -151,6 +151,19 @@ public class TestAbstractPluginManager {
     TestPluginManager manager = new TestPluginManager();
     manager.setConfigs(configs);
 
-    Assertions.assertThrows(AlreadyExistsException.class, manager::initialize);
+    Assertions.assertThrows(IllegalArgumentException.class, manager::initialize);
+  }
+
+  @Test
+  public void testPluginDuplicateInstall() {
+    List<PluginConfiguration> configs =
+        ImmutableList.of(
+            new PluginConfiguration("test-A", true, Maps.newHashMap()),
+            new PluginConfiguration("test-B", true, Maps.newHashMap()));
+    TestPluginManager manager = new TestPluginManager();
+    manager.setConfigs(configs);
+    manager.initialize();
+
+    Assertions.assertThrows(AlreadyExistsException.class, () -> manager.install("test-B"));
   }
 }
