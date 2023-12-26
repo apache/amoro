@@ -30,8 +30,17 @@ import org.apache.iceberg.types.Types;
 
 import java.util.Collection;
 
+/** Utility class for working with {@link Expression}. */
 public class ExpressionUtil {
 
+  /**
+   * Convert partition data to data filter.
+   *
+   * @param table the {@link ArcticTable} table
+   * @param specId the partition spec id
+   * @param partitions the collection of partition data
+   * @return data filter converted from partition data
+   */
   public static Expression convertPartitionDataToDataFilter(
       ArcticTable table, int specId, Collection<StructLike> partitions) {
     Expression filter = Expressions.alwaysFalse();
@@ -41,6 +50,14 @@ public class ExpressionUtil {
     return filter;
   }
 
+  /**
+   * Convert partition data to data filter.
+   *
+   * @param table the {@link ArcticTable} table
+   * @param specId the partition spec id
+   * @param partition the partition data
+   * @return data filter converted from partition data
+   */
   public static Expression convertPartitionDataToDataFilter(
       ArcticTable table, int specId, StructLike partition) {
     PartitionSpec spec = ArcticTableUtil.getArcticTablePartitionSpecById(table, specId);

@@ -201,7 +201,6 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
 
     CloseableIterable<FileScanResult> baseScanResult = CloseableIterable.empty();
     if (baseSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
-      PartitionSpec partitionSpec = baseTable.spec();
       baseScanResult =
           CloseableIterable.transform(
               baseTable.newScan().filter(partitionFilter).useSnapshot(baseSnapshotId).planFiles(),
