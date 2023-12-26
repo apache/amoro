@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.server.optimizing;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -42,6 +60,9 @@ public class OptimizingConfig {
 
   // self-optimizing.fragment-ratio
   private int fragmentRatio;
+
+  // self-optimizing.min-target-size-ratio
+  private double minTargetSizeRatio;
 
   // self-optimizing.minor.trigger.file-count
   private int minorLeastFileCount;
@@ -157,6 +178,10 @@ public class OptimizingConfig {
     return fragmentRatio;
   }
 
+  public double getMinTargetSizeRatio() {
+    return minTargetSizeRatio;
+  }
+
   public long maxFragmentSize() {
     return targetSize / fragmentRatio;
   }
@@ -167,6 +192,11 @@ public class OptimizingConfig {
 
   public OptimizingConfig setFragmentRatio(int fragmentRatio) {
     this.fragmentRatio = fragmentRatio;
+    return this;
+  }
+
+  public OptimizingConfig setMinTargetSizeRatio(double minTargetSizeRatio) {
+    this.minTargetSizeRatio = minTargetSizeRatio;
     return this;
   }
 
@@ -256,6 +286,7 @@ public class OptimizingConfig {
         && maxFileCount == that.maxFileCount
         && openFileCost == that.openFileCost
         && fragmentRatio == that.fragmentRatio
+        && Double.compare(minTargetSizeRatio, that.minTargetSizeRatio) == 0
         && minorLeastFileCount == that.minorLeastFileCount
         && minorLeastInterval == that.minorLeastInterval
         && Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0
@@ -280,6 +311,7 @@ public class OptimizingConfig {
         maxFileCount,
         openFileCost,
         fragmentRatio,
+        minTargetSizeRatio,
         minorLeastFileCount,
         minorLeastInterval,
         majorDuplicateRatio,
@@ -336,6 +368,11 @@ public class OptimizingConfig {
                 properties,
                 TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
                 TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT))
+        .setMinTargetSizeRatio(
+            CompatiblePropertyUtil.propertyAsDouble(
+                properties,
+                TableProperties.SELF_OPTIMIZING_MIN_TARGET_SIZE_RATIO,
+                TableProperties.SELF_OPTIMIZING_MIN_TARGET_SIZE_RATIO_DEFAULT))
         .setMaxFileCount(
             CompatiblePropertyUtil.propertyAsInt(
                 properties,
