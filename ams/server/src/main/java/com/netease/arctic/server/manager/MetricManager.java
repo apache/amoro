@@ -22,8 +22,6 @@ import com.netease.arctic.ams.api.metrics.MetricRegisterListener;
 import com.netease.arctic.ams.api.metrics.MetricReporter;
 import com.netease.arctic.server.metrics.MetricRegistry;
 
-import java.io.IOException;
-
 /** Metric plugins manager and registry */
 public class MetricManager extends AbstractPluginManager<MetricReporter> {
 
@@ -36,11 +34,7 @@ public class MetricManager extends AbstractPluginManager<MetricReporter> {
       synchronized (MetricManager.class) {
         if (INSTANCE == null) {
           INSTANCE = new MetricManager();
-          try {
-            INSTANCE.initialize();
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
+          INSTANCE.initialize();
         }
       }
     }
@@ -68,13 +62,13 @@ public class MetricManager extends AbstractPluginManager<MetricReporter> {
   }
 
   @Override
-  public void initialize() throws IOException {
+  public void initialize() {
     super.initialize();
     forEach(
-        l -> {
-          l.setGlobalMetricSet(globalRegistry);
-          if (l instanceof MetricRegisterListener) {
-            globalRegistry.addListener((MetricRegisterListener) l);
+        reporter -> {
+          reporter.setGlobalMetricSet(globalRegistry);
+          if (reporter instanceof MetricRegisterListener) {
+            globalRegistry.addListener((MetricRegisterListener) reporter);
           }
         });
   }

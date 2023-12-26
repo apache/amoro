@@ -45,10 +45,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -67,7 +63,6 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
   private final Map<String, PluginConfiguration> pluginConfigs = Maps.newConcurrentMap();
   private final String pluginCategory;
   private final Class<T> pluginType;
-  private final Executor pluginExecutorPool;
 
   @SuppressWarnings("unchecked")
   public AbstractPluginManager(String pluginCategory) {
@@ -76,31 +71,16 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
     Preconditions.checkArgument(
         superclass instanceof ParameterizedType, "%s isn't parameterized", superclass);
     pluginType = (Class<T>) ((ParameterizedType) superclass).getActualTypeArguments()[0];
-
-    // single thread pool, and min thread size is 1.
-    this.pluginExecutorPool =
-        new ThreadPoolExecutor(
-            0,
-            1,
-            Long.MAX_VALUE,
-            TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<Runnable>(),
-            r -> {
-              Thread thread = new Thread(r);
-              thread.setName("PluginVisitor-" + pluginCategory() + "-0");
-              thread.setDaemon(true);
-              return thread;
-            });
   }
 
   /** Initialize the plugin manager, and install all plugins. */
-  public void initialize() throws IOException {
+  public void initialize() {
     List<PluginConfiguration> pluginConfigs = loadPluginConfigurations();
     pluginConfigs.forEach(
-        f -> {
-          PluginConfiguration exists = this.pluginConfigs.putIfAbsent(f.getName(), f);
+        config -> {
+          PluginConfiguration exists = this.pluginConfigs.putIfAbsent(config.getName(), config);
           Preconditions.checkArgument(
-              exists == null, "Duplicate plugin name found: %s", f.getName());
+              exists == null, "Duplicate plugin name found: %s", config.getName());
         });
 
     foundAvailablePlugins();
@@ -208,15 +188,6 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
             });
   }
 
-  /**
-   * Visit all installed plugins and non-block the current thread.
-   *
-   * @param visitor function to visit all installed plugins.
-   */
-  protected void forEachAsync(Consumer<T> visitor) {
-    pluginExecutorPool.execute(() -> forEach(visitor));
-  }
-
   private void foundAvailablePlugins() {
     ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     ServiceLoader<T> buildInLoader = ServiceLoader.load(pluginType, classLoader);
@@ -268,14 +239,19 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
   }
 
   @VisibleForTesting
-  protected List<PluginConfiguration> loadPluginConfigurations() throws IOException {
+  protected List<PluginConfiguration> loadPluginConfigurations() {
     JSONObject yamlConfig = null;
     Path mangerConfigPath = pluginManagerConfigFilePath();
     if (!Files.exists(mangerConfigPath)) {
       return ImmutableList.of();
     }
-    yamlConfig =
-        new JSONObject(new Yaml().loadAs(Files.newInputStream(mangerConfigPath), Map.class));
+    try {
+      yamlConfig =
+          new JSONObject(new Yaml().loadAs(Files.newInputStream(mangerConfigPath), Map.class));
+    } catch (IOException e) {
+      throw new LoadingPluginException(
+          "Failed when load plugin configs from file: " + mangerConfigPath, e);
+    }
 
     LOG.info("initializing plugin configuration for: " + pluginCategory());
     String pluginListKey = pluginCategory();

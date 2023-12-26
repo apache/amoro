@@ -21,7 +21,10 @@ package com.netease.arctic.server.manager;
 import com.netease.arctic.ams.api.events.Event;
 import com.netease.arctic.ams.api.events.EventListener;
 
-import java.io.IOException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /** This class is used to trigger various events in the process and notify event emitter plugins. */
 public class EventsManager extends AbstractPluginManager<EventListener> {
@@ -34,12 +37,8 @@ public class EventsManager extends AbstractPluginManager<EventListener> {
     if (INSTANCE == null) {
       synchronized (EventsManager.class) {
         if (INSTANCE == null) {
-          try {
-            INSTANCE = new EventsManager();
-            INSTANCE.initialize();
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
+          INSTANCE = new EventsManager();
+          INSTANCE.initialize();
         }
       }
     }
@@ -56,8 +55,29 @@ public class EventsManager extends AbstractPluginManager<EventListener> {
     }
   }
 
+  private Executor pluginVisitorPool;
+
   public EventsManager() {
     super(PLUGIN_TYPE);
+  }
+
+  @Override
+  public void initialize() {
+    super.initialize();
+    // single thread pool, and min thread size is 1.
+    this.pluginVisitorPool =
+        new ThreadPoolExecutor(
+            0,
+            1,
+            Long.MAX_VALUE,
+            TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<Runnable>(),
+            r -> {
+              Thread thread = new Thread(r);
+              thread.setName("PluginVisitor-" + pluginCategory() + "-0");
+              thread.setDaemon(true);
+              return thread;
+            });
   }
 
   @Override
@@ -66,6 +86,6 @@ public class EventsManager extends AbstractPluginManager<EventListener> {
   }
 
   public void emit(Event event) {
-    forEachAsync(listener -> listener.handleEvent(event));
+    this.pluginVisitorPool.execute(() -> forEach(listener -> listener.handleEvent(event)));
   }
 }
