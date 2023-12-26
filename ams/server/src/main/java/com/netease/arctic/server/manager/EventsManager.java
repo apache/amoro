@@ -71,9 +71,9 @@ public class EventsManager extends AbstractPluginManager<EventListener> {
             1,
             Long.MAX_VALUE,
             TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<Runnable>(),
-            r -> {
-              Thread thread = new Thread(r);
+            new LinkedBlockingQueue<>(),
+            runnable -> {
+              Thread thread = new Thread(runnable);
               thread.setName("PluginVisitor-" + pluginCategory() + "-0");
               thread.setDaemon(true);
               return thread;

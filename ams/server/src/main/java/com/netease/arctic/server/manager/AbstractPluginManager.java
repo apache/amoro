@@ -134,7 +134,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
   /** Close all active plugin */
   @Override
   public void close() {
-    forEach(p -> uninstall(p.name()));
+    forEach(plugin -> uninstall(plugin.name()));
   }
 
   @Override
@@ -179,11 +179,11 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
     this.installedPlugins
         .values()
         .forEach(
-            p -> {
-              try (ClassLoaderContext ignored = new ClassLoaderContext(p)) {
-                visitor.accept(p);
+            plugin -> {
+              try (ClassLoaderContext ignored = new ClassLoaderContext(plugin)) {
+                visitor.accept(plugin);
               } catch (Throwable throwable) {
-                LOG.error("Error when call plugin: " + p.name(), throwable);
+                LOG.error("Error when call plugin: " + plugin.name(), throwable);
               }
             });
   }
@@ -201,15 +201,15 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
       Files.list(pluginPath)
           .map(Path::toFile)
           .forEach(
-              f -> {
-                if (f.isFile() && f.getName().endsWith(".jar")) {
-                  findSingleJarExternalPlugins(f, classLoader);
-                } else if (f.isDirectory()) {
-                  findClasspathExternalPlugins(f, classLoader);
+              file -> {
+                if (file.isFile() && file.getName().endsWith(".jar")) {
+                  findSingleJarExternalPlugins(file, classLoader);
+                } else if (file.isDirectory()) {
+                  findClasspathExternalPlugins(file, classLoader);
                 }
               });
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new LoadingPluginException("Failed when discover available plugins", e);
     }
   }
 
@@ -221,7 +221,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
       ServiceLoader<T> loader = ServiceLoader.load(pluginType, pluginClassLoader);
       addToFoundedPlugin(loader);
     } catch (MalformedURLException e) {
-      throw new RuntimeException(e);
+      throw new LoadingPluginException("Failed when load plugin", e);
     }
   }
 
@@ -278,14 +278,14 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
 
   private void addToFoundedPlugin(ServiceLoader<T> loader) {
     loader.forEach(
-        p -> {
-          T exists = foundedPlugins.putIfAbsent(p.name(), p);
+        plugin -> {
+          T exists = foundedPlugins.putIfAbsent(plugin.name(), plugin);
           if (exists != null) {
             throw new IllegalStateException(
                 "Plugin name "
-                    + p.name()
+                    + plugin.name()
                     + " conflict, current plugin class: "
-                    + p.getClass().getName()
+                    + plugin.getClass().getName()
                     + ", existing plugin class"
                     + exists.getClass().getName());
           }
