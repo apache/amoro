@@ -27,6 +27,15 @@ export default [
     }),
   },
   {
+    url: '/mock/ams/v1/login',
+    method: 'post',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: 'success'
+    }),
+  },
+  {
     url: '/mock/ams/v1/upgrade/properties',
     method: 'get',
     response:() => ({

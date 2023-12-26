@@ -49,6 +49,7 @@ const css = {
 // https://vitejs.dev/config/
 export default defineConfig({
   css,
+  base: './',
   build: {
     outDir: './src/main/resources/static',
   },
@@ -72,25 +73,24 @@ export default defineConfig({
      * If you run the server on you local backend
      * Maybe you need to open the Proxy
      */
-    // proxy: {
-    //   '^/ams': {
-    //     // change the target to your backend server
-    //     // Such as target: 'http://127.0.0.1:xxx',
-    //     target: 'http://127.0.0.1:8080',
-    //     changeOrigin: true,
-    //     configure(_, options) {
-    //       // configure proxy header here
-    //       options.headers = {
-    //         'cookie': 'JSESSIONID=node07rhpm05aujgi1amdr8stpj9xa4.node0',
-    //         'Access-Control-Allow-Origin': '*',
-    //         'Access-Control-Allow-Credentials': 'true',
-    //         'Access-Control-Allow-Headers':
-    //           'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild',
-    //         'Access-Control-Allow-Methods': 'PUT,POST,GET,DELETE,OPTIONS'
-    //       }
-    //     }
-    //   }
-    // }
+    proxy: {
+      '^/ams': {
+        // change the target to your backend server
+        // Such as target: 'http://127.0.0.1:xxx',
+        target: 'https://arctic.netease.com/',
+        changeOrigin: true,
+        configure(_, options) {
+          // configure proxy header here
+          options.headers = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Allow-Headers':
+              'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild',
+            'Access-Control-Allow-Methods': 'PUT,POST,GET,DELETE,OPTIONS'
+          }
+        }
+      }
+    }
   },
   resolve: {
     alias: {
