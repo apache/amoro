@@ -49,31 +49,31 @@ public class TableMetrics {
 
   // table optimizing status duration metrics
   public static final MetricDefine TABLE_OPTIMIZING_STATE_IDLE_DURATION =
-      defineGauge("table_optimizing_status_idle_duration_seconds")
+      defineGauge("table_optimizing_status_idle_duration_mills")
           .withDescription("Duration in seconds after table be in idle state")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATE_PENDING_DURATION =
-      defineGauge("table_optimizing_status_pending_duration_seconds")
+      defineGauge("table_optimizing_status_pending_duration_mills")
           .withDescription("Duration in seconds after table be in pending state")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATE_PLANNING_DURATION =
-      defineGauge("table_optimizing_status_planning_duration_seconds")
+      defineGauge("table_optimizing_status_planning_duration_mills")
           .withDescription("Duration in seconds after table be in planning state")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATE_EXECUTING_DURATION =
-      defineGauge("table_optimizing_status_executing_duration_seconds")
+      defineGauge("table_optimizing_status_executing_duration_mills")
           .withDescription("Duration in seconds after table be in executing state")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATE_COMMITTING_DURATION =
-      defineGauge("table_optimizing_status_committing_duration_seconds")
+      defineGauge("table_optimizing_status_committing_duration_mills")
           .withDescription("Duration in seconds after table be in committing state")
           .withTags("catalog", "database", "table")
           .build();
@@ -137,7 +137,7 @@ public class TableMetrics {
     this.stateSetTimestamp = stateSetTimestamp;
   }
 
-  class StateDurationGauge implements Gauge<Integer> {
+  class StateDurationGauge implements Gauge<Long> {
     final String targetState;
 
     StateDurationGauge(String targetState) {
@@ -145,12 +145,12 @@ public class TableMetrics {
     }
 
     @Override
-    public Integer getValue() {
+    public Long getValue() {
       String state = optimizingStatusToMetricState(optimizingStatus);
       if (targetState.equals(state)) {
         return stateDuration();
       }
-      return 0;
+      return 0L;
     }
 
     private String optimizingStatusToMetricState(OptimizingStatus status) {
@@ -172,8 +172,8 @@ public class TableMetrics {
       }
     }
 
-    private Integer stateDuration() {
-      return (int) ((System.currentTimeMillis() - stateSetTimestamp) / 1000);
+    private Long stateDuration() {
+      return System.currentTimeMillis() - stateSetTimestamp;
     }
   }
 }

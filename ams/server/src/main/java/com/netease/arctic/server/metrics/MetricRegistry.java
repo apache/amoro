@@ -38,7 +38,7 @@ public class MetricRegistry implements MetricSet {
   private final List<MetricRegisterListener> listeners = new CopyOnWriteArrayList<>();
 
   private final ConcurrentMap<MetricKey, Metric> registeredMetrics = Maps.newConcurrentMap();
-  private final Map<String, Pair<MetricDefine, Integer>> definedMetric = Maps.newConcurrentMap();
+  private final Map<String, Pair<MetricDefine, Integer>> definedMetrics = Maps.newConcurrentMap();
 
   /**
    * Add metric registry listener
@@ -67,26 +67,25 @@ public class MetricRegistry implements MetricSet {
         metric.getClass().getName());
 
     Pair<MetricDefine, Integer> exists =
-        definedMetric.computeIfAbsent(define.getName(), n -> Pair.of(define, 0));
+        definedMetrics.computeIfAbsent(define.getName(), n -> Pair.of(define, 0));
     Preconditions.checkArgument(
-        exists.getKey().equals(define),
+        exists.getLeft().equals(define),
         "The metric define with name: %s has been already exists, but the define is different.",
-        define.getName(),
-        exists);
+        define.getName());
 
     MetricKey key = new MetricKey(define, tags);
 
-    definedMetric.computeIfPresent(
+    definedMetrics.computeIfPresent(
         define.getName(),
         (name, existsDefine) -> {
           Preconditions.checkArgument(
-              define.equals(existsDefine.getKey()),
+              define.equals(existsDefine.getLeft()),
               "Metric define:%s is not equal to existed define:%s",
               define,
-              existsDefine);
+              existsDefine.getLeft());
           Metric existedMetric = registeredMetrics.putIfAbsent(key, metric);
           Preconditions.checkArgument(existedMetric == null, "Metric is already been registered.");
-          return Pair.of(existsDefine.getKey(), existsDefine.getRight() + 1);
+          return Pair.of(existsDefine.getLeft(), existsDefine.getRight() + 1);
         });
 
     callListener(l -> l.onMetricRegistered(key, metric));
@@ -103,21 +102,21 @@ public class MetricRegistry implements MetricSet {
     if (exists != null) {
       callListener(l -> l.onMetricUnregistered(key));
     }
-    definedMetric.computeIfPresent(
+    definedMetrics.computeIfPresent(
         key.getDefine().getName(),
         (n, p) -> {
           int count = p.getRight() - 1;
           if (count <= 0) {
             return null;
           } else {
-            return Pair.of(p.getKey(), count);
+            return Pair.of(p.getLeft(), count);
           }
         });
   }
 
   @VisibleForTesting
   int metricDefineCount(String name) {
-    return Optional.ofNullable(definedMetric.getOrDefault(name, null))
+    return Optional.ofNullable(definedMetrics.getOrDefault(name, null))
         .map(Pair::getRight)
         .orElseGet(() -> 0);
   }
