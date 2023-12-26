@@ -72,7 +72,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
                     entry ->
                         ExpressionUtil.convertPartitionDataToDataFilter(
                             table, entry.getKey(), entry.getValue()))
-                .reduce(Expressions::and)
+                .reduce(Expressions::or)
                 .orElse(Expressions.alwaysTrue());
     this.availableCore = availableCore;
     this.planTime = System.currentTimeMillis();
