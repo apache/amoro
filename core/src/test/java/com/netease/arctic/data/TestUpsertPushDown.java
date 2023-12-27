@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.data;
 
 import com.netease.arctic.BasicTableTestHelper;
@@ -58,26 +76,41 @@ public class TestUpsertPushDown extends TableTestBase {
   @Before
   public void initChangeStoreData() {
     MixedDataTestHelpers.writeAndCommitChangeStore(
-        getArcticTable().asKeyedTable(), 1L, ChangeAction.DELETE, writeRecords(1, "aaa", 0, 1));
+        getArcticTable().asKeyedTable(),
+        1L,
+        ChangeAction.DELETE,
+        writeRecords(1, "aaa", 0, 1),
+        false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
         getArcticTable().asKeyedTable(),
         2L,
         ChangeAction.UPDATE_AFTER,
-        writeRecords(1, "aaa", 0, 1));
+        writeRecords(1, "aaa", 0, 1),
+        false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
-        getArcticTable().asKeyedTable(), 3L, ChangeAction.DELETE, writeRecords(2, "bbb", 0, 2));
+        getArcticTable().asKeyedTable(),
+        3L,
+        ChangeAction.DELETE,
+        writeRecords(2, "bbb", 0, 2),
+        false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
         getArcticTable().asKeyedTable(),
         3L,
         ChangeAction.UPDATE_AFTER,
-        writeRecords(2, "bbb", 0, 2));
+        writeRecords(2, "bbb", 0, 2),
+        false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
-        getArcticTable().asKeyedTable(), 4L, ChangeAction.DELETE, writeRecords(2, "ccc", 0, 2));
+        getArcticTable().asKeyedTable(),
+        4L,
+        ChangeAction.DELETE,
+        writeRecords(2, "ccc", 0, 2),
+        false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
         getArcticTable().asKeyedTable(),
         5L,
         ChangeAction.UPDATE_AFTER,
-        writeRecords(2, "ccc", 0, 2));
+        writeRecords(2, "ccc", 0, 2),
+        false);
   }
 
   @Test

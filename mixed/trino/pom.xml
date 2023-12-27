@@ -596,13 +596,6 @@
                 </configuration>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
 
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
@@ -657,6 +650,12 @@
                         <artifactId>spotless-maven-plugin</artifactId>
                         <configuration>
                             <skip>false</skip>
+                            <java>
+                                <excludes>
+                                    <exclude>**/org/apache/**/*.java</exclude>
+                                    <exclude>**/io/trino/**/*.java</exclude>
+                                </excludes>
+                            </java>
                         </configuration>
                     </plugin>
                 </plugins>

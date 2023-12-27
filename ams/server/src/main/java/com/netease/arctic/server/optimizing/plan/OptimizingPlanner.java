@@ -22,11 +22,17 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.OptimizingType;
-import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.utils.ArcticTableUtil;
+import com.netease.arctic.utils.ExpressionUtil;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +46,7 @@ import java.util.stream.Collectors;
 public class OptimizingPlanner extends OptimizingEvaluator {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingPlanner.class);
 
-  private final TableFileScanHelper.PartitionFilter partitionFilter;
+  private final Expression partitionFilter;
 
   protected long processId;
   private final double availableCore;
@@ -60,8 +66,14 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     super(tableRuntime, table);
     this.partitionFilter =
         tableRuntime.getPendingInput() == null
-            ? null
-            : tableRuntime.getPendingInput().getPartitions()::contains;
+            ? Expressions.alwaysTrue()
+            : tableRuntime.getPendingInput().getPartitions().entrySet().stream()
+                .map(
+                    entry ->
+                        ExpressionUtil.convertPartitionDataToDataFilter(
+                            table, entry.getKey(), entry.getValue()))
+                .reduce(Expressions::or)
+                .orElse(Expressions.alwaysTrue());
     this.availableCore = availableCore;
     this.planTime = System.currentTimeMillis();
     this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, planTime);
@@ -70,8 +82,8 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   }
 
   @Override
-  protected PartitionEvaluator buildEvaluator(String partitionPath) {
-    return partitionPlannerFactory.buildPartitionPlanner(partitionPath);
+  protected PartitionEvaluator buildEvaluator(Pair<Integer, StructLike> partition) {
+    return partitionPlannerFactory.buildPartitionPlanner(partition);
   }
 
   public Map<String, Long> getFromSequence() {
@@ -79,7 +91,14 @@ public class OptimizingPlanner extends OptimizingEvaluator {
         .filter(p -> p.getFromSequence() != null)
         .collect(
             Collectors.toMap(
-                AbstractPartitionPlan::getPartition, AbstractPartitionPlan::getFromSequence));
+                partitionPlan -> {
+                  Pair<Integer, StructLike> partition = partitionPlan.getPartition();
+                  PartitionSpec spec =
+                      ArcticTableUtil.getArcticTablePartitionSpecById(
+                          arcticTable, partition.first());
+                  return spec.partitionToPath(partition.second());
+                },
+                AbstractPartitionPlan::getFromSequence));
   }
 
   public Map<String, Long> getToSequence() {
@@ -87,11 +106,18 @@ public class OptimizingPlanner extends OptimizingEvaluator {
         .filter(p -> p.getToSequence() != null)
         .collect(
             Collectors.toMap(
-                AbstractPartitionPlan::getPartition, AbstractPartitionPlan::getToSequence));
+                partitionPlan -> {
+                  Pair<Integer, StructLike> partition = partitionPlan.getPartition();
+                  PartitionSpec spec =
+                      ArcticTableUtil.getArcticTablePartitionSpecById(
+                          arcticTable, partition.first());
+                  return spec.partitionToPath(partition.second());
+                },
+                AbstractPartitionPlan::getToSequence));
   }
 
   @Override
-  protected TableFileScanHelper.PartitionFilter getPartitionFilter() {
+  protected Expression getPartitionFilter() {
     return partitionFilter;
   }
 
@@ -208,15 +234,15 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       }
     }
 
-    public PartitionEvaluator buildPartitionPlanner(String partitionPath) {
+    public PartitionEvaluator buildPartitionPlanner(Pair<Integer, StructLike> partition) {
       if (TableFormat.ICEBERG == arcticTable.format()) {
-        return new IcebergPartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
+        return new IcebergPartitionPlan(tableRuntime, arcticTable, partition, planTime);
       } else {
         if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
           return new MixedHivePartitionPlan(
-              tableRuntime, arcticTable, partitionPath, hiveLocation, planTime);
+              tableRuntime, arcticTable, partition, hiveLocation, planTime);
         } else {
-          return new MixedIcebergPartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
+          return new MixedIcebergPartitionPlan(tableRuntime, arcticTable, partition, planTime);
         }
       }
     }

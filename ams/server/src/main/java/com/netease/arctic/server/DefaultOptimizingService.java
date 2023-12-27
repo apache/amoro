@@ -20,6 +20,7 @@ package com.netease.arctic.server;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.OptimizerProperties;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
@@ -28,6 +29,7 @@ import com.netease.arctic.ams.api.OptimizingTaskResult;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
+import com.netease.arctic.server.exception.ForbiddenException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.exception.TaskNotFoundException;
@@ -229,6 +231,21 @@ public class DefaultOptimizingService extends StatedPersistentBase
   @Override
   public String authenticate(OptimizerRegisterInfo registerInfo) {
     LOG.info("Register optimizer {}.", registerInfo);
+    Optional.ofNullable(
+            registerInfo.getProperties().get(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL))
+        .ifPresent(
+            interval -> {
+              if (Long.parseLong(interval) >= optimizerTouchTimeout) {
+                throw new ForbiddenException(
+                    String.format(
+                        "The %s:%s configuration should be less than AMS's %s:%s",
+                        OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL,
+                        interval,
+                        ArcticManagementConf.OPTIMIZER_HB_TIMEOUT.key(),
+                        optimizerTouchTimeout));
+              }
+            });
+
     OptimizingQueue queue = getQueueByGroup(registerInfo.getGroupName());
     OptimizerInstance optimizer = new OptimizerInstance(registerInfo, queue.getContainerName());
     registerOptimizer(optimizer, true);
