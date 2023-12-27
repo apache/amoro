@@ -145,12 +145,15 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
             tableTestHelper()
                 .writeChangeStore(
                     getArcticTable(), transactionId, ChangeAction.INSERT, newRecords, false)));
+    setTargetSize(dataFiles);
+    setMaxTaskSize(dataFiles);
     Snapshot toSnapshot = getArcticTable().changeTable().currentSnapshot();
 
     AbstractPartitionPlan plan = buildPlanWithCurrentFiles();
     Assert.assertEquals(fromSnapshot.sequenceNumber(), (long) plan.getFromSequence());
     Assert.assertEquals(toSnapshot.sequenceNumber(), (long) plan.getToSequence());
 
+    // 1.Split tasks with tree nodes
     List<TaskDescriptor> taskDescriptors = plan.splitTasks(0);
 
     Assert.assertEquals(1, taskDescriptors.size());
@@ -161,6 +164,14 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
         Collections.emptyList(),
         Collections.emptyList(),
         deleteFiles);
+
+    // 2.Split tasks with tree nodes and bin-packing
+    plan = buildPlanWithCurrentFiles();
+    taskDescriptors = plan.splitTasks(2);
+    Assert.assertEquals(2, taskDescriptors.size());
+    for (TaskDescriptor taskDescriptor : taskDescriptors) {
+      assertTaskFileCount(taskDescriptor, 1, 0, 0, 1);
+    }
   }
 
   @Test
