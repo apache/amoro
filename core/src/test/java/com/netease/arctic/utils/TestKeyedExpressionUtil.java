@@ -42,8 +42,6 @@ import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,8 +50,6 @@ import java.util.Set;
 
 @RunWith(Parameterized.class)
 public class TestKeyedExpressionUtil extends TableTestBase {
-
-  private static final Logger logger = LoggerFactory.getLogger(TestKeyedExpressionUtil.class);
 
   public TestKeyedExpressionUtil(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -107,7 +103,6 @@ public class TestKeyedExpressionUtil extends TableTestBase {
   @Test
   public void testKeyedConvertPartitionStructLikeToDataFilter() {
     Assume.assumeTrue(isKeyedTable());
-    logger.info("Partition Spec:" + getArcticTable().spec());
     ArrayList<Record> baseStoreRecords =
         Lists.newArrayList(
             // hash("111") = -210118348, hash("222") = -699778209
@@ -151,9 +146,7 @@ public class TestKeyedExpressionUtil extends TableTestBase {
                       t -> {
                         t.baseTasks()
                             .forEach(
-                                fileTask -> {
-                                  baseDataFiles.add(fileTask.file());
-                                });
+                                fileTask -> baseDataFiles.add(fileTask.file()));
                         t.insertTasks().forEach(fileTask -> insertFiles.add(fileTask.file()));
                       }));
     } catch (IOException e) {
@@ -174,9 +167,7 @@ public class TestKeyedExpressionUtil extends TableTestBase {
                       t -> {
                         t.baseTasks()
                             .forEach(
-                                fileTask -> {
-                                  baseDataFiles.add(fileTask.file());
-                                });
+                                fileTask -> baseDataFiles.add(fileTask.file()));
                         t.insertTasks().forEach(fileTask -> insertFiles.add(fileTask.file()));
                       }));
     } catch (IOException e) {

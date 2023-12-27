@@ -43,8 +43,6 @@ import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,8 +50,6 @@ import java.util.Set;
 
 @RunWith(Parameterized.class)
 public class TestUnkeyedExpressionUtil extends TableTestBase {
-
-  private static final Logger logger = LoggerFactory.getLogger(TestUnkeyedExpressionUtil.class);
 
   public TestUnkeyedExpressionUtil(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -146,7 +142,6 @@ public class TestUnkeyedExpressionUtil extends TableTestBase {
   public void testUnkeyedConvertPartitionStructLikeToDataFilter() throws IOException {
     Assume.assumeTrue(getArcticTable().isUnkeyedTable());
     UnkeyedTable table = getArcticTable().asUnkeyedTable();
-    logger.info("Partition Spec:" + getArcticTable().spec());
     ArrayList<Record> records =
         Lists.newArrayList(
             // hash("111") = -210118348, hash("222") = -699778209
