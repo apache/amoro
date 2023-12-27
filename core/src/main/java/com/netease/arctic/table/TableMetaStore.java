@@ -218,15 +218,22 @@ public class TableMetaStore implements Serializable {
     if (disableAuth) {
       return call(callable);
     }
-    // create proxy user ugi and execute
-    UserGroupInformation proxyUgi =
-        UserGroupInformation.createProxyUser(proxyUser, Objects.requireNonNull(getUGI()));
-    LOG.debug(
-        "Access through the proxy account {}, proxy ugi {}, original ugi {}.",
-        proxyUser,
-        proxyUgi,
-        getUGI());
-    return proxyUgi.doAs((PrivilegedAction<T>) () -> call(callable));
+    if (StringUtils.isBlank(proxyUser)) {
+      // use the catalog ugi to execute
+      UserGroupInformation catalogUgi = getUGI();
+      LOG.debug("Access through the catalog ugi {}.", catalogUgi);
+      return catalogUgi.doAs((PrivilegedAction<T>) () -> call(callable));
+    } else {
+      // create proxy user ugi and execute
+      UserGroupInformation proxyUgi =
+          UserGroupInformation.createProxyUser(proxyUser, Objects.requireNonNull(getUGI()));
+      LOG.debug(
+          "Access through the proxy account {}, proxy ugi {}, original ugi {}.",
+          proxyUser,
+          proxyUgi,
+          getUGI());
+      return proxyUgi.doAs((PrivilegedAction<T>) () -> call(callable));
+    }
   }
 
   private <T> T call(Callable<T> callable) {

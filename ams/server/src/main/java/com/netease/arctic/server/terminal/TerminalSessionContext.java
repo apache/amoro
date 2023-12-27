@@ -21,7 +21,6 @@ package com.netease.arctic.server.terminal;
 import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.commons.io.Charsets;
-import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -296,13 +295,9 @@ public class TerminalSessionContext {
       TerminalSession.ResultSet rs = null;
       long begin = System.currentTimeMillis();
       try {
-        if (StringUtils.isBlank(proxyUser)) {
-          rs = session.executeStatement(catalog, statement);
-        } else {
-          rs =
-              tableMetaStore.doAsImpersonating(
-                  proxyUser, () -> session.executeStatement(catalog, statement));
-        }
+        rs =
+            tableMetaStore.doAsImpersonating(
+                proxyUser, () -> session.executeStatement(catalog, statement));
         executionResult.appendLogs(session.logs());
       } catch (Throwable t) {
         executionResult.appendLogs(session.logs());
