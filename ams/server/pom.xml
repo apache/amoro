@@ -350,7 +350,6 @@
             <groupId>com.netease.amoro</groupId>
             <artifactId>standalone-optimizer</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
