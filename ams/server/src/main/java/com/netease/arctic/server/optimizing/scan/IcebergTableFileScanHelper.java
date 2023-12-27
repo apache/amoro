@@ -20,17 +20,15 @@ package com.netease.arctic.server.optimizing.scan;
 
 import com.netease.arctic.server.ArcticServiceConstants;
 import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
-import java.util.Map;
-
 public class IcebergTableFileScanHelper implements TableFileScanHelper {
   private final Table table;
-  private PartitionFilter partitionFilter;
+  private Expression partitionFilter = Expressions.alwaysTrue();
   private final long snapshotId;
 
   public IcebergTableFileScanHelper(Table table, long snapshotId) {
@@ -43,19 +41,8 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
     if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
       return CloseableIterable.empty();
     }
-    Map<Integer, PartitionSpec> specs = table.specs();
     return CloseableIterable.transform(
-        CloseableIterable.filter(
-            table.newScan().useSnapshot(snapshotId).planFiles(),
-            fileScanTask -> {
-              if (partitionFilter != null) {
-                StructLike partition = fileScanTask.file().partition();
-                String partitionPath =
-                    specs.get(fileScanTask.file().specId()).partitionToPath(partition);
-                return partitionFilter.test(partitionPath);
-              }
-              return true;
-            }),
+        table.newScan().useSnapshot(snapshotId).filter(partitionFilter).planFiles(),
         this::buildFileScanResult);
   }
 
@@ -64,7 +51,7 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
   }
 
   @Override
-  public TableFileScanHelper withPartitionFilter(PartitionFilter partitionFilter) {
+  public TableFileScanHelper withPartitionFilter(Expression partitionFilter) {
     this.partitionFilter = partitionFilter;
     return this;
   }

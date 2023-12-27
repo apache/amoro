@@ -24,9 +24,11 @@ import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +41,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   private final Set<String> deleteFileSet = Sets.newHashSet();
   protected final TableRuntime tableRuntime;
 
-  private final String partition;
+  private final Pair<Integer, StructLike> partition;
   protected final OptimizingConfig config;
   protected final long fragmentSize;
   protected final long minTargetSize;
@@ -72,7 +74,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   private OptimizingType optimizingType = null;
   private String name;
 
-  public CommonPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
+  public CommonPartitionEvaluator(
+      TableRuntime tableRuntime, Pair<Integer, StructLike> partition, long planTime) {
     this.partition = partition;
     this.tableRuntime = tableRuntime;
     this.config = tableRuntime.getOptimizingConfig();
@@ -91,7 +94,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   @Override
-  public String getPartition() {
+  public Pair<Integer, StructLike> getPartition() {
     return partition;
   }
 
