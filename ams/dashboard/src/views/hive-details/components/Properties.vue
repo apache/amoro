@@ -224,6 +224,7 @@ onMounted(() => {
       }
     }
     .config-row {
+      gap: 10px;
       display: flex;
       // height: 40px;
       position: relative;
