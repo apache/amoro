@@ -82,6 +82,7 @@
         <maven-spotless-plugin.version>2.27.2</maven-spotless-plugin.version>
         <maven-thrift-plugin.version>0.1.11</maven-thrift-plugin.version>
         <maven-build-helper-plugin.version>3.2.0</maven-build-helper-plugin.version>
+        <maven-apache-rat-plugin.version>0.15</maven-apache-rat-plugin.version>
 
         <iceberg.version>1.3.0</iceberg.version>
         <paimon.version>0.5.0-incubating</paimon.version>
@@ -102,7 +103,7 @@
         <mockito.version>3.12.4</mockito.version>
         <parquet-hadoop.version>1.12.0</parquet-hadoop.version>
         <curator.version>5.2.1</curator.version>
-        <zookeeper.version>3.7.1</zookeeper.version>
+        <zookeeper.version>3.8.3</zookeeper.version>
         <fastjson.version>1.2.83</fastjson.version>
         <parquet-avro.version>1.12.2</parquet-avro.version>
         <orc-core.version>1.7.2</orc-core.version>
@@ -928,14 +929,45 @@
                             <importOrder>
                                 <order>,javax,java,\\#</order>
                             </importOrder>
+                            <licenseHeader>
+                                <file>copyright.txt</file>
+                            </licenseHeader>
                         </java>
                         <scala>
                             <scalafmt>
                                 <scalaMajorVersion>2.12</scalaMajorVersion>
                                 <file>.scalafmt.conf</file>
                             </scalafmt>
+                            <licenseHeader>
+                                <file>copyright.txt</file>
+                            </licenseHeader>
                         </scala>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.rat</groupId>
+                    <artifactId>apache-rat-plugin</artifactId>
+                    <version>${maven-apache-rat-plugin.version}</version>
+                    <inherited>true</inherited>
+                    <configuration>
+                        <excludeSubProjects>false</excludeSubProjects>
+                        <numUnapprovedLicenses>0</numUnapprovedLicenses>
+                        <licenseFamilies>
+                            <licenseFamily
+                                    implementation="org.apache.rat.license.SimpleLicenseFamily">
+                                <familyName>Apache License 2.0</familyName>
+                            </licenseFamily>
+                        </licenseFamilies>
+                        <excludesFile>.rat-excludes</excludesFile>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>verify</phase>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -952,6 +984,10 @@
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

@@ -56,16 +56,23 @@ export const formatMS2Time = (time: number, fromHour?: boolean): string => {
     return '0 ms'
   }
   if (time < Second) {
-    return (fromHour ? '0 min ' : '') + `${time} ms`
+    return fromHour ? '0 min ' : time + ' ms'
   }
   if (time >= Second && time < Minute) {
     const s = Math.floor(time / Second)
-    return (fromHour ? '0 min ' : '') + (s ? s + ' s' : '')
+    if (fromHour) {
+      return '0 min'
+    }
+    return s ? s + ' s' : ''
   }
   if (time >= Minute && time < Hour) {
     const calcMin = Math.floor(time / Minute)
     const s = Math.floor((time - calcMin * Minute) / Second)
-    return time % Minute === 0 ? time / Minute + ' min' : calcMin + ' min ' + (s ? s + ' s' : '')
+    if (fromHour) {
+      return calcMin + ' min'
+    } else {
+      return time % Minute === 0 ? time / Minute + ' min' : calcMin + ' min ' + (s ? s + ' s' : '')
+    }
   }
   if (time % Hour === 0) {
     return time / Hour + ' h'

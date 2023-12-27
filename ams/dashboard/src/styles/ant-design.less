@@ -1,170 +1,188 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 // small form 
 .ant-form {
   &-small {
     .ant-form-item {
-      margin-bottom: 14px;
-      display: flex;
+      margin-bottom: 14px !important;
+      display: flex !important;
     }
     .ant-form-explain {
-      position: absolute;
-      font-size: 12px;
+      position: absolute !important;
+      font-size: 12px !important;
     }
     .ant-form-item-label {
-      width: 80px;
-      flex-shrink: 0;
+      width: 80px !important;
+      flex-shrink: 0 !important;
     }
     .ant-form-item-control-wrapper {
-      flex: 1;
-      flex-shrink: 0;
+      flex: 1 !important;
+      flex-shrink: 0 !important;
     }
     // When select is disabled, no background background color is added
     .ant-select-disabled .ant-select-selection {
-      background: none;
+      background: none !important;
     }
   }
   .ant-form-item-label > label::after {
-    display: none;
+    display: none !important;
   }
   .ant-select .anticon-caret-down {
-    color: #79809a;
+    color: #79809a !important;
   }
   &-novalid {
     .ant-form-item {
-      margin-bottom: 1px;
+      margin-bottom: 1px !important;
     }
   }
 }
 
 .ant-tabs-tab {
-  padding: 12px;
+  padding: 12px !important;
 }
 
 .ant-table-thead > tr > th {
-  padding: 8px 12px !important;
+  padding: 8px 12px  !important;
 }
 .ant-table-tbody > tr > td {
-  padding: 8px 12px !important;
+  padding: 8px 12px  !important;
 }
 .ant-table-measure-row {
-  visibility: collapse;
+  visibility: collapse !important;
 }
 
 .label {
   &-80 {
     .ant-form-item-label {
-      width: 80px;
+      width: 80px !important;
     }
   }
   &-120 {
     .ant-form-item-label {
-      width: 120px;
+      width: 120px !important;
     }
   }
   &-110 {
     .ant-form-item-label {
-      width: 110px;
+      width: 110px !important;
     }
   }
   &-100 {
     .ant-form-item-label {
-      width: 100px;
+      width: 100px !important;
     }
   }
   &-140 {
     .ant-form-item-label {
-      width: 140px;
+      width: 140px !important;
     }
   }
 }
 
 /** hide-cancle-btn */
 .hide-cancle-btn .ant-modal-confirm-btns .ant-btn:not(.ant-btn-primary) {
-  display: none;
+  display: none !important;
 }
 .ant-modal {
   .ant-modal-body {
-    padding: 24px !important;
+    padding: 24px  !important;
     .ant-modal-confirm-content {
-      word-wrap: break-word;
-      color: #999;
+      word-wrap: break-word !important;
+      color: #999 !important;
     }
     .ant-modal-confirm-body > .anticon {
-      font-size: 20px;
-      margin-top: 2px;
+      font-size: 20px !important;
+      margin-top: 2px !important;
     }
   }
   .ant-modal-content {
-    border-radius: 6px;
-    color: #79809a;
+    border-radius: 6px !important;
+    color: #79809a !important;
   }
   .ant-modal-header {
-    color: #102048;
-    border-radius: 6px 6px 0 0;
+    color: #102048 !important;
+    border-radius: 6px 6px 0 0 !important;
   }
   .ant-modal-confirm-content {
-    max-height: 500px;
-    overflow-y: auto;
+    max-height: 500px !important;
+    overflow-y: auto !important;
   }
 }
 
 .ant-table-common {
   .ant-table-thead > tr > th {
-    padding: 8px 12px !important;
+    padding: 8px 12px  !important;
   }
   .ant-table-tbody > tr > td {
-    padding: 16px 12px !important;
+    padding: 16px 12px  !important;
   }
   .ant-table-fixed-header .ant-table-scroll .ant-table-header {
-    background: #f1f2f4;
+    background: #f1f2f4 !important;
   }
 }
 
 .ant-form-view{
-  padding: 0px 16px;
+  padding: 0px 16px !important;
   .ant-form-item {
-    margin-bottom: 6px;
+    margin-bottom: 6px !important;
   }
 }
 
 .ant-form-item {
-  margin-bottom: 14px;
+  margin-bottom: 14px !important;
 }
 .ant-btn {
-  padding: 0 16px;
-  border-radius: 3px;
+  padding: 0 16px !important;
+  border-radius: 3px !important;
 }
 .ant-btn-primary {
-  color: #fff;
+  color: #fff !important;
 }
 .ant-btn-link {
-  border-color: transparent;
+  border-color: transparent !important;
 }
 .ant-form-item-label {
-  text-align: left;
+  text-align: left  !important;
 }
 .ant-form-item-label > label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
-  display: none;
+  display: none !important;
 }
 
 .theme-dark {
   .ant-select-selector {
-    color: #fff;
-    background-color: @dark-bg-primary-color !important;
-    border: 1px solid rgb(255 255 255 / 12%) !important;
+    color: #fff !important;
+    background-color: @dark-bg-primary-color  !important;
+    border: 1px solid rgb(255 255 255 / 12%)  !important;
   }
   .ant-select-arrow {
-    color: #fff;
+    color: #fff !important;
   }
   &.ant-input-search .ant-input-affix-wrapper {
-    color: #fff;
-    background-color: @dark-bg-primary-color;
-    border: 1px solid rgb(255 255 255 / 12%);
+    color: #fff !important;
+    background-color: @dark-bg-primary-color !important;
+    border: 1px solid rgb(255 255 255 / 12%) !important;
     .ant-input {
-      color: #fff;
-      background-color: @dark-bg-primary-color;
+      color: #fff !important;
+      background-color: @dark-bg-primary-color !important;
     }
   }
   .ant-empty-description {
-    color: #9ea4aa;
+    color: #9ea4aa !important;
   }
 }

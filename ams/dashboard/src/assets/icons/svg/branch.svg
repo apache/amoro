@@ -1,1 +1,20 @@
+
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+/-->
+
 <?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1699950486606" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1463" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><path d="M792.66816 80.2304c-76.06272 0-137.85088 61.78816-137.85088 137.85088 0 61.66528 40.74496 113.98144 96.62464 131.584v118.03648L275.72224 623.5136V273.59232c54.40512-18.46272 93.5424-70.03136 93.5424-130.59072 0-76.06272-61.78816-137.85088-137.85088-137.85088S93.56288 66.93888 93.56288 143.0016c0 60.55936 39.13728 111.99488 93.5424 130.59072v477.44c-54.40512 18.46272-93.5424 70.03136-93.5424 130.59072 0 76.06272 61.78816 137.85088 137.85088 137.85088s137.85088-61.78816 137.85088-137.85088c0-60.55936-39.13728-112.00512-93.5424-130.59072v-34.22208L796.9792 546.0992c25.73312-8.37632 42.9568-32.24576 42.9568-59.33056V347.55584c52.79744-19.44576 90.58304-70.15424 90.58304-129.4848 0-76.05248-61.78816-137.84064-137.85088-137.84064z m-620.3392 62.7712c0-32.62464 26.46016-59.0848 59.0848-59.0848 32.6144 0 59.07456 26.46016 59.07456 59.0848 0 32.6144-26.46016 59.07456-59.07456 59.07456-32.6144 0-59.0848-26.46016-59.0848-59.07456z m118.1696 738.48832c0 32.6144-26.46016 59.07456-59.07456 59.07456-32.62464 0-59.0848-26.46016-59.0848-59.07456 0-32.62464 26.46016-59.0848 59.0848-59.0848 32.60416 0.01024 59.07456 26.4704 59.07456 59.0848z m502.1696-604.33408c-32.6144 0-59.07456-26.46016-59.07456-59.0848 0-32.6144 26.46016-59.07456 59.07456-59.07456 32.62464 0 59.0848 26.46016 59.0848 59.07456 0 32.62464-26.46016 59.0848-59.0848 59.0848z m0 0" fill="#2C2C2C" p-id="1464"></path></svg>
