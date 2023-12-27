@@ -21,6 +21,8 @@ ams:
       kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/ # kyuubi Connection Address
 ```
 
+## Kerberos Authentication
+Amoro terminal uses the Kerberos authentication information from the catalog to connect to Kyuubi. When configuring the Kyuubi JDBC URL, you only need to configure the connection information and do not need to configure Kerberos authentication information (e.g. principal).
 
 Without configuring Kyuubi, Terminal executes in memory in AMS.
 
