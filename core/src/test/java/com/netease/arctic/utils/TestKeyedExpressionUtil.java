@@ -144,9 +144,7 @@ public class TestKeyedExpressionUtil extends TableTestBase {
               cst.tasks()
                   .forEach(
                       t -> {
-                        t.baseTasks()
-                            .forEach(
-                                fileTask -> baseDataFiles.add(fileTask.file()));
+                        t.baseTasks().forEach(fileTask -> baseDataFiles.add(fileTask.file()));
                         t.insertTasks().forEach(fileTask -> insertFiles.add(fileTask.file()));
                       }));
     } catch (IOException e) {
@@ -165,9 +163,7 @@ public class TestKeyedExpressionUtil extends TableTestBase {
               cst.tasks()
                   .forEach(
                       t -> {
-                        t.baseTasks()
-                            .forEach(
-                                fileTask -> baseDataFiles.add(fileTask.file()));
+                        t.baseTasks().forEach(fileTask -> baseDataFiles.add(fileTask.file()));
                         t.insertTasks().forEach(fileTask -> insertFiles.add(fileTask.file()));
                       }));
     } catch (IOException e) {
