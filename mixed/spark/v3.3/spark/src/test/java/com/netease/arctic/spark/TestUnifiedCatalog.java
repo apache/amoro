@@ -16,22 +16,18 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.read.hybrid.reader;
+package com.netease.arctic.spark;
 
-import com.netease.arctic.flink.read.source.DataIterator;
-import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
-import org.apache.flink.connector.base.source.reader.splitreader.SplitReader;
-import org.apache.iceberg.io.CloseableIterator;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.spark.test.unified.UnifiedCatalogTestSuites;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.Serializable;
+public class TestUnifiedCatalog extends UnifiedCatalogTestSuites {
 
-/**
- * Batcher converts iterator of T into iterator of batched {@code
- * RecordsWithSplitIds<RecordAndPosition<T>>}, as FLIP-27's {@link SplitReader#fetch()} returns
- * batched records.
- */
-@FunctionalInterface
-public interface DataIteratorBatcher<T> extends Serializable {
-  CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> batch(
-      String splitId, DataIterator<T> inputIterator);
+  @ParameterizedTest
+  @MethodSource
+  public void testTableFormats(TableFormat format, boolean sessionCatalog) {
+    super.testTableFormats(format, sessionCatalog);
+  }
 }
