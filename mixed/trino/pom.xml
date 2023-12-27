@@ -650,6 +650,12 @@
                         <artifactId>spotless-maven-plugin</artifactId>
                         <configuration>
                             <skip>false</skip>
+                            <java>
+                                <excludes>
+                                    <exclude>**/org/apache/**/*.java</exclude>
+                                    <exclude>**/io/trino/**/*.java</exclude>
+                                </excludes>
+                            </java>
                         </configuration>
                     </plugin>
                 </plugins>

@@ -103,7 +103,7 @@
         <mockito.version>3.12.4</mockito.version>
         <parquet-hadoop.version>1.12.0</parquet-hadoop.version>
         <curator.version>5.2.1</curator.version>
-        <zookeeper.version>3.7.1</zookeeper.version>
+        <zookeeper.version>3.8.3</zookeeper.version>
         <fastjson.version>1.2.83</fastjson.version>
         <parquet-avro.version>1.12.2</parquet-avro.version>
         <orc-core.version>1.7.2</orc-core.version>
@@ -929,12 +929,18 @@
                             <importOrder>
                                 <order>,javax,java,\\#</order>
                             </importOrder>
+                            <licenseHeader>
+                                <file>copyright.txt</file>
+                            </licenseHeader>
                         </java>
                         <scala>
                             <scalafmt>
                                 <scalaMajorVersion>2.12</scalaMajorVersion>
                                 <file>.scalafmt.conf</file>
                             </scalafmt>
+                            <licenseHeader>
+                                <file>copyright.txt</file>
+                            </licenseHeader>
                         </scala>
                     </configuration>
                 </plugin>
