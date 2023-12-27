@@ -21,6 +21,9 @@ package com.netease.arctic.server.optimizing.plan;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.util.Pair;
 
 import java.util.List;
 
@@ -34,11 +37,12 @@ public interface PartitionEvaluator {
   interface Weight extends Comparable<Weight> {}
 
   /**
-   * Get the partition name.
+   * Get the partition represented by a Pair of {@link PartitionSpec#specId()} and partition {@link
+   * StructLike}.
    *
-   * @return the partition name
+   * @return the Pair of the partition spec id and the partition
    */
-  String getPartition();
+  Pair<Integer, StructLike> getPartition();
 
   /**
    * Add a Data file and its related Delete files to this evaluator
