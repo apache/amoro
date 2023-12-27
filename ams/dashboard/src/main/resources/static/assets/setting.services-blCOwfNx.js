@@ -17,4 +17,8 @@
   * limitations under the License.
   */
 
+<<<<<<<< HEAD:ams/dashboard/src/main/resources/static/assets/setting.services-blCOwfNx.js
 import{a2 as e}from"./index-NKcTwblh.js";function g(){return e.get("ams/v1/catalog/metastore/types")}function o(t){return e.get(`ams/v1/catalogs/${t}`)}function r(t){return e.delete(`ams/v1/catalogs/${t}`)}function c(t){return e.get(`ams/v1/catalogs/${t}/delete/check`)}function i(t){const{isCreate:a,name:s}=t;return delete t.isCreate,a?e.post("ams/v1/catalogs",{...t}):e.put(`ams/v1/catalogs/${s}`,{...t})}function u(){return e.get("ams/v1/settings/system")}function l(){return e.get("ams/v1/settings/containers")}export{o as a,u as b,c,r as d,l as e,g,i as s};
+========
+import{a2 as e}from"./index-Cv3Z2rcY.js";function g(){return e.get("ams/v1/catalog/metastore/types")}function o(t){return e.get(`ams/v1/catalogs/${t}`)}function r(t){return e.delete(`ams/v1/catalogs/${t}`)}function c(t){return e.get(`ams/v1/catalogs/${t}/delete/check`)}function i(t){const{isCreate:a,name:s}=t;return delete t.isCreate,a?e.post("ams/v1/catalogs",{...t}):e.put(`ams/v1/catalogs/${s}`,{...t})}function u(){return e.get("ams/v1/settings/system")}function l(){return e.get("ams/v1/settings/containers")}export{o as a,u as b,c,r as d,l as e,g,i as s};
+>>>>>>>> master:ams/dashboard/src/main/resources/static/assets/setting.services-SEX7a7CS.js

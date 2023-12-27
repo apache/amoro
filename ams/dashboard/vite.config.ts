@@ -49,6 +49,7 @@ const css = {
 // https://vitejs.dev/config/
 export default defineConfig({
   css,
+  base: './',
   build: {
     outDir: './src/main/resources/static',
   },
@@ -76,12 +77,11 @@ export default defineConfig({
     //   '^/ams': {
     //     // change the target to your backend server
     //     // Such as target: 'http://127.0.0.1:xxx',
-    //     target: 'http://127.0.0.1:8080',
+    //     target: 'http://127.0.0.1:xxx',
     //     changeOrigin: true,
     //     configure(_, options) {
     //       // configure proxy header here
     //       options.headers = {
-    //         'cookie': 'JSESSIONID=node07rhpm05aujgi1amdr8stpj9xa4.node0',
     //         'Access-Control-Allow-Origin': '*',
     //         'Access-Control-Allow-Credentials': 'true',
     //         'Access-Control-Allow-Headers':
