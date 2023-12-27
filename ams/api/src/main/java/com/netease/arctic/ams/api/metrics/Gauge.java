@@ -18,28 +18,16 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-/** Metric type defines. */
-public enum MetricType {
-  Counter,
-  Gauge;
-  // More metric type is not defined.
-
-  public boolean isType(Metric metric) {
-    switch (this) {
-      case Counter:
-        return metric instanceof Counter;
-      case Gauge:
-        return metric instanceof Gauge;
-    }
-    return false;
-  }
-
-  public static MetricType ofType(Metric metric) {
-    if (metric instanceof Counter) {
-      return Counter;
-    } else if (metric instanceof Gauge) {
-      return Gauge;
-    }
-    throw new IllegalStateException("Unknown type of metric: " + metric.getClass().getName());
-  }
+/**
+ * A gauge metric is an instantaneous reading of a particular value. To instrument a queue's depth,
+ * for example: final Queue<String> queue = new ConcurrentLinkedQueue<String>(); final
+ * Gauge<Integer> queueDepth = new Gauge<Integer>() { public Integer getValue() { return
+ * queue.size(); } }; Type parameters:
+ *
+ * @param <T> – the type of the metric's value
+ */
+@FunctionalInterface
+public interface Gauge<T extends Number> extends Metric {
+  /** @return The current value of metric */
+  T getValue();
 }

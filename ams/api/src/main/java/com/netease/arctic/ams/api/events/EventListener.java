@@ -16,30 +16,20 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.metrics;
+package com.netease.arctic.ams.api.events;
 
-/** Metric type defines. */
-public enum MetricType {
-  Counter,
-  Gauge;
-  // More metric type is not defined.
+import com.netease.arctic.ams.api.ActivePlugin;
 
-  public boolean isType(Metric metric) {
-    switch (this) {
-      case Counter:
-        return metric instanceof Counter;
-      case Gauge:
-        return metric instanceof Gauge;
-    }
-    return false;
-  }
+/**
+ * This is an interface defining a reporter, which users can implement to notify event to a
+ * monitoring system.
+ */
+public interface EventListener extends ActivePlugin {
 
-  public static MetricType ofType(Metric metric) {
-    if (metric instanceof Counter) {
-      return Counter;
-    } else if (metric instanceof Gauge) {
-      return Gauge;
-    }
-    throw new IllegalStateException("Unknown type of metric: " + metric.getClass().getName());
-  }
+  /**
+   * Emit metrics to the monitoring system
+   *
+   * @param event {@link Event} to emit.
+   */
+  void handleEvent(Event event);
 }

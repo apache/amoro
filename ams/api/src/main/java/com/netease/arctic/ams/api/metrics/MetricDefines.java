@@ -18,28 +18,5 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-/** Metric type defines. */
-public enum MetricType {
-  Counter,
-  Gauge;
-  // More metric type is not defined.
-
-  public boolean isType(Metric metric) {
-    switch (this) {
-      case Counter:
-        return metric instanceof Counter;
-      case Gauge:
-        return metric instanceof Gauge;
-    }
-    return false;
-  }
-
-  public static MetricType ofType(Metric metric) {
-    if (metric instanceof Counter) {
-      return Counter;
-    } else if (metric instanceof Gauge) {
-      return Gauge;
-    }
-    throw new IllegalStateException("Unknown type of metric: " + metric.getClass().getName());
-  }
-}
+/** All metric defines. */
+public class MetricDefines {}

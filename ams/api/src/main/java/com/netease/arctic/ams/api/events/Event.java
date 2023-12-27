@@ -16,30 +16,22 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.metrics;
+package com.netease.arctic.ams.api.events;
 
-/** Metric type defines. */
-public enum MetricType {
-  Counter,
-  Gauge;
-  // More metric type is not defined.
+/**
+ * Standard event interface in Amoro domain this is a parallel concept with specific metrics data of
+ * formats like MetricReport in Apache Iceberg Implementations could include all kinds of process
+ * metrics and resource metrics.
+ */
+public interface Event {
 
-  public boolean isType(Metric metric) {
-    switch (this) {
-      case Counter:
-        return metric instanceof Counter;
-      case Gauge:
-        return metric instanceof Gauge;
-    }
-    return false;
-  }
+  /** @return event type */
+  EventType type();
 
-  public static MetricType ofType(Metric metric) {
-    if (metric instanceof Counter) {
-      return Counter;
-    } else if (metric instanceof Gauge) {
-      return Gauge;
-    }
-    throw new IllegalStateException("Unknown type of metric: " + metric.getClass().getName());
-  }
+  /**
+   * The timestamp of event when it is happened.
+   *
+   * @return event created time.
+   */
+  long timestampMillis();
 }

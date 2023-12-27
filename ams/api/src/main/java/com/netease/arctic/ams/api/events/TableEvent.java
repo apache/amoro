@@ -16,30 +16,36 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.metrics;
+package com.netease.arctic.ams.api.events;
 
-/** Metric type defines. */
-public enum MetricType {
-  Counter,
-  Gauge;
-  // More metric type is not defined.
+/** An event associated with a table */
+public interface TableEvent extends Event {
 
-  public boolean isType(Metric metric) {
-    switch (this) {
-      case Counter:
-        return metric instanceof Counter;
-      case Gauge:
-        return metric instanceof Gauge;
-    }
-    return false;
-  }
+  /**
+   * The catalog name that this event source related to.
+   *
+   * @return Catalog name
+   */
+  String catalog();
 
-  public static MetricType ofType(Metric metric) {
-    if (metric instanceof Counter) {
-      return Counter;
-    } else if (metric instanceof Gauge) {
-      return Gauge;
-    }
-    throw new IllegalStateException("Unknown type of metric: " + metric.getClass().getName());
-  }
+  /**
+   * The database name that this event source related to.
+   *
+   * @return Database name
+   */
+  String database();
+
+  /**
+   * The table name that this event source related to.
+   *
+   * @return Table name
+   */
+  String table();
+
+  /**
+   * External or Internal Catalog that this event source related to.
+   *
+   * @return True if event source from an external catalog.
+   */
+  boolean isExternal();
 }
