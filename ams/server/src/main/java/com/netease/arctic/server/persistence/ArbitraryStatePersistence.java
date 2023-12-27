@@ -2,7 +2,7 @@ package com.netease.arctic.server.persistence;
 
 import com.netease.arctic.ams.api.process.ProcessStatus;
 
-public class TableProcessPersistence {
+public class ArbitraryStatePersistence {
 
   private long tableId;
   private int tableAction;
@@ -15,7 +15,7 @@ public class TableProcessPersistence {
   private String failReason;
   private String summary;
 
-  TableProcessPersistence() {}
+  ArbitraryStatePersistence() {}
 
   // Getter methods
   public long getTableId() {

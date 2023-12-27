@@ -18,14 +18,12 @@
 
 package com.netease.arctic.server.persistence;
 
+import com.netease.arctic.ams.api.process.OptimizingStage;
 import com.netease.arctic.ams.api.process.ProcessStatus;
-import com.netease.arctic.server.process.OptimizingSummary;
 import com.netease.arctic.server.process.OptimizingType;
 
-import java.util.Map;
-
 /** Meta of optimizing process. */
-public class OptimizingProcessPersistency {
+public class OptimizingStatePersistency {
 
   private Long processId;
   private Long tableId;
@@ -33,17 +31,19 @@ public class OptimizingProcessPersistency {
   private String dbName;
   private String tableName;
   private Long targetSnapshotId;
-  private Long targetChangeSnapshotId;
+  private Long lastSnapshotId;
+  private long watermark;
+  private Long lastOptimizingTime;
   private ProcessStatus status;
+  private OptimizingStage stage;
+  private Long currentStageStartTime;
   private OptimizingType optimizingType;
   private long planTime;
   private long endTime;
   private String failReason;
-  private OptimizingSummary summary;
-  private Map<String, Long> fromSequence;
-  private Map<String, Long> toSequence;
+  private String summary;
 
-  public OptimizingProcessPersistency() {}
+  public OptimizingStatePersistency() {}
 
   public Long getProcessId() {
     return processId;
@@ -133,35 +133,27 @@ public class OptimizingProcessPersistency {
     this.failReason = failReason;
   }
 
-  public OptimizingSummary getSummary() {
+  public String getSummary() {
     return summary;
   }
 
-  public void setSummary(OptimizingSummary summary) {
-    this.summary = summary;
+  public long getLastOptimizingTime() {
+    return lastOptimizingTime;
   }
 
-  public Long getTargetChangeSnapshotId() {
-    return targetChangeSnapshotId;
+  public long getLastSnapshotId() {
+    return lastSnapshotId;
   }
 
-  public void setTargetChangeSnapshotId(Long targetChangeSnapshotId) {
-    this.targetChangeSnapshotId = targetChangeSnapshotId;
+  public long getWatermark() {
+    return watermark;
   }
 
-  public Map<String, Long> getFromSequence() {
-    return fromSequence;
+  public OptimizingStage getStage() {
+    return stage;
   }
 
-  public void setFromSequence(Map<String, Long> fromSequence) {
-    this.fromSequence = fromSequence;
-  }
-
-  public Map<String, Long> getToSequence() {
-    return toSequence;
-  }
-
-  public void setToSequence(Map<String, Long> toSequence) {
-    this.toSequence = toSequence;
+  public long getCurrentStageStartTime() {
+    return currentStageStartTime;
   }
 }

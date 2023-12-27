@@ -1,6 +1,6 @@
 package com.netease.arctic.server.optimizing;
 
-import com.netease.arctic.server.persistence.OptimizingProcessPersistency;
+import com.netease.arctic.server.persistence.OptimizingStatePersistency;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.process.OptimizingType;
@@ -69,7 +69,7 @@ public class BaseOptimizingChecker extends PersistentBase {
   }
 
   protected void assertOptimizingProcess(
-      OptimizingProcessPersistency optimizingProcess,
+      OptimizingStatePersistency optimizingProcess,
       OptimizingType optimizeType,
       int fileCntBefore,
       int fileCntAfter) {
@@ -87,13 +87,13 @@ public class BaseOptimizingChecker extends PersistentBase {
             + optimizingProcess.getSummary().getNewDeleteFileCnt());
   }
 
-  protected OptimizingProcessPersistency waitOptimizeResult() {
+  protected OptimizingStatePersistency waitOptimizeResult() {
     boolean success;
     try {
       success =
           waitUntilFinish(
               () -> {
-                List<OptimizingProcessPersistency> tableOptimizingProcesses =
+                List<OptimizingStatePersistency> tableOptimizingProcesses =
                     getAs(
                         OptimizingMapper.class,
                         mapper ->
@@ -105,7 +105,7 @@ public class BaseOptimizingChecker extends PersistentBase {
                   LOG.info("optimize history is empty");
                   return Status.RUNNING;
                 }
-                Optional<OptimizingProcessPersistency> any =
+                Optional<OptimizingStatePersistency> any =
                     tableOptimizingProcesses.stream()
                         .filter(p -> p.getProcessId() > lastProcessId)
                         .filter(p -> p.getStatus().equals(OptimizingProcess.Status.SUCCESS))
@@ -117,7 +117,7 @@ public class BaseOptimizingChecker extends PersistentBase {
                   LOG.info(
                       "optimize max process id {}",
                       tableOptimizingProcesses.stream()
-                          .map(OptimizingProcessPersistency::getProcessId)
+                          .map(OptimizingStatePersistency::getProcessId)
                           .max(Comparator.naturalOrder())
                           .get());
                   return Status.RUNNING;
@@ -130,7 +130,7 @@ public class BaseOptimizingChecker extends PersistentBase {
     }
 
     if (success) {
-      List<OptimizingProcessPersistency> result =
+      List<OptimizingStatePersistency> result =
           getAs(
                   OptimizingMapper.class,
                   mapper ->
@@ -159,7 +159,7 @@ public class BaseOptimizingChecker extends PersistentBase {
     } catch (InterruptedException e) {
       throw new IllegalStateException("waiting result was interrupted");
     }
-    List<OptimizingProcessPersistency> tableOptimizingProcesses =
+    List<OptimizingStatePersistency> tableOptimizingProcesses =
         getAs(
                 OptimizingMapper.class,
                 mapper ->

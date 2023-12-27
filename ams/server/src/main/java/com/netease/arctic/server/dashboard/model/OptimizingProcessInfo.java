@@ -20,7 +20,7 @@ package com.netease.arctic.server.dashboard.model;
 
 import com.netease.arctic.ams.api.process.ProcessStatus;
 import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
-import com.netease.arctic.server.persistence.OptimizingProcessPersistency;
+import com.netease.arctic.server.persistence.OptimizingStatePersistency;
 import com.netease.arctic.server.persistence.TaskRuntimePersistency;
 import com.netease.arctic.server.process.OptimizingSummary;
 import com.netease.arctic.server.process.OptimizingType;
@@ -185,7 +185,7 @@ public class OptimizingProcessInfo {
   }
 
   public static OptimizingProcessInfo build(
-      OptimizingProcessPersistency meta, List<TaskRuntimePersistency> optimizingTaskStats) {
+      OptimizingStatePersistency meta, List<TaskRuntimePersistency> optimizingTaskStats) {
     if (meta == null) {
       return null;
     }

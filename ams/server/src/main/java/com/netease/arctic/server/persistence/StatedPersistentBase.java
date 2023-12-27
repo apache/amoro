@@ -1,10 +1,9 @@
 package com.netease.arctic.server.persistence;
 
+import com.netease.arctic.ams.api.StateField;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,8 +21,8 @@ public abstract class StatedPersistentBase extends PersistentBase {
   private final ThreadLocal<StateOwner> STATE_OWNER = ThreadLocal.withInitial(StateOwner::new);
 
   private static final Object NULL_VALUE = new Object();
-  private final Lock stateLock = new ReentrantLock();
   private final StateOwnerMeta stateOwnerMeta;
+  protected final Lock stateLock = new ReentrantLock();
 
   protected StatedPersistentBase() {
     stateOwnerMeta = getOrCreateStateOwnerMeta();
@@ -143,7 +142,4 @@ public abstract class StatedPersistentBase extends PersistentBase {
       }
     }
   }
-
-  @Retention(RetentionPolicy.RUNTIME)
-  public @interface StateField {}
 }

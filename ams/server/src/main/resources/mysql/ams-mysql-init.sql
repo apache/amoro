@@ -101,19 +101,9 @@ CREATE TABLE `table_runtime`
     `catalog_name`                  varchar(64) NOT NULL COMMENT 'Catalog name',
     `db_name`                       varchar(128) NOT NULL COMMENT 'Database name',
     `table_name`                    varchar(128) NOT NULL COMMENT 'Table name',
-    `current_snapshot_id`           bigint(20) NOT NULL DEFAULT '-1' COMMENT 'Base table current snapshot id',
-    `current_change_snapshotId`     bigint(20) DEFAULT NULL COMMENT 'Change table current snapshot id',
-    `last_optimized_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized snapshot id',
-    `last_optimized_change_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized change snapshot id',
-    `last_major_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Major Optimize time for all partitions',
-    `last_minor_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Minor Optimize time for all partitions',
-    `last_full_optimizing_time`     timestamp NULL DEFAULT NULL COMMENT 'Latest Full Optimize time for all partitions',
-    `optimizing_status`             varchar(20) DEFAULT 'IDLE' COMMENT 'Table optimize status: FULL_OPTIMIZING, MAJOR_OPTIMIZING, MINOR_OPTIMIZING, COMMITTING, PENDING, IDLE',
-    `optimizing_status_start_time`  timestamp default CURRENT_TIMESTAMP COMMENT 'Table optimize status start time',
-    `optimizing_process_id`         bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
+    `format`                        VARCHAR(32)  NOT NULL COMMENT 'Table Format',
     `optimizer_group`               varchar(64) NOT NULL,
     `table_config`                  mediumtext,
-    `optimizing_config`             mediumtext,
     `pending_input`                 mediumtext,
     PRIMARY KEY (`table_id`),
     UNIQUE KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
@@ -124,8 +114,10 @@ CREATE TABLE `table_live_process`
     `table_id`              bigint(20) NOT NULL COMMENT 'table id',
     `table_action`          tinyint(4) DEFAULT 0 COMMENT 'action like OPTIMIZING、EXPIRE_SNAPSHOTS',
     `process_id`            bigint(20) NOT NULL default 0 COMMENT 'related process id, 0 means no process running',
+    `last_trigger_time`     timestamp default CURRENT_TIMESTAMP COMMENT 'last trigger time',
+    `last_complete_time`    timestamp NULL DEFAULT NULL COMMENT 'last complete time',
     `retry_num`             int(11)  NOT NULL default 0 COMMENT 'retry count, 0 means no retry',
-    PRIMARY KEY (`table_id`, `table_action`, `process_id`),
+    PRIMARY KEY (`table_id`, `table_action`, `process_id`)
 );
 
 CREATE TABLE `table_arbitrary_process`
@@ -150,16 +142,17 @@ CREATE TABLE `table_optimizing_process`
     `db_name`                       varchar(128) NOT NULL COMMENT 'Database name',
     `table_name`                    varchar(128) NOT NULL COMMENT 'Table name',
     `target_snapshot_id`            bigint(20) NOT NULL,
-    `target_change_snapshot_id`     bigint(20) NOT NULL,
-    `status`                        varchar(10) NOT NULL COMMENT 'Direct to TableOptimizingStatus',
+    `last_snapshot_id`              bigint(20) NOT NULL,
+    `watermark`                     bigint(20) NOT NULL,
+    `stage`                         varchar(10) NOT NULL COMMENT 'Direct to OptimizingStage',
+    `stage_start_time`              timestamp default CURRENT_TIMESTAMP COMMENT 'Table optimize status start time',
+    `status`                        varchar(10) NOT NULL COMMENT 'Direct to ProcessStatus',
     `optimizing_type`               varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor',
-    `plan_time`                     timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
+    `plan_time`                     timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'this is equivalent to start_time',
     `end_time`                      timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
     `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
     `rewrite_input`                 longblob DEFAULT NULL COMMENT 'rewrite files input',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
-    `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
-    `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition',
     PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`, `plan_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
@@ -186,19 +179,16 @@ CREATE TABLE `task_runtime`
     KEY  `table_index` (`table_id`, `process_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';
 
-CREATE TABLE `optimizing_task_quota`
+CREATE TABLE `table_quota_runtime`
 (
-    `process_id`                bigint(20) NOT NULL COMMENT 'Optimize type: Major, Minor, FullMajor',
-    `task_id`                   int(11) NOT NULL COMMENT 'Optimize task unique id',
-    `retry_num`                 int(11) DEFAULT 0 COMMENT 'Retry times',
     `table_id`                  bigint(20) NOT NULL,
+    `start_process_id`          bigint(20) NOT NULL COMMENT 'Optimize type: Major, Minor, FullMajor',
     `start_time`                timestamp default CURRENT_TIMESTAMP COMMENT 'Time when task start waiting to execute',
-    `end_time`                  timestamp default CURRENT_TIMESTAMP COMMENT 'Time when task finished',
-    `fail_reason`               varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
-    PRIMARY KEY (`process_id`, `task_id`, `retry_num`),
-    KEY  `table_index` (`table_id`)
+    `quota_runtime`             bigint(20) DEFAULT NULL COMMENT 'Time when task finished',
+    `quota_target`              int(11) DEFAULT NULL COMMENT 'Time when task finished',
+    `reset`                     tinyint(1) DEFAULT 0 COMMENT 'Time when task finished',
+    PRIMARY KEY (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';
-
 
 CREATE TABLE `api_tokens`
 (

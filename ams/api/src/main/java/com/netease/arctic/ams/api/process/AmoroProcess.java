@@ -36,10 +36,6 @@ public interface AmoroProcess<T extends ProcessState> {
 
   String getSummary();
 
-  default String getFailedReason() {
-    return getState().getFailedReason();
-  }
-
   default ProcessStatus getStatus() {
     return getState().getStatus();
   }
@@ -48,20 +44,12 @@ public interface AmoroProcess<T extends ProcessState> {
     return getState().getStatus() == ProcessStatus.CLOSED;
   }
 
-  default long id() {
+  default long getId() {
     return getState().getId();
   }
 
   default Action getAction() {
     return getState().getAction();
-  }
-
-  default long getStartTime() {
-    return getState().getStartTime();
-  }
-
-  default long getId() {
-    return getState().getId();
   }
 
   default void whenCompleted(Runnable runnable) {

@@ -1,5 +1,6 @@
 package com.netease.arctic.server.persistence;
 
+import com.netease.arctic.ams.api.StateField;
 import org.junit.Test;
 
 import java.util.UUID;
@@ -10,15 +11,15 @@ import static org.junit.Assert.assertTrue;
 public class TestStatedPersistentBase {
 
   private static class ExtendedPersistency extends StatedPersistentBase {
-    @StatedPersistentBase.StateField private String stringState = "";
-    @StatedPersistentBase.StateField private int intState = 0;
+    @StateField private String stringState = "";
+    @StateField private int intState = 0;
     private boolean booleanField = false;
     private long longField = 0L;
   }
 
   private static class NormalClass {
-    @StatedPersistentBase.StateField private String stringState = "";
-    @StatedPersistentBase.StateField private int intState = 0;
+    @StateField private String stringState = "";
+    @StateField private int intState = 0;
     private final boolean booleanField = false;
     private final long longField = 0L;
   }

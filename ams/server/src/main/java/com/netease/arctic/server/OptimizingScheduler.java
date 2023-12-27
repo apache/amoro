@@ -129,16 +129,28 @@ public class OptimizingScheduler extends TaskScheduler<DefaultOptimizingState> {
   @Override
   protected ManagedProcess<DefaultOptimizingState> createProcess(
       DefaultTableRuntime tableRuntime, Action action) {
-    Preconditions.checkState(action == Action.OPTIMIZING);
-    return new DefaultOptimizingProcess(tableRuntime, false);
+    Preconditions.checkState(
+        action == Action.MINOR_OPTIMIZING || action == Action.MAJOR_OPTIMIZING);
+    return new DefaultOptimizingProcess(
+        action == Action.MINOR_OPTIMIZING
+            ? tableRuntime.getMinorOptimizingState()
+            : tableRuntime.getMajorOptimizingState(),
+        tableRuntime,
+        false);
   }
 
   @Override
   protected ManagedProcess<DefaultOptimizingState> recoverProcess(
       DefaultTableRuntime tableRuntime, Action action, DefaultOptimizingState state) {
-    Preconditions.checkState(action == Action.OPTIMIZING);
+    Preconditions.checkState(
+        action == Action.MINOR_OPTIMIZING || action == Action.MAJOR_OPTIMIZING);
     if (state.getStage().isOptimizing()) {
-      return new DefaultOptimizingProcess(tableRuntime, true);
+      return new DefaultOptimizingProcess(
+          action == Action.MINOR_OPTIMIZING
+              ? tableRuntime.getMinorOptimizingState()
+              : tableRuntime.getMajorOptimizingState(),
+          tableRuntime,
+          true);
     } else {
       return null;
     }

@@ -1,7 +1,9 @@
 package com.netease.arctic.server.persistence.mapper;
 
 import com.netease.arctic.ams.api.Action;
-import com.netease.arctic.server.persistence.TableProcessPersistence;
+import com.netease.arctic.server.persistence.ArbitraryStatePersistence;
+import com.netease.arctic.server.persistence.OptimizingStatePersistency;
+import com.netease.arctic.server.process.QuotaProvider;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -60,6 +62,42 @@ public interface TableProcessMapper {
     @Result(property = "summary", column = "summary"),
     @Result(property = "isDefault", column = "is_default")
   })
-  List<TableProcessPersistence> selectLiveProcesses(
+  List<ArbitraryStatePersistence> selectLiveProcesses(
       @Param("tableId") long tableId, @Param("action") Action action);
+
+  @Select(
+      "SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id, last_snapshot_id, "
+          + "watermark, last_optimizing_time, status, stage, stage_start_time, optimizing_type, plan_time, end_time, "
+          + "fail_reason, summary FROM table_optimizing_process WHERE table_id = #{tableId}")
+  @Results({
+    @Result(property = "processId", column = "process_id"),
+    @Result(property = "tableId", column = "table_id"),
+    @Result(property = "catalogName", column = "catalog_name"),
+    @Result(property = "dbName", column = "db_name"),
+    @Result(property = "tableName", column = "table_name"),
+    @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
+    @Result(property = "lastSnapshotId", column = "last_snapshot_id"),
+    @Result(property = "watermark", column = "watermark"),
+    @Result(property = "lastOptimizingTime", column = "last_optimizing_time"),
+    @Result(property = "status", column = "status"),
+    @Result(property = "stage", column = "stage"),
+    @Result(property = "currentStageStartTime", column = "stage_start_time"),
+    @Result(property = "optimizingType", column = "optimizing_type"),
+    @Result(property = "planTime", column = "plan_time"),
+    @Result(property = "endTime", column = "end_time"),
+    @Result(property = "failReason", column = "fail_reason"),
+    @Result(property = "summary", column = "summary")
+  })
+  List<OptimizingStatePersistency> selectOptimizingPersistencies(@Param("tableId") long tableId);
+
+  @Select(
+      "SELECT start_process_id as startProcessId, start_time as startTime, quota_runtime as quotaRuntime, "
+          + "quota_target as quotaTarget FROM table_quota_runtime WHERE table_id = #{tableId}")
+  @Results({
+    @Result(property = "startProcessId", column = "startProcessId"),
+    @Result(property = "startTime", column = "startTime"),
+    @Result(property = "quotaRuntime", column = "quotaRuntime"),
+    @Result(property = "quotaTarget", column = "quotaTarget")
+  })
+  QuotaProvider selectQuotaContainer(@Param("tableId") Long id);
 }

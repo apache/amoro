@@ -18,8 +18,6 @@
 
 package com.netease.arctic.server.dashboard;
 
-import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
-
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.DataFileType;
@@ -41,9 +39,9 @@ import com.netease.arctic.server.dashboard.model.TableStatistics;
 import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.TableStatCollector;
-import com.netease.arctic.server.persistence.OptimizingProcessPersistency;
-import com.netease.arctic.server.persistence.TaskRuntimePersistency;
+import com.netease.arctic.server.persistence.OptimizingStatePersistency;
 import com.netease.arctic.server.persistence.PersistentBase;
+import com.netease.arctic.server.persistence.TaskRuntimePersistency;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -81,6 +79,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
 
 /** Descriptor for Mixed-Hive, Mixed-Iceberg, Iceberg format tables. */
 public class MixedAndIcebergTableDescriptor extends PersistentBase
@@ -421,7 +421,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable, int limit, int offset) {
     TableIdentifier tableIdentifier = amoroTable.id();
-    List<OptimizingProcessPersistency> processMetaList =
+    List<OptimizingStatePersistency> processMetaList =
         getAs(
             OptimizingMapper.class,
             mapper ->
@@ -437,7 +437,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     }
     List<Long> processIds =
         processMetaList.stream()
-            .map(OptimizingProcessPersistency::getProcessId)
+            .map(OptimizingStatePersistency::getProcessId)
             .collect(Collectors.toList());
     Map<Long, List<TaskRuntimePersistency>> optimizingTasks =
         getAs(OptimizingMapper.class, mapper -> mapper.selectOptimizeTaskMetas(processIds)).stream()

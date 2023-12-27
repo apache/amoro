@@ -27,34 +27,29 @@ import com.netease.arctic.ams.api.process.AmoroProcess;
 import com.netease.arctic.ams.api.process.OptimizingState;
 import com.netease.arctic.ams.api.process.PendingInput;
 import com.netease.arctic.ams.api.process.ProcessFactory;
-import com.netease.arctic.ams.api.process.ProcessState;
-import com.netease.arctic.ams.api.process.ProcessStatus;
 import com.netease.arctic.ams.api.process.TableState;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.TableRuntimePersistency;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
-import com.netease.arctic.server.persistence.mapper.TableProcessMapper;
+import com.netease.arctic.server.process.ArbitraryRunner;
 import com.netease.arctic.server.process.DefaultOptimizingState;
+import com.netease.arctic.server.process.OptimizingRunner;
+import com.netease.arctic.server.process.SingletonActionRunner;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 public class DefaultTableRuntime extends StatedPersistentBase implements TableRuntime {
 
   private final TableManager tableManager;
   private final ServerTableIdentifier tableIdentifier;
-  private final DefaultOptimizingState optimizingState;
-  private final Map<Action, SingletonActionRunner<TableState>> arbitraryRunnerMap =
+  private final Map<Action, ArbitraryRunner> arbitraryRunnerMap =
       Collections.synchronizedMap(new HashMap<>());
   private final TableBlockerRuntime blockerRuntime;
   private volatile TableConfiguration tableConfiguration;
@@ -68,7 +63,6 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
     this.tableManager = tableManager;
     this.tableIdentifier = tableIdentifier;
     this.tableConfiguration = TableConfigurations.parseConfig(properties);
-    this.optimizingState = new DefaultOptimizingState(tableIdentifier);
     this.blockerRuntime = new TableBlockerRuntime(tableIdentifier);
     persistTableRuntime();
   }
@@ -84,38 +78,39 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
             tableRuntimePersistency.getDbName(),
             tableRuntimePersistency.getTableName(),
             tableRuntimePersistency.getFormat());
-    this.optimizingState = new DefaultOptimizingState(tableIdentifier, tableRuntimePersistency);
     this.tableConfiguration = tableRuntimePersistency.getTableConfig();
     this.blockerRuntime = new TableBlockerRuntime(tableIdentifier);
   }
 
-  public void register(ProcessFactory<DefaultOptimizingState> defaultOptimizingFactory) {
-    optimizingRunner = new OptimizingRunner(Action.OPTIMIZING, defaultOptimizingFactory);
+  public void register(
+      ProcessFactory<DefaultOptimizingState> defaultOptimizingFactory, boolean recover) {
+    optimizingRunner = new OptimizingRunner(this, defaultOptimizingFactory, recover);
   }
 
-  public void register(Set<Action> actions, ProcessFactory<TableState> processFactory) {
+  public void register(
+      Set<Action> actions, ProcessFactory<TableState> processFactory, boolean recover) {
     actions.forEach(
         action ->
-            arbitraryRunnerMap.put(action, new ArbitraryActionRunner(action, processFactory)));
+            arbitraryRunnerMap.put(
+                action, new ArbitraryRunner(this, processFactory, action, recover)));
   }
 
-  public AmoroProcess<OptimizingState> runOptimizing() {
-    return optimizingRunner.run();
+  public AmoroProcess<OptimizingState> runMinorOptimizing() {
+    return optimizingRunner.runMinorOptimizing();
   }
 
-  public AmoroProcess<OptimizingState> runOptimizing(
-      ProcessFactory<OptimizingState> processFactory) {
-    return optimizingRunner.run(processFactory);
+  public AmoroProcess<OptimizingState> runMajorOptimizing() {
+    return optimizingRunner.runMajorOptimizing();
   }
 
-  public AmoroProcess<? extends TableState> runAction(Action action) {
-    Preconditions.checkState(action != null && action != Action.OPTIMIZING);
+  public AmoroProcess<? extends TableState> runArbitraryAction(Action action) {
+    Preconditions.checkState(Action.isArbitrary(action));
     return arbitraryRunnerMap.get(action).run();
   }
 
-  public AmoroProcess<? extends TableState> runAction(
+  public AmoroProcess<? extends TableState> runArbitraryAction(
       Action action, ProcessFactory<TableState> processFactory) {
-    Preconditions.checkState(action != null && action != Action.OPTIMIZING);
+    Preconditions.checkState(Action.isArbitrary(action));
     return arbitraryRunnerMap.get(action).run(processFactory);
   }
 
@@ -135,8 +130,12 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
     return blockerRuntime;
   }
 
-  public DefaultOptimizingState getDefaultOptimizingState() {
-    return optimizingState;
+  public DefaultOptimizingState getMinorOptimizingState() {
+    return optimizingRunner.getMinorOptimizingState();
+  }
+
+  public DefaultOptimizingState getMajorOptimizingState() {
+    return optimizingRunner.getMajorOptimizingState();
   }
 
   @Override
@@ -163,9 +162,10 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
   public void refresh(PendingInput pendingInput, Map<String, String> config) {
     doAsTransaction(
         () -> {
-          if (pendingInput != null) {
-            optimizingState.savePendingInput(pendingInput);
-          }
+          // TODO
+          //          if (pendingInput != null) {
+          //            optimizingState.savePendingInput(pendingInput);
+          //          }
           TableConfiguration newConfig = TableConfigurations.parseConfig(config);
           if (!tableConfiguration.equals(newConfig)) {
             doAs(
@@ -201,7 +201,9 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
   }
 
   public long getNewestProcessId() {
-    return optimizingState.getId();
+    return Math.max(
+        optimizingRunner.getMinorOptimizingState().getId(),
+        optimizingRunner.getMajorOptimizingState().getId());
   }
 
   @Override
@@ -210,204 +212,5 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
         .add("tableIdentifier", tableIdentifier)
         .add("tableConfiguration", tableConfiguration)
         .toString();
-  }
-
-  public void setTargetQuota(double targetQuota) {
-    optimizingState.setTargetQuota(targetQuota);
-  }
-
-  private abstract class SingletonActionRunner<T extends ProcessState> {
-
-    protected final Map<Long, AmoroProcess<T>> externalProcesses = new HashMap<>();
-    protected final Lock lock = new ReentrantLock();
-    protected final ProcessFactory<T> defaultProcessFactory;
-    protected final Action action;
-    protected volatile AmoroProcess<T> defaultProcess;
-    private volatile long lastTriggerTime;
-    private volatile long lastCompletedTime;
-    private int retryCount;
-
-    public SingletonActionRunner(Action action, ProcessFactory<T> defaultProcessFactory) {
-      this.action = action;
-      this.defaultProcessFactory = defaultProcessFactory;
-      recover();
-    }
-
-    protected abstract void recover();
-
-    public AmoroProcess<T> run() {
-      lock.lock();
-      try {
-        Preconditions.checkState(externalProcesses.isEmpty());
-        closeDefaultProcess();
-        defaultProcess = defaultProcessFactory.create(DefaultTableRuntime.this, action);
-        if (defaultProcess != null) {
-          submitProcess(defaultProcess);
-        }
-        return defaultProcess;
-      } finally {
-        lock.unlock();
-      }
-    }
-
-    // TODO persist action table
-    public AmoroProcess<T> run(ProcessFactory<T> processFactory) {
-      lock.lock();
-      try {
-        Preconditions.checkState(processFactory != defaultProcessFactory);
-        closeDefaultProcess();
-        AmoroProcess<T> process = processFactory.create(DefaultTableRuntime.this, action);
-        if (process != null) {
-          submitProcess(process);
-        }
-        return process;
-      } finally {
-        lock.unlock();
-      }
-    }
-
-    protected void submitProcess(AmoroProcess<T> process) {
-      if (process != defaultProcess && externalProcesses.containsKey(process.getId())) {
-        throw new IllegalStateException(
-            "Process " + process.getId() + " has already been submitted");
-      }
-      doAsTransaction(
-          () -> {
-            doAs(
-                TableProcessMapper.class,
-                mapper ->
-                    mapper.insertLiveProcess(
-                        tableIdentifier.getId(),
-                        action,
-                        process.getId(),
-                        defaultProcess == process));
-            process.whenCompleted(() -> processCompleted(process));
-            if (process == defaultProcess) {
-              defaultProcess = process;
-              lastTriggerTime = process.getStartTime();
-            } else {
-              externalProcesses.put(process.getId(), process);
-            }
-            process.submit();
-          });
-    }
-
-    private void processCompleted(AmoroProcess<T> process) {
-      if (process.getStatus() == ProcessStatus.SUCCESS || defaultProcess != process) {
-        doAs(
-            TableProcessMapper.class,
-            mapper -> mapper.deleteLiveProcess(tableIdentifier.getId(), action, process.getId()));
-        if (defaultProcess == process && process.getStatus() == ProcessStatus.SUCCESS) {
-          lastCompletedTime = System.currentTimeMillis();
-          retryCount = 0;
-          defaultProcess = null;
-        } else {
-          externalProcesses.remove(process.getId());
-        }
-      } else {
-        doAs(
-            TableProcessMapper.class,
-            mapper ->
-                mapper.updateProcessAction(
-                    tableIdentifier.getId(), action, process.getId(), retryCount + 1));
-        retryCount++;
-      }
-    }
-
-    public long getLastTriggerTime() {
-      return lastTriggerTime;
-    }
-
-    public long getLastCompletedTime() {
-      return lastCompletedTime;
-    }
-
-    public int getRetryCount() {
-      return retryCount;
-    }
-
-    public AmoroProcess<T> getDefaultProcess() {
-      return defaultProcess;
-    }
-
-    public void closeDefaultProcess() {
-      AmoroProcess<T> defaultProcess = this.defaultProcess;
-      if (defaultProcess != null) {
-        /** this operation should trigger defaultProcess = null in whenCompleted callback */
-        defaultProcess.close();
-      }
-    }
-
-    public void close() {
-      lock.lock();
-      try {
-        closeDefaultProcess();
-        externalProcesses.values().forEach(AmoroProcess::close);
-      } finally {
-        lock.unlock();
-      }
-    }
-
-    public void close(long processId) {
-      lock.lock();
-      try {
-        if (defaultProcess != null && defaultProcess.getId() == processId) {
-          closeDefaultProcess();
-        } else {
-          Optional.ofNullable(externalProcesses.remove(processId)).ifPresent(AmoroProcess::close);
-        }
-      } finally {
-        lock.unlock();
-      }
-    }
-
-    public List<T> getStates() {
-      AmoroProcess<T> process = this.defaultProcess;
-      if (process != null) {
-        return Lists.newArrayList(process.getState());
-      } else {
-        return getExternalStates();
-      }
-    }
-
-    private List<T> getExternalStates() {
-      lock.lock();
-      try {
-        return externalProcesses.values().stream()
-            .map(AmoroProcess::getState)
-            .collect(Collectors.toList());
-      } finally {
-        lock.unlock();
-      }
-    }
-  }
-
-  private class ArbitraryActionRunner extends SingletonActionRunner<TableState> {
-
-    public ArbitraryActionRunner(Action action, ProcessFactory<TableState> processFactory) {
-      super(action, processFactory);
-    }
-
-    /** recover nothing for right now. */
-    protected void recover() {}
-  }
-
-  private class OptimizingRunner extends SingletonActionRunner<OptimizingState> {
-
-    @SuppressWarnings("unchecked")
-    public OptimizingRunner(
-        Action action, ProcessFactory<? extends OptimizingState> defaultProcessFactory) {
-      super(action, (ProcessFactory<OptimizingState>) defaultProcessFactory);
-    }
-
-    @Override
-    protected void recover() {
-      Preconditions.checkState(defaultProcess == null);
-      defaultProcess =
-          defaultProcessFactory.recover(DefaultTableRuntime.this, action, optimizingState);
-      if (defaultProcess != null) {
-        submitProcess(defaultProcess);
-      }
-    }
   }
 }

@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.ams.api.StateField;
 import com.netease.arctic.ams.api.exception.DuplicateRuntimeException;
 import com.netease.arctic.ams.api.exception.IllegalTaskStateException;
 import com.netease.arctic.ams.api.process.SimpleFuture;

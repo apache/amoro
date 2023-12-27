@@ -20,51 +20,42 @@
 
 package com.netease.arctic.server.process;
 
-import com.netease.arctic.ams.api.Action;
 import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.ams.api.StateField;
 import com.netease.arctic.ams.api.process.OptimizingStage;
 import com.netease.arctic.ams.api.process.OptimizingState;
-import com.netease.arctic.ams.api.process.PendingInput;
 import com.netease.arctic.ams.api.process.ProcessStatus;
+import com.netease.arctic.server.persistence.OptimizingStatePersistency;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
-import com.netease.arctic.server.persistence.TableRuntimePersistency;
-import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
-import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
+import com.netease.arctic.server.persistence.mapper.ProcessMapper;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
+// TODO persist codes
 public class DefaultOptimizingState extends OptimizingState {
 
   private final PersistenceHelper persistenceHelper = new PersistenceHelper();
-
-  @StatedPersistentBase.StateField private volatile long lastOptimizedSnapshotId;
-  private volatile long lastOptimizedChangeSnapshotId;
-  private volatile long lastMinorOptimizingTime;
-  private volatile long lastMajorOptimizingTime;
-  private volatile long lastFullOptimizingTime;
-  private volatile OptimizingType optimizingType;
-  private volatile int taskCount;
+  private final OptimizingType optimizingType;
+  @StateField private volatile long lastOptimizedSnapshotId;
+  @StateField private volatile long lastOptimizingTime;
+  @StateField private volatile int taskCount;
   private volatile DefaultOptimizingProcess optimizingProcess;
-  private volatile long quotaRuntime;
-  private volatile double quotaTarget;
-  private volatile PendingInput pendingInput;
 
   public DefaultOptimizingState(
-      ServerTableIdentifier tableIdentifier, TableRuntimePersistency tableRuntimePersistency) {
-    super(Action.OPTIMIZING, tableIdentifier);
-    this.lastOptimizedSnapshotId = tableRuntimePersistency.getLastOptimizedSnapshotId();
-    this.lastOptimizedChangeSnapshotId = tableRuntimePersistency.getLastOptimizedChangeSnapshotId();
-    this.lastMinorOptimizingTime = tableRuntimePersistency.getLastMinorOptimizingTime();
-    this.lastMajorOptimizingTime = tableRuntimePersistency.getLastMajorOptimizingTime();
-    this.lastFullOptimizingTime = tableRuntimePersistency.getLastFullOptimizingTime();
-    setTargetSnapshotId(tableRuntimePersistency.getCurrentSnapshotId());
-    setTargetChangeSnapshotId(tableRuntimePersistency.getCurrentChangeSnapshotId());
-    setStage(
-        tableRuntimePersistency.getOptimizingStage(),
-        tableRuntimePersistency.getCurrentStatusStartTime());
+      ServerTableIdentifier tableIdentifier,
+      OptimizingType optimizingType,
+      OptimizingStatePersistency statePersistency) {
+    super(optimizingType.getAction(), tableIdentifier);
+    this.optimizingType = optimizingType;
+    this.lastOptimizedSnapshotId = statePersistency.getLastSnapshotId();
+    this.lastOptimizingTime = statePersistency.getLastOptimizingTime();
+    setTargetSnapshotId(statePersistency.getTargetSnapshotId());
+    setStage(statePersistency.getStage(), statePersistency.getCurrentStageStartTime());
   }
 
-  public DefaultOptimizingState(ServerTableIdentifier tableIdentifier) {
-    super(Action.OPTIMIZING, tableIdentifier);
+  public DefaultOptimizingState(
+      ServerTableIdentifier tableIdentifier, OptimizingType optimizingType) {
+    super(optimizingType.getAction(), tableIdentifier);
+    this.optimizingType = optimizingType;
   }
 
   public void release() {
@@ -73,34 +64,8 @@ public class DefaultOptimizingState extends OptimizingState {
     }
   }
 
-  public PendingInput getPendingInput() {
-    return pendingInput;
-  }
-
-  @Override
-  public long getQuotaRuntime() {
-    return quotaRuntime;
-  }
-
-  @Override
-  public double getQuotaValue() {
-    return (double) getQuotaRuntime() / (System.currentTimeMillis() - getStartTime());
-  }
-
-  public double getQuotaOccupy() {
-    return getQuotaValue() / quotaTarget;
-  }
-
-  public long getLastMinorOptimizingTime() {
-    return lastMinorOptimizingTime;
-  }
-
-  public long getLastMajorOptimizingTime() {
-    return lastMajorOptimizingTime;
-  }
-
-  public long getLastFullOptimizingTime() {
-    return lastFullOptimizingTime;
+  public long getLastOptimizingTime() {
+    return lastOptimizingTime;
   }
 
   public OptimizingType getOptimizingType() {
@@ -111,62 +76,31 @@ public class DefaultOptimizingState extends OptimizingState {
     return lastOptimizedSnapshotId;
   }
 
-  public long getLastOptimizedChangeSnapshotId() {
-    return lastOptimizedChangeSnapshotId;
-  }
-
-  public double getTargetQuota() {
-    return quotaTarget;
-  }
-
-  public void setQuotaTarget(double quotaTarget) {
-    this.quotaTarget = quotaTarget;
-  }
-
   protected void saveProcessCreated(DefaultOptimizingProcess process) {
     Preconditions.checkState(getStage() == OptimizingStage.PENDING);
     persistenceHelper.invoke(
         () -> {
           setId(process.getId());
-          setStatus(ProcessStatus.RUNNING);
           optimizingProcess = process;
-          savePlanningStage();
-          process.whenCompleted(() -> saveProcessCompleted(process));
+          setStage(OptimizingStage.PLANNING);
+          setStartTime(getCurrentStageStartTime());
+          persistenceHelper.persistCreated();
         });
   }
 
   protected void saveProcessRecoverd(DefaultOptimizingProcess process) {
     optimizingProcess = process;
-    process.whenCompleted(() -> saveProcessCompleted(process));
   }
 
-  private void savePlanningStage() {
-    setStage(OptimizingStage.PLANNING);
-    setStartTime(getCurrentStageStartTime());
-    persistenceHelper.persistProcessCreated();
-    persistenceHelper.persistRuntimeStage();
-  }
-
-  protected void saveProcessCompleted(DefaultOptimizingProcess process) {
-    this.quotaRuntime = process.getQuotaRuntime();
-    this.optimizingProcess = null;
-    if (process.getStatus() == ProcessStatus.SUCCESS) {
-      saveStatusSuccess(process.getSummary());
-    } else if (process.getStatus() == ProcessStatus.FAILED) {
-      saveStatusFailed(process.getFailedReason());
-    }
-  }
-
-  public void savePendingInput(PendingInput input) {
+  public void savePending(long targetSnapshotId, long watermark) {
     persistenceHelper.invoke(
         () -> {
-          setTargetSnapshotId(input.getCurrentSnapshotId());
-          setTargetChangeSnapshotId(input.getCurrentChangeSnapshotId());
-          pendingInput = input;
+          setTargetSnapshotId(targetSnapshotId);
+          setWatermark(watermark);
           if (getStage() != OptimizingStage.PENDING) {
             setStage(OptimizingStage.PENDING);
           }
-          persistenceHelper.persistRuntimeStage();
+          persistenceHelper.persistStage();
         });
   }
 
@@ -174,141 +108,101 @@ public class DefaultOptimizingState extends OptimizingState {
     persistenceHelper.invoke(
         () -> {
           setStage(OptimizingStage.COMMITTING);
-          persistenceHelper.persistRuntimeStage();
+          persistenceHelper.persistStage();
         });
   }
 
   protected void saveOptimizingStage(OptimizingType optimizingType, int taskCount, String summary) {
     persistenceHelper.invoke(
         () -> {
-          this.optimizingType = optimizingType;
           this.taskCount = taskCount;
-          if (optimizingType == OptimizingType.MINOR) {
-            lastMinorOptimizingTime = getStartTime();
-          } else if (optimizingType == OptimizingType.MAJOR) {
-            lastMajorOptimizingTime = getStartTime();
-          } else if (optimizingType == OptimizingType.FULL) {
-            lastFullOptimizingTime = getStartTime();
-          }
           setStage(optimizingType.getStatus());
-          persistenceHelper.persistRuntimeStage();
-          persistenceHelper.persistProcessSummary(summary);
+          lastOptimizingTime = getStartTime();
+          persistenceHelper.persistSummary(summary);
         });
-  }
-
-  private void saveStatusSuccess(String summary) {
-    persistenceHelper.invoke(
-        () -> {
-          persistenceHelper.persistRuntimeSuccess();
-          persistenceHelper.persistProcessSummary(summary);
-        });
-  }
-
-  private void saveStatusClosed() {
-    Preconditions.checkState(
-        getStatus() != ProcessStatus.SUCCESS, "Use saveStatusSuccess instead.");
-    persistenceHelper.invoke(
-        () -> {
-          setStatus(ProcessStatus.CLOSED);
-          persistenceHelper.persistProcessStatus();
-          persistenceHelper.persistRuntimeStage();
-        });
-  }
-
-  private void saveStatusFailed(String failedReason) {
-    persistenceHelper.invoke(
-        () -> {
-          setFailedReason(failedReason);
-          persistenceHelper.persistProcessStatus();
-          persistenceHelper.persistRuntimeStage();
-        });
-  }
-
-  @Override
-  public void setStatus(ProcessStatus status) {
-    super.setStatus(status);
-    setStage(OptimizingStage.IDLE, getEndTime());
   }
 
   @Override
   public void setFailedReason(String failedReason) {
-    super.setFailedReason(failedReason);
-    setStage(OptimizingStage.IDLE, getEndTime());
+    persistenceHelper.invoke(
+        () -> {
+          super.setFailedReason(failedReason);
+          setStage(OptimizingStage.IDLE);
+          lastOptimizingTime = getStartTime();
+          persistenceHelper.persistStatus();
+        });
   }
 
-  public void setTargetQuota(double targetQuota) {
-    this.quotaTarget = targetQuota;
+  protected void setStatus(ProcessStatus status) {
+    Preconditions.checkState(status == ProcessStatus.CLOSED || status == ProcessStatus.SUCCESS);
+    if (status == ProcessStatus.CLOSED) {
+      persistenceHelper.invoke(
+          () -> {
+            super.setStatus(ProcessStatus.CLOSED);
+            setStage(OptimizingStage.IDLE, getEndTime());
+            lastOptimizingTime = getStartTime();
+            persistenceHelper.persistStatus();
+            optimizingProcess = null;
+          });
+    } else {
+      persistenceHelper.invoke(
+          () -> {
+            super.setStatus(ProcessStatus.SUCCESS);
+            setStage(OptimizingStage.IDLE, getEndTime());
+            lastOptimizingTime = getStartTime();
+            persistenceHelper.persistSummary(optimizingProcess.getSummary());
+            optimizingProcess = null;
+          });
+    }
   }
 
   private class PersistenceHelper extends StatedPersistentBase {
 
     public void invoke(Runnable runnable) {
-      persistenceHelper.invoke(runnable);
+      invokeConsistency(runnable);
     }
 
-    public void persistProcessCreated() {
+    public void persistCreated() {
       doAs(
-          OptimizingMapper.class,
-          mapper ->
-              mapper.insertOptimizingProcess(
-                  getTableIdentifier(),
-                  getId(),
-                  getTargetSnapshotId(),
-                  getTargetChangeSnapshotId(),
-                  getStatus(),
-                  null,
-                  getStartTime(),
-                  null));
+          ProcessMapper.class,
+          mapper -> mapper.insertDefaultOptimizingProcess(DefaultOptimizingState.this));
     }
 
-    public void persistProcessStatus() {
+    public void persistSummary(String summary) {
       doAs(
-          OptimizingMapper.class,
+          ProcessMapper.class,
           mapper ->
               mapper.updateOptimizingProcess(
                   getTableIdentifier().getId(),
                   getId(),
                   getStatus(),
+                  getStage(),
+                  getCurrentStageStartTime(),
                   getEndTime(),
-                  getFailedReason()));
-    }
-
-    public void persistProcessSummary(String summary) {
-      doAs(
-          OptimizingMapper.class,
-          mapper ->
-              mapper.updateOptimizingProcess(
-                  getTableIdentifier().getId(),
-                  getId(),
-                  optimizingType,
-                  getEndTime(),
-                  getStatus(),
                   taskCount,
                   summary,
                   getFailedReason()));
     }
 
-    public void persistRuntimeSuccess() {
+    public void persistStatus() {
       doAs(
-          TableMetaMapper.class,
+          ProcessMapper.class,
           mapper ->
-              mapper.updateTableOptimizingSuccess(
+              mapper.updateOptimizingProcess(
                   getTableIdentifier().getId(),
                   getId(),
+                  getStatus(),
                   getStage(),
-                  lastOptimizedSnapshotId,
-                  lastOptimizedChangeSnapshotId,
-                  lastMinorOptimizingTime,
-                  lastMajorOptimizingTime,
-                  lastFullOptimizingTime,
-                  getStartTime()));
+                  getCurrentStageStartTime(),
+                  getEndTime(),
+                  getFailedReason()));
     }
 
-    public void persistRuntimeStage() {
+    public void persistStage() {
       doAs(
-          TableMetaMapper.class,
+          ProcessMapper.class,
           mapper ->
-              mapper.updateTableStage(
+              mapper.updateOptimizingProcess(
                   getTableIdentifier().getId(), getId(), getStage(), getCurrentStageStartTime()));
     }
   }

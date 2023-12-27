@@ -22,16 +22,17 @@ package com.netease.arctic.ams.api.process;
 
 import com.netease.arctic.ams.api.Action;
 import com.netease.arctic.ams.api.ServerTableIdentifier;
+import com.netease.arctic.ams.api.StateField;
 
 public class TableState implements ProcessState {
 
-  private volatile long id;
+  @StateField private volatile long id;
   private final Action action;
   private final ServerTableIdentifier tableIdentifier;
-  private long startTime;
-  private long endTime = -1L;
-  private ProcessStatus status = ProcessStatus.RUNNING;
-  private volatile String failedReason;
+  @StateField private long startTime;
+  @StateField private long endTime = -1L;
+  @StateField private ProcessStatus status = ProcessStatus.RUNNING;
+  @StateField private volatile String failedReason;
   private volatile String summary;
 
   public TableState(Action action, ServerTableIdentifier tableIdentifier) {

@@ -21,6 +21,7 @@
 package com.netease.arctic.server.process;
 
 import com.netease.arctic.ams.api.OptimizingTaskId;
+import com.netease.arctic.ams.api.TableRuntime;
 import com.netease.arctic.ams.api.process.OptimizingStage;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
@@ -31,7 +32,6 @@ import com.netease.arctic.server.process.task.TableCommitInput;
 import com.netease.arctic.server.process.task.TableCommitOutput;
 import com.netease.arctic.server.process.task.TablePlanInput;
 import com.netease.arctic.server.process.task.TablePlanOutput;
-import com.netease.arctic.server.table.DefaultTableRuntime;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
@@ -42,7 +42,8 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class DefaultOptimizingProcess extends ManagedProcess<DefaultOptimizingState> {
+public class DefaultOptimizingProcess extends ManagedProcess<DefaultOptimizingState>
+    implements QuotaConsumer {
 
   private static final int COMMMIT_TASK_SEQUENCE = Integer.MAX_VALUE;
 
@@ -52,9 +53,10 @@ public class DefaultOptimizingProcess extends ManagedProcess<DefaultOptimizingSt
   private final Lock executingLock = new ReentrantLock();
   private volatile String summary;
 
-  public DefaultOptimizingProcess(DefaultTableRuntime tableRuntime, boolean recoverMode) {
-    super(tableRuntime.getDefaultOptimizingState(), tableRuntime);
-    if (recoverMode) {
+  public DefaultOptimizingProcess(
+      DefaultOptimizingState optimizingState, TableRuntime tableRuntime, boolean recover) {
+    super(optimizingState, tableRuntime);
+    if (recover) {
       processId = getState().getId();
       state.saveProcessRecoverd(this);
     } else {
@@ -210,7 +212,17 @@ public class DefaultOptimizingProcess extends ManagedProcess<DefaultOptimizingSt
   }
 
   public String getSummary() {
-    return summary.toString();
+    return summary;
+  }
+
+  @Override
+  public long getId() {
+    return processId;
+  }
+
+  @Override
+  public long getStartTime() {
+    return state.getStartTime();
   }
 
   private class Persistence extends PersistentBase {

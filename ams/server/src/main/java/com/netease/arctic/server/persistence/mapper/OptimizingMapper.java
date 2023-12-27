@@ -1,16 +1,16 @@
 package com.netease.arctic.server.persistence.mapper;
 
-import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.process.ProcessStatus;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
-import com.netease.arctic.server.persistence.OptimizingProcessPersistency;
+import com.netease.arctic.server.persistence.OptimizingStatePersistency;
 import com.netease.arctic.server.persistence.TaskRuntimePersistency;
 import com.netease.arctic.server.persistence.converter.JsonObjectConverter;
 import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
 import com.netease.arctic.server.persistence.converter.MapLong2StringConverter;
 import com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert;
+import com.netease.arctic.server.process.DefaultOptimizingState;
 import com.netease.arctic.server.process.OptimizingSummary;
 import com.netease.arctic.server.process.OptimizingType;
 import com.netease.arctic.server.process.TaskRuntime;
@@ -33,26 +33,7 @@ public interface OptimizingMapper {
       "DELETE FROM table_optimizing_process WHERE table_id = #{tableId} and process_id < #{time}")
   void deleteOptimizingProcessBefore(@Param("tableId") long tableId, @Param("time") long time);
 
-  @Insert(
-      "INSERT INTO table_optimizing_process(table_id, catalog_name, db_name, table_name ,process_id,"
-          + " target_snapshot_id, target_change_snapshot_id, status, optimizing_type, plan_time, summary, from_sequence,"
-          + " to_sequence) VALUES (#{table.id}, #{table.catalog},"
-          + " #{table.database}, #{table.tableName}, #{processId}, #{targetSnapshotId}, #{targetChangeSnapshotId},"
-          + " #{status}, #{optimizingType},"
-          + " #{planTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
-          + " #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter},"
-          + " #{fromSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter},"
-          + " #{toSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter}"
-          + ")")
-  void insertOptimizingProcess(
-      @Param("table") ServerTableIdentifier tableIdentifier,
-      @Param("processId") long processId,
-      @Param("targetSnapshotId") long targetSnapshotId,
-      @Param("targetChangeSnapshotId") long targetChangeSnapshotId,
-      @Param("status") ProcessStatus status,
-      @Param("optimizingType") OptimizingType optimizingType,
-      @Param("planTime") long planTime,
-      @Param("summary") OptimizingSummary summary);
+  void insertOptimizingProcess(@Param("optimizingState") DefaultOptimizingState optimizingState);
 
   @Select(
       "SELECT a.process_id, a.table_id, a.catalog_name, a.db_name, a.table_name, a.target_snapshot_id,"
@@ -85,7 +66,7 @@ public interface OptimizingMapper {
         column = "to_sequence",
         typeHandler = MapLong2StringConverter.class)
   })
-  List<OptimizingProcessPersistency> selectOptimizingProcesses(
+  List<OptimizingStatePersistency> selectOptimizingProcesses(
       @Param("catalogName") String catalogName,
       @Param("dbName") String dbName,
       @Param("tableName") String tableName);

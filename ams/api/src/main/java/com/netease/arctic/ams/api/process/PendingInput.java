@@ -17,6 +17,7 @@ public class PendingInput {
   private long equalityDeleteBytes = 0L;
   private long currentSnapshotId;
   private long currentChangeSnapshotId;
+  private boolean needCompactDataFiles = false;
 
   public PendingInput() {}
 
@@ -27,7 +28,8 @@ public class PendingInput {
       int equalityDeleteFileCount,
       int positionalDeleteFileCount,
       long positionalDeleteBytes,
-      long equalityDeleteBytes) {
+      long equalityDeleteBytes,
+      boolean needCompactDataFiles) {
     this.partitions.addAll(partitions);
     this.dataFileCount = dataFileCount;
     this.dataFileSize = dataFileSize;
@@ -35,6 +37,7 @@ public class PendingInput {
     this.positionalDeleteFileCount = positionalDeleteFileCount;
     this.positionalDeleteBytes = positionalDeleteBytes;
     this.equalityDeleteBytes = equalityDeleteBytes;
+    this.needCompactDataFiles = needCompactDataFiles;
   }
 
   public int getInputFileCount() {
@@ -100,5 +103,9 @@ public class PendingInput {
 
   public void setCurrentChangeSnapshotId(long currentChangeSnapshotId) {
     this.currentChangeSnapshotId = currentChangeSnapshotId;
+  }
+
+  public boolean needCompactDataFiles() {
+    return needCompactDataFiles;
   }
 }
