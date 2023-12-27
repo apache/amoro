@@ -44,16 +44,6 @@ public interface TableFileScanHelper {
     }
   }
 
-  interface PartitionFilter {
-    /**
-     * If we should keep or skip this partition
-     *
-     * @param partition -
-     * @return true for keep this partition
-     */
-    boolean test(String partition);
-  }
-
   CloseableIterable<FileScanResult> scan();
 
   TableFileScanHelper withPartitionFilter(Expression partitionFilter);
