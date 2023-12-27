@@ -18,14 +18,11 @@
 
 package com.netease.arctic.utils;
 
-import static com.netease.arctic.BasicTableTestHelper.SPEC;
 import static com.netease.arctic.BasicTableTestHelper.TABLE_SCHEMA;
 
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.io.IcebergDataTestHelpers;
 import com.netease.arctic.table.UnkeyedTable;
@@ -51,90 +48,34 @@ import java.util.Set;
 @RunWith(Parameterized.class)
 public class TestUnkeyedExpressionUtil extends TableTestBase {
 
-  public TestUnkeyedExpressionUtil(
-      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
-    super(catalogTestHelper, tableTestHelper);
+  public TestUnkeyedExpressionUtil(TableFormat tableFormat, PartitionSpec partitionSpec) {
+    super(new BasicCatalogTestHelper(tableFormat), new BasicTableTestHelper(false, partitionSpec));
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[][] parameters() {
     return new Object[][] {
+      {TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).identity("op_time").build()},
+      {TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).bucket("name", 2).build()},
+      {TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).truncate("ts", 10).build()},
+      {TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).year("op_time").build()},
+      {TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).month("op_time").build()},
+      {TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).day("op_time").build()},
+      {TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).hour("op_time").build()},
+      {TableFormat.ICEBERG, PartitionSpec.unpartitioned()},
       {
-        new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(
-            false, PartitionSpec.builderFor(TABLE_SCHEMA).identity("op_time").build())
+        TableFormat.MIXED_ICEBERG,
+        PartitionSpec.builderFor(TABLE_SCHEMA).identity("op_time").build()
       },
+      {TableFormat.MIXED_ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).bucket("name", 2).build()},
       {
-        new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(
-            false, PartitionSpec.builderFor(TABLE_SCHEMA).bucket("name", 2).build())
+        TableFormat.MIXED_ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).truncate("ts", 10).build()
       },
-      {
-        new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(
-            false, PartitionSpec.builderFor(TABLE_SCHEMA).truncate("ts", 10).build())
-      },
-      {
-        new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(
-            false, PartitionSpec.builderFor(TABLE_SCHEMA).year("op_time").build())
-      },
-      {
-        new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(
-            false, PartitionSpec.builderFor(TABLE_SCHEMA).month("op_time").build())
-      },
-      {
-        new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(
-            false,
-            // 'day' transform on 'op_time'
-            SPEC)
-      },
-      {
-        new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(
-            false, PartitionSpec.builderFor(TABLE_SCHEMA).hour("op_time").build())
-      },
-      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, false)},
-      {
-        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(
-            false, PartitionSpec.builderFor(TABLE_SCHEMA).identity("op_time").build())
-      },
-      {
-        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(
-            false, PartitionSpec.builderFor(TABLE_SCHEMA).bucket("name", 2).build())
-      },
-      {
-        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(
-            false, PartitionSpec.builderFor(TABLE_SCHEMA).truncate("ts", 10).build())
-      },
-      {
-        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(
-            false, PartitionSpec.builderFor(TABLE_SCHEMA).year("op_time").build())
-      },
-      {
-        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(
-            false, PartitionSpec.builderFor(TABLE_SCHEMA).month("op_time").build())
-      },
-      {
-        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(
-            false,
-            // 'day' transform on 'op_time'
-            SPEC)
-      },
-      {
-        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(
-            false, PartitionSpec.builderFor(TABLE_SCHEMA).hour("op_time").build())
-      },
-      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, false)}
+      {TableFormat.MIXED_ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).year("op_time").build()},
+      {TableFormat.MIXED_ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).month("op_time").build()},
+      {TableFormat.MIXED_ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).day("op_time").build()},
+      {TableFormat.MIXED_ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).hour("op_time").build()},
+      {TableFormat.MIXED_ICEBERG, PartitionSpec.unpartitioned()}
     };
   }
 

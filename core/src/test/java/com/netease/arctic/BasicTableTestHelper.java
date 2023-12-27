@@ -167,8 +167,8 @@ public class BasicTableTestHelper implements TableTestHelper {
   @Override
   public String toString() {
     return String.format(
-        "hasPrimaryKey = %b, hasPartitionSpec = %b, PartitionSpec = %s",
-        primaryKeySpec.primaryKeyExisted(), partitionSpec.isPartitioned(), partitionSpec);
+        "hasPrimaryKey = %b, hasPartitionSpec = %b",
+        primaryKeySpec.primaryKeyExisted(), partitionSpec.isPartitioned());
   }
 
   protected static Map<String, String> buildTableFormat(String fileFormat) {
