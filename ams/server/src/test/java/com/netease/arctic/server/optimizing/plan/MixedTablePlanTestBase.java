@@ -521,7 +521,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
       int rePosDeletedDataFiles,
       int readOnlyDeleteFiles,
       int rewrittenDeleteFiles) {
-    Assert.assertEquals(actual.getPartition(), getPartition());
+    Assert.assertEquals(actual.getPartition(), getPartitionPath());
     Assert.assertEquals(rewrittenDeleteFiles, actual.getInput().rewrittenDeleteFiles().length);
     Assert.assertEquals(rewrittenDataFiles, actual.getInput().rewrittenDataFiles().length);
     Assert.assertEquals(readOnlyDeleteFiles, actual.getInput().readOnlyDeleteFiles().length);
