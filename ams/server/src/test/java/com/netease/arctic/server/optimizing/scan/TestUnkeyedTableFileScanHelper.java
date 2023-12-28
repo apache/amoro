@@ -27,6 +27,7 @@ import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ExpressionUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.data.Record;
@@ -83,9 +84,13 @@ public class TestUnkeyedTableFileScanHelper extends TableFileScanHelperTestBase 
             tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
             tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-02T12:00:00"),
             tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-02T12:00:00"));
-    OptimizingTestHelpers.appendBase(
-        getArcticTable(),
-        tableTestHelper().writeBaseStore(getArcticTable(), 0L, newRecords, false));
+    List<DataFile> dataFiles =
+        OptimizingTestHelpers.appendBase(
+            getArcticTable(),
+            tableTestHelper().writeBaseStore(getArcticTable(), 0L, newRecords, false));
+    // partition field = "2022-01-01T12:00:00"
+    DataFile sampleFile = dataFiles.get(0);
+
     OptimizingTestHelpers.appendBase(
         getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), 0L, newRecords, false));
@@ -102,7 +107,9 @@ public class TestUnkeyedTableFileScanHelper extends TableFileScanHelperTestBase 
     scan =
         scanFiles(
             buildFileScanHelper()
-                .withPartitionFilter(partition -> getPartition().equals(partition)));
+                .withPartitionFilter(
+                    ExpressionUtil.convertPartitionDataToDataFilter(
+                        getArcticTable(), sampleFile.specId(), sampleFile.partition())));
     assertScanResult(scan, 2, null, 0);
   }
 

@@ -76,26 +76,41 @@ public class TestUpsertPushDown extends TableTestBase {
   @Before
   public void initChangeStoreData() {
     MixedDataTestHelpers.writeAndCommitChangeStore(
-        getArcticTable().asKeyedTable(), 1L, ChangeAction.DELETE, writeRecords(1, "aaa", 0, 1));
+        getArcticTable().asKeyedTable(),
+        1L,
+        ChangeAction.DELETE,
+        writeRecords(1, "aaa", 0, 1),
+        false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
         getArcticTable().asKeyedTable(),
         2L,
         ChangeAction.UPDATE_AFTER,
-        writeRecords(1, "aaa", 0, 1));
+        writeRecords(1, "aaa", 0, 1),
+        false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
-        getArcticTable().asKeyedTable(), 3L, ChangeAction.DELETE, writeRecords(2, "bbb", 0, 2));
+        getArcticTable().asKeyedTable(),
+        3L,
+        ChangeAction.DELETE,
+        writeRecords(2, "bbb", 0, 2),
+        false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
         getArcticTable().asKeyedTable(),
         3L,
         ChangeAction.UPDATE_AFTER,
-        writeRecords(2, "bbb", 0, 2));
+        writeRecords(2, "bbb", 0, 2),
+        false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
-        getArcticTable().asKeyedTable(), 4L, ChangeAction.DELETE, writeRecords(2, "ccc", 0, 2));
+        getArcticTable().asKeyedTable(),
+        4L,
+        ChangeAction.DELETE,
+        writeRecords(2, "ccc", 0, 2),
+        false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
         getArcticTable().asKeyedTable(),
         5L,
         ChangeAction.UPDATE_AFTER,
-        writeRecords(2, "ccc", 0, 2));
+        writeRecords(2, "ccc", 0, 2),
+        false);
   }
 
   @Test

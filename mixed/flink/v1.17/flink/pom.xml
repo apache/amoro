@@ -82,7 +82,7 @@
                         <configuration>
                             <artifactSet>
                                 <includes combine.children="append">
-                                    <include>com.netease.amoro:flink-common</include>
+                                    <include>com.netease.amoro:amoro-mixed-flink-common</include>
                                 </includes>
                             </artifactSet>
                         </configuration>
