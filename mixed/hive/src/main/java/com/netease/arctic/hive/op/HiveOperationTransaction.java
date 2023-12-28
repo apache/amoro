@@ -51,11 +51,15 @@ import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.thrift.TException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 
 public class HiveOperationTransaction implements Transaction {
+
+  private static final Logger LOG = LoggerFactory.getLogger(HiveOperationTransaction.class);
 
   private final UnkeyedHiveTable unkeyedHiveTable;
   private final Transaction wrapped;
@@ -152,7 +156,11 @@ public class HiveOperationTransaction implements Transaction {
   @Override
   public void commitTransaction() {
     wrapped.commitTransaction();
-    transactionalClient.commit();
+    try {
+      transactionalClient.commit();
+    } catch (Exception e) {
+      LOG.warn("Commit operation to HMS failed.", e);
+    }
   }
 
   @Override

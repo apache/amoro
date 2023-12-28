@@ -236,6 +236,11 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
 
+    Transaction tx = baseStore.newTransaction();
+    OverwriteFiles overwriteFiles1 = tx.newOverwrite();
+    dataFiles.forEach(overwriteFiles1::addFile);
+    overwriteFiles1.commit();
+
     // rename the hive table,
     Table hiveTable =
         TEST_HMS
@@ -249,6 +254,8 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
 
     // commit should success even though hive table is not existed.
     overwriteFiles.commit();
+    // transaction commit should success even though hive table is not existed.
+    tx.commitTransaction();
 
     hiveTable.setTableName(getArcticTable().id().getTableName());
     TEST_HMS
