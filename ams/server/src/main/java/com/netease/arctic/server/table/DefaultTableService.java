@@ -39,6 +39,7 @@ import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
+import com.netease.arctic.server.manager.MetricManager;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
@@ -357,6 +358,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         tableRuntimeMeta -> {
           TableRuntime tableRuntime = tableRuntimeMeta.constructTableRuntime(this);
           tableRuntimeMap.put(tableRuntime.getTableIdentifier(), tableRuntime);
+          tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
         });
 
     if (headHandler != null) {
@@ -641,6 +643,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     }
     TableRuntime tableRuntime = new TableRuntime(serverTableIdentifier, this, table.properties());
     tableRuntimeMap.put(serverTableIdentifier, tableRuntime);
+    tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
     if (headHandler != null) {
       headHandler.fireTableAdded(table, tableRuntime);
     }

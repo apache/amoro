@@ -15,5 +15,8 @@
 # limitations under the License.
 #
 
-com.netease.arctic.server.manager.TestSpiPluginMananger$TestPluginImpl1
-com.netease.arctic.server.manager.TestSpiPluginMananger$TestPluginImpl2
+# This file is the config file for plugin event listener
+# configurations of event listeners
+event-listeners:
+  - name: logging-listener
+    enabled: false

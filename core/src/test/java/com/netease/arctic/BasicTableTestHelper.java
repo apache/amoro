@@ -92,6 +92,14 @@ public class BasicTableTestHelper implements TableTestHelper {
     this(hasPrimaryKey, hasPartition, DEFAULT_FILE_FORMAT_DEFAULT);
   }
 
+  public BasicTableTestHelper(boolean hasPrimaryKey, PartitionSpec partitionSpec) {
+    this(
+        TABLE_SCHEMA,
+        hasPrimaryKey ? PRIMARY_KEY_SPEC : PrimaryKeySpec.noPrimaryKey(),
+        partitionSpec,
+        buildTableFormat(DEFAULT_FILE_FORMAT_DEFAULT));
+  }
+
   @Override
   public Schema tableSchema() {
     return tableSchema;

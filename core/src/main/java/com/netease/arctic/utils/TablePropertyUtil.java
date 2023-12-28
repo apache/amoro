@@ -100,23 +100,12 @@ public class TablePropertyUtil {
   }
 
   public static Map<String, String> getPartitionProperties(
-      ArcticTable arcticTable, String partitionPath) {
+      ArcticTable arcticTable, StructLike partition) {
     return getPartitionProperties(
         arcticTable.isKeyedTable()
             ? arcticTable.asKeyedTable().baseTable()
             : arcticTable.asUnkeyedTable(),
-        partitionPath);
-  }
-
-  public static Map<String, String> getPartitionProperties(
-      UnkeyedTable unkeyedTable, String partitionPath) {
-    StructLike partitionData;
-    if (unkeyedTable.spec().isUnpartitioned()) {
-      partitionData = TablePropertyUtil.EMPTY_STRUCT;
-    } else {
-      partitionData = ArcticDataFiles.data(unkeyedTable.spec(), partitionPath);
-    }
-    return getPartitionProperties(unkeyedTable, partitionData);
+        partition);
   }
 
   public static Map<String, String> getPartitionProperties(
