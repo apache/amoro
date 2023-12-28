@@ -158,6 +158,17 @@ export default defineComponent({
         getSearchDBList()
       }
     }
+    const databases = computed(() => {
+      return state.allDatabaseListLoaded.filter((ele) => {
+        return ele.label.includes(state.DBSearchInput)
+      })
+    })
+
+    const tables = computed(() => {
+      return state.allTableListLoaded.filter((ele) => {
+        return ele.label.includes(state.tableSearchInput)
+      })
+    })
 
     const getSearchTableList = debounce(() => {
       getAllTableList()
@@ -253,9 +264,7 @@ export default defineComponent({
         return
       }
       if (state.allDatabaseListLoaded.length) {
-        state.databaseList = state.allDatabaseListLoaded.filter((ele) => {
-          return ele.label.includes(state.DBSearchInput)
-        })
+        state.databaseList = databases
         return
       }
 
@@ -287,9 +296,7 @@ export default defineComponent({
         return
       }
       if (state.allTableListLoaded.length) {
-        state.tableList = state.allTableListLoaded.filter((ele) => {
-          return ele.label.includes(state.tableSearchInput)
-        })
+        state.tableList = tables
         return
       }
 
