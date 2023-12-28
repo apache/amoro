@@ -85,6 +85,8 @@ import java.util.stream.Collectors;
 /** Descriptor for Paimon format tables. */
 public class PaimonTableDescriptor implements FormatTableDescriptor {
 
+  public static final String PAIMON_MAIN_BRANCH_NAME = "main";
+
   private final ExecutorService executor;
 
   public PaimonTableDescriptor(ExecutorService executor) {
@@ -179,7 +181,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     FileStoreTable table = getTable(amoroTable);
     List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
     Iterator<Snapshot> snapshots;
-    if ("main".equals(ref)) {
+    if (PAIMON_MAIN_BRANCH_NAME.equals(ref)) {
       try {
         snapshots = table.snapshotManager().snapshots();
       } catch (IOException e) {
