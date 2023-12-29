@@ -112,12 +112,12 @@ ams:
 #    backend: kyuubi
 #    kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/
 
-
 #  High availability configuration.
 #  ha:
 #    enabled: true
 #    cluster-name: default
 #    zookeeper-address: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
+
 
 containers:
   - name: localContainer
