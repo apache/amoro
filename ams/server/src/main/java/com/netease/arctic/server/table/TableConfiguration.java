@@ -154,12 +154,16 @@ public class TableConfiguration {
   }
 
   public static TableConfiguration parseConfig(Map<String, String> properties) {
+    boolean gcEnabled =
+        CompatiblePropertyUtil.propertyAsBoolean(
+            properties, org.apache.iceberg.TableProperties.GC_ENABLED, true);
     return new TableConfiguration()
         .setExpireSnapshotEnabled(
-            CompatiblePropertyUtil.propertyAsBoolean(
-                properties,
-                TableProperties.ENABLE_TABLE_EXPIRE,
-                TableProperties.ENABLE_TABLE_EXPIRE_DEFAULT))
+            gcEnabled
+                && CompatiblePropertyUtil.propertyAsBoolean(
+                    properties,
+                    TableProperties.ENABLE_TABLE_EXPIRE,
+                    TableProperties.ENABLE_TABLE_EXPIRE_DEFAULT))
         .setSnapshotTTLMinutes(
             CompatiblePropertyUtil.propertyAsLong(
                 properties,
@@ -171,20 +175,22 @@ public class TableConfiguration {
                 TableProperties.CHANGE_DATA_TTL,
                 TableProperties.CHANGE_DATA_TTL_DEFAULT))
         .setCleanOrphanEnabled(
-            CompatiblePropertyUtil.propertyAsBoolean(
-                properties,
-                TableProperties.ENABLE_ORPHAN_CLEAN,
-                TableProperties.ENABLE_ORPHAN_CLEAN_DEFAULT))
+            gcEnabled
+                && CompatiblePropertyUtil.propertyAsBoolean(
+                    properties,
+                    TableProperties.ENABLE_ORPHAN_CLEAN,
+                    TableProperties.ENABLE_ORPHAN_CLEAN_DEFAULT))
         .setOrphanExistingMinutes(
             CompatiblePropertyUtil.propertyAsLong(
                 properties,
                 TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME,
                 TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT))
         .setDeleteDanglingDeleteFilesEnabled(
-            CompatiblePropertyUtil.propertyAsBoolean(
-                properties,
-                TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN,
-                TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT))
+            gcEnabled
+                && CompatiblePropertyUtil.propertyAsBoolean(
+                    properties,
+                    TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN,
+                    TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT))
         .setOptimizingConfig(OptimizingConfig.parseOptimizingConfig(properties))
         .setExpiringDataConfig(DataExpirationConfig.parse(properties))
         .setTagConfiguration(TagConfiguration.parse(properties));

@@ -491,6 +491,73 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assert.assertTrue(baseTable.io().exists(file3.path()));
   }
 
+  @Test
+  public void testChangeTableGcDisabled() {
+    Assume.assumeTrue(isKeyedTable());
+    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
+    testKeyedTable.updateProperties().set("gc.enabled", "false").commit();
+
+    insertChangeDataFiles(testKeyedTable, 1);
+    insertChangeDataFiles(testKeyedTable, 2);
+
+    Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
+
+    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
+    Mockito.when(tableRuntime.getTableIdentifier())
+        .thenReturn(
+            ServerTableIdentifier.of(
+                AmsUtil.toTableIdentifier(testKeyedTable.id()), getTestFormat()));
+    Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
+    Mockito.when(tableRuntime.getTableConfiguration())
+        .thenReturn(TableConfiguration.parseConfig(testKeyedTable.properties()));
+
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(testKeyedTable);
+    testKeyedTable.updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
+    tableMaintainer.expireSnapshots(tableRuntime);
+    Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
+
+    testKeyedTable.updateProperties().set("gc.enabled", "true").commit();
+    Mockito.when(tableRuntime.getTableConfiguration())
+        .thenReturn(TableConfiguration.parseConfig(testKeyedTable.properties()));
+    tableMaintainer.expireSnapshots(tableRuntime);
+    Assert.assertEquals(1, Iterables.size(testKeyedTable.changeTable().snapshots()));
+  }
+
+  @Test
+  public void testBaseTableGcDisabled() {
+    Assume.assumeFalse(isKeyedTable());
+    UnkeyedTable testUnkeyedTable = getArcticTable().asUnkeyedTable();
+    testUnkeyedTable.updateProperties().set("gc.enabled", "false").commit();
+
+    testUnkeyedTable.newAppend().commit();
+    testUnkeyedTable.newAppend().commit();
+
+    Assert.assertEquals(2, Iterables.size(testUnkeyedTable.snapshots()));
+
+    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
+    Mockito.when(tableRuntime.getTableIdentifier())
+        .thenReturn(
+            ServerTableIdentifier.of(
+                AmsUtil.toTableIdentifier(testUnkeyedTable.id()), getTestFormat()));
+    Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
+    Mockito.when(tableRuntime.getTableConfiguration())
+        .thenReturn(TableConfiguration.parseConfig(testUnkeyedTable.properties()));
+
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(testUnkeyedTable);
+    testUnkeyedTable
+        .updateProperties()
+        .set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0")
+        .commit();
+    tableMaintainer.expireSnapshots(tableRuntime);
+    Assert.assertEquals(2, Iterables.size(testUnkeyedTable.snapshots()));
+
+    testUnkeyedTable.updateProperties().set("gc.enabled", "true").commit();
+    Mockito.when(tableRuntime.getTableConfiguration())
+        .thenReturn(TableConfiguration.parseConfig(testUnkeyedTable.properties()));
+    tableMaintainer.expireSnapshots(tableRuntime);
+    Assert.assertEquals(1, Iterables.size(testUnkeyedTable.snapshots()));
+  }
+
   private long waitUntilAfter(long timestampMillis) {
     long current = System.currentTimeMillis();
     while (current <= timestampMillis) {

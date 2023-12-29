@@ -27,6 +27,10 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.server.dashboard.utils.AmsUtil;
+import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.server.table.TableConfiguration;
+import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.executor.ExecutorTestBase;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -47,6 +51,7 @@ import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.Mockito;
 
 import java.io.File;
 import java.io.IOException;
@@ -349,6 +354,69 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     Assert.assertTrue(unkeyedTable.io().exists(file1.path()));
     Assert.assertTrue(unkeyedTable.io().exists(file2.path()));
     Assert.assertTrue(unkeyedTable.io().exists(file3.path()));
+  }
+
+  @Test
+  public void testGcDisabled() throws IOException {
+    if (isKeyedTable()) {
+      writeAndCommitBaseAndChange(getArcticTable());
+    } else {
+      writeAndCommitBaseStore(getArcticTable());
+    }
+
+    UnkeyedTable baseTable =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().baseTable()
+            : getArcticTable().asUnkeyedTable();
+    baseTable
+        .updateProperties()
+        .set(TableProperties.ENABLE_ORPHAN_CLEAN, "true")
+        .set(TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME, "0")
+        .set("gc.enabled", "false")
+        .commit();
+
+    String baseOrphanFileDir =
+        baseTable.location() + File.separator + DATA_FOLDER_NAME + File.separator + "testLocation";
+    String baseOrphanFilePath = baseOrphanFileDir + File.separator + "orphan.parquet";
+    OutputFile baseOrphanDataFile = getArcticTable().io().newOutputFile(baseOrphanFilePath);
+    baseOrphanDataFile.createOrOverwrite().close();
+    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFileDir));
+    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
+
+    String changeOrphanFilePath =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().changeTable().location()
+                + File.separator
+                + DATA_FOLDER_NAME
+                + File.separator
+                + "orphan.parquet"
+            : "";
+    if (isKeyedTable()) {
+      OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(changeOrphanFilePath);
+      changeOrphanDataFile.createOrOverwrite().close();
+      Assert.assertTrue(getArcticTable().io().exists(changeOrphanFilePath));
+    }
+
+    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
+    Mockito.when(tableRuntime.getTableIdentifier())
+        .thenReturn(
+            ServerTableIdentifier.of(AmsUtil.toTableIdentifier(baseTable.id()), getTestFormat()));
+    Mockito.when(tableRuntime.getTableConfiguration())
+        .thenReturn(TableConfiguration.parseConfig(baseTable.properties()));
+
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getArcticTable());
+    maintainer.cleanOrphanFiles(tableRuntime);
+
+    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFileDir));
+    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
+
+    baseTable.updateProperties().set("gc.enabled", "true").commit();
+    Mockito.when(tableRuntime.getTableConfiguration())
+        .thenReturn(TableConfiguration.parseConfig(baseTable.properties()));
+    maintainer.cleanOrphanFiles(tableRuntime);
+
+    Assert.assertFalse(getArcticTable().io().exists(baseOrphanFileDir));
+    Assert.assertFalse(getArcticTable().io().exists(baseOrphanFilePath));
   }
 
   private StatisticsFile commitStatisticsFile(UnkeyedTable table, String fileLocation) {
