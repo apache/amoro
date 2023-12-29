@@ -146,4 +146,14 @@ public interface TableService extends CatalogService, TableManager {
    * @return block list
    */
   List<Blocker> getBlockers(TableIdentifier tableIdentifier);
+
+  DefaultTableRuntime getRuntime(ServerTableIdentifier tableIdentifier);
+
+  List<DefaultTableRuntime> listTableRuntimes();
+
+  void addTableWatcher(TableWatcher watcher);
+
+  default boolean contains(ServerTableIdentifier tableIdentifier) {
+    return getRuntime(tableIdentifier) != null;
+  }
 }

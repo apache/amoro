@@ -17,7 +17,10 @@ public class PendingInput {
   private long equalityDeleteBytes = 0L;
   private long currentSnapshotId;
   private long currentChangeSnapshotId;
-  private boolean needCompactDataFiles = false;
+  private long currentWatermark;
+  private long currentChangeWatermark;
+  private boolean needMinorOptimizing = false;
+  private boolean needMajorOptimizing = false;
 
   public PendingInput() {}
 
@@ -29,7 +32,8 @@ public class PendingInput {
       int positionalDeleteFileCount,
       long positionalDeleteBytes,
       long equalityDeleteBytes,
-      boolean needCompactDataFiles) {
+      boolean needMinorOptimizing,
+      boolean needMajorOptimizing) {
     this.partitions.addAll(partitions);
     this.dataFileCount = dataFileCount;
     this.dataFileSize = dataFileSize;
@@ -37,7 +41,8 @@ public class PendingInput {
     this.positionalDeleteFileCount = positionalDeleteFileCount;
     this.positionalDeleteBytes = positionalDeleteBytes;
     this.equalityDeleteBytes = equalityDeleteBytes;
-    this.needCompactDataFiles = needCompactDataFiles;
+    this.needMinorOptimizing = needMinorOptimizing;
+    this.needMajorOptimizing = needMajorOptimizing;
   }
 
   public int getInputFileCount() {
@@ -105,7 +110,35 @@ public class PendingInput {
     this.currentChangeSnapshotId = currentChangeSnapshotId;
   }
 
-  public boolean needCompactDataFiles() {
-    return needCompactDataFiles;
+  public boolean needMinorOptimizing() {
+    return needMinorOptimizing;
+  }
+
+  public boolean needMajorOptimizing() {
+    return needMajorOptimizing;
+  }
+
+  public int getFragmentFileCount() {
+    return 0;
+  }
+
+  public long getFragmentFileSize() {
+    return 0;
+  }
+
+  public int getSegmentFileCount() {
+    return 0;
+  }
+
+  public long getSegmentFileSize() {
+    return 0;
+  }
+
+  public long getWatermark() {
+    return currentWatermark;
+  }
+
+  public long getChangeWatermark() {
+    return currentChangeWatermark;
   }
 }

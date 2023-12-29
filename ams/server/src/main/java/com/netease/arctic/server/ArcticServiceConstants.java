@@ -7,6 +7,6 @@ public class ArcticServiceConstants {
   public static final long INVALID_SNAPSHOT_ID = -1L;
 
   public static final String SCHEDULING_POLICY_PROPERTY_NAME = "scheduling-policy";
-  public static final String SCHEDULING_POLICY_QUOTA = "quota";
-  public static final String SCHEDULING_POLICY_BALANCED = "balanced";
+  public static final String SCHEDULING_POLICY_QUOTA = "quota-first";
+  public static final String SCHEDULING_POLICY_WATERMARK = "watermark-first";
 }

@@ -18,7 +18,7 @@ public abstract class ManagedProcess<T extends TableState> extends TableProcess<
     super(state, tableRuntime);
   }
 
-  protected void handleAsyncTask(TaskRuntime<?, ?> taskRuntime, Runnable completedAction) {
+  private void handleAsyncTask(TaskRuntime<?, ?> taskRuntime, Runnable completedAction) {
     taskRuntime.whenCompleted(
         () -> {
           try {
@@ -36,6 +36,10 @@ public abstract class ManagedProcess<T extends TableState> extends TableProcess<
             }
           }
         });
+  }
+
+  protected void submitAsyncTask(TaskRuntime<?, ?> taskRuntime, Runnable completedAction) {
+    handleAsyncTask(taskRuntime, completedAction);
     submitTask(taskRuntime);
   }
 
@@ -43,9 +47,10 @@ public abstract class ManagedProcess<T extends TableState> extends TableProcess<
       TaskRuntime<?, ?> taskRuntime, Runnable completedAction) {
     Preconditions.checkState(taskRuntime.getStatus() == TaskRuntime.Status.FAILED);
     if (taskRuntime.getRetry() < tableRuntime.getMaxExecuteRetryCount()) {
-      taskRuntime.whenCompleted(completedAction);
+      handleAsyncTask(taskRuntime, completedAction);
       retry(taskRuntime);
     } else {
+      handleTaskFailed(taskRuntime);
       complete(taskRuntime.getFailReason());
     }
   }
@@ -59,4 +64,6 @@ public abstract class ManagedProcess<T extends TableState> extends TableProcess<
   protected abstract void retry(TaskRuntime<?, ?> taskRuntime);
 
   protected abstract void submitTask(TaskRuntime<?, ?> taskRuntime);
+
+  protected abstract void handleTaskFailed(TaskRuntime<?, ?> taskRuntime);
 }

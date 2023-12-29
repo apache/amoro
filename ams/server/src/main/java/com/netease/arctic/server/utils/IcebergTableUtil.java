@@ -21,12 +21,6 @@ package com.netease.arctic.server.utils;
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
-import com.netease.arctic.server.process.DefaultOptimizingState;
-import com.netease.arctic.server.table.BasicTableSnapshot;
-import com.netease.arctic.server.table.DefaultTableRuntime;
-import com.netease.arctic.server.table.KeyedTableSnapshot;
-import com.netease.arctic.server.table.TableSnapshot;
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
@@ -60,17 +54,6 @@ public class IcebergTableUtil {
       return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
     } else {
       return currentSnapshot.snapshotId();
-    }
-  }
-
-  public static TableSnapshot getSnapshot(
-      ArcticTable arcticTable, DefaultTableRuntime tableRuntime) {
-    DefaultOptimizingState optimizingState = tableRuntime.getDefaultOptimizingState();
-    if (arcticTable.isUnkeyedTable()) {
-      return new BasicTableSnapshot(optimizingState.getTargetSnapshotId());
-    } else {
-      return new KeyedTableSnapshot(
-          optimizingState.getTargetSnapshotId(), optimizingState.getTargetChangeSnapshotId());
     }
   }
 

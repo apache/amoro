@@ -58,6 +58,10 @@ public class DefaultOptimizingState extends OptimizingState {
     this.optimizingType = optimizingType;
   }
 
+  public boolean isPending() {
+    return getStatus() != ProcessStatus.RUNNING && getStage() == OptimizingStage.PENDING;
+  }
+
   public void release() {
     if (optimizingProcess != null) {
       optimizingProcess.close();

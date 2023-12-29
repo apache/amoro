@@ -60,11 +60,6 @@ public abstract class TableProcess<T extends TableState> implements AmoroProcess
     return status;
   }
 
-  @Override
-  public String getFailedReason() {
-    return failedReason;
-  }
-
   protected abstract void closeInternal();
 
   @Override

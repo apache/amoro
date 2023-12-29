@@ -34,6 +34,7 @@ import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.process.ArbitraryRunner;
 import com.netease.arctic.server.process.DefaultOptimizingState;
 import com.netease.arctic.server.process.OptimizingRunner;
+import com.netease.arctic.server.process.QuotaProvider;
 import com.netease.arctic.server.process.SingletonActionRunner;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -53,6 +54,7 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
       Collections.synchronizedMap(new HashMap<>());
   private final TableBlockerRuntime blockerRuntime;
   private volatile TableConfiguration tableConfiguration;
+  private volatile PendingInput pendingInput;
   private OptimizingRunner optimizingRunner;
 
   protected DefaultTableRuntime(
@@ -126,6 +128,31 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
                 action -> action, action -> arbitraryRunnerMap.get(action).getLastCompletedTime()));
   }
 
+  public long getLastTriggerTime(Action action) {
+    if (Action.isArbitrary(action)) {
+      return arbitraryRunnerMap.get(action).getLastTriggerTime();
+    } else if (action == Action.MINOR_OPTIMIZING) {
+      return optimizingRunner.getLastMinorTriggerTime();
+    } else if (action == Action.MAJOR_OPTIMIZING) {
+      return optimizingRunner.getLastMajorTriggerTime();
+    } else {
+      throw new IllegalArgumentException("Unsupported action: " + action);
+    }
+  }
+
+  public long getLastTriggerOptimizingTime() {
+    return Math.max(
+        optimizingRunner.getLastMinorTriggerTime(), optimizingRunner.getLastMajorTriggerTime());
+  }
+
+  public boolean needMinorOptimizing() {
+    return pendingInput.needMajorOptimizing() && optimizingRunner.isMinorAvailable();
+  }
+
+  public boolean needMajorOptimizing() {
+    return pendingInput.needMajorOptimizing() && optimizingRunner.isMajorAvailable();
+  }
+
   public TableBlockerRuntime getBlockerRuntime() {
     return blockerRuntime;
   }
@@ -136,6 +163,14 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
 
   public DefaultOptimizingState getMajorOptimizingState() {
     return optimizingRunner.getMajorOptimizingState();
+  }
+
+  public QuotaProvider getOptimizingQuota() {
+    return optimizingRunner.getQuotaProvider();
+  }
+
+  public PendingInput getPendingInput() {
+    return pendingInput;
   }
 
   @Override
@@ -159,26 +194,38 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
     doAs(TableMetaMapper.class, mapper -> mapper.deleteOptimizingRuntime(tableIdentifier.getId()));
   }
 
-  public void refresh(PendingInput pendingInput, Map<String, String> config) {
+  public void refresh(PendingInput pending, Map<String, String> config) {
     doAsTransaction(
         () -> {
-          // TODO
-          //          if (pendingInput != null) {
-          //            optimizingState.savePendingInput(pendingInput);
-          //          }
           TableConfiguration newConfig = TableConfigurations.parseConfig(config);
           if (!tableConfiguration.equals(newConfig)) {
-            doAs(
-                TableMetaMapper.class,
-                mapper ->
-                    mapper.updateTableConfiguration(tableIdentifier.getId(), tableConfiguration));
+            persistTableConfig(newConfig);
+            TableConfiguration oldConfig = tableConfiguration;
             tableConfiguration = newConfig;
+            tableManager.refresh(this, oldConfig);
+            if (pending != null) {
+              persistPendingInput(pending);
+              pendingInput = pending;
+              optimizingRunner.syncPending(pendingInput);
+            }
           }
         });
   }
 
   private void persistTableRuntime() {
     doAs(TableMetaMapper.class, mapper -> mapper.insertTableRuntime(this));
+  }
+
+  private void persistPendingInput(PendingInput pending) {
+    doAs(
+        TableMetaMapper.class,
+        mapper -> mapper.updatePendingInput(tableIdentifier.getId(), pending));
+  }
+
+  private void persistTableConfig(TableConfiguration tableConfig) {
+    doAs(
+        TableMetaMapper.class,
+        mapper -> mapper.updateTableConfiguration(tableIdentifier.getId(), tableConfig));
   }
 
   @Override

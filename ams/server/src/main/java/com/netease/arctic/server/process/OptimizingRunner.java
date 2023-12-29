@@ -2,8 +2,10 @@ package com.netease.arctic.server.process;
 
 import com.netease.arctic.ams.api.Action;
 import com.netease.arctic.ams.api.TableRuntime;
+import com.netease.arctic.ams.api.config.OptimizingConfig;
 import com.netease.arctic.ams.api.process.AmoroProcess;
 import com.netease.arctic.ams.api.process.OptimizingState;
+import com.netease.arctic.ams.api.process.PendingInput;
 import com.netease.arctic.ams.api.process.ProcessFactory;
 import com.netease.arctic.ams.api.process.ProcessStatus;
 import com.netease.arctic.server.persistence.OptimizingStatePersistency;
@@ -60,6 +62,22 @@ public class OptimizingRunner extends SingletonActionRunner<OptimizingState> {
 
   public AmoroProcess<OptimizingState> runMajorOptimizing() {
     return run();
+  }
+
+  public long getLastMinorTriggerTime() {
+    return minorOptimizingRunner.getLastTriggerTime();
+  }
+
+  public long getLastMinorCompletedTime() {
+    return minorOptimizingRunner.getLastCompletedTime();
+  }
+
+  public long getLastMajorTriggerTime() {
+    return getLastTriggerTime();
+  }
+
+  public long getLastMajorCompletedTime() {
+    return getLastCompletedTime();
   }
 
   @Override
@@ -130,17 +148,33 @@ public class OptimizingRunner extends SingletonActionRunner<OptimizingState> {
     }
   }
 
-  @Override
-  protected void handleSubmitted(AmoroProcess<OptimizingState> process) {
-    if (defaultProcess == process && process instanceof QuotaConsumer) {
-      quotaProvider.addConsumer((QuotaConsumer) process);
-    }
-  }
-
   private List<OptimizingStatePersistency> listStatePersistencies() {
     return getAs(
         TableProcessMapper.class,
         mapper -> mapper.selectOptimizingPersistencies(tableRuntime.getTableIdentifier().getId()));
+  }
+
+  public void syncPending(PendingInput pendingInput) {
+    if (pendingInput.needMinorOptimizing()) {
+      minorOptimizingState.savePending(
+          pendingInput.getCurrentChangeSnapshotId(), pendingInput.getChangeWatermark());
+    }
+    if (pendingInput.needMajorOptimizing()) {
+      majorOptimizingState.savePending(
+          pendingInput.getCurrentSnapshotId(), pendingInput.getWatermark());
+    }
+  }
+
+  public boolean isMinorAvailable() {
+    OptimizingConfig config = tableRuntime.getTableConfiguration().getOptimizingConfig();
+    return minorOptimizingState.isPending()
+        && !minorOptimizingRunner.hasRunningProcess()
+        && System.currentTimeMillis() - minorOptimizingRunner.getLastTriggerTime()
+            > config.getMinorLeastInterval();
+  }
+
+  public boolean isMajorAvailable() {
+    return majorOptimizingState.isPending() && !hasRunningProcess();
   }
 
   private class MinorOptimizingRunner extends SingletonActionRunner<OptimizingState> {
@@ -153,11 +187,6 @@ public class OptimizingRunner extends SingletonActionRunner<OptimizingState> {
 
     @Override
     protected void recoverProcesses() {}
-
-    @Override
-    protected void handleSubmitted(AmoroProcess<OptimizingState> process) {
-      quotaProvider.addConsumer((QuotaConsumer) process);
-    }
 
     @Override
     protected void handleCompleted(AmoroProcess<OptimizingState> process) {

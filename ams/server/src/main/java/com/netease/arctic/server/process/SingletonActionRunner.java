@@ -44,11 +44,13 @@ public abstract class SingletonActionRunner<T extends ProcessState> extends Pers
     }
   }
 
+  public boolean hasRunningProcess() {
+    return defaultProcess != null || !externalProcesses.isEmpty();
+  }
+
   protected abstract void recoverProcesses();
 
   protected abstract void handleCompleted(AmoroProcess<T> process);
-
-  protected abstract void handleSubmitted(AmoroProcess<T> process);
 
   public AmoroProcess<T> run() {
     // TODO: throw a reasonable exception
@@ -102,7 +104,6 @@ public abstract class SingletonActionRunner<T extends ProcessState> extends Pers
             externalProcesses.put(process.getId(), process);
           }
           process.submit();
-          handleSubmitted(process);
         });
   }
 

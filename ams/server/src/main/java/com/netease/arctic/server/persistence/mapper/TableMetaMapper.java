@@ -2,7 +2,7 @@ package com.netease.arctic.server.persistence.mapper;
 
 import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.config.TableConfiguration;
-import com.netease.arctic.ams.api.process.OptimizingStage;
+import com.netease.arctic.ams.api.process.PendingInput;
 import com.netease.arctic.server.persistence.TableRuntimePersistency;
 import com.netease.arctic.server.persistence.converter.JsonObjectConverter;
 import com.netease.arctic.server.persistence.converter.Long2TsConverter;
@@ -294,46 +294,6 @@ public interface TableMetaMapper {
   })
   List<ServerTableIdentifier> selectAllTableIdentifiers();
 
-  @Update(
-      "UPDATE table_runtime SET"
-          + " optimizing_status = #{stage},"
-          + " optimizing_status_start_time = #{startTime},"
-          + " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
-          + " optimizing_process_id = #{processId},"
-          + " WHERE table_id = #{tableId}")
-  void updateTableStage(
-      @Param("tableId") long tableId,
-      @Param("processId") long processId,
-      @Param("stage") OptimizingStage stage,
-      @Param("startTime") long currentStatusStartTime);
-
-  @Update(
-      "UPDATE table_runtime SET"
-          + " last_optimized_snapshotId = #{lastOptimizedSnapshotId},"
-          + " last_optimized_change_snapshotId = #{lastOptimizedChangeSnapshotId},"
-          + " last_major_optimizing_time = #{lastMajorOptimizingTime, "
-          + " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
-          + " last_minor_optimizing_time = #{lastMinorOptimizingTime,"
-          + " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
-          + " last_full_optimizing_time = #{lastFullOptimizingTime,"
-          + " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
-          + " optimizing_status = #{stage},"
-          + " optimizing_status_start_time = #{currentStatusStartTime},"
-          + " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
-          + " optimizing_process_id = #{processId},"
-          + " pending_input = null"
-          + " WHERE table_id = #{tableId}")
-  void updateTableOptimizingSuccess(
-      @Param("tableId") long tableId,
-      @Param("processId") long processId,
-      @Param("stage") OptimizingStage stage,
-      @Param("lastOptimizedSnapshotId") long lastOptimizedSnapshotId,
-      @Param("lastOptimizedChangeSnapshotId") long lastOptimizedChangeSnapshotId,
-      @Param("lastMinorOptimizingTime") long lastMinorOptimizingTime,
-      @Param("lastMajorOptimizingTime") long lastMajorOptimizingTime,
-      @Param("lastFullOptimizingTime") long lastFullOptimizingTime,
-      @Param("currentStatusStartTime") long currentStatusStartTime);
-
   @Delete("DELETE FROM table_runtime WHERE table_id = #{tableId}")
   void deleteOptimizingRuntime(@Param("tableId") long tableId);
 
@@ -368,7 +328,17 @@ public interface TableMetaMapper {
           + " table_config = #{tableConfiguration,"
           + " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter},"
           + " WHERE table_id = #{tableId}")
-  void updateTableConfiguration(long tableId, TableConfiguration tableConfiguration);
+  void updateTableConfiguration(
+      @Param("tableId") long tableId,
+      @Param("tableConfiguration") TableConfiguration tableConfiguration);
+
+  @Update(
+      "UPDATE table_runtime SET"
+          + " pending_input = #{pendingInput,"
+          + " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter},"
+          + " WHERE table_id = #{tableId}")
+  void updatePendingInput(
+      @Param("tableId") long tableId, @Param("pendingInput") PendingInput pendingInput);
 
   @Select(
       "SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, i.format, a.current_snapshot_id, a"

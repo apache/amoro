@@ -22,7 +22,7 @@ import com.netease.arctic.ams.api.Action;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.TableRuntime;
-import com.netease.arctic.ams.api.process.OptimizingStage;
+import com.netease.arctic.ams.api.config.OptimizingConfig;
 import com.netease.arctic.ams.api.process.TableProcess;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.process.DefaultOptimizingProcess;
@@ -38,20 +38,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class OptimizingScheduler extends TaskScheduler<DefaultOptimizingState> {
 
-  private static final Map<String, Comparator<DefaultTableRuntime>> OPTIMIZING_POLICIES =
-      ImmutableMap.of(
-          ArcticServiceConstants.SCHEDULING_POLICY_QUOTA, new QuotaOccupySorter(),
-          ArcticServiceConstants.SCHEDULING_POLICY_BALANCED, new BalancedSorter());
+  private static final Map<String, Comparator<Pair<DefaultTableRuntime, Action>>>
+      OPTIMIZING_POLICIES =
+          ImmutableMap.of(
+              ArcticServiceConstants.SCHEDULING_POLICY_QUOTA, new QuotaOccupySorter(),
+              ArcticServiceConstants.SCHEDULING_POLICY_WATERMARK, new MajorWatermarkSorter());
 
   private final int maxPlanningParallelism;
   private final Map<ServerTableIdentifier, DefaultTableRuntime> tableRuntimeMap = new HashMap<>();
-  private final Comparator<DefaultTableRuntime> tableSorter;
+  private final Comparator<Pair<DefaultTableRuntime, Action>> tableSorter;
   private double allTargetQuota = 0;
 
   public OptimizingScheduler(ResourceGroup optimizerGroup, int maxPlanningParallelism) {
@@ -127,6 +127,25 @@ public class OptimizingScheduler extends TaskScheduler<DefaultOptimizingState> {
   }
 
   @Override
+  public void setAvailableQuota(long quota) {
+    schedulerLock.lock();
+    try {
+      tableRuntimeMap
+          .values()
+          .forEach(
+              tableRuntime -> {
+                OptimizingConfig config =
+                    tableRuntime.getTableConfiguration().getOptimizingConfig();
+                tableRuntime
+                    .getOptimizingQuota()
+                    .setQuotaTarget(config.getTargetQuota() * quota / allTargetQuota);
+              });
+    } finally {
+      schedulerLock.unlock();
+    }
+  }
+
+  @Override
   protected ManagedProcess<DefaultOptimizingState> createProcess(
       DefaultTableRuntime tableRuntime, Action action) {
     Preconditions.checkState(
@@ -164,82 +183,74 @@ public class OptimizingScheduler extends TaskScheduler<DefaultOptimizingState> {
             .filter(state -> state.getStage().isOptimizing())
             .mapToInt(state -> 1)
             .sum();
-    DefaultTableRuntime targetTable =
-        planningCount < maxPlanningParallelism ? scheduleInternal() : null;
-    return targetTable != null ? Pair.of(scheduleInternal(), Action.OPTIMIZING) : null;
+    return planningCount < maxPlanningParallelism ? scheduleInternal() : null;
   }
 
-  public DefaultTableRuntime scheduleInternal() {
-    Set<DefaultTableRuntime> skipSet = fillSkipSet();
+  private Pair<DefaultTableRuntime, Action> scheduleInternal() {
     return tableRuntimeMap.values().stream()
-        .filter(tableRuntime -> !skipSet.contains(tableRuntime))
+        .map(tableRuntime -> Pair.of(tableRuntime, determineAction(tableRuntime)))
+        .filter(pair -> pair.getRight() != null && isReady(pair.getLeft()))
         .min(tableSorter)
         .orElse(null);
   }
 
-  @Override
-  public void setAvailableQuota(long availableQuota) {
-    schedulerLock.lock();
-    try {
-      tableRuntimeMap
-          .values()
-          .forEach(
-              tableRuntime ->
-                  tableRuntime.setTargetQuota(
-                      tableRuntime.getTableConfiguration().getOptimizingConfig().getTargetQuota()
-                          * availableQuota
-                          / allTargetQuota));
-    } finally {
-      schedulerLock.unlock();
+  private Action determineAction(DefaultTableRuntime tableRuntime) {
+    if (tableRuntime.needMinorOptimizing()) {
+      return Action.MINOR_OPTIMIZING;
+    } else if (tableRuntime.needMajorOptimizing()) {
+      return Action.MAJOR_OPTIMIZING;
+    } else {
+      return null;
     }
   }
 
-  private Set<DefaultTableRuntime> fillSkipSet() {
-    long currentTime = System.currentTimeMillis();
-    return tableRuntimeMap.values().stream()
-        .filter(
-            tableRuntime ->
-                !isTablePending(tableRuntime)
-                    || tableRuntime.getBlockerRuntime().isBlocked(BlockableOperation.OPTIMIZE)
-                    || currentTime - tableRuntime.getDefaultOptimizingState().getStartTime()
-                        < tableRuntime
-                            .getTableConfiguration()
-                            .getOptimizingConfig()
-                            .getMinPlanInterval())
-        .collect(Collectors.toSet());
+  private boolean isReady(DefaultTableRuntime tableRuntime) {
+    return !tableRuntime.getBlockerRuntime().isBlocked(BlockableOperation.OPTIMIZE)
+        && System.currentTimeMillis() - tableRuntime.getLastTriggerOptimizingTime()
+            < tableRuntime.getTableConfiguration().getOptimizingConfig().getMinPlanInterval();
   }
 
-  private boolean isTablePending(DefaultTableRuntime tableRuntime) {
-    DefaultOptimizingState state = tableRuntime.getDefaultOptimizingState();
-    return state.getStage() == OptimizingStage.PENDING
-        && (state.getTargetSnapshotId() != state.getLastOptimizedSnapshotId()
-            || state.getLastOptimizedChangeSnapshotId() != state.getTargetChangeSnapshotId());
-  }
-
-  private static class QuotaOccupySorter implements Comparator<DefaultTableRuntime> {
+  private static class QuotaOccupySorter implements Comparator<Pair<DefaultTableRuntime, Action>> {
 
     @Override
-    public int compare(DefaultTableRuntime one, DefaultTableRuntime another) {
-      return Double.compare(
-          one.getDefaultOptimizingState().getQuotaOccupy(),
-          another.getDefaultOptimizingState().getQuotaOccupy());
+    public int compare(Pair<DefaultTableRuntime, Action> p1, Pair<DefaultTableRuntime, Action> p2) {
+      double quota1 = p1.getLeft().getOptimizingQuota().getQuotaOccupy();
+      double quota2 = p2.getLeft().getOptimizingQuota().getQuotaOccupy();
+      if (quota1 == quota2) {
+        return Long.compare(
+            p1.getLeft().getOptimizingQuota().getQuotaRuntime(),
+            p2.getLeft().getOptimizingQuota().getQuotaRuntime());
+      } else {
+        return Double.compare(quota1, quota2);
+      }
     }
   }
 
-  private static class BalancedSorter implements Comparator<DefaultTableRuntime> {
+  private static class MajorWatermarkSorter
+      implements Comparator<Pair<DefaultTableRuntime, Action>> {
+
+    private final Comparator<Pair<DefaultTableRuntime, Action>> quotaSorter =
+        new QuotaOccupySorter();
+
     @Override
-    public int compare(DefaultTableRuntime one, DefaultTableRuntime another) {
-      return Long.compare(
-          Math.max(
-              one.getDefaultOptimizingState().getLastFullOptimizingTime(),
-              Math.max(
-                  one.getDefaultOptimizingState().getLastMinorOptimizingTime(),
-                  one.getDefaultOptimizingState().getLastMajorOptimizingTime())),
-          Math.max(
-              another.getDefaultOptimizingState().getLastFullOptimizingTime(),
-              Math.max(
-                  another.getDefaultOptimizingState().getLastMinorOptimizingTime(),
-                  another.getDefaultOptimizingState().getLastMajorOptimizingTime())));
+    public int compare(Pair<DefaultTableRuntime, Action> p1, Pair<DefaultTableRuntime, Action> p2) {
+      if (p1.getRight() == p2.getRight()) {
+        if (p1.getRight() == Action.MINOR_OPTIMIZING) {
+          return Long.compare(
+              p1.getLeft().getMinorOptimizingState().getWatermark(),
+              p2.getLeft().getMinorOptimizingState().getWatermark());
+        } else {
+          return quotaSorter.compare(p1, p2);
+        }
+      } else {
+        Pair<DefaultTableRuntime, Action> minorPair =
+            p1.getRight() == Action.MINOR_OPTIMIZING ? p1 : p2;
+        if (minorPair.getLeft().getOptimizingQuota().getQuotaOccupy() < 1) {
+          return minorPair == p1 ? -1 : 1;
+        } else {
+          return quotaSorter.compare(p1, p2);
+        }
+      }
     }
   }
 }

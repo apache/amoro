@@ -38,7 +38,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class TaskRuntime<I, O> extends StatedPersistentBase {
+public class TaskRuntime<I, O> extends StatedPersistentBase implements QuotaConsumer {
 
   @StateField private Status status = Status.PLANNED;
   private final TaskStatusMachine statusMachine = new TaskStatusMachine();

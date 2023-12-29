@@ -1,9 +1,11 @@
 package com.netease.arctic.server.process;
 
+import com.netease.arctic.ams.api.process.ProcessState;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.mapper.QuotaMapper;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class QuotaProvider extends StatedPersistentBase {
@@ -23,18 +25,18 @@ public class QuotaProvider extends StatedPersistentBase {
     doAs(QuotaMapper.class, mapper -> mapper.insertQuota(this));
   }
 
-  protected void addConsumer(QuotaConsumer consumer) {
+  protected void addConsumer(ProcessState state, Collection<? extends QuotaConsumer> consumerList) {
     invokeConsistency(
         () -> {
           if (reset) {
             consumers.clear();
             quotaRuntime = 0;
-            startProcessId = consumer.getId();
-            startTime = consumer.getStartTime();
+            startProcessId = state.getId();
+            startTime = state.getStartTime();
             reset = false;
+            doAs(QuotaMapper.class, mapper -> mapper.updateQuota(this));
           }
-          doAs(QuotaMapper.class, mapper -> mapper.insertQuota(this));
-          consumers.add(consumer);
+          consumers.addAll(consumerList);
         });
   }
 
@@ -43,7 +45,7 @@ public class QuotaProvider extends StatedPersistentBase {
    *
    * @param quotaTarget
    */
-  protected void setQuotaTarget(double quotaTarget) {
+  public void setQuotaTarget(double quotaTarget) {
     stateLock.lock();
     try {
       this.quotaTarget = quotaTarget;
