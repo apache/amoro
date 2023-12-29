@@ -121,6 +121,6 @@ public class FlinkArcticDataReader extends AbstractAdaptHiveUnkeyedDataReader<Ro
   @Override
   public CloseableIterator<RowData> open(FileScanTask fileScanTask) {
     ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask) fileScanTask;
-    return readData(arcticFileScanTask);
+    return fileIO.doAs(() -> readData(arcticFileScanTask));
   }
 }
