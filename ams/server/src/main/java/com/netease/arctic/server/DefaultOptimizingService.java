@@ -59,7 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
@@ -80,12 +79,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
     implements OptimizingService.Iface, OptimizerManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultOptimizingService.class);
-  private static final Set<Action> MAINTAINING_ACTIONS =
-      Sets.newHashSet(
-          Action.REFRESH_SNAPSHOT,
-          Action.EXPIRE_SNAPSHOTS,
-          Action.CLEAN_ORPHANED_FILES,
-          Action.HIVE_COMMIT_SYNC);
 
   private final long optimizerTouchTimeout;
   private final long taskAckTimeout;
@@ -115,20 +108,21 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizerGroups.forEach(
         group -> {
           String groupName = group.getName();
-          if (group.getActions().contains(Action.OPTIMIZING)) {
+          if (group.getActions().contains(Action.MINOR_OPTIMIZING)
+              || group.getActions().contains(Action.MAJOR_OPTIMIZING)) {
             OptimizingScheduler optimizingScheduler =
                 new OptimizingScheduler(group, maxPlanningParallelism);
             tableRuntimeList.stream()
                 .filter(table -> table.getOptimizerGroup().equals(groupName))
-                .forEach(table -> table.register(optimizingScheduler));
-          } else if (!Sets.intersection(group.getActions(), MAINTAINING_ACTIONS).isEmpty()) {
+                .forEach(table -> table.register(optimizingScheduler, true));
+          } else if (!Sets.intersection(group.getActions(), Action.ARBITRARY_ACTIONS).isEmpty()) {
             Preconditions.checkState(
                 maintainingScheduler == null,
                 "There should be only one group for maintaining actions fow now");
             maintainingScheduler = new MaintainingScheduler(group);
             schedulersByGroup.put(groupName, maintainingScheduler);
             tableRuntimeList.forEach(
-                table -> table.register(group.getActions(), maintainingScheduler));
+                table -> table.register(group.getActions(), maintainingScheduler, true));
           }
         });
     optimizers.forEach(this::registerOptimizer);
@@ -229,11 +223,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
    * @return OptimizeQueueItem
    */
   private TaskScheduler<?> getSchedulerByGroup(String optimizerGroup) {
-    return getOptionalQueueByGroup(optimizerGroup)
+    return getOptionalSchedulerByGroup(optimizerGroup)
         .orElseThrow(() -> new ObjectNotExistsException("Optimizer group " + optimizerGroup));
   }
 
-  private Optional<TaskScheduler<?>> getOptionalQueueByGroup(String optimizerGroup) {
+  private Optional<TaskScheduler<?>> getOptionalSchedulerByGroup(String optimizerGroup) {
     Preconditions.checkArgument(optimizerGroup != null, "optimizerGroup can not be null");
     return Optional.ofNullable(schedulersByGroup.get(optimizerGroup));
   }
@@ -384,9 +378,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
     public void tableChanged(DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
       String originalGroup = originalConfig.getOptimizingConfig().getOptimizerGroup();
       if (!tableRuntime.getOptimizerGroup().equals(originalGroup)) {
-        getOptionalQueueByGroup(originalGroup).ifPresent(q -> q.releaseTable(tableRuntime));
+        getOptionalSchedulerByGroup(originalGroup).ifPresent(q -> q.releaseTable(tableRuntime));
       }
-      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup())
+      getOptionalSchedulerByGroup(tableRuntime.getOptimizerGroup())
           .ifPresent(q -> q.refreshTable(tableRuntime));
     }
 
@@ -397,14 +391,23 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     public void tableAdded(DefaultTableRuntime tableRuntime, AmoroTable<?> table) {
-      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup())
-          .ifPresent(q -> q.refreshTable(tableRuntime));
+      getOptionalSchedulerByGroup(tableRuntime.getOptimizerGroup())
+          .ifPresent(
+              scheduler -> {
+                if (maintainingScheduler != null) {
+                  tableRuntime.register(Action.ARBITRARY_ACTIONS, maintainingScheduler, false);
+                }
+                if (scheduler instanceof OptimizingScheduler) {
+                  tableRuntime.register(((OptimizingScheduler) scheduler), false);
+                }
+                scheduler.refreshTable(tableRuntime);
+              });
     }
 
     @Override
     public void tableRemoved(DefaultTableRuntime tableRuntime) {
-      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup())
-          .ifPresent(queue -> queue.releaseTable(tableRuntime));
+      getOptionalSchedulerByGroup(tableRuntime.getOptimizerGroup())
+          .ifPresent(scheduler -> scheduler.releaseTable(tableRuntime));
     }
   }
 

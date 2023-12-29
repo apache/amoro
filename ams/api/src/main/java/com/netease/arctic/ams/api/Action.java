@@ -34,7 +34,7 @@ public enum Action {
   CLEAN_ORPHANED_FILES("clean_orphaned", 12),
   HIVE_COMMIT_SYNC("sync_hive", 13);
 
-  private static final Set<Action> ARBITRARY_ACTIONS =
+  public static final Set<Action> ARBITRARY_ACTIONS =
       Collections.unmodifiableSet(
           Sets.newHashSet(
               REFRESH_SNAPSHOT, EXPIRE_SNAPSHOTS, CLEAN_ORPHANED_FILES, HIVE_COMMIT_SYNC));
