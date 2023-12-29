@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.netease.arctic.server.ArcticManagementConf.TERMINAL_LOCAL_CORES;
+
 public class LocalSessionFactory implements TerminalSessionFactory {
 
   static final Set<String> STATIC_SPARK_CONF =
@@ -106,7 +108,8 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   protected synchronized SparkSession lazyInitContext() {
     Preconditions.checkNotNull(this.conf);
     if (context == null) {
-      SparkConf sparkconf = new SparkConf().setAppName("spark-local-context").setMaster("local");
+      SparkConf sparkconf = new SparkConf().setAppName("spark-local-context");
+      sparkconf.setMaster("local[" + conf.getInteger(TERMINAL_LOCAL_CORES) + "]");
       sparkconf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
       sparkconf.set("spark.executor.heartbeatInterval", "100s");
       sparkconf.set("spark.network.timeout", "200s");
