@@ -314,10 +314,10 @@ public class ArcticManagementConf {
           .withDescription("session timeout in minute");
 
   public static final ConfigOption<Integer> TERMINAL_LOCAL_CORES =
-    ConfigOptions.key("terminal.local.cores")
-      .intType()
-      .defaultValue(1)
-      .withDescription("cores for local spark terminal");
+      ConfigOptions.key("terminal.local.cores")
+          .intType()
+          .defaultValue(1)
+          .withDescription("cores for local spark terminal");
 
   /** configs of data expiration */
   public static final ConfigOption<Boolean> DATA_EXPIRATION_ENABLED =

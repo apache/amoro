@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.terminal.local;
 
+import static com.netease.arctic.server.ArcticManagementConf.TERMINAL_LOCAL_CORES;
+
 import com.netease.arctic.server.terminal.SparkContextUtil;
 import com.netease.arctic.server.terminal.TerminalSession;
 import com.netease.arctic.server.terminal.TerminalSessionFactory;
@@ -35,8 +37,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static com.netease.arctic.server.ArcticManagementConf.TERMINAL_LOCAL_CORES;
 
 public class LocalSessionFactory implements TerminalSessionFactory {
 
