@@ -115,6 +115,6 @@ public abstract class AbstractAdaptHiveUnkeyedDataReader<T> extends AbstractUnke
       builder.withNameMapping(NameMappingParser.fromJson(nameMapping));
     }
 
-    return builder.build();
+    return fileIO.doAs(builder::build);
   }
 }

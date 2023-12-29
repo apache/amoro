@@ -114,7 +114,7 @@ public abstract class BaseArcticOptimizingDataReader<T> {
                             newProjectedSchema,
                             DataReaderCommon.getIdToConstant(
                                 fileScanTask, newProjectedSchema, convertConstant)))));
-    return dataIterable.iterator();
+    return fileIO.doAs(dataIterable::iterator);
   }
 
   public CloseableIterator<T> readDeletedData(KeyedTableScanTask keyedTableScanTask) {
@@ -150,7 +150,7 @@ public abstract class BaseArcticOptimizingDataReader<T> {
                               newProjectedSchema,
                               DataReaderCommon.getIdToConstant(
                                   fileScanTask, newProjectedSchema, convertConstant)))));
-      return dataIterable.iterator();
+      return fileIO.doAs(dataIterable::iterator);
     } else {
       return CloseableIterator.empty();
     }

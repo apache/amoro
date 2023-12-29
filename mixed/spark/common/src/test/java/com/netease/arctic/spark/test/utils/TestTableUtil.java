@@ -268,8 +268,7 @@ public class TestTableUtil {
                   .tasks()
                   .forEach(
                       scTask -> {
-                        try (CloseableIterator<Record> records =
-                            reader.readData(scTask).iterator()) {
+                        try (CloseableIterator<Record> records = reader.readData(scTask)) {
                           while (records.hasNext()) {
                             result.add(records.next());
                           }
@@ -405,8 +404,7 @@ public class TestTableUtil {
                   .tasks()
                   .forEach(
                       scTask -> {
-                        try (CloseableIterator<Record> records =
-                            reader.readData(scTask).iterator()) {
+                        try (CloseableIterator<Record> records = reader.readData(scTask)) {
                           while (records.hasNext()) {
                             result.add(records.next());
                           }

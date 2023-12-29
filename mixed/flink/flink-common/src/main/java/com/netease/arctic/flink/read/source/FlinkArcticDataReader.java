@@ -33,7 +33,6 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.RowDataWrapper;
 import org.apache.iceberg.flink.data.FlinkOrcReader;
-import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.orc.OrcRowReader;
 import org.apache.iceberg.parquet.ParquetValueReader;
@@ -122,7 +121,6 @@ public class FlinkArcticDataReader extends AbstractAdaptHiveUnkeyedDataReader<Ro
   @Override
   public CloseableIterator<RowData> open(FileScanTask fileScanTask) {
     ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask) fileScanTask;
-    CloseableIterable<RowData> rowDataIterable = readData(arcticFileScanTask);
-    return fileIO.doAs(rowDataIterable::iterator);
+    return readData(arcticFileScanTask);
   }
 }

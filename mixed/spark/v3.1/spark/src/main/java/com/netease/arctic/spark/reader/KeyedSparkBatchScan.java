@@ -193,20 +193,26 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
     }
 
     @Override
-    public boolean next() throws IOException {
-      while (true) {
-        if (currentIterator.hasNext()) {
-          this.current = currentIterator.next();
-          return true;
-        } else if (scanTasks.hasNext()) {
-          this.currentIterator.close();
-          this.currentScanTask = scanTasks.next();
-          this.currentIterator = reader.readData(this.currentScanTask);
-        } else {
-          this.currentIterator.close();
-          return false;
-        }
-      }
+    public boolean next() {
+      reader
+          .getArcticFileIo()
+          .doAs(
+              () -> {
+                while (true) {
+                  if (currentIterator.hasNext()) {
+                    this.current = currentIterator.next();
+                    return true;
+                  } else if (scanTasks.hasNext()) {
+                    this.currentIterator.close();
+                    this.currentScanTask = scanTasks.next();
+                    this.currentIterator = reader.readData(this.currentScanTask);
+                  } else {
+                    this.currentIterator.close();
+                    return false;
+                  }
+                }
+              });
+      return false;
     }
 
     @Override

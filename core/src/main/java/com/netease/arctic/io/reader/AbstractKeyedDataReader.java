@@ -171,6 +171,10 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
     return dataIterable.iterator();
   }
 
+  public ArcticFileIO getArcticFileIo() {
+    return fileIO;
+  }
+
   // TODO Return deleted record produced by equality delete file only now, should refactor the
   // reader to return all
   // deleted records.

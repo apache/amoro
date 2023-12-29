@@ -30,7 +30,6 @@ import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 
 import java.io.IOException;
@@ -118,11 +117,11 @@ public class DataReader {
       completableFutures.add(
           CompletableFuture.supplyAsync(
               () -> {
-                CloseableIterable<Record> closeableIterable = dataReader.readData(fileScanTask);
+                CloseableIterator<Record> closeableIterator = dataReader.readData(fileScanTask);
                 List<Record> list = new ArrayList<>();
-                Iterables.addAll(list, closeableIterable);
+                Iterators.addAll(list, closeableIterator);
                 try {
-                  closeableIterable.close();
+                  closeableIterator.close();
                 } catch (IOException e) {
                   throw new RuntimeException(e);
                 }

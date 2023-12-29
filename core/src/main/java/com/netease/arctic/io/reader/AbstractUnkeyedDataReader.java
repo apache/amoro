@@ -30,6 +30,7 @@ import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.orc.ORC;
@@ -135,7 +136,7 @@ public abstract class AbstractUnkeyedDataReader<T> {
     }
   }
 
-  public CloseableIterable<T> readData(FileScanTask task) {
+  public CloseableIterator<T> readData(FileScanTask task) {
 
     Map<Integer, ?> idToConstant =
         DataReaderCommon.getIdToConstant(task, projectedSchema, convertConstant);
@@ -147,10 +148,14 @@ public abstract class AbstractUnkeyedDataReader<T> {
         deleteFilter.filter(newIterable(task, deleteFilter.requiredSchema(), idToConstant));
 
     if (dataNodeFilter != null) {
-      return dataNodeFilter.filter(iterable);
+      return dataNodeFilter.filter(iterable).iterator();
     }
 
-    return iterable;
+    return iterable.iterator();
+  }
+
+  public ArcticFileIO getArcticFileIo() {
+    return fileIO;
   }
 
   private CloseableIterable<T> newIterable(
