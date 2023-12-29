@@ -86,7 +86,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeMount, reactive, toRefs } from 'vue'
+import { defineComponent, onBeforeMount, reactive, toRefs, computed } from 'vue'
 import {
   // PlusOutlined,
   SearchOutlined,
@@ -144,6 +144,24 @@ export default defineComponent({
     const storageTableKey = 'easylake-menu-catalog-db-table'
     const storageCataDBTable = JSON.parse(localStorage.getItem(storageTableKey) || '{}')
 
+    const filteredDatabases = computed(() => {
+      if (!state.allDatabaseListLoaded) {
+        return []
+      }
+      return state.allDatabaseListLoaded.filter((ele) => {
+        return ele.label.includes(state.DBSearchInput)
+      })
+    })
+
+    const filteredTables = computed(() => {
+      if (!state.allTableListLoaded) {
+        return []
+      }
+      return state.allTableListLoaded.filter((ele) => {
+        return ele.label.includes(state.tableSearchInput)
+      })
+    })
+
     const placeholder = reactive(usePlaceholder())
 
     const handleSearch = (type: string) => {
@@ -158,17 +176,6 @@ export default defineComponent({
         getSearchDBList()
       }
     }
-    const databases = computed(() => {
-      return state.allDatabaseListLoaded.filter((ele) => {
-        return ele.label.includes(state.DBSearchInput)
-      })
-    })
-
-    const tables = computed(() => {
-      return state.allTableListLoaded.filter((ele) => {
-        return ele.label.includes(state.tableSearchInput)
-      })
-    })
 
     const getSearchTableList = debounce(() => {
       getAllTableList()
@@ -264,7 +271,7 @@ export default defineComponent({
         return
       }
       if (state.allDatabaseListLoaded.length) {
-        state.databaseList = databases
+        state.databaseList = filteredDatabases
         return
       }
 
@@ -296,7 +303,7 @@ export default defineComponent({
         return
       }
       if (state.allTableListLoaded.length) {
-        state.tableList = tables
+        state.tableList = filteredTables
         return
       }
 
