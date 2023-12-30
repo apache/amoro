@@ -39,17 +39,14 @@ public class SchemaUtil {
   }
 
   /**
-   * Convert an Iceberg Schema {@link Schema} to a {@link Schema} based on the given schema.
+   * * Convert an Iceberg Schema {@link Schema} to a {@link Schema} based on the given schema. * *
    *
-   * <p>This fill-up does not assign new ids; it uses ids from the base schema.
+   * <p>This fill-up does not assign new ids; it uses ids from the base schema. * *
    *
    * <p>If the fromSchema does contain the identifierFields of the based schema, it will fill-up the
-   * identifierFields to a new schema.
-   *
-   * @param baseSchema a Schema on which loading is based
-   * @param fromSchema a Schema on which compared to
-   * @return a new Schema on which contain the identifier fields of the base Schema and column
-   *     fields of the fromSchema
+   * * identifierFields to a new schema. * * @param baseSchema a Schema on which loading is based
+   * * @param fromSchema a Schema on which compared to * @return a new Schema on which contain the
+   * identifier fields of the base Schema and column * fields of the fromSchema
    */
   public static Schema fillUpIdentifierFields(
       Schema baseSchema, Schema fromSchema, PrimaryKeySpec primaryKeySpec) {
@@ -60,36 +57,42 @@ public class SchemaUtil {
     primaryKeySpec.fields().stream()
         .map(PrimaryKeySpec.PrimaryKeyField::fieldName)
         .forEach(p -> identifierFieldIds.add(baseSchema.findField(p).fieldId()));
-
     identifierFieldIds.forEach(
         fieldId -> {
           if (struct.field(fieldId) == null) {
             fields.add(baseSchema.findField(fieldId));
           }
         });
-
     return new Schema(schemaId, fields, identifierFieldIds);
   }
 
   /**
-   * Create an Iceberg Schema {@link Schema} from a {@link Schema} based on the given order of
-   * fieldNames.
+   * * Create an Iceberg Schema {@link Schema} from a {@link Schema} based on the given order of *
+   * fieldNames. * *
    *
-   * <p>{@link Schema#select(String...)} is not used because it returns a new Schema whose fields
-   * are not in the same order as the incoming fields.
-   *
-   * @param baseSchema a Schema on which loading is based
-   * @param fieldNames a list of field names
-   * @return a new Schema on which contain the fieldNames of the base schema.
+   * <p>{@link Schema#select(String...)} is not used because it returns a new Schema whose fields *
+   * are not in the same order as the incoming fields. * * @param baseSchema a Schema on which
+   * loading is based * @param fieldNames a list of field names * @return a new Schema on which
+   * contain the fieldNames of the base schema.
    */
   public static Schema selectInOrder(Schema baseSchema, List<String> fieldNames) {
     Preconditions.checkNotNull(fieldNames);
     Preconditions.checkNotNull(baseSchema);
-
+    validateSchemaFields(baseSchema, fieldNames);
     int schemaId = baseSchema.schemaId();
     List<Types.NestedField> fields =
         fieldNames.stream().map(baseSchema::findField).collect(Collectors.toList());
-
     return new Schema(schemaId, fields);
+  }
+
+  private static void validateSchemaFields(Schema schema, List<String> requiredFields) {
+    List<String> existingFields =
+        schema.columns().stream().map(Types.NestedField::name).collect(Collectors.toList());
+    for (String requiredField : requiredFields) {
+      if (!existingFields.contains(requiredField)) {
+        throw new IllegalArgumentException(
+            "The required field in schema is missing: " + requiredField);
+      }
+    }
   }
 }
