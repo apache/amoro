@@ -26,6 +26,7 @@ import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
@@ -53,13 +54,11 @@ public class TagConfiguration {
       }
 
       @Override
-      public LocalDateTime getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
-        return checkTime
-            .minusMinutes(triggerOffsetMinutes)
-            .truncatedTo(ChronoUnit.DAYS)
-            .plusMinutes(triggerOffsetMinutes);
+      public LocalDateTime getTagTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
+        return checkTime.minusMinutes(triggerOffsetMinutes).truncatedTo(ChronoUnit.DAYS);
       }
     },
+
     HOURLY("hourly") {
       @Override
       protected Duration periodDuration() {
@@ -67,11 +66,8 @@ public class TagConfiguration {
       }
 
       @Override
-      public LocalDateTime getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
-        return checkTime
-            .minusMinutes(triggerOffsetMinutes)
-            .truncatedTo(ChronoUnit.HOURS)
-            .plusMinutes(triggerOffsetMinutes);
+      public LocalDateTime getTagTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
+        return checkTime.minusMinutes(triggerOffsetMinutes).truncatedTo(ChronoUnit.HOURS);
       }
     };
 
@@ -88,30 +84,21 @@ public class TagConfiguration {
     protected abstract Duration periodDuration();
 
     /**
-     * Obtain the trigger time for creating a tag, which is the ideal time of the last tag before
-     * the check time.
+     * Obtain the tag time for creating a tag, which is the ideal time of the last tag before the
+     * check time.
      *
      * <p>For example, when creating a daily tag, the check time is 2022-08-08 11:00:00 and the
-     * offset is set to be 5 min, the idea trigger time is 2022-08-08 00:05:00.
+     * offset is set to be 5 min, the idea tag time is 2022-08-08 00:00:00.
      *
      * <p>For example, when creating a daily tag, the offset is set to be 30 min, if the check time
-     * is 2022-08-08 02:00:00, the ideal trigger time is 2022-08-08 00:30:00; if the check time is
-     * 2022-08-09 00:20:00 (before 00:30 of the next day), the ideal trigger time is still
-     * 2022-08-08 00:30:00.
-     */
-    public abstract LocalDateTime getTagTriggerTime(
-        LocalDateTime checkTime, int triggerOffsetMinutes);
-
-    /**
-     * Normalize the trigger time to the tag time by subtracting the trigger offset minutes and the
-     * duration of the period.
-     *
-     * <p>For example, if the trigger time is 2022-08-08 00:05:00 and the trigger offset is set to
-     * be 5 minutes, and the period is set to be daily, the ideal tag time will be 2022-08-07
+     * is 2022-08-08 02:00:00, the ideal tag time is 2022-08-08 00:00:00; if the check time is
+     * 2022-08-09 00:20:00 (before 00:30 of the next day), the ideal tag time is still 2022-08-08
      * 00:00:00.
      */
-    public LocalDateTime normalizeToTagTime(LocalDateTime triggerTime, int triggerOffsetMinutes) {
-      return triggerTime.minus(triggerOffsetMinutes, ChronoUnit.MINUTES).minus(periodDuration());
+    public abstract LocalDateTime getTagTime(LocalDateTime checkTime, int triggerOffsetMinutes);
+
+    public String generateTagName(LocalDateTime tagTime, String tagFormat) {
+      return tagTime.minus(periodDuration()).format(DateTimeFormatter.ofPattern(tagFormat));
     }
   }
 

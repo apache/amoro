@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 /** Action to auto create tag for Iceberg Table. */
@@ -35,12 +34,20 @@ public class AutoCreateIcebergTagAction {
 
   private final Table table;
   private final TagConfiguration tagConfig;
-  private final LocalDateTime now;
+  private final LocalDateTime triggerTime;
+  private final String tagName;
 
-  public AutoCreateIcebergTagAction(Table table, TagConfiguration tagConfig, LocalDateTime now) {
+  public AutoCreateIcebergTagAction(
+      Table table, TagConfiguration tagConfig, LocalDateTime checkTime) {
     this.table = table;
     this.tagConfig = tagConfig;
-    this.now = now;
+
+    LocalDateTime tagTime =
+        tagConfig.getTriggerPeriod().getTagTime(checkTime, tagConfig.getTriggerOffsetMinutes());
+    // triggerTime = TagTime + triggerOffset
+    // The trigger time of the tag, which is the time when the tag is expected to be created.
+    this.triggerTime = tagTime.plusMinutes(tagConfig.getTriggerOffsetMinutes());
+    this.tagName = tagConfig.getTriggerPeriod().generateTagName(tagTime, tagConfig.getTagFormat());
   }
 
   public void execute() {
@@ -61,12 +68,11 @@ public class AutoCreateIcebergTagAction {
   }
 
   private boolean tagExist() {
-    String name = generateTagName();
     String tag =
         table.refs().entrySet().stream()
             .filter(entry -> entry.getValue().isTag())
             .map(Map.Entry::getKey)
-            .filter(name::equals)
+            .filter(tagName::equals)
             .findFirst()
             .orElse(null);
     return tag != null;
@@ -89,11 +95,10 @@ public class AutoCreateIcebergTagAction {
           tagTriggerTimestampMillis);
       return false;
     }
-    String newTagName = generateTagName();
-    table.manageSnapshots().createTag(newTagName, snapshot.snapshotId()).commit();
+    table.manageSnapshots().createTag(tagName, snapshot.snapshotId()).commit();
     LOG.info(
         "Created a tag {} for {} on snapshot {} at {}",
-        newTagName,
+        tagName,
         table.name(),
         snapshot.snapshotId(),
         snapshot.timestampMillis());
@@ -108,23 +113,8 @@ public class AutoCreateIcebergTagAction {
     return delay > tagConfig.getMaxDelayMinutes() * 60_000L;
   }
 
-  private String generateTagName() {
-    LocalDateTime tagTime =
-        tagConfig
-            .getTriggerPeriod()
-            .normalizeToTagTime(
-                tagConfig
-                    .getTriggerPeriod()
-                    .getTagTriggerTime(now, tagConfig.getTriggerOffsetMinutes()),
-                tagConfig.getTriggerOffsetMinutes());
-    String tagFormat = tagConfig.getTagFormat();
-    return tagTime.format(DateTimeFormatter.ofPattern(tagFormat));
-  }
-
   private long getTagTriggerTimestampMillis() {
-    LocalDateTime tagTriggerTime =
-        tagConfig.getTriggerPeriod().getTagTriggerTime(now, tagConfig.getTriggerOffsetMinutes());
-    return tagTriggerTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+    return triggerTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
   }
 
   private static Snapshot findSnapshot(Table table, long tagTriggerTime) {

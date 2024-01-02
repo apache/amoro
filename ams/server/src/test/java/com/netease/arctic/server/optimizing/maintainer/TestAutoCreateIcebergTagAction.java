@@ -263,16 +263,16 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
   @Test
   public void testTriggerTimePeriod() {
-    testTagTriggerTimePeriodHourly("2022-08-08T11:40:00", 30, "2022-08-08T11:30:00");
-    testTagTriggerTimePeriodHourly("2022-08-08T23:40:00", 15, "2022-08-08T23:15:00");
-    testTagTriggerTimePeriodHourly("2022-08-09T00:10:00", 30, "2022-08-08T23:30:00");
+    testTagTimePeriodHourly("2022-08-08T11:40:00", 30, "2022-08-08T11:00:00");
+    testTagTimePeriodHourly("2022-08-08T23:40:00", 15, "2022-08-08T23:00:00");
+    testTagTimePeriodHourly("2022-08-09T00:10:00", 30, "2022-08-08T23:00:00");
 
-    testTagTriggerTimePeriodDaily("2022-08-08T03:40:00", 30, "2022-08-08T00:30:00");
-    testTagTriggerTimePeriodDaily("2022-08-08T23:40:00", 15, "2022-08-08T00:15:00");
-    testTagTriggerTimePeriodDaily("2022-08-09T00:10:00", 30, "2022-08-08T00:30:00");
+    testTagTimePeriodDaily("2022-08-08T03:40:00", 30, "2022-08-08T00:00:00");
+    testTagTimePeriodDaily("2022-08-08T23:40:00", 15, "2022-08-08T00:00:00");
+    testTagTimePeriodDaily("2022-08-09T00:10:00", 30, "2022-08-08T00:00:00");
   }
 
-  private void testTagTriggerTimePeriodHourly(
+  private void testTagTimePeriodHourly(
       String checkTimeStr, int offsetMinutes, String expectedResultStr) {
     LocalDateTime checkTime = LocalDateTime.parse(checkTimeStr);
     Long expectedTriggerTime =
@@ -285,7 +285,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
     Long actualTriggerTime =
         TagConfiguration.Period.HOURLY
-            .getTagTriggerTime(checkTime, offsetMinutes)
+            .getTagTime(checkTime, offsetMinutes)
             .atZone(ZoneId.systemDefault())
             .toInstant()
             .toEpochMilli();
@@ -293,7 +293,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
     Assert.assertEquals(expectedTriggerTime, actualTriggerTime);
   }
 
-  private void testTagTriggerTimePeriodDaily(
+  private void testTagTimePeriodDaily(
       String checkTimeStr, int offsetMinutes, String expectedResultStr) {
     LocalDateTime checkTime = LocalDateTime.parse(checkTimeStr);
     Long expectedTriggerTime =
@@ -306,7 +306,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
     Long actualTriggerTime =
         TagConfiguration.Period.DAILY
-            .getTagTriggerTime(checkTime, offsetMinutes)
+            .getTagTime(checkTime, offsetMinutes)
             .atZone(ZoneId.systemDefault())
             .toInstant()
             .toEpochMilli();
