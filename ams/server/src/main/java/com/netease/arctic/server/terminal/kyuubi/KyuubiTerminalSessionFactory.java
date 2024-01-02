@@ -18,6 +18,9 @@
 
 package com.netease.arctic.server.terminal.kyuubi;
 
+import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE;
+import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT;
+import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_PRINCIPAL;
 import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_USER;
 
 import com.netease.arctic.server.terminal.SparkContextUtil;
@@ -110,6 +113,9 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
   public TerminalSession create(TableMetaStore metaStore, Configurations configuration) {
     List<String> logs = Lists.newArrayList();
     JdbcConnectionParams connectionParams = new JdbcConnectionParams(this.params);
+    if (metaStore.isKerberosAuthMethod()) {
+      checkAndFillKerberosInfo(connectionParams, metaStore);
+    }
 
     Map<String, String> sparkConf = SparkContextUtil.getSparkConf(configuration);
     sparkConf.forEach((k, v) -> connectionParams.getHiveVars().put(k, v));
@@ -159,5 +165,17 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
   private void logMessage(List<String> logs, String message) {
     logs.add(message);
     LOG.info(message);
+  }
+
+  private void checkAndFillKerberosInfo(
+      JdbcConnectionParams connectionParams, TableMetaStore metaStore) {
+    if (connectionParams.getSessionVars().containsKey(AUTH_PRINCIPAL)) {
+      throw new RuntimeException(
+          "jdbc url should not contain principal when kyuubi kerberos enable");
+    }
+    connectionParams
+        .getSessionVars()
+        .put(AUTH_KERBEROS_AUTH_TYPE, AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT);
+    connectionParams.getSessionVars().put(AUTH_PRINCIPAL, metaStore.getKrbPrincipal());
   }
 }

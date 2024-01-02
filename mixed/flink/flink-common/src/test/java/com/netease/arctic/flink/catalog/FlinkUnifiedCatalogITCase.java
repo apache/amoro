@@ -117,4 +117,24 @@ public class FlinkUnifiedCatalogITCase extends CatalogITCaseBase {
     assertEquals(
         Row.of(1, "Lily", 1234567890L, "2020-01-01T01:02:03").toString(), actualRow.toString());
   }
+
+  @Test
+  public void testSwitchCurrentCatalog() {
+    String memCatalog = "mem_catalog";
+    exec("create catalog %s with('type'='generic_in_memory')", memCatalog);
+    exec(
+        "create table %s.`default`.datagen_table(\n"
+            + "    a int,\n"
+            + "    b varchar"
+            + ") with(\n"
+            + "    'connector'='datagen',\n"
+            + "    'number-of-rows'='1'\n"
+            + ")",
+        memCatalog);
+    TableResult tableResult = exec("select * from mem_catalog.`default`.datagen_table");
+    assertNotNull(tableResult.collect().next());
+    exec("use catalog %s", memCatalog);
+    tableResult = exec("select * from datagen_table");
+    assertNotNull(tableResult.collect().next());
+  }
 }

@@ -17,13 +17,18 @@
   */
 
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+
 import App from './App.vue'
 import router from './router'
-import { createPinia } from 'pinia'
 import useStore from './store'
 import VueI18n from './language/i18n'
 
 import RegisterComponents from './components/register'
+import 'ant-design-vue/es/message/style/css'
+import 'ant-design-vue/es/modal/style/index.css'
+import 'ant-design-vue/es/notification/style/index.css'
+
 import './styles/index.less'
 import './utils/editor'
 import './assets/icons'
@@ -31,6 +36,9 @@ import SvgIcon from '@/components/svg-icon.vue'
 import loginService from './services/login.service'
 import { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
 import { getQueryString } from './utils'
+
+import 'virtual:svg-icons-register'
+
 
 const app = createApp(App).use(createPinia())
 app.component('svg-icon', SvgIcon)
