@@ -16,20 +16,20 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.metrics;
+package com.netease.arctic.server.events;
 
-import com.netease.arctic.ams.api.metrics.MetricsContent;
-import com.netease.arctic.ams.api.metrics.MetricsEmitter;
+import com.netease.arctic.ams.api.events.Event;
+import com.netease.arctic.ams.api.events.EventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-public class LoggingMetricsEmitter implements MetricsEmitter {
+public class LoggingEventListener implements EventListener {
 
-  public static final String NAME = "log_emitter";
+  public static final String NAME = "logging-listener";
 
-  private static final String METRIC_LOGGER = "amoro.metric";
+  private static final String METRIC_LOGGER = "amoro.event";
   private static final Logger LOG = LoggerFactory.getLogger(METRIC_LOGGER);
 
   @Override
@@ -48,16 +48,11 @@ public class LoggingMetricsEmitter implements MetricsEmitter {
   }
 
   @Override
-  public void emit(MetricsContent<?> metrics) {
+  public void handleEvent(Event event) {
     LOG.info(
-        "Received metrics named {} type {} data: {}",
-        metrics.name(),
-        metrics.type().name(),
-        metrics.data());
-  }
-
-  @Override
-  public boolean accept(MetricsContent<?> metrics) {
-    return true;
+        "Received event: {} timestamp: {} content: {}",
+        event.type(),
+        event.timestampMillis(),
+        event);
   }
 }

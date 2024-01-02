@@ -21,6 +21,8 @@ package com.netease.arctic.server.table;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.DefaultOptimizingService;
+import com.netease.arctic.server.manager.EventsManager;
+import com.netease.arctic.server.manager.MetricManager;
 import com.netease.arctic.server.utils.Configurations;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -50,6 +52,8 @@ public abstract class TableServiceTestBase {
   @AfterClass
   public static void disposeTableService() {
     TABLE_SERVICE.dispose();
+    MetricManager.dispose();
+    EventsManager.dispose();
   }
 
   protected DefaultTableService tableService() {

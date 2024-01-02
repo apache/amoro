@@ -18,27 +18,32 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-import com.netease.arctic.ams.api.ActivePlugin;
+import java.util.concurrent.atomic.LongAdder;
 
-/**
- * This is an interface defining a reporter, which users can implement to notify metrics to a
- * monitoring system.
- */
-public interface MetricsEmitter extends ActivePlugin {
+/** An incrementing counter metric. */
+public class Counter implements Metric {
+  private final LongAdder count = new LongAdder();
 
-  /**
-   * emit metrics to the monitoring system
-   *
-   * @param metrics {@link MetricsContent} to emit.
-   */
-  void emit(MetricsContent<?> metrics);
+  /** Increment the counter by one. */
+  public void inc() {
+    inc(1);
+  }
 
   /**
-   * determine whether the emitter accepts the metrics according to {@link MetricsContent#type()}
-   * and {@link MetricsContent#name()}
+   * Increment the counter by {@code n}.
    *
-   * @param metrics metrics data
-   * @return true if the type and name is accepted by the emitter
+   * @param n the amount by which the counter will be increased
    */
-  boolean accept(MetricsContent<?> metrics);
+  public void inc(long n) {
+    count.add(n);
+  }
+
+  /**
+   * Returns the counter's current value.
+   *
+   * @return the counter's current value
+   */
+  public long getCount() {
+    return count.sum();
+  }
 }
