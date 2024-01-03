@@ -31,6 +31,7 @@ import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
+import com.netease.arctic.server.dashboard.model.OperationType;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
@@ -40,12 +41,14 @@ import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
+import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.util.Pair;
 import org.apache.paimon.AbstractFileStore;
+import org.apache.paimon.CoreOptions;
 import org.apache.paimon.Snapshot;
 import org.apache.paimon.data.BinaryRow;
 import org.apache.paimon.io.DataFileMeta;
@@ -70,15 +73,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /** Descriptor for Paimon format tables. */
 public class PaimonTableDescriptor implements FormatTableDescriptor {
+
+  public static final String PAIMON_MAIN_BRANCH_NAME = "main";
 
   private final ExecutorService executor;
 
@@ -169,23 +176,32 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable, String ref) {
-    if (ref != null) {
-      throw new UnsupportedOperationException("Paimon not support tag and branch");
-    }
+  public List<AmoroSnapshotsOfTable> getSnapshots(
+      AmoroTable<?> amoroTable, String ref, OperationType operationType) {
     FileStoreTable table = getTable(amoroTable);
     List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
     Iterator<Snapshot> snapshots;
-    try {
-      snapshots = table.snapshotManager().snapshots();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    if (PAIMON_MAIN_BRANCH_NAME.equals(ref)) {
+      try {
+        snapshots = table.snapshotManager().snapshots();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      snapshots = Collections.singleton(table.tagManager().taggedSnapshot(ref)).iterator();
     }
+
     AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
     List<CompletableFuture<AmoroSnapshotsOfTable>> futures = new ArrayList<>();
+    Predicate<Snapshot> predicate =
+        operationType == OperationType.ALL
+            ? s -> true
+            : operationType == OperationType.OPTIMIZING
+                ? s -> s.commitKind() == Snapshot.CommitKind.COMPACT
+                : s -> s.commitKind() != Snapshot.CommitKind.COMPACT;
     while (snapshots.hasNext()) {
       Snapshot snapshot = snapshots.next();
-      if (snapshot.commitKind() == Snapshot.CommitKind.COMPACT) {
+      if (!predicate.test(snapshot)) {
         continue;
       }
       futures.add(
@@ -347,6 +363,8 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     TableIdentifier tableIdentifier = amoroTable.id();
     FileStoreTable fileStoreTable = (FileStoreTable) amoroTable.originalTable();
     AbstractFileStore<?> store = (AbstractFileStore<?>) fileStoreTable.store();
+    boolean isPrimaryTable = !fileStoreTable.primaryKeys().isEmpty();
+    int maxLevel = CoreOptions.fromMap(fileStoreTable.options()).numLevels() - 1;
     int total;
     try {
       List<Snapshot> compactSnapshots =
@@ -373,17 +391,42 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
                     ManifestFile manifestFile = store.manifestFileFactory().create();
                     ManifestList manifestList = store.manifestListFactory().create();
                     List<ManifestFileMeta> manifestFileMetas = s.deltaManifests(manifestList);
+                    boolean hasMaxLevels = false;
+                    long minCreateTime = Long.MAX_VALUE;
+                    long maxCreateTime = Long.MIN_VALUE;
+                    Set<Integer> buckets = new HashSet<>();
                     for (ManifestFileMeta manifestFileMeta : manifestFileMetas) {
                       List<ManifestEntry> compactManifestEntries =
                           manifestFile.read(manifestFileMeta.fileName());
                       for (ManifestEntry compactManifestEntry : compactManifestEntries) {
+                        if (compactManifestEntry.file().level() == maxLevel) {
+                          hasMaxLevels = true;
+                        }
+                        buckets.add(compactManifestEntry.bucket());
                         if (compactManifestEntry.kind() == FileKind.DELETE) {
                           inputBuilder.addFile(compactManifestEntry.file().fileSize());
                         } else {
+                          minCreateTime =
+                              Math.min(
+                                  minCreateTime,
+                                  compactManifestEntry.file().creationTime().getMillisecond());
+                          maxCreateTime =
+                              Math.max(
+                                  maxCreateTime,
+                                  compactManifestEntry.file().creationTime().getMillisecond());
                           outputBuilder.addFile(compactManifestEntry.file().fileSize());
                         }
                       }
                     }
+                    if (isPrimaryTable && hasMaxLevels) {
+                      optimizingProcessInfo.setOptimizingType(OptimizingType.FULL);
+                    } else {
+                      optimizingProcessInfo.setOptimizingType(OptimizingType.MINOR);
+                    }
+                    optimizingProcessInfo.setSuccessTasks(buckets.size());
+                    optimizingProcessInfo.setTotalTasks(buckets.size());
+                    optimizingProcessInfo.setStartTime(minCreateTime);
+                    optimizingProcessInfo.setDuration(s.timeMillis() - minCreateTime);
                     optimizingProcessInfo.setInputFiles(inputBuilder.build());
                     optimizingProcessInfo.setOutputFiles(outputBuilder.build());
                     optimizingProcessInfo.setSummary(Collections.emptyMap());
@@ -456,7 +499,12 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable) {
-    return Collections.emptyList();
+    FileStoreTable table = getTable(amoroTable);
+    SortedMap<Snapshot, String> tags = table.tagManager().tags();
+    return tags.entrySet().stream()
+        .map(
+            e -> new TagOrBranchInfo(e.getValue(), e.getKey().id(), 0, 0L, 0L, TagOrBranchInfo.TAG))
+        .collect(Collectors.toList());
   }
 
   @Override

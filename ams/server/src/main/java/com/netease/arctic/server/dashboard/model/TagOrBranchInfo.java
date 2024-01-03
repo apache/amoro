@@ -35,7 +35,7 @@ public class TagOrBranchInfo {
 
   public TagOrBranchInfo() {}
 
-  private TagOrBranchInfo(
+  public TagOrBranchInfo(
       String name,
       long snapshotId,
       Integer minSnapshotsToKeep,
