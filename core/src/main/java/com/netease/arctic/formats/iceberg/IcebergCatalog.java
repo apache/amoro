@@ -21,13 +21,13 @@ package com.netease.arctic.formats.iceberg;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.FormatCatalog;
 import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.NoSuchTableException;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
 import java.util.Map;
@@ -35,24 +35,25 @@ import java.util.stream.Collectors;
 
 public class IcebergCatalog implements FormatCatalog {
 
+  private SupportsNamespaces asNamespaceCatalog;
   private final Catalog icebergCatalog;
   private final TableMetaStore metaStore;
   private final Map<String, String> properties;
 
-  public IcebergCatalog(
-      Catalog icebergCatalog, Map<String, String> properties, TableMetaStore metaStore) {
-    this.icebergCatalog = icebergCatalog;
+  public IcebergCatalog(Catalog catalog, Map<String, String> properties, TableMetaStore metaStore) {
+    this.icebergCatalog = CatalogUtil.buildCacheCatalog(catalog, properties);
+    if (catalog instanceof SupportsNamespaces) {
+      this.asNamespaceCatalog = (SupportsNamespaces) catalog;
+    }
     this.metaStore = metaStore;
     this.properties = properties;
   }
 
   @Override
   public List<String> listDatabases() {
-    if (icebergCatalog instanceof SupportsNamespaces) {
-      return ((SupportsNamespaces) icebergCatalog)
-          .listNamespaces().stream().map(ns -> ns.level(0)).collect(Collectors.toList());
-    }
-    return Lists.newArrayList();
+    return asNamespaceCatalog().listNamespaces().stream()
+        .map(ns -> ns.level(0))
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -68,18 +69,12 @@ public class IcebergCatalog implements FormatCatalog {
 
   @Override
   public void createDatabase(String database) {
-    if (icebergCatalog instanceof SupportsNamespaces) {
-      Namespace ns = Namespace.of(database);
-      ((SupportsNamespaces) icebergCatalog).createNamespace(ns);
-    }
+    asNamespaceCatalog().createNamespace(Namespace.of(database));
   }
 
   @Override
   public void dropDatabase(String database) {
-    Namespace ns = Namespace.of(database);
-    if (icebergCatalog instanceof SupportsNamespaces) {
-      ((SupportsNamespaces) icebergCatalog).dropNamespace(ns);
-    }
+    asNamespaceCatalog().dropNamespace(Namespace.of(database));
   }
 
   @Override
@@ -101,6 +96,16 @@ public class IcebergCatalog implements FormatCatalog {
     } catch (NoSuchTableException e) {
       throw new com.netease.arctic.NoSuchTableException(e);
     }
+  }
+
+  private SupportsNamespaces asNamespaceCatalog() {
+    if (asNamespaceCatalog == null) {
+      throw new UnsupportedOperationException(
+          String.format(
+              "Iceberg catalog: %s doesn't implement SupportsNamespaces",
+              icebergCatalog.getClass().getName()));
+    }
+    return asNamespaceCatalog;
   }
 
   @Override
