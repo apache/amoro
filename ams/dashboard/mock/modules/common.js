@@ -23,7 +23,10 @@ export default [
     response: () => ({
       code: 200,
       msg: 'success',
-      result: ''
+      "result": {
+        "userName": "admin",
+        "loginTime": "1703839452053"
+      }
     }),
   },
   {
@@ -36,9 +39,21 @@ export default [
     }),
   },
   {
+    url: '/mock/ams/v1/versionInfo',
+    method: 'get',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: {
+        "version": "0.7.0-SNAPSHOT",
+        "commitTime": "2023-12-26T13:59:42+0800"
+      }
+    }),
+  },
+  {
     url: '/mock/ams/v1/upgrade/properties',
     method: 'get',
-    response:() => ({
+    response: () => ({
       code: 200,
       msg: 'success',
       result: {

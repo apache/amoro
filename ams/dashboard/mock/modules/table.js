@@ -18,207 +18,185 @@
 
 export default [
   {
-    url: '/mock/ams/v1/tables/bdmstest_arctic/ndc_test_db/realtime_dw_inventory_poc_wt_3141/partitions',
+    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/details',
     method: 'get',
     response: () => ({
-      code: 200,
-      msg: 'success',
-      result: {
-        list: [
+      "message": "success",
+      "code": 200,
+      "result": {
+        "tableType": "ICEBERG",
+        "tableIdentifier": {
+          "catalog": "test_catalog",
+          "database": "db",
+          "tableName": "user"
+        },
+        "schema": [
           {
-            partition: '2022-03-02',
-            fileCount: 16,
-            size: '123KB',
-            lastCommitTime: 1651301798030
+            "field": "id",
+            "type": "int",
+            "required": false,
+            "comment": null
           },
           {
-            partition: '2022-03-03',
-            fileCount: 20,
-            size: '1234KB',
-            lastCommitTime: 1651301798030
+            "field": "name",
+            "type": "string",
+            "required": false,
+            "comment": null
+          },
+          {
+            "field": "ts",
+            "type": "timestamptz",
+            "required": false,
+            "comment": null
           }
         ],
-        total: 2
+        "pkList": [],
+        "partitionColumnList": [
+          {
+            "field": "ts_day",
+            "sourceField": "ts",
+            "transform": "day",
+            "fieldId": 1000,
+            "sourceFieldId": 3
+          }
+        ],
+        "properties": {
+          "owner": "root",
+          "self-optimizing.group": "local"
+        },
+        "changeMetrics": null,
+        "baseMetrics": {
+          "lastCommitTime": 1703586944652,
+          "totalSize": "1.79KB",
+          "baseWatermark": null,
+          "averageFileSize": "918.00B",
+          "fileCount": 2
+        },
+        "tableSummary": {
+          "file": 2,
+          "size": "1.79KB",
+          "tableFormat": "Iceberg(V1)",
+          "averageFile": "918.00B"
+        },
+        "baseLocation": "/mnt/dfs/4/warehouse_public/db/user",
+        "filter": null,
+        "createTime": 0,
+        "creator": null,
+        "tableWatermark": null,
+        "baseWatermark": null
       }
     }),
   },
   {
-    url: '/mock/api/v1/tables/as/db/t1/optimize',
+    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/partitions',
     method: 'get',
     response: () => ({
-      code: 200,
-      msg: 'success',
-      result: {
-        list: [
+      "message": "success",
+      "code": 200,
+      "result": {
+        "list": [
           {
-            tableIdentifier: {
-              catalog: 'arctic_online_new',
-              database: 'tmp_music',
-              tableName: 'dim_moyi_itm_gift_base_dd',
-              id: 205
-            },
-            compactRange: 'Partition',
-            recordId: 103354,
-            visibleTime: 1651301798030,
-            commitTime: 1651301798030,
-            planTime: 1651301798030,
-            duration: 18173,
-            parallelism: 10,
-            totalFilesStatBeforeCompact: {
-              fileCnt: 5,
-              totalSize: 78539,
-              averageSize: 15707
-            },
-            insertFilesStatBeforeCompact: {
-              fileCnt: 4,
-              totalSize: 66763,
-              averageSize: 16690
-            },
-            deleteFilesStatBeforeCompact: {
-              fileCnt: 0,
-              totalSize: 0,
-              averageSize: 0
-            },
-            baseFilesStatBeforeCompact: {
-              fileCnt: 1,
-              totalSize: 11776,
-              averageSize: 11776
-            },
-            totalFilesStatAfterCompact: {
-              fileCnt: 4,
-              totalSize: 67985,
-              averageSize: 16996
-            },
-            snapshotInfo: {
-              snapshotId: 9197286040231952000,
-              operation: null,
-              totalSize: 7369863,
-              totalFiles: 506,
-              totalRecords: 653,
-              addedFiles: null,
-              addedFilesSize: 67985,
-              addedRecords: 142,
-              removedFilesSize: 11776,
-              removedFiles: 1,
-              removedRecords: 1
-            },
-            partitionCnt: 1,
-            partitions: 'dt=2022-04-29',
-            baseTableMaxFileSequence: '{dt=2022-04-29=12, dt=2022-04-28=7}'
+            "partition": "ts_day=2022-07-02",
+            "specId": 0,
+            "fileCount": 1,
+            "fileSize": 921,
+            "lastCommitTime": 1703586944652,
+            "size": "921.00B"
           },
           {
-            tableIdentifier: {
-              catalog: 'arctic_online_new',
-              database: 'tmp_music',
-              tableName: 'dim_moyi_itm_gift_base_dd',
-              id: 205
-            },
-            compactRange: 'Partition',
-            recordId: 103354,
-            visibleTime: 1651204980005,
-            commitTime: 1651204980005,
-            planTime: 1651204961832,
-            duration: 18173,
-            totalFilesStatBeforeCompact: {
-              fileCnt: 5,
-              totalSize: 78539,
-              averageSize: 15707
-            },
-            insertFilesStatBeforeCompact: {
-              fileCnt: 4,
-              totalSize: 66763,
-              averageSize: 16690
-            },
-            deleteFilesStatBeforeCompact: {
-              fileCnt: 0,
-              totalSize: 0,
-              averageSize: 0
-            },
-            baseFilesStatBeforeCompact: {
-              fileCnt: 1,
-              totalSize: 11776,
-              averageSize: 11776
-            },
-            totalFilesStatAfterCompact: {
-              fileCnt: 4,
-              totalSize: 67985,
-              averageSize: 16996
-            },
-            snapshotInfo: {
-              snapshotId: 9197286040231952000,
-              operation: null,
-              totalSize: 7369863,
-              totalFiles: 506,
-              totalRecords: 653,
-              addedFiles: null,
-              addedFilesSize: 67985,
-              addedRecords: 142,
-              removedFilesSize: 11776,
-              removedFiles: 1,
-              removedRecords: 1
-            },
-            partitionCnt: 1,
-            partitions: 'dt=2022-04-29',
-            baseTableMaxFileSequence: '{dt=2022-04-29=12, dt=2022-04-28=7}'
-          },
-          {
-            tableIdentifier: {
-              catalog: 'arctic_online_new',
-              database: 'tmp_music',
-              tableName: 'dim_moyi_itm_gift_base_dd',
-              id: 205
-            },
-            compactRange: 'Partition',
-            recordId: 103354,
-            visibleTime: 1651204980005,
-            commitTime: 1651204980005,
-            planTime: 1651204961832,
-            duration: 18173,
-            totalFilesStatBeforeCompact: {
-              fileCnt: 5,
-              totalSize: 78539,
-              averageSize: 15707
-            },
-            insertFilesStatBeforeCompact: {
-              fileCnt: 4,
-              totalSize: 66763,
-              averageSize: 16690
-            },
-            deleteFilesStatBeforeCompact: {
-              fileCnt: 0,
-              totalSize: 0,
-              averageSize: 0
-            },
-            baseFilesStatBeforeCompact: {
-              fileCnt: 1,
-              totalSize: 11776,
-              averageSize: 11776
-            },
-            totalFilesStatAfterCompact: {
-              fileCnt: 4,
-              totalSize: 67985,
-              averageSize: 16996
-            },
-            snapshotInfo: {
-              snapshotId: 9197286040231952000,
-              operation: null,
-              totalSize: 7369863,
-              totalFiles: 506,
-              totalRecords: 653,
-              addedFiles: null,
-              addedFilesSize: 67985,
-              addedRecords: 142,
-              removedFilesSize: 11776,
-              removedFiles: 1,
-              removedRecords: 1
-            },
-            partitionCnt: 1,
-            partitions: 'dt=2022-04-29',
-            baseTableMaxFileSequence: '{dt=2022-04-29=12, dt=2022-04-28=7}'
+            "partition": "ts_day=2022-07-01",
+            "specId": 0,
+            "fileCount": 1,
+            "fileSize": 916,
+            "lastCommitTime": 1703586944652,
+            "size": "916.00B"
           }
         ],
-        total: 7
+        "total": 2
       }
     }),
+  },
+  {
+    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/branches',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": {
+        "list": [
+          {
+            "name": "main",
+            "snapshotId": 6289200084786695285,
+            "minSnapshotsToKeep": null,
+            "maxSnapshotAgeMs": null,
+            "maxRefAgeMs": null,
+            "type": "branch"
+          }
+        ],
+        "total": 1
+      }
+    }),
+  },
+  {
+    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/tags',
+    method: 'get',
+    response: () => ({ "message": "success", "code": 200, "result": { "list": [], "total": 0 } }),
+  },
+  {
+    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/snapshots',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": {
+        "list": [
+          {
+            "snapshotId": "6289200084786695285",
+            "fileCount": 2,
+            "fileSize": "1.79KB",
+            "records": 3,
+            "commitTime": 1703586944652,
+            "operation": "overwrite",
+            "producer": "INGESTION",
+            "summary": {
+              "added-data-files": "2",
+              "total-equality-deletes": "0",
+              "added-records": "3",
+              "replace-partitions": "true",
+              "total-records": "3",
+              "spark.app.id": "local-1703586930757",
+              "changed-partition-count": "2",
+              "total-position-deletes": "0",
+              "added-files-size": "1.79KB",
+              "total-delete-files": "0",
+              "total-files-size": "1.79KB",
+              "total-data-files": "2"
+            },
+            "recordsSummaryForChart": {
+              "total-records": "3",
+              "eq-delete-records": "0",
+              "pos-delete-records": "0"
+            },
+            "filesSummaryForChart": {
+              "delete-files": "0",
+              "total-files": "2",
+              "data-files": "2"
+            },
+            "originalFileSize": 1837
+          }
+        ],
+        "total": 1
+      }
+    }),
+  },
+  {
+    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/optimizing-processes',
+    method: 'get',
+    response: () => ({ "message": "success", "code": 200, "result": { "list": [], "total": 0 } }),
+  },
+  {
+    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/operations',
+    method: 'get',
+    response: () => ({ "message": "success", "code": 200, "result": { "list": [], "total": 0 } }),
   },
 ]
