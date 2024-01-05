@@ -161,13 +161,17 @@ public class DataExpirationConfig {
   }
 
   public static DataExpirationConfig parse(Map<String, String> properties) {
+    boolean gcEnabled =
+        CompatiblePropertyUtil.propertyAsBoolean(
+            properties, org.apache.iceberg.TableProperties.GC_ENABLED, true);
     DataExpirationConfig config =
         new DataExpirationConfig()
             .setEnabled(
-                CompatiblePropertyUtil.propertyAsBoolean(
-                    properties,
-                    TableProperties.ENABLE_DATA_EXPIRATION,
-                    TableProperties.ENABLE_DATA_EXPIRATION_DEFAULT))
+                gcEnabled
+                    && CompatiblePropertyUtil.propertyAsBoolean(
+                        properties,
+                        TableProperties.ENABLE_DATA_EXPIRATION,
+                        TableProperties.ENABLE_DATA_EXPIRATION_DEFAULT))
             .setExpirationLevel(
                 ExpireLevel.fromString(
                     CompatiblePropertyUtil.propertyAsString(

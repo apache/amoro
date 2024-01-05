@@ -463,6 +463,44 @@ public class TestDataExpire extends ExecutorTestBase {
     testFileLevel();
   }
 
+  @Test
+  public void testGcDisabled() {
+    ArcticTable testTable = getArcticTable();
+    testTable.updateProperties().set("gc.enabled", "false").commit();
+
+    ArrayList<Record> baseRecords =
+        Lists.newArrayList(
+            createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"));
+    OptimizingTestHelpers.appendBase(
+        testTable, tableTestHelper().writeBaseStore(testTable, 0, baseRecords, false));
+
+    CloseableIterable<TableFileScanHelper.FileScanResult> scan;
+    if (isKeyedTable()) {
+      scan = buildKeyedFileScanHelper().scan();
+    } else {
+      scan = getTableFileScanHelper().scan();
+    }
+    assertScanResult(scan, 1, 0);
+
+    DataExpirationConfig config = new DataExpirationConfig(testTable);
+    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getArcticTable());
+    mixedTableMaintainer.expireDataFrom(
+        config,
+        LocalDateTime.parse("2024-01-01T00:00:00.000")
+            .atZone(
+                IcebergTableMaintainer.getDefaultZoneId(
+                    testTable.schema().findField(config.getExpirationField())))
+            .toInstant());
+
+    CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire;
+    if (isKeyedTable()) {
+      scanAfterExpire = buildKeyedFileScanHelper().scan();
+    } else {
+      scanAfterExpire = getTableFileScanHelper().scan();
+    }
+    assertScanResult(scanAfterExpire, 0, 0);
+  }
+
   protected Record createRecord(int id, String name, long ts, String opTime) {
     Object time;
     Schema schema = getArcticTable().schema();
