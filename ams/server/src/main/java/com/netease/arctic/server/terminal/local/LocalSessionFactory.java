@@ -18,11 +18,10 @@
 
 package com.netease.arctic.server.terminal.local;
 
-import static com.netease.arctic.server.ArcticManagementConf.TERMINAL_LOCAL_CORES;
-
 import com.netease.arctic.server.terminal.SparkContextUtil;
 import com.netease.arctic.server.terminal.TerminalSession;
 import com.netease.arctic.server.terminal.TerminalSessionFactory;
+import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.ConfigOptions;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableMetaStore;
@@ -45,6 +44,9 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   static final Set<String> EXTERNAL_CONNECTORS =
       Collections.unmodifiableSet(Sets.newHashSet("iceberg", "paimon"));
   static final String SPARK_CONF_PREFIX = "spark.";
+
+  public static ConfigOption<Integer> SPARK_CORES =
+      ConfigOptions.key("cores").intType().defaultValue(1);
 
   SparkSession context = null;
   Configurations conf;
@@ -109,7 +111,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     Preconditions.checkNotNull(this.conf);
     if (context == null) {
       SparkConf sparkconf = new SparkConf().setAppName("spark-local-context");
-      sparkconf.setMaster("local[" + conf.getInteger(TERMINAL_LOCAL_CORES) + "]");
+      sparkconf.setMaster("local[" + conf.getInteger(SPARK_CORES) + "]");
       sparkconf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
       sparkconf.set("spark.executor.heartbeatInterval", "100s");
       sparkconf.set("spark.network.timeout", "200s");
