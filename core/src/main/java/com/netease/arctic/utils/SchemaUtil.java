@@ -95,8 +95,8 @@ public class SchemaUtil {
   }
 
   private static void validateSchemaFields(Schema schema, List<String> requiredFields) {
-    List<String> existingFields =
-        schema.columns().stream().map(Types.NestedField::name).collect(Collectors.toList());
+    Set<String> existingFields =
+        schema.columns().stream().map(Types.NestedField::name).collect(Collectors.toSet());
     for (String requiredField : requiredFields) {
       if (!existingFields.contains(requiredField)) {
         throw new IllegalArgumentException(
