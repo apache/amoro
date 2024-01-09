@@ -140,10 +140,17 @@ public class RocksDBRecordState extends RocksDBCacheState<byte[]> {
   }
 
   private byte[] serializeValue(RowData value) throws IOException {
-    return valueSerializer.serialize(value);
+    return valueSerializer().serialize(value);
   }
 
   private RowData deserializeValue(byte[] recordBytes) throws IOException {
-    return valueSerializer.deserialize(recordBytes);
+    return valueSerializer().deserialize(recordBytes);
+  }
+
+  private BinaryRowDataSerializerWrapper valueSerializer() {
+    if (valueSerializerThreadLocal.get() == null) {
+      valueSerializerThreadLocal.set(valueSerializer.clone());
+    }
+    return valueSerializerThreadLocal.get();
   }
 }
