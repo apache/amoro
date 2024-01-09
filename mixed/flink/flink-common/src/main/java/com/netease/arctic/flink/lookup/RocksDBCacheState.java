@@ -66,9 +66,15 @@ public abstract class RocksDBCacheState<V> {
 
   protected final String columnFamilyName;
   protected final ColumnFamilyHandle columnFamilyHandle;
-  protected BinaryRowDataSerializerWrapper keySerializer;
+  protected ThreadLocal<BinaryRowDataSerializerWrapper> keySerializerThreadLocal =
+      new ThreadLocal<>();
 
-  protected BinaryRowDataSerializerWrapper valueSerializer;
+  protected ThreadLocal<BinaryRowDataSerializerWrapper> valueSerializerThreadLocal =
+      new ThreadLocal<>();
+
+  protected final BinaryRowDataSerializerWrapper keySerializer;
+
+  protected final BinaryRowDataSerializerWrapper valueSerializer;
   private ExecutorService writeRocksDBService;
   private final AtomicBoolean initialized = new AtomicBoolean(false);
   private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -127,7 +133,10 @@ public abstract class RocksDBCacheState<V> {
 
   @VisibleForTesting
   public byte[] serializeKey(RowData key) throws IOException {
-    return serializeKey(keySerializer, key);
+    if (keySerializerThreadLocal.get() == null) {
+      keySerializerThreadLocal.set(keySerializer.clone());
+    }
+    return serializeKey(keySerializerThreadLocal.get(), key);
   }
 
   @VisibleForTesting
