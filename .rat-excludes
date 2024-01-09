@@ -18,3 +18,4 @@ docs/**
 **/pnpm-lock.yaml
 **/src/main/resources/static/**
 **/components.d.ts
+**/dist/**
