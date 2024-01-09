@@ -33,9 +33,9 @@ import java.io.Serializable;
 
 /**
  * This is a wrapper for {@link BinaryRowDataSerializer}. It is used to serialize and deserialize
- * RowData.
+ * RowData. And serialize and deserialize operations are not thread-safe.
  */
-public class BinaryRowDataSerializerWrapper implements Serializable {
+public class BinaryRowDataSerializerWrapper implements Serializable, Cloneable {
 
   private static final long serialVersionUID = 1L;
   protected BinaryRowDataSerializer serializer;
@@ -72,5 +72,10 @@ public class BinaryRowDataSerializerWrapper implements Serializable {
     }
     inputView.setBuffer(recordBytes);
     return serializer.deserialize(inputView);
+  }
+
+  @Override
+  public BinaryRowDataSerializerWrapper clone() {
+    return new BinaryRowDataSerializerWrapper(schema);
   }
 }
