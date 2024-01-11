@@ -56,6 +56,12 @@ export default [
     }),
   },
   {
+    url: '/mock/ams/v1/catalogs',
+    method: 'post',
+    response: () => ({"message":"success","code":200,"result":""}),
+  },
+
+  {
     url: '/mock/ams/v1/catalogs/test_catalog/databases',
     method: 'get',
     response: () => {
@@ -69,4 +75,114 @@ export default [
       return { "message": "success", "code": 200, "result": [{ "name": "user", "type": "ICEBERG" }] };
     },
   },
+  {
+    url: '/mock/ams/v1/catalogs/:id',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": {
+        "name": "test_catalog",
+        "type": "hadoop",
+        "optimizerGroup": "local",
+        "tableFormatList": [
+          "ICEBERG"
+        ],
+        "storageConfig": {
+          "storage.type": "Hadoop",
+          "hive.site": {
+            "fileName": "hive-site.xml",
+            "fileUrl": "/ams/v1/catalogs/test_catalog/config/storage-config/hive-site"
+          },
+          "hadoop.core.site": {
+            "fileName": "core-site.xml",
+            "fileUrl": "/ams/v1/catalogs/test_catalog/config/storage-config/hadoop-core-site"
+          },
+          "hadoop.hdfs.site": {
+            "fileName": "hdfs-site.xml",
+            "fileUrl": "/ams/v1/catalogs/test_catalog/config/storage-config/hadoop-hdfs-site"
+          }
+        },
+        "authConfig": {
+          "auth.type": "SIMPLE",
+          "auth.simple.hadoop_username": "root"
+        },
+        "properties": {
+          "warehouse": "/mnt/dfs/4/warehouse_public",
+          "type": "hadoop"
+        },
+        "tableProperties": {}
+      }
+    }),
+  },
+  {
+    url: '/mock/ams/v1/catalogs/:id',
+    method: 'put',
+    response: () => ({ "message": "success", "code": 200, "result": null }),
+  },
+  {
+    url: '/mock/ams/v1/catalogs/:id',
+    method: 'delete',
+    response: () => ({ "message": "success", "code": 200, "result": true }),
+  },
+  {
+    url: '/mock/ams/v1/catalogs/:id/delete/check',
+    method: 'get',
+    response: () => ({ "message": "success", "code": 200, "result": true }),
+  },
+
+
+  {
+    url: '/mock/ams/v1/catalog/metastore/types',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": [
+        {
+          "value": "ams",
+          "display": "Arctic Metastore"
+        },
+        {
+          "value": "hive",
+          "display": "Hive Metastore"
+        },
+        {
+          "value": "hadoop",
+          "display": "Hadoop"
+        },
+        {
+          "value": "glue",
+          "display": "Glue"
+        },
+        {
+          "value": "custom",
+          "display": "Custom"
+        }
+      ]
+    }),
+  },
+  {
+    url: '/mock/ams/v1/optimize/resourceGroups',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": [
+        {
+          "resourceGroup": {
+            "name": "local",
+            "container": "localContainer",
+            "properties": {
+              "memory": "1024"
+            }
+          },
+          "occupationCore": 0,
+          "occupationMemory": 0
+        }
+      ]
+    }),
+  },
+
+
 ]
