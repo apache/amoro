@@ -35,12 +35,17 @@ public class Optimizer {
   public Optimizer(OptimizerConfig config) {
     this.config = config;
     this.toucher = new OptimizerToucher(config);
-    this.executors = new OptimizerExecutor[config.getExecutionParallel()];
-    IntStream.range(0, config.getExecutionParallel())
-        .forEach(i -> executors[i] = new OptimizerExecutor(config, i));
+    this.executors = newOptimizerExecutor(config);
     if (config.getResourceId() != null) {
       toucher.withRegisterProperty(OptimizerProperties.RESOURCE_ID, config.getResourceId());
     }
+  }
+
+  protected OptimizerExecutor[] newOptimizerExecutor(OptimizerConfig config) {
+    OptimizerExecutor[] optimizerExecutors = new OptimizerExecutor[config.getExecutionParallel()];
+    IntStream.range(0, config.getExecutionParallel())
+        .forEach(i -> optimizerExecutors[i] = new OptimizerExecutor(config, i));
+    return optimizerExecutors;
   }
 
   public void startOptimizing() {

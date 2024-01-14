@@ -62,7 +62,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     return threadId;
   }
 
-  private OptimizingTask pollTask() {
+  protected OptimizingTask pollTask() {
     OptimizingTask task = null;
     while (isStarted()) {
       try {
@@ -80,7 +80,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     return task;
   }
 
-  private boolean ackTask(OptimizingTask task) {
+  protected boolean ackTask(OptimizingTask task) {
     try {
       callAuthenticatedAms(
           (client, token) -> {
@@ -100,7 +100,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private OptimizingTaskResult executeTask(OptimizingTask task) {
+  protected OptimizingTaskResult executeTask(OptimizingTask task) {
     try {
       OptimizingInputProperties properties = OptimizingInputProperties.parse(task.getProperties());
       String executorFactoryImpl = properties.getExecutorFactoryImpl();
@@ -135,7 +135,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     }
   }
 
-  private void completeTask(OptimizingTaskResult optimizingTaskResult) {
+  protected void completeTask(OptimizingTaskResult optimizingTaskResult) {
     try {
       callAuthenticatedAms(
           (client, token) -> {

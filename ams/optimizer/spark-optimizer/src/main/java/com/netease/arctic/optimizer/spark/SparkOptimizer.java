@@ -18,10 +18,11 @@
 
 package com.netease.arctic.optimizer.spark;
 
-import com.netease.arctic.ams.api.OptimizerProperties;
 import com.netease.arctic.ams.api.resource.Resource;
+import com.netease.arctic.optimizer.common.Optimizer;
+import com.netease.arctic.optimizer.common.OptimizerConfig;
+import com.netease.arctic.optimizer.common.OptimizerExecutor;
 import com.netease.arctic.optimizer.common.OptimizerToucher;
-import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.util.Utils;
@@ -29,18 +30,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /** The {@code SparkOptimizer} acts as an entrypoint of the spark program */
-public class SparkOptimizer {
+public class SparkOptimizer extends Optimizer {
   private static final Logger LOG = LoggerFactory.getLogger(SparkOptimizer.class);
   private static final String APP_NAME = "amoro-spark-optimizer";
+
+  public SparkOptimizer(SparkOptimizerConfig config, JavaSparkContext jsc) {
+    super(config);
+    IntStream.range(0, config.getExecutionParallel())
+        .forEach(i -> getExecutors()[i] = new SparkOptimizerExecutor(jsc, config, i));
+  }
+
+  @Override
+  protected OptimizerExecutor[] newOptimizerExecutor(OptimizerConfig config) {
+    return new SparkOptimizerExecutor[config.getExecutionParallel()];
+  }
 
   public static void main(String[] args) throws Exception {
     SparkSession spark = SparkSession.builder().appName(APP_NAME).getOrCreate();
@@ -49,63 +58,34 @@ public class SparkOptimizer {
     if (!jsc.getConf().getBoolean("spark.dynamicAllocation.enabled", false)) {
       LOG.warn(
           "To better utilize computing resources, it is recommended to enable 'spark.dynamicAllocation.enabled' "
-              + "and set 'spark.executor.cores' * 'spark.dynamicAllocation.maxExecutors' greater than or equal to 'OPTIMIZER_EXECUTION_PARALLEL'");
+              + "and set 'spark.dynamicAllocation.maxExecutors' equal to 'OPTIMIZER_EXECUTION_PARALLEL'");
     }
+
+    // calculate optimizer memory allocation
     int driverMemory = Utils.memoryStringToMb(jsc.getConf().get("spark.driver.memory", "1g"));
-    if (config.getMemorySize() < driverMemory) {
-      config.setMemorySize(driverMemory);
-    }
+    int executorMemory = Utils.memoryStringToMb(jsc.getConf().get("spark.executor.memory", "1g"));
+    config.setMemorySize(driverMemory + config.getExecutionParallel() * executorMemory);
 
-    OptimizerToucher toucher = new OptimizerToucher(config);
-    if (config.getResourceId() != null) {
-      toucher.withRegisterProperty(OptimizerProperties.RESOURCE_ID, config.getResourceId());
-    }
+    SparkOptimizer optimizer = new SparkOptimizer(config, jsc);
+    OptimizerToucher toucher = optimizer.getToucher();
     toucher.withRegisterProperty(Resource.PROPERTY_JOB_ID, spark.sparkContext().applicationId());
-    LOG.info("Starting optimizer with configuration:{}", config);
-
-    ThreadFactory executorFactory =
-        new ThreadFactoryBuilder()
-            .setDaemon(false)
-            .setNameFormat("spark-optimizer-task-submitter-%d")
-            .build();
-    ThreadPoolExecutor executorService =
-        new ThreadPoolExecutor(
-            config.getExecutionParallel(),
-            config.getExecutionParallel(),
-            30L,
-            TimeUnit.SECONDS,
-            new ArrayBlockingQueue<>(config.getExecutionParallel()),
-            executorFactory);
-    SparkOptimizingTaskSubmitter[] submitters =
-        new SparkOptimizingTaskSubmitter[config.getExecutionParallel()];
-    IntStream.range(0, config.getExecutionParallel())
-        .forEach(
-            i -> {
-              SparkOptimizingTaskSubmitter sparkOptimizingTaskSubmitter =
-                  new SparkOptimizingTaskSubmitter(jsc, config, i);
-              executorService.execute(sparkOptimizingTaskSubmitter);
-              submitters[i] = sparkOptimizingTaskSubmitter;
-            });
+    LOG.info("Starting the spark optimizer with configuration:{}", config);
+    optimizer.startOptimizing();
 
     // check whether the spark driver can exit normally in the current schedule time
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     scheduler.scheduleAtFixedRate(
         () -> {
-          if (executorService.getActiveCount() == 0) {
-            executorService.shutdown();
+          long runningCnt =
+              Arrays.stream(optimizer.getExecutors()).filter(e -> e.isStarted()).count();
+          if (runningCnt == 0) {
+            LOG.info(
+                "Waited for {} s, the spark optimizer will exit", config.getTaskPollingTimeout());
             System.exit(0);
           }
         },
         0,
         1,
         TimeUnit.MINUTES);
-
-    toucher
-        .withTokenChangeListener(
-            newToken -> {
-              Arrays.stream(submitters)
-                  .forEach(optimizerExecutor -> optimizerExecutor.setToken(newToken));
-            })
-        .start();
   }
 }

@@ -37,14 +37,12 @@ import java.nio.ByteBuffer;
  * The {@code SparkOptimizingTaskExecuteFunction} defines the whole processing logic that how to
  * execute {@code OptimizingTask}
  */
-public class SparkOptimizingTaskExecuteFunction
-    implements Function<OptimizingTask, OptimizingTaskResult> {
-  private static final Logger LOG =
-      LoggerFactory.getLogger(SparkOptimizingTaskExecuteFunction.class);
+public class SparkOptimizingTaskFunction implements Function<OptimizingTask, OptimizingTaskResult> {
+  private static final Logger LOG = LoggerFactory.getLogger(SparkOptimizingTaskFunction.class);
   private final SparkOptimizerConfig config;
   private final int threadId;
 
-  public SparkOptimizingTaskExecuteFunction(SparkOptimizerConfig config, int threadId) {
+  public SparkOptimizingTaskFunction(SparkOptimizerConfig config, int threadId) {
     this.config = config;
     this.threadId = threadId;
   }
@@ -52,10 +50,6 @@ public class SparkOptimizingTaskExecuteFunction
   @Override
   public OptimizingTaskResult call(OptimizingTask task) {
     LOG.info("Start to execute Task {}", task);
-    return executeTask(task);
-  }
-
-  private OptimizingTaskResult executeTask(OptimizingTask task) {
     try {
       OptimizingInputProperties properties = OptimizingInputProperties.parse(task.getProperties());
       String executorFactoryImpl = properties.getExecutorFactoryImpl();
