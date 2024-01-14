@@ -69,8 +69,6 @@ public class SparkOptimizer extends Optimizer {
     SparkOptimizer optimizer = new SparkOptimizer(config, jsc);
     OptimizerToucher toucher = optimizer.getToucher();
     toucher.withRegisterProperty(Resource.PROPERTY_JOB_ID, spark.sparkContext().applicationId());
-    LOG.info("Starting the spark optimizer with configuration:{}", config);
-    optimizer.startOptimizing();
 
     // check whether the spark driver can exit normally in the current schedule time
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
@@ -87,5 +85,8 @@ public class SparkOptimizer extends Optimizer {
         0,
         1,
         TimeUnit.MINUTES);
+
+    LOG.info("Starting the spark optimizer with configuration:{}", config);
+    optimizer.startOptimizing();
   }
 }
