@@ -290,7 +290,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
                   TableFormat.MIXED_ICEBERG));
 
   public static final ConfigOption<Integer> SCAN_PARALLELISM =
-      ConfigOptions.key("parallelism")
+      ConfigOptions.key("source.parallelism")
           .intType()
           .noDefaultValue()
           .withDescription(
