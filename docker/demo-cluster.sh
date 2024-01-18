@@ -18,7 +18,8 @@
 #
 
 
-AMORO_TAG=master-snapshot
+# default to use the last built image when no specified tag given
+AMORO_TAG=latest
 
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
