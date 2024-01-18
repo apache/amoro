@@ -289,6 +289,15 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
                   TableFormat.PAIMON,
                   TableFormat.MIXED_ICEBERG));
 
+  public static final ConfigOption<Integer> SCAN_PARALLELISM =
+      ConfigOptions.key("parallelism")
+          .intType()
+          .noDefaultValue()
+          .withDescription(
+              "Defines a custom parallelism for the source. "
+                  + "By default, if this option is not defined, the planner will derive the parallelism "
+                  + "for each statement individually by also considering the global configuration.");
+
   @Override
   public void validate(DescriptorProperties properties) {
     String emitMode = properties.getString(ARCTIC_EMIT_MODE.key());

@@ -267,6 +267,7 @@ public class TestKeyed extends FlinkTestBase {
                 + "/*+ OPTIONS("
                 + "'arctic.read.mode'='file'"
                 + ", 'streaming'='false'"
+                + ", 'parallelism'='2'"
                 + ")*/");
 
     List<Object[]> expected = new LinkedList<>();
@@ -347,6 +348,7 @@ public class TestKeyed extends FlinkTestBase {
                 + "/*+ OPTIONS("
                 + "'arctic.read.mode'='log'"
                 + ", 'scan.startup.mode'='earliest'"
+                + ", 'parallelism'='2'"
                 + ")*/");
 
     Set<Row> actual = new HashSet<>();
