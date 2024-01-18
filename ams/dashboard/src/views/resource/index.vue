@@ -31,7 +31,7 @@ limitations under the License.
             :tab="t('tables')"
             :class="[activeTab === 'tables' ? 'active' : '']"
           >
-            <TableList curGroupName="all" type="tables" />
+            <TableList />
           </a-tab-pane>
           <a-tab-pane
             key="optimizers"
