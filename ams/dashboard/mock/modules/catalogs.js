@@ -161,28 +161,5 @@ export default [
         }
       ]
     }),
-  },
-  {
-    url: '/mock/ams/v1/optimize/resourceGroups',
-    method: 'get',
-    response: () => ({
-      "message": "success",
-      "code": 200,
-      "result": [
-        {
-          "resourceGroup": {
-            "name": "local",
-            "container": "localContainer",
-            "properties": {
-              "memory": "1024"
-            }
-          },
-          "occupationCore": 0,
-          "occupationMemory": 0
-        }
-      ]
-    }),
-  },
-
-
+  }
 ]

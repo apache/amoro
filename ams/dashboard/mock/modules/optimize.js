@@ -38,7 +38,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/optimize/optimizerGroups/all/tables',
+    url: '/mock/ams/v1/optimize/optimizerGroups/:groups/tables',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -95,6 +95,28 @@ export default [
         {
           "resourceGroup": {
             "name": "local",
+            "container": "localContainer",
+            "properties": {
+              "memory": "1024"
+            }
+          },
+          "occupationCore": 0,
+          "occupationMemory": 0
+        },
+        {
+          "resourceGroup": {
+            "name": "local11",
+            "container": "localContainer",
+            "properties": {
+              "memory": "1024"
+            }
+          },
+          "occupationCore": 0,
+          "occupationMemory": 0
+        },
+        {
+          "resourceGroup": {
+            "name": "local22",
             "container": "localContainer",
             "properties": {
               "memory": "1024"
