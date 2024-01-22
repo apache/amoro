@@ -22,6 +22,7 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_ALL_KINDS;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_PARALLELISM;
 import static org.apache.flink.table.connector.ChangelogMode.insertOnly;
 
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSource;
@@ -165,8 +166,11 @@ public class LogDynamicSource
         if (watermarkStrategy == null) {
           watermarkStrategy = WatermarkStrategy.noWatermarks();
         }
-        return execEnv.fromSource(
-            kafkaSource, watermarkStrategy, "LogStoreSource-" + arcticTable.name());
+        int scanParallelism =
+            tableOptions.getOptional(SCAN_PARALLELISM).orElse(execEnv.getParallelism());
+        return execEnv
+            .fromSource(kafkaSource, watermarkStrategy, "LogStoreSource-" + arcticTable.name())
+            .setParallelism(scanParallelism);
       }
 
       @Override
