@@ -19,7 +19,6 @@
 package com.netease.arctic.server.dashboard.controller;
 
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogLoader;
@@ -35,6 +34,7 @@ import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.HiveTableInfo;
+import com.netease.arctic.server.dashboard.model.OperationType;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
@@ -68,7 +68,6 @@ import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -342,58 +341,14 @@ public class TableController {
     OperationType operationType = OperationType.of(operation);
 
     List<AmoroSnapshotsOfTable> snapshotsOfTables =
-        tableDescriptor
-            .getSnapshots(
-                TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(), ref)
-            .stream()
-            .filter(s -> validOperationType(s, operationType))
-            .collect(Collectors.toList());
+        tableDescriptor.getSnapshots(
+            TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(),
+            ref,
+            operationType);
     int offset = (page - 1) * pageSize;
     PageResult<AmoroSnapshotsOfTable> pageResult =
         PageResult.of(snapshotsOfTables, offset, pageSize);
     ctx.json(OkResponse.of(pageResult));
-  }
-
-  private enum OperationType {
-    ALL("all"),
-    OPTIMIZING("optimizing"),
-    NON_OPTIMIZING("non-optimizing");
-
-    private final String displayName;
-
-    OperationType(String displayName) {
-      this.displayName = displayName;
-    }
-
-    public String displayName() {
-      return displayName;
-    }
-
-    public static OperationType of(String displayName) {
-      return Arrays.stream(OperationType.values())
-          .filter(o -> o.displayName().equals(displayName))
-          .findFirst()
-          .orElseThrow(
-              () ->
-                  new IllegalArgumentException(
-                      "invalid operation: "
-                          + displayName
-                          + ", only support all/optimizing/non-optimizing"));
-    }
-  }
-
-  private boolean validOperationType(AmoroSnapshotsOfTable snapshot, OperationType operationType) {
-    switch (operationType) {
-      case ALL:
-        return true;
-      case OPTIMIZING:
-        return CommitMetaProducer.OPTIMIZE.name().equals(snapshot.getProducer());
-      case NON_OPTIMIZING:
-        return !CommitMetaProducer.OPTIMIZE.name().equals(snapshot.getProducer());
-      default:
-        throw new IllegalArgumentException(
-            "invalid operation: " + operationType + ", only support all/optimizing/non-optimizing");
-    }
   }
 
   /**

@@ -30,6 +30,7 @@ import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.ExpressionUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -125,15 +126,19 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
             tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-02T12:00:00"));
 
     long transactionId = getArcticTable().beginTransaction("");
-    OptimizingTestHelpers.appendBase(
-        getArcticTable(),
-        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+    List<DataFile> dataFiles =
+        OptimizingTestHelpers.appendBase(
+            getArcticTable(),
+            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+    // partition field = "2022-01-01T12:00:00"
+    DataFile sampleFile = dataFiles.get(0);
 
     transactionId = getArcticTable().beginTransaction("");
-    appendChange(
+    List<DataFile> dataFiles1 =
         tableTestHelper()
             .writeChangeStore(
-                getArcticTable(), transactionId, ChangeAction.DELETE, newRecords, false));
+                getArcticTable(), transactionId, ChangeAction.DELETE, newRecords, false);
+    appendChange(dataFiles1);
 
     newRecords =
         Lists.newArrayList(
@@ -156,7 +161,9 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     scan =
         scanFiles(
             buildFileScanHelper()
-                .withPartitionFilter(partition -> getPartition().equals(partition)));
+                .withPartitionFilter(
+                    ExpressionUtil.convertPartitionDataToDataFilter(
+                        getArcticTable(), sampleFile.specId(), sampleFile.partition())));
     if (isPartitionedTable()) {
       assertScanResult(scan, 4, 1);
     } else {

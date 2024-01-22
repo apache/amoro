@@ -21,6 +21,7 @@ package com.netease.arctic.server.dashboard;
 import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.FileNameRules;
@@ -31,6 +32,7 @@ import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
+import com.netease.arctic.server.dashboard.model.OperationType;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
@@ -182,7 +184,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
-  public List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable, String ref) {
+  public List<AmoroSnapshotsOfTable> getSnapshots(
+      AmoroTable<?> amoroTable, String ref, OperationType operationType) {
     ArcticTable arcticTable = getTable(amoroTable);
     List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
     List<Pair<Table, Long>> tableAndSnapshotIdList = new ArrayList<>();
@@ -203,8 +206,24 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     }
     tableAndSnapshotIdList.forEach(
         tableAndSnapshotId -> collectSnapshots(snapshotsOfTables, tableAndSnapshotId));
-    snapshotsOfTables.sort((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()));
-    return snapshotsOfTables;
+    return snapshotsOfTables.stream()
+        .filter(s -> validOperationType(s, operationType))
+        .sorted((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()))
+        .collect(Collectors.toList());
+  }
+
+  private boolean validOperationType(AmoroSnapshotsOfTable snapshot, OperationType operationType) {
+    switch (operationType) {
+      case ALL:
+        return true;
+      case OPTIMIZING:
+        return CommitMetaProducer.OPTIMIZE.name().equals(snapshot.getProducer());
+      case NON_OPTIMIZING:
+        return !CommitMetaProducer.OPTIMIZE.name().equals(snapshot.getProducer());
+      default:
+        throw new IllegalArgumentException(
+            "invalid operation: " + operationType + ", only support all/optimizing/non-optimizing");
+    }
   }
 
   private void collectSnapshots(

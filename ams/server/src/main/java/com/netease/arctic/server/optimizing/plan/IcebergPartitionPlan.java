@@ -22,6 +22,8 @@ import com.netease.arctic.optimizing.IcebergRewriteExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.util.Pair;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,7 +31,10 @@ import java.util.stream.Collectors;
 public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
   protected IcebergPartitionPlan(
-      TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
+      TableRuntime tableRuntime,
+      ArcticTable table,
+      Pair<Integer, StructLike> partition,
+      long planTime) {
     super(tableRuntime, table, partition, planTime);
   }
 

@@ -22,6 +22,7 @@ import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
+import com.netease.arctic.server.dashboard.model.OperationType;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
@@ -42,7 +43,8 @@ public interface FormatTableDescriptor {
   ServerTableMeta getTableDetail(AmoroTable<?> amoroTable);
 
   /** Get the snapshot information of the {@link AmoroTable}. */
-  List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable, String ref);
+  List<AmoroSnapshotsOfTable> getSnapshots(
+      AmoroTable<?> amoroTable, String ref, OperationType operationType);
 
   /** Get the snapshot detail information of the {@link AmoroTable}. */
   List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, long snapshotId);

@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
+import com.netease.arctic.server.dashboard.model.OperationType;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
@@ -71,10 +72,11 @@ public class ServerTableDescriptor extends PersistentBase {
     return formatTableDescriptor.getTableDetail(amoroTable);
   }
 
-  public List<AmoroSnapshotsOfTable> getSnapshots(TableIdentifier tableIdentifier, String ref) {
+  public List<AmoroSnapshotsOfTable> getSnapshots(
+      TableIdentifier tableIdentifier, String ref, OperationType operationType) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
-    return formatTableDescriptor.getSnapshots(amoroTable, ref);
+    return formatTableDescriptor.getSnapshots(amoroTable, ref, operationType);
   }
 
   public List<PartitionFileBaseInfo> getSnapshotDetail(

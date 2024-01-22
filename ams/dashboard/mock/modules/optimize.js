@@ -37,4 +37,129 @@ export default [
       result: ['container1', 'container2']
     }),
   },
+  {
+    url: '/mock/ams/v1/optimize/optimizerGroups/:groups/tables',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": {
+        "list": [
+          {
+            "tableIdentifier": {
+              "id": 1,
+              "catalog": "test_catalog",
+              "database": "db",
+              "tableName": "user",
+              "format": "ICEBERG",
+              "identifier": {
+                "catalog": "test_catalog",
+                "database": "db",
+                "tableName": "user",
+                "setCatalog": true,
+                "setDatabase": true,
+                "setTableName": true
+              }
+            },
+            "tableName": "test_catalog.db.user",
+            "optimizeStatus": "idle",
+            "duration": 1195501081,
+            "fileCount": 0,
+            "fileSize": 0,
+            "quota": 0.1,
+            "quotaOccupation": 0.0,
+            "groupName": "local"
+          }
+        ],
+        "total": 1
+      }
+    }),
+  },
+  {
+    url: '/mock/ams/v1/optimize/optimizerGroups/all/optimizers',
+    method: 'get',
+    response: () => ({ "message": "success", "code": 200, "result": { "list": [], "total": 0 } }),
+  },
+  {
+    url: '/mock/ams/v1/optimize/optimizerGroups/local/optimizers',
+    method: 'post',
+    response: () => ({ "message": "success", "code": 200, "result": "success to scaleOut optimizer" }),
+  },
+  {
+    url: '/mock/ams/v1/optimize/resourceGroups',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": [
+        {
+          "resourceGroup": {
+            "name": "local",
+            "container": "localContainer",
+            "properties": {
+              "memory": "1024"
+            }
+          },
+          "occupationCore": 0,
+          "occupationMemory": 0
+        },
+        {
+          "resourceGroup": {
+            "name": "local11",
+            "container": "localContainer",
+            "properties": {
+              "memory": "1024"
+            }
+          },
+          "occupationCore": 0,
+          "occupationMemory": 0
+        },
+        {
+          "resourceGroup": {
+            "name": "local22",
+            "container": "localContainer",
+            "properties": {
+              "memory": "1024"
+            }
+          },
+          "occupationCore": 0,
+          "occupationMemory": 0
+        }
+      ]
+    }),
+  },
+  {
+    url: '/mock/ams/v1/optimize/resourceGroups',
+    method: 'put',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": "The optimizer group has been successfully updated."
+    }),
+  },
+  {
+    url: '/mock/ams/v1/optimize/resourceGroups',
+    method: 'post',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": "The optimizer group has been successfully created."
+    }),
+  },
+  {
+    url: '/mock/ams/v1/optimize/resourceGroups/:id/delete/check',
+    method: 'get',
+    response: () => ({ "message": "success", "code": 200, "result": true }),
+  },
+  {
+    url: '/mock/ams/v1/optimize/resourceGroups/:id',
+    method: 'delete',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": "The optimizer group has been successfully deleted."
+    }),
+  },
+
+
 ]
