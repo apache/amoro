@@ -24,7 +24,6 @@ import com.netease.arctic.ams.api.ActivePlugin;
 import com.netease.arctic.server.Environments;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.LoadingPluginException;
-import org.apache.commons.io.FileUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
@@ -41,7 +40,6 @@ import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -248,11 +246,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
       return ImmutableList.of();
     }
     try {
-      Object yamlObj =
-          new Yaml()
-              .loadAs(
-                  FileUtils.readFileToString(mangerConfigPath.toFile(), StandardCharsets.UTF_8),
-                  Object.class);
+      Object yamlObj = new Yaml().loadAs(Files.newInputStream(mangerConfigPath), Object.class);
       if (yamlObj instanceof Map) {
         yamlConfig = new JSONObject((Map) yamlObj);
       }
