@@ -4,7 +4,6 @@
 **/*.md
 **/*.iml
 **/target/**
-**/dist/**
 **/scalastyle-output.xml
 docs/**
 **/dependency-reduced-pom.xml
@@ -18,4 +17,5 @@ docs/**
 **/node_modules/**
 **/pnpm-lock.yaml
 **/src/main/resources/static/**
+**/ams-dashboard/dist/**
 **/components.d.ts
