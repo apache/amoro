@@ -3091,8 +3091,11 @@ public class TestBaseArcticConnectorTest extends BaseConnectorTest {
   public void testGetIcebergTableProperties() {
     assertUpdate("CREATE TABLE test_arctic_get_table_props (x BIGINT)");
     assertThat(query("SELECT * FROM \"test_arctic_get_table_props$properties\""))
-        .matches(format("VALUES (VARCHAR 'write.format.default', VARCHAR '%s')," +
-            " (VARCHAR 'write.parquet.compression-codec', VARCHAR 'zstd')", format.name()));
+        .matches(
+            format(
+                "VALUES (VARCHAR 'write.format.default', VARCHAR '%s'),"
+                    + " (VARCHAR 'write.parquet.compression-codec', VARCHAR 'zstd')",
+                format.name()));
     dropTable("test_arctic_get_table_props");
   }
 
