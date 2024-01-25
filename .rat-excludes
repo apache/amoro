@@ -4,6 +4,7 @@
 **/*.md
 **/*.iml
 **/target/**
+**/dist/**
 **/scalastyle-output.xml
 docs/**
 **/dependency-reduced-pom.xml
