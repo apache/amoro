@@ -38,7 +38,7 @@ Self-optimizing configurations are applicable to both Iceberg Format and Mixed s
 | self-optimizing.max-task-size-bytes           | 134217728(128MB) | Maximum file size bytes in a single task for splitting tasks                                                                             |
 | self-optimizing.fragment-ratio                | 8                | The fragment file size threshold. We could divide self-optimizing.target-size by this ratio to get the actual fragment file size         |
 | self-optimizing.min-target-size-ratio         | 0.75             | The undersized segment file size threshold. Segment files under this threshold will be considered for rewriting                          |
-| self-optimizing.minor.trigger.file-count      | 12               | The minimum number of files to trigger minor optimization is determined by the sum of fragment file count and equality delete file count |
+| self-optimizing.minor.trigger.file-count      | 12               | The minimum number of files to trigger minor optimizing is determined by the sum of fragment file count and equality delete file count |
 | self-optimizing.minor.trigger.interval        | 3600000(1 hour)  | The time interval in milliseconds to trigger minor optimizing                                                                            |
 | self-optimizing.major.trigger.duplicate-ratio | 0.1              | The ratio of duplicate data of segment files to trigger major optimizing                                                                 |
 | self-optimizing.full.trigger.interval         | -1(closed)       | The time interval in milliseconds to trigger full optimizing                                                                             |
