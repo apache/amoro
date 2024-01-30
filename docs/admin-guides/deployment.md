@@ -51,12 +51,12 @@ amoro-mixed-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
 original-amoro-mixed-flink-runtime-1.15-x.y.z.jar
 maven-archiver/
 
-cd ${base_dir}/mixed/spark/v3.1/spark-runtime/target
+cd ${base_dir}/mixed/spark/v3.2/spark-runtime/target
 ls
-amoro-mixed-spark-3.1-runtime-x.y.z.jar # Spark v3.1 runtime package)
-amoro-mixed-spark-3.1-runtime-x.y.z-tests.jar
-amoro-mixed-spark-3.1-runtime-x.y.z-sources.jar
-original-amoro-mixed-spark-3.1-runtime-x.y.z.jar
+amoro-mixed-spark-3.2-runtime-x.y.z.jar # Spark v3.2 runtime package)
+amoro-mixed-spark-3.2-runtime-x.y.z-tests.jar
+amoro-mixed-spark-3.2-runtime-x.y.z-sources.jar
+original-amoro-mixed-spark-3.2-runtime-x.y.z.jar
 ```
 
 If you need to compile the Trino module at the same time, you need to install jdk17 locally and configure `toolchains.xml` in the user's `${user.home}/.m2/` directory,

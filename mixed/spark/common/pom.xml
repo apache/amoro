@@ -33,7 +33,7 @@
     <url>https://amoro.netease.com</url>
 
     <properties>
-        <spark.version>3.1.2</spark.version>
+        <spark.version>3.2.2</spark.version>
         <scala.version>2.12.15</scala.version>
     </properties>
     <dependencies>
@@ -144,7 +144,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark-3.1_2.12</artifactId>
+            <artifactId>iceberg-spark-3.2_2.12</artifactId>
             <version>${iceberg.version}</version>
             <scope>provided</scope>
             <exclusions>
