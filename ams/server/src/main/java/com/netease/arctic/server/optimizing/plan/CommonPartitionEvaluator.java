@@ -59,6 +59,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   protected int undersizedSegmentFileCount = 0;
   protected long undersizedSegmentFileSize = 0;
   protected int rewritePosSegmentFileCount = 0;
+  protected int combinePosSegmentFileCount = 0;
   protected long rewritePosSegmentFileSize = 0L;
   protected long min1SegmentFileSize = Integer.MAX_VALUE;
   protected long min2SegmentFileSize = Integer.MAX_VALUE;
@@ -214,11 +215,12 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   public boolean segmentShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
     Preconditions.checkArgument(!isFragmentFile(dataFile), "Unsupported fragment file.");
-    return deletes.stream().anyMatch(delete -> delete.content() == FileContent.EQUALITY_DELETES)
-        || deletes.stream()
-                .filter(delete -> delete.content() == FileContent.POSITION_DELETES)
-                .count()
-            >= 2;
+    if (deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count()
+        >= 2) {
+      combinePosSegmentFileCount++;
+      return true;
+    }
+    return deletes.stream().anyMatch(delete -> delete.content() == FileContent.EQUALITY_DELETES);
   }
 
   protected boolean isFullOptimizing() {
@@ -317,7 +319,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   public boolean isMinorNecessary() {
     int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
     return smallFileCount >= config.getMinorLeastFileCount()
-        || (smallFileCount > 1 && reachMinorInterval());
+        || (smallFileCount > 1 && reachMinorInterval())
+        || combinePosSegmentFileCount > 0;
   }
 
   protected boolean reachMinorInterval() {

@@ -103,6 +103,11 @@ public class ArcticTableLoader implements TableLoader {
     arcticCatalog = catalogBuilder.build();
   }
 
+  @Override
+  public boolean isOpen() {
+    return arcticCatalog != null;
+  }
+
   public ArcticTable loadArcticTable() {
     return ((ArcticTable)
         new FlinkTablePropertiesInvocationHandler(
