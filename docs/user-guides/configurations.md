@@ -76,7 +76,7 @@ soon.
 | tag.auto-create.trigger.period             | daily                                            | Period of creating tags, support `daily`,`hourly` now       |
 | tag.auto-create.trigger.offset.minutes     | 0                                                | The minutes by which the tag is created after midnight (00:00) |
 | tag.auto-create.trigger.max-delay.minutes  | 60                                               | The maximum delay time for creating a tag                   |
-| tag.auto-create.tag-format            | 'tag-'yyyyMMdd for daily and 'tag-'yyyyMMddHH for hourly periods | The format of the <br/>name for daily tag  <br>             |
+| tag.auto-create.tag-format            | 'tag-'yyyyMMdd for daily and 'tag-'yyyyMMddHH for hourly periods | The format of the name for tag              |
 
 ## Mixed Format configurations
 
