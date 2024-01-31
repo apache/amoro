@@ -246,8 +246,10 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
       return ImmutableList.of();
     }
     try {
-      yamlConfig =
-          new JSONObject(new Yaml().loadAs(Files.newInputStream(mangerConfigPath), Map.class));
+      Object yamlObj = new Yaml().loadAs(Files.newInputStream(mangerConfigPath), Object.class);
+      if (yamlObj instanceof Map) {
+        yamlConfig = new JSONObject((Map) yamlObj);
+      }
     } catch (IOException e) {
       throw new LoadingPluginException(
           "Failed when load plugin configs from file: " + mangerConfigPath, e);
@@ -256,7 +258,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
     LOG.info("initializing plugin configuration for: " + pluginCategory());
     String pluginListKey = pluginCategory();
 
-    JSONArray pluginConfigList = yamlConfig.getJSONArray(pluginListKey);
+    JSONArray pluginConfigList = yamlConfig != null ? yamlConfig.getJSONArray(pluginListKey) : null;
     List<PluginConfiguration> configs = Lists.newArrayList();
     if (pluginConfigList != null && !pluginConfigList.isEmpty()) {
       for (int i = 0; i < pluginConfigList.size(); i++) {
