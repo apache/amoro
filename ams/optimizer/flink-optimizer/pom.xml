@@ -33,8 +33,10 @@
     <url>https://amoro.netease.com</url>
 
     <properties>
-        <optimizer-flink.version>1.14.6</optimizer-flink.version>
-        <flink.scala.suffix>_2.12</flink.scala.suffix>
+        <flink-optimizer.flink-version>1.18.1</flink-optimizer.flink-version>
+        <flink-optimizer.scala-version>2.12</flink-optimizer.scala-version>
+        <!--   When the flink version is more than 1.15, the scala suffix is empty     -->
+        <flink-optimizer.scala-version_suffix></flink-optimizer.scala-version_suffix>
     </properties>
 
     <dependencies>
@@ -63,8 +65,8 @@
         <!-- flink dependencies begin -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table-api-java-bridge${flink.scala.suffix}</artifactId>
-            <version>${optimizer-flink.version}</version>
+            <artifactId>flink-table-api-java-bridge${flink-optimizer.scala-version_suffix}</artifactId>
+            <version>${flink-optimizer.flink-version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -76,8 +78,8 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table-runtime${flink.scala.suffix}</artifactId>
-            <version>${optimizer-flink.version}</version>
+            <artifactId>flink-table-runtime${flink-optimizer.scala-version_suffix}</artifactId>
+            <version>${flink-optimizer.flink-version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -89,8 +91,8 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-java${flink.scala.suffix}</artifactId>
-            <version>${optimizer-flink.version}</version>
+            <artifactId>flink-streaming-java${flink-optimizer.scala-version_suffix}</artifactId>
+            <version>${flink-optimizer.flink-version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -102,8 +104,8 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-clients${flink.scala.suffix}</artifactId>
-            <version>${optimizer-flink.version}</version>
+            <artifactId>flink-clients${flink-optimizer.scala-version_suffix}</artifactId>
+            <version>${flink-optimizer.flink-version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -115,8 +117,8 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table-planner_${scala.binary.version}</artifactId>
-            <version>${optimizer-flink.version}</version>
+            <artifactId>flink-table-planner_${flink-optimizer.scala-version}</artifactId>
+            <version>${flink-optimizer.flink-version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -129,7 +131,7 @@
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-runtime</artifactId>
-            <version>${optimizer-flink.version}</version>
+            <version>${flink-optimizer.flink-version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -141,8 +143,8 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-runtime-web${flink.scala.suffix}</artifactId>
-            <version>${optimizer-flink.version}</version>
+            <artifactId>flink-runtime-web${flink-optimizer.scala-version_suffix}</artifactId>
+            <version>${flink-optimizer.flink-version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -155,32 +157,15 @@
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-metrics-influxdb</artifactId>
-            <version>${optimizer-flink.version}</version>
+            <version>${flink-optimizer.flink-version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-json</artifactId>
-            <version>${optimizer-flink.version}</version>
+            <version>${flink-optimizer.flink-version}</version>
             <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-kafka${flink.scala.suffix}</artifactId>
-            <version>${optimizer-flink.version}</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>slf4j-api</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>zstd-jni</artifactId>
-                    <groupId>com.github.luben</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -262,41 +247,15 @@
 
     <profiles>
         <profile>
-            <id>optimizer.flink1.14</id>
+            <id>flink-pre-1.15</id>
             <activation>
                 <property>
-                    <name>!optimizer.flink</name>
+                    <name>flink-optimizer.flink-version</name>
+                    <value>[,1.15)</value>
                 </property>
             </activation>
             <properties>
-                <optimizer-flink.version>1.14.6</optimizer-flink.version>
-                <flink.scala.suffix>_2.12</flink.scala.suffix>
-            </properties>
-        </profile>
-        <profile>
-            <id>optimizer.flink1.15</id>
-            <activation>
-                <property>
-                    <name>optimizer.flink</name>
-                    <value>1.15</value>
-                </property>
-            </activation>
-            <properties>
-                <optimizer-flink.version>1.15.4</optimizer-flink.version>
-                <flink.scala.suffix/>
-            </properties>
-        </profile>
-        <profile>
-            <id>optimizer.flink1.16</id>
-            <activation>
-                <property>
-                    <name>optimizer.flink</name>
-                    <value>1.16</value>
-                </property>
-            </activation>
-            <properties>
-                <optimizer-flink.version>1.16.2</optimizer-flink.version>
-                <flink.scala.suffix/>
+                <flink-optimizer.scala-version_suffix>_${flink-optimizer.scala-version}</flink-optimizer.scala-version_suffix>
             </properties>
         </profile>
     </profiles>
