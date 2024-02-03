@@ -21,7 +21,6 @@ package com.netease.arctic.optimizer.spark;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.optimizer.common.Optimizer;
 import com.netease.arctic.optimizer.common.OptimizerConfig;
-import com.netease.arctic.optimizer.common.OptimizerExecutor;
 import com.netease.arctic.optimizer.common.OptimizerToucher;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
@@ -29,32 +28,22 @@ import org.apache.spark.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
-
 /** The {@code SparkOptimizer} acts as an entrypoint of the spark program */
 public class SparkOptimizer extends Optimizer {
   private static final Logger LOG = LoggerFactory.getLogger(SparkOptimizer.class);
   private static final String APP_NAME = "amoro-spark-optimizer";
 
-  public SparkOptimizer(SparkOptimizerConfig config, JavaSparkContext jsc) {
-    super(config);
-    IntStream.range(0, config.getExecutionParallel())
-        .forEach(i -> getExecutors()[i] = new SparkOptimizerExecutor(jsc, config, i));
-  }
-
-  @Override
-  protected OptimizerExecutor[] newOptimizerExecutor(OptimizerConfig config) {
-    return new SparkOptimizerExecutor[config.getExecutionParallel()];
+  public SparkOptimizer(OptimizerConfig config, JavaSparkContext jsc) {
+    super(
+        config,
+        () -> new OptimizerToucher(config),
+        (i) -> new SparkOptimizerExecutor(jsc, config, i));
   }
 
   public static void main(String[] args) throws Exception {
     SparkSession spark = SparkSession.builder().appName(APP_NAME).getOrCreate();
     JavaSparkContext jsc = new JavaSparkContext(spark.sparkContext());
-    SparkOptimizerConfig config = new SparkOptimizerConfig(args);
+    OptimizerConfig config = new OptimizerConfig(args);
     if (!jsc.getConf().getBoolean("spark.dynamicAllocation.enabled", false)) {
       LOG.warn(
           "To better utilize computing resources, it is recommended to enable 'spark.dynamicAllocation.enabled' "
@@ -69,22 +58,6 @@ public class SparkOptimizer extends Optimizer {
     SparkOptimizer optimizer = new SparkOptimizer(config, jsc);
     OptimizerToucher toucher = optimizer.getToucher();
     toucher.withRegisterProperty(Resource.PROPERTY_JOB_ID, spark.sparkContext().applicationId());
-
-    // check whether the spark driver can exit normally in the current schedule time
-    ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    scheduler.scheduleAtFixedRate(
-        () -> {
-          long runningCnt =
-              Arrays.stream(optimizer.getExecutors()).filter(e -> e.isStarted()).count();
-          if (runningCnt == 0) {
-            LOG.info(
-                "Waited for {} s, the spark optimizer will exit", config.getTaskPollingTimeout());
-            System.exit(0);
-          }
-        },
-        0,
-        1,
-        TimeUnit.MINUTES);
 
     LOG.info("Starting the spark optimizer with configuration:{}", config);
     optimizer.startOptimizing();

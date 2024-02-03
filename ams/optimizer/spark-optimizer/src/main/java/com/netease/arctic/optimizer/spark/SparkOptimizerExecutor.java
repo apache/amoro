@@ -20,6 +20,7 @@ package com.netease.arctic.optimizer.spark;
 
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.optimizer.common.OptimizerConfig;
 import com.netease.arctic.optimizer.common.OptimizerExecutor;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.TableOptimizing;
@@ -27,7 +28,6 @@ import com.netease.arctic.utils.ExceptionUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,12 +40,12 @@ import java.util.List;
 public class SparkOptimizerExecutor extends OptimizerExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(SparkOptimizerExecutor.class);
   private final JavaSparkContext jsc;
-  private final SparkOptimizerConfig sparkOptimizerConfig;
+  private final OptimizerConfig config;
   private final int threadId;
 
-  public SparkOptimizerExecutor(JavaSparkContext jsc, SparkOptimizerConfig config, int threadId) {
+  public SparkOptimizerExecutor(JavaSparkContext jsc, OptimizerConfig config, int threadId) {
     super(config, threadId);
-    this.sparkOptimizerConfig = config;
+    this.config = config;
     this.jsc = jsc;
     this.threadId = threadId;
   }
@@ -62,7 +62,7 @@ public class SparkOptimizerExecutor extends OptimizerExecutor {
           String.format("%s | TableName(%s)", task.getTaskId(), parseFullTableName(task));
       jsc.setJobDescription(jobDesc);
       SparkOptimizingTaskFunction taskFunction =
-          new SparkOptimizingTaskFunction((SparkOptimizerConfig) getConfig(), threadId);
+          new SparkOptimizingTaskFunction((OptimizerConfig) getConfig(), threadId);
       List<OptimizingTaskResult> results = jsc.parallelize(of, 1).map(taskFunction).collect();
       result = results.get(0);
       LOG.info(
@@ -79,33 +79,6 @@ public class SparkOptimizerExecutor extends OptimizerExecutor {
       result.setErrorMessage(ExceptionUtil.getErrorMessage(r, 4000));
       return result;
     }
-  }
-
-  @Override
-  protected OptimizingTask pollTask() {
-    OptimizingTask task = null;
-    long startTime = System.currentTimeMillis();
-    while (isStarted()) {
-      try {
-        task = callAuthenticatedAms((client, token) -> client.pollTask(token, threadId));
-      } catch (TException exception) {
-        LOG.error("Optimizer executor[{}] polled task failed", threadId, exception);
-      }
-      if (task != null) {
-        LOG.info("Optimizer executor[{}] polled task[{}] from ams", threadId, task.getTaskId());
-        break;
-      } else {
-        waitAShortTime();
-      }
-      if (System.currentTimeMillis() - startTime > sparkOptimizerConfig.getTaskPollingTimeout()) {
-        LOG.warn(
-            "Waited for {} s, the SparkOptimizerExecutor-{} will stop",
-            sparkOptimizerConfig.getTaskPollingTimeout(),
-            threadId);
-        stop();
-      }
-    }
-    return task;
   }
 
   private String parseFullTableName(OptimizingTask task) {

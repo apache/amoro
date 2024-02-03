@@ -33,8 +33,8 @@
     <url>https://amoro.netease.com</url>
 
     <properties>
-        <optimizer-spark.version>3.1.2</optimizer-spark.version>
-        <spark.scala.suffix>_2.12</spark.scala.suffix>
+        <spark-optimizer.spark-version>3.1.2</spark-optimizer.spark-version>
+        <spark-optimizer.scala-version>2.12</spark-optimizer.scala-version>
     </properties>
 
     <dependencies>
@@ -61,8 +61,8 @@
         <!-- spark dependencies begin -->
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core${spark.scala.suffix}</artifactId>
-            <version>${optimizer-spark.version}</version>
+            <artifactId>spark-core_${spark-optimizer.scala-version}</artifactId>
+            <version>${spark-optimizer.spark-version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -74,8 +74,8 @@
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql${spark.scala.suffix}</artifactId>
-            <version>${optimizer-spark.version}</version>
+            <artifactId>spark-sql_${spark-optimizer.scala-version}</artifactId>
+            <version>${spark-optimizer.spark-version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -171,8 +171,8 @@
                 </property>
             </activation>
             <properties>
-                <optimizer-spark.version>3.1.2</optimizer-spark.version>
-                <spark.scala.suffix>_2.12</spark.scala.suffix>
+                <spark-optimizer.spark-version>3.1.2</spark-optimizer.spark-version>
+                <spark-optimizer.scala-version>2.12</spark-optimizer.scala-version>
             </properties>
         </profile>
         <profile>
@@ -184,7 +184,7 @@
                 </property>
             </activation>
             <properties>
-                <optimizer-spark.version>3.2.4</optimizer-spark.version>
+                <spark-optimizer.spark-version>3.2.4</spark-optimizer.spark-version>
                 <spark.scala.suffix/>
             </properties>
         </profile>
@@ -197,7 +197,7 @@
                 </property>
             </activation>
             <properties>
-                <optimizer-spark.version>3.3.3</optimizer-spark.version>
+                <spark-optimizer.spark-version>3.3.3</spark-optimizer.spark-version>
                 <spark.scala.suffix/>
             </properties>
         </profile>

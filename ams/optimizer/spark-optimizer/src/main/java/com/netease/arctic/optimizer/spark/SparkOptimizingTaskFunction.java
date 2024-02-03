@@ -20,6 +20,7 @@ package com.netease.arctic.optimizer.spark;
 
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.optimizer.common.OptimizerConfig;
 import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
@@ -39,10 +40,10 @@ import java.nio.ByteBuffer;
  */
 public class SparkOptimizingTaskFunction implements Function<OptimizingTask, OptimizingTaskResult> {
   private static final Logger LOG = LoggerFactory.getLogger(SparkOptimizingTaskFunction.class);
-  private final SparkOptimizerConfig config;
+  private final OptimizerConfig config;
   private final int threadId;
 
-  public SparkOptimizingTaskFunction(SparkOptimizerConfig config, int threadId) {
+  public SparkOptimizingTaskFunction(OptimizerConfig config, int threadId) {
     this.config = config;
     this.threadId = threadId;
   }
