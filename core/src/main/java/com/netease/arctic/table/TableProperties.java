@@ -216,6 +216,10 @@ public class TableProperties {
       "tag.auto-create.trigger.max-delay.minutes";
   public static final int AUTO_CREATE_TAG_MAX_DELAY_MINUTES_DEFAULT = 60;
 
+  public static final String AUTO_CREATE_TAG_EXPIRATION_MS =
+      "tag.auto-create.trigger.expiration.ms";
+  public static final int AUTO_CREATE_TAG_EXPIRATION_MS_DEFAULT = -1;
+
   public static final String AUTO_CREATE_TAG_FORMAT = "tag.auto-create.tag-format";
   public static final String AUTO_CREATE_TAG_FORMAT_DAILY_DEFAULT = "'tag-'yyyyMMdd";
   public static final String AUTO_CREATE_TAG_FORMAT_HOURLY_DEFAULT = "'tag-'yyyyMMddHH";

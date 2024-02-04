@@ -24,6 +24,7 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.server.table.TagConfiguration;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.Table;
@@ -272,6 +273,37 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
     testTagTimePeriodDaily("2022-08-09T00:10:00", 30, "2022-08-08T00:00:00");
   }
 
+  @Test
+  public void testTagExpiration() {
+    Table table = getArcticTable().asUnkeyedTable();
+    long expireKeepMs = 20;
+    table
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .set(TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES, "0")
+        .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD, "hourly")
+        .set(TableProperties.AUTO_CREATE_TAG_EXPIRATION_MS, expireKeepMs + "")
+        .commit();
+
+    table.newAppend().commit();
+    checkSnapshots(table, 1);
+    checkNoTag(table);
+
+    Snapshot snapshot = table.currentSnapshot();
+    LocalDateTime now = fromEpochMillis(snapshot.timestampMillis());
+    newAutoCreateIcebergTagAction(table, now).execute();
+    checkTagCount(table, 1);
+    checkTag(table, "tag-" + formatDateTime(now.minusHours(1)), snapshot);
+
+    // should not recreate tag
+    newAutoCreateIcebergTagAction(table, now).execute();
+    checkTagCount(table, 1);
+    long expirationTime = System.currentTimeMillis() + expireKeepMs;
+    waitUntilAfter(expirationTime);
+    expireSnapshots(table);
+    checkTagCount(table, 0);
+  }
+
   private void testTagTimePeriodHourly(
       String checkTimeStr, int offsetMinutes, String expectedResultStr) {
     LocalDateTime checkTime = LocalDateTime.parse(checkTimeStr);
@@ -355,5 +387,18 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
   private void checkSnapshots(Table table, int count) {
     Assert.assertEquals(Iterables.size(table.snapshots()), count);
+  }
+
+  private long waitUntilAfter(long timestampMillis) {
+    long current = System.currentTimeMillis();
+    while (current <= timestampMillis) {
+      current = System.currentTimeMillis();
+    }
+    return current;
+  }
+
+  private void expireSnapshots(Table table) {
+    ExpireSnapshots expireSnapshots = table.expireSnapshots();
+    expireSnapshots.commit();
   }
 }

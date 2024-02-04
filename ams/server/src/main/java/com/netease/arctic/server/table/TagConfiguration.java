@@ -44,6 +44,8 @@ public class TagConfiguration {
   private int triggerOffsetMinutes;
   // tag.auto-create.trigger.max-delay.minutes
   private int maxDelayMinutes;
+  // tag auto create expire millisecond
+  private long expirationMs;
 
   /** The interval for periodically triggering creating tags */
   public enum Period {
@@ -142,6 +144,11 @@ public class TagConfiguration {
             tableProperties,
             TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES,
             TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES_DEFAULT));
+    tagConfig.setExpirationMs(
+        CompatiblePropertyUtil.propertyAsLong(
+            tableProperties,
+            TableProperties.AUTO_CREATE_TAG_EXPIRATION_MS,
+            TableProperties.AUTO_CREATE_TAG_EXPIRATION_MS_DEFAULT));
     return tagConfig;
   }
 
@@ -185,6 +192,14 @@ public class TagConfiguration {
     this.maxDelayMinutes = maxDelayMinutes;
   }
 
+  public long getExpirationMs() {
+    return expirationMs;
+  }
+
+  public void setExpirationMs(long expirationMs) {
+    this.expirationMs = expirationMs;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -194,13 +209,19 @@ public class TagConfiguration {
         && triggerOffsetMinutes == that.triggerOffsetMinutes
         && maxDelayMinutes == that.maxDelayMinutes
         && Objects.equal(tagFormat, that.tagFormat)
-        && triggerPeriod == that.triggerPeriod;
+        && triggerPeriod == that.triggerPeriod
+        && expirationMs == that.expirationMs;
   }
 
   @Override
   public int hashCode() {
     return Objects.hashCode(
-        autoCreateTag, tagFormat, triggerPeriod, triggerOffsetMinutes, maxDelayMinutes);
+        autoCreateTag,
+        tagFormat,
+        triggerPeriod,
+        triggerOffsetMinutes,
+        maxDelayMinutes,
+        expirationMs);
   }
 
   @Override
@@ -211,6 +232,7 @@ public class TagConfiguration {
         .add("triggerPeriod", triggerPeriod)
         .add("triggerOffsetMinutes", triggerOffsetMinutes)
         .add("maxDelayMinutes", maxDelayMinutes)
+        .add("expireKeepMinutes", expirationMs)
         .toString();
   }
 }
