@@ -24,9 +24,10 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
 
@@ -35,7 +36,7 @@ import java.util.Map;
 public class TagConfiguration {
   // tag.auto-create.enabled
   private boolean autoCreateTag = false;
-  // tag.auto-create.daily.tag-format
+  // tag.auto-create.tag-format
   private String tagFormat;
   // tag.auto-create.trigger.period
   private Period triggerPeriod;
@@ -48,10 +49,25 @@ public class TagConfiguration {
   public enum Period {
     DAILY("daily") {
       @Override
-      public long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
-        LocalTime offsetTime = LocalTime.ofSecondOfDay(triggerOffsetMinutes * 60L);
-        LocalDateTime triggerTime = LocalDateTime.of(checkTime.toLocalDate(), offsetTime);
-        return triggerTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+      protected Duration periodDuration() {
+        return Duration.ofDays(1);
+      }
+
+      @Override
+      public LocalDateTime getTagTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
+        return checkTime.minusMinutes(triggerOffsetMinutes).truncatedTo(ChronoUnit.DAYS);
+      }
+    },
+
+    HOURLY("hourly") {
+      @Override
+      protected Duration periodDuration() {
+        return Duration.ofHours(1);
+      }
+
+      @Override
+      public LocalDateTime getTagTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
+        return checkTime.minusMinutes(triggerOffsetMinutes).truncatedTo(ChronoUnit.HOURS);
       }
     };
 
@@ -65,14 +81,25 @@ public class TagConfiguration {
       return propertyName;
     }
 
+    protected abstract Duration periodDuration();
+
     /**
-     * Obtain the trigger time for creating a tag, which is the idea time of the last tag before the
+     * Obtain the tag time for creating a tag, which is the ideal time of the last tag before the
      * check time.
      *
      * <p>For example, when creating a daily tag, the check time is 2022-08-08 11:00:00 and the
-     * offset is set to be 5 min, the idea trigger time is 2022-08-08 00:05:00.
+     * offset is set to be 5 min, the idea tag time is 2022-08-08 00:00:00.
+     *
+     * <p>For example, when creating a daily tag, the offset is set to be 30 min, if the check time
+     * is 2022-08-08 02:00:00, the ideal tag time is 2022-08-08 00:00:00; if the check time is
+     * 2022-08-09 00:20:00 (before 00:30 of the next day), the ideal tag time is still 2022-08-08
+     * 00:00:00.
      */
-    public abstract long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes);
+    public abstract LocalDateTime getTagTime(LocalDateTime checkTime, int triggerOffsetMinutes);
+
+    public String generateTagName(LocalDateTime tagTime, String tagFormat) {
+      return tagTime.minus(periodDuration()).format(DateTimeFormatter.ofPattern(tagFormat));
+    }
   }
 
   public static TagConfiguration parse(Map<String, String> tableProperties) {
@@ -82,11 +109,6 @@ public class TagConfiguration {
             tableProperties,
             TableProperties.ENABLE_AUTO_CREATE_TAG,
             TableProperties.ENABLE_AUTO_CREATE_TAG_DEFAULT));
-    tagConfig.setTagFormat(
-        CompatiblePropertyUtil.propertyAsString(
-            tableProperties,
-            TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT,
-            TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT_DEFAULT));
     tagConfig.setTriggerPeriod(
         Period.valueOf(
             CompatiblePropertyUtil.propertyAsString(
@@ -94,6 +116,22 @@ public class TagConfiguration {
                     TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD,
                     TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD_DEFAULT)
                 .toUpperCase(Locale.ROOT)));
+
+    String defaultFormat;
+    switch (tagConfig.getTriggerPeriod()) {
+      case DAILY:
+        defaultFormat = TableProperties.AUTO_CREATE_TAG_FORMAT_DAILY_DEFAULT;
+        break;
+      case HOURLY:
+        defaultFormat = TableProperties.AUTO_CREATE_TAG_FORMAT_HOURLY_DEFAULT;
+        break;
+      default:
+        throw new IllegalArgumentException(
+            "Unsupported trigger period: " + tagConfig.getTriggerPeriod());
+    }
+    tagConfig.setTagFormat(
+        CompatiblePropertyUtil.propertyAsString(
+            tableProperties, TableProperties.AUTO_CREATE_TAG_FORMAT, defaultFormat));
     tagConfig.setTriggerOffsetMinutes(
         CompatiblePropertyUtil.propertyAsInt(
             tableProperties,
