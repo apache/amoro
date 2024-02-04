@@ -457,9 +457,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     @Override
-    protected void doDispose() {
-      DefaultOptimizingService.this.dispose();
-    }
+    protected void doDispose() {}
   }
 
   private class OptimizerKeepingTask implements Delayed {
