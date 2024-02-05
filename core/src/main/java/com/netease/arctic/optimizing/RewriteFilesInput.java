@@ -18,7 +18,6 @@
 
 package com.netease.arctic.optimizing;
 
-import com.google.common.base.MoreObjects;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.table.ArcticTable;
@@ -26,6 +25,7 @@ import com.netease.arctic.utils.ContentFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.ArrayList;
 import java.util.Arrays;
