@@ -27,6 +27,7 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableFileUtil;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
@@ -34,6 +35,7 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Predicate;
@@ -87,24 +89,38 @@ public class IcebergTableUtil {
     return Optional.ofNullable(Iterables.tryFind(snapshots, predicate).orNull());
   }
 
-  public static Set<String> getAllContentFilePath(Table internalTable) {
-    Set<String> validFilesPath = new HashSet<>();
+  public static Set<Long> findExpiredSnapshotIds(
+      TableMetadata originalMetadata, TableMetadata updatedMetadata) {
+    Set<Long> retainedSnapshots =
+        updatedMetadata.snapshots().stream().map(Snapshot::snapshotId).collect(Collectors.toSet());
+    return originalMetadata.snapshots().stream()
+        .map(Snapshot::snapshotId)
+        .filter(id -> !retainedSnapshots.contains(id))
+        .collect(Collectors.toSet());
+  }
+
+  public static Set<Pair<String, FileContent>> getAllContentFile(Table table) {
+    Set<Pair<String, FileContent>> validFiles = new HashSet<>();
 
     TableEntriesScan entriesScan =
-        TableEntriesScan.builder(internalTable)
+        TableEntriesScan.builder(table)
             .includeFileContent(
                 FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
             .allEntries()
             .build();
     try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
       for (IcebergFileEntry entry : entries) {
-        validFilesPath.add(TableFileUtil.getUriPath(entry.getFile().path().toString()));
+        validFiles.add(Pair.of(entry.getFile().path().toString(), entry.getFile().content()));
       }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
 
-    return validFilesPath;
+    return validFiles;
+  }
+
+  public static Set<String> getAllContentFilePath(Table internalTable) {
+    return getAllContentFile(internalTable).stream().map(Pair::getLeft).collect(Collectors.toSet());
   }
 
   public static Set<String> getAllStatisticsFilePath(Table table) {

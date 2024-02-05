@@ -64,7 +64,11 @@ public class TableFileUtil {
       ArcticFileIO io, String directoryPath, Set<String> exclude) {
     Preconditions.checkArgument(
         io.supportFileSystemOperations(), "The fileIo doesn't support directory operation");
-    Preconditions.checkArgument(io.exists(directoryPath), "The target directory is not exist");
+
+    if (!io.exists(directoryPath)) {
+      return;
+    }
+
     Preconditions.checkArgument(
         io.asFileSystemIO().isDirectory(directoryPath), "The target path is not directory");
 

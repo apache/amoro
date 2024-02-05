@@ -21,12 +21,18 @@ package com.netease.arctic.server.optimizing.maintainer;
 import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.FLINK_MAX_COMMITTED_CHECKPOINT_ID;
 import static com.netease.arctic.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
 
+import com.google.common.collect.Lists;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.events.expire.ExpireEvent;
+import com.netease.arctic.ams.api.events.expire.mixed.ExpireMixedSnapshotsResult;
+import com.netease.arctic.ams.api.events.expire.mixed.ImmutableExpireMixedSnapshotsResult;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.SupportsFileSystemOperations;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
@@ -54,10 +60,12 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.Mockito;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -122,7 +130,9 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     // In order to advance the snapshot
     insertChangeDataFiles(testKeyedTable, 2);
 
-    tableMaintainer.getChangeMaintainer().expireSnapshots(System.currentTimeMillis());
+    tableMaintainer
+        .getChangeMaintainer()
+        .expireSnapshots(getArcticTable().id(), System.currentTimeMillis());
 
     Assert.assertEquals(1, Iterables.size(testKeyedTable.changeTable().snapshots()));
     s1Files.forEach(
@@ -173,7 +183,9 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     tableMaintainer.getChangeMaintainer().expireFiles(l + 1);
     // In order to advance the snapshot
     insertChangeDataFiles(testKeyedTable, 2);
-    tableMaintainer.getChangeMaintainer().expireSnapshots(System.currentTimeMillis());
+    tableMaintainer
+        .getChangeMaintainer()
+        .expireSnapshots(getArcticTable().id(), System.currentTimeMillis());
 
     Assert.assertEquals(1, Iterables.size(testKeyedTable.changeTable().snapshots()));
     Assert.assertTrue(testKeyedTable.io().exists(s1Files.get(0).path().toString()));
@@ -366,7 +378,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     List<DataFile> newDataFiles = writeAndCommitBaseStore(table);
     Assert.assertEquals(3, Iterables.size(table.snapshots()));
-    new MixedTableMaintainer(table).expireSnapshots(System.currentTimeMillis());
+    new MixedTableMaintainer(table)
+        .expireSnapshots(getArcticTable().id(), System.currentTimeMillis());
     Assert.assertEquals(1, Iterables.size(table.snapshots()));
 
     dataFiles.forEach(file -> Assert.assertFalse(table.io().exists(file.path().toString())));
@@ -416,7 +429,9 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(testKeyedTable);
     tableMaintainer.getChangeMaintainer().expireFiles(secondCommitTime + 1);
-    tableMaintainer.getChangeMaintainer().expireSnapshots(secondCommitTime + 1);
+    tableMaintainer
+        .getChangeMaintainer()
+        .expireSnapshots(getArcticTable().id(), secondCommitTime + 1);
 
     Set<CharSequence> dataFiles = getDataFiles(testKeyedTable);
     Assert.assertEquals(last4File, dataFiles);
@@ -482,7 +497,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assert.assertTrue(baseTable.io().exists(file1.path()));
     Assert.assertTrue(baseTable.io().exists(file2.path()));
     Assert.assertTrue(baseTable.io().exists(file3.path()));
-    new MixedTableMaintainer(testKeyedTable).expireSnapshots(expireTime);
+    new MixedTableMaintainer(testKeyedTable).expireSnapshots(getArcticTable().id(), expireTime);
 
     Assert.assertEquals(1, Iterables.size(baseTable.snapshots()));
     Assert.assertFalse(baseTable.io().exists(file1.path()));
@@ -556,6 +571,105 @@ public class TestSnapshotExpire extends ExecutorTestBase {
         .thenReturn(TableConfiguration.parseConfig(testUnkeyedTable.properties()));
     tableMaintainer.expireSnapshots(tableRuntime);
     Assert.assertEquals(1, Iterables.size(testUnkeyedTable.snapshots()));
+  }
+
+  @Test
+  public void testKeyedExpireSnapshotsEvent() {
+    Assume.assumeTrue(isKeyedTable());
+
+    KeyedTable keyedTable = getArcticTable().asKeyedTable();
+    // add data files and snapshots
+    writeAndCommitBaseAndChange(keyedTable);
+    Snapshot changeS1 = keyedTable.changeTable().currentSnapshot();
+    // commit an empty snapshot in change table
+    keyedTable.changeTable().newAppend().commit();
+
+    Assertions.assertEquals(2, Iterables.size(keyedTable.changeTable().snapshots()));
+    Assertions.assertEquals(1, Iterables.size(keyedTable.baseTable().snapshots()));
+
+    // expire change s1
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(keyedTable);
+    ExpireEvent event =
+        tableMaintainer.expireSnapshots(keyedTable.id(), System.currentTimeMillis());
+    Assert.assertEquals(1, Iterables.size(keyedTable.changeTable().snapshots()));
+    Assert.assertEquals(1, Iterables.size(keyedTable.baseTable().snapshots()));
+
+    ExpireMixedSnapshotsResult actualResult =
+        event.getExpireResultAs(ExpireMixedSnapshotsResult.class);
+    ExpireMixedSnapshotsResult expectResult =
+        ImmutableExpireMixedSnapshotsResult.builder()
+            .totalDuration(actualResult.totalDuration())
+            .addDeletedMetadataFiles(changeS1.manifestListLocation())
+            .build();
+    Assertions.assertEquals(expectResult, actualResult);
+  }
+
+  @Test
+  public void testUnkeyedExpireSnapshotsEvent() {
+    Assume.assumeFalse(isKeyedTable());
+
+    UnkeyedTable baseTable = getArcticTable().asUnkeyedTable();
+
+    // commit two empty snapshots
+    baseTable.newAppend().commit();
+    baseTable.newAppend().commit();
+
+    // add a statistics file, will not create a new snapshot
+    Snapshot s2 = baseTable.currentSnapshot();
+    StatisticsFile statisticsFile =
+        StatisticsFileUtil.writerBuilder(baseTable)
+            .withSnapshotId(s2.snapshotId())
+            .build()
+            .add(
+                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                StructLikeMap.create(baseTable.spec().partitionType()),
+                StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
+            .complete();
+    baseTable.updateStatistics().setStatistics(s2.snapshotId(), statisticsFile).commit();
+
+    // add few data files
+    List<DataFile> addedFiles = writeAndCommitBaseStore(baseTable);
+    Assert.assertEquals(3, Iterables.size(baseTable.snapshots()));
+    // delete files
+    DeleteFiles deleteFiles = baseTable.newDelete();
+    addedFiles.forEach(deleteFiles::deleteFile);
+    deleteFiles.commit();
+    // commit an empty snapshot
+    baseTable.newAppend().commit();
+    Assert.assertEquals(5, Iterables.size(baseTable.snapshots()));
+
+    String metadataLocation = baseTable.location() + "/metadata";
+    List<String> expectDeletedDataFiles =
+        addedFiles.stream().map(d -> d.path().toString()).collect(Collectors.toList());
+    List<String> previousMetadataFiles = listChildFiles(baseTable.io(), metadataLocation);
+
+    // expire s1
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(baseTable);
+    ExpireEvent event = tableMaintainer.expireSnapshots(baseTable.id(), System.currentTimeMillis());
+    Assert.assertEquals(1, Iterables.size(baseTable.snapshots()));
+
+    List<String> updatedMetadataFiles = listChildFiles(baseTable.io(), metadataLocation);
+    List<String> expectDeletedMetadataFiles = Lists.newArrayList(previousMetadataFiles);
+    expectDeletedMetadataFiles.removeAll(updatedMetadataFiles);
+
+    ExpireMixedSnapshotsResult actualResult =
+        event.getExpireResultAs(ExpireMixedSnapshotsResult.class);
+    ExpireMixedSnapshotsResult expectResult =
+        ImmutableExpireMixedSnapshotsResult.builder()
+            .totalDuration(actualResult.totalDuration())
+            .deletedMetadataFiles(expectDeletedMetadataFiles)
+            .addDeletedStatisticsFiles(statisticsFile.path())
+            .deletedBaseFiles(expectDeletedDataFiles)
+            .build();
+
+    Assertions.assertEquals(expectResult, actualResult);
+  }
+
+  protected static List<String> listChildFiles(ArcticFileIO io, String parentPath) {
+    SupportsFileSystemOperations fileSystemOperations = io.asFileSystemIO();
+    return Lists.newArrayList(fileSystemOperations.listDirectory(parentPath)).stream()
+        .map(p -> URI.create(p.location()).getPath())
+        .collect(Collectors.toList());
   }
 
   private long waitUntilAfter(long timestampMillis) {

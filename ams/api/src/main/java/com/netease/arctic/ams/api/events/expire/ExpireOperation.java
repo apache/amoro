@@ -16,10 +16,11 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.events;
+package com.netease.arctic.ams.api.events.expire;
 
-/** Event types define */
-public enum EventType {
-  ICEBERG_REPORT,
-  EXPIRE_REPORT
+public enum ExpireOperation {
+  EXPIRE_SNAPSHOTS,
+  REMOVE_ORPHAN_FILES,
+  REMOVE_DANGLING_FILES,
+  EXPIRE_DATA
 }

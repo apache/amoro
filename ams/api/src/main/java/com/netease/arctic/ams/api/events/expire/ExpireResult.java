@@ -16,10 +16,16 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.events;
+package com.netease.arctic.ams.api.events.expire;
 
-/** Event types define */
-public enum EventType {
-  ICEBERG_REPORT,
-  EXPIRE_REPORT
+import java.time.Duration;
+
+/** Expire event details */
+public interface ExpireResult {
+  /**
+   * total duration of the event
+   *
+   * @return duration
+   */
+  Duration totalDuration();
 }

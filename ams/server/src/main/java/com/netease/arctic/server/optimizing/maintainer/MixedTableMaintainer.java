@@ -22,9 +22,16 @@ import static com.netease.arctic.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUE
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 import com.netease.arctic.IcebergFileEntry;
+import com.netease.arctic.ams.api.events.EventType;
+import com.netease.arctic.ams.api.events.expire.ExpireEvent;
+import com.netease.arctic.ams.api.events.expire.ExpireOperation;
+import com.netease.arctic.ams.api.events.expire.ExpireResult;
+import com.netease.arctic.ams.api.events.expire.ImmutableExpireEvent;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.TableEntriesScan;
+import com.netease.arctic.server.events.MixedExpireEvents;
+import com.netease.arctic.server.manager.EventsManager;
 import com.netease.arctic.server.table.DataExpirationConfig;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
@@ -33,6 +40,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -132,14 +140,20 @@ public class MixedTableMaintainer implements TableMaintainer {
       changeMaintainer.expireSnapshots(tableRuntime);
     }
     baseMaintainer.expireSnapshots(tableRuntime);
+
+    reportMixedExpireEvent(
+        changeMaintainer == null ? null : changeMaintainer.expireEvent, baseMaintainer.expireEvent);
   }
 
   @VisibleForTesting
-  protected void expireSnapshots(long mustOlderThan) {
+  protected ExpireEvent expireSnapshots(TableIdentifier tableIdentifier, long mustOlderThan) {
+    ExpireEvent changeExpireEvent = null, baseExpireEvent;
     if (changeMaintainer != null) {
-      changeMaintainer.expireSnapshots(mustOlderThan);
+      changeExpireEvent = changeMaintainer.expireSnapshots(tableIdentifier, mustOlderThan);
     }
-    baseMaintainer.expireSnapshots(mustOlderThan);
+    baseExpireEvent = baseMaintainer.expireSnapshots(tableIdentifier, mustOlderThan);
+
+    return reportMixedExpireEvent(changeExpireEvent, baseExpireEvent);
   }
 
   @Override
@@ -294,6 +308,18 @@ public class MixedTableMaintainer implements TableMaintainer {
     baseMaintainer.cleanDanglingDeleteFiles();
   }
 
+  private ExpireEvent reportMixedExpireEvent(ExpireEvent changeEvent, ExpireEvent baseEvent) {
+    ExpireEvent event;
+    if (arcticTable.isKeyedTable()) {
+      event = MixedExpireEvents.combine(changeEvent, baseEvent);
+    } else {
+      event = MixedExpireEvents.wrap(baseEvent);
+    }
+
+    EventsManager.getInstance().emit(event);
+    return event;
+  }
+
   public ChangeTableMaintainer getChangeMaintainer() {
     return changeMaintainer;
   }
@@ -308,6 +334,8 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     private final UnkeyedTable unkeyedTable;
 
+    ExpireEvent expireEvent;
+
     public ChangeTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
       this.unkeyedTable = unkeyedTable;
@@ -320,9 +348,9 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     @Override
     @VisibleForTesting
-    void expireSnapshots(long mustOlderThan) {
+    ExpireEvent expireSnapshots(TableIdentifier tableIdentifier, long mustOlderThan) {
       expireFiles(mustOlderThan);
-      super.expireSnapshots(mustOlderThan);
+      return super.expireSnapshots(tableIdentifier, mustOlderThan);
     }
 
     @Override
@@ -332,7 +360,13 @@ public class MixedTableMaintainer implements TableMaintainer {
       }
       long now = System.currentTimeMillis();
       expireFiles(now - snapshotsKeepTime(tableRuntime));
-      expireSnapshots(mustOlderThan(tableRuntime, now));
+
+      ExpireEvent event =
+          expireSnapshots(
+              TableIdentifier.of(tableRuntime.getTableIdentifier().getIdentifier()),
+              mustOlderThan(tableRuntime, now));
+
+      reportExpireEvent(event);
     }
 
     @Override
@@ -467,9 +501,33 @@ public class MixedTableMaintainer implements TableMaintainer {
         LOG.error(unkeyedTable.name() + " failed to delete change files, ignore", t);
       }
     }
+
+    @Override
+    protected ExpireEvent triggerExpireEvent(
+        TableIdentifier tableIdentifier, ExpireResult expireResult, long triggerTimestamp) {
+      return ImmutableExpireEvent.builder()
+          .catalog(tableIdentifier.getCatalog())
+          .database(tableIdentifier.getDatabase())
+          .table(tableIdentifier.getTableName())
+          .isExternal(false)
+          .expireResult(expireResult)
+          .timestampMillis(triggerTimestamp)
+          .transactionId(triggerTimestamp)
+          .operation(ExpireOperation.EXPIRE_SNAPSHOTS.name())
+          .type(EventType.EXPIRE_REPORT)
+          .build();
+    }
+
+    @Override
+    protected void reportExpireEvent(ExpireEvent event) {
+      // don't report immediately
+      this.expireEvent = event;
+    }
   }
 
   public class BaseTableMaintainer extends IcebergTableMaintainer {
+
+    ExpireEvent expireEvent;
 
     public BaseTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
@@ -517,6 +575,28 @@ public class MixedTableMaintainer implements TableMaintainer {
     @Override
     protected Set<String> expireSnapshotNeedToExcludeFiles() {
       return Sets.union(changeFiles, hiveFiles);
+    }
+
+    @Override
+    protected ExpireEvent triggerExpireEvent(
+        TableIdentifier tableIdentifier, ExpireResult expireResult, long triggerTimestamp) {
+      return ImmutableExpireEvent.builder()
+          .catalog(tableIdentifier.getCatalog())
+          .database(tableIdentifier.getDatabase())
+          .table(tableIdentifier.getTableName())
+          .isExternal(false)
+          .expireResult(expireResult)
+          .timestampMillis(triggerTimestamp)
+          .transactionId(triggerTimestamp)
+          .operation(ExpireOperation.EXPIRE_SNAPSHOTS.name())
+          .type(EventType.EXPIRE_REPORT)
+          .build();
+    }
+
+    @Override
+    protected void reportExpireEvent(ExpireEvent event) {
+      // don't report immediately
+      this.expireEvent = event;
     }
   }
 

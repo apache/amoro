@@ -116,7 +116,9 @@ public class TestSnapshotExpireHive extends TestSnapshotExpire {
             ? getArcticTable().asKeyedTable().baseTable()
             : getArcticTable().asUnkeyedTable();
     MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getArcticTable());
-    mixedTableMaintainer.getBaseMaintainer().expireSnapshots(System.currentTimeMillis());
+    mixedTableMaintainer
+        .getBaseMaintainer()
+        .expireSnapshots(getArcticTable().id(), System.currentTimeMillis());
     Assert.assertEquals(1, Iterables.size(unkeyedTable.snapshots()));
 
     hiveFiles.forEach(

@@ -16,10 +16,24 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.events;
+package com.netease.arctic.ams.api.events.expire.iceberg;
 
-/** Event types define */
-public enum EventType {
-  ICEBERG_REPORT,
-  EXPIRE_REPORT
+import com.netease.arctic.ams.api.events.expire.ExpireResult;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.immutables.value.Value;
+
+import java.util.Set;
+
+/** Event details for cleaning orphan files in native Iceberg format */
+@Value.Immutable
+public abstract class RemoveOrphanFilesResult implements ExpireResult {
+  @Value.Default
+  public Set<String> removedFiles() {
+    return Sets.newHashSet();
+  }
+
+  @Value.Default
+  public long releasedFileSize() {
+    return 0L;
+  }
 }
