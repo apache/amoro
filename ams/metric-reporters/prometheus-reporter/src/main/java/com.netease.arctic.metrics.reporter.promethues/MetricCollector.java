@@ -1,19 +1,43 @@
-package com.netease.arctic.server.metrics.promethues;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import com.clearspring.analytics.util.Lists;
+package com.netease.arctic.metrics.reporter.promethues;
+
+
+
 import com.netease.arctic.ams.api.metrics.Counter;
 import com.netease.arctic.ams.api.metrics.Gauge;
 import com.netease.arctic.ams.api.metrics.Metric;
 import com.netease.arctic.ams.api.metrics.MetricDefine;
+import com.netease.arctic.ams.api.metrics.MetricKey;
 import com.netease.arctic.ams.api.metrics.MetricSet;
 import com.netease.arctic.ams.api.metrics.MetricType;
 import io.prometheus.client.Collector;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Metric type converter for prometheus api
+ */
 public class MetricCollector extends Collector {
   MetricSet metrics;
 
@@ -23,13 +47,13 @@ public class MetricCollector extends Collector {
 
   @Override
   public List<MetricFamilySamples> collect() {
-    Map<RegisteredMetricKey, Metric> registeredMetrics = metrics.getMetrics();
+    Map<MetricKey, Metric> registeredMetrics = metrics.getMetrics();
 
-    Map<MetricDefine, List<RegisteredMetricKey>> metricDefineMap =
+    Map<MetricDefine, List<MetricKey>> metricDefineMap =
         registeredMetrics.keySet().stream()
             .collect(
                 Collectors.groupingBy(
-                    RegisteredMetricKey::getDefine,
+                        MetricKey::getDefine,
                     Collectors.mapping(Function.identity(), Collectors.toList())));
     return metricDefineMap.entrySet().stream()
         .map(entry -> createFamilySample(entry.getKey(), entry.getValue(), registeredMetrics))
@@ -38,11 +62,11 @@ public class MetricCollector extends Collector {
 
   private MetricFamilySamples createFamilySample(
       MetricDefine define,
-      List<RegisteredMetricKey> keys,
-      Map<RegisteredMetricKey, Metric> registeredMetrics) {
+      List<MetricKey> keys,
+      Map<MetricKey, Metric> registeredMetrics) {
 
     List<MetricFamilySamples.Sample> samples = Lists.newArrayList();
-    for (RegisteredMetricKey key : keys) {
+    for (MetricKey key : keys) {
       Metric metric = registeredMetrics.get(key);
 
       MetricFamilySamples.Sample sample =
