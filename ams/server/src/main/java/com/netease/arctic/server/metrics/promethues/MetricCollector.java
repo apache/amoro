@@ -7,7 +7,6 @@ import com.netease.arctic.ams.api.metrics.Metric;
 import com.netease.arctic.ams.api.metrics.MetricDefine;
 import com.netease.arctic.ams.api.metrics.MetricSet;
 import com.netease.arctic.ams.api.metrics.MetricType;
-import com.netease.arctic.ams.api.metrics.RegisteredMetricKey;
 import io.prometheus.client.Collector;
 
 import java.util.List;
