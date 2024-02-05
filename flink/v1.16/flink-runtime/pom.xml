@@ -235,6 +235,9 @@
                                     <pattern>org.apache.iceberg.</pattern>
                                     <shadedPattern>com.netease.arctic.shaded.org.apache.iceberg.
                                     </shadedPattern>
+                                    <excludes>
+                                        <exclude>org.apache.iceberg.mr.hive.*</exclude>
+                                    </excludes>
                                 </relocation>
                                 <!--            parquet                    -->
                                 <relocation>
