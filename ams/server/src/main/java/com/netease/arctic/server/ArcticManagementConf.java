@@ -330,7 +330,16 @@ public class ArcticManagementConf {
           .durationType()
           .defaultValue(Duration.ofDays(1))
           .withDescription("Execute interval for data expiration");
-
+  public static final ConfigOption<Long> OPTIMIXING_EXPIRING_KEEP_TIME =
+      ConfigOptions.key("optimizing-expiring.keep_time")
+          .longType()
+          .defaultValue(2592000000L)
+          .withDescription("optimizing data keep time");
+  public static final ConfigOption<Long> OPTIMIXING_EXPIRING_INTERVAL =
+      ConfigOptions.key("optimizing-expiring.interval")
+          .longType()
+          .defaultValue(86400000L)
+          .withDescription("Execute interval for optimizing expiration");
   public static final String SYSTEM_CONFIG = "ams";
 
   public static final String CATALOG_CORE_SITE = "core-site";

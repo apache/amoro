@@ -82,6 +82,10 @@ ams:
     thread-count: 3
     interval: 60000 # 1min
 
+  optimizing-expiring:
+    keep_time: 2592000000 # 30 days
+    interval: 86400000 # 1 day
+
   database:
     type: derby
     jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver

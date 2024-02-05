@@ -27,21 +27,21 @@ import org.slf4j.LoggerFactory;
 
 public class OptimizingExpiringExecutor extends BaseTableExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingExpiringExecutor.class);
-
-  // 1 days
-  private static final long INTERVAL = 24 * 60 * 60 * 1000L;
-  // 30 days
-  private static final long KEEP_TIME = 30 * 24 * 60 * 60 * 1000L;
+  private final long interval;
+  private final long keepTime;
 
   private final Persistency persistency = new Persistency();
 
-  public OptimizingExpiringExecutor(TableManager tableRuntimes) {
+  public OptimizingExpiringExecutor(TableManager tableRuntimes, long keepTime, long interval) {
     super(tableRuntimes, 1);
+
+    this.keepTime = keepTime;
+    this.interval = interval;
   }
 
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return INTERVAL;
+    return interval;
   }
 
   @Override
@@ -61,7 +61,7 @@ public class OptimizingExpiringExecutor extends BaseTableExecutor {
 
   private class Persistency extends PersistentBase {
     public void doExpiring(TableRuntime tableRuntime) {
-      long expireTime = System.currentTimeMillis() - KEEP_TIME;
+      long expireTime = System.currentTimeMillis() - keepTime;
       doAsTransaction(
           () ->
               doAs(

@@ -60,7 +60,11 @@ public class AsyncTableExecutors {
     this.optimizingCommitExecutor =
         new OptimizingCommitExecutor(
             tableManager, conf.getInteger(ArcticManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
-    this.optimizingExpiringExecutor = new OptimizingExpiringExecutor(tableManager);
+    this.optimizingExpiringExecutor =
+        new OptimizingExpiringExecutor(
+            tableManager,
+            conf.getLong(ArcticManagementConf.OPTIMIXING_EXPIRING_KEEP_TIME),
+            conf.getLong(ArcticManagementConf.OPTIMIXING_EXPIRING_INTERVAL));
     this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableManager);
     if (conf.getBoolean(ArcticManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
       this.hiveCommitSyncExecutor =
