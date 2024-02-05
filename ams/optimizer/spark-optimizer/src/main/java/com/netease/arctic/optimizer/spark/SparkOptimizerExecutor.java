@@ -40,12 +40,10 @@ import java.util.List;
 public class SparkOptimizerExecutor extends OptimizerExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(SparkOptimizerExecutor.class);
   private final JavaSparkContext jsc;
-  private final OptimizerConfig config;
   private final int threadId;
 
   public SparkOptimizerExecutor(JavaSparkContext jsc, OptimizerConfig config, int threadId) {
     super(config, threadId);
-    this.config = config;
     this.jsc = jsc;
     this.threadId = threadId;
   }
@@ -53,43 +51,42 @@ public class SparkOptimizerExecutor extends OptimizerExecutor {
   @Override
   protected OptimizingTaskResult executeTask(OptimizingTask task) {
     OptimizingTaskResult result;
+    String threadName = Thread.currentThread().getName();
     try {
-      String threadName = Thread.currentThread().getName();
       long startTime = System.currentTimeMillis();
-      LOG.info("Now [{}] execute task {}", threadName, task);
       ImmutableList<OptimizingTask> of = ImmutableList.of(task);
-      String jobDesc =
-          String.format("%s | TableName(%s)", task.getTaskId(), parseFullTableName(task));
-      jsc.setJobDescription(jobDesc);
+      jsc.setJobDescription(jobDescription(task));
       SparkOptimizingTaskFunction taskFunction =
-          new SparkOptimizingTaskFunction((OptimizerConfig) getConfig(), threadId);
+          new SparkOptimizingTaskFunction(getConfig(), threadId);
       List<OptimizingTaskResult> results = jsc.parallelize(of, 1).map(taskFunction).collect();
       result = results.get(0);
       LOG.info(
-          "[{}] execute task {}, completed {} and time {} ms",
+          "Optimizer executor[{}] executed task[{}] and cost {}",
           threadName,
-          task,
-          result,
+          task.getTaskId(),
           System.currentTimeMillis() - startTime);
       return result;
     } catch (Throwable r) {
-      LOG.error("Failed to execute optimizing task.", r);
-      LOG.error("Optimizer executor[{}] executed task[{}] failed", threadId, task.getTaskId(), r);
+      LOG.error(
+          "Optimizer executor[{}] executed task[{}] failed, and cost {}", threadName, task, r);
       result = new OptimizingTaskResult(task.getTaskId(), threadId);
       result.setErrorMessage(ExceptionUtil.getErrorMessage(r, 4000));
       return result;
     }
   }
 
-  private String parseFullTableName(OptimizingTask task) {
-    String tableName = null;
+  private String jobDescription(OptimizingTask task) {
+    String description;
     TableOptimizing.OptimizingInput input =
         SerializationUtil.simpleDeserialize(task.getTaskInput());
     if (input instanceof RewriteFilesInput) {
-      tableName = ((RewriteFilesInput) input).getTable().name();
+      description =
+          String.format(
+              "Amoro rewrite files task, table name:%s, task id:%s",
+              task.getTaskId(), ((RewriteFilesInput) input).getTable().name());
     } else {
-      // TODO resolve other input types in future
+      throw new IllegalArgumentException("Unsupported task:" + input.getClass());
     }
-    return tableName;
+    return description;
   }
 }

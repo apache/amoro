@@ -18,6 +18,7 @@
 
 package com.netease.arctic.optimizing;
 
+import com.google.common.base.MoreObjects;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.table.ArcticTable;
@@ -153,16 +154,13 @@ public class RewriteFilesInput extends BaseOptimizingInput {
 
   @Override
   public String toString() {
-    return "RewriteFilesInput{"
-        + "rewrittenDataFilesSize="
-        + (rewrittenDataFiles == null ? 0 : rewrittenDataFiles.length)
-        + ", rePosDeletedDataFilesSize="
-        + (rePosDeletedDataFiles == null ? 0 : rePosDeletedDataFiles.length)
-        + ", readOnlyDeleteFilesSize="
-        + (readOnlyDeleteFiles == null ? 0 : readOnlyDeleteFiles.length)
-        + ", rewrittenDeleteFilesSize="
-        + (rewrittenDeleteFiles == null ? 0 : rewrittenDeleteFiles.length)
-        + "} "
-        + super.toString();
+    return MoreObjects.toStringHelper(this)
+        .add("rewrittenDataFilesSize", rewrittenDataFiles.length)
+        .add("rePosDeletedDataFilesSize", rePosDeletedDataFiles.length)
+        .add("readOnlyDeleteFilesSize", readOnlyDeleteFiles.length)
+        .add("rewrittenDeleteFilesSize", rewrittenDeleteFiles.length)
+        .add("table", table.name())
+        .addValue(super.toString())
+        .toString();
   }
 }
