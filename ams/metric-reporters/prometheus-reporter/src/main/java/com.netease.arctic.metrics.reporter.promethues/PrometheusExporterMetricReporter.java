@@ -26,9 +26,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Prometheus exporter
- */
+/** Prometheus exporter */
 public class PrometheusExporterMetricReporter implements MetricReporter {
 
   public static final String PORT = "port";

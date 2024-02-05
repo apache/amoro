@@ -18,8 +18,6 @@
 
 package com.netease.arctic.metrics.reporter.promethues;
 
-
-
 import com.netease.arctic.ams.api.metrics.Counter;
 import com.netease.arctic.ams.api.metrics.Gauge;
 import com.netease.arctic.ams.api.metrics.Metric;
@@ -35,9 +33,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Metric type converter for prometheus api
- */
+/** Metric type converter for prometheus api */
 public class MetricCollector extends Collector {
   MetricSet metrics;
 
@@ -53,7 +49,7 @@ public class MetricCollector extends Collector {
         registeredMetrics.keySet().stream()
             .collect(
                 Collectors.groupingBy(
-                        MetricKey::getDefine,
+                    MetricKey::getDefine,
                     Collectors.mapping(Function.identity(), Collectors.toList())));
     return metricDefineMap.entrySet().stream()
         .map(entry -> createFamilySample(entry.getKey(), entry.getValue(), registeredMetrics))
@@ -61,9 +57,7 @@ public class MetricCollector extends Collector {
   }
 
   private MetricFamilySamples createFamilySample(
-      MetricDefine define,
-      List<MetricKey> keys,
-      Map<MetricKey, Metric> registeredMetrics) {
+      MetricDefine define, List<MetricKey> keys, Map<MetricKey, Metric> registeredMetrics) {
 
     List<MetricFamilySamples.Sample> samples = Lists.newArrayList();
     for (MetricKey key : keys) {
