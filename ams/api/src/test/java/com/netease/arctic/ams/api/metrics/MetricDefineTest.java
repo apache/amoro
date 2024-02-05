@@ -52,32 +52,32 @@ public class MetricDefineTest {
   static Stream<Arguments> provideMetricNamesForEquality() {
 
     return Stream.of(
-        // 相同的 name, tags, type 应该返回 true
+        // same <name, tags, type> should be true
         Arguments.of(
             new MetricDefine(
                 "test-define", Arrays.asList("tag1", "tag2"), MetricType.Counter, "description"),
             true),
-        // 不同的 name 应该返回 false
+        // different name should be false
         Arguments.of(
             new MetricDefine(
                 "different-name", Arrays.asList("tag1", "tag2"), MetricType.Counter, "description"),
             false),
-        // 集合顺序不相同 tags 应该返回 true
+        // different order of tags should be true
         Arguments.of(
             new MetricDefine(
                 "test-define", Arrays.asList("tag2", "tag1"), MetricType.Counter, "description"),
             true),
-        // 不同的 tags 集合内容不同应该返回 false
+        // different tags should be false
         Arguments.of(
             new MetricDefine(
                 "test-define", Arrays.asList("tag3", "tag4"), MetricType.Counter, "description"),
             false),
-        // 不同的 MetricType 应该返回 false
+        // different MetricType should be false
         Arguments.of(
             new MetricDefine(
                 "test-define", Arrays.asList("tag1", "tag2"), MetricType.Gauge, "description"),
             false),
-        // 即使 description 不同，因为它不参与 equals 和 hashCode，所以应该返回 true
+        // even description is different，should be true
         Arguments.of(
             new MetricDefine(
                 "test-define",
