@@ -35,8 +35,9 @@
   - ".rat-excludes"
   - ".scalafmt"
   - "**/*pom.xml"
-  - "dist/**/*"
+  - "ams/dist/**/*"
   - "docker/**/*"
+  - "charts/**/"
 
 "type:docs":
   - "*.md"
@@ -45,24 +46,24 @@
 "module:core":
   - "core/**/*"
 
-"module:ams":
+"module:ams-server":
   - "ams/api/**/*"
   - "ams/ams-server/**/*"
 
-"module:dashboard":
-  - "ams/**/*"
+"module:ams-dashboard":
+  - "ams/dashboard/**/*"
 
-"module:spark":
-  - "spark/**/*"
+"module:ams-optimizer":
+  - "ams/optimizer/**/*"
 
-"module:flink":
-  - "flink/**/*"
+"module:mixed-spark":
+  - "mixed/spark/**/*"
 
-"module:hive":
-  - "hive/**/*"
+"module:mixed-flink":
+  - "mixed/flink/**/*"
 
-"module:optimize":
-  - "optimize/**/*"
+"module:mixed-hive":
+  - "mixed/hive/**/*"
 
-"module:trino":
-  - "trino/**/*"
+"module:mixed-trino":
+  - "mixed/trino/**/*"

@@ -83,6 +83,30 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
   }
 
   @Test
+  public void testCreateHourlyTag() {
+    Table table = getArcticTable().asUnkeyedTable();
+    table
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .set(TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES, "0")
+        .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD, "hourly")
+        .commit();
+    table.newAppend().commit();
+    checkSnapshots(table, 1);
+    checkNoTag(table);
+
+    Snapshot snapshot = table.currentSnapshot();
+    LocalDateTime now = fromEpochMillis(snapshot.timestampMillis());
+    newAutoCreateIcebergTagAction(table, now).execute();
+    checkTagCount(table, 1);
+    checkTag(table, "tag-" + formatDateTime(now.minusHours(1)), snapshot);
+
+    // should not recreate tag
+    newAutoCreateIcebergTagAction(table, now).execute();
+    checkTagCount(table, 1);
+  }
+
+  @Test
   public void testCreateDailyOffsetTag() {
     Table table = getArcticTable().asUnkeyedTable();
     table
@@ -104,7 +128,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
         .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES, offsetMinutesOfToday + "")
         .commit();
     newAutoCreateIcebergTagAction(table, now).execute();
-    checkTagCount(table, 0);
+    checkTag(table, "tag-" + formatDate(now.minusDays(2)), snapshot);
 
     // Offset -1 minute to make the snapshot exceed the offset to create tag
     offsetMinutesOfToday--;
@@ -113,12 +137,48 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
         .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES, offsetMinutesOfToday + "")
         .commit();
     newAutoCreateIcebergTagAction(table, now).execute();
-    checkTagCount(table, 1);
+    checkTagCount(table, 2);
     checkTag(table, "tag-" + formatDate(now.minusDays(1)), snapshot);
 
     // should not recreate tag
     newAutoCreateIcebergTagAction(table, now).execute();
-    checkTagCount(table, 1);
+    checkTagCount(table, 2);
+  }
+
+  @Test
+  public void testCreateHourlyOffsetTag() {
+    Table table = getArcticTable().asUnkeyedTable();
+    table
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .set(TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES, "0")
+        .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD, "hourly")
+        .commit();
+    table.newAppend().commit();
+    checkSnapshots(table, 1);
+    checkNoTag(table);
+
+    Snapshot snapshot = table.currentSnapshot();
+    LocalDateTime testDateTime = fromEpochMillis(snapshot.timestampMillis());
+    long offsetMinutesOfHour = getOffsetMinutesOfHour(snapshot.timestampMillis()) + 1;
+    table
+        .updateProperties()
+        .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES, offsetMinutesOfHour + "")
+        .commit();
+    newAutoCreateIcebergTagAction(table, testDateTime).execute();
+    checkTag(table, "tag-" + formatDateTime(testDateTime.minusHours(2)), snapshot);
+
+    offsetMinutesOfHour--;
+    table
+        .updateProperties()
+        .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES, offsetMinutesOfHour + "")
+        .commit();
+    newAutoCreateIcebergTagAction(table, testDateTime).execute();
+    checkTagCount(table, 2);
+    checkTag(table, "tag-" + formatDateTime(testDateTime.minusHours(1)), snapshot);
+
+    newAutoCreateIcebergTagAction(table, testDateTime).execute();
+    checkTagCount(table, 2);
   }
 
   @Test
@@ -148,6 +208,33 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
   }
 
   @Test
+  public void testNotCreateDelayHourlyTag() {
+    Table table = getArcticTable().asUnkeyedTable();
+    table
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD, "hourly")
+        .set(TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES, "60")
+        .commit();
+    table.newAppend().commit();
+    checkSnapshots(table, 1);
+    checkNoTag(table);
+
+    Snapshot snapshot = table.currentSnapshot();
+    LocalDateTime now = fromEpochMillis(snapshot.timestampMillis());
+    LocalDateTime lastHour = now.minusHours(1);
+
+    // should not create last hour tag
+    newAutoCreateIcebergTagAction(table, lastHour).execute();
+    checkNoTag(table);
+
+    // should create this hour tag
+    newAutoCreateIcebergTagAction(table, now).execute();
+    checkTagCount(table, 1);
+    checkTag(table, "tag-" + formatDateTime(now.minusHours(1)), snapshot);
+  }
+
+  @Test
   public void testTagFormat() {
     Table table = getArcticTable().asUnkeyedTable();
     table
@@ -157,7 +244,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
         .commit();
     table
         .updateProperties()
-        .set(TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT, "'custom-tag-'yyyyMMdd'-auto'")
+        .set(TableProperties.AUTO_CREATE_TAG_FORMAT, "'custom-tag-'yyyyMMdd'-auto'")
         .commit();
     table.newAppend().commit();
     checkSnapshots(table, 1);
@@ -174,11 +261,69 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
     checkTagCount(table, 1);
   }
 
+  @Test
+  public void testTriggerTimePeriod() {
+    testTagTimePeriodHourly("2022-08-08T11:40:00", 30, "2022-08-08T11:00:00");
+    testTagTimePeriodHourly("2022-08-08T23:40:00", 15, "2022-08-08T23:00:00");
+    testTagTimePeriodHourly("2022-08-09T00:10:00", 30, "2022-08-08T23:00:00");
+
+    testTagTimePeriodDaily("2022-08-08T03:40:00", 30, "2022-08-08T00:00:00");
+    testTagTimePeriodDaily("2022-08-08T23:40:00", 15, "2022-08-08T00:00:00");
+    testTagTimePeriodDaily("2022-08-09T00:10:00", 30, "2022-08-08T00:00:00");
+  }
+
+  private void testTagTimePeriodHourly(
+      String checkTimeStr, int offsetMinutes, String expectedResultStr) {
+    LocalDateTime checkTime = LocalDateTime.parse(checkTimeStr);
+    Long expectedTriggerTime =
+        (expectedResultStr == null)
+            ? null
+            : LocalDateTime.parse(expectedResultStr)
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli();
+
+    Long actualTriggerTime =
+        TagConfiguration.Period.HOURLY
+            .getTagTime(checkTime, offsetMinutes)
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli();
+
+    Assert.assertEquals(expectedTriggerTime, actualTriggerTime);
+  }
+
+  private void testTagTimePeriodDaily(
+      String checkTimeStr, int offsetMinutes, String expectedResultStr) {
+    LocalDateTime checkTime = LocalDateTime.parse(checkTimeStr);
+    Long expectedTriggerTime =
+        (expectedResultStr == null)
+            ? null
+            : LocalDateTime.parse(expectedResultStr)
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli();
+
+    Long actualTriggerTime =
+        TagConfiguration.Period.DAILY
+            .getTagTime(checkTime, offsetMinutes)
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli();
+
+    Assert.assertEquals(expectedTriggerTime, actualTriggerTime);
+  }
+
   private long getOffsetMinutesOfToday(long millis) {
     LocalDateTime now = fromEpochMillis(millis);
     LocalDateTime today = LocalDateTime.of(now.toLocalDate(), LocalTime.ofSecondOfDay(0));
     Duration between = Duration.between(today, now);
     return between.toMinutes();
+  }
+
+  private long getOffsetMinutesOfHour(long millis) {
+    LocalDateTime now = fromEpochMillis(millis);
+    return now.getMinute();
   }
 
   private LocalDateTime fromEpochMillis(long millis) {
@@ -187,6 +332,10 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
   private String formatDate(LocalDateTime localDateTime) {
     return localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+  }
+
+  private String formatDateTime(LocalDateTime localDateTime) {
+    return localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHH"));
   }
 
   private void checkNoTag(Table table) {

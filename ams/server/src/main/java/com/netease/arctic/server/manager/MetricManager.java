@@ -22,12 +22,10 @@ import com.netease.arctic.ams.api.metrics.MetricRegisterListener;
 import com.netease.arctic.ams.api.metrics.MetricReporter;
 import com.netease.arctic.server.metrics.MetricRegistry;
 
-import java.util.List;
-
 /** Metric plugins manager and registry */
-public class MetricManager extends BasePluginManager<MetricReporter> {
+public class MetricManager extends AbstractPluginManager<MetricReporter> {
 
-  public static final String PLUGIN_CONFIG_KEY = "metric-reporters";
+  public static final String PLUGIN_CATEGORY = "metric-reporters";
   private static volatile MetricManager INSTANCE;
 
   /** @return Get the singleton object. */
@@ -35,25 +33,26 @@ public class MetricManager extends BasePluginManager<MetricReporter> {
     if (INSTANCE == null) {
       synchronized (MetricManager.class) {
         if (INSTANCE == null) {
-          throw new IllegalStateException("MetricManager is not initialized");
+          INSTANCE = new MetricManager();
+          INSTANCE.initialize();
         }
       }
     }
     return INSTANCE;
   }
 
-  public static void initialize(List<PluginConfiguration> pluginConfigurations) {
+  /** Close the manager */
+  public static void dispose() {
     synchronized (MetricManager.class) {
       if (INSTANCE != null) {
-        throw new IllegalStateException("MetricManger has been already initialized.");
+        INSTANCE.close();
       }
-      INSTANCE = new MetricManager(pluginConfigurations);
-      INSTANCE.initialize();
+      INSTANCE = null;
     }
   }
 
-  protected MetricManager(List<PluginConfiguration> pluginConfigurations) {
-    super(pluginConfigurations);
+  protected MetricManager() {
+    super(PLUGIN_CATEGORY);
   }
 
   private final MetricRegistry globalRegistry = new MetricRegistry();
@@ -63,18 +62,13 @@ public class MetricManager extends BasePluginManager<MetricReporter> {
   }
 
   @Override
-  protected String pluginCategory() {
-    return PLUGIN_CONFIG_KEY;
-  }
-
-  @Override
   public void initialize() {
     super.initialize();
-    callPlugins(
-        l -> {
-          l.setGlobalMetricSet(globalRegistry);
-          if (l instanceof MetricRegisterListener) {
-            globalRegistry.addListener((MetricRegisterListener) l);
+    forEach(
+        reporter -> {
+          reporter.setGlobalMetricSet(globalRegistry);
+          if (reporter instanceof MetricRegisterListener) {
+            globalRegistry.addListener((MetricRegisterListener) reporter);
           }
         });
   }

@@ -135,8 +135,8 @@ Amoro is built using Maven with Java 1.8 and Java 17(only for `mixed/trino` modu
 * To skip tests: `mvn -DskipTests package -P toolchain`
 * To package without trino module and JAVA 17 dependency: `mvn clean package -DskipTests -pl '!mixed/trino'`
 * To build with hadoop 2.x(the default is 3.x) `mvn clean package -DskipTests -Dhadoop=v2`
-* To indicate flink version for optimizer(the default is 1.14, 1.15 and 1.16 are available)
-  `mvn clean package -DskipTests -Doptimizer.flink=1.15`
+* To indicate Flink version for optimizer (the default is 1.18.1): `mvn clean package -Dflink-optimizer.flink-version=1.15.4`. If the version of Flink is below 1.5.0, you also need to add the `-Pflink-pre-1.15` parameter: `mvn clean package -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`.
+  `mvn clean package -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6 -DskipTests`
 
 >Spotless is skipped by default in `trino` module. So if you want to perform checkstyle when building `trino` module, you must be in a Java 17 environment.
 
@@ -153,3 +153,16 @@ If you are interested in Lakehouse, Data Lake Format, welcome to join our commun
 and individuals to grow together, and sincerely hope to help users better use Data Lake Format through open source.
 
 Join the Amoro WeChat Group: Add " `kllnn999` " as a friend on WeChat and specify "Amoro lover".
+
+## Contributors
+This project exists thanks to all the people who contribute.
+
+<a href="https://github.com/NetEase/amoro/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=NetEase/amoro" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=NetEase/amoro&type=Date)](https://star-history.com/#NetEase/amoro&Date)

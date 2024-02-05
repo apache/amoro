@@ -36,9 +36,9 @@ import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.base.Optional;
 import org.apache.iceberg.relocated.com.google.common.base.Predicate;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +46,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -78,9 +80,11 @@ public class IcebergTableUtil {
     return table.currentSnapshot();
   }
 
-  public static Optional<Snapshot> findSnapshot(Table table, Predicate<Snapshot> predicate) {
-    Iterable<Snapshot> snapshots = table.snapshots();
-    return Iterables.tryFind(snapshots, predicate);
+  public static Optional<Snapshot> findFirstMatchSnapshot(
+      Table table, Predicate<Snapshot> predicate) {
+    List<Snapshot> snapshots = Lists.newArrayList(table.snapshots());
+    Collections.reverse(snapshots);
+    return Optional.ofNullable(Iterables.tryFind(snapshots, predicate).orNull());
   }
 
   public static Set<String> getAllContentFilePath(Table internalTable) {

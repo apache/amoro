@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink;
 
-import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.IDENTIFIER;
+import static com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
@@ -26,7 +26,7 @@ import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
+import com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions;
 import com.netease.arctic.flink.write.ArcticRowDataTaskWriterFactory;
 import com.netease.arctic.io.reader.GenericKeyedDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
@@ -126,8 +126,8 @@ public class FlinkTestBase extends TableTestBase {
 
   public void config() {
     props = Maps.newHashMap();
-    props.put("type", IDENTIFIER);
-    props.put(ArcticCatalogFactoryOptions.METASTORE_URL.key(), metastoreUrl);
+    props.put("type", LEGACY_MIXED_IDENTIFIER);
+    props.put(CatalogFactoryOptions.METASTORE_URL.key(), metastoreUrl);
   }
 
   public static void prepare() throws Exception {

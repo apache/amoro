@@ -20,7 +20,7 @@ package com.netease.arctic.flink.table;
 
 import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema;
 import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchemaForDimTable;
-import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.METASTORE_URL;
+import static com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions.METASTORE_URL;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaProperties;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOOKUP_CACHE_MAX_ROWS;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOOKUP_CACHE_TTL_AFTER_WRITE;
@@ -42,7 +42,7 @@ import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOp
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.TOPIC;
 
 import com.netease.arctic.flink.InternalCatalogBuilder;
-import com.netease.arctic.flink.catalog.ArcticCatalog;
+import com.netease.arctic.flink.catalog.MixedCatalog;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
@@ -84,9 +84,9 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
   private InternalCatalogBuilder internalCatalogBuilder;
   private String internalCatalogName;
 
-  public DynamicTableFactory(ArcticCatalog arcticCatalog) {
-    this.internalCatalogBuilder = arcticCatalog.catalogBuilder();
-    this.internalCatalogName = arcticCatalog.amsCatalogName();
+  public DynamicTableFactory(MixedCatalog mixedCatalog) {
+    this.internalCatalogBuilder = mixedCatalog.catalogBuilder();
+    this.internalCatalogName = mixedCatalog.amsCatalogName();
   }
 
   public DynamicTableFactory() {}

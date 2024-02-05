@@ -19,4 +19,10 @@
 package com.netease.arctic.server.exception;
 
 /** forbiddenException */
-public class ForbiddenException extends ArcticRuntimeException {}
+public class ForbiddenException extends ArcticRuntimeException {
+  public ForbiddenException() {}
+
+  public ForbiddenException(String message) {
+    super(message);
+  }
+}

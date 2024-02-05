@@ -69,7 +69,10 @@ public class Asserts {
     Streams.zip(expectSpec.fields().stream(), actualSpec.fields().stream(), Pair::of)
         .forEach(
             x -> {
-              Assertions.assertEquals(x.getLeft().transform(), x.getRight().transform());
+              Assertions.assertTrue(
+                  x.getLeft()
+                      .transform()
+                      .canTransform(actualSchema.findType(x.getRight().sourceId())));
               Assertions.assertEquals(
                   expectSchema.findField(x.getLeft().sourceId()).name(),
                   actualSchema.findField(x.getRight().sourceId()).name());

@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.events.IcebergReportEvent;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
@@ -106,13 +107,11 @@ public class RestCatalogService extends PersistentBase {
   private final JavalinJackson jsonMapper;
 
   private final TableService tableService;
-  private final EventsManager eventsManager;
 
   public RestCatalogService(TableService tableService) {
     this.tableService = tableService;
     ObjectMapper objectMapper = jsonMapper();
     this.jsonMapper = new JavalinJackson(objectMapper);
-    this.eventsManager = EventsManager.getInstance();
   }
 
   public EndpointGroup endpoints() {
@@ -369,6 +368,14 @@ public class RestCatalogService extends PersistentBase {
           String bodyJson = ctx.body();
           ReportMetricsRequest metricsRequest = ReportMetricsRequestParser.fromJson(bodyJson);
           ServerTableIdentifier identifier = handler.tableMetadata().getTableIdentifier();
+          IcebergReportEvent event =
+              new IcebergReportEvent(
+                  identifier.getCatalog(),
+                  identifier.getDatabase(),
+                  identifier.getTableName(),
+                  false,
+                  metricsRequest.report());
+          EventsManager.getInstance().emit(event);
           return null;
         });
   }

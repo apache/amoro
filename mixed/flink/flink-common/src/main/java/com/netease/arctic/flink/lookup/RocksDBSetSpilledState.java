@@ -42,7 +42,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RocksDBSetSpilledState extends RocksDBCacheState<Set<ByteArrayWrapper>> {
   private static final Logger LOG = LoggerFactory.getLogger(RocksDBSetSpilledState.class);
-  protected BinaryRowDataSerializerWrapper joinKeySerializer;
+  protected ThreadLocal<BinaryRowDataSerializerWrapper> joinKeySerializerThreadLocal =
+      new ThreadLocal<>();
+  private final BinaryRowDataSerializerWrapper joinKeySerializer;
   /** Multi-threads would put and delete the joinKeys and Set<ByteArrayWrapper> in the rocksdb. */
   private final Object rocksDBLock = new Object();
 
@@ -76,7 +78,10 @@ public class RocksDBSetSpilledState extends RocksDBCacheState<Set<ByteArrayWrapp
 
   @Override
   public byte[] serializeKey(RowData key) throws IOException {
-    return serializeKey(joinKeySerializer, key);
+    if (joinKeySerializerThreadLocal.get() == null) {
+      joinKeySerializerThreadLocal.set(joinKeySerializer.clone());
+    }
+    return serializeKey(joinKeySerializerThreadLocal.get(), key);
   }
 
   /**

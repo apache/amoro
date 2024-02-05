@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.table;
 
-import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.UNIFIED_IDENTIFIER;
+import static com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions.UNIFIED_IDENTIFIER;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.TABLE_FORMAT;
 
 import com.netease.arctic.ams.api.TableFormat;

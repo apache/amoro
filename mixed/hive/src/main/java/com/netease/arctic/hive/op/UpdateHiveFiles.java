@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.hive.op;
 
 import static com.netease.arctic.op.OverwriteBaseFiles.PROPERTIES_TRANSACTION_ID;
@@ -78,6 +96,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   protected final StructLikeMap<Partition> partitionToAlter;
   protected final StructLikeMap<Partition> partitionToAlterLocation;
   protected String unpartitionTableLocation;
+  private String hiveLocation = null;
   protected Long txId = null;
   protected boolean validateLocation = true;
   protected boolean checkOrphanFiles = false;
@@ -109,6 +128,13 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     this.partitionToCreate = StructLikeMap.create(table.spec().partitionType());
     this.partitionToDelete = StructLikeMap.create(table.spec().partitionType());
     this.partitionToAlterLocation = StructLikeMap.create(table.spec().partitionType());
+  }
+
+  private String hiveLocation() {
+    if (hiveLocation == null) {
+      hiveLocation = table.hiveLocation();
+    }
+    return hiveLocation;
   }
 
   protected abstract void postHiveDataCommitted(List<DataFile> committedDataFile);
@@ -505,7 +531,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     String newLocation;
     newLocation =
         HiveTableUtil.newHiveDataLocation(
-            table.hiveLocation(),
+            hiveLocation(),
             table.spec(),
             null,
             txId != null
@@ -548,7 +574,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   }
 
   protected boolean isHiveDataFile(DataFile dataFile) {
-    String hiveLocation = table.hiveLocation();
+    String hiveLocation = hiveLocation();
     String dataFileLocation = dataFile.path().toString();
     return dataFileLocation.toLowerCase().contains(hiveLocation.toLowerCase());
   }

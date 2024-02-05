@@ -1,7 +1,26 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.optimizer.common;
 
 import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.ErrorCodes;
+import com.netease.arctic.ams.api.OptimizerProperties;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
@@ -54,6 +73,9 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
         String token =
             callAms(
                 client -> {
+                  withRegisterProperty(
+                      OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL,
+                      String.valueOf(getConfig().getHeartBeat()));
                   OptimizerRegisterInfo registerInfo = new OptimizerRegisterInfo();
                   registerInfo.setThreadCount(getConfig().getExecutionParallel());
                   registerInfo.setMemoryMb(getConfig().getMemorySize());
@@ -71,6 +93,10 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
         return true;
       } catch (TException e) {
         LOG.error("Register optimizer to ams failed", e);
+        if (e instanceof ArcticException
+            && ErrorCodes.FORBIDDEN_ERROR_CODE == ((ArcticException) e).getErrorCode()) {
+          System.exit(1); // Don't need to try again
+        }
         return false;
       }
     }
