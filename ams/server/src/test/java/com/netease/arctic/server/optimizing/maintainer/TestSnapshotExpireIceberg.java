@@ -65,7 +65,7 @@ public class TestSnapshotExpireIceberg extends TestSnapshotExpire {
     IcebergTableMaintainer icebergTableMaintainer = new IcebergTableMaintainer(table);
     ExpireSnapshotsResult actualResult =
         icebergTableMaintainer
-            .expireSnapshots(getArcticTable().id(), System.currentTimeMillis())
+            .expireSnapshots(getArcticTable().id(), TableFormat.ICEBERG, System.currentTimeMillis())
             .getExpireResultAs(ExpireSnapshotsResult.class);
     Assertions.assertEquals(1, Iterables.size(table.snapshots()));
 

@@ -22,6 +22,7 @@ import static com.netease.arctic.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUE
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 import com.netease.arctic.IcebergFileEntry;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.events.EventType;
 import com.netease.arctic.ams.api.events.expire.ExpireEvent;
 import com.netease.arctic.ams.api.events.expire.ExpireOperation;
@@ -146,12 +147,13 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @VisibleForTesting
-  protected ExpireEvent expireSnapshots(TableIdentifier tableIdentifier, long mustOlderThan) {
+  protected ExpireEvent expireSnapshots(
+      TableIdentifier tableIdentifier, TableFormat format, long mustOlderThan) {
     ExpireEvent changeExpireEvent = null, baseExpireEvent;
     if (changeMaintainer != null) {
-      changeExpireEvent = changeMaintainer.expireSnapshots(tableIdentifier, mustOlderThan);
+      changeExpireEvent = changeMaintainer.expireSnapshots(tableIdentifier, format, mustOlderThan);
     }
-    baseExpireEvent = baseMaintainer.expireSnapshots(tableIdentifier, mustOlderThan);
+    baseExpireEvent = baseMaintainer.expireSnapshots(tableIdentifier, format, mustOlderThan);
 
     return reportMixedExpireEvent(changeExpireEvent, baseExpireEvent);
   }
@@ -348,9 +350,10 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     @Override
     @VisibleForTesting
-    ExpireEvent expireSnapshots(TableIdentifier tableIdentifier, long mustOlderThan) {
+    ExpireEvent expireSnapshots(
+        TableIdentifier tableIdentifier, TableFormat format, long mustOlderThan) {
       expireFiles(mustOlderThan);
-      return super.expireSnapshots(tableIdentifier, mustOlderThan);
+      return super.expireSnapshots(tableIdentifier, format, mustOlderThan);
     }
 
     @Override
@@ -364,6 +367,7 @@ public class MixedTableMaintainer implements TableMaintainer {
       ExpireEvent event =
           expireSnapshots(
               TableIdentifier.of(tableRuntime.getTableIdentifier().getIdentifier()),
+              tableRuntime.getFormat(),
               mustOlderThan(tableRuntime, now));
 
       reportExpireEvent(event);
@@ -504,12 +508,15 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     @Override
     protected ExpireEvent triggerExpireEvent(
-        TableIdentifier tableIdentifier, ExpireResult expireResult, long triggerTimestamp) {
+        TableIdentifier tableIdentifier,
+        TableFormat format,
+        ExpireResult expireResult,
+        long triggerTimestamp) {
       return ImmutableExpireEvent.builder()
           .catalog(tableIdentifier.getCatalog())
           .database(tableIdentifier.getDatabase())
           .table(tableIdentifier.getTableName())
-          .isExternal(false)
+          .format(format)
           .expireResult(expireResult)
           .timestampMillis(triggerTimestamp)
           .transactionId(triggerTimestamp)
@@ -579,12 +586,15 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     @Override
     protected ExpireEvent triggerExpireEvent(
-        TableIdentifier tableIdentifier, ExpireResult expireResult, long triggerTimestamp) {
+        TableIdentifier tableIdentifier,
+        TableFormat format,
+        ExpireResult expireResult,
+        long triggerTimestamp) {
       return ImmutableExpireEvent.builder()
           .catalog(tableIdentifier.getCatalog())
           .database(tableIdentifier.getDatabase())
           .table(tableIdentifier.getTableName())
-          .isExternal(false)
+          .format(format)
           .expireResult(expireResult)
           .timestampMillis(triggerTimestamp)
           .transactionId(triggerTimestamp)

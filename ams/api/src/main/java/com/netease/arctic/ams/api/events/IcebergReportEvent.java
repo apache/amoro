@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.api.events;
 
+import com.netease.arctic.ams.api.TableFormat;
 import org.apache.iceberg.metrics.MetricsReport;
 
 /** An event triggered when iceberg report metrics */
@@ -27,7 +28,7 @@ public class IcebergReportEvent implements TableEvent {
   private final String catalog;
   private final String database;
   private final String table;
-  private final boolean external;
+  private final Boolean external;
 
   public IcebergReportEvent(
       String catalog, String database, String table, boolean external, MetricsReport report) {
@@ -65,8 +66,13 @@ public class IcebergReportEvent implements TableEvent {
   }
 
   @Override
-  public boolean isExternal() {
+  public Boolean isExternal() {
     return external;
+  }
+
+  @Override
+  public TableFormat format() {
+    return TableFormat.ICEBERG;
   }
 
   /**

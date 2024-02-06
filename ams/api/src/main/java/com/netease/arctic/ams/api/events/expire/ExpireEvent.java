@@ -21,6 +21,8 @@ package com.netease.arctic.ams.api.events.expire;
 import com.netease.arctic.ams.api.events.TableEvent;
 import org.immutables.value.Value;
 
+import javax.annotation.Nullable;
+
 /**
  * Amoro automatically maintains datalake metadata files(e.g. expire snapshots, clean orphan
  * files...), every maintenance process will generate an event which could be reported to {@link
@@ -29,6 +31,9 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface ExpireEvent extends TableEvent {
 
+  @Nullable
+  @Override
+  Boolean isExternal();
   /**
    * The expiring process id
    *

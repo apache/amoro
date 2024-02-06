@@ -48,7 +48,7 @@ public class MixedExpireEvents {
         .table(baseEvent.table())
         .transactionId(Math.min(changeEvent.transactionId(), baseEvent.transactionId()))
         .timestampMillis(Math.min(changeEvent.timestampMillis(), baseEvent.timestampMillis()))
-        .isExternal(false)
+        .format(baseEvent.format())
         .operation(baseEvent.operation())
         .expireResult(
             combineExpireResult(
@@ -72,7 +72,7 @@ public class MixedExpireEvents {
         .table(nativeEvent.table())
         .transactionId(nativeEvent.transactionId())
         .timestampMillis(nativeEvent.timestampMillis())
-        .isExternal(false)
+        .format(nativeEvent.format())
         .operation(nativeEvent.operation())
         .expireResult(mixedSnapshotsResult)
         .type(EventType.EXPIRE_REPORT)

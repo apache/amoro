@@ -21,6 +21,7 @@ package com.netease.arctic.server.optimizing.maintainer;
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 import com.netease.arctic.ams.api.CommitMetaProducer;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.events.EventType;
 import com.netease.arctic.ams.api.events.expire.ExpireEvent;
 import com.netease.arctic.ams.api.events.expire.ExpireOperation;
@@ -176,6 +177,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     ExpireEvent event =
         expireSnapshots(
             TableIdentifier.of(tableRuntime.getTableIdentifier().getIdentifier()),
+            tableRuntime.getFormat(),
             mustOlderThan(tableRuntime, System.currentTimeMillis()));
 
     reportExpireEvent(event);
@@ -187,12 +189,13 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @VisibleForTesting
-  ExpireEvent expireSnapshots(TableIdentifier tableIdentifier, long mustOlderThan) {
+  ExpireEvent expireSnapshots(
+      TableIdentifier tableIdentifier, TableFormat format, long mustOlderThan) {
     long triggerTimestamp = System.currentTimeMillis();
     ExpireSnapshotsResult expireSnapshotsResult =
         expireSnapshots(mustOlderThan, expireSnapshotNeedToExcludeFiles());
 
-    return triggerExpireEvent(tableIdentifier, expireSnapshotsResult, triggerTimestamp);
+    return triggerExpireEvent(tableIdentifier, format, expireSnapshotsResult, triggerTimestamp);
   }
 
   private ExpireSnapshotsResult expireSnapshots(long olderThan, Set<String> exclude) {
@@ -213,7 +216,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
         .retainLast(1)
         .expireOlderThan(olderThan)
         .deleteWith(
-            file -> {
+            fileUri -> {
+              String file = TableFileUtil.getUriPath(fileUri);
               try {
                 if (exclude.isEmpty()) {
                   arcticFileIO().deleteFile(file);
@@ -254,17 +258,20 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   protected ExpireEvent triggerExpireEvent(
-      TableIdentifier tableIdentifier, ExpireResult expireResult, long triggerTimestamp) {
+      TableIdentifier tableIdentifier,
+      TableFormat format,
+      ExpireResult expireResult,
+      long triggerTimestamp) {
     return ImmutableExpireEvent.builder()
         .catalog(tableIdentifier.getCatalog())
         .database(tableIdentifier.getDatabase())
         .table(tableIdentifier.getTableName())
-        .isExternal(true)
+        .format(format)
         .expireResult(expireResult)
         .timestampMillis(triggerTimestamp)
         .transactionId(triggerTimestamp)
         .operation(ExpireOperation.EXPIRE_SNAPSHOTS.name())
-        .type(EventType.ICEBERG_REPORT)
+        .type(EventType.EXPIRE_REPORT)
         .build();
   }
 

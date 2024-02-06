@@ -18,6 +18,8 @@
 
 package com.netease.arctic.ams.api.events;
 
+import com.netease.arctic.ams.api.TableFormat;
+
 /** An event associated with a table */
 public interface TableEvent extends Event {
 
@@ -47,5 +49,12 @@ public interface TableEvent extends Event {
    *
    * @return True if event source from an external catalog.
    */
-  boolean isExternal();
+  Boolean isExternal();
+
+  /**
+   * Effective table format
+   *
+   * @return table format
+   */
+  TableFormat format();
 }
