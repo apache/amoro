@@ -110,7 +110,10 @@ public class IcebergTableUtil {
             .build();
     try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
       for (IcebergFileEntry entry : entries) {
-        validFiles.add(Pair.of(entry.getFile().path().toString(), entry.getFile().content()));
+        validFiles.add(
+            Pair.of(
+                TableFileUtil.getUriPath(entry.getFile().path().toString()),
+                entry.getFile().content()));
       }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
