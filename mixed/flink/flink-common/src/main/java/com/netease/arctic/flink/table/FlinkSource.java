@@ -21,6 +21,7 @@ package com.netease.arctic.flink.table;
 import static com.netease.arctic.flink.FlinkSchemaUtil.filterWatermark;
 import static com.netease.arctic.flink.FlinkSchemaUtil.toRowType;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_PARALLELISM;
 
 import com.netease.arctic.flink.interceptor.ProxyFactory;
 import com.netease.arctic.flink.read.ArcticSource;
@@ -184,17 +185,19 @@ public class FlinkSource {
               scanContext.caseSensitive(),
               arcticTable.io());
 
+      int scanParallelism = flinkConf.getOptional(SCAN_PARALLELISM).orElse(env.getParallelism());
       DataStreamSource<RowData> sourceStream =
           env.fromSource(
-              new ArcticSource<>(
-                  tableLoader,
-                  scanContext,
-                  rowDataReaderFunction,
-                  InternalTypeInfo.of(rowType),
-                  arcticTable.name(),
-                  dimTable),
-              watermarkStrategy,
-              ArcticSource.class.getName());
+                  new ArcticSource<>(
+                      tableLoader,
+                      scanContext,
+                      rowDataReaderFunction,
+                      InternalTypeInfo.of(rowType),
+                      arcticTable.name(),
+                      dimTable),
+                  watermarkStrategy,
+                  ArcticSource.class.getName())
+              .setParallelism(scanParallelism);
       context.generateUid(ARCTIC_FILE_TRANSFORMATION).ifPresent(sourceStream::uid);
       return sourceStream;
     }
@@ -225,6 +228,7 @@ public class FlinkSource {
     private DataStream<RowData> wrapKrb(DataStream<RowData> ds) {
       IcebergClassUtil.clean(env);
       Transformation origin = ds.getTransformation();
+      int scanParallelism = flinkConf.getOptional(SCAN_PARALLELISM).orElse(origin.getParallelism());
 
       if (origin instanceof OneInputTransformation) {
         OneInputTransformation<RowData, RowData> tf =
@@ -236,7 +240,7 @@ public class FlinkSource {
         if (tf.getInputs().isEmpty()) {
           return env.addSource(
                   new UnkeyedInputFormatSourceFunction(inputFormatProxyFactory, tf.getOutputType()))
-              .setParallelism(tf.getParallelism());
+              .setParallelism(scanParallelism);
         }
 
         LegacySourceTransformation tfSource = (LegacySourceTransformation) tf.getInputs().get(0);
@@ -248,10 +252,12 @@ public class FlinkSource {
         DataStreamSource sourceStream =
             env.addSource(functionProxy, tfSource.getName(), tfSource.getOutputType());
         context.generateUid(ARCTIC_FILE_TRANSFORMATION).ifPresent(sourceStream::uid);
-        return sourceStream.transform(
-            tf.getName(),
-            tf.getOutputType(),
-            new UnkeyedInputFormatOperatorFactory(inputFormatProxyFactory));
+        return sourceStream
+            .setParallelism(scanParallelism)
+            .transform(
+                tf.getName(),
+                tf.getOutputType(),
+                new UnkeyedInputFormatOperatorFactory(inputFormatProxyFactory));
       }
 
       LegacySourceTransformation tfSource = (LegacySourceTransformation) origin;
@@ -263,7 +269,7 @@ public class FlinkSource {
           (InputFormat) ProxyUtil.getProxy(function.getFormat(), arcticTable.io());
       DataStreamSource sourceStream =
           env.createInput(inputFormatProxy, tfSource.getOutputType())
-              .setParallelism(origin.getParallelism());
+              .setParallelism(scanParallelism);
       context.generateUid(ARCTIC_FILE_TRANSFORMATION).ifPresent(sourceStream::uid);
       return sourceStream;
     }

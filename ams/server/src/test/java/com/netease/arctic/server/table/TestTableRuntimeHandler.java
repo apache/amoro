@@ -26,6 +26,8 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
+import com.netease.arctic.server.manager.EventsManager;
+import com.netease.arctic.server.manager.MetricManager;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
@@ -74,6 +76,8 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     validateArcticTable(handler.getAddedTables().get(0).first());
     validateTableRuntime(handler.getAddedTables().get(0).second());
     tableService.dispose();
+    MetricManager.dispose();
+    EventsManager.dispose();
     Assert.assertTrue(handler.isDisposed());
 
     // initialize with a history table

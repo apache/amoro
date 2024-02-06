@@ -26,6 +26,7 @@ import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DataTask;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.FileMetadata;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.HasTableOperations;
@@ -309,11 +310,13 @@ public class TableEntriesScan {
     String filePath = fileRecord.get(dataFileFieldIndex(DataFile.FILE_PATH.name()), String.class);
     Long fileSize = fileRecord.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
     Long recordCount = fileRecord.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class);
+    String format = fileRecord.get(dataFileFieldIndex(DataFile.FILE_FORMAT.name()), String.class);
     DataFiles.Builder builder =
         DataFiles.builder(table.spec())
             .withPath(filePath)
             .withFileSizeInBytes(fileSize)
-            .withRecordCount(recordCount);
+            .withRecordCount(recordCount)
+            .withFormat(FileFormat.fromString(format));
     if (needMetrics()) {
       builder.withMetrics(buildMetrics(fileRecord));
     }
@@ -329,11 +332,13 @@ public class TableEntriesScan {
     String filePath = fileRecord.get(dataFileFieldIndex(DataFile.FILE_PATH.name()), String.class);
     Long fileSize = fileRecord.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
     Long recordCount = fileRecord.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class);
+    String format = fileRecord.get(dataFileFieldIndex(DataFile.FILE_FORMAT.name()), String.class);
     FileMetadata.Builder builder =
         FileMetadata.deleteFileBuilder(table.spec())
             .withPath(filePath)
             .withFileSizeInBytes(fileSize)
-            .withRecordCount(recordCount);
+            .withRecordCount(recordCount)
+            .withFormat(FileFormat.fromString(format));
     if (needMetrics()) {
       builder.withMetrics(buildMetrics(fileRecord));
     }

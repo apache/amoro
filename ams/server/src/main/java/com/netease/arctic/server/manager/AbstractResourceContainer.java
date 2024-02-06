@@ -1,6 +1,24 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.server.manager;
 
-import com.netease.arctic.ams.api.PropertyNames;
+import com.netease.arctic.ams.api.OptimizerProperties;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceContainer;
 import com.netease.arctic.ams.api.resource.ResourceStatus;
@@ -28,14 +46,14 @@ public abstract class AbstractResourceContainer implements ResourceContainer {
   public void init(String name, Map<String, String> containerProperties) {
     this.containerName = name;
     this.containerProperties = containerProperties;
-    this.amsHome = containerProperties.get(PropertyNames.AMS_HOME);
-    this.amsOptimizingUrl = containerProperties.get(PropertyNames.AMS_OPTIMIZER_URI);
+    this.amsHome = containerProperties.get(OptimizerProperties.AMS_HOME);
+    this.amsOptimizingUrl = containerProperties.get(OptimizerProperties.AMS_OPTIMIZER_URI);
     Preconditions.checkNotNull(
-        this.amsHome, "Container Property: %s is required", PropertyNames.AMS_HOME);
+        this.amsHome, "Container Property: %s is required", OptimizerProperties.AMS_HOME);
     Preconditions.checkNotNull(
         this.amsOptimizingUrl,
         "Container Property: %s is required",
-        PropertyNames.AMS_OPTIMIZER_URI);
+        OptimizerProperties.AMS_OPTIMIZER_URI);
   }
 
   @Override
@@ -47,7 +65,8 @@ public abstract class AbstractResourceContainer implements ResourceContainer {
   protected abstract Map<String, String> doScaleOut(Resource resource);
 
   protected String getOptimizingUri(Map<String, String> resourceProperties) {
-    String optimizingUrl = resourceProperties.getOrDefault(PropertyNames.AMS_OPTIMIZER_URI, null);
+    String optimizingUrl =
+        resourceProperties.getOrDefault(OptimizerProperties.AMS_OPTIMIZER_URI, null);
     if (StringUtils.isNotEmpty(optimizingUrl)) {
       return optimizingUrl;
     }
@@ -67,22 +86,23 @@ public abstract class AbstractResourceContainer implements ResourceContainer {
         .append(resource.getThreadCount())
         .append(" -g ")
         .append(resource.getGroupName());
-    if (resource.getProperties().containsKey(PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL)) {
+    if (resource.getProperties().containsKey(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL)) {
       stringBuilder
           .append(" -hb ")
-          .append(resource.getProperties().get(PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL));
+          .append(resource.getProperties().get(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL));
     }
     if (org.apache.iceberg.util.PropertyUtil.propertyAsBoolean(
         resource.getProperties(),
-        PropertyNames.OPTIMIZER_EXTEND_DISK_STORAGE,
-        PropertyNames.OPTIMIZER_EXTEND_DISK_STORAGE_DEFAULT)) {
+        OptimizerProperties.OPTIMIZER_EXTEND_DISK_STORAGE,
+        OptimizerProperties.OPTIMIZER_EXTEND_DISK_STORAGE_DEFAULT)) {
       stringBuilder
           .append(" -eds -dsp ")
-          .append(resource.getRequiredProperty(PropertyNames.OPTIMIZER_DISK_STORAGE_PATH));
-      if (resource.getProperties().containsKey(PropertyNames.OPTIMIZER_MEMORY_STORAGE_SIZE)) {
+          .append(resource.getRequiredProperty(OptimizerProperties.OPTIMIZER_DISK_STORAGE_PATH));
+      if (resource.getProperties().containsKey(OptimizerProperties.OPTIMIZER_MEMORY_STORAGE_SIZE)) {
         stringBuilder
             .append(" -msz ")
-            .append(resource.getProperties().get(PropertyNames.OPTIMIZER_MEMORY_STORAGE_SIZE));
+            .append(
+                resource.getProperties().get(OptimizerProperties.OPTIMIZER_MEMORY_STORAGE_SIZE));
       }
     }
     if (StringUtils.isNotEmpty(resource.getResourceId())) {
@@ -95,9 +115,9 @@ public abstract class AbstractResourceContainer implements ResourceContainer {
     List<String> cmds = new ArrayList<>();
     if (containerProperties != null) {
       for (Map.Entry<String, String> entry : containerProperties.entrySet()) {
-        if (entry.getKey().startsWith(PropertyNames.EXPORT_PROPERTY_PREFIX)) {
+        if (entry.getKey().startsWith(OptimizerProperties.EXPORT_PROPERTY_PREFIX)) {
           String exportPropertyName =
-              entry.getKey().substring(PropertyNames.EXPORT_PROPERTY_PREFIX.length());
+              entry.getKey().substring(OptimizerProperties.EXPORT_PROPERTY_PREFIX.length());
           String exportValue = entry.getValue();
           cmds.add(String.format("export %s=%s", exportPropertyName, exportValue));
         }

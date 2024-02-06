@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.server.ArcticManagementConf;
@@ -10,6 +28,7 @@ public class AsyncTableExecutors {
   private SnapshotsExpiringExecutor snapshotsExpiringExecutor;
   private TableRuntimeRefreshExecutor tableRefreshingExecutor;
   private OrphanFilesCleaningExecutor orphanFilesCleaningExecutor;
+  private DanglingDeleteFilesCleaningExecutor danglingDeleteFilesCleaningExecutor;
   private BlockerExpiringExecutor blockerExpiringExecutor;
   private OptimizingCommitExecutor optimizingCommitExecutor;
   private OptimizingExpiringExecutor optimizingExpiringExecutor;
@@ -31,6 +50,12 @@ public class AsyncTableExecutors {
       this.orphanFilesCleaningExecutor =
           new OrphanFilesCleaningExecutor(
               tableManager, conf.getInteger(ArcticManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT));
+    }
+    if (conf.getBoolean(ArcticManagementConf.CLEAN_DANGLING_DELETE_FILES_ENABLED)) {
+      this.danglingDeleteFilesCleaningExecutor =
+          new DanglingDeleteFilesCleaningExecutor(
+              tableManager,
+              conf.getInteger(ArcticManagementConf.CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT));
     }
     this.optimizingCommitExecutor =
         new OptimizingCommitExecutor(
@@ -77,6 +102,10 @@ public class AsyncTableExecutors {
 
   public OrphanFilesCleaningExecutor getOrphanFilesCleaningExecutor() {
     return orphanFilesCleaningExecutor;
+  }
+
+  public DanglingDeleteFilesCleaningExecutor getDanglingDeleteFilesCleaningExecutor() {
+    return danglingDeleteFilesCleaningExecutor;
   }
 
   public BlockerExpiringExecutor getBlockerExpiringExecutor() {

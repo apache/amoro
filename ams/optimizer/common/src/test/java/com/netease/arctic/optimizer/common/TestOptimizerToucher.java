@@ -1,11 +1,30 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.optimizer.common;
 
+import com.google.common.collect.Maps;
+import com.netease.arctic.ams.api.OptimizerProperties;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -26,10 +45,11 @@ public class TestOptimizerToucher extends OptimizerTestBase {
     tokenChangeListener.waitForTokenChange();
     Assert.assertEquals(1, tokenChangeListener.tokenList().size());
     Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
+    Map<String, String> optimizerProperties = Maps.newHashMap();
+    optimizerProperties.put("test_k", "test_v");
+    optimizerProperties.put(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL, "1000");
     validateRegisteredOptimizer(
-        tokenChangeListener.tokenList().get(0),
-        optimizerConfig,
-        Collections.singletonMap("test_k", "test_v"));
+        tokenChangeListener.tokenList().get(0), optimizerConfig, optimizerProperties);
 
     // clear all optimizer, toucher will register again
     TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().clear();
@@ -37,9 +57,7 @@ public class TestOptimizerToucher extends OptimizerTestBase {
     Assert.assertEquals(2, tokenChangeListener.tokenList().size());
     Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
     validateRegisteredOptimizer(
-        tokenChangeListener.tokenList().get(1),
-        optimizerConfig,
-        Collections.singletonMap("test_k", "test_v"));
+        tokenChangeListener.tokenList().get(1), optimizerConfig, optimizerProperties);
 
     optimizerToucher.stop();
   }

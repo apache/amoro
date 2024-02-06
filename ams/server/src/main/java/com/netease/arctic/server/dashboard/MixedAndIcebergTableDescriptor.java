@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,7 @@ package com.netease.arctic.server.dashboard;
 import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.FileNameRules;
@@ -31,6 +32,7 @@ import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
+import com.netease.arctic.server.dashboard.model.OperationType;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
@@ -53,6 +55,7 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticDataFiles;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.IcebergFindFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
@@ -102,6 +105,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   @Override
   public ServerTableMeta getTableDetail(AmoroTable<?> amoroTable) {
     ArcticTable table = getTable(amoroTable);
+    String tableFormat = decorateTableFormat(amoroTable);
     // set basic info
     TableBasicInfo tableBasicInfo = getTableBasicInfo(table);
     ServerTableMeta serverTableMeta = getServerTableMeta(table);
@@ -150,9 +154,22 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     tableSummary.put("size", byteToXB(tableSize));
     tableSummary.put("file", tableFileCnt);
     tableSummary.put("averageFile", byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
-    tableSummary.put("tableFormat", AmsUtil.formatString(amoroTable.format().name()));
+    tableSummary.put("tableFormat", tableFormat);
     serverTableMeta.setTableSummary(tableSummary);
     return serverTableMeta;
+  }
+
+  private String decorateTableFormat(AmoroTable table) {
+    StringBuilder sb = new StringBuilder();
+    sb.append(AmsUtil.formatString(table.format().name()));
+    if (table.format().equals(TableFormat.ICEBERG)) {
+      int formatVersion =
+          ((HasTableOperations) table.originalTable()).operations().current().formatVersion();
+      sb.append("(V");
+      sb.append(formatVersion);
+      sb.append(")");
+    }
+    return sb.toString();
   }
 
   private Long snapshotIdOfTableRef(Table table, String ref) {
@@ -167,7 +184,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
-  public List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable, String ref) {
+  public List<AmoroSnapshotsOfTable> getSnapshots(
+      AmoroTable<?> amoroTable, String ref, OperationType operationType) {
     ArcticTable arcticTable = getTable(amoroTable);
     List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
     List<Pair<Table, Long>> tableAndSnapshotIdList = new ArrayList<>();
@@ -188,8 +206,24 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     }
     tableAndSnapshotIdList.forEach(
         tableAndSnapshotId -> collectSnapshots(snapshotsOfTables, tableAndSnapshotId));
-    snapshotsOfTables.sort((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()));
-    return snapshotsOfTables;
+    return snapshotsOfTables.stream()
+        .filter(s -> validOperationType(s, operationType))
+        .sorted((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()))
+        .collect(Collectors.toList());
+  }
+
+  private boolean validOperationType(AmoroSnapshotsOfTable snapshot, OperationType operationType) {
+    switch (operationType) {
+      case ALL:
+        return true;
+      case OPTIMIZING:
+        return CommitMetaProducer.OPTIMIZE.name().equals(snapshot.getProducer());
+      case NON_OPTIMIZING:
+        return !CommitMetaProducer.OPTIMIZE.name().equals(snapshot.getProducer());
+      default:
+        throw new IllegalArgumentException(
+            "invalid operation: " + operationType + ", only support all/optimizing/non-optimizing");
+    }
   }
 
   private void collectSnapshots(
@@ -469,12 +503,15 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                     taskMeta.getPartitionData(),
                     taskMeta.getStatus(),
                     taskMeta.getRetryNum(),
+                    taskMeta.getOptimizerToken(),
                     taskMeta.getThreadId(),
                     taskMeta.getStartTime(),
                     taskMeta.getEndTime(),
                     taskMeta.getCostTime(),
                     taskMeta.getFailReason(),
-                    taskMeta.getMetricsSummary(),
+                    taskMeta.getMetricsSummary().getInputFilesStatistics(),
+                    taskMeta.getMetricsSummary().getOutputFilesStatistics(),
+                    taskMeta.getMetricsSummary().summaryAsMap(true),
                     taskMeta.getProperties()))
         .collect(Collectors.toList());
   }

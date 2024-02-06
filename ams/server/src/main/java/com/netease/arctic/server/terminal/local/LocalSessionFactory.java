@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *  *
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,6 +21,7 @@ package com.netease.arctic.server.terminal.local;
 import com.netease.arctic.server.terminal.SparkContextUtil;
 import com.netease.arctic.server.terminal.TerminalSession;
 import com.netease.arctic.server.terminal.TerminalSessionFactory;
+import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.ConfigOptions;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableMetaStore;
@@ -43,6 +44,9 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   static final Set<String> EXTERNAL_CONNECTORS =
       Collections.unmodifiableSet(Sets.newHashSet("iceberg", "paimon"));
   static final String SPARK_CONF_PREFIX = "spark.";
+
+  public static ConfigOption<Integer> SPARK_CORES =
+      ConfigOptions.key("cores").intType().defaultValue(1);
 
   SparkSession context = null;
   Configurations conf;
@@ -106,7 +110,8 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   protected synchronized SparkSession lazyInitContext() {
     Preconditions.checkNotNull(this.conf);
     if (context == null) {
-      SparkConf sparkconf = new SparkConf().setAppName("spark-local-context").setMaster("local");
+      SparkConf sparkconf = new SparkConf().setAppName("spark-local-context");
+      sparkconf.setMaster("local[" + conf.getInteger(SPARK_CORES) + "]");
       sparkconf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
       sparkconf.set("spark.executor.heartbeatInterval", "100s");
       sparkconf.set("spark.network.timeout", "200s");

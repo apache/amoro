@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
 import com.netease.arctic.server.optimizing.MetricsSummary;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
@@ -26,6 +25,7 @@ import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
 import com.netease.arctic.server.optimizing.OptimizingType;
 
 import java.util.List;
+import java.util.Map;
 
 public class OptimizingProcessInfo {
   private Long tableId;
@@ -45,8 +45,7 @@ public class OptimizingProcessInfo {
   private long finishTime;
   private FilesStatistics inputFiles;
   private FilesStatistics outputFiles;
-
-  private MetricsSummary summary;
+  private Map<String, String> summary;
 
   public Long getTableId() {
     return tableId;
@@ -176,11 +175,11 @@ public class OptimizingProcessInfo {
     this.outputFiles = outputFiles;
   }
 
-  public MetricsSummary getSummary() {
+  public Map<String, String> getSummary() {
     return summary;
   }
 
-  public void setSummary(MetricsSummary summary) {
+  public void setSummary(Map<String, String> summary) {
     this.summary = summary;
   }
 
@@ -209,24 +208,11 @@ public class OptimizingProcessInfo {
       result.setSuccessTasks(successTasks);
       result.setRunningTasks(runningTasks);
     }
-    FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
-    FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
     MetricsSummary summary = meta.getSummary();
     if (summary != null) {
-      inputBuilder.addFiles(summary.getEqualityDeleteSize(), summary.getEqDeleteFileCnt());
-      inputBuilder.addFiles(
-          summary.getPositionDeleteSize() + summary.getPositionalDeleteSize(),
-          summary.getPosDeleteFileCnt());
-      inputBuilder.addFiles(summary.getRewriteDataSize(), summary.getRewriteDataFileCnt());
-      inputBuilder.addFiles(
-          summary.getRewritePosDataSize(),
-          summary.getReRowDeletedDataFileCnt() + summary.getRewritePosDataFileCnt());
-      outputBuilder.addFiles(summary.getNewFileSize(), summary.getNewFileCnt());
-      outputBuilder.addFiles(summary.getNewDataSize(), summary.getNewDataFileCnt());
-      outputBuilder.addFiles(summary.getNewDeleteSize(), summary.getNewDeleteFileCnt());
+      result.setInputFiles(summary.getInputFilesStatistics());
+      result.setOutputFiles(summary.getOutputFilesStatistics());
     }
-    result.setInputFiles(inputBuilder.build());
-    result.setOutputFiles(outputBuilder.build());
 
     result.setTableId(meta.getTableId());
     result.setCatalogName(meta.getCatalogName());
@@ -243,7 +229,7 @@ public class OptimizingProcessInfo {
             ? meta.getEndTime() - meta.getPlanTime()
             : System.currentTimeMillis() - meta.getPlanTime());
     result.setFinishTime(meta.getEndTime());
-    result.setSummary(meta.getSummary());
+    result.setSummary(meta.getSummary().summaryAsMap(true));
     return result;
   }
 }

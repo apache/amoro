@@ -37,7 +37,8 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
-import org.apache.iceberg.StructLike;
+import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -65,7 +66,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
   private final KeyedTable arcticTable;
   private final long changeSnapshotId;
   private final long baseSnapshotId;
-  private PartitionFilter partitionFilter;
+  private Expression partitionFilter = Expressions.alwaysTrue();
 
   public KeyedTableFileScanHelper(KeyedTable arcticTable, KeyedTableSnapshot snapshot) {
     this.arcticTable = arcticTable;
@@ -171,6 +172,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
         ChangeTableIncrementalScan changeTableIncrementalScan =
             changeTable
                 .newScan()
+                .filter(partitionFilter)
                 .fromSequence(optimizedSequence)
                 .toSequence(maxSequence)
                 .useSnapshot(changeSnapshotId);
@@ -187,7 +189,6 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
             CloseableIterable.withNoopClose(
                 changeFiles
                     .allInsertFiles()
-                    .filter(insertFile -> filterFilePartition(partitionSpec, insertFile))
                     .map(
                         insertFile -> {
                           List<ContentFile<?>> relatedDeleteFiles =
@@ -200,12 +201,9 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
 
     CloseableIterable<FileScanResult> baseScanResult = CloseableIterable.empty();
     if (baseSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
-      PartitionSpec partitionSpec = baseTable.spec();
       baseScanResult =
           CloseableIterable.transform(
-              CloseableIterable.filter(
-                  baseTable.newScan().useSnapshot(baseSnapshotId).planFiles(),
-                  fileScanTask -> filterFilePartition(partitionSpec, fileScanTask.file())),
+              baseTable.newScan().filter(partitionFilter).useSnapshot(baseSnapshotId).planFiles(),
               fileScanTask -> {
                 DataFile dataFile = wrapBaseFile(fileScanTask.file());
                 List<ContentFile<?>> deleteFiles = new ArrayList<>(fileScanTask.deletes());
@@ -220,7 +218,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
   }
 
   @Override
-  public KeyedTableFileScanHelper withPartitionFilter(PartitionFilter partitionFilter) {
+  public KeyedTableFileScanHelper withPartitionFilter(Expression partitionFilter) {
     this.partitionFilter = partitionFilter;
     return this;
   }
@@ -231,16 +229,6 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
 
   private DataFile wrapBaseFile(DataFile dataFile) {
     return DefaultKeyedFile.parseBase(dataFile);
-  }
-
-  private boolean filterFilePartition(PartitionSpec partitionSpec, ContentFile<?> file) {
-    if (partitionFilter != null) {
-      StructLike partition = file.partition();
-      String partitionPath = partitionSpec.partitionToPath(partition);
-      return partitionFilter.test(partitionPath);
-    } else {
-      return true;
-    }
   }
 
   private long getMaxSequenceLimit(
@@ -265,6 +253,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         changeTable
             .newScan()
+            .filter(partitionFilter)
             .fromSequence(partitionOptimizedSequence)
             .useSnapshot(changeSnapshot.snapshotId());
     Map<Long, SnapshotFileGroup> changeFilesGroupBySequence = new HashMap<>();

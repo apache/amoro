@@ -20,7 +20,7 @@ package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.spark.test.utils.DataComparator;
 import com.netease.arctic.spark.test.utils.ExpectResultUtil;
@@ -44,7 +44,7 @@ import java.util.stream.Stream;
 
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
-public class TestMergeIntoSQL extends SparkTableTestBase {
+public class TestMergeIntoSQL extends MixedTableTestBase {
 
   private static final Schema schema =
       new Schema(

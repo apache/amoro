@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.spark.test.utils.TableFiles;
 import com.netease.arctic.spark.test.utils.TestTableUtil;
@@ -35,7 +35,7 @@ import java.util.stream.Stream;
 
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
-public class TestDropPartitionSQL extends SparkTableTestBase {
+public class TestDropPartitionSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testDropPartition() {
     return Stream.of(

@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,9 +33,13 @@ import org.apache.iceberg.Table;
 // TODO TableMaintainer should not be in this optimizing.xxx package.
 public interface TableMaintainer {
 
-  /** Clean table orphan files. Includes: data files, metadata files, dangling delete files. */
+  /** Clean table orphan files. Includes: data files, metadata files. */
   void cleanOrphanFiles(TableRuntime tableRuntime);
 
+  /** Clean table dangling delete files. */
+  default void cleanDanglingDeleteFiles(TableRuntime tableRuntime) {
+    // DO nothing by default
+  }
   /**
    * Expire snapshots. The optimizing based on the snapshot that the current table relies on will
    * not expire according to TableRuntime.

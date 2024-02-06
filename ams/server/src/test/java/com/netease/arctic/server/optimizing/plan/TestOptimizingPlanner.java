@@ -20,6 +20,7 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.OptimizerProperties;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
@@ -94,6 +95,10 @@ public class TestOptimizingPlanner extends TestOptimizingEvaluator {
 
   @Override
   protected OptimizingPlanner buildOptimizingEvaluator() {
-    return new OptimizingPlanner(getTableRuntime(), getArcticTable(), 1);
+    return new OptimizingPlanner(
+        getTableRuntime(),
+        getArcticTable(),
+        1,
+        OptimizerProperties.MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT);
   }
 }

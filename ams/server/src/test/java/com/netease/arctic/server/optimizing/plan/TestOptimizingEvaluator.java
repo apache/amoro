@@ -28,9 +28,10 @@ import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,6 +39,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @RunWith(Parameterized.class)
@@ -104,7 +106,7 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
     Assert.assertTrue(optimizingEvaluator.isNecessary());
     pendingInput = optimizingEvaluator.getPendingInput();
 
-    assertInput(pendingInput, FileInfo.buildFileInfo(getArcticTable().spec(), dataFiles));
+    assertInput(pendingInput, FileInfo.buildFileInfo(dataFiles));
   }
 
   protected OptimizingEvaluator buildOptimizingEvaluator() {
@@ -133,7 +135,7 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
   }
 
   private static class FileInfo {
-    private final Set<String> partitions = Sets.newHashSet();
+    private final Map<Integer, Set<StructLike>> partitions = Maps.newHashMap();
     private int dataFileCount = 0;
     private long dataFileSize = 0;
     private final int equalityDeleteFileCount = 0;
@@ -141,17 +143,20 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
     private final long positionalDeleteBytes = 0L;
     private final long equalityDeleteBytes = 0L;
 
-    public static FileInfo buildFileInfo(PartitionSpec spec, List<DataFile> dataFiles) {
+    public static FileInfo buildFileInfo(List<DataFile> dataFiles) {
       FileInfo fileInfo = new FileInfo();
       for (DataFile dataFile : dataFiles) {
         fileInfo.dataFileCount++;
         fileInfo.dataFileSize += dataFile.fileSizeInBytes();
-        fileInfo.partitions.add(spec.partitionToPath(dataFile.partition()));
+        fileInfo
+            .partitions
+            .computeIfAbsent(dataFile.specId(), ignore -> Sets.newHashSet())
+            .add(dataFile.partition());
       }
       return fileInfo;
     }
 
-    public Set<String> getPartitions() {
+    public Map<Integer, Set<StructLike>> getPartitions() {
       return partitions;
     }
 

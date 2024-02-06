@@ -102,6 +102,10 @@ public class TestHiveUnkeyedPartitionPlan extends TestUnkeyedPartitionPlan {
         OptimizingTestHelpers.appendBase(
             getArcticTable(),
             tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+    dataFiles.addAll(
+        OptimizingTestHelpers.appendBase(
+            getArcticTable(),
+            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
     StructLike partition = dataFiles.get(0).partition();
 
     // not trigger optimize

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *  *
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,14 +41,27 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   private Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newHashMap();
   private final Map<String, String> properties = Maps.newHashMap();
 
+  private TableMetaStore tableMetaStore;
+
   public CommonUnifiedCatalog(
       Supplier<CatalogMeta> catalogMetaSupplier, Map<String, String> properties) {
     CatalogMeta catalogMeta = catalogMetaSupplier.get();
     CatalogUtil.mergeCatalogProperties(catalogMeta, properties);
     this.meta = catalogMeta;
+    this.tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
     this.properties.putAll(properties);
     this.metaSupplier = catalogMetaSupplier;
     initializeFormatCatalogs();
+  }
+
+  @Override
+  public String metastoreType() {
+    return meta.getCatalogType();
+  }
+
+  @Override
+  public TableMetaStore authenticationContext() {
+    return this.tableMetaStore;
   }
 
   @Override
@@ -163,8 +176,14 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     if (newMeta.equals(this.meta)) {
       return;
     }
+    this.tableMetaStore = CatalogUtil.buildMetaStore(newMeta);
     this.meta = newMeta;
     this.initializeFormatCatalogs();
+  }
+
+  @Override
+  public Map<String, String> properties() {
+    return this.meta.getCatalogProperties();
   }
 
   protected void initializeFormatCatalogs() {
@@ -174,8 +193,11 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newConcurrentMap();
     for (FormatCatalogFactory factory : loader) {
       if (formats.contains(factory.format())) {
+        Map<String, String> catalogProperties =
+            factory.convertCatalogProperties(
+                name(), meta.getCatalogType(), meta.getCatalogProperties());
         FormatCatalog catalog =
-            factory.create(name(), meta.getCatalogType(), meta.getCatalogProperties(), store);
+            factory.create(name(), meta.getCatalogType(), catalogProperties, store);
         formatCatalogs.put(factory.format(), catalog);
       }
     }

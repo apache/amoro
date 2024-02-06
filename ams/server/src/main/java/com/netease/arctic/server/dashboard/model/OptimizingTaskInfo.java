@@ -18,24 +18,31 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.netease.arctic.server.optimizing.MetricsSummary;
+import static com.netease.arctic.server.ArcticServiceConstants.INVALID_TIME;
+
 import com.netease.arctic.server.optimizing.TaskRuntime;
 
 import java.util.Map;
 
 public class OptimizingTaskInfo {
+  public static String RETRY_COUNT_PROP = "retry-count";
+  public static String OPTIMIZER_TOKEN_PROP = "optimizer.token";
+  public static String OPTIMIZER_THREAD_ID_PROP = "optimizer.thread-id";
   private Long tableId;
   private Long processId;
   private int taskId;
   private String partitionData;
   private TaskRuntime.Status status;
   private int retryNum;
+  private String optimizerToken;
   private int threadId;
   private long startTime;
   private long endTime;
   private long costTime;
   private String failReason;
-  private MetricsSummary summary;
+  private FilesStatistics inputFiles;
+  private FilesStatistics outputFiles;
+  private Map<String, String> summary;
   private Map<String, String> properties;
 
   public OptimizingTaskInfo(
@@ -45,12 +52,15 @@ public class OptimizingTaskInfo {
       String partitionData,
       TaskRuntime.Status status,
       int retryNum,
+      String optimizerToken,
       int threadId,
       long startTime,
       long endTime,
       long costTime,
       String failReason,
-      MetricsSummary summary,
+      FilesStatistics inputFiles,
+      FilesStatistics outputFiles,
+      Map<String, String> summary,
       Map<String, String> properties) {
     this.tableId = tableId;
     this.processId = processId;
@@ -58,13 +68,25 @@ public class OptimizingTaskInfo {
     this.partitionData = partitionData;
     this.status = status;
     this.retryNum = retryNum;
+    this.optimizerToken = optimizerToken;
     this.threadId = threadId;
     this.startTime = startTime;
     this.endTime = endTime;
-    this.costTime = costTime;
+    if (costTime == 0 && startTime != INVALID_TIME && endTime == INVALID_TIME) {
+      this.costTime = System.currentTimeMillis() - startTime;
+    } else {
+      this.costTime = costTime;
+    }
     this.failReason = failReason;
+    this.inputFiles = inputFiles;
+    this.outputFiles = outputFiles;
     this.summary = summary;
     this.properties = properties;
+    this.summary.put(RETRY_COUNT_PROP, String.valueOf(retryNum));
+    if (this.optimizerToken != null) {
+      this.summary.put(OPTIMIZER_TOKEN_PROP, optimizerToken);
+      this.summary.put(OPTIMIZER_THREAD_ID_PROP, String.valueOf(threadId));
+    }
   }
 
   public Long getTableId() {
@@ -115,6 +137,14 @@ public class OptimizingTaskInfo {
     this.retryNum = retryNum;
   }
 
+  public String getOptimizerToken() {
+    return optimizerToken;
+  }
+
+  public void setOptimizerToken(String optimizerToken) {
+    this.optimizerToken = optimizerToken;
+  }
+
   public int getThreadId() {
     return threadId;
   }
@@ -155,11 +185,11 @@ public class OptimizingTaskInfo {
     this.failReason = failReason;
   }
 
-  public MetricsSummary getSummary() {
+  public Map<String, String> getSummary() {
     return summary;
   }
 
-  public void setSummary(MetricsSummary summary) {
+  public void setSummary(Map<String, String> summary) {
     this.summary = summary;
   }
 
@@ -169,5 +199,21 @@ public class OptimizingTaskInfo {
 
   public void setProperties(Map<String, String> properties) {
     this.properties = properties;
+  }
+
+  public FilesStatistics getInputFiles() {
+    return inputFiles;
+  }
+
+  public void setInputFiles(FilesStatistics inputFiles) {
+    this.inputFiles = inputFiles;
+  }
+
+  public FilesStatistics getOutputFiles() {
+    return outputFiles;
+  }
+
+  public void setOutputFiles(FilesStatistics outputFiles) {
+    this.outputFiles = outputFiles;
   }
 }

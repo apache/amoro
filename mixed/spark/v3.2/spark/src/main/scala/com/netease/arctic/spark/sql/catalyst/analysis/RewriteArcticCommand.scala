@@ -19,6 +19,7 @@
 package com.netease.arctic.spark.sql.catalyst.analysis
 
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
+import com.netease.arctic.spark.mixed.MixedSessionCatalogBase
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.buildCatalogAndIdentifier
 import com.netease.arctic.spark.sql.catalyst.plans.{AlterArcticTableDropPartition, TruncateArcticTable}
 import com.netease.arctic.spark.table.ArcticSparkTable
@@ -47,7 +48,8 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
     catalog match {
       case _: ArcticSparkCatalog => true
       case _: ArcticSparkSessionCatalog[_] =>
-        provider.isDefined && provider.get.equalsIgnoreCase("arctic")
+        provider.isDefined && MixedSessionCatalogBase.supportedProviders.contains(
+          provider.get.toLowerCase)
       case _ => false
     }
   }

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.manager;
 
-import com.netease.arctic.ams.api.PropertyNames;
+import com.netease.arctic.ams.api.OptimizerProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Test;
@@ -32,9 +32,9 @@ public class TestFlinkOptimizerContainer {
   Map<String, String> containerProperties = Maps.newHashMap();
 
   public TestFlinkOptimizerContainer() {
-    containerProperties.put(PropertyNames.AMS_HOME, "/home/ams");
+    containerProperties.put(OptimizerProperties.AMS_HOME, "/home/ams");
     containerProperties.put(FlinkOptimizerContainer.FLINK_HOME_PROPERTY, "/home/ams");
-    containerProperties.put(PropertyNames.AMS_OPTIMIZER_URI, "thrift://127.0.0.1:1261");
+    containerProperties.put(OptimizerProperties.AMS_OPTIMIZER_URI, "thrift://127.0.0.1:1261");
   }
 
   @Test

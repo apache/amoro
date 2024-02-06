@@ -42,6 +42,8 @@ import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -154,7 +156,7 @@ public class SqlSessionFactoryProvider {
     }
   }
 
-  private String getInitSqlScriptPath(String type) {
+  private URI getInitSqlScriptPath(String type) throws URISyntaxException {
     String scriptPath = null;
     if (type.equals(ArcticManagementConf.DB_TYPE_MYSQL)) {
       scriptPath = MYSQL_INIT_SQL_SCRIPT;
@@ -167,7 +169,7 @@ public class SqlSessionFactoryProvider {
     if (scriptUrl == null) {
       throw new IllegalStateException("Cannot find init sql script:" + scriptPath);
     }
-    return scriptUrl.getPath();
+    return scriptUrl.toURI();
   }
 
   public SqlSessionFactory get() {

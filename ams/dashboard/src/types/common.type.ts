@@ -136,6 +136,35 @@ export interface BreadcrumbSnapshotItem {
   commitTime: number | string
 }
 
+export interface FilesStatistics {
+  fileCnt: number
+  totalSize: number
+  averageSize: number
+}
+
+export interface BreadcrumbOptimizingItem {
+  tableId: number
+  processId: number
+  taskId: number
+  partitionData: string
+  status: string
+  retryNum: number
+  optimizerToken: string
+  threadId: number
+  thread: string
+  startTime: number | string
+  endTime: number | string
+  costTime: number
+  formatCostTime: string
+  failReason: string
+  summary: Record<string, string>
+  inputFiles: FilesStatistics
+  outputFiles: FilesStatistics
+  inputFilesDesc: string
+  outputFilesDesc: string
+  properties: Record<string, string>
+}
+
 export interface SnapshotItemSummary {
   'total-data-files': number
   'total-delete-files': number

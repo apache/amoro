@@ -36,5 +36,7 @@ public @interface EnableCatalogSelect {
     String use() default "";
 
     boolean byTableFormat() default false;
+
+    boolean unifiedCatalog() default false;
   }
 }

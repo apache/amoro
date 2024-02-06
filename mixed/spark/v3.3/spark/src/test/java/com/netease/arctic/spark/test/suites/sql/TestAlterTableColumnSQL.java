@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.AnalysisException;
@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
-public class TestAlterTableColumnSQL extends SparkTableTestBase {
+public class TestAlterTableColumnSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testAddColumn() {
     return Stream.of(
@@ -230,7 +230,7 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
   @DisplayName("Test `alter column`")
   @ParameterizedTest
   @MethodSource()
-  @EnableCatalogSelect.SelectCatalog(use = HADOOP_CATALOG)
+  @EnableCatalogSelect.SelectCatalog(use = MIXED_ICEBERG_CATALOG)
   public void testAlterColumn(
       String alterText, String primaryKeyDDL, Types.StructType expectedSchema) {
     String sqlText =

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.optimizer.common;
 
-import com.netease.arctic.ams.api.PropertyNames;
+import com.netease.arctic.ams.api.OptimizerProperties;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -31,14 +31,14 @@ public class OptimizerConfig implements Serializable {
 
   @Option(
       name = "-a",
-      aliases = "--" + PropertyNames.AMS_OPTIMIZER_URI,
+      aliases = "--" + OptimizerProperties.AMS_OPTIMIZER_URI,
       usage = "The ams url",
       required = true)
   private String amsUrl;
 
   @Option(
       name = "-p",
-      aliases = "--" + PropertyNames.OPTIMIZER_EXECUTION_PARALLEL,
+      aliases = "--" + OptimizerProperties.OPTIMIZER_EXECUTION_PARALLEL,
       usage = "Optimizer execution parallel",
       required = true)
   private int executionParallel;
@@ -47,42 +47,42 @@ public class OptimizerConfig implements Serializable {
   @Deprecated
   @Option(
       name = "-m",
-      aliases = "--" + PropertyNames.OPTIMIZER_MEMORY_SIZE,
+      aliases = "--" + OptimizerProperties.OPTIMIZER_MEMORY_SIZE,
       usage = "Optimizer memory size(MB)")
   private int memorySize;
 
   @Option(
       name = "-g",
-      aliases = "--" + PropertyNames.OPTIMIZER_GROUP_NAME,
+      aliases = "--" + OptimizerProperties.OPTIMIZER_GROUP_NAME,
       usage = "Group name optimizer belong",
       required = true)
   private String groupName;
 
   @Option(
       name = "-hb",
-      aliases = "--" + PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL,
+      aliases = "--" + OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL,
       usage = "Heart beat interval with ams(ms), default 10s")
   private long heartBeat = 10000; // 10 s
 
   @Option(
       name = "-eds",
-      aliases = "--" + PropertyNames.OPTIMIZER_EXTEND_DISK_STORAGE,
+      aliases = "--" + OptimizerProperties.OPTIMIZER_EXTEND_DISK_STORAGE,
       usage = "Whether extend storage to disk, default false")
   private boolean extendDiskStorage = false;
 
   @Option(
       name = "-dsp",
-      aliases = "--" + PropertyNames.OPTIMIZER_DISK_STORAGE_PATH,
+      aliases = "--" + OptimizerProperties.OPTIMIZER_DISK_STORAGE_PATH,
       usage = "Disk storage path")
   private String diskStoragePath;
 
   @Option(
       name = "-msz",
-      aliases = "--" + PropertyNames.OPTIMIZER_MEMORY_STORAGE_SIZE,
+      aliases = "--" + OptimizerProperties.OPTIMIZER_MEMORY_STORAGE_SIZE,
       usage = "Memory storage size limit when extending disk storage(MB), default 512MB")
   private long memoryStorageSize = 512; // 512 M
 
-  @Option(name = "-id", aliases = "--" + PropertyNames.RESOURCE_ID, usage = "Resource id")
+  @Option(name = "-id", aliases = "--" + OptimizerProperties.RESOURCE_ID, usage = "Resource id")
   private String resourceId;
 
   public OptimizerConfig() {}

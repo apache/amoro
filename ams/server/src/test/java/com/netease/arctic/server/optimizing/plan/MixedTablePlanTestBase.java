@@ -37,14 +37,18 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticDataFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.PartitionData;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
@@ -217,32 +221,33 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
     // 1.write 1 segment file A
     newRecords =
-        OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 40, "2022-01-01T12:00:00");
+        OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 1000, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
     rePosSegmentFiles.addAll(
         OptimizingTestHelpers.appendBase(
             getArcticTable(),
             tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
 
-    // 2.write 2 pos-delete for the segment file A
+    // 2.write 2 pos-delete (radio < 0.1) for the complete segment file A
     rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, rePosSegmentFiles, 0));
     rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, rePosSegmentFiles, 1));
 
     // 3.write 1 segment file B
     newRecords =
-        OptimizingTestHelpers.generateRecord(tableTestHelper(), 41, 80, "2022-01-01T12:00:00");
+        OptimizingTestHelpers.generateRecord(tableTestHelper(), 1001, 2000, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
     rewrittenSegmentFiles.addAll(
         OptimizingTestHelpers.appendBase(
             getArcticTable(),
             tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
 
-    // 4.write 1 pos-delete (radio > 0.5) for 1 segment file B
-    rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, rewrittenSegmentFiles, 0, 20));
+    // 4.write 1 pos-delete (radio > 0.1) for the complete segment file B
+    rewrittenDeleteFiles.addAll(
+        appendPosDelete(transactionId, rewrittenSegmentFiles, 0, newRecords.size() / 10 + 1));
 
     // 5.write 1 fragment file C
     newRecords =
-        OptimizingTestHelpers.generateRecord(tableTestHelper(), 81, 84, "2022-01-01T12:00:00");
+        OptimizingTestHelpers.generateRecord(tableTestHelper(), 2001, 2004, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
     fragmentFiles.addAll(
         OptimizingTestHelpers.appendBase(
@@ -251,7 +256,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
     // 6.write 1 fragment file D
     newRecords =
-        OptimizingTestHelpers.generateRecord(tableTestHelper(), 85, 88, "2022-01-01T12:00:00");
+        OptimizingTestHelpers.generateRecord(tableTestHelper(), 2005, 2008, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
     fragmentFiles.addAll(
         OptimizingTestHelpers.appendBase(
@@ -265,6 +270,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     segmentFiles.addAll(rePosSegmentFiles);
     segmentFiles.addAll(rewrittenSegmentFiles);
 
+    setTargetSize(segmentFiles, true);
     setFragmentRatio(segmentFiles);
     assertSegmentFiles(segmentFiles);
     assertFragmentFiles(fragmentFiles);
@@ -341,8 +347,21 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
-
     return partitionPlan;
+  }
+
+  private void setTargetSize(List<DataFile> dataFiles, boolean isCompleteSegment) {
+    Long maxFileSizeBytes =
+        dataFiles.stream()
+            .map(ContentFile::fileSizeInBytes)
+            .max(Long::compareTo)
+            .orElseThrow(() -> new IllegalStateException("dataFiles can't not be empty"));
+    long targetFileSizeBytes =
+        isCompleteSegment ? maxFileSizeBytes + 1 : (maxFileSizeBytes * 2 + 1);
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.SELF_OPTIMIZING_TARGET_SIZE, targetFileSizeBytes + "")
+        .commit();
   }
 
   private void setFragmentRatio(List<DataFile> dataFiles) {
@@ -383,6 +402,12 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
         .updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL, "-1")
         .commit();
+  }
+
+  private void resetTargetSize() {
+    updateTableProperty(
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT + "");
   }
 
   protected void updateTableProperty(String key, String value) {
@@ -476,7 +501,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
       List<DataFile> rePosDeletedDataFiles,
       List<? extends ContentFile<?>> readOnlyDeleteFiles,
       List<? extends ContentFile<?>> rewrittenDeleteFiles) {
-    Assert.assertEquals(actual.getPartition(), getPartition());
+    Assert.assertEquals(actual.getPartition(), getPartitionPath());
     assertFiles(rewrittenDeleteFiles, actual.getInput().rewrittenDeleteFiles());
     assertFiles(rewrittenDataFiles, actual.getInput().rewrittenDataFiles());
     assertFiles(readOnlyDeleteFiles, actual.getInput().readOnlyDeleteFiles());
@@ -517,7 +542,15 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   protected abstract TableFileScanHelper getTableFileScanHelper();
 
-  protected String getPartition() {
+  protected Pair<Integer, StructLike> getPartition() {
+    return isPartitionedTable()
+        ? Pair.of(
+            getArcticTable().spec().specId(),
+            ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01"))
+        : Pair.of(getArcticTable().spec().specId(), new PartitionData(Types.StructType.of()));
+  }
+
+  protected String getPartitionPath() {
     return isPartitionedTable() ? "op_time_day=2022-01-01" : "";
   }
 
