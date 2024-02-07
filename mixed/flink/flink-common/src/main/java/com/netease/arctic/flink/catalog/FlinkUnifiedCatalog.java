@@ -31,6 +31,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.flink.catalog.factories.iceberg.IcebergFlinkCatalogFactory;
 import com.netease.arctic.flink.catalog.factories.mixed.MixedCatalogFactory;
+import com.netease.arctic.flink.catalog.factories.paimon.PaimonFlinkCatalogFactory;
 import com.netease.arctic.flink.table.AmoroDynamicTableFactory;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.flink.configuration.Configuration;
@@ -446,6 +447,11 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
         break;
       case ICEBERG:
         catalogFactory = new IcebergFlinkCatalogFactory(hadoopConf);
+        break;
+      case PAIMON:
+        catalogFactory =
+            new PaimonFlinkCatalogFactory(
+                unifiedCatalog.properties(), unifiedCatalog.metastoreType());
         break;
       default:
         throw new UnsupportedOperationException(

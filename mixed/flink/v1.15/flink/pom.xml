@@ -65,6 +65,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.apache.paimon</groupId>
+            <artifactId>paimon-flink-1.15</artifactId>
+            <version>${paimon.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

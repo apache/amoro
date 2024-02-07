@@ -72,7 +72,11 @@ public class FlinkCatalogContext {
         Arguments.of(
             initFlinkCatalog(TableFormat.ICEBERG),
             generateFlinkTable(TableFormat.ICEBERG.toString()),
-            TableFormat.ICEBERG));
+            TableFormat.ICEBERG),
+        Arguments.of(
+            initFlinkCatalog(TableFormat.PAIMON),
+            generateFlinkTable(TableFormat.PAIMON.toString()),
+            TableFormat.PAIMON));
   }
 
   static ResolvedCatalogTable generateFlinkTable(String tableFormat) {
