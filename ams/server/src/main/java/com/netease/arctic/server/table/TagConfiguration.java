@@ -232,7 +232,7 @@ public class TagConfiguration {
         .add("triggerPeriod", triggerPeriod)
         .add("triggerOffsetMinutes", triggerOffsetMinutes)
         .add("maxDelayMinutes", maxDelayMinutes)
-        .add("expireKeepMinutes", tagMaxAgeMs)
+        .add("tagMaxAgeMs", tagMaxAgeMs)
         .toString();
   }
 }
