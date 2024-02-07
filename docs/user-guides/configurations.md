@@ -70,13 +70,14 @@ Data-cleaning configurations are applicable to both Iceberg Format and Mixed str
 Tags configurations are applicable to Iceberg Format only now, and will be supported in Mixed Format
 soon.
 
-| Key                                        | Default                                          | Description                                                 |
-|--------------------------------------------|--------------------------------------------------|-------------------------------------------------------------|
-| tag.auto-create.enabled                    | false                                            | Enables automatically creating tags                         |
-| tag.auto-create.trigger.period             | daily                                            | Period of creating tags, support `daily`,`hourly` now       |
-| tag.auto-create.trigger.offset.minutes     | 0                                                | The minutes by which the tag is created after midnight (00:00) |
-| tag.auto-create.trigger.max-delay.minutes  | 60                                               | The maximum delay time for creating a tag                   |
-| tag.auto-create.tag-format            | 'tag-'yyyyMMdd for daily and 'tag-'yyyyMMddHH for hourly periods | The format of the name for tag              |
+| Key                                       | Default                                                          | Description                                                                                                                          |
+|-------------------------------------------|------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| tag.auto-create.enabled                   | false                                                            | Enables automatically creating tags                                                                                                  |
+| tag.auto-create.trigger.period            | daily                                                            | Period of creating tags, support `daily`,`hourly` now                                                                                |
+| tag.auto-create.trigger.offset.minutes    | 0                                                                | The minutes by which the tag is created after midnight (00:00)                                                                       |
+| tag.auto-create.trigger.max-delay.minutes | 60                                                               | The maximum delay time for creating a tag                                                                                            |
+| tag.auto-create.tag-format                | 'tag-'yyyyMMdd for daily and 'tag-'yyyyMMddHH for hourly periods | The format of the name for tag. Modifying this configuration will not take effect on old tags                                        |
+| tag.auto-create.max-age-ms                | -1                                                               | Time of automatically created Tag to retain, -1 means keep it forever. Modifying this configuration will not take effect on old tags |
 
 ## Mixed Format configurations
 
