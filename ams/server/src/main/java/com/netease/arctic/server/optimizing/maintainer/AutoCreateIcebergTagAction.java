@@ -97,8 +97,8 @@ public class AutoCreateIcebergTagAction {
       return false;
     }
     ManageSnapshots tag = table.manageSnapshots().createTag(tagName, snapshot.snapshotId());
-    if (tagConfig.getExpirationMs() > 0) {
-      tag.setMaxRefAgeMs(tagName, tagConfig.getExpirationMs());
+    if (tagConfig.getTagMaxAgeMs() > 0) {
+      tag.setMaxRefAgeMs(tagName, tagConfig.getTagMaxAgeMs());
     }
     tag.commit();
     LOG.info(

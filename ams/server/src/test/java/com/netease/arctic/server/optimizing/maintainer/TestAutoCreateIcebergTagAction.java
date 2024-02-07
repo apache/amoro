@@ -282,7 +282,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
         .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
         .set(TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES, "0")
         .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD, "hourly")
-        .set(TableProperties.AUTO_CREATE_TAG_EXPIRATION_MS, expireKeepMs + "")
+        .set(TableProperties.AUTO_CREATE_TAG_MAX_AGE_MS, expireKeepMs + "")
         .commit();
 
     table.newAppend().commit();

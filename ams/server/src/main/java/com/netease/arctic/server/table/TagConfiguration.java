@@ -44,8 +44,8 @@ public class TagConfiguration {
   private int triggerOffsetMinutes;
   // tag.auto-create.trigger.max-delay.minutes
   private int maxDelayMinutes;
-  // tag auto create expire millisecond
-  private long expirationMs;
+  // tag.auto-create.max-age-ms
+  private long tagMaxAgeMs;
 
   /** The interval for periodically triggering creating tags */
   public enum Period {
@@ -144,11 +144,11 @@ public class TagConfiguration {
             tableProperties,
             TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES,
             TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES_DEFAULT));
-    tagConfig.setExpirationMs(
+    tagConfig.setTagMaxAgeMs(
         CompatiblePropertyUtil.propertyAsLong(
             tableProperties,
-            TableProperties.AUTO_CREATE_TAG_EXPIRATION_MS,
-            TableProperties.AUTO_CREATE_TAG_EXPIRATION_MS_DEFAULT));
+            TableProperties.AUTO_CREATE_TAG_MAX_AGE_MS,
+            TableProperties.AUTO_CREATE_TAG_MAX_AGE_MS_DEFAULT));
     return tagConfig;
   }
 
@@ -192,12 +192,12 @@ public class TagConfiguration {
     this.maxDelayMinutes = maxDelayMinutes;
   }
 
-  public long getExpirationMs() {
-    return expirationMs;
+  public long getTagMaxAgeMs() {
+    return tagMaxAgeMs;
   }
 
-  public void setExpirationMs(long expirationMs) {
-    this.expirationMs = expirationMs;
+  public void setTagMaxAgeMs(long tagMaxAgeMs) {
+    this.tagMaxAgeMs = tagMaxAgeMs;
   }
 
   @Override
@@ -210,7 +210,7 @@ public class TagConfiguration {
         && maxDelayMinutes == that.maxDelayMinutes
         && Objects.equal(tagFormat, that.tagFormat)
         && triggerPeriod == that.triggerPeriod
-        && expirationMs == that.expirationMs;
+        && tagMaxAgeMs == that.tagMaxAgeMs;
   }
 
   @Override
@@ -221,7 +221,7 @@ public class TagConfiguration {
         triggerPeriod,
         triggerOffsetMinutes,
         maxDelayMinutes,
-        expirationMs);
+        tagMaxAgeMs);
   }
 
   @Override
@@ -232,7 +232,7 @@ public class TagConfiguration {
         .add("triggerPeriod", triggerPeriod)
         .add("triggerOffsetMinutes", triggerOffsetMinutes)
         .add("maxDelayMinutes", maxDelayMinutes)
-        .add("expireKeepMinutes", expirationMs)
+        .add("expireKeepMinutes", tagMaxAgeMs)
         .toString();
   }
 }
