@@ -29,13 +29,17 @@ import com.netease.arctic.ams.api.metrics.MetricDefine;
 import com.netease.arctic.ams.api.metrics.MetricKey;
 import com.netease.arctic.server.metrics.MetricRegistry;
 import com.netease.arctic.server.resource.OptimizerInstance;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 public class OptimizingGroupMetrics {
 
@@ -49,6 +53,24 @@ public class OptimizingGroupMetrics {
   public static final MetricDefine OPTIMIZER_GROUP_EXECUTING_TASKS =
       defineGauge("optimizer_group_executing_tasks")
           .withDescription("Number of executing tasks in optimizing resource group")
+          .withTags(GROUP_TAG)
+          .build();
+
+  public static final MetricDefine OPTIMIZER_GROUP_PLANING_TABLES =
+      defineGauge("optimizer_group_planing_tables")
+          .withDescription("Number of planing tables in optimizing resource group")
+          .withTags(GROUP_TAG)
+          .build();
+
+  public static final MetricDefine OPTIMIZER_GROUP_PENDING_TABLES =
+      defineGauge("optimizer_group_pending_tables")
+          .withDescription("Number of pending tables in optimizing resource group")
+          .withTags(GROUP_TAG)
+          .build();
+
+  public static final MetricDefine OPTIMIZER_GROUP_EXECUTING_TABLES =
+      defineGauge("optimizer_group_executing_tables")
+          .withDescription("Number of executing tables in optimizing resource group")
           .withTags(GROUP_TAG)
           .build();
 
@@ -74,6 +96,7 @@ public class OptimizingGroupMetrics {
   @VisibleForTesting private final MetricRegistry registry;
   private final OptimizingQueue optimizingQueue;
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
+  private final Set<ServerTableIdentifier> planningTables = new HashSet<>();
   private final Map<String, OptimizerInstance> optimizerInstances = new ConcurrentHashMap<>();
 
   public OptimizingGroupMetrics(
@@ -89,21 +112,41 @@ public class OptimizingGroupMetrics {
   }
 
   public void register() {
+    Function<TaskRuntime, Boolean> pendingTasksFilter =
+        task -> {
+          return task.getStatus().equals(PLANNED) || task.getStatus().equals(SCHEDULED);
+        };
+
+    Function<TaskRuntime, Boolean> executingTasksFilter = task -> task.getStatus().equals(ACKED);
+
     registerMetric(
         registry,
         OPTIMIZER_GROUP_QUEUE_TASKS,
-        (Gauge<Integer>)
-            () ->
-                optimizingQueue
-                    .collectTasks(
-                        task ->
-                            task.getStatus().equals(PLANNED) || task.getStatus().equals(SCHEDULED))
-                    .size());
+        (Gauge<Integer>) () -> optimizingQueue.collectTasks(pendingTasksFilter::apply).size());
     registerMetric(
         registry,
         OPTIMIZER_GROUP_EXECUTING_TASKS,
-        (Gauge<Integer>)
-            () -> optimizingQueue.collectTasks(task -> task.getStatus().equals(ACKED)).size());
+        (Gauge<Integer>) () -> optimizingQueue.collectTasks(executingTasksFilter::apply).size());
+
+    registerMetric(registry, OPTIMIZER_GROUP_PLANING_TABLES, (Gauge<Integer>) planningTables::size);
+    registerMetric(
+        registry,
+        OPTIMIZER_GROUP_PENDING_TABLES,
+        (Gauge<Long>)
+            () -> {
+              List<TaskRuntime> pendingTasks =
+                  optimizingQueue.collectTasks(pendingTasksFilter::apply);
+              return pendingTasks.stream().mapToLong(TaskRuntime::getTableId).distinct().count();
+            });
+    registerMetric(
+        registry,
+        OPTIMIZER_GROUP_EXECUTING_TABLES,
+        (Gauge<Long>)
+            () -> {
+              List<TaskRuntime> executingTasks =
+                  optimizingQueue.collectTasks(executingTasksFilter::apply);
+              return executingTasks.stream().mapToLong(TaskRuntime::getTableId).distinct().count();
+            });
 
     registerMetric(registry, OPTIMIZER_GROUP_OPTIMIZERS, (Gauge<Integer>) optimizerInstances::size);
     registerMetric(
@@ -143,5 +186,13 @@ public class OptimizingGroupMetrics {
 
   public void removeOptimizer(OptimizerInstance optimizerInstance) {
     optimizerInstances.remove(optimizerInstance.getToken());
+  }
+
+  public void addPlanningTable(ServerTableIdentifier tableIdentifier) {
+    planningTables.add(tableIdentifier);
+  }
+
+  public void removePlanningTable(ServerTableIdentifier tableIdentifier) {
+    planningTables.remove(tableIdentifier);
   }
 }

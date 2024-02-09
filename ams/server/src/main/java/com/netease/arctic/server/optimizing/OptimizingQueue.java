@@ -223,6 +223,7 @@ public class OptimizingQueue extends PersistentBase {
         tableRuntime.getTableIdentifier(),
         scheduler.name());
     planningTables.add(tableRuntime.getTableIdentifier());
+    metrics.addPlanningTable(tableRuntime.getTableIdentifier());
     CompletableFuture.supplyAsync(() -> planInternal(tableRuntime), planExecutor)
         .whenComplete(
             (process, throwable) -> {
@@ -231,6 +232,7 @@ public class OptimizingQueue extends PersistentBase {
               try {
                 tableRuntime.setLastPlanTime(currentTime);
                 planningTables.remove(tableRuntime.getTableIdentifier());
+                metrics.removePlanningTable(tableRuntime.getTableIdentifier());
                 if (process != null) {
                   tableQueue.offer(process);
                   LOG.info(

@@ -19,9 +19,12 @@
 package com.netease.arctic.server.optimizing;
 
 import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.GROUP_TAG;
+import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TABLES;
 import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TASKS;
 import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED;
 import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_OPTIMIZERS;
+import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_PENDING_TABLES;
+import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
 import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_QUEUE_TASKS;
 import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_THREADS;
 
@@ -247,16 +250,11 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   }
 
   @Test
-  public void testTaskMetrics() {
+  public void testTaskAndTableMetrics() {
     TableRuntimeMeta tableRuntimeMeta = initTableWithFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntimeMeta);
     MetricRegistry registry = MetricManager.getInstance().getGlobalRegistry();
     Map<String, String> tagValues = ImmutableMap.of(GROUP_TAG, testResourceGroup().getName());
-
-    //    Assert.assertEquals(0, queue.collectTasks().size());
-
-    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
-    Assert.assertNotNull(task);
 
     Gauge<Integer> queueTasksGauge =
         (Gauge<Integer>)
@@ -264,20 +262,41 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Gauge<Integer> executingTasksGauge =
         (Gauge<Integer>)
             registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_EXECUTING_TASKS, tagValues));
+    Gauge<Integer> planingTablesGauge =
+        (Gauge<Integer>)
+            registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_PLANING_TABLES, tagValues));
+    Gauge<Long> pendingTablesGauge =
+        (Gauge<Long>)
+            registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_PENDING_TABLES, tagValues));
+    Gauge<Long> executingTablesGauge =
+        (Gauge<Long>)
+            registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_EXECUTING_TABLES, tagValues));
+
+    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
 
     task.schedule(optimizerThread);
     Assert.assertEquals(1, queueTasksGauge.getValue().longValue());
     Assert.assertEquals(0, executingTasksGauge.getValue().longValue());
+    Assert.assertEquals(0, planingTablesGauge.getValue().longValue());
+    Assert.assertEquals(1, pendingTablesGauge.getValue().longValue());
+    Assert.assertEquals(0, executingTablesGauge.getValue().longValue());
 
     task.ack(optimizerThread);
     Assert.assertEquals(0, queueTasksGauge.getValue().longValue());
     Assert.assertEquals(1, executingTasksGauge.getValue().longValue());
+    Assert.assertEquals(0, planingTablesGauge.getValue().longValue());
+    Assert.assertEquals(0, pendingTablesGauge.getValue().longValue());
+    Assert.assertEquals(1, executingTablesGauge.getValue().longValue());
 
     task.complete(
         optimizerThread,
         buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(0, queueTasksGauge.getValue().longValue());
     Assert.assertEquals(0, executingTasksGauge.getValue().longValue());
+    Assert.assertEquals(0, planingTablesGauge.getValue().longValue());
+    Assert.assertEquals(0, pendingTablesGauge.getValue().longValue());
+    Assert.assertEquals(0, executingTablesGauge.getValue().longValue());
     queue.dispose();
   }
 
