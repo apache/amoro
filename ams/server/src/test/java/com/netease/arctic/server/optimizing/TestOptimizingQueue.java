@@ -266,18 +266,18 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_EXECUTING_TASKS, tagValues));
 
     task.schedule(optimizerThread);
-    Assert.assertEquals(1L, (long) queueTasksGauge.getValue());
-    Assert.assertEquals(0L, (long) executingTasksGauge.getValue());
+    Assert.assertEquals(1, queueTasksGauge.getValue().longValue());
+    Assert.assertEquals(0, executingTasksGauge.getValue().longValue());
 
     task.ack(optimizerThread);
-    Assert.assertEquals(0L, (long) queueTasksGauge.getValue());
-    Assert.assertEquals(1L, (long) executingTasksGauge.getValue());
+    Assert.assertEquals(0, queueTasksGauge.getValue().longValue());
+    Assert.assertEquals(1, executingTasksGauge.getValue().longValue());
 
     task.complete(
         optimizerThread,
         buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
-    Assert.assertEquals(0L, (long) queueTasksGauge.getValue());
-    Assert.assertEquals(0L, (long) executingTasksGauge.getValue());
+    Assert.assertEquals(0, queueTasksGauge.getValue().longValue());
+    Assert.assertEquals(0, executingTasksGauge.getValue().longValue());
     queue.dispose();
   }
 
@@ -304,14 +304,14 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         (Gauge<Long>) registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_THREADS, tagValues));
 
     queue.addOptimizer(optimizer);
-    Assert.assertEquals(1L, (long) optimizerCountGauge.getValue());
-    Assert.assertEquals((long) 2048 * 1024 * 1024, (long) optimizerMemoryGauge.getValue());
-    Assert.assertEquals(2L, (long) optimizerThreadsGauge.getValue());
+    Assert.assertEquals(1, optimizerCountGauge.getValue().longValue());
+    Assert.assertEquals((long) 2048 * 1024 * 1024, optimizerMemoryGauge.getValue().longValue());
+    Assert.assertEquals(2, optimizerThreadsGauge.getValue().longValue());
 
     queue.removeOptimizer(optimizer);
-    Assert.assertEquals(0L, (long) optimizerCountGauge.getValue());
-    Assert.assertEquals(0L, (long) optimizerMemoryGauge.getValue());
-    Assert.assertEquals(0L, (long) optimizerThreadsGauge.getValue());
+    Assert.assertEquals(0, optimizerCountGauge.getValue().longValue());
+    Assert.assertEquals(0, optimizerMemoryGauge.getValue().longValue());
+    Assert.assertEquals(0, optimizerThreadsGauge.getValue().longValue());
     queue.dispose();
   }
 
