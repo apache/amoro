@@ -262,8 +262,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Gauge<Integer> executingTasksGauge =
         (Gauge<Integer>)
             registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_EXECUTING_TASKS, tagValues));
-    Gauge<Integer> planingTablesGauge =
-        (Gauge<Integer>)
+    Gauge<Long> planingTablesGauge =
+        (Gauge<Long>)
             registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_PLANING_TABLES, tagValues));
     Gauge<Long> pendingTablesGauge =
         (Gauge<Long>)
@@ -272,15 +272,20 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         (Gauge<Long>)
             registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_EXECUTING_TABLES, tagValues));
 
-    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
-    Assert.assertNotNull(task);
-
-    task.schedule(optimizerThread);
-    Assert.assertEquals(1, queueTasksGauge.getValue().longValue());
+    Assert.assertEquals(0, queueTasksGauge.getValue().longValue());
     Assert.assertEquals(0, executingTasksGauge.getValue().longValue());
     Assert.assertEquals(0, planingTablesGauge.getValue().longValue());
     Assert.assertEquals(1, pendingTablesGauge.getValue().longValue());
     Assert.assertEquals(0, executingTablesGauge.getValue().longValue());
+
+    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+    task.schedule(optimizerThread);
+    Assert.assertEquals(1, queueTasksGauge.getValue().longValue());
+    Assert.assertEquals(0, executingTasksGauge.getValue().longValue());
+    Assert.assertEquals(0, planingTablesGauge.getValue().longValue());
+    Assert.assertEquals(0, pendingTablesGauge.getValue().longValue());
+    Assert.assertEquals(1, executingTablesGauge.getValue().longValue());
 
     task.ack(optimizerThread);
     Assert.assertEquals(0, queueTasksGauge.getValue().longValue());
@@ -292,6 +297,14 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     task.complete(
         optimizerThread,
         buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
+    Assert.assertEquals(0, queueTasksGauge.getValue().longValue());
+    Assert.assertEquals(0, executingTasksGauge.getValue().longValue());
+    Assert.assertEquals(0, planingTablesGauge.getValue().longValue());
+    Assert.assertEquals(0, pendingTablesGauge.getValue().longValue());
+    Assert.assertEquals(1, executingTablesGauge.getValue().longValue());
+
+    OptimizingProcess optimizingProcess = tableRuntimeMeta.getTableRuntime().getOptimizingProcess();
+    optimizingProcess.commit();
     Assert.assertEquals(0, queueTasksGauge.getValue().longValue());
     Assert.assertEquals(0, executingTasksGauge.getValue().longValue());
     Assert.assertEquals(0, planingTablesGauge.getValue().longValue());
