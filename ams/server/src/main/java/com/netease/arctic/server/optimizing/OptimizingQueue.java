@@ -109,7 +109,6 @@ public class OptimizingQueue extends PersistentBase {
     tableRuntimeMetaList.forEach(this::initTableRuntime);
   }
 
-  @VisibleForTesting
   private void initTableRuntime(TableRuntimeMeta tableRuntimeMeta) {
     TableRuntime tableRuntime = tableRuntimeMeta.getTableRuntime();
     if (tableRuntime.getOptimizingStatus().isProcessing()
