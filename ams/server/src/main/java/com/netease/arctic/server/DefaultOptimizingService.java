@@ -151,16 +151,19 @@ public class DefaultOptimizingService extends StatedPersistentBase
     if (needPersistency) {
       doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
     }
+
+    OptimizingQueue optimizingQueue = optimizingQueueByGroup.get(optimizer.getGroupName());
+    optimizingQueue.addOptimizer(optimizer);
     authOptimizers.put(optimizer.getToken(), optimizer);
-    optimizingQueueByToken.put(
-        optimizer.getToken(), optimizingQueueByGroup.get(optimizer.getGroupName()));
+    optimizingQueueByToken.put(optimizer.getToken(), optimizingQueue);
     optimizerKeeper.keepInTouch(optimizer);
   }
 
   private void unregisterOptimizer(String token) {
     doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(token));
-    optimizingQueueByToken.remove(token);
-    authOptimizers.remove(token);
+    OptimizingQueue optimizingQueue = optimizingQueueByToken.remove(token);
+    OptimizerInstance optimizer = authOptimizers.remove(token);
+    optimizingQueue.removeOptimizer(optimizer);
   }
 
   @Override
@@ -317,7 +320,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
   public void deleteResourceGroup(String groupName) {
     if (canDeleteResourceGroup(groupName)) {
       doAs(ResourceMapper.class, mapper -> mapper.deleteResourceGroup(groupName));
-      optimizingQueueByGroup.remove(groupName);
+      OptimizingQueue optimizingQueue = optimizingQueueByGroup.remove(groupName);
+      optimizingQueue.dispose();
     } else {
       throw new RuntimeException(
           String.format(

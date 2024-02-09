@@ -25,11 +25,13 @@ import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingClosedException;
+import com.netease.arctic.server.manager.MetricManager;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
+import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.QuotaProvider;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableManager;
@@ -83,6 +85,7 @@ public class OptimizingQueue extends PersistentBase {
   private final Lock scheduleLock = new ReentrantLock();
   private final Condition planningCompleted = scheduleLock.newCondition();
   private final int maxPlanningParallelism;
+  private final OptimizingGroupMetrics metrics;
   private ResourceGroup optimizerGroup;
 
   public OptimizingQueue(
@@ -99,9 +102,14 @@ public class OptimizingQueue extends PersistentBase {
     this.scheduler = new SchedulingPolicy(optimizerGroup);
     this.tableManager = tableManager;
     this.maxPlanningParallelism = maxPlanningParallelism;
+    this.metrics =
+        new OptimizingGroupMetrics(
+            optimizerGroup.getName(), MetricManager.getInstance().getGlobalRegistry(), this);
+    this.metrics.register();
     tableRuntimeMetaList.forEach(this::initTableRuntime);
   }
 
+  @VisibleForTesting
   private void initTableRuntime(TableRuntimeMeta tableRuntimeMeta) {
     TableRuntime tableRuntime = tableRuntimeMeta.getTableRuntime();
     if (tableRuntime.getOptimizingStatus().isProcessing()
@@ -299,6 +307,18 @@ public class OptimizingQueue extends PersistentBase {
         "optimizer group name mismatch");
     this.optimizerGroup = optimizerGroup;
     scheduler.setTableSorterIfNeeded(optimizerGroup);
+  }
+
+  public void addOptimizer(OptimizerInstance optimizerInstance) {
+    this.metrics.addOptimizer(optimizerInstance);
+  }
+
+  public void removeOptimizer(OptimizerInstance optimizerInstance) {
+    this.metrics.removeOptimizer(optimizerInstance);
+  }
+
+  public void dispose() {
+    this.metrics.unregister();
   }
 
   private double getAvailableCore() {
