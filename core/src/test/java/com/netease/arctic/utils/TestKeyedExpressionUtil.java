@@ -18,8 +18,6 @@
 
 package com.netease.arctic.utils;
 
-import static com.netease.arctic.BasicTableTestHelper.TABLE_SCHEMA;
-
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
@@ -29,11 +27,13 @@ import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.scan.CombinedScanTask;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -51,8 +51,15 @@ public class TestKeyedExpressionUtil extends TableTestBase {
   public TestKeyedExpressionUtil(PartitionSpec partitionSpec) {
     super(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(true, partitionSpec));
+        new BasicTableTestHelper(TABLE_SCHEMA, true, partitionSpec));
   }
+
+  public static final Schema TABLE_SCHEMA =
+      new Schema(
+          Types.NestedField.required(1, "id", Types.IntegerType.get()),
+          Types.NestedField.required(2, "name", Types.StringType.get()),
+          Types.NestedField.required(3, "ts", Types.LongType.get()),
+          Types.NestedField.optional(4, "op_time", Types.TimestampType.withoutZone()));
 
   @Parameterized.Parameters(name = "{0}")
   public static Object[] parameters() {
@@ -76,29 +83,25 @@ public class TestKeyedExpressionUtil extends TableTestBase {
             // hash("111") = -210118348, hash("222") = -699778209
             tableTestHelper().generateTestRecord(1, "111", 1, "2021-01-01T01:00:00"),
             tableTestHelper().generateTestRecord(2, "111", 1, "2021-01-01T01:00:00"),
-            tableTestHelper().generateTestRecord(3, "222", 11, "2022-02-02T02:00:00"),
-            tableTestHelper().generateTestRecord(4, "222", 11, "2022-02-02T02:00:00"));
+            tableTestHelper().generateTestRecord(3, "222", 11, null),
+            tableTestHelper().generateTestRecord(4, "222", 11, null));
     ArrayList<Record> changeStoreRecords =
         Lists.newArrayList(
             tableTestHelper().generateTestRecord(5, "111", 1, "2021-01-01T01:00:00"),
             tableTestHelper().generateTestRecord(6, "111", 1, "2021-01-01T01:00:00"),
-            tableTestHelper().generateTestRecord(7, "222", 11, "2022-02-02T02:00:00"),
-            tableTestHelper().generateTestRecord(8, "222", 11, "2022-02-02T02:00:00"));
+            tableTestHelper().generateTestRecord(7, "222", 11, null),
+            tableTestHelper().generateTestRecord(8, "222", 11, null));
     // 4 files
     List<DataFile> baseStoreFiles =
         MixedDataTestHelpers.writeAndCommitBaseStore(getArcticTable(), 1L, baseStoreRecords, true);
-    // identity: opTime=2021-01-01T01:00:00; bucket: id_bucket=0;
-    // truncate: ts_trunc=0; year: op_time_year=2021; month: op_time_month=2021-01;
-    // day: op_time_day=2021-01-01; hour: op_time_hour=2021-01-01-01
-    DataFile sampleFile = baseStoreFiles.get(0);
-
     MixedDataTestHelpers.writeAndCommitChangeStore(
         getArcticTable().asKeyedTable(), 2L, ChangeAction.INSERT, changeStoreRecords, true);
-
-    Expression partitionFilter =
-        ExpressionUtil.convertPartitionDataToDataFilter(
-            getArcticTable(), sampleFile.specId(), Sets.newHashSet(sampleFile.partition()));
-    assertPlanHalfWithPartitionFilter(partitionFilter);
+    for (DataFile baseStoreFile : baseStoreFiles) {
+      Expression partitionFilter =
+          ExpressionUtil.convertPartitionDataToDataFilter(
+              getArcticTable(), baseStoreFile.specId(), Sets.newHashSet(baseStoreFile.partition()));
+      assertPlanHalfWithPartitionFilter(partitionFilter);
+    }
   }
 
   private void assertPlanHalfWithPartitionFilter(Expression partitionFilter) {
@@ -118,6 +121,22 @@ public class TestKeyedExpressionUtil extends TableTestBase {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+    baseDataFiles.clear();
+    insertFiles.clear();
+    try (CloseableIterable<CombinedScanTask> it =
+        getArcticTable().asKeyedTable().newScan().planTasks()) {
+      it.forEach(
+          cst ->
+              cst.tasks()
+                  .forEach(
+                      t -> {
+                        t.baseTasks().forEach(fileTask -> baseDataFiles.add(fileTask.file()));
+                        t.insertTasks().forEach(fileTask -> insertFiles.add(fileTask.file()));
+                      }));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
     Assert.assertEquals(4, baseDataFiles.size());
     Assert.assertEquals(4, insertFiles.size());
     baseDataFiles.clear();

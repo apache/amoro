@@ -19,6 +19,7 @@
 package com.netease.arctic.server.optimizing.maintainer;
 
 import com.netease.arctic.server.table.TagConfiguration;
+import org.apache.iceberg.ManageSnapshots;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.slf4j.Logger;
@@ -95,7 +96,11 @@ public class AutoCreateIcebergTagAction {
           tagTriggerTimestampMillis);
       return false;
     }
-    table.manageSnapshots().createTag(tagName, snapshot.snapshotId()).commit();
+    ManageSnapshots tag = table.manageSnapshots().createTag(tagName, snapshot.snapshotId());
+    if (tagConfig.getTagMaxAgeMs() > 0) {
+      tag.setMaxRefAgeMs(tagName, tagConfig.getTagMaxAgeMs());
+    }
+    tag.commit();
     LOG.info(
         "Created a tag {} for {} on snapshot {} at {}",
         tagName,
