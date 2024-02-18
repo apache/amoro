@@ -38,7 +38,7 @@
         </file>
         <file>
             <source>
-                ../metrics-reporter/prometheus-reporter/target/prometheus-reporter-${project.version}-jar-with-dependencies.jar
+                ../metric-reporter/prometheus-reporter/target/prometheus-reporter-${project.version}-jar-with-dependencies.jar
             </source>
             <outputDirectory>plugin/metrics-reporter</outputDirectory>
             <destName>prometheus-reporter.jar</destName>
