@@ -83,7 +83,7 @@ public class SparkOptimizerExecutor extends OptimizerExecutor {
       description =
           String.format(
               "Amoro rewrite files task, table name:%s, task id:%s",
-              task.getTaskId(), ((RewriteFilesInput) input).getTable().name());
+              ((RewriteFilesInput) input).getTable().name(), task.getTaskId());
     } else {
       throw new IllegalArgumentException("Unsupported task:" + input.getClass());
     }
