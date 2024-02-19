@@ -44,7 +44,7 @@ public class OptimizerGroupMetrics {
   @VisibleForTesting protected static final String GROUP_TAG = "group";
   public static final MetricDefine OPTIMIZER_GROUP_PENDING_TASKS =
       defineGauge("optimizer_group_pending_tasks")
-          .withDescription("Number of queue tasks in optimizing resource group")
+          .withDescription("Number of pending tasks in optimizing resource group")
           .withTags(GROUP_TAG)
           .build();
 
