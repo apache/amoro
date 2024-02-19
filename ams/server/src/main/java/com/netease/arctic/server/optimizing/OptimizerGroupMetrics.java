@@ -44,49 +44,49 @@ public class OptimizerGroupMetrics {
   @VisibleForTesting protected static final String GROUP_TAG = "group";
   public static final MetricDefine OPTIMIZER_GROUP_PENDING_TASKS =
       defineGauge("optimizer_group_pending_tasks")
-          .withDescription("Number of pending tasks in optimizing resource group")
+          .withDescription("Number of pending tasks in optimizer group")
           .withTags(GROUP_TAG)
           .build();
 
   public static final MetricDefine OPTIMIZER_GROUP_EXECUTING_TASKS =
       defineGauge("optimizer_group_executing_tasks")
-          .withDescription("Number of executing tasks in optimizing resource group")
+          .withDescription("Number of executing tasks in optimizer group")
           .withTags(GROUP_TAG)
           .build();
 
   public static final MetricDefine OPTIMIZER_GROUP_PLANING_TABLES =
       defineGauge("optimizer_group_planing_tables")
-          .withDescription("Number of planing tables in optimizing resource group")
+          .withDescription("Number of planing tables in optimizer group")
           .withTags(GROUP_TAG)
           .build();
 
   public static final MetricDefine OPTIMIZER_GROUP_PENDING_TABLES =
       defineGauge("optimizer_group_pending_tables")
-          .withDescription("Number of pending tables in optimizing resource group")
+          .withDescription("Number of pending tables in optimizer group")
           .withTags(GROUP_TAG)
           .build();
 
   public static final MetricDefine OPTIMIZER_GROUP_EXECUTING_TABLES =
       defineGauge("optimizer_group_executing_tables")
-          .withDescription("Number of executing tables in optimizing resource group")
+          .withDescription("Number of executing tables in optimizer group")
           .withTags(GROUP_TAG)
           .build();
 
   public static final MetricDefine OPTIMIZER_GROUP_OPTIMIZERS =
       defineGauge("optimizer_group_optimizers")
-          .withDescription("Number of optimizer instances in optimizing resource group")
+          .withDescription("Number of optimizer instances in optimizer group")
           .withTags(GROUP_TAG)
           .build();
 
   public static final MetricDefine OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED =
       defineGauge("optimizer_group_memory_bytes_allocated")
-          .withDescription("Memory bytes allocated in optimizing resource group")
+          .withDescription("Memory bytes allocated in optimizer group")
           .withTags(GROUP_TAG)
           .build();
 
   public static final MetricDefine OPTIMIZER_GROUP_THREADS =
       defineGauge("optimizer_group_threads")
-          .withDescription("Number of total threads in optimizing resource group")
+          .withDescription("Number of total threads in optimizer group")
           .withTags(GROUP_TAG)
           .build();
 
