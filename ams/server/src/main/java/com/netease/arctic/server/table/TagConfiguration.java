@@ -44,6 +44,8 @@ public class TagConfiguration {
   private int triggerOffsetMinutes;
   // tag.auto-create.trigger.max-delay.minutes
   private int maxDelayMinutes;
+  // tag.auto-create.max-age-ms
+  private long tagMaxAgeMs;
 
   /** The interval for periodically triggering creating tags */
   public enum Period {
@@ -142,6 +144,11 @@ public class TagConfiguration {
             tableProperties,
             TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES,
             TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES_DEFAULT));
+    tagConfig.setTagMaxAgeMs(
+        CompatiblePropertyUtil.propertyAsLong(
+            tableProperties,
+            TableProperties.AUTO_CREATE_TAG_MAX_AGE_MS,
+            TableProperties.AUTO_CREATE_TAG_MAX_AGE_MS_DEFAULT));
     return tagConfig;
   }
 
@@ -185,6 +192,14 @@ public class TagConfiguration {
     this.maxDelayMinutes = maxDelayMinutes;
   }
 
+  public long getTagMaxAgeMs() {
+    return tagMaxAgeMs;
+  }
+
+  public void setTagMaxAgeMs(long tagMaxAgeMs) {
+    this.tagMaxAgeMs = tagMaxAgeMs;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -194,13 +209,19 @@ public class TagConfiguration {
         && triggerOffsetMinutes == that.triggerOffsetMinutes
         && maxDelayMinutes == that.maxDelayMinutes
         && Objects.equal(tagFormat, that.tagFormat)
-        && triggerPeriod == that.triggerPeriod;
+        && triggerPeriod == that.triggerPeriod
+        && tagMaxAgeMs == that.tagMaxAgeMs;
   }
 
   @Override
   public int hashCode() {
     return Objects.hashCode(
-        autoCreateTag, tagFormat, triggerPeriod, triggerOffsetMinutes, maxDelayMinutes);
+        autoCreateTag,
+        tagFormat,
+        triggerPeriod,
+        triggerOffsetMinutes,
+        maxDelayMinutes,
+        tagMaxAgeMs);
   }
 
   @Override
@@ -211,6 +232,7 @@ public class TagConfiguration {
         .add("triggerPeriod", triggerPeriod)
         .add("triggerOffsetMinutes", triggerOffsetMinutes)
         .add("maxDelayMinutes", maxDelayMinutes)
+        .add("tagMaxAgeMs", tagMaxAgeMs)
         .toString();
   }
 }
