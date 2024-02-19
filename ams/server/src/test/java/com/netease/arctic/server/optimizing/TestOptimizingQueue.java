@@ -18,15 +18,15 @@
 
 package com.netease.arctic.server.optimizing;
 
-import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.GROUP_TAG;
-import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TABLES;
-import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TASKS;
-import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED;
-import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_OPTIMIZERS;
-import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_PENDING_TABLES;
-import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
-import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_QUEUE_TASKS;
-import static com.netease.arctic.server.optimizing.OptimizingGroupMetrics.OPTIMIZER_GROUP_THREADS;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.GROUP_TAG;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TABLES;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TASKS;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_OPTIMIZERS;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TABLES;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TASKS;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_THREADS;
 
 import com.google.common.collect.ImmutableMap;
 import com.netease.arctic.BasicTableTestHelper;
@@ -258,7 +258,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
     Gauge<Integer> queueTasksGauge =
         (Gauge<Integer>)
-            registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_QUEUE_TASKS, tagValues));
+            registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_PENDING_TASKS, tagValues));
     Gauge<Integer> executingTasksGauge =
         (Gauge<Integer>)
             registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_EXECUTING_TASKS, tagValues));

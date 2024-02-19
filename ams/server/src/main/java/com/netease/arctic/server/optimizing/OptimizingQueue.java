@@ -85,7 +85,7 @@ public class OptimizingQueue extends PersistentBase {
   private final Lock scheduleLock = new ReentrantLock();
   private final Condition planningCompleted = scheduleLock.newCondition();
   private final int maxPlanningParallelism;
-  private final OptimizingGroupMetrics metrics;
+  private final OptimizerGroupMetrics metrics;
   private ResourceGroup optimizerGroup;
 
   public OptimizingQueue(
@@ -103,7 +103,7 @@ public class OptimizingQueue extends PersistentBase {
     this.tableManager = tableManager;
     this.maxPlanningParallelism = maxPlanningParallelism;
     this.metrics =
-        new OptimizingGroupMetrics(
+        new OptimizerGroupMetrics(
             optimizerGroup.getName(), MetricManager.getInstance().getGlobalRegistry(), this);
     this.metrics.register();
     tableRuntimeMetaList.forEach(this::initTableRuntime);

@@ -39,11 +39,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class OptimizingGroupMetrics {
+public class OptimizerGroupMetrics {
 
   @VisibleForTesting protected static final String GROUP_TAG = "group";
-  public static final MetricDefine OPTIMIZER_GROUP_QUEUE_TASKS =
-      defineGauge("optimizer_group_queue_tasks")
+  public static final MetricDefine OPTIMIZER_GROUP_PENDING_TASKS =
+      defineGauge("optimizer_group_pending_tasks")
           .withDescription("Number of queue tasks in optimizing resource group")
           .withTags(GROUP_TAG)
           .build();
@@ -96,7 +96,7 @@ public class OptimizingGroupMetrics {
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
   private final Map<String, OptimizerInstance> optimizerInstances = new ConcurrentHashMap<>();
 
-  public OptimizingGroupMetrics(
+  public OptimizerGroupMetrics(
       String groupName, MetricRegistry registry, OptimizingQueue optimizingQueue) {
     this.groupName = groupName;
     this.registry = registry;
@@ -111,7 +111,7 @@ public class OptimizingGroupMetrics {
   public void register() {
     registerMetric(
         registry,
-        OPTIMIZER_GROUP_QUEUE_TASKS,
+            OPTIMIZER_GROUP_PENDING_TASKS,
         (Gauge<Integer>)
             () ->
                 optimizingQueue
