@@ -111,7 +111,7 @@ public class OptimizerGroupMetrics {
   public void register() {
     registerMetric(
         registry,
-            OPTIMIZER_GROUP_PENDING_TASKS,
+        OPTIMIZER_GROUP_PENDING_TASKS,
         (Gauge<Integer>)
             () ->
                 optimizingQueue

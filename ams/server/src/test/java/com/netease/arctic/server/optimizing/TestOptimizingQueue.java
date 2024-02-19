@@ -24,8 +24,8 @@ import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZ
 import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED;
 import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_OPTIMIZERS;
 import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TABLES;
-import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
 import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TASKS;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
 import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_THREADS;
 
 import com.google.common.collect.ImmutableMap;
