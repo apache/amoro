@@ -44,7 +44,11 @@ import java.util.Set;
 public class FlinkUnifiedCatalogFactory implements CatalogFactory {
 
   public static final Set<TableFormat> SUPPORTED_FORMATS =
-      Sets.newHashSet(TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE, TableFormat.ICEBERG);
+      Sets.newHashSet(
+          TableFormat.MIXED_ICEBERG,
+          TableFormat.MIXED_HIVE,
+          TableFormat.ICEBERG,
+          TableFormat.PAIMON);
 
   @Override
   public String factoryIdentifier() {

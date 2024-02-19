@@ -129,6 +129,15 @@ public class IcebergHadoopCatalogTestHelper extends AbstractFormatCatalogTestHel
     catalog.createTable(TableIdentifier.of(db, tableName), schema, spec, properties);
   }
 
+  @Override
+  public void createDatabase(String database) {
+    Catalog catalog = originalCatalog();
+    if (catalog instanceof SupportsNamespaces) {
+      Namespace ns = Namespace.of(database);
+      ((SupportsNamespaces) catalog).createNamespace(ns);
+    }
+  }
+
   public static IcebergHadoopCatalogTestHelper defaultHelper() {
     return new IcebergHadoopCatalogTestHelper("test_iceberg_catalog", new HashMap<>());
   }
