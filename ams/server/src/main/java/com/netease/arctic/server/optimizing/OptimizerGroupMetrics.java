@@ -39,9 +39,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/** Metrics manager for an optimizer group. */
 public class OptimizerGroupMetrics {
 
-  @VisibleForTesting protected static final String GROUP_TAG = "group";
+  static final String GROUP_TAG = "group";
   public static final MetricDefine OPTIMIZER_GROUP_PENDING_TASKS =
       defineGauge("optimizer_group_pending_tasks")
           .withDescription("Number of pending tasks in optimizer group")
@@ -156,12 +157,12 @@ public class OptimizerGroupMetrics {
         OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED,
         (Gauge<Long>)
             () -> {
-              // set totalMemoryMb as long type to avoid arithmetic overflow of sum(int)
-              long totalMemoryMb = 0;
+              // set totalMemoryBytes as long type to avoid arithmetic overflow of sum(int)
+              long totalMemoryBytes = 0;
               for (OptimizerInstance o : optimizerInstances.values()) {
-                totalMemoryMb += (long) o.getMemoryMb() * 1024 * 1024;
+                totalMemoryBytes += (long) o.getMemoryMb() * 1024 * 1024;
               }
-              return totalMemoryMb;
+              return totalMemoryBytes;
             });
     registerMetric(
         registry,
