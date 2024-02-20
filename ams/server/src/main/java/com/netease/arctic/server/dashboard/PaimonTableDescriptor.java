@@ -500,11 +500,16 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable) {
     FileStoreTable table = getTable(amoroTable);
-    SortedMap<Snapshot, String> tags = table.tagManager().tags();
-    return tags.entrySet().stream()
-        .map(
-            e -> new TagOrBranchInfo(e.getValue(), e.getKey().id(), 0, 0L, 0L, TagOrBranchInfo.TAG))
-        .collect(Collectors.toList());
+    SortedMap<Snapshot, List<String>> tags = table.tagManager().tags();
+    List<TagOrBranchInfo> tagOrBranchInfos = new ArrayList<>();
+    tags.forEach(
+        (snapshot, tagList) -> {
+          for (String tagName : tagList) {
+            tagOrBranchInfos.add(
+                new TagOrBranchInfo(tagName, snapshot.id(), 0, 0L, 0L, TagOrBranchInfo.TAG));
+          }
+        });
+    return tagOrBranchInfos;
   }
 
   @Override
