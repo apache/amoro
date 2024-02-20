@@ -191,16 +191,14 @@ public class DefaultOptimizingService extends StatedPersistentBase
     LOG.debug("Optimizer {} (threadId {}) try polling task", authToken, threadId);
     OptimizingQueue queue = getQueueByToken(authToken);
     return Optional.ofNullable(queue.pollTask(pollingTimeout))
-        .map(
-            task ->
-                extractOptimizingTask(
-                    task, getAuthenticatedOptimizer(authToken).getThread(threadId), queue))
+        .map(task -> extractOptimizingTask(task, authToken, threadId, queue))
         .orElse(null);
   }
 
   private OptimizingTask extractOptimizingTask(
-      TaskRuntime task, OptimizerThread optimizerThread, OptimizingQueue queue) {
+      TaskRuntime task, String authToken, int threadId, OptimizingQueue queue) {
     try {
+      OptimizerThread optimizerThread = getAuthenticatedOptimizer(authToken).getThread(threadId);
       task.schedule(optimizerThread);
       LOG.info("OptimizerThread {} polled task {}", optimizerThread, task.getTaskId());
       return task.getOptimizingTask();
