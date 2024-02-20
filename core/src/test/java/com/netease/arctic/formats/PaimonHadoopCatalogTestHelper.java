@@ -18,6 +18,7 @@
 
 package com.netease.arctic.formats;
 
+import com.netease.arctic.AlreadyExistsException;
 import com.netease.arctic.AmoroCatalog;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.formats.paimon.PaimonCatalogFactory;
@@ -125,6 +126,15 @@ public class PaimonHadoopCatalogTestHelper extends AbstractFormatCatalogTestHelp
       catalog.createTable(Identifier.create(db, tableName), schema, false);
     } catch (Exception e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void createDatabase(String database) throws Exception {
+    try (Catalog catalog = originalCatalog()) {
+      catalog.createDatabase(database, false);
+    } catch (Catalog.DatabaseAlreadyExistException e) {
+      throw new AlreadyExistsException(e);
     }
   }
 
