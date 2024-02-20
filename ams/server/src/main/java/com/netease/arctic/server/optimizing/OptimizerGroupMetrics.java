@@ -31,7 +31,6 @@ import com.netease.arctic.ams.api.metrics.MetricDefine;
 import com.netease.arctic.ams.api.metrics.MetricKey;
 import com.netease.arctic.server.metrics.MetricRegistry;
 import com.netease.arctic.server.resource.OptimizerInstance;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
@@ -73,8 +72,8 @@ public class OptimizerGroupMetrics {
           .withTags(GROUP_TAG)
           .build();
 
-  public static final MetricDefine OPTIMIZER_GROUP_OPTIMIZERS =
-      defineGauge("optimizer_group_optimizers")
+  public static final MetricDefine OPTIMIZER_GROUP_OPTIMIZER_INSTANCES =
+      defineGauge("optimizer_group_optimizer_instances")
           .withDescription("Number of optimizer instances in optimizer group")
           .withTags(GROUP_TAG)
           .build();
@@ -92,7 +91,7 @@ public class OptimizerGroupMetrics {
           .build();
 
   private final String groupName;
-  @VisibleForTesting private final MetricRegistry registry;
+  private final MetricRegistry registry;
   private final OptimizingQueue optimizingQueue;
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
   private final Map<String, OptimizerInstance> optimizerInstances = new ConcurrentHashMap<>();
@@ -151,31 +150,25 @@ public class OptimizerGroupMetrics {
                     .filter(t -> t.getOptimizingStatus().isProcessing())
                     .count());
 
-    registerMetric(registry, OPTIMIZER_GROUP_OPTIMIZERS, (Gauge<Integer>) optimizerInstances::size);
+    registerMetric(
+        registry, OPTIMIZER_GROUP_OPTIMIZER_INSTANCES, (Gauge<Integer>) optimizerInstances::size);
     registerMetric(
         registry,
         OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED,
         (Gauge<Long>)
-            () -> {
-              // set totalMemoryBytes as long type to avoid arithmetic overflow of sum(int)
-              long totalMemoryBytes = 0;
-              for (OptimizerInstance o : optimizerInstances.values()) {
-                totalMemoryBytes += (long) o.getMemoryMb() * 1024 * 1024;
-              }
-              return totalMemoryBytes;
-            });
+            () ->
+                optimizerInstances.values().stream()
+                    .mapToLong(OptimizerInstance::getMemoryMb)
+                    .map(mb -> mb * 1024 * 1024)
+                    .sum());
     registerMetric(
         registry,
         OPTIMIZER_GROUP_THREADS,
         (Gauge<Long>)
-            () -> {
-              // set totalThreads as long type to avoid arithmetic overflow of sum(int)
-              long totalThreads = 0;
-              for (OptimizerInstance o : optimizerInstances.values()) {
-                totalThreads += o.getThreadCount();
-              }
-              return totalThreads;
-            });
+            () ->
+                optimizerInstances.values().stream()
+                    .mapToLong(OptimizerInstance::getThreadCount)
+                    .sum());
   }
 
   public void unregister() {

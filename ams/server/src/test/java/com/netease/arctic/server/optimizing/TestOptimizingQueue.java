@@ -22,7 +22,7 @@ import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.GROUP_T
 import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TABLES;
 import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TASKS;
 import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED;
-import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_OPTIMIZERS;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_OPTIMIZER_INSTANCES;
 import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TABLES;
 import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TASKS;
 import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
@@ -326,7 +326,9 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
     Gauge<Integer> optimizerCountGauge =
         (Gauge<Integer>)
-            registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_OPTIMIZERS, tagValues));
+            registry
+                .getMetrics()
+                .get(new MetricKey(OPTIMIZER_GROUP_OPTIMIZER_INSTANCES, tagValues));
     Gauge<Long> optimizerMemoryGauge =
         (Gauge<Long>)
             registry
