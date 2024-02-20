@@ -122,6 +122,12 @@ public class MixedIcebergHadoopCatalogTestHelper
         .create();
   }
 
+  @Override
+  public void createDatabase(String database) {
+    ArcticCatalog catalog = originalCatalog();
+    catalog.createDatabase(database);
+  }
+
   public static MixedIcebergHadoopCatalogTestHelper defaultHelper() {
     return new MixedIcebergHadoopCatalogTestHelper("test_mixed_iceberg_catalog", new HashMap<>());
   }
