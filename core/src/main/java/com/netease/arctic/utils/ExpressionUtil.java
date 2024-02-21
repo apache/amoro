@@ -71,7 +71,11 @@ public class ExpressionUtil {
       Class<?> resultType =
           partitionField.transform().getResultType(sourceField.type()).typeId().javaClass();
       Object partitionValue = partition.get(i, resultType);
-      filter = Expressions.and(filter, Expressions.equal(transform, partitionValue));
+      if (partitionValue != null) {
+        filter = Expressions.and(filter, Expressions.equal(transform, partitionValue));
+      } else {
+        filter = Expressions.and(filter, Expressions.isNull(transform));
+      }
     }
     return filter;
   }
