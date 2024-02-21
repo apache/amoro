@@ -455,7 +455,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
   public static long fetchLatestNonOptimizedSnapshotTime(Table table) {
     Optional<Snapshot> snapshot =
         IcebergTableUtil.findFirstMatchSnapshot(
-            table, s -> !s.summary().containsValue(CommitMetaProducer.OPTIMIZE.name()));
+            table,
+            s ->
+                !s.summary().containsValue(CommitMetaProducer.OPTIMIZE.name())
+                    && !s.summary().containsValue(CommitMetaProducer.DATA_EXPIRATION.name()));
     return snapshot.map(Snapshot::timestampMillis).orElse(Long.MAX_VALUE);
   }
 
@@ -703,13 +706,17 @@ public class IcebergTableMaintainer implements TableMaintainer {
     // expire data files
     DeleteFiles delete = table.newDelete();
     dataFiles.forEach(delete::deleteFile);
-    delete.set(com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER, "DATA_EXPIRATION");
+    delete.set(
+        com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER,
+        CommitMetaProducer.DATA_EXPIRATION.name());
     delete.commit();
     // expire delete files
     if (!deleteFiles.isEmpty()) {
       RewriteFiles rewriteFiles = table.newRewrite().validateFromSnapshot(snapshotId);
       deleteFiles.forEach(rewriteFiles::deleteFile);
-      rewriteFiles.set(com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER, "DATA_EXPIRATION");
+      rewriteFiles.set(
+          com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER,
+          CommitMetaProducer.DATA_EXPIRATION.name());
       rewriteFiles.commit();
     }
 

@@ -151,16 +151,19 @@ public class DefaultOptimizingService extends StatedPersistentBase
     if (needPersistency) {
       doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
     }
+
+    OptimizingQueue optimizingQueue = optimizingQueueByGroup.get(optimizer.getGroupName());
+    optimizingQueue.addOptimizer(optimizer);
     authOptimizers.put(optimizer.getToken(), optimizer);
-    optimizingQueueByToken.put(
-        optimizer.getToken(), optimizingQueueByGroup.get(optimizer.getGroupName()));
+    optimizingQueueByToken.put(optimizer.getToken(), optimizingQueue);
     optimizerKeeper.keepInTouch(optimizer);
   }
 
   private void unregisterOptimizer(String token) {
     doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(token));
-    optimizingQueueByToken.remove(token);
-    authOptimizers.remove(token);
+    OptimizingQueue optimizingQueue = optimizingQueueByToken.remove(token);
+    OptimizerInstance optimizer = authOptimizers.remove(token);
+    optimizingQueue.removeOptimizer(optimizer);
   }
 
   @Override
@@ -188,16 +191,14 @@ public class DefaultOptimizingService extends StatedPersistentBase
     LOG.debug("Optimizer {} (threadId {}) try polling task", authToken, threadId);
     OptimizingQueue queue = getQueueByToken(authToken);
     return Optional.ofNullable(queue.pollTask(pollingTimeout))
-        .map(
-            task ->
-                extractOptimizingTask(
-                    task, getAuthenticatedOptimizer(authToken).getThread(threadId), queue))
+        .map(task -> extractOptimizingTask(task, authToken, threadId, queue))
         .orElse(null);
   }
 
   private OptimizingTask extractOptimizingTask(
-      TaskRuntime task, OptimizerThread optimizerThread, OptimizingQueue queue) {
+      TaskRuntime task, String authToken, int threadId, OptimizingQueue queue) {
     try {
+      OptimizerThread optimizerThread = getAuthenticatedOptimizer(authToken).getThread(threadId);
       task.schedule(optimizerThread);
       LOG.info("OptimizerThread {} polled task {}", optimizerThread, task.getTaskId());
       return task.getOptimizingTask();
@@ -317,7 +318,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
   public void deleteResourceGroup(String groupName) {
     if (canDeleteResourceGroup(groupName)) {
       doAs(ResourceMapper.class, mapper -> mapper.deleteResourceGroup(groupName));
-      optimizingQueueByGroup.remove(groupName);
+      OptimizingQueue optimizingQueue = optimizingQueueByGroup.remove(groupName);
+      optimizingQueue.dispose();
     } else {
       throw new RuntimeException(
           String.format(

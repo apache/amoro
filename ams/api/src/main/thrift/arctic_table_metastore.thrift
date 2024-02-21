@@ -98,7 +98,8 @@ struct PrimaryKeySpec {
 
 enum CommitMetaProducer {
     OPTIMIZE,
-    INGESTION
+    INGESTION,
+    DATA_EXPIRATION
 }
 
 struct Blocker {

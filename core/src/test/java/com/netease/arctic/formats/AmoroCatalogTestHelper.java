@@ -85,4 +85,7 @@ public interface AmoroCatalogTestHelper<T> {
 
   /** Create a table. The schema, properties, etc. of a table depend on its implementation. */
   void createTable(String db, String tableName) throws Exception;
+
+  /** Create database. */
+  void createDatabase(String database) throws Exception;
 }
