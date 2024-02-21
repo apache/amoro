@@ -90,7 +90,7 @@ ams:
     url: jdbc:derby:/tmp/amoro/derby;create=true
     connection-pool-max-total: 20
     connection-pool-max-idle: 16
-    connect-max-wait-millis: 1000
+    connection-pool-max-wait-millis: 1000
 
 #    MySQL database configuration.
 #    database:
@@ -101,7 +101,7 @@ ams:
 #      password: root
 #      connection-pool-max-total: 20
 #      connection-pool-max-idle: 16
-#      connect-max-wait-millis: 1000
+#      connection-pool-max-wait-millis: 1000
 
   #  Postgres database configuration.
   #  database:
@@ -112,7 +112,7 @@ ams:
   #    password: passwd
   #    connection-pool-max-total: 20
   #    connection-pool-max-idle: 16
-  #    connect-max-wait-millis: 1000
+  #    connection-pool-max-wait-millis: 1000
 
   terminal:
     backend: local
