@@ -226,6 +226,20 @@ public class ArcticManagementConf {
           .defaultValue(10)
           .withDescription("The number of threads that self-optimizing uses to submit results.");
 
+  public static final ConfigOption<Integer> OPTIMIZING_RUNTIME_DATA_KEEP_DAYS =
+      ConfigOptions.key("self-optimizing.runtime-data-keep-days")
+          .intType()
+          .defaultValue(30)
+          .withDescription(
+              "The number of days that self-optimizing runtime data keeps the runtime.");
+
+  public static final ConfigOption<Integer> OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL_HOURS =
+      ConfigOptions.key("self-optimizing.runtime-data-expire-interval-hours")
+          .intType()
+          .defaultValue(1)
+          .withDescription(
+              "The number of hours that self-optimizing runtime data expire interval.");
+
   public static final ConfigOption<String> DB_TYPE =
       ConfigOptions.key("database.type")
           .stringType()
@@ -255,6 +269,24 @@ public class ArcticManagementConf {
           .stringType()
           .defaultValue("")
           .withDescription("The password for connecting to the database.");
+
+  public static final ConfigOption<Integer> DB_CONNECT_MAX_TOTAL =
+      ConfigOptions.key("database.connection-pool-max-total")
+          .intType()
+          .defaultValue(20)
+          .withDescription("Max connect count of database connect pool.");
+
+  public static final ConfigOption<Integer> DB_CONNECT_MAX_IDLE =
+      ConfigOptions.key("database.connection-pool-max-idle")
+          .intType()
+          .defaultValue(16)
+          .withDescription("Max idle connect count of database connect pool.");
+
+  public static final ConfigOption<Long> DB_CONNECT_MAX_WAIT_MILLIS =
+      ConfigOptions.key("database.connection-pool-max-wait-millis")
+          .longType()
+          .defaultValue(1000L)
+          .withDescription("Max wait time before getting a connection timeout.");
 
   public static final ConfigOption<Long> OPTIMIZER_HB_TIMEOUT =
       ConfigOptions.key("optimizer.heart-beat-timeout")
