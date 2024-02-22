@@ -19,13 +19,13 @@
 package com.netease.arctic.server.events;
 
 import com.netease.arctic.ams.api.events.EventType;
-import com.netease.arctic.ams.api.events.expire.ExpireEvent;
-import com.netease.arctic.ams.api.events.expire.ExpireOperation;
-import com.netease.arctic.ams.api.events.expire.ExpireResult;
-import com.netease.arctic.ams.api.events.expire.ImmutableExpireEvent;
-import com.netease.arctic.ams.api.events.expire.iceberg.ExpireSnapshotsResult;
-import com.netease.arctic.ams.api.events.expire.mixed.ExpireMixedSnapshotsResult;
-import com.netease.arctic.ams.api.events.expire.mixed.ImmutableExpireMixedSnapshotsResult;
+import com.netease.arctic.ams.api.events.ExpireEvent;
+import com.netease.arctic.ams.api.events.ExpireOperation;
+import com.netease.arctic.ams.api.events.ExpireResult;
+import com.netease.arctic.ams.api.events.ImmutableExpireEvent;
+import com.netease.arctic.ams.api.events.iceberg.ExpireSnapshotsResult;
+import com.netease.arctic.ams.api.events.mixed.ExpireMixedSnapshotsResult;
+import com.netease.arctic.ams.api.events.mixed.ImmutableExpireMixedSnapshotsResult;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.FileNameRules;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -46,7 +46,7 @@ public class MixedExpireEvents {
         .catalog(baseEvent.catalog())
         .database(baseEvent.database())
         .table(baseEvent.table())
-        .transactionId(Math.min(changeEvent.transactionId(), baseEvent.transactionId()))
+        .processId(Math.min(changeEvent.processId(), baseEvent.processId()))
         .timestampMillis(Math.min(changeEvent.timestampMillis(), baseEvent.timestampMillis()))
         .format(baseEvent.format())
         .operation(baseEvent.operation())
@@ -70,7 +70,7 @@ public class MixedExpireEvents {
         .catalog(nativeEvent.catalog())
         .database(nativeEvent.database())
         .table(nativeEvent.table())
-        .transactionId(nativeEvent.transactionId())
+        .processId(nativeEvent.processId())
         .timestampMillis(nativeEvent.timestampMillis())
         .format(nativeEvent.format())
         .operation(nativeEvent.operation())
@@ -80,8 +80,8 @@ public class MixedExpireEvents {
   }
 
   private static ExpireResult combineExpireResult(
-      String expectOperation, ExpireResult changeResult, ExpireResult baseResult) {
-    if (expectOperation.equals(ExpireOperation.EXPIRE_SNAPSHOTS.name())) {
+      ExpireOperation expectOperation, ExpireResult changeResult, ExpireResult baseResult) {
+    if (expectOperation == ExpireOperation.EXPIRE_SNAPSHOTS) {
       return combineExpireSnapshots(
           (ExpireSnapshotsResult) changeResult, (ExpireSnapshotsResult) baseResult);
     } else {

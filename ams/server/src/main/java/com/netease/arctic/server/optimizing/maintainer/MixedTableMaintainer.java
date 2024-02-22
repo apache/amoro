@@ -24,10 +24,10 @@ import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.mi
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.events.EventType;
-import com.netease.arctic.ams.api.events.expire.ExpireEvent;
-import com.netease.arctic.ams.api.events.expire.ExpireOperation;
-import com.netease.arctic.ams.api.events.expire.ExpireResult;
-import com.netease.arctic.ams.api.events.expire.ImmutableExpireEvent;
+import com.netease.arctic.ams.api.events.ExpireEvent;
+import com.netease.arctic.ams.api.events.ExpireOperation;
+import com.netease.arctic.ams.api.events.ExpireResult;
+import com.netease.arctic.ams.api.events.ImmutableExpireEvent;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.TableEntriesScan;
@@ -519,8 +519,8 @@ public class MixedTableMaintainer implements TableMaintainer {
           .format(format)
           .expireResult(expireResult)
           .timestampMillis(triggerTimestamp)
-          .transactionId(triggerTimestamp)
-          .operation(ExpireOperation.EXPIRE_SNAPSHOTS.name())
+          .processId(triggerTimestamp)
+          .operation(ExpireOperation.EXPIRE_SNAPSHOTS)
           .type(EventType.EXPIRE_REPORT)
           .build();
     }
@@ -597,8 +597,8 @@ public class MixedTableMaintainer implements TableMaintainer {
           .format(format)
           .expireResult(expireResult)
           .timestampMillis(triggerTimestamp)
-          .transactionId(triggerTimestamp)
-          .operation(ExpireOperation.EXPIRE_SNAPSHOTS.name())
+          .processId(triggerTimestamp)
+          .operation(ExpireOperation.EXPIRE_SNAPSHOTS)
           .type(EventType.EXPIRE_REPORT)
           .build();
     }

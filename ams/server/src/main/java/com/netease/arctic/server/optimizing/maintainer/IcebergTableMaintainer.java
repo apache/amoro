@@ -23,12 +23,12 @@ import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.mi
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.events.EventType;
-import com.netease.arctic.ams.api.events.expire.ExpireEvent;
-import com.netease.arctic.ams.api.events.expire.ExpireOperation;
-import com.netease.arctic.ams.api.events.expire.ExpireResult;
-import com.netease.arctic.ams.api.events.expire.ImmutableExpireEvent;
-import com.netease.arctic.ams.api.events.expire.iceberg.ExpireSnapshotsResult;
-import com.netease.arctic.ams.api.events.expire.iceberg.ImmutableExpireSnapshotsResult;
+import com.netease.arctic.ams.api.events.ExpireEvent;
+import com.netease.arctic.ams.api.events.ExpireOperation;
+import com.netease.arctic.ams.api.events.ExpireResult;
+import com.netease.arctic.ams.api.events.ImmutableExpireEvent;
+import com.netease.arctic.ams.api.events.iceberg.ExpireSnapshotsResult;
+import com.netease.arctic.ams.api.events.iceberg.ImmutableExpireSnapshotsResult;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
 import com.netease.arctic.io.SupportsFileSystemOperations;
@@ -248,6 +248,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
       parentDirectory.forEach(
           parent -> TableFileUtil.deleteEmptyDirectory(arcticFileIO(), parent, exclude));
     }
+    LOG.info(
+        "to delete {} files, success delete {} files", toDeleteFiles.get(), deletedFiles.size());
 
     return getExpireSnapshotsResult(
         deletedFiles, Duration.ofMillis(System.currentTimeMillis() - start));
@@ -269,8 +271,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
         .format(format)
         .expireResult(expireResult)
         .timestampMillis(triggerTimestamp)
-        .transactionId(triggerTimestamp)
-        .operation(ExpireOperation.EXPIRE_SNAPSHOTS.name())
+        .processId(triggerTimestamp)
+        .operation(ExpireOperation.EXPIRE_SNAPSHOTS)
         .type(EventType.EXPIRE_REPORT)
         .build();
   }

@@ -16,16 +16,12 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.events.expire;
+package com.netease.arctic.ams.api.events;
 
-import java.time.Duration;
-
-/** Expire event details */
-public interface ExpireResult {
-  /**
-   * total duration of the event
-   *
-   * @return duration
-   */
-  Duration totalDuration();
+/** Define various expiration operations */
+public enum ExpireOperation {
+  EXPIRE_SNAPSHOTS,
+  REMOVE_ORPHAN_FILES,
+  REMOVE_DANGLING_FILES,
+  EXPIRE_DATA
 }

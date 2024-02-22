@@ -16,36 +16,24 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.events.expire.iceberg;
+package com.netease.arctic.ams.api.events.iceberg;
 
-import com.netease.arctic.ams.api.events.expire.ExpireResult;
+import com.netease.arctic.ams.api.events.ExpireResult;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.immutables.value.Value;
 
 import java.util.Set;
 
-/** Event details for expiring snapshots in native Iceberg format */
+/** Event details for cleaning orphan files in native Iceberg format */
 @Value.Immutable
-public abstract class ExpireSnapshotsResult implements ExpireResult {
+public abstract class RemoveOrphanFilesResult implements ExpireResult {
   @Value.Default
-  public Set<String> deletedDataFiles() {
+  public Set<String> removedFiles() {
     return Sets.newHashSet();
   }
 
   @Value.Default
-  public Set<String> deletedPositionDeleteFiles() {
-    return Sets.newHashSet();
-  }
-
-  @Value.Default
-  public Set<String> deletedEqualityDeleteFiles() {
-    return Sets.newHashSet();
-  }
-
-  public abstract Set<String> deletedMetadataFiles();
-
-  @Value.Default
-  public Set<String> deletedStatisticsFiles() {
-    return Sets.newHashSet();
+  public long releasedFileSize() {
+    return 0L;
   }
 }

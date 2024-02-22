@@ -16,9 +16,8 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.events.expire;
+package com.netease.arctic.ams.api.events;
 
-import com.netease.arctic.ams.api.events.TableEvent;
 import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
@@ -39,14 +38,14 @@ public interface ExpireEvent extends TableEvent {
    *
    * @return id
    */
-  long transactionId();
+  long processId();
 
   /**
    * Operation of expiring(e.g. expire snapshots)
    *
    * @return expiring operation
    */
-  String operation();
+  ExpireOperation operation();
 
   /**
    * Details of expiring event

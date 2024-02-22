@@ -16,24 +16,19 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.events.expire.mixed;
+package com.netease.arctic.ams.api.events.iceberg;
 
-import com.netease.arctic.ams.api.events.expire.ExpireResult;
+import com.netease.arctic.ams.api.events.ExpireResult;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.immutables.value.Value;
 
 import java.util.Set;
 
-/** Event details for expiring snapshots in mixed format */
+/** Event details for expiring snapshots in native Iceberg format */
 @Value.Immutable
-public abstract class ExpireMixedSnapshotsResult implements ExpireResult {
+public abstract class ExpireSnapshotsResult implements ExpireResult {
   @Value.Default
-  public Set<String> deletedBaseFiles() {
-    return Sets.newHashSet();
-  }
-
-  @Value.Default
-  public Set<String> deletedInsertFiles() {
+  public Set<String> deletedDataFiles() {
     return Sets.newHashSet();
   }
 
@@ -44,11 +39,6 @@ public abstract class ExpireMixedSnapshotsResult implements ExpireResult {
 
   @Value.Default
   public Set<String> deletedEqualityDeleteFiles() {
-    return Sets.newHashSet();
-  }
-
-  @Value.Default
-  public Set<String> deletedIcebergEqualityDeleteFiles() {
     return Sets.newHashSet();
   }
 
