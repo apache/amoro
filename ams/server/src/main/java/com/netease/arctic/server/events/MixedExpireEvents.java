@@ -62,9 +62,8 @@ public class MixedExpireEvents {
       return null;
     }
 
-    ExpireSnapshotsResult nativeResult = nativeEvent.getExpireResultAs(ExpireSnapshotsResult.class);
-    ExpireResult mixedSnapshotsResult =
-        combineExpireResult(nativeEvent.operation(), null, nativeResult);
+    ExpireResult mixedResult =
+        combineExpireResult(nativeEvent.operation(), null, nativeEvent.expireResult());
 
     return ImmutableExpireEvent.builder()
         .catalog(nativeEvent.catalog())
@@ -74,7 +73,7 @@ public class MixedExpireEvents {
         .timestampMillis(nativeEvent.timestampMillis())
         .format(nativeEvent.format())
         .operation(nativeEvent.operation())
-        .expireResult(mixedSnapshotsResult)
+        .expireResult(mixedResult)
         .type(EventType.EXPIRE_REPORT)
         .build();
   }
