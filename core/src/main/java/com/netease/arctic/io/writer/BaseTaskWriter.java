@@ -205,8 +205,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     }
 
     protected boolean shouldRollToNewFile(TaskDataWriter<T> dataWriter) {
-      // TODO: ORC file now not support target file size before closed
-      return !format.equals(FileFormat.ORC) && dataWriter.length() >= targetFileSize;
+      return dataWriter.length() >= targetFileSize;
     }
 
     protected TaskDataWriter<T> newWriter(TaskWriterKey writerKey) {
