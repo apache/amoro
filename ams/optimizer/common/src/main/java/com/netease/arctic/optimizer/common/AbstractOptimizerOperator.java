@@ -163,11 +163,11 @@ public class AbstractOptimizerOperator implements Serializable {
     }
   }
 
-  interface AmsCallOperation<T> {
+  protected interface AmsCallOperation<T> {
     T call(OptimizingService.Iface client) throws TException;
   }
 
-  interface AmsAuthenticatedCallOperation<T> {
+  protected interface AmsAuthenticatedCallOperation<T> {
     T call(OptimizingService.Iface client, String token) throws TException;
   }
 }
