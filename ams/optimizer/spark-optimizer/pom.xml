@@ -33,29 +33,15 @@
     <url>https://amoro.netease.com</url>
 
     <properties>
-        <spark-optimizer.spark-version>3.1.2</spark-optimizer.spark-version>
+        <spark-optimizer.spark-version>3.3.2</spark-optimizer.spark-version>
         <spark-optimizer.scala-version>2.12</spark-optimizer.scala-version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.netease.amoro</groupId>
             <artifactId>optimizer-common</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>args4j</groupId>
-            <artifactId>args4j</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
         </dependency>
 
         <!-- spark dependencies begin -->
@@ -79,55 +65,46 @@
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
-                    <artifactId>slf4j-api</artifactId>
+                    <groupId>org.apache.parquet</groupId>
+                    <artifactId>parquet-column</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.parquet</groupId>
+                    <artifactId>parquet-hadoop</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.parquet</groupId>
+                    <artifactId>parquet-hadoop</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.avro</groupId>
+                    <artifactId>avro</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>arrow-memory-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>arrow-memory-netty</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>arrow-vector</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.orc</groupId>
+                    <artifactId>orc-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.orc</groupId>
+                    <artifactId>orc-mapreduce</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-ams-api</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-1.2-api</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -135,20 +112,37 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven-assembly-plugin.version}</version>
-                <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                </configuration>
+                <artifactId>maven-shade-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>make-assembly</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>single</goal>
+                            <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.apache.parquet</pattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.parquet</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <finalName>${project.artifactId}-${project.version}</finalName>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -164,14 +158,14 @@
 
     <profiles>
         <profile>
-            <id>optimizer.spark3.1</id>
+            <id>optimizer.spark3.3</id>
             <activation>
                 <property>
                     <name>!optimizer.spark</name>
                 </property>
             </activation>
             <properties>
-                <spark-optimizer.spark-version>3.1.2</spark-optimizer.spark-version>
+                <spark-optimizer.spark-version>3.3.2</spark-optimizer.spark-version>
                 <spark-optimizer.scala-version>2.12</spark-optimizer.scala-version>
             </properties>
         </profile>
@@ -184,21 +178,8 @@
                 </property>
             </activation>
             <properties>
-                <spark-optimizer.spark-version>3.2.4</spark-optimizer.spark-version>
-                <spark.scala.suffix/>
-            </properties>
-        </profile>
-        <profile>
-            <id>optimizer.spark3.3</id>
-            <activation>
-                <property>
-                    <name>optimizer.spark</name>
-                    <value>3.3</value>
-                </property>
-            </activation>
-            <properties>
-                <spark-optimizer.spark-version>3.3.3</spark-optimizer.spark-version>
-                <spark.scala.suffix/>
+                <spark-optimizer.spark-version>3.2.2</spark-optimizer.spark-version>
+                <spark-optimizer.scala-version>2.12</spark-optimizer.scala-version>
             </properties>
         </profile>
     </profiles>
