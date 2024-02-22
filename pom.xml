@@ -108,7 +108,7 @@
         <zookeeper.version>3.7.1</zookeeper.version>
         <fastjson.version>1.2.83</fastjson.version>
         <parquet-avro.version>1.12.2</parquet-avro.version>
-        <orc-core.version>1.7.2</orc-core.version>
+        <orc-core.version>1.8.3</orc-core.version>
         <awssdk.version>2.20.5</awssdk.version>
         <terminal.spark.version>3.3.2</terminal.spark.version>
         <terminal.spark.major.version>3.3</terminal.spark.major.version>
