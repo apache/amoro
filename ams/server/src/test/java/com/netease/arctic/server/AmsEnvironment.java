@@ -434,6 +434,8 @@ public class AmsEnvironment {
         + "\n"
         + "  self-optimizing:\n"
         + "    commit-thread-count: 10\n"
+        + "    runtime-data-keep-days: 30\n"
+        + "    runtime-data-expire-interval-hours: 1\n"
         + "\n"
         + "  database:\n"
         + "    type: \"derby\"\n"
