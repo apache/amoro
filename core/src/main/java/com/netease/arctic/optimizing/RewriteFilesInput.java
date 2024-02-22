@@ -25,6 +25,7 @@ import com.netease.arctic.utils.ContentFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -153,16 +154,13 @@ public class RewriteFilesInput extends BaseOptimizingInput {
 
   @Override
   public String toString() {
-    return "RewriteFilesInput{"
-        + "rewrittenDataFilesSize="
-        + (rewrittenDataFiles == null ? 0 : rewrittenDataFiles.length)
-        + ", rePosDeletedDataFilesSize="
-        + (rePosDeletedDataFiles == null ? 0 : rePosDeletedDataFiles.length)
-        + ", readOnlyDeleteFilesSize="
-        + (readOnlyDeleteFiles == null ? 0 : readOnlyDeleteFiles.length)
-        + ", rewrittenDeleteFilesSize="
-        + (rewrittenDeleteFiles == null ? 0 : rewrittenDeleteFiles.length)
-        + "} "
-        + super.toString();
+    return MoreObjects.toStringHelper(this)
+        .add("rewrittenDataFilesSize", rewrittenDataFiles.length)
+        .add("rePosDeletedDataFilesSize", rePosDeletedDataFiles.length)
+        .add("readOnlyDeleteFilesSize", readOnlyDeleteFiles.length)
+        .add("rewrittenDeleteFilesSize", rewrittenDeleteFiles.length)
+        .add("table", table.name())
+        .addValue(super.toString())
+        .toString();
   }
 }

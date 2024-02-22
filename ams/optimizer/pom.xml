@@ -34,6 +34,7 @@
 
     <modules>
         <module>flink-optimizer</module>
+        <module>spark-optimizer</module>
         <module>standalone-optimizer</module>
         <module>common</module>
     </modules>
