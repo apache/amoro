@@ -201,9 +201,9 @@ public class OptimizingQueue extends PersistentBase {
 
   private TaskRuntime fetchScheduledTask() {
     return tableQueue.stream()
+        .findFirst()
         .map(TableOptimizingProcess::poll)
         .filter(Objects::nonNull)
-        .findFirst()
         .orElse(null);
   }
 
