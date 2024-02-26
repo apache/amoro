@@ -178,8 +178,8 @@ optimizer:
       jobUri: "local:///opt/flink/usrlib/optimizer-job.jar"
     properties: {
       "flink-conf.taskmanager.memory.managed.size": "32mb",
-      "flink-conf.taskmanager.memory.netwrok.max": "32mb",
-      "flink-conf.taskmanager.memory.netwrok.nin": "32mb"
+      "flink-conf.taskmanager.memory.network.max": "32mb",
+      "flink-conf.taskmanager.memory.network.min": "32mb"
     }
 ```
 
