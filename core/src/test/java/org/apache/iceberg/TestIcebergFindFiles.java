@@ -134,6 +134,17 @@ public class TestIcebergFindFiles extends TableTestBase {
         .commit();
     table.updateSpec().removeField(Expressions.bucket("data", 16)).commit();
 
+    DataFile FILE_DROP_PARTITION_FIELD =
+        DataFiles.builder(table.spec())
+            .withPath("/path/to/data-drop-partition.parquet")
+            .withFileSizeInBytes(10L)
+            .withRecordCount(1L)
+            .build();
+    table
+        .newAppend()
+        .appendFile(FILE_DROP_PARTITION_FIELD) // without partition field
+        .commit();
+
     Iterable<ContentFile<?>> files =
         transform(
             new IcebergFindFiles(table)
@@ -143,6 +154,14 @@ public class TestIcebergFindFiles extends TableTestBase {
                 .entries());
 
     Assert.assertEquals(pathSet(FILE_B, FILE_C), pathSet(files));
+
+    Iterable<ContentFile<?>> files2 =
+        transform(
+            new IcebergFindFiles(table)
+                .inPartitions(table.spec(), StaticDataTask.Row.of(new Object[] {null}))
+                .entries());
+
+    Assert.assertEquals(pathSet(FILE_DROP_PARTITION_FIELD), pathSet(files2));
   }
 
   @Test
