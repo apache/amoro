@@ -42,6 +42,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
@@ -182,9 +183,12 @@ public class IcebergFindFiles {
       Expression partFilter = Expressions.alwaysTrue();
       for (int i = 0; i < spec.fields().size(); i += 1) {
         PartitionField field = spec.fields().get(i);
-        partFilter =
-            Expressions.and(
-                partFilter, Expressions.equal(field.name(), partitionData.get(i, Object.class)));
+        Object partitionValue = partitionData.get(i, Object.class);
+        if (Objects.isNull(partitionValue)) {
+          partFilter = Expressions.and(partFilter, Expressions.isNull(field.name()));
+        } else {
+          partFilter = Expressions.and(partFilter, Expressions.equal(field.name(), partitionValue));
+        }
       }
       partitionSetFilter = Expressions.or(partitionSetFilter, partFilter);
     }
