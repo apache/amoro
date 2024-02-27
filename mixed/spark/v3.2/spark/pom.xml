@@ -258,7 +258,7 @@
             </exclusions>
         </dependency>
 
-        <!-- test dependency -->
+        <!-- test dependencies -->
         <dependency>
             <groupId>org.apache.paimon</groupId>
             <artifactId>paimon-spark-3.2</artifactId>
