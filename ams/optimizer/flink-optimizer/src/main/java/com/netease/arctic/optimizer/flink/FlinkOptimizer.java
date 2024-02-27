@@ -50,7 +50,9 @@ public class FlinkOptimizer {
         .setParallelism(1)
         .broadcast()
         .transform(
-            FlinkExecutor.class.getName(), Types.VOID, new FlinkExecutor(optimizer.getExecutors()))
+            FlinkExecutor.class.getName(),
+            Types.VOID,
+            new FlinkExecutor(optimizer.getExecutors(), optimizerConfig.getGroupName()))
         .setParallelism(optimizerConfig.getExecutionParallel())
         .addSink(new DiscardingSink<>())
         .name("Optimizer empty sink")
