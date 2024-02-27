@@ -48,7 +48,7 @@
 
 "module:ams-server":
   - "ams/api/**/*"
-  - "ams/ams-server/**/*"
+  - "ams/server/**/*"
 
 "module:ams-dashboard":
   - "ams/dashboard/**/*"
