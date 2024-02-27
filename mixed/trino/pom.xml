@@ -48,6 +48,7 @@
         <commons-lang.version>2.6</commons-lang.version>
         <commons-io.version>2.4</commons-io.version>
         <jol.version>0.16</jol.version>
+        <surefire-testng.version>3.2.5</surefire-testng.version>
     </properties>
 
     <dependencies>
@@ -586,6 +587,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-testng</artifactId>
+                        <version>${surefire-testng.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
 
             <plugin>
@@ -595,7 +603,6 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
-
 
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
