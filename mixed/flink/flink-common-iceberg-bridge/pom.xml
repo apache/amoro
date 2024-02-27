@@ -210,12 +210,7 @@
             </exclusions>
         </dependency>
 
-        <!--        test-->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-
+        <!-- test dependencies -->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-streaming-java</artifactId>
@@ -286,16 +281,12 @@
             <scope>provided</scope>
         </dependency>
 
-        <!--        test-->
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-        </dependency>
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.17</version>
         </dependency>
+
         <dependency>
             <groupId>com.netease.amoro</groupId>
             <artifactId>amoro-core</artifactId>
