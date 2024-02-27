@@ -260,10 +260,6 @@
 
         <!-- test dependency -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.paimon</groupId>
             <artifactId>paimon-spark-3.2</artifactId>
             <version>${paimon.version}</version>
@@ -276,14 +272,6 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-launcher</artifactId>
