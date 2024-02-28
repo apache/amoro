@@ -45,13 +45,6 @@ public interface TableEvent extends Event {
   String table();
 
   /**
-   * External or Internal Catalog that this event source related to.
-   *
-   * @return True if event source from an external catalog.
-   */
-  Boolean isExternal();
-
-  /**
    * Effective table format
    *
    * @return table format

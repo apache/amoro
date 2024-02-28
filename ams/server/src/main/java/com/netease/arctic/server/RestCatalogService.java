@@ -373,7 +373,6 @@ public class RestCatalogService extends PersistentBase {
                   identifier.getCatalog(),
                   identifier.getDatabase(),
                   identifier.getTableName(),
-                  false,
                   metricsRequest.report());
           EventsManager.getInstance().emit(event);
           return null;

@@ -28,16 +28,14 @@ public class IcebergReportEvent implements TableEvent {
   private final String catalog;
   private final String database;
   private final String table;
-  private final Boolean external;
 
   public IcebergReportEvent(
-      String catalog, String database, String table, boolean external, MetricsReport report) {
+      String catalog, String database, String table, MetricsReport report) {
     this.report = report;
     this.timestamp = System.currentTimeMillis();
     this.catalog = catalog;
     this.database = database;
     this.table = table;
-    this.external = external;
   }
 
   @Override
@@ -63,11 +61,6 @@ public class IcebergReportEvent implements TableEvent {
   @Override
   public String table() {
     return table;
-  }
-
-  @Override
-  public Boolean isExternal() {
-    return external;
   }
 
   @Override
