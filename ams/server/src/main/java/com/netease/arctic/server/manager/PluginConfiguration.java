@@ -18,14 +18,14 @@
 
 package com.netease.arctic.server.manager;
 
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
+import com.netease.arctic.utils.JacksonUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 
 /** Configuration of a plugin. */
 public class PluginConfiguration {
@@ -42,12 +42,14 @@ public class PluginConfiguration {
     this.properties = properties;
   }
 
-  public static PluginConfiguration fromJSONObject(JSONObject configOptions) {
-    Preconditions.checkArgument(configOptions.containsKey(NAME), "plugin name is required");
-    String name = configOptions.get(NAME).toString();
-    boolean enabled = Optional.ofNullable(configOptions.getBoolean(ENABLED)).orElse(true);
+  public static PluginConfiguration fromJSONObject(JsonNode configOptions) {
+    JsonNode nameNode = configOptions.get(NAME);
+    Preconditions.checkNotNull(nameNode, "plugin name is required");
+    String name = nameNode.textValue();
+
+    boolean enabled = JacksonUtils.getBoolean(configOptions, ENABLED, true);
     Map<String, String> props =
-        configOptions.getObject(PROPERTIES, new TypeReference<Map<String, String>>() {});
+        JacksonUtils.getMap(configOptions, PROPERTIES, new TypeReference<Map<String, String>>() {});
     if (props == null) {
       props = ImmutableMap.of();
     }

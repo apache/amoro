@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
-import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.utils.Configurations;
@@ -46,7 +46,7 @@ public class LoginController {
   /** handle login post request. */
   public void login(Context ctx) {
     // ok
-    JSONObject postBody = ctx.bodyAsClass(JSONObject.class);
+    JsonNode postBody = ctx.bodyAsClass(JsonNode.class);
     if (adminUser.equals(postBody.get("user"))
         && (adminPassword.equals(postBody.get("password")))) {
       ctx.sessionAttribute("user", new SessionInfo(adminUser, System.currentTimeMillis() + ""));
