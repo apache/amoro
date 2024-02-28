@@ -203,11 +203,22 @@ public class IcebergTableMaintainer implements TableMaintainer {
             })
         .cleanExpiredFiles(true)
         .commit();
-    if (arcticFileIO().supportFileSystemOperations()) {
-      parentDirectory.forEach(
-          parent -> TableFileUtil.deleteEmptyDirectory(arcticFileIO(), parent, exclude));
-    }
-    LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
+
+    parentDirectory.forEach(
+        parent -> {
+          try {
+            TableFileUtil.deleteEmptyDirectory(arcticFileIO(), parent, exclude);
+          } catch (Exception e) {
+            // Ignore exceptions to remove as many directories as possible
+            LOG.warn("Fail to delete empty directory " + parent, e);
+          }
+        });
+
+    LOG.info(
+        "to delete {} files in {}, success delete {} files",
+        toDeleteFiles.get(),
+        getTable().name(),
+        deleteFiles.get());
   }
 
   @Override
