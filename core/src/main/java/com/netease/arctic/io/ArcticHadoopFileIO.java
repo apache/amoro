@@ -158,7 +158,8 @@ public class ArcticHadoopFileIO extends HadoopFileIO
 
   @Override
   public boolean isEmptyDirectory(String location) {
-    Preconditions.checkArgument(isDirectory(location), "the target location is not directory");
+    Preconditions.checkArgument(
+        isDirectory(location), "the target location %s is not a directory", location);
     return tableMetaStore.doAs(
         () -> {
           Path path = new Path(location);
