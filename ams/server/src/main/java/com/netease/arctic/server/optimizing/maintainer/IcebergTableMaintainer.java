@@ -18,8 +18,9 @@
 
 package com.netease.arctic.server.optimizing.maintainer;
 
-import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
+import static com.google.common.primitives.Longs.min;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.events.EventType;
@@ -65,7 +66,6 @@ import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.SupportsPrefixOperations;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Strings;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;

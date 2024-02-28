@@ -29,8 +29,7 @@ public class IcebergReportEvent implements TableEvent {
   private final String database;
   private final String table;
 
-  public IcebergReportEvent(
-      String catalog, String database, String table, MetricsReport report) {
+  public IcebergReportEvent(String catalog, String database, String table, MetricsReport report) {
     this.report = report;
     this.timestamp = System.currentTimeMillis();
     this.catalog = catalog;
