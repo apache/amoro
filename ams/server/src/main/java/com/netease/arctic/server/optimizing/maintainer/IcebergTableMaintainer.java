@@ -183,14 +183,14 @@ public class IcebergTableMaintainer implements TableMaintainer {
         .expireOlderThan(olderThan)
         .deleteWith(
             file -> {
-              try (ArcticFileIO io = arcticFileIO()) {
+              try {
                 if (exclude.isEmpty()) {
-                  io.deleteFile(file);
+                  arcticFileIO().deleteFile(file);
                 } else {
                   String fileUriPath = TableFileUtil.getUriPath(file);
                   if (!exclude.contains(fileUriPath)
                       && !exclude.contains(new Path(fileUriPath).getParent().toString())) {
-                    io.deleteFile(file);
+                    arcticFileIO().deleteFile(file);
                   }
                 }
                 parentDirectory.add(new Path(file).getParent().toString());
@@ -203,13 +203,11 @@ public class IcebergTableMaintainer implements TableMaintainer {
             })
         .cleanExpiredFiles(true)
         .commit();
-    try (ArcticFileIO io = arcticFileIO()) {
-      parentDirectory.forEach(parent -> TableFileUtil.deleteEmptyDirectory(io, parent, exclude));
-    } catch (IllegalStateException e) {
-      // Doesn't support directory operations
-      throw e;
-    } catch (Exception ignore) {
+    try {
+      parentDirectory.forEach(parent -> TableFileUtil.deleteEmptyDirectory(arcticFileIO(), parent, exclude));
+    } catch (Exception e) {
       // Ignore exceptions to remove as many directories as possible
+      LOG.warn("Fail to delete empty directories", e);
     }
     LOG.info(
         "to delete {} files in {}, success delete {} files",
