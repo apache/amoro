@@ -20,7 +20,6 @@ package com.netease.arctic.utils;
 
 import com.netease.arctic.io.ArcticFileIO;
 import org.apache.hadoop.fs.Path;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,14 +61,14 @@ public class TableFileUtil {
    */
   public static void deleteEmptyDirectory(
       ArcticFileIO io, String directoryPath, Set<String> exclude) {
-    Preconditions.checkArgument(
-        io.supportFileSystemOperations(), "The fileIo doesn't support directory operation");
-    Preconditions.checkArgument(io.exists(directoryPath), "The target directory is not exist");
-    Preconditions.checkArgument(
-        io.asFileSystemIO().isDirectory(directoryPath), "The target path is not directory");
-
+    if (!io.exists(directoryPath)) {
+      LOG.warn("The target directory {} does not exist or has been deleted", directoryPath);
+      return;
+    }
     String parent = new Path(directoryPath).getParent().toString();
-    if (exclude.contains(directoryPath) || exclude.contains(parent)) {
+    if (!io.asFileSystemIO().isDirectory(directoryPath)
+        || exclude.contains(directoryPath)
+        || exclude.contains(parent)) {
       return;
     }
 
