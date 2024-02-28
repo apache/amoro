@@ -25,9 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.powermock.api.mockito.PowerMockito.verifyZeroInteractions;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 import org.apache.ibatis.session.SqlSession;
 import org.junit.jupiter.api.AfterEach;
@@ -101,7 +101,7 @@ public class TestNestedSqlSession {
   void testCommitWithNestCountGreaterThanZero() {
     nestedSession.openNestedSession();
     nestedSession.commit();
-    verifyZeroInteractions(sqlSession);
+    verifyNoInteractions(sqlSession);
     nestedSession.close();
 
     nestedSession.commit();
@@ -121,12 +121,12 @@ public class TestNestedSqlSession {
     nestedSession.openNestedSession();
     nestedSession.commit();
     nestedSession.close();
-    verifyZeroInteractions(sqlSession);
+    verifyNoInteractions(sqlSession);
 
     nestedSession.commit();
-    verifyZeroInteractions(sqlSession);
+    verifyNoInteractions(sqlSession);
     nestedSession.close();
-    verifyZeroInteractions(sqlSession);
+    verifyNoInteractions(sqlSession);
 
     nestedSession.commit();
     nestedSession.close();
@@ -139,7 +139,7 @@ public class TestNestedSqlSession {
   void testRollbackWithNestCountGreaterThanZero() {
     nestedSession.openNestedSession();
     nestedSession.rollback();
-    verifyZeroInteractions(sqlSession);
+    verifyNoInteractions(sqlSession);
     nestedSession.close();
 
     nestedSession.rollback();
@@ -159,12 +159,12 @@ public class TestNestedSqlSession {
     nestedSession.openNestedSession();
     nestedSession.commit();
     nestedSession.close();
-    verifyZeroInteractions(sqlSession);
+    verifyNoInteractions(sqlSession);
 
     nestedSession.rollback();
-    verifyZeroInteractions(sqlSession);
+    verifyNoInteractions(sqlSession);
     nestedSession.close();
-    verifyZeroInteractions(sqlSession);
+    verifyNoInteractions(sqlSession);
 
     nestedSession.rollback();
     verify(sqlSession).rollback(true);
