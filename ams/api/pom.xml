@@ -74,6 +74,10 @@
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -161,12 +165,12 @@
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.zookeeper</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.zookeeper
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.zookeeper
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.curator</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.curator
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.curator
                                     </shadedPattern>
                                 </relocation>
                             </relocations>
