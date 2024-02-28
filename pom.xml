@@ -98,10 +98,9 @@
         <junit5.vintage.version>5.9.1</junit5.vintage.version>
         <junit5.platform.version>1.9.1</junit5.platform.version>
         <commons-pool2.version>2.12.0</commons-pool2.version>
-        <commons-lang3.version>3.12.0</commons-lang3.version>
+        <commons-lang3.version>3.14.0</commons-lang3.version>
         <cglib.version>2.2.2</cglib.version>
         <mockito.version>4.11.0</mockito.version>
-        <parquet-hadoop.version>1.13.1</parquet-hadoop.version>
         <curator.version>5.6.0</curator.version>
         <zookeeper.version>3.9.1</zookeeper.version>
         <fastjson.version>1.2.83</fastjson.version>
@@ -121,11 +120,11 @@
         <netty.version>4.1.86.Final</netty.version>
         <javalin.version>4.6.8</javalin.version>
         <kyuubi-hive-jdbc-shaded.version>1.6.0-incubating</kyuubi-hive-jdbc-shaded.version>
-        <rocksdb.version>7.10.2</rocksdb.version>
-        <kryo.version>2.24.0</kryo.version>
+        <rocksdb.version>8.10.2</rocksdb.version>
+        <kryo.version>4.0.3</kryo.version>
         <trino.version>406</trino.version>
         <lucene.version>8.11.2</lucene.version>
-        <bitmap.version>0.9.44</bitmap.version>
+        <bitmap.version>1.0.1</bitmap.version>
     </properties>
 
     <dependencies>
@@ -290,18 +289,6 @@
                 <groupId>org.apache.parquet</groupId>
                 <artifactId>parquet-avro</artifactId>
                 <version>${parquet-avro.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.parquet</groupId>
-                        <artifactId>parquet-hadoop</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.parquet</groupId>
-                <artifactId>parquet-hadoop</artifactId>
-                <version>${parquet-hadoop.version}</version>
             </dependency>
 
             <dependency>
@@ -601,7 +588,7 @@
             </dependency>
 
             <dependency>
-                <groupId>com.esotericsoftware.kryo</groupId>
+                <groupId>com.esotericsoftware</groupId>
                 <artifactId>kryo</artifactId>
                 <version>${kryo.version}</version>
             </dependency>
