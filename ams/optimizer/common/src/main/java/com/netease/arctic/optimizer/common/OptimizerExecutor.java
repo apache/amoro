@@ -26,37 +26,26 @@ import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.TableOptimizing;
 import com.netease.arctic.utils.ExceptionUtil;
 import com.netease.arctic.utils.SerializationUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
 public class OptimizerExecutor extends AbstractOptimizerOperator {
 
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerExecutor.class);
 
   private final int threadId;
-  private Map<String, String> runtimeContext = new ConcurrentHashMap<String, String>();
-  private Consumer metricsReporter = null;
 
   public OptimizerExecutor(OptimizerConfig config, int threadId) {
     super(config);
     this.threadId = threadId;
   }
 
-  public void addRuntimeContext(String key, String value) {
-    runtimeContext.put(key, value);
-  }
-
-  public void setMetricReporter(Consumer<Integer> metricsReporter) {
-    this.metricsReporter = metricsReporter;
-  }
+  // subclass can overwrite it to add some custome logic
+  public void callBeforeTaskComplete(OptimizingTaskResult result) {}
 
   public void start() {
     while (isStarted()) {
@@ -64,10 +53,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
         OptimizingTask task = pollTask();
         if (task != null && ackTask(task)) {
           OptimizingTaskResult result = executeTask(task);
-          if (metricsReporter != null) {
-            // reporter metrics by flink, counter the number of tasks consumed
-            metricsReporter.accept(1);
-          }
+          callBeforeTaskComplete(result);
           completeTask(result);
         }
       } catch (Throwable t) {
@@ -118,16 +104,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
   }
 
   protected OptimizingTaskResult executeTask(OptimizingTask task) {
-    OptimizingTaskResult result = executeTask(getConfig(), getThreadId(), task, LOG);
-    // add optimizer flink runtime info, including application_id, tm_id, host
-    StringBuilder sb = new StringBuilder();
-    if (StringUtils.isNotEmpty(result.getErrorMessage())) {
-      if (runtimeContext != null && runtimeContext.size() > 0) {
-        runtimeContext.forEach((k, v) -> sb.append(k).append("=").append(v).append("\n"));
-      }
-      result.setErrorMessage(sb.toString() + result.getErrorMessage());
-    }
-    return result;
+    return executeTask(getConfig(), getThreadId(), task, LOG);
   }
 
   protected void completeTask(OptimizingTaskResult optimizingTaskResult) {

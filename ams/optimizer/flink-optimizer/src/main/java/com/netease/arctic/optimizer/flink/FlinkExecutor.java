@@ -19,7 +19,6 @@
 package com.netease.arctic.optimizer.flink;
 
 import static org.apache.flink.configuration.HighAvailabilityOptions.HA_CLUSTER_ID;
-import static org.apache.flink.configuration.TaskManagerOptions.HOST;
 import static org.apache.flink.configuration.TaskManagerOptions.TASK_MANAGER_RESOURCE_ID;
 
 import com.netease.arctic.optimizer.common.OptimizerExecutor;
@@ -35,7 +34,7 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
 
   private static final Logger LOG = LoggerFactory.getLogger(FlinkExecutor.class);
   private final OptimizerExecutor[] allExecutors;
-  private OptimizerExecutor executor;
+  private FlinkOptimizerExecutor executor;
   private String optimizeGroupName;
 
   public FlinkExecutor(OptimizerExecutor[] allExecutors) {
@@ -56,18 +55,15 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
             .getTaskManagerRuntimeInfo()
             .getConfiguration()
             .get(TASK_MANAGER_RESOURCE_ID);
-    String bindHost = getRuntimeContext().getTaskManagerRuntimeInfo().getConfiguration().get(HOST);
     String applicationId =
         getRuntimeContext().getTaskManagerRuntimeInfo().getConfiguration().getString(HA_CLUSTER_ID);
-    executor = allExecutors[subTaskIndex];
+    executor = (FlinkOptimizerExecutor) allExecutors[subTaskIndex];
     // set optimizer flink runtime info, including application_id, tm_id, host
     executor.addRuntimeContext("application_id", applicationId);
     executor.addRuntimeContext("tm_id", taskManagerContainerId);
-    executor.addRuntimeContext("host", bindHost);
     // add label optimize_group;
     getMetricGroup().getAllVariables().put("<optimizer_group>", optimizeGroupName);
     Counter counter = getMetricGroup().addGroup("amoro").addGroup("optimizer").counter("tasks");
-
     executor.setMetricReporter(x -> counter.inc());
     new Thread(() -> executor.start(), "flink-optimizer-executor-" + subTaskIndex).start();
   }

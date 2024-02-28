@@ -20,6 +20,7 @@ package com.netease.arctic.optimizer.flink;
 
 import com.netease.arctic.optimizer.common.Optimizer;
 import com.netease.arctic.optimizer.common.OptimizerConfig;
+import com.netease.arctic.optimizer.common.OptimizerToucher;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.JobManagerOptions;
@@ -32,10 +33,14 @@ import org.kohsuke.args4j.CmdLineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FlinkOptimizer {
+public class FlinkOptimizer extends Optimizer {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkOptimizer.class);
 
   private static final String JOB_NAME = "amoro-flink-optimizer";
+
+  public FlinkOptimizer(OptimizerConfig config) {
+    super(config, () -> new OptimizerToucher(config), (i) -> new FlinkOptimizerExecutor(config, i));
+  }
 
   public static void main(String[] args) throws CmdLineException {
     StreamExecutionEnvironment env =
@@ -45,7 +50,7 @@ public class FlinkOptimizer {
     // calculate optimizer memory allocation
     calcOptimizerMemory(optimizerConfig, env);
 
-    Optimizer optimizer = new Optimizer(optimizerConfig);
+    Optimizer optimizer = new FlinkOptimizer(optimizerConfig);
     env.addSource(new FlinkToucher(optimizer.getToucher()))
         .setParallelism(1)
         .broadcast()
