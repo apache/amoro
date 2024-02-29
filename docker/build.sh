@@ -146,7 +146,7 @@ while [ $i -le $j ]; do
 done
 
 FLINK_MAJOR_VERSION=${FLINK_VERSION%.*}
-SPARK_MAJOR_VERSION=${SPARK_VERSION%.*}
+SPARK_MAJOR_VERSION=$(echo "${SPARK_VERSION%.*}" | sed 's/[^0-9\.]//g')
 
 function print_env() {
   echo "SET FLINK_VERSION=${FLINK_VERSION}"
