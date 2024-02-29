@@ -33,7 +33,7 @@
             <AppenderRef ref="stdout"/>
         </Logger>
         <!-- iceberg rest catalog tests -->
-        <Logger name="org.apache.hc.client5.http.headers" level="DEBUG" additivity="false">
+        <Logger name="org.apache.hc.client5.http.headers" level="INFO" additivity="false">
             <AppenderRef ref="stdout"/>
         </Logger>
     </Loggers>
