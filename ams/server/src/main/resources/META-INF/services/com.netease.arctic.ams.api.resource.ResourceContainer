@@ -16,5 +16,6 @@
 # limitations under the License.
 #
 
+com.netease.arctic.server.manager.SparkOptimizerContainer
 com.netease.arctic.server.manager.FlinkOptimizerContainer
 com.netease.arctic.server.manager.LocalOptimizerContainer

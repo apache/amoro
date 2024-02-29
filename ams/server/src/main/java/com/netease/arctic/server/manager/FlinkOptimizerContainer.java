@@ -224,8 +224,8 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
       "amoro.optimizer-id:" + resource.getResourceId()
     };
     String resourceLabel = Joiner.on(',').join(labels);
-    flinkConf.putToOptions(FlinkConfKeys.KUBERNETES_TASKMANAGER_LABLES, resourceLabel);
-    flinkConf.putToOptions(FlinkConfKeys.KUBERNETES_JOBMANAGER_LABLES, resourceLabel);
+    flinkConf.putToOptions(FlinkConfKeys.KUBERNETES_TASKMANAGER_LABELS, resourceLabel);
+    flinkConf.putToOptions(FlinkConfKeys.KUBERNETES_JOBMANAGER_LABELS, resourceLabel);
   }
 
   private void addYarnProperties(FlinkConf flinkConf) {
@@ -431,8 +431,8 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
     public static final String KUBERNETES_IMAGE_REF = "kubernetes.container.image";
     public static final String KUBERNETES_CLUSTER_ID = "kubernetes.cluster-id";
-    public static final String KUBERNETES_TASKMANAGER_LABLES = "kubernetes.taskmanager.labels";
-    public static final String KUBERNETES_JOBMANAGER_LABLES = "kubernetes.jobmanager.labels";
+    public static final String KUBERNETES_TASKMANAGER_LABELS = "kubernetes.taskmanager.labels";
+    public static final String KUBERNETES_JOBMANAGER_LABELS = "kubernetes.jobmanager.labels";
   }
 
   public static class FlinkConf {
