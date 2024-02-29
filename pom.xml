@@ -106,18 +106,18 @@
         <fastjson.version>1.2.83</fastjson.version>
         <parquet-avro.version>1.13.1</parquet-avro.version>
         <orc-core.version>1.8.3</orc-core.version>
-        <awssdk.version>2.20.5</awssdk.version>
+        <awssdk.version>2.24.12</awssdk.version>
         <terminal.spark.version>3.3.2</terminal.spark.version>
         <terminal.spark.major.version>3.3</terminal.spark.major.version>
         <dropwizard.metrics.version>4.2.19</dropwizard.metrics.version>
         <thrift.version>0.13.0</thrift.version>
         <caffeine.version>2.9.3</caffeine.version>
         <snakeyaml.version>2.2</snakeyaml.version>
-        <mybatis.version>3.5.6</mybatis.version>
-        <postgres-jdbc.version>42.5.1</postgres-jdbc.version>
-        <derby-jdbc.version>10.13.1.1</derby-jdbc.version>
+        <mybatis.version>3.5.15</mybatis.version>
+        <postgres-jdbc.version>42.7.2</postgres-jdbc.version>
+        <derby-jdbc.version>10.17.1.0</derby-jdbc.version>
         <commons-dbcp2.version>2.9.0</commons-dbcp2.version>
-        <netty.version>4.1.86.Final</netty.version>
+        <netty.version>4.1.107.Final</netty.version>
         <javalin.version>4.6.8</javalin.version>
         <kyuubi-hive-jdbc-shaded.version>1.6.0-incubating</kyuubi-hive-jdbc-shaded.version>
         <rocksdb.version>7.10.2</rocksdb.version>
@@ -599,35 +599,31 @@
                 <version>${hive.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-hdfs</artifactId>
+                        <groupId>org.apache.hbase</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>com.google.guava</groupId>
-                        <artifactId>guava</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.logging.log4j</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>org.eclipse.jetty.aggregate</groupId>
-                        <artifactId>jetty-all</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-yarn-server-web-proxy</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.mortbay.jetty</groupId>
-                        <artifactId>jetty-util</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.mortbay.jetty</groupId>
-                        <artifactId>jetty-sslengine</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>org.eclipse.jetty</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.jetty.aggregate</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.jetty.orbit</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.mortbay.jetty</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
@@ -635,52 +631,28 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>com.sun.jersey</groupId>
-                        <artifactId>jersey-servlet</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>jdk.tools</groupId>
-                        <artifactId>jdk.tools</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.parquet</groupId>
-                        <artifactId>parquet-hadoop-bundle</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.orc</groupId>
-                        <artifactId>orc-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hive</groupId>
-                        <artifactId>hive-orc</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-yarn-server-resourcemanager</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-yarn-server-applicationhistoryservice</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-yarn-registry</artifactId>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>io.netty</groupId>
                         <artifactId>netty-common</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>org.apache.hbase</groupId>
-                        <artifactId>hbase-hadoop2-compat</artifactId>
+                        <groupId>com.sun.jersey</groupId>
+                        <artifactId>jersey-servlet</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>*</artifactId>
+                        <groupId>org.apache.parquet</groupId>
+                        <artifactId>parquet-hadoop-bundle</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jdk.tools</groupId>
+                        <artifactId>jdk.tools</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.orc</groupId>
+                        <artifactId>orc-core</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
