@@ -676,7 +676,7 @@
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.hbase</groupId>
-                        <artifactId>hbase-hadoop2-compat</artifactId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
