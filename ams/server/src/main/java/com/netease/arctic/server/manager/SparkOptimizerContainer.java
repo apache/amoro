@@ -160,7 +160,7 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
     String sparkOptions = resourceSparkConf.toConfOptions();
 
     String jobArgs = super.buildOptimizerStartupArgsString(resource);
-    // ./bin/spark-submit ACTION --deploy-mode=<sparkMode> OPTIONS -c <main-class> <job-file>
+    // ./bin/spark-submit ACTION --deploy-mode=<sparkMode> OPTIONS --class <main-class> <job-file>
     // <arguments>
     //  options: --conf <property=value>
     return String.format(

@@ -25,7 +25,7 @@ cd $CURRENT_DIR
 
 AMORO_VERSION=`cat $PROJECT_HOME/pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
 FLINK_VERSION=1.15.3
-SPARK_VERSION=v3.3.2
+SPARK_VERSION=3.3.3
 HADOOP_VERSION=2.10.2
 DEBIAN_MIRROR=http://deb.debian.org
 APACHE_ARCHIVE=https://archive.apache.org/dist
@@ -53,7 +53,7 @@ Images:
 
 Options:
     --flink-version         Flink binary release version, default is 1.15.3, format must be x.y.z
-    --spark-version         Spark binary release version, default is 3.3.2, format must be x.y.z
+    --spark-version         Spark binary release version, default is 3.3.3, format must be x.y.z
     --hadoop-version        Hadoop binary release version, default is 2.10.2, format must be x.y.z
     --apache-archive        Apache Archive url, default is https://archive.apache.org/dist
     --debian-mirror         Mirror url of debian, default is http://deb.debian.org
@@ -146,7 +146,7 @@ while [ $i -le $j ]; do
 done
 
 FLINK_MAJOR_VERSION=${FLINK_VERSION%.*}
-SPARK_MAJOR_VERSION=$(echo "${SPARK_VERSION%.*}" | sed 's/[^0-9\.]//g')
+SPARK_MAJOR_VERSION=${SPARK_VERSION%.*}
 
 function print_env() {
   echo "SET FLINK_VERSION=${FLINK_VERSION}"
