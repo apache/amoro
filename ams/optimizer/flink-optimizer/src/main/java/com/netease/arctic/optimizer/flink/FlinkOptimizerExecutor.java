@@ -23,18 +23,24 @@ import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
 import com.netease.arctic.optimizer.common.OptimizerConfig;
 import com.netease.arctic.optimizer.common.OptimizerExecutor;
+import org.apache.flink.metrics.Counter;
+import org.apache.flink.metrics.MetricGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
-/** @Auth: hzwangtao6 @Time: 2024/2/28 14:19 @Description: */
+/**
+ * OptimizerExecutor For flink engine only . 1、You can customize special execution logic for Flink
+ * here. 2、You can customize logic that will be called after task execution and before reporting
+ * task results to AMS.
+ */
 public class FlinkOptimizerExecutor extends OptimizerExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerExecutor.class);
   private Map<String, String> runtimeContext = new ConcurrentHashMap<String, String>();
-  private Consumer<Integer> metricsReporter = null;
+  private MetricGroup operatorMetricGroup;
+  private Counter taskCounter = null;
 
   public FlinkOptimizerExecutor(OptimizerConfig config, int threadId) {
     super(config, threadId);
@@ -44,15 +50,16 @@ public class FlinkOptimizerExecutor extends OptimizerExecutor {
     runtimeContext.put(key, value);
   }
 
-  public void setMetricReporter(Consumer<Integer> metricsReporter) {
-    this.metricsReporter = metricsReporter;
+  public void initOperatorMetric(MetricGroup metricGroup) {
+    this.operatorMetricGroup = metricGroup;
+    taskCounter = this.operatorMetricGroup.addGroup("amoro").addGroup("optimizer").counter("tasks");
   }
 
   @Override
   public void callBeforeTaskComplete(OptimizingTaskResult result) {
-    if (metricsReporter != null) {
+    if (taskCounter != null) {
       // reporter metrics by flink, counter the number of tasks consumed
-      metricsReporter.accept(1);
+      taskCounter.inc();
     }
   }
 
