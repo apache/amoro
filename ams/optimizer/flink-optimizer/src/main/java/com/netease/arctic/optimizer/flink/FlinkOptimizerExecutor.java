@@ -32,9 +32,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * OptimizerExecutor For flink engine only . 1、You can customize special execution logic for Flink
- * here. 2、You can customize logic that will be called after task execution and before reporting
- * task results to AMS.
+ * Optimizer executor For Flink engine supports:
+ *
+ * <ul>
+ *   <li>Add additional content to error messages to help locate execution nodes.
+ *   <li>Add some Flink metrics like task number executed.
+ * </ul>
  */
 public class FlinkOptimizerExecutor extends OptimizerExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerExecutor.class);
