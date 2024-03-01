@@ -44,16 +44,12 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     this.threadId = threadId;
   }
 
-  // subclass can overwrite it to add some custome logic
-  public void callBeforeTaskComplete(OptimizingTaskResult result) {}
-
   public void start() {
     while (isStarted()) {
       try {
         OptimizingTask task = pollTask();
         if (task != null && ackTask(task)) {
           OptimizingTaskResult result = executeTask(task);
-          callBeforeTaskComplete(result);
           completeTask(result);
         }
       } catch (Throwable t) {

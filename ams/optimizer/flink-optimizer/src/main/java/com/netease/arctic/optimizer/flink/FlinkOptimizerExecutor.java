@@ -55,8 +55,7 @@ public class FlinkOptimizerExecutor extends OptimizerExecutor {
     taskCounter = this.operatorMetricGroup.addGroup("amoro").addGroup("optimizer").counter("tasks");
   }
 
-  @Override
-  public void callBeforeTaskComplete(OptimizingTaskResult result) {
+  private void callBeforeTaskComplete() {
     if (taskCounter != null) {
       // reporter metrics by flink, counter the number of tasks consumed
       taskCounter.inc();
@@ -66,6 +65,7 @@ public class FlinkOptimizerExecutor extends OptimizerExecutor {
   @Override
   protected OptimizingTaskResult executeTask(OptimizingTask task) {
     OptimizingTaskResult result = executeTask(getConfig(), getThreadId(), task, LOG);
+    callBeforeTaskComplete();
     // add optimizer flink runtime info, including application_id, tm_id
     StringBuilder sb = new StringBuilder();
     if (!Strings.isNullOrEmpty(result.getErrorMessage())) {
