@@ -27,6 +27,8 @@ import com.netease.arctic.ams.api.metrics.MetricSet;
 import com.netease.arctic.ams.api.metrics.MetricType;
 import io.prometheus.client.Collector;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -36,6 +38,7 @@ import java.util.stream.Collectors;
 
 /** Metric type converter for prometheus api */
 public class MetricCollector extends Collector {
+  private static final Logger LOGGER = LoggerFactory.getLogger(MetricCollector.class);
   private static final String PREFIX = "amoro_";
   private static final Pattern NAME_PATTERN = Pattern.compile("[a-zA-Z_:][a-zA-Z0-9_:]*");
   private static final Pattern LABEL_PATTERN = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
@@ -65,12 +68,16 @@ public class MetricCollector extends Collector {
     boolean nameIsValid = NAME_PATTERN.matcher(define.getName()).matches();
     boolean labelIsValid = true;
     for (String tag : define.getTags()) {
-      if (!NAME_PATTERN.matcher(tag).matches()) {
+      if (!LABEL_PATTERN.matcher(tag).matches()) {
         labelIsValid = false;
         break;
       }
     }
-    return nameIsValid && labelIsValid;
+    boolean valid = nameIsValid && labelIsValid;
+    if (!valid) {
+      LOGGER.warn("Metric {} is not a valid prometheus metric.", define);
+    }
+    return valid;
   }
 
   private MetricFamilySamples createFamilySample(
