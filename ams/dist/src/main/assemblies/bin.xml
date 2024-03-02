@@ -44,7 +44,14 @@
             <destName>prometheus-reporter.jar</destName>
             <fileMode>0644</fileMode>
         </file>
-
+        <file>
+            <source>
+                ../optimizer/spark-optimizer/target/spark-optimizer-${project.version}.jar
+            </source>
+            <outputDirectory>plugin/optimizer/spark</outputDirectory>
+            <destName>optimizer-job.jar</destName>
+            <fileMode>0644</fileMode>
+        </file>
         <file>
             <source>../server/target/amoro-ams-server-${project.version}.jar</source>
             <outputDirectory>lib/</outputDirectory>

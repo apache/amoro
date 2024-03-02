@@ -25,11 +25,13 @@ import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingClosedException;
+import com.netease.arctic.server.manager.MetricManager;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
+import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.QuotaProvider;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableManager;
@@ -83,6 +85,7 @@ public class OptimizingQueue extends PersistentBase {
   private final Lock scheduleLock = new ReentrantLock();
   private final Condition planningCompleted = scheduleLock.newCondition();
   private final int maxPlanningParallelism;
+  private final OptimizerGroupMetrics metrics;
   private ResourceGroup optimizerGroup;
 
   public OptimizingQueue(
@@ -99,6 +102,10 @@ public class OptimizingQueue extends PersistentBase {
     this.scheduler = new SchedulingPolicy(optimizerGroup);
     this.tableManager = tableManager;
     this.maxPlanningParallelism = maxPlanningParallelism;
+    this.metrics =
+        new OptimizerGroupMetrics(
+            optimizerGroup.getName(), MetricManager.getInstance().getGlobalRegistry(), this);
+    this.metrics.register();
     tableRuntimeMetaList.forEach(this::initTableRuntime);
   }
 
@@ -301,6 +308,18 @@ public class OptimizingQueue extends PersistentBase {
     scheduler.setTableSorterIfNeeded(optimizerGroup);
   }
 
+  public void addOptimizer(OptimizerInstance optimizerInstance) {
+    this.metrics.addOptimizer(optimizerInstance);
+  }
+
+  public void removeOptimizer(OptimizerInstance optimizerInstance) {
+    this.metrics.removeOptimizer(optimizerInstance);
+  }
+
+  public void dispose() {
+    this.metrics.unregister();
+  }
+
   private double getAvailableCore() {
     // the available core should be at least 1
     return Math.max(quotaProvider.getTotalQuota(optimizerGroup.getName()), 1);
@@ -370,8 +389,10 @@ public class OptimizingQueue extends PersistentBase {
       if (tableRuntimeMeta.getToSequence() != null) {
         toSequence = tableRuntimeMeta.getToSequence();
       }
-      loadTaskRuntimes();
-      tableRuntimeMeta.getTableRuntime().recover(this);
+      loadTaskRuntimes(this);
+      if (this.status != OptimizingProcess.Status.CLOSED) {
+        tableRuntimeMeta.getTableRuntime().recover(this);
+      }
     }
 
     @Override
@@ -631,24 +652,32 @@ public class OptimizingQueue extends PersistentBase {
       }
     }
 
-    private void loadTaskRuntimes() {
+    private void loadTaskRuntimes(OptimizingProcess optimizingProcess) {
       List<TaskRuntime> taskRuntimes =
           getAs(
               OptimizingMapper.class,
               mapper ->
                   mapper.selectTaskRuntimes(tableRuntime.getTableIdentifier().getId(), processId));
-      Map<Integer, RewriteFilesInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
-      taskRuntimes.forEach(
-          taskRuntime -> {
-            taskRuntime.claimOwnership(this);
-            taskRuntime.setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
-            taskMap.put(taskRuntime.getTaskId(), taskRuntime);
-            if (taskRuntime.getStatus() == TaskRuntime.Status.PLANNED) {
-              taskQueue.offer(taskRuntime);
-            } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
-              retryTask(taskRuntime);
-            }
-          });
+      try {
+        Map<Integer, RewriteFilesInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
+        taskRuntimes.forEach(
+            taskRuntime -> {
+              taskRuntime.claimOwnership(this);
+              taskRuntime.setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
+              taskMap.put(taskRuntime.getTaskId(), taskRuntime);
+              if (taskRuntime.getStatus() == TaskRuntime.Status.PLANNED) {
+                taskQueue.offer(taskRuntime);
+              } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
+                retryTask(taskRuntime);
+              }
+            });
+      } catch (IllegalArgumentException e) {
+        LOG.warn(
+            "Load task inputs failed, close the optimizing process : {}",
+            optimizingProcess.getProcessId(),
+            e);
+        optimizingProcess.close();
+      }
     }
 
     private void loadTaskRuntimes(List<TaskDescriptor> taskDescriptors) {

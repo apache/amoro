@@ -23,6 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 public class Optimizer {
@@ -33,11 +35,18 @@ public class Optimizer {
   private final OptimizerExecutor[] executors;
 
   public Optimizer(OptimizerConfig config) {
+    this(config, () -> new OptimizerToucher(config), (i) -> new OptimizerExecutor(config, i));
+  }
+
+  protected Optimizer(
+      OptimizerConfig config,
+      Supplier<OptimizerToucher> toucherFactory,
+      IntFunction<OptimizerExecutor> executorFactory) {
     this.config = config;
-    this.toucher = new OptimizerToucher(config);
+    this.toucher = toucherFactory.get();
     this.executors = new OptimizerExecutor[config.getExecutionParallel()];
     IntStream.range(0, config.getExecutionParallel())
-        .forEach(i -> executors[i] = new OptimizerExecutor(config, i));
+        .forEach(i -> executors[i] = executorFactory.apply(i));
     if (config.getResourceId() != null) {
       toucher.withRegisterProperty(OptimizerProperties.RESOURCE_ID, config.getResourceId());
     }

@@ -98,8 +98,12 @@ class TestFlinkUnifiedCatalogs {
       flinkUnifiedCatalog.alterDatabase(
           "default", new CatalogDatabaseImpl(Collections.emptyMap(), "default"), false);
     } catch (UnsupportedOperationException e) {
-      // Mixed-format and Iceberg catalog does not support altering database.
-      if (!tableFormat.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG)) {
+      // Mixed-format,Iceberg and paimon catalog does not support altering database.
+      if (!tableFormat.in(
+          TableFormat.MIXED_HIVE,
+          TableFormat.MIXED_ICEBERG,
+          TableFormat.ICEBERG,
+          TableFormat.PAIMON)) {
         throw e;
       }
     }

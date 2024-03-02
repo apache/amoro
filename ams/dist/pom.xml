@@ -54,6 +54,12 @@
         </dependency>
         <dependency>
             <groupId>com.netease.amoro</groupId>
+            <artifactId>spark-optimizer</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.netease.amoro</groupId>
             <artifactId>prometheus-reporter</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>

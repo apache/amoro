@@ -99,43 +99,11 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     }
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private OptimizingTaskResult executeTask(OptimizingTask task) {
-    try {
-      OptimizingInputProperties properties = OptimizingInputProperties.parse(task.getProperties());
-      String executorFactoryImpl = properties.getExecutorFactoryImpl();
-      TableOptimizing.OptimizingInput input =
-          SerializationUtil.simpleDeserialize(task.getTaskInput());
-      DynConstructors.Ctor<OptimizingExecutorFactory> ctor =
-          DynConstructors.builder(OptimizingExecutorFactory.class)
-              .impl(executorFactoryImpl)
-              .buildChecked();
-      OptimizingExecutorFactory factory = ctor.newInstance();
-
-      if (getConfig().isExtendDiskStorage()) {
-        properties.enableSpillMap();
-      }
-      properties.setMaxSizeInMemory(getConfig().getMemoryStorageSize() * 1024 * 1024);
-      properties.setSpillMapPath(getConfig().getDiskStoragePath());
-      factory.initialize(properties.getProperties());
-
-      OptimizingExecutor executor = factory.createExecutor(input);
-      TableOptimizing.OptimizingOutput output = executor.execute();
-      ByteBuffer outputByteBuffer = SerializationUtil.simpleSerialize(output);
-      OptimizingTaskResult result = new OptimizingTaskResult(task.getTaskId(), threadId);
-      result.setTaskOutput(outputByteBuffer);
-      result.setSummary(output.summary());
-      LOG.info("Optimizer executor[{}] executed task[{}]", threadId, task.getTaskId());
-      return result;
-    } catch (Throwable t) {
-      LOG.error("Optimizer executor[{}] executed task[{}] failed", threadId, task.getTaskId(), t);
-      OptimizingTaskResult errorResult = new OptimizingTaskResult(task.getTaskId(), threadId);
-      errorResult.setErrorMessage(ExceptionUtil.getErrorMessage(t, 4000));
-      return errorResult;
-    }
+  protected OptimizingTaskResult executeTask(OptimizingTask task) {
+    return executeTask(getConfig(), getThreadId(), task, LOG);
   }
 
-  private void completeTask(OptimizingTaskResult optimizingTaskResult) {
+  protected void completeTask(OptimizingTaskResult optimizingTaskResult) {
     try {
       callAuthenticatedAms(
           (client, token) -> {
@@ -152,6 +120,55 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
           threadId,
           optimizingTaskResult.getTaskId(),
           exception);
+    }
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public static OptimizingTaskResult executeTask(
+      OptimizerConfig config, int threadId, OptimizingTask task, Logger logger) {
+    long startTime = System.currentTimeMillis();
+    TableOptimizing.OptimizingInput input = null;
+    try {
+      OptimizingInputProperties properties = OptimizingInputProperties.parse(task.getProperties());
+      input = SerializationUtil.simpleDeserialize(task.getTaskInput());
+      String executorFactoryImpl = properties.getExecutorFactoryImpl();
+      DynConstructors.Ctor<OptimizingExecutorFactory> ctor =
+          DynConstructors.builder(OptimizingExecutorFactory.class)
+              .impl(executorFactoryImpl)
+              .buildChecked();
+      OptimizingExecutorFactory factory = ctor.newInstance();
+
+      if (config.isExtendDiskStorage()) {
+        properties.enableSpillMap();
+      }
+      properties.setMaxSizeInMemory(config.getMemoryStorageSize() * 1024 * 1024);
+      properties.setSpillMapPath(config.getDiskStoragePath());
+      factory.initialize(properties.getProperties());
+
+      OptimizingExecutor executor = factory.createExecutor(input);
+      TableOptimizing.OptimizingOutput output = executor.execute();
+      ByteBuffer outputByteBuffer = SerializationUtil.simpleSerialize(output);
+      OptimizingTaskResult result = new OptimizingTaskResult(task.getTaskId(), threadId);
+      result.setTaskOutput(outputByteBuffer);
+      result.setSummary(output.summary());
+      logger.info(
+          "Optimizer executor[{}] executed task[{}]({}) and cost {}",
+          threadId,
+          task.getTaskId(),
+          input,
+          System.currentTimeMillis() - startTime);
+      return result;
+    } catch (Throwable t) {
+      logger.error(
+          "Optimizer executor[{}] executed task[{}]({}) failed and cost {}",
+          threadId,
+          task.getTaskId(),
+          input,
+          System.currentTimeMillis() - startTime,
+          t);
+      OptimizingTaskResult errorResult = new OptimizingTaskResult(task.getTaskId(), threadId);
+      errorResult.setErrorMessage(ExceptionUtil.getErrorMessage(t, 4000));
+      return errorResult;
     }
   }
 }
