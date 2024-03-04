@@ -220,6 +220,8 @@
                             <include>asm:*</include>
                             <include>org.apache.flink:flink-connector-kafka</include>
                             <include>org.apache.kafka:*</include>
+                            <include>org.apache.httpcomponents.client5:*</include>
+                            <include>org.apache.httpcomponents.core5:*</include>
                         </includes>
                     </artifactSet>
                 </configuration>
@@ -383,6 +385,11 @@
                                 <relocation>
                                     <pattern>com.facebook.fb303</pattern>
                                     <shadedPattern>com.netease.arctic.shaded.com.facebook.fb303
+                                    </shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.hc</pattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.hc
                                     </shadedPattern>
                                 </relocation>
                             </relocations>
