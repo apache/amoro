@@ -165,12 +165,12 @@
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.zookeeper</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.zookeeper
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.zookeeper
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.curator</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.curator
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.curator
                                     </shadedPattern>
                                 </relocation>
                             </relocations>
