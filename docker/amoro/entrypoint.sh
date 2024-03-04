@@ -34,9 +34,9 @@ configure_jvm_options() {
     declare -l lowerKey=$key
     if grep "$lowerKey" "$JVM_PROPERTIES_FILE" >/dev/null
     then
-       sed -i "s/$lowerKey=.*$/$lowerKey=\"$value\"/g" "$JVM_PROPERTIES_FILE"
+       sed -i "s/$lowerKey=.*$/$lowerKey=$value/g" "$JVM_PROPERTIES_FILE"
     else
-       sed -i '$a/'"$lowerKey=\"$value\""  "$JVM_PROPERTIES_FILE"
+       sed -i '$a'"$lowerKey=$value"  "$JVM_PROPERTIES_FILE"
     fi
   done
 }
