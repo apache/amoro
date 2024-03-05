@@ -25,9 +25,9 @@ import java.util.Set;
 
 public enum Action {
   MINOR_OPTIMIZING("minor-optimizing", 0),
-  MAJOR_OPTIMIZING("minor-optimizing", 1),
+  MAJOR_OPTIMIZING("major-optimizing", 1),
   EXTERNAL_OPTIMIZING("external-optimizing", 2),
-  REFRESH_SNAPSHOT("refreshing", 10),
+  REFRESH_METADATA("refreshing", 10),
   EXPIRE_SNAPSHOTS("expiring", 11),
   CLEAN_ORPHANED_FILES("clean_orphaned", 12),
   HIVE_COMMIT_SYNC("sync_hive", 13);
@@ -35,7 +35,7 @@ public enum Action {
   public static final Set<Action> ARBITRARY_ACTIONS =
       Collections.unmodifiableSet(
           Sets.newHashSet(
-              REFRESH_SNAPSHOT, EXPIRE_SNAPSHOTS, CLEAN_ORPHANED_FILES, HIVE_COMMIT_SYNC));
+                  REFRESH_METADATA, EXPIRE_SNAPSHOTS, CLEAN_ORPHANED_FILES, HIVE_COMMIT_SYNC));
 
   public static boolean isArbitrary(Action action) {
     return ARBITRARY_ACTIONS.contains(action);
@@ -66,7 +66,7 @@ public enum Action {
       case 2:
         return EXTERNAL_OPTIMIZING;
       case 10:
-        return REFRESH_SNAPSHOT;
+        return REFRESH_METADATA;
       case 11:
         return EXPIRE_SNAPSHOTS;
       case 12:

@@ -73,9 +73,9 @@ public abstract class TableProcess<T extends TableState> implements AmoroProcess
 
   @Override
   public void close() {
-    status = ProcessStatus.CLOSED;
     closeInternal();
-    complete();
+    status = ProcessStatus.CLOSED;
+    completeFuture.complete();
   }
 
   @Override
