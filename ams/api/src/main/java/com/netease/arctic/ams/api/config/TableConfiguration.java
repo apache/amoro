@@ -57,8 +57,8 @@ public class TableConfiguration {
 
   public Map<Action, Long> getActionMinIntervals(Set<Action> actions) {
     Map<Action, Long> minIntervals = new HashMap<>();
-    if (actions.contains(Action.REFRESH_SNAPSHOT)) {
-      minIntervals.put(Action.REFRESH_SNAPSHOT, optimizingConfig.getRefreshMinInterval());
+    if (actions.contains(Action.REFRESH_METADATA)) {
+      minIntervals.put(Action.REFRESH_METADATA, optimizingConfig.getRefreshMinInterval());
     } else if (actions.contains(Action.EXPIRE_SNAPSHOTS) && isExpireSnapshotEnabled()) {
       minIntervals.put(Action.EXPIRE_SNAPSHOTS, getSnapshotTTLMinutes() * 60 * 1000);
     } else if (actions.contains(Action.CLEAN_ORPHANED_FILES)) {
