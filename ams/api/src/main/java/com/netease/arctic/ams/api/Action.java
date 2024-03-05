@@ -35,7 +35,7 @@ public enum Action {
   public static final Set<Action> ARBITRARY_ACTIONS =
       Collections.unmodifiableSet(
           Sets.newHashSet(
-                  REFRESH_METADATA, EXPIRE_SNAPSHOTS, CLEAN_ORPHANED_FILES, HIVE_COMMIT_SYNC));
+              REFRESH_METADATA, EXPIRE_SNAPSHOTS, CLEAN_ORPHANED_FILES, HIVE_COMMIT_SYNC));
 
   public static boolean isArbitrary(Action action) {
     return ARBITRARY_ACTIONS.contains(action);

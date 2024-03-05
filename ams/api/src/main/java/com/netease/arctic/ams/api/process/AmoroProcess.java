@@ -22,9 +22,9 @@ import com.netease.arctic.ams.api.Action;
 
 /**
  * AmoroProcess is a process the whole lifecycle of which is managed by Amoro. AmoroProcess is
- * submitted by user or system and handled by Amoro. AmoroProcess should be related to one single {@link Action},
- * which could be minor optimizing, major optimizing, external optimizing, metadata refreshing, snapshots expiring,
- * orphaned files cleaning or hive commit sync.
+ * submitted by user or system and handled by Amoro. AmoroProcess should be related to one single
+ * {@link Action}, which could be minor optimizing, major optimizing, external optimizing, metadata
+ * refreshing, snapshots expiring, orphaned files cleaning or hive commit sync.
  *
  * @param <T> the state type of the process
  */
@@ -38,16 +38,16 @@ public interface AmoroProcess<T extends ProcessState> {
   void submit();
 
   /**
-   * return submit future of the process.
-   * This method always returns the same future object even if submit() has not been called
+   * return submit future of the process. This method always returns the same future object even if
+   * submit() has not been called
    *
    * @return submit future of the process
    */
   SimpleFuture getSubmitFuture();
 
   /**
-   * return complete future of the process.
-   * This method always returns the same future object even if submit() has not been called
+   * return complete future of the process. This method always returns the same future object even
+   * if submit() has not been called
    *
    * @return complete future of the process
    */
