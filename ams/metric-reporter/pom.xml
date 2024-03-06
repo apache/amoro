@@ -29,7 +29,7 @@
 
     <artifactId>amoro-metric-reporter</artifactId>
     <packaging>pom</packaging>
-    <name>Amoro Project AMS Metric Reporters Parent</name>
+    <name>Amoro Project AMS Metric Reporter Parent</name>
     <url>https://amoro.netease.com</url>
 
     <modules>

@@ -30,14 +30,13 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 public class MetricDefineTest {
+  private MetricDefine source =
+      new MetricDefine(
+          "test-define", Arrays.asList("tag1", "tag2"), MetricType.Counter, "description");
 
   @ParameterizedTest
   @MethodSource("provideMetricNamesForEquality")
-  void testEquals(MetricDefine target, boolean expectedEquality) {
-    MetricDefine source =
-        new MetricDefine(
-            "test-define", Arrays.asList("tag1", "tag2"), MetricType.Counter, "description");
-
+  public void testEquals(MetricDefine target, boolean expectedEquality) {
     // MetricDefine is equally if(name, tag set, type) are qually
     if (expectedEquality) {
       assertEquals(source, target, "MetricNames should be equal");
@@ -49,7 +48,7 @@ public class MetricDefineTest {
     }
   }
 
-  static Stream<Arguments> provideMetricNamesForEquality() {
+  public static Stream<Arguments> provideMetricNamesForEquality() {
 
     return Stream.of(
         // same <name, tags, type> should be true

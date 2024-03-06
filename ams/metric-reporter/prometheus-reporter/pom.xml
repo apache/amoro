@@ -35,6 +35,7 @@
         <dependency>
             <groupId>com.netease.amoro</groupId>
             <artifactId>amoro-ams-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.prometheus</groupId>
