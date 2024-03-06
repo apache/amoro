@@ -60,19 +60,21 @@ public interface AmoroProcess<T extends ProcessState> {
   void close();
 
   /**
-   * Get the string encoded summary of the process, this could be a simple description or a POJO
-   * encoded by JSON
-   *
-   * @return the summary of the process
-   */
-  String getSummary();
-
-  /**
    * Get {@link ProcessState} of the process
    *
    * @return the state of the process
    */
   T getState();
+
+  /**
+   * Get the string encoded summary of the process, this could be a simple description or a POJO
+   * encoded by JSON
+   *
+   * @return the summary of the process
+   */
+  default String getSummary() {
+    return getState().getSummary();
+  }
 
   /**
    * Get {@link ProcessStatus} of the process
