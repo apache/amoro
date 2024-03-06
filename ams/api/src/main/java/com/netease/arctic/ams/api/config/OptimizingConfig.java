@@ -46,6 +46,8 @@ public class OptimizingConfig {
   private long openFileCost;
   // self-optimizing.fragment-ratio
   private int fragmentRatio;
+  // self-optimizing.min-target-size-ratio
+  private double minTargetSizeRatio;
   // self-optimizing.minor.trigger.file-count
   private int minorLeastFileCount;
   // self-optimizing.minor.trigger.interval
@@ -73,6 +75,15 @@ public class OptimizingConfig {
 
   public OptimizingConfig setEnabled(boolean enabled) {
     this.enabled = enabled;
+    return this;
+  }
+
+  public int getMaxCommitRetryCount() {
+    return maxCommitRetryCount;
+  }
+
+  public OptimizingConfig setMaxCommitRetryCount(int maxCommitRetryCount) {
+    this.maxCommitRetryCount = maxCommitRetryCount;
     return this;
   }
 
@@ -152,6 +163,10 @@ public class OptimizingConfig {
     return fragmentRatio;
   }
 
+  public double getMinTargetSizeRatio() {
+    return minTargetSizeRatio;
+  }
+
   public long maxFragmentSize() {
     return targetSize / fragmentRatio;
   }
@@ -162,6 +177,11 @@ public class OptimizingConfig {
 
   public OptimizingConfig setFragmentRatio(int fragmentRatio) {
     this.fragmentRatio = fragmentRatio;
+    return this;
+  }
+
+  public OptimizingConfig setMinTargetSizeRatio(double minTargetSizeRatio) {
+    this.minTargetSizeRatio = minTargetSizeRatio;
     return this;
   }
 

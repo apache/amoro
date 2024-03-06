@@ -60,7 +60,8 @@ public interface AmoroProcess<T extends ProcessState> {
   void close();
 
   /**
-   * Get the summary of the process
+   * Get the string encoded summary of the process, this could be a simple description or a POJO
+   * encoded by JSON
    *
    * @return the summary of the process
    */

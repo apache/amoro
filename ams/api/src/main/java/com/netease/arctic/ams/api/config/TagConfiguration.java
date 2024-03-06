@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.api.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Objects;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
@@ -26,6 +27,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 
 /** Configuration for auto creating tags. */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TagConfiguration {
   // tag.auto-create.enabled
   private boolean autoCreateTag = false;

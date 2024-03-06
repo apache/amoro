@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.api.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
@@ -32,6 +33,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /** Data expiration configuration. */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DataExpirationConfig {
   // data-expire.enabled
   private boolean enabled;

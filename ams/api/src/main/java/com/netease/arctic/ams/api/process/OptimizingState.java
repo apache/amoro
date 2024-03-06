@@ -23,7 +23,7 @@ import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.StateField;
 
 /** The state of the optimizing process. */
-public abstract class OptimizingState extends TableState {
+public abstract class OptimizingState extends TableProcessState {
 
   @StateField private volatile long targetSnapshotId;
   @StateField private volatile long watermark;

@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.TableIdentifier;
 
 import java.util.Objects;
 
+@Deprecated
 public class ServerTableIdentifier {
 
   private Long id;

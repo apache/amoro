@@ -121,6 +121,7 @@ public abstract class StatedPersistentBase extends PersistentBase {
     }
   }
 
+  @Deprecated
   @Retention(RetentionPolicy.RUNTIME)
   public @interface StateField {}
 }

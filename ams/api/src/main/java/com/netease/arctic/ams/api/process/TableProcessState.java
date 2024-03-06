@@ -23,7 +23,7 @@ import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.StateField;
 
 /** A common state of a table process. */
-public class TableState implements ProcessState {
+public class TableProcessState implements ProcessState {
 
   @StateField private volatile long id;
   private final Action action;
@@ -34,12 +34,12 @@ public class TableState implements ProcessState {
   @StateField private volatile String failedReason;
   private volatile String summary;
 
-  public TableState(Action action, ServerTableIdentifier tableIdentifier) {
+  public TableProcessState(Action action, ServerTableIdentifier tableIdentifier) {
     this.action = action;
     this.tableIdentifier = tableIdentifier;
   }
 
-  public TableState(long id, Action action, ServerTableIdentifier tableIdentifier) {
+  public TableProcessState(long id, Action action, ServerTableIdentifier tableIdentifier) {
     this.id = id;
     this.action = action;
     this.tableIdentifier = tableIdentifier;

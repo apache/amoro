@@ -20,7 +20,7 @@ package com.netease.arctic.ams.api;
 
 import com.netease.arctic.ams.api.config.TableConfiguration;
 import com.netease.arctic.ams.api.process.OptimizingState;
-import com.netease.arctic.ams.api.process.TableState;
+import com.netease.arctic.ams.api.process.TableProcessState;
 
 import java.util.List;
 
@@ -46,7 +46,7 @@ public interface TableRuntime {
    *
    * @return the list of arbitrary process states
    */
-  List<TableState> getArbitraryStates();
+  List<TableProcessState> getArbitraryStates();
 
   /**
    * Get the table identifier containing server side id and table format.

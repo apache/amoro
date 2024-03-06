@@ -41,9 +41,8 @@ public interface ProcessFactory<T extends ProcessState> {
    * Recover a process for the action from a state.
    *
    * @param tableRuntime table runtime
-   * @param action action type
    * @param state state of the process
    * @return target process which has not been submitted yet.
    */
-  AmoroProcess<T> recover(TableRuntime tableRuntime, Action action, T state);
+  AmoroProcess<T> recover(TableRuntime tableRuntime, T state);
 }

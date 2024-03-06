@@ -25,7 +25,7 @@ import com.netease.arctic.ams.api.TableRuntime;
  *
  * @param <T>
  */
-public abstract class TableProcess<T extends TableState> implements AmoroProcess<T> {
+public abstract class TableProcess<T extends TableProcessState> implements AmoroProcess<T> {
 
   protected final T state;
   protected final TableRuntime tableRuntime;

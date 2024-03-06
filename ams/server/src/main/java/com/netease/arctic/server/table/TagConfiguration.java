@@ -31,6 +31,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
 
+@Deprecated
 /** Configuration for auto creating tags. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TagConfiguration {

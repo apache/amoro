@@ -27,6 +27,7 @@ import com.netease.arctic.utils.CompatiblePropertyUtil;
 import java.util.Map;
 import java.util.Optional;
 
+@Deprecated
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TableConfiguration {
   private boolean expireSnapshotEnabled;

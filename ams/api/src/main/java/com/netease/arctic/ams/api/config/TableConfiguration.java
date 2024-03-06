@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.api.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Objects;
 import com.netease.arctic.ams.api.Action;
 
@@ -27,15 +28,16 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Configuration for a table, containing OptimizingConfig, DataExpirationConfig, and
- * TagConfiguration.
+ * Configuration for a table, containing {@link OptimizingConfig}, {@link DataExpirationConfig}, and
+ * {@link TagConfiguration}.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TableConfiguration {
 
   // The maximum retry count for executing process.
   private int maxExecuteRetryCount;
   // Whether to expire snapshots.
-  private boolean expireSnapshotEnabled;
+  private boolean expireOperationEnabled;
   // The time to live for snapshots.
   private long snapshotTTLMinutes;
   // The time to live for change store data.
@@ -59,10 +61,10 @@ public class TableConfiguration {
     Map<Action, Long> minIntervals = new HashMap<>();
     if (actions.contains(Action.REFRESH_METADATA)) {
       minIntervals.put(Action.REFRESH_METADATA, optimizingConfig.getRefreshMinInterval());
-    } else if (actions.contains(Action.EXPIRE_SNAPSHOTS) && isExpireSnapshotEnabled()) {
-      minIntervals.put(Action.EXPIRE_SNAPSHOTS, getSnapshotTTLMinutes() * 60 * 1000);
-    } else if (actions.contains(Action.CLEAN_ORPHANED_FILES)) {
-      minIntervals.put(Action.CLEAN_ORPHANED_FILES, getOrphanExistingMinutes() * 60 * 1000);
+    } else if (actions.contains(Action.EXPIRE_DATA) && isExpireOperationEnabled()) {
+      minIntervals.put(Action.EXPIRE_DATA, getSnapshotTTLMinutes() * 60 * 1000);
+    } else if (actions.contains(Action.DELETE_ORPHAN_FILES)) {
+      minIntervals.put(Action.DELETE_ORPHAN_FILES, getOrphanExistingMinutes() * 60 * 1000);
     }
     return minIntervals;
   }
@@ -76,8 +78,8 @@ public class TableConfiguration {
     return maxExecuteRetryCount;
   }
 
-  public boolean isExpireSnapshotEnabled() {
-    return expireSnapshotEnabled;
+  public boolean isExpireOperationEnabled() {
+    return expireOperationEnabled;
   }
 
   public long getSnapshotTTLMinutes() {
@@ -110,8 +112,8 @@ public class TableConfiguration {
     return this;
   }
 
-  public TableConfiguration setExpireSnapshotEnabled(boolean expireSnapshotEnabled) {
-    this.expireSnapshotEnabled = expireSnapshotEnabled;
+  public TableConfiguration setExpireOperationEnabled(boolean expireOperationEnabled) {
+    this.expireOperationEnabled = expireOperationEnabled;
     return this;
   }
 
@@ -168,7 +170,7 @@ public class TableConfiguration {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     TableConfiguration that = (TableConfiguration) o;
-    return expireSnapshotEnabled == that.expireSnapshotEnabled
+    return expireOperationEnabled == that.expireOperationEnabled
         && snapshotTTLMinutes == that.snapshotTTLMinutes
         && changeDataTTLMinutes == that.changeDataTTLMinutes
         && cleanOrphanEnabled == that.cleanOrphanEnabled
@@ -182,7 +184,7 @@ public class TableConfiguration {
   @Override
   public int hashCode() {
     return Objects.hashCode(
-        expireSnapshotEnabled,
+        expireOperationEnabled,
         snapshotTTLMinutes,
         changeDataTTLMinutes,
         cleanOrphanEnabled,
