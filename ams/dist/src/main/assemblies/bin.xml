@@ -38,6 +38,14 @@
         </file>
         <file>
             <source>
+                ../metric-reporter/prometheus-reporter/target/prometheus-reporter-${project.version}-jar-with-dependencies.jar
+            </source>
+            <outputDirectory>plugin/metrics-reporter</outputDirectory>
+            <destName>prometheus-reporter.jar</destName>
+            <fileMode>0644</fileMode>
+        </file>
+        <file>
+            <source>
                 ../optimizer/spark-optimizer/target/spark-optimizer-${project.version}.jar
             </source>
             <outputDirectory>plugin/optimizer/spark</outputDirectory>
