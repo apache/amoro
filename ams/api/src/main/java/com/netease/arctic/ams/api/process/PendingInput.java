@@ -30,9 +30,9 @@ public class PendingInput {
   private int dataFileCount = 0;
   private long dataFileSize = 0;
   private int equalityDeleteFileCount = 0;
+  private long equalityDeleteFileSize = 0L;
   private int positionalDeleteFileCount = 0;
-  private long positionalDeleteBytes = 0L;
-  private long equalityDeleteBytes = 0L;
+  private long positionalDeleteFileSize = 0L;
   private long currentSnapshotId;
   private long currentChangeSnapshotId;
   private long currentWatermark;
@@ -48,8 +48,8 @@ public class PendingInput {
       long dataFileSize,
       int equalityDeleteFileCount,
       int positionalDeleteFileCount,
-      long positionalDeleteBytes,
-      long equalityDeleteBytes,
+      long positionalDeleteFileSize,
+      long equalityDeleteFileSize,
       boolean needMinorOptimizing,
       boolean needMajorOptimizing) {
     this.partitions.addAll(partitions);
@@ -57,8 +57,8 @@ public class PendingInput {
     this.dataFileSize = dataFileSize;
     this.equalityDeleteFileCount = equalityDeleteFileCount;
     this.positionalDeleteFileCount = positionalDeleteFileCount;
-    this.positionalDeleteBytes = positionalDeleteBytes;
-    this.equalityDeleteBytes = equalityDeleteBytes;
+    this.positionalDeleteFileSize = positionalDeleteFileSize;
+    this.equalityDeleteFileSize = equalityDeleteFileSize;
     this.needMinorOptimizing = needMinorOptimizing;
     this.needMajorOptimizing = needMajorOptimizing;
   }
@@ -68,7 +68,7 @@ public class PendingInput {
   }
 
   public long getInputFileSize() {
-    return dataFileSize + equalityDeleteBytes + positionalDeleteBytes;
+    return dataFileSize + equalityDeleteFileSize + positionalDeleteFileSize;
   }
 
   public Set<String> getPartitions() {
@@ -91,12 +91,12 @@ public class PendingInput {
     return positionalDeleteFileCount;
   }
 
-  public long getPositionalDeleteBytes() {
-    return positionalDeleteBytes;
+  public long getPositionalDeleteFileSize() {
+    return positionalDeleteFileSize;
   }
 
-  public long getEqualityDeleteBytes() {
-    return equalityDeleteBytes;
+  public long getEqualityDeleteFileSize() {
+    return equalityDeleteFileSize;
   }
 
   @Override
@@ -107,8 +107,8 @@ public class PendingInput {
         .add("dataFileSize", dataFileSize)
         .add("equalityDeleteFileCount", equalityDeleteFileCount)
         .add("positionalDeleteFileCount", positionalDeleteFileCount)
-        .add("positionalDeleteBytes", positionalDeleteBytes)
-        .add("equalityDeleteBytes", equalityDeleteBytes)
+        .add("positionalDeleteBytes", positionalDeleteFileSize)
+        .add("equalityDeleteBytes", equalityDeleteFileSize)
         .toString();
   }
 
