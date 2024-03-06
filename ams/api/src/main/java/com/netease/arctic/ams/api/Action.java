@@ -29,7 +29,7 @@ public enum Action {
   EXTERNAL_OPTIMIZING("external-optimizing", 2),
   REFRESH_METADATA("refreshing", 10),
   EXPIRE_SNAPSHOTS("expiring", 11),
-  CLEAN_ORPHANED_FILES("clean_orphaned", 12),
+  DELETE_ORPHAN_FILES("delete-orphan-files", 12),
   SYNC_HIVE_COMMIT("sync-hive-commit", 13);
 
   public static final Set<Action> ARBITRARY_ACTIONS =
