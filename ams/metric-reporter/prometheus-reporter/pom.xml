@@ -19,50 +19,32 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     <parent>
+        <artifactId>amoro-metric-reporter</artifactId>
         <groupId>com.netease.amoro</groupId>
-        <artifactId>amoro-ams</artifactId>
         <version>0.7.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>dist</artifactId>
-    <name>Amoro Project AMS Dist</name>
+    <artifactId>prometheus-reporter</artifactId>
+    <name>Amoro Project AMS Prometheus Reporter</name>
     <url>https://amoro.netease.com</url>
-
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-    </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-ams-server</artifactId>
-            <version>${project.version}</version>
+            <artifactId>amoro-ams-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.netease.amoro</groupId>
-            <artifactId>standalone-optimizer</artifactId>
-            <version>${project.version}</version>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient</artifactId>
         </dependency>
+
         <dependency>
-            <groupId>com.netease.amoro</groupId>
-            <artifactId>flink-optimizer</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.netease.amoro</groupId>
-            <artifactId>spark-optimizer</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.netease.amoro</groupId>
-            <artifactId>prometheus-reporter</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient_httpserver</artifactId>
         </dependency>
     </dependencies>
 
@@ -72,20 +54,18 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${maven-assembly-plugin.version}</version>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>bin</id>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
-                        <phase>package</phase>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>src/main/assemblies/bin.xml</descriptor>
-                            </descriptors>
-                            <finalName>amoro-${project.version}-bin</finalName>
-                            <appendAssemblyId>false</appendAssemblyId>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -98,5 +78,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
