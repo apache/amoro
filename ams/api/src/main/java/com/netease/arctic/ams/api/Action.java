@@ -30,7 +30,7 @@ public enum Action {
   REFRESH_METADATA("refreshing", 10),
   EXPIRE_SNAPSHOTS("expiring", 11),
   CLEAN_ORPHANED_FILES("clean_orphaned", 12),
-  HIVE_COMMIT_SYNC("sync_hive", 13);
+  SYNC_HIVE_COMMIT("sync-hive-commit", 13);
 
   public static final Set<Action> ARBITRARY_ACTIONS =
       Collections.unmodifiableSet(
