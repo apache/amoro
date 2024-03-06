@@ -19,8 +19,8 @@
 package com.netease.arctic.ams.api.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.apache.iceberg.relocated.com.google.common.base.Objects;
 import com.netease.arctic.ams.api.Action;
+import org.apache.iceberg.relocated.com.google.common.base.Objects;
 
 import java.util.HashMap;
 import java.util.Map;

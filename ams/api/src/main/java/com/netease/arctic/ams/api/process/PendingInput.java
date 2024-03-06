@@ -23,6 +23,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import java.util.Set;
 
+/** Pending input for optimizing processes. */
 public class PendingInput {
 
   private final Set<String> partitions = Sets.newHashSet();

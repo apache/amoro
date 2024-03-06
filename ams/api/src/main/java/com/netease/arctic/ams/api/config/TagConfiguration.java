@@ -19,8 +19,8 @@
 package com.netease.arctic.ams.api.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.apache.iceberg.relocated.com.google.common.base.Objects;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+import org.apache.iceberg.relocated.com.google.common.base.Objects;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;

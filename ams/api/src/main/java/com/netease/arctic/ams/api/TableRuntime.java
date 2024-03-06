@@ -33,7 +33,8 @@ public interface TableRuntime {
 
   /**
    * Get the list of optimizing process states. Normally, the list contains one default optimizing
-   * state. There could be more than one states if customized optimizing process factory is used.
+   * state at least. There could be more than one states if multiple optimizing processes are
+   * running.
    *
    * @return the list of optimizing process states
    */
@@ -41,7 +42,7 @@ public interface TableRuntime {
 
   /**
    * Get the list of arbitrary process states. One arbitrary state belongs to one arbitrary process
-   * related to one {@link com.netease.arctic.ams.api.Action#ARBITRARY_ACTIONS} There could be more
+   * related to one {@link com.netease.arctic.ams.api.Action#ARBITRARY_ACTIONS}. There could be more
    * than one arbitrary states depending on scheduler implementation.
    *
    * @return the list of arbitrary process states

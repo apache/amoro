@@ -18,7 +18,10 @@
 
 package com.netease.arctic.ams.api.process;
 
-/** Status of any {@link AmoroProcess}. */
+/**
+ * Status of any {@link AmoroProcess}. Only UNKNOWN, RUNNING, FINISHED(SUCCESS, CLOSED, FAILED) are
+ * necessary Stage classes are used to define multiple phases of one process such as OptimizingStage
+ */
 public enum ProcessStatus {
   UNKNOWN,
   RUNNING,
