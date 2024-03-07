@@ -27,6 +27,9 @@ import com.netease.arctic.utils.CompatiblePropertyUtil;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * TODO Use TableConfiguration class in API module, this class shall be removed after 0.7.0
+ */
 @Deprecated
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TableConfiguration {
