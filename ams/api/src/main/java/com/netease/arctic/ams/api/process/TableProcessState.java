@@ -22,6 +22,8 @@ import com.netease.arctic.ams.api.Action;
 import com.netease.arctic.ams.api.ServerTableIdentifier;
 import com.netease.arctic.ams.api.StateField;
 
+import java.util.Map;
+
 /** A common state of a table process. */
 public class TableProcessState implements ProcessState {
 
@@ -30,9 +32,9 @@ public class TableProcessState implements ProcessState {
   private final ServerTableIdentifier tableIdentifier;
   @StateField private long startTime;
   @StateField private long endTime = -1L;
-  @StateField private ProcessStatus status = ProcessStatus.RUNNING;
+  @StateField private ProcessStatus status = ProcessStatus.ACTIVE;
   @StateField private volatile String failedReason;
-  private volatile String summary;
+  private volatile Map<String, String> summary;
 
   public TableProcessState(Action action, ServerTableIdentifier tableIdentifier) {
     this.action = action;
@@ -71,7 +73,7 @@ public class TableProcessState implements ProcessState {
   }
 
   @Override
-  public String getSummary() {
+  public Map<String, String> getSummary() {
     return summary;
   }
 
@@ -93,7 +95,7 @@ public class TableProcessState implements ProcessState {
     return tableIdentifier;
   }
 
-  protected void setSummary(String summary) {
+  protected void setSummary(Map<String, String> summary) {
     this.summary = summary;
   }
 
@@ -106,7 +108,7 @@ public class TableProcessState implements ProcessState {
         || status == ProcessStatus.FAILED
         || status == ProcessStatus.CLOSED) {
       endTime = System.currentTimeMillis();
-    } else if (this.status != ProcessStatus.RUNNING && status == ProcessStatus.RUNNING) {
+    } else if (this.status != ProcessStatus.ACTIVE && status == ProcessStatus.ACTIVE) {
       endTime = -1L;
       failedReason = null;
       summary = null;

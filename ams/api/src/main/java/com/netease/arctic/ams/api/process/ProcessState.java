@@ -20,6 +20,8 @@ package com.netease.arctic.ams.api.process;
 
 import com.netease.arctic.ams.api.Action;
 
+import java.util.Map;
+
 /**
  * ProcessState contains information in any {@link AmoroProcess} which must be persistent and {@link
  * ProcessFactory} will use to recover {@link AmoroProcess}.
@@ -50,7 +52,7 @@ public interface ProcessState {
    *
    * @return the summary of the process
    */
-  String getSummary();
+  Map<String, String> getSummary();
 
   /** @return the reason of process failure, null if the process has not failed yet. */
   String getFailedReason();
