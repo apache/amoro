@@ -28,18 +28,18 @@ public class PendingInput {
 
   private final Set<String> partitions = Sets.newHashSet();
 
-  private int dataFileCount = 0;
-  private long dataFileSize = 0;
-  private int equalityDeleteFileCount = 0;
-  private long equalityDeleteFileSize = 0L;
-  private int positionalDeleteFileCount = 0;
-  private long positionalDeleteFileSize = 0L;
+  private int dataFileCount;
+  private long dataFileSize;
+  private int equalityDeleteFileCount;
+  private long equalityDeleteFileSize;
+  private int positionalDeleteFileCount;
+  private long positionalDeleteFileSize;
   private long currentSnapshotId;
   private long currentChangeSnapshotId;
   private long currentWatermark;
   private long currentChangeWatermark;
-  private boolean needMinorOptimizing = false;
-  private boolean needMajorOptimizing = false;
+  private boolean needMinorOptimizing;
+  private boolean needMajorOptimizing;
 
   public PendingInput() {}
 
@@ -51,6 +51,10 @@ public class PendingInput {
       int positionalDeleteFileCount,
       long positionalDeleteFileSize,
       long equalityDeleteFileSize,
+      long currentSnapshotId,
+      long currentChangeSnapshotId,
+      long currentWatermark,
+      long currentChangeWatermark,
       boolean needMinorOptimizing,
       boolean needMajorOptimizing) {
     this.partitions.addAll(partitions);
@@ -60,6 +64,10 @@ public class PendingInput {
     this.positionalDeleteFileCount = positionalDeleteFileCount;
     this.positionalDeleteFileSize = positionalDeleteFileSize;
     this.equalityDeleteFileSize = equalityDeleteFileSize;
+    this.currentSnapshotId = currentSnapshotId;
+    this.currentChangeSnapshotId = currentChangeSnapshotId;
+    this.currentWatermark = currentWatermark;
+    this.currentChangeWatermark = currentChangeWatermark;
     this.needMinorOptimizing = needMinorOptimizing;
     this.needMajorOptimizing = needMajorOptimizing;
   }
@@ -100,33 +108,12 @@ public class PendingInput {
     return equalityDeleteFileSize;
   }
 
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("partitions", partitions)
-        .add("dataFileCount", dataFileCount)
-        .add("dataFileSize", dataFileSize)
-        .add("equalityDeleteFileCount", equalityDeleteFileCount)
-        .add("positionalDeleteFileCount", positionalDeleteFileCount)
-        .add("positionalDeleteBytes", positionalDeleteFileSize)
-        .add("equalityDeleteBytes", equalityDeleteFileSize)
-        .toString();
-  }
-
   public long getCurrentSnapshotId() {
     return currentSnapshotId;
   }
 
   public long getCurrentChangeSnapshotId() {
     return currentChangeSnapshotId;
-  }
-
-  public void setCurrentSnapshotId(long currentSnapshotId) {
-    this.currentSnapshotId = currentSnapshotId;
-  }
-
-  public void setCurrentChangeSnapshotId(long currentChangeSnapshotId) {
-    this.currentChangeSnapshotId = currentChangeSnapshotId;
   }
 
   public boolean needMinorOptimizing() {
@@ -159,5 +146,18 @@ public class PendingInput {
 
   public long getChangeWatermark() {
     return currentChangeWatermark;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+            .add("partitions", partitions)
+            .add("dataFileCount", dataFileCount)
+            .add("dataFileSize", dataFileSize)
+            .add("equalityDeleteFileCount", equalityDeleteFileCount)
+            .add("positionalDeleteFileCount", positionalDeleteFileCount)
+            .add("positionalDeleteBytes", positionalDeleteFileSize)
+            .add("equalityDeleteBytes", equalityDeleteFileSize)
+            .toString();
   }
 }
