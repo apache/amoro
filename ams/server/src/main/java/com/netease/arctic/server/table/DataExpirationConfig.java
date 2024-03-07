@@ -37,9 +37,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * TODO Use DataExpirationConfig class in API module, this class shall be removed after 0.7.0
- */
+/** TODO Use DataExpirationConfig class in API module, this class shall be removed after 0.7.0 */
 @Deprecated
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DataExpirationConfig {

@@ -25,9 +25,7 @@ package com.netease.arctic.ams.api.process;
 public enum ProcessStatus {
   UNKNOWN,
 
-  /**
-   * This status containing scheduled and running phases
-   */
+  /** This status containing scheduled and running phases */
   ACTIVE,
   SUCCESS,
   CLOSED,

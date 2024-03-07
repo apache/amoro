@@ -23,9 +23,7 @@ import com.netease.arctic.ams.api.TableIdentifier;
 
 import java.util.Objects;
 
-/**
- * TODO Use ServerTableIdentifier class in API module, this class shall be removed after 0.7.0
- */
+/** TODO Use ServerTableIdentifier class in API module, this class shall be removed after 0.7.0 */
 @Deprecated
 public class ServerTableIdentifier {
 

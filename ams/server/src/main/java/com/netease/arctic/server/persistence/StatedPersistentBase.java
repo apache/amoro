@@ -121,9 +121,7 @@ public abstract class StatedPersistentBase extends PersistentBase {
     }
   }
 
-  /**
-   * TODO Use StateField in API module, this class shall be removed after 0.7.0
-   */
+  /** TODO Use StateField in API module, this class shall be removed after 0.7.0 */
   @Deprecated
   @Retention(RetentionPolicy.RUNTIME)
   public @interface StateField {}

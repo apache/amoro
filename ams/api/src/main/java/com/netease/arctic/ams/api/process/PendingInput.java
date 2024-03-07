@@ -151,13 +151,13 @@ public class PendingInput {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-            .add("partitions", partitions)
-            .add("dataFileCount", dataFileCount)
-            .add("dataFileSize", dataFileSize)
-            .add("equalityDeleteFileCount", equalityDeleteFileCount)
-            .add("positionalDeleteFileCount", positionalDeleteFileCount)
-            .add("positionalDeleteBytes", positionalDeleteFileSize)
-            .add("equalityDeleteBytes", equalityDeleteFileSize)
-            .toString();
+        .add("partitions", partitions)
+        .add("dataFileCount", dataFileCount)
+        .add("dataFileSize", dataFileSize)
+        .add("equalityDeleteFileCount", equalityDeleteFileCount)
+        .add("positionalDeleteFileCount", positionalDeleteFileCount)
+        .add("positionalDeleteBytes", positionalDeleteFileSize)
+        .add("equalityDeleteBytes", equalityDeleteFileSize)
+        .toString();
   }
 }
