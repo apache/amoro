@@ -31,7 +31,7 @@ public abstract class TableProcess<T extends TableProcessState> implements Amoro
   protected final TableRuntime tableRuntime;
   private final SimpleFuture submitFuture = new SimpleFuture();
   private final SimpleFuture completeFuture = new SimpleFuture();
-  private volatile ProcessStatus status = ProcessStatus.RUNNING;
+  private volatile ProcessStatus status = ProcessStatus.ACTIVE;
   private volatile String failedReason;
 
   protected TableProcess(T state, TableRuntime tableRuntime) {

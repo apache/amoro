@@ -20,6 +20,8 @@ package com.netease.arctic.ams.api.process;
 
 import com.netease.arctic.ams.api.Action;
 
+import java.util.Map;
+
 /**
  * AmoroProcess is a process the whole lifecycle of which is managed by Amoro. AmoroProcess is
  * submitted by user or system and handled by Amoro. AmoroProcess should be related to one single
@@ -72,7 +74,7 @@ public interface AmoroProcess<T extends ProcessState> {
    *
    * @return the summary of the process
    */
-  default String getSummary() {
+  default Map<String, String> getSummary() {
     return getState().getSummary();
   }
 
