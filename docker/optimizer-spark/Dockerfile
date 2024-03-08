@@ -30,4 +30,4 @@ RUN cd $SPARK_HOME/jars \
     && wget ${MAVEN_MIRROR}/software/amazon/awssdk/url-connection-client/2.20.5/url-connection-client-2.20.5.jar \
     && chown root:root *.jar
 
-ADD $OPTIMIZER_JOB $SPARK_HOME/jars/optimizer-job.jar
+COPY $OPTIMIZER_JOB $SPARK_HOME/jars/optimizer-job.jar

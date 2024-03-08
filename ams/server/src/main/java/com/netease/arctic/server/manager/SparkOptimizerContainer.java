@@ -46,21 +46,18 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
   public static final String SPARK_HOME_PROPERTY = "spark-home";
   public static final String SPARK_CONFIG_PATH = "/conf";
   public static final String ENV_SPARK_CONF_DIR = "SPARK_CONF_DIR";
-
+  public static final String ENV_HADOOP_USER_NAME = "HADOOP_USER_NAME";
   private static final String DEFAULT_JOB_URI = "/plugin/optimizer/spark/optimizer-job.jar";
   private static final String SPARK_JOB_MAIN_CLASS =
       "com.netease.arctic.optimizer.spark.SparkOptimizer";
-
+  public static final String SPARK_MASTER = "master";
   public static final String SPARK_DEPLOY_MODE = "deploy-mode";
   public static final String SPARK_JOB_URI = "job-uri";
-
   public static final String YARN_APPLICATION_ID_PROPERTY = "yarn-application-id";
-  public static final String KUBERNETES_APPLICATION_ID_PROPERTY = "kubernetes-application-id";
-
+  public static final String KUBERNETES_SUBMISSION_ID_PROPERTY = "kubernetes-submission-id";
   private static final Pattern APPLICATION_ID_PATTERN =
       Pattern.compile("(.*)application_(\\d+)_(\\d+)");
   private static final int MAX_READ_APP_ID_TIME = 600000; // 10 min
-
   private static final Function<String, String> yarnApplicationIdReader =
       readLine -> {
         Matcher matcher = APPLICATION_ID_PATTERN.matcher(readLine);
@@ -69,10 +66,9 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
         }
         return null;
       };
-
+  private String sparkMaster;
   private DeployMode deployMode;
   private String sparkHome;
-
   private String sparkConfDir;
   private String jobUri;
 
@@ -81,13 +77,15 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
     super.init(name, containerProperties);
     this.sparkHome = getSparkHome();
     this.sparkConfDir = getSparkConfDir();
-
+    this.sparkMaster = containerProperties.getOrDefault(SPARK_MASTER, "yarn");
+    Preconditions.checkArgument(
+        StringUtils.isNotEmpty(sparkMaster), "The property: %s is required", sparkMaster);
     String runMode =
         Optional.ofNullable(containerProperties.get(SPARK_DEPLOY_MODE))
-            .orElse(DeployMode.YARN_CLIENT.getValue());
+            .orElse(DeployMode.CLIENT.getValue());
     this.deployMode = DeployMode.valueToEnum(runMode);
     String jobUri = containerProperties.get(SPARK_JOB_URI);
-    if (deployMode.isClusterMode()) {
+    if (deployMode.equals(DeployMode.CLUSTER.name())) {
       Preconditions.checkArgument(
           StringUtils.isNotEmpty(jobUri),
           "The property: %s is required if running mode in cluster mode.",
@@ -97,12 +95,9 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
       jobUri = amsHome + DEFAULT_JOB_URI;
     }
     this.jobUri = jobUri;
-
-    if (DeployMode.KUBERNETES_CLUSTER == deployMode) {
-      SparkOptimizerContainer.SparkConf sparkConf =
-          SparkOptimizerContainer.SparkConf.buildFor(loadSparkConfig(), containerProperties)
-              .build();
-
+    SparkOptimizerContainer.SparkConf sparkConf =
+        SparkOptimizerContainer.SparkConf.buildFor(loadSparkConfig(), containerProperties).build();
+    if (deployedOnKubernetes()) {
       String imageRef =
           sparkConf.configValue(SparkOptimizerContainer.SparkConfKeys.KUBERNETES_IMAGE_REF);
       Preconditions.checkArgument(
@@ -116,25 +111,28 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
   @Override
   protected Map<String, String> doScaleOut(Resource resource) {
     String startUpArgs = this.buildOptimizerStartupArgsString(resource);
-    Runtime runtime = Runtime.getRuntime();
     try {
       String exportCmd = String.join(" && ", exportSystemProperties());
       String startUpCmd = String.format("%s && %s", exportCmd, startUpArgs);
       String[] cmd = {"/bin/sh", "-c", startUpCmd};
       LOG.info("Starting spark optimizer using command : {}", startUpCmd);
-      Process exec = runtime.exec(cmd);
+      Process exec = Runtime.getRuntime().exec(cmd);
       Map<String, String> startUpStatesMap = Maps.newHashMap();
-      String applicationId = fetchCommandOutput(exec, yarnApplicationIdReader);
-      switch (deployMode) {
-        case YARN_CLIENT:
-        case YARN_CLUSTER:
-          if (applicationId != null) {
-            startUpStatesMap.put(YARN_APPLICATION_ID_PROPERTY, applicationId);
-          }
-          break;
-        case KUBERNETES_CLUSTER:
-          startUpStatesMap.put(KUBERNETES_APPLICATION_ID_PROPERTY, kubernetesAppId(resource));
-          break;
+      if (deployedOnKubernetes()) {
+        SparkOptimizerContainer.SparkConf sparkConf =
+            SparkOptimizerContainer.SparkConf.buildFor(loadSparkConfig(), getContainerProperties())
+                .build();
+        String namespace =
+            StringUtils.defaultIfEmpty(
+                sparkConf.configValue(SparkConfKeys.KUBERNETES_NAMESPACE), "default");
+        startUpStatesMap.put(
+            KUBERNETES_SUBMISSION_ID_PROPERTY,
+            String.format("%s:%s", namespace, kubernetesDriverName(resource)));
+      } else {
+        String applicationId = fetchCommandOutput(exec, yarnApplicationIdReader);
+        if (applicationId != null) {
+          startUpStatesMap.put(YARN_APPLICATION_ID_PROPERTY, applicationId);
+        }
       }
       return startUpStatesMap;
     } catch (IOException e) {
@@ -145,27 +143,49 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
   @Override
   protected String buildOptimizerStartupArgsString(Resource resource) {
     Map<String, String> sparkConfig = loadSparkConfig();
-
     SparkOptimizerContainer.SparkConf resourceSparkConf =
         SparkOptimizerContainer.SparkConf.buildFor(sparkConfig, getContainerProperties())
             .withGroupProperties(resource.getProperties())
             .build();
 
-    String sparkMode = deployMode.isClusterMode() ? "cluster" : "client";
-    if (DeployMode.KUBERNETES_CLUSTER == deployMode) {
+    // Default enable the spark DRA(dynamic resource allocation)
+    resourceSparkConf.putToOptions(
+        SparkConfKeys.KUBERNETES_DRA_ENABLED,
+        StringUtils.defaultIfEmpty(
+            resourceSparkConf.configValue(SparkConfKeys.KUBERNETES_DRA_ENABLED), "true"));
+    resourceSparkConf.putToOptions(
+        SparkConfKeys.KUBERNETES_DRA_MAX_EXECUTORS,
+        StringUtils.defaultIfEmpty(
+            resourceSparkConf.configValue(SparkConfKeys.KUBERNETES_DRA_MAX_EXECUTORS),
+            String.valueOf(resource.getThreadCount())));
+
+    if (deployedOnKubernetes()) {
       addKubernetesProperties(resource, resourceSparkConf);
-    } else if (DeployMode.YARN_CLIENT == deployMode || DeployMode.YARN_CLUSTER == deployMode) {
+    } else {
       addYarnProperties(resourceSparkConf);
     }
     String sparkOptions = resourceSparkConf.toConfOptions();
-
+    String proxyUser =
+        getContainerProperties()
+            .getOrDefault(
+                OptimizerProperties.EXPORT_PROPERTY_PREFIX + ENV_HADOOP_USER_NAME, "hadoop");
     String jobArgs = super.buildOptimizerStartupArgsString(resource);
-    // ./bin/spark-submit ACTION --deploy-mode=<sparkMode> OPTIONS --class <main-class> <job-file>
+    // ./bin/spark-submit --master <master> --deploy-mode=<sparkMode> <options> --proxy-user <user>
+    // --class
+    // <main-class>
+    // <job-file>
     // <arguments>
     //  options: --conf <property=value>
     return String.format(
-        "%s/bin/spark-submit --deploy-mode=%s %s --class %s %s %s",
-        sparkHome, sparkMode, sparkOptions, SPARK_JOB_MAIN_CLASS, jobUri, jobArgs);
+        "%s/bin/spark-submit --master %s --deploy-mode=%s %s --proxy-user %s --class %s %s %s",
+        sparkHome,
+        sparkMaster,
+        deployMode.getValue(),
+        sparkOptions,
+        proxyUser,
+        SPARK_JOB_MAIN_CLASS,
+        jobUri,
+        jobArgs);
   }
 
   private Map<String, String> loadSparkConfig() {
@@ -178,10 +198,15 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
     }
   }
 
+  private boolean deployedOnKubernetes() {
+    return sparkMaster.startsWith("k8s://");
+  }
+
   private void addKubernetesProperties(
       Resource resource, SparkOptimizerContainer.SparkConf sparkConf) {
-    String appId = kubernetesAppId(resource);
-    sparkConf.putToOptions(SparkOptimizerContainer.SparkConfKeys.KUBERNETES_DRIVER_NAME, appId);
+    String driverName = kubernetesDriverName(resource);
+    sparkConf.putToOptions(
+        SparkOptimizerContainer.SparkConfKeys.KUBERNETES_DRIVER_NAME, driverName);
 
     // add labels to the driver pod
     sparkConf.putToOptions(
@@ -239,18 +264,11 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
   @Override
   public void releaseOptimizer(Resource resource) {
     String releaseCommand;
-    switch (deployMode) {
-      case YARN_CLIENT:
-      case YARN_CLUSTER:
-        releaseCommand = buildReleaseYarnCommand(resource);
-        break;
-      case KUBERNETES_CLUSTER:
-        releaseCommand = buildReleaseKubernetesCommand(resource);
-        break;
-      default:
-        throw new IllegalStateException("Unsupported running mode: " + deployMode.getValue());
+    if (deployedOnKubernetes()) {
+      releaseCommand = buildReleaseKubernetesCommand(resource);
+    } else {
+      releaseCommand = buildReleaseYarnCommand(resource);
     }
-
     try {
       String exportCmd = String.join(" && ", exportSystemProperties());
       String releaseCmd = exportCmd + " && " + releaseCommand;
@@ -268,16 +286,25 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
         "Cannot find {} from optimizer start up stats",
         YARN_APPLICATION_ID_PROPERTY);
     String applicationId = resource.getProperties().get(YARN_APPLICATION_ID_PROPERTY);
-    return String.format("%s/bin/spark-submit --kill %s", sparkHome, applicationId);
+    return String.format(
+        "%s/bin/spark-submit --kill %s --master %s", sparkHome, applicationId, sparkMaster);
   }
 
   private String buildReleaseKubernetesCommand(Resource resource) {
+    Map<String, String> sparkConfig = loadSparkConfig();
     Preconditions.checkArgument(
-        resource.getProperties().containsKey(KUBERNETES_APPLICATION_ID_PROPERTY),
+        resource.getProperties().containsKey(KUBERNETES_SUBMISSION_ID_PROPERTY),
         "Cannot find {} from optimizer start up stats.",
-        KUBERNETES_APPLICATION_ID_PROPERTY);
-    String appId = resource.getProperties().get(KUBERNETES_APPLICATION_ID_PROPERTY);
-    return String.format("%s/bin/spark-submit --kill %s", this.sparkHome, appId);
+        KUBERNETES_SUBMISSION_ID_PROPERTY);
+    SparkOptimizerContainer.SparkConf resourceSparkConf =
+        SparkOptimizerContainer.SparkConf.buildFor(sparkConfig, getContainerProperties())
+            .withGroupProperties(resource.getProperties())
+            .build();
+    String sparkOptions = resourceSparkConf.toConfOptions();
+    String submissionId = resource.getProperties().get(KUBERNETES_SUBMISSION_ID_PROPERTY);
+    return String.format(
+        "%s/bin/spark-submit --kill %s --master %s %s",
+        sparkHome, submissionId, sparkMaster, sparkOptions);
   }
 
   private String getSparkHome() {
@@ -297,21 +324,18 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
     return this.sparkHome + SPARK_CONFIG_PATH;
   }
 
-  private String kubernetesAppId(Resource resource) {
+  private String kubernetesDriverName(Resource resource) {
     return "amoro-optimizer-" + resource.getResourceId();
   }
 
   private enum DeployMode {
-    YARN_CLIENT("yarn-client", false),
-    YARN_CLUSTER("yarn-cluster", true),
-    KUBERNETES_CLUSTER("kubernetes-cluster", true);
+    CLIENT("client"),
+    CLUSTER("cluster");
 
     private final String value;
-    private final boolean isClusterMode;
 
-    DeployMode(String value, boolean mode) {
+    DeployMode(String value) {
       this.value = value;
-      this.isClusterMode = mode;
     }
 
     public static DeployMode valueToEnum(String value) {
@@ -319,10 +343,6 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
           .filter(t -> t.value.equalsIgnoreCase(value))
           .findFirst()
           .orElseThrow(() -> new IllegalArgumentException("can't parse value: " + value));
-    }
-
-    public boolean isClusterMode() {
-      return isClusterMode;
     }
 
     public String getValue() {
@@ -333,19 +353,20 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
   public static class SparkConfKeys {
     public static final String DRIVER_CLASSPATH_INCLUDE_USER_JAR =
         "spark.driver.userClassPathFirst";
-
     public static final String EXECUTOR_CLASSPATH_INCLUDE_USER_JAR =
         "spark.executor.userClassPathFirst";
     public static final String CLASSPATH_INCLUDE_USER_JAR_DEFAULT = "true";
-
     public static final String KUBERNETES_IMAGE_REF = "spark.kubernetes.container.image";
     public static final String KUBERNETES_DRIVER_NAME = "spark.kubernetes.driver.pod.name";
+    public static final String KUBERNETES_NAMESPACE = "spark.kubernetes.namespace";
     public static final String KUBERNETES_EXECUTOR_LABEL_PREFIX = "spark.kubernetes.driver.label.";
     public static final String KUBERNETES_DRIVER_LABEL_PREFIX = "spark.kubernetes.driver.label.";
+    public static final String KUBERNETES_DRA_ENABLED = "spark.dynamicAllocation.enabled";
+    public static final String KUBERNETES_DRA_MAX_EXECUTORS =
+        "spark.dynamicAllocation.maxExecutors";
   }
 
   public static class SparkConf {
-
     public static final String SPARK_PARAMETER_PREFIX = "spark-conf.";
 
     final Map<String, String> sparkConf;
@@ -387,7 +408,6 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
 
     public static class Builder {
       final Map<String, String> sparkConf;
-
       Map<String, String> containerProperties;
       Map<String, String> groupProperties = Collections.emptyMap();
 

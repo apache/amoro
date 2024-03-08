@@ -150,3 +150,24 @@ containers:
 #      job-uri: "local:///opt/flink/usrlib/optimizer-job.jar"      # Optimizer job main jar for kubernetes application
 #      flink-conf.kubernetes.container.image: "arctic163/optimizer-flink:{version}"   # Optimizer image ref
 #      flink-conf.kubernetes.service-account: flink                # Service account that is used within kubernetes cluster.
+
+#containers:
+#  - name: sparkContainer
+#    container-impl: com.netease.arctic.server.manager.SparkOptimizerContainer
+#    properties:
+#      spark-home: /opt/spark/                                     # Spark install home
+#      master: yarn                                                # The cluster manager to connect to. See the list of https://spark.apache.org/docs/latest/submitting-applications.html#master-urls.
+#      deploy-mode: cluster                                        # Spark deploy mode, client or cluster
+#      export.JVM_ARGS: -Djava.security.krb5.conf=/opt/krb5.conf   # Spark launch jvm args, like kerberos config when ues kerberos
+#      export.HADOOP_CONF_DIR: /etc/hadoop/conf/                   # Hadoop config dir
+#      export.HADOOP_USER_NAME: hadoop                             # Hadoop user submit on yarn
+#      export.SPARK_CONF_DIR: /opt/spark/conf/                     # Spark config dir
+#      # spark kubernetes application properties.
+#      job-uri: "local:///opt/spark/jars/optimizer-job.jar"        # Optimizer job main jar for kubernetes application
+#      ams-optimizing-uri: thrift://ams.amoro.service.local:1261   # AMS optimizing uri
+#      spark-conf.spark.shuffle.service.enabled: "false"           # If spark DRA is used on kubernetes, we should set it false
+#      spark-conf.spark.dynamicAllocation.shuffleTracking.enabled: "true"                    # Enables shuffle file tracking for executors, which allows dynamic allocation without the need for an external shuffle service
+#      spark-conf.spark.dynamicAllocation.shuffleTracking.timeout: "60s"                     # If spark.dynamicAllocation.shuffleTracking.enabled is true , this setting is needed
+#      spark-conf.spark.kubernetes.container.image: "arctic163/optimizer-spark:{version}"    # Optimizer image ref
+#      spark-conf.spark.kubernetes.namespace: <spark-namespace>                              # Namespace that is used within kubernetes cluster
+#      spark-conf.spark.kubernetes.authenticate.driver.serviceAccountName: <spark-sa>        # Service account that is used within kubernetes cluster.

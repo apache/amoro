@@ -137,10 +137,10 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
       LOG.info("Starting flink optimizer using command : {}", startUpCmd);
       Process exec = runtime.exec(cmd);
       Map<String, String> startUpStatesMap = Maps.newHashMap();
-      String applicationId = fetchCommandOutput(exec, yarnApplicationIdReader);
       switch (target) {
         case YARN_PER_JOB:
         case YARN_APPLICATION:
+          String applicationId = fetchCommandOutput(exec, yarnApplicationIdReader);
           if (applicationId != null) {
             startUpStatesMap.put(YARN_APPLICATION_ID_PROPERTY, applicationId);
           }
