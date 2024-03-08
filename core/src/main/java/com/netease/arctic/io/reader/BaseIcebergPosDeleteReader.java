@@ -27,6 +27,9 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.orc.GenericOrcReader;
 import org.apache.iceberg.data.parquet.GenericParquetReaders;
+import org.apache.iceberg.encryption.EncryptedFiles;
+import org.apache.iceberg.encryption.EncryptedInputFile;
+import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.orc.ORC;
@@ -46,10 +49,13 @@ public class BaseIcebergPosDeleteReader {
       POS_DELETE_SCHEMA.accessorForField(MetadataColumns.DELETE_FILE_POS.fieldId());
 
   protected final ArcticFileIO fileIO;
+  protected final EncryptionManager encryptionManager;
   protected final List<DeleteFile> posDeleteFiles;
 
-  public BaseIcebergPosDeleteReader(ArcticFileIO fileIO, List<DeleteFile> posDeleteFiles) {
+  public BaseIcebergPosDeleteReader(
+      ArcticFileIO fileIO, EncryptionManager encryptionManager, List<DeleteFile> posDeleteFiles) {
     this.fileIO = fileIO;
+    this.encryptionManager = encryptionManager;
     this.posDeleteFiles = posDeleteFiles;
   }
 
@@ -67,7 +73,11 @@ public class BaseIcebergPosDeleteReader {
   }
 
   private CloseableIterable<Record> readDelete(DeleteFile deleteFile) {
-    InputFile input = fileIO.newInputFile(deleteFile.path().toString());
+    EncryptedInputFile encryptedInput =
+        EncryptedFiles.encryptedInput(
+            fileIO.newInputFile(deleteFile.path().toString()), deleteFile.keyMetadata());
+    InputFile input = encryptionManager.decrypt(encryptedInput);
+
     switch (deleteFile.format()) {
       case PARQUET:
         Parquet.ReadBuilder builder =

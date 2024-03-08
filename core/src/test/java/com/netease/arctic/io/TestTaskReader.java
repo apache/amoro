@@ -197,6 +197,7 @@ public class TestTaskReader extends TableDataTestBase {
     BaseIcebergPosDeleteReader baseIcebergPosDeleteReader =
         new BaseIcebergPosDeleteReader(
             getArcticTable().asKeyedTable().io(),
+            getArcticTable().asKeyedTable().baseTable().encryption(),
             Collections.singletonList(deleteFileOfPositionDelete));
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     baseIcebergPosDeleteReader.readDeletes().forEach(record -> builder.add(record.copy()));
