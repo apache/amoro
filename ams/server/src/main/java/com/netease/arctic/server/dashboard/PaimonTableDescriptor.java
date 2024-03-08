@@ -345,7 +345,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
           new PartitionFileBaseInfo(
               snapshotId == null ? null : snapshotId.toString(),
               INSERT_FILE,
-              manifestEntry.file().creationTime().getMillisecond(),
+              manifestEntry.file().creationTimeEpochMillis(),
               partitionSt,
               0,
               fullFilePath(store, manifestEntry),
@@ -409,11 +409,11 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
                           minCreateTime =
                               Math.min(
                                   minCreateTime,
-                                  compactManifestEntry.file().creationTime().getMillisecond());
+                                  compactManifestEntry.file().creationTimeEpochMillis());
                           maxCreateTime =
                               Math.max(
                                   maxCreateTime,
-                                  compactManifestEntry.file().creationTime().getMillisecond());
+                                  compactManifestEntry.file().creationTimeEpochMillis());
                           outputBuilder.addFile(compactManifestEntry.file().fileSize());
                         }
                       }
