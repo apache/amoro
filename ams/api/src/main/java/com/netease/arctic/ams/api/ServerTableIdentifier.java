@@ -16,15 +16,11 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.table;
-
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.TableIdentifier;
+package com.netease.arctic.ams.api;
 
 import java.util.Objects;
 
-/** TODO Use ServerTableIdentifier class in API module, this class shall be removed after 0.7.0 */
-@Deprecated
+/** Server-side table identifier containing server-side id and table format. */
 public class ServerTableIdentifier {
 
   private Long id;

@@ -31,6 +31,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
 
+/** TODO Use TagConfiguration class in API module, this class shall be removed after 0.7.0 */
+@Deprecated
 /** Configuration for auto creating tags. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TagConfiguration {
