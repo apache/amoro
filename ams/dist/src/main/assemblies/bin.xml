@@ -38,7 +38,7 @@
         </file>
         <file>
             <source>
-                ../optimizer/spark-optimizer/target/spark-optimizer-${project.version}.jar
+                ../optimizer/spark-optimizer/target/spark-optimizer-${project.version}-jar-with-dependencies.jar
             </source>
             <outputDirectory>plugin/optimizer/spark</outputDirectory>
             <destName>optimizer-job.jar</destName>
