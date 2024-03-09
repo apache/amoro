@@ -48,6 +48,7 @@ import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
@@ -325,7 +326,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         commitId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
-                        arcticTable.spec().partitionToPath(f.partition()),
+                        getPartitionSpecBySpecId(arcticTable, f.specId())
+                            .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),
                         "add")));
@@ -338,7 +340,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         commitId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
-                        arcticTable.spec().partitionToPath(f.partition()),
+                        getPartitionSpecBySpecId(arcticTable, f.specId())
+                            .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),
                         "remove")));
@@ -351,7 +354,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         commitId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
-                        arcticTable.spec().partitionToPath(f.partition()),
+                        getPartitionSpecBySpecId(arcticTable, f.specId())
+                            .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),
                         "add")));
@@ -364,11 +368,22 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         commitId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
-                        arcticTable.spec().partitionToPath(f.partition()),
+                        getPartitionSpecBySpecId(arcticTable, f.specId())
+                            .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),
                         "remove")));
     return result;
+  }
+
+  private PartitionSpec getPartitionSpecBySpecId(ArcticTable arcticTable, Integer fileSpecId) {
+    PartitionSpec partitionSpec;
+    if (arcticTable instanceof BasicUnkeyedTable) {
+      partitionSpec = ((BasicUnkeyedTable) arcticTable).specs().get(fileSpecId);
+    } else {
+      partitionSpec = arcticTable.spec();
+    }
+    return partitionSpec;
   }
 
   @Override
