@@ -220,7 +220,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
   @Override
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
-    LOG.info("Optimizer {} complete task {}", authToken, taskResult.getTaskId());
+    LOG.info(
+        "Optimizer {} (threadId {}) complete task {}",
+        authToken,
+        taskResult.getThreadId(),
+        taskResult.getTaskId());
     OptimizingQueue queue = getQueueByToken(authToken);
     OptimizerThread thread =
         getAuthenticatedOptimizer(authToken).getThread(taskResult.getThreadId());
@@ -534,12 +538,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
           OptimizerKeepingTask keepingTask = suspendingQueue.take();
           String token = keepingTask.getToken();
           boolean isExpired = !keepingTask.tryKeeping();
-          Optional.ofNullable(keepingTask.getQueue())
-              .ifPresent(
-                  queue ->
-                      queue
-                          .collectTasks(buildSuspendingPredication(token, isExpired))
-                          .forEach(task -> retryTask(task, queue)));
           if (isExpired) {
             LOG.info("Optimizer {} has been expired, unregister it", keepingTask.getOptimizer());
             unregisterOptimizer(token);
@@ -547,6 +545,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
             LOG.debug("Optimizer {} is being touched, keep it", keepingTask.getOptimizer());
             keepInTouch(keepingTask.getOptimizer());
           }
+          Optional.ofNullable(keepingTask.getQueue())
+              .ifPresent(
+                  queue ->
+                      queue
+                          .collectTasks(buildSuspendingPredication(token, isExpired))
+                          .forEach(task -> retryTask(task, queue)));
         } catch (InterruptedException ignored) {
         } catch (Throwable t) {
           LOG.error("OptimizerKeeper has encountered a problem.", t);
