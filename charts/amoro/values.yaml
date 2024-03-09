@@ -127,6 +127,30 @@ optimizer:
       "flink-conf.taskmanager.memory.netwrok.max": "32mb",
       "flink-conf.taskmanager.memory.netwrok.nin": "32mb"
     }
+  # spark optimizer
+  spark:
+    ## enable the spark optimizer.
+    enabled: true
+    ## container name, default is spark
+    name: ~
+    ## image information of spark optimizer.
+    image:
+      ## the image repository
+      repository: arctic163/optimizer-spark
+      ## the image tag, if not set, the default value is the same with amoro image tag.
+      tag: ~
+      jobUri: "local:///opt/spark/jars/optimizer-job.jar"
+    properties: {
+      "master": "k8s://https://<k8s-apiserver-host>:<k8s-apiserver-port>",
+      "deploy-mode": "cluster",
+      "export.HADOOP_USER_NAME": "hadoop",
+      "spark-conf.spark.shuffle.service.enabled": "false",
+      "spark-conf.spark.dynamicAllocation.shuffleTracking.enabled": "true",
+      "spark-conf.spark.dynamicAllocation.shuffleTracking.timeout": "60s",
+      "spark-conf.spark.kubernetes.hadoop.configMapName": "",
+      "spark-conf.spark.kubernetes.namespace": "default",
+      "spark-conf.spark.kubernetes.authenticate.driver.serviceAccountName": "default"
+    }
   # local optimizer
   local:
     # enable the local optimizer container

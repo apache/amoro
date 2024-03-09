@@ -97,6 +97,10 @@ data:
       - name: {{ .Values.optimizer.flink.name | default "flink" }}
         {{- include "amoro.optimizer.container.flink" . | nindent 8 }}
       {{ end }}
+      {{- if .Values.optimizer.spark.enabled }}
+      - name: {{ .Values.optimizer.spark.name | default "spark" }}
+        {{- include "amoro.optimizer.container.spark" . | nindent 8 }}
+      {{ end }}
       {{- if .Values.optimizer.local.enabled }}
       - name: {{ .Values.optimizer.local.name | default "local" }}
         {{- include "amoro.optimizer.container.local" . | nindent 8 }}

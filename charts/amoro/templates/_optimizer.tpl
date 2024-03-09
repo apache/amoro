@@ -24,9 +24,23 @@
 {{- end -}}
 {{- end -}}
 
+{{/*Spark Optimizer Image Tag*/}}
+{{- define "amoro.optimizer.container.spark.tag" -}}
+{{- if .Values.optimizer.spark.image.tag -}}
+  {{ .Values.optimizer.spark.image.tag }}
+{{- else -}}
+  {{ include "amoro.image.tag" . }}
+{{- end -}}
+{{- end -}}
+
 {{/*Flink Optimizer Image repo*/}}
 {{- define "amoro.optimizer.container.flink.image" }}
 {{- .Values.optimizer.flink.image.repository }}:{{ include "amoro.optimizer.container.flink.tag" . }}
+{{- end -}}
+
+{{/*Spark Optimizer Image repo*/}}
+{{- define "amoro.optimizer.container.spark.image" }}
+{{- .Values.optimizer.spark.image.repository }}:{{ include "amoro.optimizer.container.spark.tag" . }}
 {{- end -}}
 
 
@@ -42,6 +56,20 @@ properties:
   flink-conf.kubernetes.container.image: {{ include "amoro.optimizer.container.flink.image" .  | quote }}
   flink-conf.kubernetes.service-account: {{ include "amoro.sa.name" . | quote }}
   {{- with .Values.optimizer.flink.properties -}}
+    {{- toYaml . | nindent 2 }}
+  {{- end -}}
+{{- end -}}
+
+{{- define "amoro.optimizer.container.spark" -}}
+container-impl: com.netease.arctic.server.manager.SparkOptimizerContainer
+properties:
+  job-uri: {{ .Values.optimizer.spark.image.jobUri | quote }}
+  ams-optimizing-uri: {{include "amoro.svc.optimizing.uri" . | quote}}
+  spark-home: /opt/spark
+  export.SPARK_HOME: /opt/spark
+  spark-conf.kubernetes.container.image: {{ include "amoro.optimizer.container.spark.image" .  | quote }}
+  spark-conf.kubernetes.service-account: {{ include "amoro.sa.name" . | quote }}
+  {{- with .Values.optimizer.spark.properties -}}
     {{- toYaml . | nindent 2 }}
   {{- end -}}
 {{- end -}}
