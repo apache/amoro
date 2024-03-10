@@ -22,7 +22,7 @@ import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
 import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
 import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.table.SupportHive;

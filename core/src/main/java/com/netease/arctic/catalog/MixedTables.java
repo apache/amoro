@@ -19,22 +19,12 @@
 package com.netease.arctic.catalog;
 
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.io.TableTrashManagers;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseTable;
-import com.netease.arctic.table.BasicKeyedTable;
-import com.netease.arctic.table.BasicUnkeyedTable;
-import com.netease.arctic.table.ChangeTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.properties.MetaTableProperties;
+import com.netease.arctic.table.*;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -93,7 +83,7 @@ public class MixedTables {
     BaseTable baseTable =
         new BasicKeyedTable.BaseInternalTable(
             tableIdentifier,
-            CatalogUtil.useArcticTableOperations(
+            ArcticCatalogUtil.useArcticTableOperations(
                 baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -102,7 +92,7 @@ public class MixedTables {
     ChangeTable changeTable =
         new BasicKeyedTable.ChangeInternalTable(
             tableIdentifier,
-            CatalogUtil.useArcticTableOperations(
+            ArcticCatalogUtil.useArcticTableOperations(
                 changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -143,7 +133,7 @@ public class MixedTables {
             catalogProperties);
     return new BasicUnkeyedTable(
         tableIdentifier,
-        CatalogUtil.useArcticTableOperations(
+        ArcticCatalogUtil.useArcticTableOperations(
             table, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO,
         catalogProperties);
@@ -192,7 +182,7 @@ public class MixedTables {
     BaseTable baseTable =
         new BasicKeyedTable.BaseInternalTable(
             tableIdentifier,
-            CatalogUtil.useArcticTableOperations(
+            ArcticCatalogUtil.useArcticTableOperations(
                 baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -210,7 +200,7 @@ public class MixedTables {
     ChangeTable changeTable =
         new BasicKeyedTable.ChangeInternalTable(
             tableIdentifier,
-            CatalogUtil.useArcticTableOperations(
+            ArcticCatalogUtil.useArcticTableOperations(
                 changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -256,7 +246,7 @@ public class MixedTables {
             catalogProperties);
     return new BasicUnkeyedTable(
         tableIdentifier,
-        CatalogUtil.useArcticTableOperations(
+        ArcticCatalogUtil.useArcticTableOperations(
             table, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO,
         catalogProperties);

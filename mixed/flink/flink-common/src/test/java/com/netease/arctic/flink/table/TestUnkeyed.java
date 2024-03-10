@@ -18,15 +18,15 @@
 
 package com.netease.arctic.flink.table;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;

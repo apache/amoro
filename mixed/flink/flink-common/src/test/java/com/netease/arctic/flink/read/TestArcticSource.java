@@ -18,8 +18,8 @@
 
 package com.netease.arctic.flink.read;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
+import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.MockArcticMetastoreServer.TEST_DB_NAME;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static org.apache.flink.util.Preconditions.checkArgument;

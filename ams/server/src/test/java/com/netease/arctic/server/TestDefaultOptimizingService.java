@@ -20,13 +20,13 @@ package com.netease.arctic.server;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.OptimizerProperties;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.io.MixedDataTestHelpers;

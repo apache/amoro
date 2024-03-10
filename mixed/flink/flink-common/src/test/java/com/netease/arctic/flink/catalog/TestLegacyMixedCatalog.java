@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.catalog;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.flink.FlinkSchemaUtil.COMPUTED_COLUMNS;
 import static com.netease.arctic.flink.FlinkSchemaUtil.FLINK_PREFIX;
 import static com.netease.arctic.flink.FlinkSchemaUtil.WATERMARK;
@@ -30,8 +30,8 @@ import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_
 import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_STRATEGY_DATA_TYPE;
 import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_STRATEGY_EXPR;
 
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestBase;
 import com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions;

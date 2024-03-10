@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.api;
 
+import com.netease.arctic.ams.api.process.TableProcess;
 import com.netease.arctic.ams.api.process.TableProcessState;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
@@ -38,11 +39,10 @@ public enum Action {
   /**
    * Arbitrary actions are actions that can be handled by a single optimizer. The processes they
    * related to like refreshing, expiring, cleaning and syncing all share the same basic
-   * implementations which are {@link com.netease.arctic.ams.api.process.TableProcess} and {@link
-   * TableProcessState} and they won't have any spitted stages like optimizing processes(plan,
-   * execute, commit), so they can be easily triggered and managed. If you want to add a new action
-   * which is handled stand-alone, you should add it to this set, and you would find it's easy to
-   * implement the process and state.
+   * implementations which are {@link TableProcess} and {@link TableProcessState} and they won't
+   * have any spitted stages like optimizing processes(plan, execute, commit), so they can be easily
+   * triggered and managed. If you want to add a new action which is handled stand-alone, you should
+   * add it to this set, and you would find it's easy to implement the process and state.
    */
   public static final Set<Action> ARBITRARY_ACTIONS =
       Collections.unmodifiableSet(

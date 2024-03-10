@@ -21,11 +21,11 @@ package com.netease.arctic.server.table;
 import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.api.properties.MetaTableProperties;
+import com.netease.arctic.properties.CatalogMetaProperties;
+import com.netease.arctic.properties.MetaTableProperties;
 import com.netease.arctic.server.dashboard.utils.PropertiesUtil;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;

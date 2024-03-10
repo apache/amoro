@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.iceberg;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.spark.SparkTableFormat;
 import com.netease.arctic.spark.mixed.MixedFormatSparkUtil;
 import org.apache.iceberg.BaseMetastoreTableOperations;

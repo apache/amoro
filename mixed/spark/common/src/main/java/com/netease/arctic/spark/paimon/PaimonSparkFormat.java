@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.paimon;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.spark.SparkTableFormat;
 import org.apache.spark.sql.connector.catalog.Table;
 

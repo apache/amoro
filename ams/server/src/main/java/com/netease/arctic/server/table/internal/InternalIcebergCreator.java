@@ -21,12 +21,12 @@ package com.netease.arctic.server.table.internal;
 import static com.netease.arctic.server.table.internal.InternalTableConstants.PROPERTIES_METADATA_LOCATION;
 import static com.netease.arctic.server.utils.InternalTableUtil.genNewMetadataFileLocation;
 
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.properties.CatalogMetaProperties;
+import com.netease.arctic.properties.MetaTableProperties;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.utils.InternalTableUtil;

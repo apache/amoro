@@ -19,6 +19,7 @@
 package com.netease.arctic.server.table.blocker;
 
 import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.table.blocker.RenewableBlocker;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
@@ -86,13 +87,13 @@ public class TableBlocker {
     this.properties = properties;
   }
 
-  public com.netease.arctic.ams.api.Blocker buildBlocker() {
+  public Blocker buildBlocker() {
     Map<String, String> properties = this.properties == null ? Maps.newHashMap() : this.properties;
     properties.put(RenewableBlocker.CREATE_TIME_PROPERTY, createTime + "");
     properties.put(RenewableBlocker.EXPIRATION_TIME_PROPERTY, expirationTime + "");
     List<BlockableOperation> operations =
         getOperations().stream().map(BlockableOperation::valueOf).collect(Collectors.toList());
-    return new com.netease.arctic.ams.api.Blocker(blockerId + "", operations, properties);
+    return new Blocker(blockerId + "", operations, properties);
   }
 
   @Override

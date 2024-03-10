@@ -20,7 +20,7 @@ package com.netease.arctic.flink.read.hybrid.reader;
 
 import com.google.common.collect.Lists;
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.flink.read.MixedIncrementalLoader;

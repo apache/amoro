@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.mixed;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 
 /** Mixed Iceberg DataSource register */
 public class MixedIcebergDataSource extends MixedSourceBase {

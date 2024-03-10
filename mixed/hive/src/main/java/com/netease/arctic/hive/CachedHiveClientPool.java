@@ -20,7 +20,7 @@ package com.netease.arctic.hive;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.InvalidObjectException;

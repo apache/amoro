@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.mixed;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.utils.CompatibleHivePropertyUtil;
 import com.netease.arctic.table.TableProperties;

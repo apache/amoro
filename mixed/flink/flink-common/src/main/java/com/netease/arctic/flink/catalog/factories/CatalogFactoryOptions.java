@@ -18,12 +18,12 @@
 
 package com.netease.arctic.flink.catalog.factories;
 
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
 import static com.netease.arctic.flink.catalog.MixedCatalog.DEFAULT_DB;
+import static com.netease.arctic.properties.CatalogMetaProperties.TABLE_FORMATS;
 
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.flink.catalog.FlinkUnifiedCatalog;
 import com.netease.arctic.flink.catalog.MixedCatalog;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;

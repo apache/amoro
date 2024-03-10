@@ -22,8 +22,8 @@ import static com.netease.arctic.data.DataFileType.INSERT_FILE;
 import static org.apache.paimon.operation.FileStoreScan.Plan.groupByPartFiles;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.ams.api.CommitMetaProducer;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
 import com.netease.arctic.server.dashboard.component.reverser.PaimonTableMetaExtract;

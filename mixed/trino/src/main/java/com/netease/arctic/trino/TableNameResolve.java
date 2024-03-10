@@ -18,7 +18,7 @@
 
 package com.netease.arctic.trino;
 
-import com.netease.arctic.ams.api.Constants;
+import com.netease.arctic.Constants;
 
 /** To resolve sub table name, such as "tableName#base", "tableName#change" */
 public class TableNameResolve {

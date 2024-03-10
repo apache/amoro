@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.test.suites.sql;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.mixed.SparkSQLProperties;

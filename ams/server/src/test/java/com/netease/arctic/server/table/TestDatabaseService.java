@@ -23,9 +23,9 @@ import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
 
 import com.google.common.collect.Lists;
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.TestedCatalogs;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;

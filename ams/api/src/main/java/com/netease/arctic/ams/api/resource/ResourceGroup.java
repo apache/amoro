@@ -18,7 +18,7 @@
 
 package com.netease.arctic.ams.api.resource;
 
-import com.netease.arctic.ams.api.Constants;
+import com.netease.arctic.Constants;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.HashMap;

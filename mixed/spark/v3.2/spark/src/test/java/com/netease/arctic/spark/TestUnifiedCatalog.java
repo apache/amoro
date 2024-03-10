@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.spark.test.unified.UnifiedCatalogTestSuites;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;

@@ -28,8 +28,8 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate;

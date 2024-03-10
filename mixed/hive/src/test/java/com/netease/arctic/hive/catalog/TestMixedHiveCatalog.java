@@ -22,7 +22,7 @@ import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_FLAG;
 import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
 
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.catalog.TestMixedCatalog;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.table.ArcticTable;

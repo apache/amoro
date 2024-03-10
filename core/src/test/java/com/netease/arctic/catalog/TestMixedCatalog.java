@@ -19,11 +19,11 @@
 package com.netease.arctic.catalog;
 
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableBuilder;

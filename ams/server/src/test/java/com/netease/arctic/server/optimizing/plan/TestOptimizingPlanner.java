@@ -19,9 +19,9 @@
 package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.OptimizerProperties;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.server.optimizing.OptimizingType;

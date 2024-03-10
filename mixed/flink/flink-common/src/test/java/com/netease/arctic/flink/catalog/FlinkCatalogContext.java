@@ -21,9 +21,9 @@ package com.netease.arctic.flink.catalog;
 import static com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions.METASTORE_URL;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.TABLE_FORMAT;
 
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TestAms;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.flink.catalog.factories.FlinkUnifiedCatalogFactory;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;

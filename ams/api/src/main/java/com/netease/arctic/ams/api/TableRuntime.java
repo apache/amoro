@@ -20,6 +20,7 @@ package com.netease.arctic.ams.api;
 
 import com.netease.arctic.ams.api.config.TableConfiguration;
 import com.netease.arctic.ams.api.process.OptimizingState;
+import com.netease.arctic.ams.api.process.ProcessFactory;
 import com.netease.arctic.ams.api.process.TableProcessState;
 
 import java.util.List;
@@ -27,7 +28,7 @@ import java.util.List;
 /**
  * TableRuntime is the key interface for the AMS framework to interact with the table. Typically, it
  * is used to get the table's configuration, process states, and table identifier. The key usage is
- * {@link com.netease.arctic.ams.api.process.ProcessFactory} to create and recover Process.
+ * {@link ProcessFactory} to create and recover Process.
  */
 public interface TableRuntime {
 
@@ -42,8 +43,8 @@ public interface TableRuntime {
 
   /**
    * Get the list of arbitrary process states. One arbitrary state belongs to one arbitrary process
-   * related to one {@link com.netease.arctic.ams.api.Action#ARBITRARY_ACTIONS}. There could be more
-   * than one arbitrary states depending on scheduler implementation.
+   * related to one {@link Action#ARBITRARY_ACTIONS}. There could be more than one arbitrary states
+   * depending on scheduler implementation.
    *
    * @return the list of arbitrary process states
    */

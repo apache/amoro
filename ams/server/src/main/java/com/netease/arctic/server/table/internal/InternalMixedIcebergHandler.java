@@ -20,15 +20,15 @@ package com.netease.arctic.server.table.internal;
 
 import static com.netease.arctic.server.table.internal.InternalTableConstants.CHANGE_STORE_TABLE_NAME_SUFFIX;
 
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.utils.InternalTableUtil;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableOperations;
@@ -67,7 +67,7 @@ public class InternalMixedIcebergHandler extends InternalIcebergHandler {
     if (InternalTableUtil.isLegacyMixedIceberg(tableMetadata())) {
       String tableLocation =
           changeStore ? tableMetadata().getChangeLocation() : tableMetadata().getBaseLocation();
-      TableMetaStore metaStore = CatalogUtil.buildMetaStore(catalogMeta);
+      TableMetaStore metaStore = ArcticCatalogUtil.buildMetaStore(catalogMeta);
 
       ArcticHadoopTableOperations ops =
           new ArcticHadoopTableOperations(

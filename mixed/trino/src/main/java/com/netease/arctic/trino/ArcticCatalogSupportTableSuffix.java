@@ -18,7 +18,7 @@
 
 package com.netease.arctic.trino;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;

@@ -20,8 +20,8 @@ package com.netease.arctic.hive.op;
 
 import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.MixedHiveTableTestBase;

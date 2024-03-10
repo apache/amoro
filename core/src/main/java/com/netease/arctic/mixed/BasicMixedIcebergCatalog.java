@@ -20,11 +20,11 @@ package com.netease.arctic.mixed;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.PooledAmsClient;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.op.CreateTableTransaction;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;

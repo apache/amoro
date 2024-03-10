@@ -18,6 +18,8 @@
 
 package com.netease.arctic.ams.api;
 
+import com.netease.arctic.TableFormat;
+
 import java.util.Objects;
 
 /** Server-side table identifier containing server-side id and table format. */

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.test.extensions;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.spark.test.SparkTestBase;
 import com.netease.arctic.spark.test.SparkTestContext;
 import org.apache.commons.lang.StringUtils;

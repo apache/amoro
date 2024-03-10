@@ -18,12 +18,12 @@
 
 package com.netease.arctic.server;
 
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.IcebergDataTestHelpers;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.io.reader.GenericUnkeyedDataReader;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;

@@ -26,8 +26,8 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
 import static org.apache.flink.table.api.Expressions.$;
 
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;

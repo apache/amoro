@@ -18,13 +18,13 @@
 
 package com.netease.arctic.trino.arctic;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
+import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.MockArcticMetastoreServer.TEST_DB_NAME;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.MockArcticMetastoreServer;
+import com.netease.arctic.MockArcticMetastoreServer;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelper;

@@ -18,9 +18,9 @@
 
 package com.netease.arctic.utils;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.ams.api.properties.MetaTableProperties;
+import com.netease.arctic.properties.MetaTableProperties;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Schema;

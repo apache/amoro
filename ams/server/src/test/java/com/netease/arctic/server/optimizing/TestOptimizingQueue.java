@@ -30,11 +30,11 @@ import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZ
 
 import com.google.common.collect.ImmutableMap;
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.metrics.Gauge;
 import com.netease.arctic.ams.api.metrics.MetricKey;
 import com.netease.arctic.ams.api.resource.ResourceGroup;

@@ -24,7 +24,7 @@ import static org.apache.flink.table.expressions.ApiExpressionUtils.valueLiteral
 import static org.apache.flink.table.functions.BuiltInFunctionDefinitions.EQUALS;
 
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;

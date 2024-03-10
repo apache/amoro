@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.test.utils;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import org.apache.iceberg.types.Types;
 
 public class TestTables {

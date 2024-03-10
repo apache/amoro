@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.mixed;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 
 /** Mixed Hive DataSource register */
 public class MixedHiveDataSource extends MixedSourceBase {

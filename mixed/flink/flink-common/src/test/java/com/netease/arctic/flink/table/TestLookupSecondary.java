@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.table;
 
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.flink.write.FlinkTaskWriterBaseTest;

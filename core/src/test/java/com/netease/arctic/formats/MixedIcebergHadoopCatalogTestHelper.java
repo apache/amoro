@@ -21,14 +21,14 @@ package com.netease.arctic.formats;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.netease.arctic.AmoroCatalog;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.formats.mixed.MixedIcebergCatalogFactory;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
@@ -63,7 +63,7 @@ public class MixedIcebergHadoopCatalogTestHelper
   @Override
   public AmoroCatalog amoroCatalog() {
     MixedIcebergCatalogFactory mixedIcebergCatalogFactory = new MixedIcebergCatalogFactory();
-    TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
+    TableMetaStore metaStore = ArcticCatalogUtil.buildMetaStore(getCatalogMeta());
     Map<String, String> properties =
         mixedIcebergCatalogFactory.convertCatalogProperties(
             catalogName, getMetastoreType(), catalogProperties);
@@ -74,7 +74,7 @@ public class MixedIcebergHadoopCatalogTestHelper
   @Override
   public ArcticCatalog originalCatalog() {
     CatalogMeta meta = getCatalogMeta();
-    TableMetaStore metaStore = CatalogUtil.buildMetaStore(meta);
+    TableMetaStore metaStore = ArcticCatalogUtil.buildMetaStore(meta);
     return CatalogLoader.createCatalog(
         catalogName(), meta.getCatalogType(), meta.getCatalogProperties(), metaStore);
   }

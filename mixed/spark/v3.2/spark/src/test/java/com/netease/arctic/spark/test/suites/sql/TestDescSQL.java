@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.test.suites.sql;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import org.apache.spark.sql.Row;

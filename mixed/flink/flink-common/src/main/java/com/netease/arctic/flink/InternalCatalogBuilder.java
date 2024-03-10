@@ -18,9 +18,9 @@
 
 package com.netease.arctic.flink;
 
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.utils.ConfigurationFileUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.table.catalog.exceptions.CatalogException;

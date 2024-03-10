@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.exception;
 
+import com.netease.arctic.ErrorCodes;
 import com.netease.arctic.ams.api.ArcticException;
-import com.netease.arctic.ams.api.ErrorCodes;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;

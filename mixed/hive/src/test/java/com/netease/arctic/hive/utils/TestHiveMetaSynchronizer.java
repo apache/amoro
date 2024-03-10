@@ -20,7 +20,7 @@ package com.netease.arctic.hive.utils;
 
 import static com.netease.arctic.utils.TablePropertyUtil.EMPTY_STRUCT;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.TestHMS;

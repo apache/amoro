@@ -18,16 +18,16 @@
 
 package com.netease.arctic.server.catalog;
 
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.utils.Configurations;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -56,7 +56,7 @@ public class CatalogBuilder {
   public static ServerCatalog buildServerCatalog(
       CatalogMeta catalogMeta, Configurations serverConfiguration) {
     String type = catalogMeta.getCatalogType();
-    Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
+    Set<TableFormat> tableFormats = ArcticCatalogUtil.tableFormats(catalogMeta);
 
     Preconditions.checkState(
         formatSupportedMatrix.containsKey(type), "unsupported catalog type: %s", type);

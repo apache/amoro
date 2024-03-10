@@ -19,7 +19,7 @@
 package com.netease.arctic.server.table;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;

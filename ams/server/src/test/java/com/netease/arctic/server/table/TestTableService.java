@@ -22,12 +22,12 @@ import static com.netease.arctic.TableTestHelper.TEST_DB_NAME;
 import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
 
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.TestedCatalogs;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;

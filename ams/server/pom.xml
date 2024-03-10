@@ -38,7 +38,7 @@
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
+            <artifactId>amoro-ams-api</artifactId>
         </dependency>
 
         <dependency>

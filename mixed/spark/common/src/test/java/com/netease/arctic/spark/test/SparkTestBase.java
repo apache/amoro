@@ -20,11 +20,11 @@ package com.netease.arctic.spark.test;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.AlreadyExistsException;
+import com.netease.arctic.Constants;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.UnifiedCatalogLoader;
-import com.netease.arctic.ams.api.Constants;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.client.ArcticThriftUrl;
+import com.netease.arctic.client.ArcticThriftUrl;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.spark.test.utils.TestTableUtil;
 import org.apache.hadoop.hive.metastore.TableType;

@@ -20,7 +20,7 @@ package com.netease.arctic.hive.table;
 
 import static com.netease.arctic.hive.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.HiveOperationTransaction;

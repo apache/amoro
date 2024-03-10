@@ -19,10 +19,10 @@
 package com.netease.arctic.table.blocker;
 
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.OperationConflictException;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import org.junit.Assert;

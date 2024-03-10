@@ -19,13 +19,13 @@
 package com.netease.arctic.spark;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.Constants;
 import com.netease.arctic.FormatCatalogFactory;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.UnifiedCatalogLoader;
-import com.netease.arctic.ams.api.Constants;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.client.ArcticThriftUrl;
+import com.netease.arctic.client.ArcticThriftUrl;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;

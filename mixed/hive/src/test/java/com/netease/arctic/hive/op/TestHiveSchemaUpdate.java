@@ -22,8 +22,8 @@ import static com.netease.arctic.hive.catalog.HiveTableTestHelper.COLUMN_NAME_D;
 import static com.netease.arctic.hive.catalog.HiveTableTestHelper.COLUMN_NAME_OP_DAY;
 import static com.netease.arctic.hive.catalog.HiveTableTestHelper.COLUMN_NAME_OP_TIME_WITH_ZONE;
 
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.hive.TestHMS;

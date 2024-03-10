@@ -20,7 +20,7 @@ package com.netease.arctic.flink.table.descriptors;
 
 import static org.apache.flink.configuration.description.TextElement.text;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import org.apache.commons.lang.StringUtils;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;

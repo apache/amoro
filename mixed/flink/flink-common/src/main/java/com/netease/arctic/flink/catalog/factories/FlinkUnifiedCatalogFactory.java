@@ -18,17 +18,17 @@
 
 package com.netease.arctic.flink.catalog.factories;
 
-import static com.netease.arctic.ams.api.Constants.THRIFT_TABLE_SERVICE_NAME;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
+import static com.netease.arctic.Constants.THRIFT_TABLE_SERVICE_NAME;
 import static com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions.DEFAULT_DATABASE;
+import static com.netease.arctic.properties.CatalogMetaProperties.TABLE_FORMATS;
 import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
 
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.UnifiedCatalogLoader;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.client.ArcticThriftUrl;
+import com.netease.arctic.client.ArcticThriftUrl;
 import com.netease.arctic.flink.catalog.FlinkUnifiedCatalog;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.factories.CatalogFactory;
@@ -86,7 +86,7 @@ public class FlinkUnifiedCatalogFactory implements CatalogFactory {
     Configuration hadoopConf = unifiedCatalog.authenticationContext().getConfiguration();
 
     Set<TableFormat> tableFormats =
-        CatalogUtil.tableFormats(unifiedCatalog.metastoreType(), unifiedCatalog.properties());
+        ArcticCatalogUtil.tableFormats(unifiedCatalog.metastoreType(), unifiedCatalog.properties());
     validate(tableFormats);
 
     return new FlinkUnifiedCatalog(

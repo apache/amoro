@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.mixed;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import org.apache.spark.sql.connector.catalog.Table;
 
 /** Mixed Hive format implementation of spark table format */

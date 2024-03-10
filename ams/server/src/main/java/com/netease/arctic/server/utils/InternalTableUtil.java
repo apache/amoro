@@ -24,13 +24,13 @@ import static com.netease.arctic.server.table.internal.InternalTableConstants.MI
 import static com.netease.arctic.server.table.internal.InternalTableConstants.S3_FILE_IO_IMPL;
 import static com.netease.arctic.server.table.internal.InternalTableConstants.S3_PROTOCOL_PREFIX;
 
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
@@ -82,7 +82,7 @@ public class InternalTableUtil {
    */
   public static ArcticFileIO newIcebergFileIo(CatalogMeta meta) {
     Map<String, String> catalogProperties = meta.getCatalogProperties();
-    TableMetaStore store = CatalogUtil.buildMetaStore(meta);
+    TableMetaStore store = ArcticCatalogUtil.buildMetaStore(meta);
     Configuration conf = store.getConfiguration();
     String warehouse = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
     String defaultImpl = HADOOP_FILE_IO_IMPL;

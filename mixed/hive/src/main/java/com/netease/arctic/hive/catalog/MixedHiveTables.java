@@ -19,7 +19,6 @@
 package com.netease.arctic.hive.catalog;
 
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
@@ -30,13 +29,14 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.io.ArcticHadoopFileIO;
+import com.netease.arctic.properties.MetaTableProperties;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
@@ -85,7 +85,7 @@ public class MixedHiveTables extends MixedTables {
     UnkeyedHiveTable baseTable =
         new KeyedHiveTable.HiveBaseInternalTable(
             tableIdentifier,
-            CatalogUtil.useArcticTableOperations(
+            ArcticCatalogUtil.useArcticTableOperations(
                 baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             tableLocation,
@@ -97,7 +97,7 @@ public class MixedHiveTables extends MixedTables {
     ChangeTable changeTable =
         new KeyedHiveTable.HiveChangeInternalTable(
             tableIdentifier,
-            CatalogUtil.useArcticTableOperations(
+            ArcticCatalogUtil.useArcticTableOperations(
                 changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -136,7 +136,7 @@ public class MixedHiveTables extends MixedTables {
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
     return new UnkeyedHiveTable(
         tableIdentifier,
-        CatalogUtil.useArcticTableOperations(
+        ArcticCatalogUtil.useArcticTableOperations(
             table, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO,
         tableLocation,
@@ -190,7 +190,7 @@ public class MixedHiveTables extends MixedTables {
     UnkeyedHiveTable baseTable =
         new KeyedHiveTable.HiveBaseInternalTable(
             tableIdentifier,
-            CatalogUtil.useArcticTableOperations(
+            ArcticCatalogUtil.useArcticTableOperations(
                 baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             tableLocation,
@@ -218,7 +218,7 @@ public class MixedHiveTables extends MixedTables {
     ChangeTable changeTable =
         new KeyedHiveTable.HiveChangeInternalTable(
             tableIdentifier,
-            CatalogUtil.useArcticTableOperations(
+            ArcticCatalogUtil.useArcticTableOperations(
                 changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -338,7 +338,7 @@ public class MixedHiveTables extends MixedTables {
             catalogProperties);
     return new UnkeyedHiveTable(
         tableIdentifier,
-        CatalogUtil.useArcticTableOperations(
+        ArcticCatalogUtil.useArcticTableOperations(
             table, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO,
         tableLocation,

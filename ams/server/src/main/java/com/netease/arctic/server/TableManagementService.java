@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server;
 
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
@@ -25,7 +26,6 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.api.TableCommitMeta;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.table.ServerTableIdentifier;

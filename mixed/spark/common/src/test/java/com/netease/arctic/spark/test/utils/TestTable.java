@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.test.utils;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
