@@ -33,6 +33,7 @@ import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.Metrics;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
@@ -45,16 +46,22 @@ import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /** API for configuring a scan to get the {@link IcebergFileEntry} of an Iceberg Table. */
 public class TableEntriesScan {
+
+  private static final Logger LOG = LoggerFactory.getLogger(TableEntriesScan.class);
+
   private final Table table;
   private final Long snapshotId;
   private final Expression dataFilter;
@@ -311,8 +318,18 @@ public class TableEntriesScan {
     Long fileSize = fileRecord.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
     Long recordCount = fileRecord.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class);
     String format = fileRecord.get(dataFileFieldIndex(DataFile.FILE_FORMAT.name()), String.class);
+    PartitionSpec spec =
+        Optional.ofNullable(
+                fileRecord.get(dataFileFieldIndex(DataFile.SPEC_ID.name()), Integer.class))
+            .map(table.specs()::get)
+            .orElseGet(
+                () -> {
+                  LOG.info("No specId found for the current fileRecord[%S]", filePath);
+                  return table.spec();
+                });
+
     DataFiles.Builder builder =
-        DataFiles.builder(table.spec())
+        DataFiles.builder(spec)
             .withPath(filePath)
             .withFileSizeInBytes(fileSize)
             .withRecordCount(recordCount)
@@ -320,7 +337,7 @@ public class TableEntriesScan {
     if (needMetrics()) {
       builder.withMetrics(buildMetrics(fileRecord));
     }
-    if (table.spec().isPartitioned()) {
+    if (spec.isPartitioned()) {
       StructLike partition =
           fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
       builder.withPartition(partition);
@@ -333,8 +350,18 @@ public class TableEntriesScan {
     Long fileSize = fileRecord.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
     Long recordCount = fileRecord.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class);
     String format = fileRecord.get(dataFileFieldIndex(DataFile.FILE_FORMAT.name()), String.class);
+    PartitionSpec spec =
+        Optional.ofNullable(
+                fileRecord.get(dataFileFieldIndex(DataFile.SPEC_ID.name()), Integer.class))
+            .map(table.specs()::get)
+            .orElseGet(
+                () -> {
+                  LOG.info("No specId found for the current fileRecord[%S]", filePath);
+                  return table.spec();
+                });
+
     FileMetadata.Builder builder =
-        FileMetadata.deleteFileBuilder(table.spec())
+        FileMetadata.deleteFileBuilder(spec)
             .withPath(filePath)
             .withFileSizeInBytes(fileSize)
             .withRecordCount(recordCount)
@@ -342,7 +369,7 @@ public class TableEntriesScan {
     if (needMetrics()) {
       builder.withMetrics(buildMetrics(fileRecord));
     }
-    if (table.spec().isPartitioned()) {
+    if (spec.isPartitioned()) {
       StructLike partition =
           fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
       builder.withPartition(partition);
