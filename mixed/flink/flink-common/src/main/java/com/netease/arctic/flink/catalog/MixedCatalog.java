@@ -106,6 +106,12 @@ public class MixedCatalog extends AbstractCatalog {
    */
   public static final String SQL_LIKE_METHOD = "lookupLikeSourceTable";
 
+  public static final String LOCATION = "location";
+
+  public static final String CHERRY_PICK_SNAPSHOT_ID = "cherry-pick-snapshot-id";
+
+  public static final String CURRENT_SNAPSHOT_ID = "current-snapshot-id";
+
   private final InternalCatalogBuilder catalogBuilder;
 
   private com.netease.arctic.catalog.ArcticCatalog internalCatalog;
@@ -700,11 +706,11 @@ public class MixedCatalog extends AbstractCatalog {
         continue;
       }
 
-      if ("location".equalsIgnoreCase(key)) {
+      if (LOCATION.equalsIgnoreCase(key)) {
         setLocation = value;
-      } else if ("current-snapshot-id".equalsIgnoreCase(key)) {
+      } else if (CURRENT_SNAPSHOT_ID.equalsIgnoreCase(key)) {
         setSnapshotId = value;
-      } else if ("cherry-pick-snapshot-id".equalsIgnoreCase(key)) {
+      } else if (CHERRY_PICK_SNAPSHOT_ID.equalsIgnoreCase(key)) {
         pickSnapshotId = value;
       } else {
         setProperties.put(key, value);
