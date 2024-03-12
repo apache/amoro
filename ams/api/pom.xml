@@ -99,6 +99,16 @@
             <version>${curator.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.10.2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -165,12 +175,12 @@
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.zookeeper</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.zookeeper
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.zookeeper
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.curator</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.curator
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.curator
                                     </shadedPattern>
                                 </relocation>
                             </relocations>

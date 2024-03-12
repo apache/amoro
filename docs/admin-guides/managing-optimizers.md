@@ -145,15 +145,13 @@ containers:
       spark-home: /opt/spark/                                                              # Spark install home
       master: k8s://https://<k8s-apiserver-host>:<k8s-apiserver-port>                      # The k8s cluster manager to connect to
       deploy-mode: cluster                                                                 # Spark deploy mode, client or cluster
-      job-uri: "local:///opt/spark/jars/optimizer-job.jar"                                 # Optimizer job main jar for kubernetes application
+      job-uri: "local:///opt/spark/usrlib/optimizer-job.jar"                               # Optimizer job main jar for kubernetes application
       ams-optimizing-uri: thrift://ams.amoro.service.local:1261                            # AMS optimizing uri 
       export.HADOOP_USER_NAME: hadoop                                                      # Hadoop user submits on yarn
       export.HADOOP_CONF_DIR: /etc/hadoop/conf/                                            # Hadoop config dir
       export.SPARK_CONF_DIR: /opt/spark/conf/                                              # Spark config dir
       spark-conf.spark.kubernetes.container.image: "arctic163/optimizer-spark:{version}"   # Optimizer image ref
-      spark-conf.spark.shuffle.service.enabled: "false"                                    # If spark DRA is used on kubernetes, we should set it false
-      spark-conf.spark.dynamicAllocation.shuffleTracking.enabled: "true"                   # Enables shuffle file tracking for executors, which allows dynamic allocation without the need for an ESS
-      spark-conf.spark.dynamicAllocation.shuffleTracking.timeout: "60s"                    # If spark.dynamicAllocation.shuffleTracking.enabled is true , this setting is needed
+      spark-conf.spark.dynamicAllocation.enabled: "true"                                   # If spark DRA is used on kubernetes, we can make full use of computing resources
       spark-conf.spark.kubernetes.namespace: <spark-namespace>                             # Namespace that is used within kubernetes cluster
       spark-conf.spark.kubernetes.authenticate.driver.serviceAccountName: <spark-sa>       # Service account that is used within kubernetes cluster
 ```

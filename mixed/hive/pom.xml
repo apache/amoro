@@ -47,6 +47,7 @@
             <artifactId>hive-metastore</artifactId>
         </dependency>
 
+        <!-- test dependencies -->
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-exec</artifactId>

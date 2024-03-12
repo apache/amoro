@@ -45,6 +45,14 @@
             <fileMode>0644</fileMode>
         </file>
         <file>
+            <source>
+                ../metric-reporter/prometheus-reporter/target/prometheus-reporter-${project.version}-jar-with-dependencies.jar
+            </source>
+            <outputDirectory>plugin/metrics-reporter</outputDirectory>
+            <destName>prometheus-reporter.jar</destName>
+            <fileMode>0644</fileMode>
+        </file>
+        <file>
             <source>../server/target/amoro-ams-server-${project.version}.jar</source>
             <outputDirectory>lib/</outputDirectory>
             <destName>amoro-ams-server-${project.version}.jar</destName>

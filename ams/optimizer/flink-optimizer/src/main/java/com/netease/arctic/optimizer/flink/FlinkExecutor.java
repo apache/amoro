@@ -18,6 +18,9 @@
 
 package com.netease.arctic.optimizer.flink;
 
+import static org.apache.flink.configuration.HighAvailabilityOptions.HA_CLUSTER_ID;
+import static org.apache.flink.configuration.TaskManagerOptions.TASK_MANAGER_RESOURCE_ID;
+
 import com.netease.arctic.optimizer.common.OptimizerExecutor;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
@@ -27,17 +30,32 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
     implements OneInputStreamOperator<String, Void> {
 
   private final OptimizerExecutor[] allExecutors;
-  private OptimizerExecutor executor;
+  private FlinkOptimizerExecutor executor;
+  private String optimizeGroupName;
 
-  public FlinkExecutor(OptimizerExecutor[] allExecutors) {
+  public FlinkExecutor(OptimizerExecutor[] allExecutors, String optimizeGroupName) {
     this.allExecutors = allExecutors;
+    this.optimizeGroupName = optimizeGroupName;
   }
 
   @Override
   public void open() throws Exception {
     super.open();
     int subTaskIndex = getRuntimeContext().getIndexOfThisSubtask();
-    executor = allExecutors[subTaskIndex];
+    String taskManagerId =
+        getRuntimeContext()
+            .getTaskManagerRuntimeInfo()
+            .getConfiguration()
+            .get(TASK_MANAGER_RESOURCE_ID);
+    String applicationId =
+        getRuntimeContext().getTaskManagerRuntimeInfo().getConfiguration().getString(HA_CLUSTER_ID);
+    executor = (FlinkOptimizerExecutor) allExecutors[subTaskIndex];
+    // set optimizer flink runtime info, including application_id, tm_id, host
+    executor.addRuntimeContext("application_id", applicationId);
+    executor.addRuntimeContext("tm_id", taskManagerId);
+    // add label optimize_group;
+    getMetricGroup().getAllVariables().put("<optimizer_group>", optimizeGroupName);
+    executor.initOperatorMetric(getMetricGroup());
     new Thread(() -> executor.start(), "flink-optimizer-executor-" + subTaskIndex).start();
   }
 
