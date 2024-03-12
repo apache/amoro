@@ -19,8 +19,8 @@
 package com.netease.arctic.utils;
 
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.ArcticTableOperations;
@@ -200,7 +200,6 @@ public class ArcticCatalogUtil {
         builder.withBase64KrbAuth(keytab, krb5, principal);
       }
     }
-
     return builder.build();
   }
 
@@ -283,9 +282,8 @@ public class ArcticCatalogUtil {
         tableMeta.getTableIdentifier().getTableName());
   }
 
-  public static com.netease.arctic.ams.api.TableIdentifier amsTaleId(
-      TableIdentifier tableIdentifier) {
-    return new com.netease.arctic.ams.api.TableIdentifier(
+  public static com.netease.arctic.api.TableIdentifier amsTaleId(TableIdentifier tableIdentifier) {
+    return new com.netease.arctic.api.TableIdentifier(
         tableIdentifier.getCatalog(),
         tableIdentifier.getDatabase(),
         tableIdentifier.getTableName());

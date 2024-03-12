@@ -18,7 +18,7 @@
 
 package com.netease.arctic.catalog;
 
-import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.io.TableTrashManagers;

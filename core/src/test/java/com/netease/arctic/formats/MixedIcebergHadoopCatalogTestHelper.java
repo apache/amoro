@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.netease.arctic.AmoroCatalog;
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.formats.mixed.MixedIcebergCatalogFactory;

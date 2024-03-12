@@ -41,7 +41,7 @@
     <modules>
         <module>core</module>
         <module>ams</module>
-        <module>mixed</module>
+        <module>mixed-format</module>
     </modules>
 
     <scm>
@@ -216,7 +216,7 @@
 
             <dependency>
                 <groupId>com.netease.amoro</groupId>
-                <artifactId>amoro-mixed-hive</artifactId>
+                <artifactId>amoro-mixed-format-hive</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

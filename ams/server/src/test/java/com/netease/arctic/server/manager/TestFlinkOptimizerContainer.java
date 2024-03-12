@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.manager;
 
-import com.netease.arctic.ams.api.OptimizerProperties;
+import com.netease.arctic.api.OptimizerProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Test;

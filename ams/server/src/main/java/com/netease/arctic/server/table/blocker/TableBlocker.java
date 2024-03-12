@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.table.blocker;
 
-import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.Blocker;
+import com.netease.arctic.api.BlockableOperation;
+import com.netease.arctic.api.Blocker;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.table.blocker.RenewableBlocker;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;

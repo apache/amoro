@@ -18,8 +18,8 @@
 
 package com.netease.arctic;
 
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.NoSuchObjectException;
 import com.netease.arctic.properties.CatalogMetaProperties;
 
 import java.util.Map;

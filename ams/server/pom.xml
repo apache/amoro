@@ -43,7 +43,7 @@
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-mixed-hive</artifactId>
+            <artifactId>amoro-mixed-format-hive</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.eclipse.jetty.orbit</groupId>
@@ -270,7 +270,7 @@
         <!-- runtime dependencies -->
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-mixed-spark-${terminal.spark.major.version}</artifactId>
+            <artifactId>amoro-mixed-format-spark-${terminal.spark.major.version}</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
@@ -308,7 +308,7 @@
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-mixed-hive</artifactId>
+            <artifactId>amoro-mixed-format-hive</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>

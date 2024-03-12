@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.resource;
 
-import com.netease.arctic.ams.api.resource.ResourceManager;
+import com.netease.arctic.api.resource.ResourceManager;
 
 import java.util.List;
 

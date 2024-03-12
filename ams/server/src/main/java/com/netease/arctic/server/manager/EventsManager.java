@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.manager;
 
-import com.netease.arctic.ams.api.events.Event;
-import com.netease.arctic.ams.api.events.EventListener;
+import com.netease.arctic.api.events.Event;
+import com.netease.arctic.api.events.EventListener;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;

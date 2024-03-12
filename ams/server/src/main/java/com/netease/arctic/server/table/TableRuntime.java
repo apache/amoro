@@ -20,7 +20,7 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.api.BlockableOperation;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;

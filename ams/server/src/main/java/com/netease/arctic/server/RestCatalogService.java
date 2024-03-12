@@ -32,7 +32,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.events.IcebergReportEvent;
+import com.netease.arctic.api.events.IcebergReportEvent;
 import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;

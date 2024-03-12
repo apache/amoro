@@ -22,7 +22,7 @@ import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_F
 import static com.netease.arctic.hive.op.UpdateHiveFiles.SYNC_DATA_TO_HIVE;
 import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
 
-import com.netease.arctic.ams.api.CommitMetaProducer;
+import com.netease.arctic.api.CommitMetaProducer;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;

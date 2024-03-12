@@ -22,8 +22,8 @@ import static com.netease.arctic.server.table.internal.InternalTableConstants.PR
 import static com.netease.arctic.server.utils.InternalTableUtil.genNewMetadataFileLocation;
 
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.properties.MetaTableProperties;

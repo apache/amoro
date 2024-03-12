@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.manager;
 
-import com.netease.arctic.ams.api.OptimizerProperties;
-import com.netease.arctic.ams.api.resource.Resource;
+import com.netease.arctic.api.OptimizerProperties;
+import com.netease.arctic.api.resource.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Function;

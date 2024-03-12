@@ -19,7 +19,7 @@
 package com.netease.arctic.server.table;
 
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.api.TableIdentifier;
 
 import java.util.Objects;
 

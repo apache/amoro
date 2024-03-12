@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.manager;
 
-import com.netease.arctic.ams.api.metrics.MetricRegisterListener;
-import com.netease.arctic.ams.api.metrics.MetricReporter;
+import com.netease.arctic.api.metrics.MetricRegisterListener;
+import com.netease.arctic.api.metrics.MetricReporter;
 import com.netease.arctic.server.metrics.MetricRegistry;
 
 /** Metric plugins manager and registry */

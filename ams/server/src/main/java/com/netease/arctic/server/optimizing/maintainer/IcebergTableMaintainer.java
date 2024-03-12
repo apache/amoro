@@ -20,7 +20,7 @@ package com.netease.arctic.server.optimizing.maintainer;
 
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
-import com.netease.arctic.ams.api.CommitMetaProducer;
+import com.netease.arctic.api.CommitMetaProducer;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
 import com.netease.arctic.io.SupportsFileSystemOperations;

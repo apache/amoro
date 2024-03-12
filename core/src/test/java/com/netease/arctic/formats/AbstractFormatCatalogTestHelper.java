@@ -20,7 +20,7 @@ package com.netease.arctic.formats;
 
 import com.netease.arctic.AmoroCatalog;
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.properties.CatalogMetaProperties;
 import org.apache.hadoop.conf.Configuration;

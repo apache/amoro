@@ -19,8 +19,8 @@
 package com.netease.arctic.optimizer.common;
 
 import com.netease.arctic.ErrorCodes;
-import com.netease.arctic.ams.api.ArcticException;
-import com.netease.arctic.ams.api.OptimizingService;
+import com.netease.arctic.api.ArcticException;
+import com.netease.arctic.api.OptimizingService;
 import com.netease.arctic.client.OptimizingClientPools;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.thrift.TApplicationException;

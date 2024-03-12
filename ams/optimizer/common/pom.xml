@@ -40,7 +40,7 @@
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-mixed-hive</artifactId>
+            <artifactId>amoro-mixed-format-hive</artifactId>
         </dependency>
 
         <dependency>

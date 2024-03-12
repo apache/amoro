@@ -22,8 +22,8 @@ import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DE
 
 import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.TableMeta;
 import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.properties.MetaTableProperties;
 import com.netease.arctic.server.dashboard.utils.PropertiesUtil;
@@ -110,8 +110,7 @@ public class TableMetadata implements Serializable {
     meta.setProperties(newProperties);
 
     if (StringUtils.isNotBlank(primaryKey)) {
-      com.netease.arctic.ams.api.PrimaryKeySpec keySpec =
-          new com.netease.arctic.ams.api.PrimaryKeySpec();
+      com.netease.arctic.api.PrimaryKeySpec keySpec = new com.netease.arctic.api.PrimaryKeySpec();
       List<String> fields =
           Arrays.stream(primaryKey.split(PRIMARY_KEY_COLUMN_JOIN_DELIMITER))
               .collect(Collectors.toList());

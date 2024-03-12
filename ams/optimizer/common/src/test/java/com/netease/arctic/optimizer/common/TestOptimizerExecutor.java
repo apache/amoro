@@ -19,10 +19,10 @@
 package com.netease.arctic.optimizer.common;
 
 import com.google.common.collect.Maps;
-import com.netease.arctic.ams.api.OptimizerRegisterInfo;
-import com.netease.arctic.ams.api.OptimizingTask;
-import com.netease.arctic.ams.api.OptimizingTaskId;
-import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.api.OptimizerRegisterInfo;
+import com.netease.arctic.api.OptimizingTask;
+import com.netease.arctic.api.OptimizingTaskId;
+import com.netease.arctic.api.OptimizingTaskResult;
 import com.netease.arctic.optimizing.BaseOptimizingInput;
 import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutorFactory;

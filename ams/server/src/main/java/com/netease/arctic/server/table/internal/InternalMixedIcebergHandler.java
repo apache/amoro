@@ -21,8 +21,8 @@ package com.netease.arctic.server.table.internal;
 import static com.netease.arctic.server.table.internal.InternalTableConstants.CHANGE_STORE_TABLE_NAME_SUFFIX;
 
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.TableMeta;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.utils.InternalTableUtil;

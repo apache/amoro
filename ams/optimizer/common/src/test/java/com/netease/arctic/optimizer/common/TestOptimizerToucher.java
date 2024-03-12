@@ -19,8 +19,8 @@
 package com.netease.arctic.optimizer.common;
 
 import com.google.common.collect.Maps;
-import com.netease.arctic.ams.api.OptimizerProperties;
-import com.netease.arctic.ams.api.OptimizerRegisterInfo;
+import com.netease.arctic.api.OptimizerProperties;
+import com.netease.arctic.api.OptimizerRegisterInfo;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;

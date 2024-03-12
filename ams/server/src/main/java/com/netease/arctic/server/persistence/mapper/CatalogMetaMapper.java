@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.persistence.mapper;
 
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;

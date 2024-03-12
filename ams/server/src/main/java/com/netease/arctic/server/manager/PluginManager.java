@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.manager;
 
-import com.netease.arctic.ams.api.AmoroPlugin;
+import com.netease.arctic.api.AmoroPlugin;
 
 import java.util.List;
 

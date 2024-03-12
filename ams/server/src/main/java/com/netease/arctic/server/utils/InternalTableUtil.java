@@ -25,7 +25,7 @@ import static com.netease.arctic.server.table.internal.InternalTableConstants.S3
 import static com.netease.arctic.server.table.internal.InternalTableConstants.S3_PROTOCOL_PREFIX;
 
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.properties.CatalogMetaProperties;

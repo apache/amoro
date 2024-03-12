@@ -21,7 +21,7 @@ package com.netease.arctic.client;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.netease.arctic.Constants;
-import com.netease.arctic.ams.api.ArcticTableMetastore;
+import com.netease.arctic.api.ArcticTableMetastore;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TMultiplexedProtocol;

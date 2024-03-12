@@ -20,7 +20,7 @@ package com.netease.arctic.server;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;

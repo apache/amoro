@@ -20,7 +20,7 @@ package com.netease.arctic.server.dashboard.controller;
 
 import com.netease.arctic.Constants;
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;

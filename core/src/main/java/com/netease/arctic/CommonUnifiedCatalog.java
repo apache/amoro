@@ -18,7 +18,7 @@
 
 package com.netease.arctic;
 
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.ArcticCatalogUtil;

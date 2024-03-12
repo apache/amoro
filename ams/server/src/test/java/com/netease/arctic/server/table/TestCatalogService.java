@@ -20,7 +20,7 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.TestedCatalogs;
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;

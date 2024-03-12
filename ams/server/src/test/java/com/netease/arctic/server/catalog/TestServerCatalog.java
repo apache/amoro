@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.catalog;
 
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.formats.AmoroCatalogTestHelper;
 import com.netease.arctic.formats.IcebergHadoopCatalogTestHelper;
 import com.netease.arctic.formats.MixedIcebergHadoopCatalogTestHelper;

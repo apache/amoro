@@ -26,7 +26,7 @@ import static com.netease.arctic.server.utils.InternalTableUtil.genNewMetadataFi
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.TablePropertyUtil;

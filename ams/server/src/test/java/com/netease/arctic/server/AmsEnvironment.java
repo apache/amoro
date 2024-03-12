@@ -20,8 +20,8 @@ package com.netease.arctic.server;
 
 import com.netease.arctic.SingletonResourceUtil;
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.resource.ResourceGroup;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.resource.ResourceGroup;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelpers;

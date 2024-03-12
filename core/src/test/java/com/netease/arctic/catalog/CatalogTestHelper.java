@@ -21,7 +21,7 @@ package com.netease.arctic.catalog;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.UnifiedCatalog;
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.properties.CatalogMetaProperties;
 import org.apache.iceberg.catalog.Catalog;
 

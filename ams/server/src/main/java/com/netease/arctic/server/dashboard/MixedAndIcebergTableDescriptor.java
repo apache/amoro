@@ -22,7 +22,7 @@ import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.CommitMetaProducer;
+import com.netease.arctic.api.CommitMetaProducer;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;

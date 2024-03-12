@@ -25,7 +25,7 @@ import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_H
 import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;

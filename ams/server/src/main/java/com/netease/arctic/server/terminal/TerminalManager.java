@@ -20,7 +20,7 @@ package com.netease.arctic.server.terminal;
 
 import com.netease.arctic.Constants;
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.CatalogType;
