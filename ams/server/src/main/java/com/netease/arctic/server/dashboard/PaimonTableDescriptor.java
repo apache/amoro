@@ -216,7 +216,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         throw new RuntimeException(e);
       }
     }
-    return snapshotsOfTables;
+    return snapshotsOfTables.stream()
+        .sorted((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()))
+        .collect(Collectors.toList());
   }
 
   @Override
