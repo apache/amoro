@@ -53,6 +53,12 @@ public class CatalogBuilder {
                   TableFormat.PAIMON),
           CATALOG_TYPE_AMS, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
 
+  private static String getAmsURI(Configurations serviceConfig) {
+    String host = serviceConfig.getString(ArcticManagementConf.SERVER_EXPOSE_HOST);
+    Integer port = serviceConfig.getInteger(ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT);
+    return String.format("thrift://%s:%d", host, port);
+  }
+
   public static ServerCatalog buildServerCatalog(
       CatalogMeta catalogMeta, Configurations serverConfiguration) {
     String type = catalogMeta.getCatalogType();
@@ -60,10 +66,6 @@ public class CatalogBuilder {
 
     Preconditions.checkState(
         formatSupportedMatrix.containsKey(type), "unsupported catalog type: %s", type);
-    Preconditions.checkState(
-        tableFormats.size() == 1,
-        "only 1 types format is supported: %s",
-        Joiner.on(",").join(tableFormats));
 
     Set<TableFormat> supportedFormats = formatSupportedMatrix.get(type);
     TableFormat tableFormat = tableFormats.iterator().next();
@@ -79,9 +81,12 @@ public class CatalogBuilder {
       case CATALOG_TYPE_CUSTOM:
         return new ExternalCatalog(catalogMeta);
       case CATALOG_TYPE_HIVE:
-        if (tableFormat.equals(TableFormat.MIXED_HIVE)) {
+        if (tableFormats.size() == 1 && tableFormat.equals(TableFormat.MIXED_HIVE)) {
           return new MixedHiveCatalogImpl(catalogMeta);
         }
+        // if tableFormats.size() > 1 , we nned fullfill the ams uri in catalogProperty
+        String amsUri = getAmsURI(serverConfiguration);
+        catalogMeta.getCatalogProperties().put(CatalogMetaProperties.AMS_URI, amsUri);
         return new ExternalCatalog(catalogMeta);
       case CATALOG_TYPE_AMS:
         if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {

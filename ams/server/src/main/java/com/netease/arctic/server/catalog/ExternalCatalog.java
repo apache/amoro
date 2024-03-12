@@ -52,6 +52,24 @@ public class ExternalCatalog extends ServerCatalog {
             () -> new CommonUnifiedCatalog(this::getMetadata, Maps.newHashMap()));
     updateTableFilter(metadata);
     updateDatabaseFilter(metadata);
+    this.hiveClientPool =
+        new CachedHiveClientPool(this.tableMetaStore, metadata.getCatalogProperties());
+  }
+
+  public ArcticCatalog getArcticCatalog() {
+    FormatCatalog formatCatalog =
+        ((CommonUnifiedCatalog) unifiedCatalog)
+            .formatCatalogAsOrder(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG)
+            .findFirst()
+            .get();
+    if (formatCatalog instanceof MixedCatalog) {
+      return ((MixedCatalog) formatCatalog).getCatalog();
+    }
+    return null;
+  }
+
+  public HMSClientPool getHMSClientPool() {
+    return this.hiveClientPool;
   }
 
   public void syncTable(String database, String tableName, TableFormat format) {
