@@ -28,6 +28,7 @@ RUN apt-get update \
 RUN cd $SPARK_HOME/jars \
     && wget ${MAVEN_MIRROR}/software/amazon/awssdk/bundle/2.20.5/bundle-2.20.5.jar \
     && wget ${MAVEN_MIRROR}/software/amazon/awssdk/url-connection-client/2.20.5/url-connection-client-2.20.5.jar \
-    && chown root:root *.jar
+    && chown spark:spark *.jar \
+    && mkdir -p $SPARK_HOME/usrlib
 
-COPY $OPTIMIZER_JOB $SPARK_HOME/jars/optimizer-job.jar
+COPY $OPTIMIZER_JOB $SPARK_HOME/usrlib/optimizer-job.jar
