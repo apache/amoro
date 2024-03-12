@@ -38,6 +38,10 @@ public class MixedCatalog implements FormatCatalog {
     this.format = format;
   }
 
+  public ArcticCatalog getCatalog() {
+    return catalog;
+  }
+
   @Override
   public List<String> listDatabases() {
     return catalog.listDatabases();

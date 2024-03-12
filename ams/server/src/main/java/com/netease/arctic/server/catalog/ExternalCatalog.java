@@ -20,11 +20,16 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.CommonUnifiedCatalog;
+import com.netease.arctic.FormatCatalog;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.formats.mixed.MixedCatalog;
+import com.netease.arctic.hive.CachedHiveClientPool;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
@@ -43,6 +48,7 @@ public class ExternalCatalog extends ServerCatalog {
   TableMetaStore tableMetaStore;
   private Pattern tableFilterPattern;
   private Pattern databaseFilterPattern;
+  private HMSClientPool hiveClientPool;
 
   protected ExternalCatalog(CatalogMeta metadata) {
     super(metadata);
@@ -52,6 +58,24 @@ public class ExternalCatalog extends ServerCatalog {
             () -> new CommonUnifiedCatalog(this::getMetadata, Maps.newHashMap()));
     updateTableFilter(metadata);
     updateDatabaseFilter(metadata);
+    this.hiveClientPool =
+        new CachedHiveClientPool(this.tableMetaStore, metadata.getCatalogProperties());
+  }
+
+  public ArcticCatalog getArcticCatalog() {
+    FormatCatalog formatCatalog =
+        ((CommonUnifiedCatalog) unifiedCatalog)
+            .formatCatalogAsOrder(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG)
+            .findFirst()
+            .get();
+    if (formatCatalog instanceof MixedCatalog) {
+      return ((MixedCatalog) formatCatalog).getCatalog();
+    }
+    return null;
+  }
+
+  public HMSClientPool getHMSClientPool() {
+    return this.hiveClientPool;
   }
 
   public void syncTable(String database, String tableName, TableFormat format) {
