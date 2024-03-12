@@ -67,8 +67,9 @@ properties:
   ams-optimizing-uri: {{include "amoro.svc.optimizing.uri" . | quote}}
   spark-home: /opt/spark
   export.SPARK_HOME: /opt/spark
-  spark-conf.kubernetes.container.image: {{ include "amoro.optimizer.container.spark.image" .  | quote }}
-  spark-conf.kubernetes.service-account: {{ include "amoro.sa.name" . | quote }}
+  spark-conf.spark.kubernetes.container.image: {{ include "amoro.optimizer.container.spark.image" .  | quote }}
+  spark-conf.spark.kubernetes.authenticate.driver.serviceAccountName: {{ include "amoro.sa.name" . | quote }}
+  spark-conf.spark.kubernetes.namespace: {{ include "amoro.namespace" . | quote }}
   {{- with .Values.optimizer.spark.properties -}}
     {{- toYaml . | nindent 2 }}
   {{- end -}}

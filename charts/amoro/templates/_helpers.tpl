@@ -72,11 +72,14 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 thrift://{{ include "amoro.svc.optimizing.fullname" .}}:{{ .Values.server.optimizing.port }}
 {{- end -}}
 
-
 {{- define "amoro.sa.name" -}}
 {{ if .Values.serviceAccount.create }}
 {{- include "common.names.fullname" . -}}
 {{- else -}}
 {{- .Values.serviceAccount.name -}}
 {{ end }}
+{{- end -}}
+
+{{- define "amoro.namespace" -}}
+{{ .Release.Namespace }}
 {{- end -}}
