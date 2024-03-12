@@ -210,12 +210,13 @@ public class TableController {
       }
     } else {
       arcticHiveCatalog =
-        (ArcticHiveCatalog)
-            CatalogLoader.load(
-                String.join(
-                    "/",
-                    AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME),
-                    catalog));
+          (ArcticHiveCatalog)
+              CatalogLoader.load(
+                  String.join(
+                      "/",
+                      AmsUtil.getAMSThriftAddress(
+                          serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME),
+                      catalog));
     }
     final ArcticHiveCatalog finalArcticHiveCatalog = arcticHiveCatalog;
 
@@ -515,20 +516,20 @@ public class TableController {
     String catalogType = serverCatalog.getMetadata().getCatalogType();
     if (serverCatalog instanceof MixedHiveCatalogImpl || catalogType.equals("hive")) {
       HMSClientPool hmsClientPool = null;
-    if (serverCatalog instanceof MixedHiveCatalogImpl) {
+      if (serverCatalog instanceof MixedHiveCatalogImpl) {
         hmsClientPool = ((MixedHiveCatalogImpl) serverCatalog).getHiveClient();
       } else {
         hmsClientPool = ((ExternalCatalog) serverCatalog).getHMSClientPool();
       }
       if (hmsClientPool != null) {
         List<String> hiveTables = HiveTableUtil.getAllHiveTables(hmsClientPool, db);
-      Set<String> arcticTables =
-          tables.stream().map(TableMeta::getName).collect(Collectors.toSet());
-      hiveTables.stream()
-          .filter(e -> !arcticTables.contains(e))
-          .sorted(String::compareTo)
-          .forEach(e -> tables.add(new TableMeta(e, TableMeta.TableType.HIVE.toString())));
-    }
+        Set<String> arcticTables =
+            tables.stream().map(TableMeta::getName).collect(Collectors.toSet());
+        hiveTables.stream()
+            .filter(e -> !arcticTables.contains(e))
+            .sorted(String::compareTo)
+            .forEach(e -> tables.add(new TableMeta(e, TableMeta.TableType.HIVE.toString())));
+      }
     }
 
     ctx.json(
