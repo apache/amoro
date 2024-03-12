@@ -20,7 +20,6 @@ FROM apache/spark:${SPARK_VERSION}
 
 ARG MAVEN_MIRROR=https://repo.maven.apache.org/maven2
 ARG OPTIMIZER_JOB=optimizer-job.jar
-USER root
 
 RUN apt-get update \
     && apt-get install -y wget
