@@ -23,7 +23,17 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.properties.MetaTableProperties;
-import com.netease.arctic.table.*;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.BaseTable;
+import com.netease.arctic.table.BasicKeyedTable;
+import com.netease.arctic.table.BasicUnkeyedTable;
+import com.netease.arctic.table.ChangeTable;
+import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.PartitionSpec;
@@ -42,6 +52,7 @@ import java.util.Map;
  * TODO: this class will be removed when we support using restCatalog as base store for
  * InternalCatalog
  */
+@Deprecated
 public class MixedTables {
 
   private static final Logger LOG = LoggerFactory.getLogger(MixedTables.class);

@@ -57,13 +57,13 @@
   - "ams/optimizer/**/*"
 
 "module:mixed-spark":
-  - "mixed/spark/**/*"
+  - "mixed-format/spark/**/*"
 
 "module:mixed-flink":
-  - "mixed/flink/**/*"
+  - "mixed-format/flink/**/*"
 
 "module:mixed-hive":
-  - "mixed/hive/**/*"
+  - "mixed-format/hive/**/*"
 
 "module:mixed-trino":
-  - "mixed/trino/**/*"
+  - "mixed-format/trino/**/*"
