@@ -216,7 +216,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         throw new RuntimeException(e);
       }
     }
-    return snapshotsOfTables;
+    return snapshotsOfTables.stream()
+        .sorted((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()))
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -238,7 +240,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
             new PartitionFileBaseInfo(
                 null,
                 DataFileType.BASE_FILE,
-                entry.file().creationTime().getMillisecond(),
+                entry.file().creationTimeEpochMillis(),
                 partitionString(entry.partition(), entry.bucket(), fileStorePathFactory),
                 fullFilePath(store, entry),
                 entry.file().fileSize(),
@@ -279,7 +281,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         for (DataFileMeta dataFileMeta : groupByBucketEntry.getValue()) {
           fileCount++;
           fileSize += dataFileMeta.fileSize();
-          lastCommitTime = Math.max(lastCommitTime, dataFileMeta.creationTime().getMillisecond());
+          lastCommitTime = Math.max(lastCommitTime, dataFileMeta.creationTimeEpochMillis());
         }
         partitionBaseInfoList.add(
             new PartitionBaseInfo(partitionSt, 0, fileCount, fileSize, lastCommitTime));

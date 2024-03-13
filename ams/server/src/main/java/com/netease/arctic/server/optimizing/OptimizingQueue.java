@@ -196,7 +196,7 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   private TaskRuntime fetchTask() {
-    return Optional.ofNullable(retryTaskQueue.poll()).orElse(fetchScheduledTask());
+    return Optional.ofNullable(retryTaskQueue.poll()).orElseGet(() -> fetchScheduledTask());
   }
 
   private TaskRuntime fetchScheduledTask() {
