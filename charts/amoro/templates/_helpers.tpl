@@ -79,7 +79,3 @@ thrift://{{ include "amoro.svc.optimizing.fullname" .}}:{{ .Values.server.optimi
 {{- .Values.serviceAccount.name -}}
 {{ end }}
 {{- end -}}
-
-{{- define "amoro.namespace" -}}
-{{ .Release.Namespace }}
-{{- end -}}
