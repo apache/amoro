@@ -151,7 +151,9 @@ containers:
       export.HADOOP_CONF_DIR: /etc/hadoop/conf/                                            # Hadoop config dir
       export.SPARK_CONF_DIR: /opt/spark/conf/                                              # Spark config dir
       spark-conf.spark.kubernetes.container.image: "arctic163/optimizer-spark:{version}"   # Optimizer image ref
-      spark-conf.spark.dynamicAllocation.enabled: "true"                                   # If spark DRA is used on kubernetes, we can make full use of computing resources
+      spark-conf.spark.dynamicAllocation.enabled: "true"                                   # Enabling DRA feature can make full use of computing resources
+      spark-conf.spark.shuffle.service.enabled: "false"                                    # If spark DRA is used on kubernetes, we should set it false
+      spark-conf.spark.dynamicAllocation.shuffleTracking.enabled: "true"                   # Enables shuffle file tracking for executors, which allows dynamic allocation without the need for an ESS
       spark-conf.spark.kubernetes.namespace: <spark-namespace>                             # Namespace that is used within kubernetes cluster
       spark-conf.spark.kubernetes.authenticate.driver.serviceAccountName: <spark-sa>       # Service account that is used within kubernetes cluster
 ```
