@@ -20,7 +20,7 @@ package com.netease.arctic.server.resource;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import com.netease.arctic.ams.api.resource.ResourceContainer;
+import com.netease.arctic.api.resource.ResourceContainer;
 
 import java.util.List;
 import java.util.Map;

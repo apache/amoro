@@ -18,7 +18,7 @@
 
 package com.netease.arctic.data;
 
-import com.netease.arctic.ams.api.Constants;
+import com.netease.arctic.Constants;
 import com.netease.arctic.io.writer.TaskWriterKey;
 import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.TableFileUtil;

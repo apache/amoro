@@ -21,8 +21,8 @@ package com.netease.arctic.server.catalog;
 import static com.netease.arctic.server.table.internal.InternalTableConstants.CHANGE_STORE_TABLE_NAME_SUFFIX;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.formats.mixed.MixedTable;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.mixed.InternalMixedIcebergCatalog;

@@ -19,13 +19,14 @@
 package com.netease.arctic.server.optimizing;
 
 import com.google.common.collect.Maps;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.server.AmsEnvironment;
 import com.netease.arctic.server.RestCatalogService;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
@@ -432,8 +433,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
       throw new IllegalStateException("unknown catalog");
     }
 
-    TableMetaStore tms =
-        com.netease.arctic.utils.CatalogUtil.buildMetaStore(serverCatalog.getMetadata());
+    TableMetaStore tms = ArcticCatalogUtil.buildMetaStore(serverCatalog.getMetadata());
     Catalog icebergCatalog =
         CatalogUtil.loadCatalog(impl, catalog, properties, tms.getConfiguration());
 

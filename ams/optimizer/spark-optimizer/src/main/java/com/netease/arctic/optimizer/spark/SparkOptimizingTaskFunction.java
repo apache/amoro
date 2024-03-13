@@ -18,8 +18,8 @@
 
 package com.netease.arctic.optimizer.spark;
 
-import com.netease.arctic.ams.api.OptimizingTask;
-import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.api.OptimizingTask;
+import com.netease.arctic.api.OptimizingTaskResult;
 import com.netease.arctic.optimizer.common.OptimizerConfig;
 import com.netease.arctic.optimizer.common.OptimizerExecutor;
 import org.apache.spark.api.java.function.Function;

@@ -18,7 +18,6 @@
 
 package com.netease.arctic;
 
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.TableIdentifier;
 
 import java.util.Map;

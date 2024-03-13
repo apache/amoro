@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.exception;
 
-import com.netease.arctic.ams.api.OptimizingTaskId;
+import com.netease.arctic.api.OptimizingTaskId;
 
 public class TaskNotFoundException extends ArcticRuntimeException {
   private final OptimizingTaskId taskId;

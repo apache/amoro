@@ -20,10 +20,10 @@ package com.netease.arctic.formats;
 
 import com.netease.arctic.AlreadyExistsException;
 import com.netease.arctic.AmoroCatalog;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.formats.paimon.PaimonCatalogFactory;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
@@ -63,7 +63,7 @@ public class PaimonHadoopCatalogTestHelper extends AbstractFormatCatalogTestHelp
   @Override
   public AmoroCatalog amoroCatalog() {
     PaimonCatalogFactory paimonCatalogFactory = new PaimonCatalogFactory();
-    TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
+    TableMetaStore metaStore = ArcticCatalogUtil.buildMetaStore(getCatalogMeta());
     Map<String, String> paimonCatalogProperties =
         paimonCatalogFactory.convertCatalogProperties(
             catalogName, getMetastoreType(), getCatalogMeta().getCatalogProperties());

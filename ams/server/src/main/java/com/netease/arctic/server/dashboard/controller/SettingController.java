@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
-import com.netease.arctic.ams.api.resource.ResourceGroup;
+import com.netease.arctic.api.resource.ResourceGroup;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.resource.ContainerMetadata;

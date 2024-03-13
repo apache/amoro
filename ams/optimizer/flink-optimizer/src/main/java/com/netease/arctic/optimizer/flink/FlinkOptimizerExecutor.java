@@ -19,8 +19,8 @@
 package com.netease.arctic.optimizer.flink;
 
 import com.google.common.base.Strings;
-import com.netease.arctic.ams.api.OptimizingTask;
-import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.api.OptimizingTask;
+import com.netease.arctic.api.OptimizingTaskResult;
 import com.netease.arctic.optimizer.common.OptimizerConfig;
 import com.netease.arctic.optimizer.common.OptimizerExecutor;
 import org.apache.flink.metrics.Counter;

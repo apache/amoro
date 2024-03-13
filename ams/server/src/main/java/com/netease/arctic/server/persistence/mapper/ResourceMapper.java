@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.persistence.mapper;
 
-import com.netease.arctic.ams.api.resource.Resource;
-import com.netease.arctic.ams.api.resource.ResourceGroup;
+import com.netease.arctic.api.resource.Resource;
+import com.netease.arctic.api.resource.ResourceGroup;
 import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
 import com.netease.arctic.server.resource.OptimizerInstance;

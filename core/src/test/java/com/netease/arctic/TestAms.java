@@ -18,7 +18,6 @@
 
 package com.netease.arctic;
 
-import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -18,10 +18,10 @@
 
 package com.netease.arctic.optimizer.common;
 
-import com.netease.arctic.ams.api.ArcticException;
-import com.netease.arctic.ams.api.ErrorCodes;
-import com.netease.arctic.ams.api.OptimizerProperties;
-import com.netease.arctic.ams.api.OptimizerRegisterInfo;
+import com.netease.arctic.ErrorCodes;
+import com.netease.arctic.api.ArcticException;
+import com.netease.arctic.api.OptimizerProperties;
+import com.netease.arctic.api.OptimizerRegisterInfo;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;

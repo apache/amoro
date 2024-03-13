@@ -18,7 +18,7 @@
 
 package com.netease.arctic.table.blocker;
 
-import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.api.BlockableOperation;
 
 import java.util.List;
 import java.util.Map;

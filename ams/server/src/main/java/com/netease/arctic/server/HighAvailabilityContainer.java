@@ -19,8 +19,8 @@
 package com.netease.arctic.server;
 
 import com.alibaba.fastjson.JSONObject;
-import com.netease.arctic.ams.api.client.AmsServerInfo;
-import com.netease.arctic.ams.api.properties.AmsHAProperties;
+import com.netease.arctic.client.AmsServerInfo;
+import com.netease.arctic.properties.AmsHAProperties;
 import com.netease.arctic.server.utils.Configurations;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;

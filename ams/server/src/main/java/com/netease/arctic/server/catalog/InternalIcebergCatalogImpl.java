@@ -19,8 +19,8 @@
 package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.formats.iceberg.IcebergTable;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.server.ArcticManagementConf;
@@ -33,7 +33,7 @@ import com.netease.arctic.server.table.internal.InternalTableCreator;
 import com.netease.arctic.server.table.internal.InternalTableHandler;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.InternalTableUtil;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.TableOperations;
@@ -100,7 +100,7 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
     return IcebergTable.newIcebergTable(
         tableIdentifier,
         table,
-        CatalogUtil.buildMetaStore(getMetadata()),
+        ArcticCatalogUtil.buildMetaStore(getMetadata()),
         getMetadata().getCatalogProperties());
   }
 

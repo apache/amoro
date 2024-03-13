@@ -18,8 +18,8 @@
 
 package com.netease.arctic.table.blocker;
 
-import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.OperationConflictException;
+import com.netease.arctic.api.BlockableOperation;
+import com.netease.arctic.api.OperationConflictException;
 import com.netease.arctic.table.TableIdentifier;
 
 import java.util.Collections;

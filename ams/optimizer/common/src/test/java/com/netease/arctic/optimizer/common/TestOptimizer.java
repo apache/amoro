@@ -18,7 +18,7 @@
 
 package com.netease.arctic.optimizer.common;
 
-import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.api.OptimizingTaskResult;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;

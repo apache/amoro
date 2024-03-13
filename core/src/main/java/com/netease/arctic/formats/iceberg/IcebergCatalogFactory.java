@@ -20,8 +20,9 @@ package com.netease.arctic.formats.iceberg;
 
 import com.netease.arctic.FormatCatalog;
 import com.netease.arctic.FormatCatalogFactory;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.catalog.Catalog;
@@ -36,8 +37,7 @@ public class IcebergCatalogFactory implements FormatCatalogFactory {
       String name, String metastoreType, Map<String, String> properties, TableMetaStore metaStore) {
     Preconditions.checkArgument(StringUtils.isNotBlank(metastoreType), "metastore type is blank");
     properties =
-        com.netease.arctic.utils.CatalogUtil.withIcebergCatalogInitializeProperties(
-            name, metastoreType, properties);
+        ArcticCatalogUtil.withIcebergCatalogInitializeProperties(name, metastoreType, properties);
 
     Catalog icebergCatalog =
         CatalogUtil.buildIcebergCatalog(name, properties, metaStore.getConfiguration());
@@ -52,7 +52,7 @@ public class IcebergCatalogFactory implements FormatCatalogFactory {
   @Override
   public Map<String, String> convertCatalogProperties(
       String catalogName, String metastoreType, Map<String, String> unifiedCatalogProperties) {
-    return com.netease.arctic.utils.CatalogUtil.withIcebergCatalogInitializeProperties(
+    return ArcticCatalogUtil.withIcebergCatalogInitializeProperties(
         catalogName, metastoreType, unifiedCatalogProperties);
   }
 }

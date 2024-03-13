@@ -18,11 +18,10 @@
 
 package com.netease.arctic;
 
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.List;
@@ -46,9 +45,9 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   public CommonUnifiedCatalog(
       Supplier<CatalogMeta> catalogMetaSupplier, Map<String, String> properties) {
     CatalogMeta catalogMeta = catalogMetaSupplier.get();
-    CatalogUtil.mergeCatalogProperties(catalogMeta, properties);
+    ArcticCatalogUtil.mergeCatalogProperties(catalogMeta, properties);
     this.meta = catalogMeta;
-    this.tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
+    this.tableMetaStore = ArcticCatalogUtil.buildMetaStore(catalogMeta);
     this.properties.putAll(properties);
     this.metaSupplier = catalogMetaSupplier;
     initializeFormatCatalogs();
@@ -172,11 +171,11 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   @Override
   public synchronized void refresh() {
     CatalogMeta newMeta = metaSupplier.get();
-    CatalogUtil.mergeCatalogProperties(meta, properties);
+    ArcticCatalogUtil.mergeCatalogProperties(meta, properties);
     if (newMeta.equals(this.meta)) {
       return;
     }
-    this.tableMetaStore = CatalogUtil.buildMetaStore(newMeta);
+    this.tableMetaStore = ArcticCatalogUtil.buildMetaStore(newMeta);
     this.meta = newMeta;
     this.initializeFormatCatalogs();
   }
@@ -188,8 +187,8 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
 
   protected void initializeFormatCatalogs() {
     ServiceLoader<FormatCatalogFactory> loader = ServiceLoader.load(FormatCatalogFactory.class);
-    Set<TableFormat> formats = CatalogUtil.tableFormats(this.meta);
-    TableMetaStore store = CatalogUtil.buildMetaStore(this.meta);
+    Set<TableFormat> formats = ArcticCatalogUtil.tableFormats(this.meta);
+    TableMetaStore store = ArcticCatalogUtil.buildMetaStore(this.meta);
     Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newConcurrentMap();
     for (FormatCatalogFactory factory : loader) {
       if (formats.contains(factory.format())) {

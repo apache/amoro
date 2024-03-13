@@ -18,7 +18,7 @@
 
 package com.netease.arctic.optimizer.standalone;
 
-import com.netease.arctic.ams.api.resource.Resource;
+import com.netease.arctic.api.resource.Resource;
 import com.netease.arctic.optimizer.common.Optimizer;
 import com.netease.arctic.optimizer.common.OptimizerConfig;
 import org.kohsuke.args4j.CmdLineException;
