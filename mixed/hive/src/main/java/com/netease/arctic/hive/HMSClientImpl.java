@@ -148,6 +148,12 @@ public class HMSClientImpl implements HMSClient {
   }
 
   @Override
+  public List<Table> getTableObjectsByName(String dbName, List<String> tableNames)
+      throws TException {
+    return getClient().getTableObjectsByName(dbName, tableNames);
+  }
+
+  @Override
   public void alterPartitions(
       String dbName,
       String tblName,

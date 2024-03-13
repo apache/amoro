@@ -69,7 +69,7 @@ public class ExternalCatalog extends ServerCatalog {
             .findFirst()
             .get();
     if (formatCatalog instanceof MixedCatalog) {
-      return ((MixedCatalog) formatCatalog).getCatalog();
+      return ((MixedCatalog) formatCatalog).getArcticCatalog();
     }
     return null;
   }

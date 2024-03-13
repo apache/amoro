@@ -38,7 +38,7 @@ public class MixedCatalog implements FormatCatalog {
     this.format = format;
   }
 
-  public ArcticCatalog getCatalog() {
+  public ArcticCatalog getArcticCatalog() {
     return catalog;
   }
 
