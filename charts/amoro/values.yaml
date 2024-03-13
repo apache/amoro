@@ -141,7 +141,7 @@ optimizer:
       tag: ~
       jobUri: "local:///opt/spark/usrlib/optimizer-job.jar"
     properties: {
-      "master": "k8s://https://<k8s-apiserver-host>:<k8s-apiserver-port>",
+      "master": "k8s://kubernetes.default.svc",
       "deploy-mode": "cluster",
       "export.HADOOP_USER_NAME": "hadoop",
       "spark-conf.spark.dynamicAllocation.enabled": "true",
