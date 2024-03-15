@@ -146,9 +146,7 @@ optimizer:
       "export.HADOOP_USER_NAME": "hadoop",
       "spark-conf.spark.dynamicAllocation.enabled": "true",
       "spark-conf.spark.shuffle.service.enabled": "false",
-      "spark-conf.spark.dynamicAllocation.shuffleTracking.enabled": "true",
-      "spark-conf.spark.kubernetes.namespace": "",
-      "spark-conf.spark.kubernetes.hadoop.configMapName": ""
+      "spark-conf.spark.dynamicAllocation.shuffleTracking.enabled": "true"
     }
   # local optimizer
   local:
