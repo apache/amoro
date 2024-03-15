@@ -53,6 +53,7 @@ import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -461,10 +462,17 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                   try {
                     tableIdentifiersFutures.add(
                         CompletableFuture.supplyAsync(
-                            () ->
-                                externalCatalog.listTables(database).stream()
+                            () -> {
+                              try {
+                                return externalCatalog.listTables(database).stream()
                                     .map(TableIdentity::new)
-                                    .collect(Collectors.toSet()),
+                                    .collect(Collectors.toSet());
+                              } catch (Exception e) {
+                                LOG.error(
+                                    "TableExplorer list tables in database {} error", database, e);
+                                return new HashSet<>();
+                              }
+                            },
                             tableExplorerExecutors));
                   } catch (RejectedExecutionException e) {
                     LOG.error(
