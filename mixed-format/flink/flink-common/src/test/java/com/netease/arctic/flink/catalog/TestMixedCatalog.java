@@ -18,13 +18,6 @@
 
 package com.netease.arctic.flink.catalog;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import static com.netease.arctic.flink.FlinkSchemaUtil.COMPUTED_COLUMNS;
 import static com.netease.arctic.flink.FlinkSchemaUtil.FLINK_PREFIX;
 import static com.netease.arctic.flink.FlinkSchemaUtil.WATERMARK;
@@ -35,18 +28,12 @@ import static org.apache.flink.table.descriptors.DescriptorProperties.NAME;
 import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_ROWTIME;
 import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_STRATEGY_DATA_TYPE;
 import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_STRATEGY_EXPR;
+
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestBase;
 import com.netease.arctic.flink.catalog.factories.CatalogFactoryOptions;
-import com.netease.arctic.formats.IcebergHadoopCatalogTestHelper;
-import com.netease.arctic.formats.MixedIcebergHadoopCatalogTestHelper;
-import com.netease.arctic.formats.PaimonHadoopCatalogTestHelper;
-import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
-import com.netease.arctic.hive.formats.IcebergHiveCatalogTestHelper;
-import com.netease.arctic.hive.formats.MixedIcebergHiveCatalogTestHelper;
-import com.netease.arctic.hive.formats.PaimonHiveCatalogTestHelper;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
@@ -76,10 +63,17 @@ import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 /**
  * Test cases for mixed catalog factories, including:
- * CatalogFactoryOptions.MIXED_ICEBERG_IDENTIFIER,
- * CatalogFactoryOptions.MIXED_HIVE_IDENTIFIER,
+ * CatalogFactoryOptions.MIXED_ICEBERG_IDENTIFIER, CatalogFactoryOptions.MIXED_HIVE_IDENTIFIER,
  * CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER
  */
 @RunWith(value = Parameterized.class)
@@ -91,16 +85,15 @@ public class TestMixedCatalog extends CatalogTestBase {
   public TestMixedCatalog(String catalogFactoryType) {
     super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG));
     this.catalogFactoryType = catalogFactoryType;
-    this.catalogName = catalogFactoryType +"_catalog";
+    this.catalogName = catalogFactoryType + "_catalog";
   }
-
 
   @Parameterized.Parameters(name = "catalogFactoryType = {0}")
   public static Object[] parameters() {
     return new Object[] {
-        CatalogFactoryOptions.MIXED_ICEBERG_IDENTIFIER,
-        CatalogFactoryOptions.MIXED_HIVE_IDENTIFIER,
-        CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER
+      CatalogFactoryOptions.MIXED_ICEBERG_IDENTIFIER,
+      CatalogFactoryOptions.MIXED_HIVE_IDENTIFIER,
+      CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER
     };
   }
 
@@ -117,7 +110,7 @@ public class TestMixedCatalog extends CatalogTestBase {
     props = Maps.newHashMap();
     props.put("type", catalogFactoryType);
     props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
-    sql("CREATE CATALOG " + catalogName+ " WITH %s", toWithClause(props));
+    sql("CREATE CATALOG " + catalogName + " WITH %s", toWithClause(props));
     sql("USE CATALOG " + catalogName);
     sql("CREATE DATABASE " + catalogName + "." + DB);
   }
@@ -136,9 +129,7 @@ public class TestMixedCatalog extends CatalogTestBase {
     String[] catalogs = getTableEnv().listCatalogs();
     Assert.assertArrayEquals(
         Arrays.stream(catalogs).sorted().toArray(),
-        Stream.of("default_catalog", catalogName)
-            .sorted()
-            .toArray());
+        Stream.of("default_catalog", catalogName).sorted().toArray());
   }
 
   @Test
@@ -155,8 +146,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             + " name STRING,"
             + " t TIMESTAMP,"
             + " PRIMARY KEY (id) NOT ENFORCED "
-            + ") PARTITIONED BY(t) "
-    );
+            + ") PARTITIONED BY(t) ");
     sql("USE  " + catalogName + "." + DB);
     sql("SHOW tables");
 
@@ -184,8 +174,7 @@ public class TestMixedCatalog extends CatalogTestBase {
                     + " compute_id as id+5 ,"
                     + " proc as PROCTIME() ,"
                     + " name STRING"
-                    + ") "
-            ));
+                    + ") "));
 
     // compute column must come after all the physical columns
     sql(
@@ -198,8 +187,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             + " ("
             + " id INT,"
             + " proc as PROCTIME() "
-            + ") "
-    );
+            + ") ");
   }
 
   @Test
@@ -223,13 +211,10 @@ public class TestMixedCatalog extends CatalogTestBase {
             + " proc as PROCTIME() ,"
             + " watermark FOR t3 AS t3 - INTERVAL '5' SECOND, "
             + " PRIMARY KEY (id) NOT ENFORCED "
-            + ") PARTITIONED BY(t) "
-    );
+            + ") PARTITIONED BY(t) ");
 
     Map<String, String> properties =
-        getMixedFormatCatalog()
-            .loadTable(TableIdentifier.of(catalogName, DB, TABLE))
-            .properties();
+        getMixedFormatCatalog().loadTable(TableIdentifier.of(catalogName, DB, TABLE)).properties();
 
     // index for compute columns
     int[] computedIndex = {1, 2, 3};
@@ -272,8 +257,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             + " compute_id as id+5 ,"
             + " proc as PROCTIME(), "
             + " PRIMARY KEY (id) NOT ENFORCED "
-            + ") PARTITIONED BY(t) "
-    );
+            + ") PARTITIONED BY(t) ");
 
     // insert values into arctic table
     insertValue();
@@ -309,8 +293,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             + " proc as PROCTIME(), "
             + " compute_id as id+5 ,"
             + " PRIMARY KEY (id) NOT ENFORCED "
-            + ") PARTITIONED BY(t) "
-    );
+            + ") PARTITIONED BY(t) ");
 
     ArcticTable amoroTable =
         getMixedFormatCatalog().loadTable(TableIdentifier.of(catalogName, DB, TABLE));
@@ -369,8 +352,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             + " name STRING,"
             + " t TIMESTAMP,"
             + " PRIMARY KEY (id) NOT ENFORCED "
-            + ") PARTITIONED BY(t) "
-    );
+            + ") PARTITIONED BY(t) ");
 
     sql(
         "INSERT INTO "
@@ -397,11 +379,10 @@ public class TestMixedCatalog extends CatalogTestBase {
     sql("DROP TABLE default_catalog.default_database." + TABLE);
   }
 
-
   @Test
   public void testDefaultCatalogDDLWithVirtualColumn() {
-    //this test only for LEGACY_MIXED_IDENTIFIER
-    if(catalogFactoryType.equals(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER)) {
+    // this test only for LEGACY_MIXED_IDENTIFIER
+    if (catalogFactoryType.equals(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER)) {
       // create arctic table with only physical columns
       sql(
           "CREATE TABLE "
@@ -609,9 +590,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             + " "
             + "SET ( 'write.metadata.delete-after-commit.enabled' = 'false')");
     Map<String, String> unKeyTableProperties =
-        getMixedFormatCatalog()
-            .loadTable(TableIdentifier.of(catalogName, DB, TABLE))
-            .properties();
+        getMixedFormatCatalog().loadTable(TableIdentifier.of(catalogName, DB, TABLE)).properties();
     Assert.assertEquals(
         unKeyTableProperties.get("write.metadata.delete-after-commit.enabled"), "false");
   }
@@ -630,8 +609,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             + " name STRING,"
             + " t TIMESTAMP,"
             + " PRIMARY KEY (id) NOT ENFORCED "
-            + ") PARTITIONED BY(t) "
-    );
+            + ") PARTITIONED BY(t) ");
     sql(
         "ALTER TABLE "
             + catalogName
@@ -662,9 +640,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             + "SET ( 'write.upsert.enabled' = 'true')");
 
     Map<String, String> keyTableProperties =
-        getMixedFormatCatalog()
-            .loadTable(TableIdentifier.of(catalogName, DB, TABLE))
-            .properties();
+        getMixedFormatCatalog().loadTable(TableIdentifier.of(catalogName, DB, TABLE)).properties();
     Assert.assertEquals(keyTableProperties.get("self-optimizing.enabled"), "true");
     Assert.assertEquals(keyTableProperties.get("self-optimizing.group"), "flink");
     Assert.assertEquals(keyTableProperties.get("write.upsert.enabled"), "true");
