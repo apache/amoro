@@ -20,10 +20,15 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.CommonUnifiedCatalog;
+import com.netease.arctic.FormatCatalog;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.formats.mixed.MixedCatalog;
+import com.netease.arctic.hive.CachedHiveClientPool;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
@@ -43,6 +48,7 @@ public class ExternalCatalog extends ServerCatalog {
   TableMetaStore tableMetaStore;
   private Pattern tableFilterPattern;
   private Pattern databaseFilterPattern;
+  private HMSClientPool hiveClientPool;
 
   protected ExternalCatalog(CatalogMeta metadata) {
     super(metadata);
