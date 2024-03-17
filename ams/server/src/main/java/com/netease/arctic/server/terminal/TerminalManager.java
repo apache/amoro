@@ -239,7 +239,7 @@ public class TerminalManager {
     String catalogType = catalogMeta.getCatalogType();
     String tableFormats =
         catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
-    String[] tableFormatList = tableFormats.split(",");
+    Set<TableFormat> tableFormatSet = ArcticCatalogUtil.tableFormats(catalogMeta);
 
     if (catalogType.equalsIgnoreCase(CatalogType.AMS.name())) {
       if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_ICEBERG.name())) {
@@ -249,7 +249,7 @@ public class TerminalManager {
       }
     } else if (catalogType.equalsIgnoreCase(CatalogType.HIVE.name())
         || catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())) {
-      if (tableFormatList.length > 1) {
+      if (tableFormatSet.size() > 1) {
         return "unified";
       } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_HIVE.name())
           || StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_ICEBERG.name())) {

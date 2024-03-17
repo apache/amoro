@@ -18,16 +18,19 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+
 import com.netease.arctic.Constants;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.ExternalCatalog;
 import com.netease.arctic.server.catalog.MixedHiveCatalogImpl;
 import com.netease.arctic.server.catalog.ServerCatalog;
@@ -159,7 +162,10 @@ public class TableController {
       hmsClientPool = mixedHiveCatalog.getHiveClient();
     } else if (serverCatalog instanceof ExternalCatalog) {
       ExternalCatalog externalCatalog = (ExternalCatalog) serverCatalog;
-      hmsClientPool = externalCatalog.getHMSClientPool();
+      hmsClientPool =
+          new CachedHiveClientPool(
+              externalCatalog.getTableMetaStore(),
+              externalCatalog.getMetadata().getCatalogProperties());
     }
     Preconditions.checkArgument(
         hmsClientPool != null,
@@ -204,10 +210,17 @@ public class TableController {
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     ArcticHiveCatalog arcticHiveCatalog = null;
     if (serverCatalog instanceof ExternalCatalog) {
-      ArcticCatalog arcticCatalog = ((ExternalCatalog) serverCatalog).getArcticCatalog();
-      if (arcticCatalog instanceof ArcticHiveCatalog) {
-        arcticHiveCatalog = (ArcticHiveCatalog) arcticCatalog;
-      }
+      // todo: we may need to check whether the catalog supports mixed-hive table format
+      // we need to create a ArcticHiveCatalog with mixed hive table format.
+      Map<String, String> catalogProperties = serverCatalog.getMetadata().getCatalogProperties();
+      catalogProperties.put(CatalogMetaProperties.TABLE_FORMATS, TableFormat.MIXED_HIVE.name());
+      arcticHiveCatalog =
+          (ArcticHiveCatalog)
+              CatalogLoader.createCatalog(
+                  catalog,
+                  serverCatalog.getMetadata().getCatalogType(),
+                  catalogProperties,
+                  ((ExternalCatalog) serverCatalog).getTableMetaStore());
     } else {
       arcticHiveCatalog =
           (ArcticHiveCatalog)
@@ -514,13 +527,17 @@ public class TableController {
                 })
             .collect(Collectors.toList());
     String catalogType = serverCatalog.getMetadata().getCatalogType();
-    if (serverCatalog instanceof MixedHiveCatalogImpl || catalogType.equals("hive")) {
+    if (catalogType.equals(CATALOG_TYPE_HIVE)) {
       HMSClientPool hmsClientPool = null;
       if (serverCatalog instanceof MixedHiveCatalogImpl) {
         hmsClientPool = ((MixedHiveCatalogImpl) serverCatalog).getHiveClient();
       } else {
-        hmsClientPool = ((ExternalCatalog) serverCatalog).getHMSClientPool();
+        hmsClientPool =
+            new CachedHiveClientPool(
+                ((ExternalCatalog) serverCatalog).getTableMetaStore(),
+                serverCatalog.getMetadata().catalogProperties);
       }
+
       if (hmsClientPool != null) {
         List<String> hiveTables = HiveTableUtil.getAllHiveTables(hmsClientPool, db);
         Set<String> arcticTables =
