@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.optimizing;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.api.OptimizerProperties;
 import com.netease.arctic.api.OptimizingTaskId;
@@ -37,6 +38,7 @@ import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
+import com.netease.arctic.server.utils.TimeoutUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
@@ -62,6 +64,8 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -87,6 +91,7 @@ public class OptimizingQueue extends PersistentBase {
   private final int maxPlanningParallelism;
   private final OptimizerGroupMetrics metrics;
   private ResourceGroup optimizerGroup;
+  private final ExecutorService asyncPersistExecutors;
 
   public OptimizingQueue(
       TableManager tableManager,
@@ -107,6 +112,11 @@ public class OptimizingQueue extends PersistentBase {
             optimizerGroup.getName(), MetricManager.getInstance().getGlobalRegistry(), this);
     this.metrics.register();
     tableRuntimeMetaList.forEach(this::initTableRuntime);
+    this.asyncPersistExecutors =
+        Executors.newCachedThreadPool(
+            new ThreadFactoryBuilder()
+                .setNameFormat("async-persist-executors-" + optimizerGroup.getName())
+                .build());
   }
 
   private void initTableRuntime(TableRuntimeMeta tableRuntimeMeta) {
@@ -626,7 +636,13 @@ public class OptimizingQueue extends PersistentBase {
     private void persistProcessCompleted(boolean success) {
       if (!success) {
         doAsTransaction(
-            () -> taskMap.values().forEach(TaskRuntime::tryCanceling),
+            () ->
+                taskMap
+                    .values()
+                    .forEach(
+                        task ->
+                            TimeoutUtils.runWithTimeout(
+                                task::tryCanceling, asyncPersistExecutors, 10, TimeUnit.SECONDS)),
             () ->
                 doAs(
                     OptimizingMapper.class,

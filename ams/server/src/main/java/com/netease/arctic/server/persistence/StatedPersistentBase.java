@@ -45,7 +45,7 @@ public abstract class StatedPersistentBase extends PersistentBase {
     consistentFields = getOrCreateConsistentFields();
   }
 
-  protected final void invokeConsisitency(Runnable runnable) {
+  protected final void invokeConsistency(Runnable runnable) {
     stateLock.lock();
     Map<Field, Object> states = retainStates();
     try {
@@ -58,7 +58,7 @@ public abstract class StatedPersistentBase extends PersistentBase {
     }
   }
 
-  protected final <T> T invokeConsisitency(Supplier<T> supplier) {
+  protected final <T> T invokeConsistency(Supplier<T> supplier) {
     stateLock.lock();
     Map<Field, Object> states = retainStates();
     try {
@@ -73,6 +73,44 @@ public abstract class StatedPersistentBase extends PersistentBase {
 
   protected final void invokeInStateLock(Runnable runnable) {
     stateLock.lock();
+    try {
+      runnable.run();
+    } finally {
+      stateLock.unlock();
+    }
+  }
+
+  protected final void invokeConsistencyInterruptibly(Runnable runnable)
+      throws InterruptedException {
+    stateLock.lockInterruptibly();
+    Map<Field, Object> states = retainStates();
+    try {
+      doAsTransaction(runnable);
+    } catch (Throwable throwable) {
+      restoreStates(states);
+      throw throwable;
+    } finally {
+      stateLock.unlock();
+    }
+  }
+
+  protected final <T> T invokeConsistencyInterruptibly(Supplier<T> supplier)
+      throws InterruptedException {
+    stateLock.lockInterruptibly();
+    Map<Field, Object> states = retainStates();
+    try {
+      return supplier.get();
+    } catch (Throwable throwable) {
+      restoreStates(states);
+      throw throwable;
+    } finally {
+      stateLock.unlock();
+    }
+  }
+
+  protected final void invokeInStateLockInterruptibly(Runnable runnable)
+      throws InterruptedException {
+    stateLock.lockInterruptibly();
     try {
       runnable.run();
     } finally {

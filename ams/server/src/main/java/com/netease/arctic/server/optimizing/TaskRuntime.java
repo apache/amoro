@@ -73,7 +73,7 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public void complete(OptimizerThread thread, OptimizingTaskResult result) {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           validThread(thread);
           if (result.getErrorMessage() != null) {
@@ -107,7 +107,7 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   void reset() {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           statusMachine.accept(Status.PLANNED);
           startTime = ArcticServiceConstants.INVALID_TIME;
@@ -123,7 +123,7 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public void schedule(OptimizerThread thread) {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           statusMachine.accept(Status.SCHEDULED);
           token = thread.getToken();
@@ -134,7 +134,7 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public void ack(OptimizerThread thread) {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           validThread(thread);
           statusMachine.accept(Status.ACKED);
@@ -143,16 +143,20 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   void tryCanceling() {
-    invokeConsisitency(
-        () -> {
-          if (statusMachine.tryAccepting(Status.CANCELED)) {
-            endTime = System.currentTimeMillis();
-            if (startTime != ArcticServiceConstants.INVALID_TIME) {
-              costTime += endTime - startTime;
+    try {
+      invokeConsistencyInterruptibly(
+          () -> {
+            if (statusMachine.tryAccepting(Status.CANCELED)) {
+              endTime = System.currentTimeMillis();
+              if (startTime != ArcticServiceConstants.INVALID_TIME) {
+                costTime += endTime - startTime;
+              }
+              persistTaskRuntime(this);
             }
-            persistTaskRuntime(this);
-          }
-        });
+          });
+    } catch (InterruptedException e) {
+      // ignore the interrupted cancellation
+    }
   }
 
   public TaskRuntime claimOwnership(TaskOwner owner) {
