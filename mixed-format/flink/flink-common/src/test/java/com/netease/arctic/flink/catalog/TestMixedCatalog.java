@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink.catalog;
 
-import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.flink.FlinkSchemaUtil.COMPUTED_COLUMNS;
 import static com.netease.arctic.flink.FlinkSchemaUtil.FLINK_PREFIX;
 import static com.netease.arctic.flink.FlinkSchemaUtil.WATERMARK;
@@ -59,6 +58,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,11 +71,30 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TestLegacyMixedCatalog extends CatalogTestBase {
-  private static final Logger LOG = LoggerFactory.getLogger(TestLegacyMixedCatalog.class);
+/**
+ * Test cases for mixed catalog factories, including:
+ * CatalogFactoryOptions.MIXED_ICEBERG_IDENTIFIER, CatalogFactoryOptions.MIXED_HIVE_IDENTIFIER,
+ * CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER
+ */
+@RunWith(value = Parameterized.class)
+public class TestMixedCatalog extends CatalogTestBase {
+  private String catalogName;
+  private String catalogFactoryType;
+  private static final Logger LOG = LoggerFactory.getLogger(TestMixedCatalog.class);
 
-  public TestLegacyMixedCatalog() {
+  public TestMixedCatalog(String catalogFactoryType) {
     super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG));
+    this.catalogFactoryType = catalogFactoryType;
+    this.catalogName = catalogFactoryType + "_catalog";
+  }
+
+  @Parameterized.Parameters(name = "catalogFactoryType = {0}")
+  public static Object[] parameters() {
+    return new Object[] {
+      CatalogFactoryOptions.MIXED_ICEBERG_IDENTIFIER,
+      CatalogFactoryOptions.MIXED_HIVE_IDENTIFIER,
+      CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER
+    };
   }
 
   @Rule public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -82,51 +102,41 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
 
   private static final String DB = TableTestHelper.TEST_DB_NAME;
   private static final String TABLE = TableTestHelper.TEST_TABLE_NAME;
-  private static final String CATALOG = "arcticCatalog";
   private volatile StreamExecutionEnvironment env = null;
   private volatile StreamTableEnvironment tEnv = null;
 
   @Before
   public void before() throws Exception {
     props = Maps.newHashMap();
-    props.put("type", CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER);
+    props.put("type", catalogFactoryType);
     props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
-    sql("CREATE CATALOG " + CATALOG + " WITH %s", toWithClause(props));
-    sql("USE CATALOG " + CATALOG);
-    sql("CREATE DATABASE " + CATALOG + "." + DB);
+    sql("CREATE CATALOG " + catalogName + " WITH %s", toWithClause(props));
+    sql("USE CATALOG " + catalogName);
+    sql("CREATE DATABASE " + catalogName + "." + DB);
   }
 
   @After
   public void after() {
-    sql("DROP TABLE IF EXISTS " + CATALOG + "." + DB + "." + TABLE);
-    sql("DROP DATABASE IF EXISTS " + CATALOG + "." + DB);
+    sql("DROP TABLE IF EXISTS " + catalogName + "." + DB + "." + TABLE);
+    sql("DROP DATABASE IF EXISTS " + catalogName + "." + DB);
     Assert.assertTrue(CollectionUtil.isNullOrEmpty(getMixedFormatCatalog().listDatabases()));
     sql("USE CATALOG default_catalog");
-    sql("DROP CATALOG " + CATALOG);
+    sql("DROP CATALOG " + catalogName);
   }
 
   @Test
-  public void testCreateIcebergHiveCatalog() {
-    sql(
-        "CREATE CATALOG mixed_iceberg_catalog WITH ('type'='mixed_iceberg', 'metastore.url'='%s')",
-        getCatalogUrl());
-    sql(
-        "CREATE CATALOG mixed_hive_catalog WITH ('type'='mixed_hive', 'metastore.url'='%s')",
-        getCatalogUrl());
-
+  public void testMixedCatalog() {
     String[] catalogs = getTableEnv().listCatalogs();
     Assert.assertArrayEquals(
         Arrays.stream(catalogs).sorted().toArray(),
-        Stream.of("default_catalog", "arcticCatalog", "mixed_iceberg_catalog", "mixed_hive_catalog")
-            .sorted()
-            .toArray());
+        Stream.of("default_catalog", catalogName).sorted().toArray());
   }
 
   @Test
-  public void testDDL() throws IOException {
+  public void testDDL() {
     sql(
         "CREATE TABLE "
-            + CATALOG
+            + catalogName
             + "."
             + DB
             + "."
@@ -136,16 +146,13 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
             + " name STRING,"
             + " t TIMESTAMP,"
             + " PRIMARY KEY (id) NOT ENFORCED "
-            + ") PARTITIONED BY(t) "
-            + " WITH ("
-            + " 'connector' = 'arctic'"
-            + ")");
-    sql("USE  arcticCatalog." + DB);
+            + ") PARTITIONED BY(t) ");
+    sql("USE  " + catalogName + "." + DB);
     sql("SHOW tables");
 
     Assert.assertTrue(
         getMixedFormatCatalog()
-            .loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE))
+            .loadTable(TableIdentifier.of(catalogName, DB, TABLE))
             .isKeyedTable());
   }
 
@@ -157,7 +164,7 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
         () ->
             sql(
                 "CREATE TABLE "
-                    + CATALOG
+                    + catalogName
                     + "."
                     + DB
                     + "."
@@ -167,15 +174,12 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
                     + " compute_id as id+5 ,"
                     + " proc as PROCTIME() ,"
                     + " name STRING"
-                    + ") "
-                    + " WITH ("
-                    + " 'connector' = 'arctic'"
-                    + ")"));
+                    + ") "));
 
     // compute column must come after all the physical columns
     sql(
         "CREATE TABLE "
-            + CATALOG
+            + catalogName
             + "."
             + DB
             + "."
@@ -183,10 +187,7 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
             + " ("
             + " id INT,"
             + " proc as PROCTIME() "
-            + ") "
-            + " WITH ("
-            + " 'connector' = 'arctic'"
-            + ")");
+            + ") ");
   }
 
   @Test
@@ -196,7 +197,7 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
     // datatype manually
     sql(
         "CREATE TABLE "
-            + CATALOG
+            + catalogName
             + "."
             + DB
             + "."
@@ -210,15 +211,10 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
             + " proc as PROCTIME() ,"
             + " watermark FOR t3 AS t3 - INTERVAL '5' SECOND, "
             + " PRIMARY KEY (id) NOT ENFORCED "
-            + ") PARTITIONED BY(t) "
-            + " WITH ("
-            + " 'connector' = 'arctic'"
-            + ")");
+            + ") PARTITIONED BY(t) ");
 
     Map<String, String> properties =
-        getMixedFormatCatalog()
-            .loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE))
-            .properties();
+        getMixedFormatCatalog().loadTable(TableIdentifier.of(catalogName, DB, TABLE)).properties();
 
     // index for compute columns
     int[] computedIndex = {1, 2, 3};
@@ -241,7 +237,7 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
     Assert.assertTrue(
         properties.containsKey(compoundKey(FLINK_PREFIX, WATERMARK, WATERMARK_STRATEGY_DATA_TYPE)));
 
-    List<Row> result = sql("DESC " + CATALOG + "." + DB + "." + TABLE + "");
+    List<Row> result = sql("DESC " + catalogName + "." + DB + "." + TABLE + "");
     Assert.assertEquals(6, result.size());
   }
 
@@ -250,7 +246,7 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
     // create arctic table with compute columns under arctic catalog
     sql(
         "CREATE TABLE "
-            + CATALOG
+            + catalogName
             + "."
             + DB
             + "."
@@ -261,10 +257,7 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
             + " compute_id as id+5 ,"
             + " proc as PROCTIME(), "
             + " PRIMARY KEY (id) NOT ENFORCED "
-            + ") PARTITIONED BY(t) "
-            + " WITH ("
-            + " 'connector' = 'arctic'"
-            + ")");
+            + ") PARTITIONED BY(t) ");
 
     // insert values into arctic table
     insertValue();
@@ -273,7 +266,7 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
     List<Row> rows =
         sql(
             "SELECT * FROM "
-                + CATALOG
+                + catalogName
                 + "."
                 + DB
                 + "."
@@ -289,7 +282,7 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
     // create arctic table with compute columns under arctic catalog
     sql(
         "CREATE TABLE "
-            + CATALOG
+            + catalogName
             + "."
             + DB
             + "."
@@ -300,13 +293,10 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
             + " proc as PROCTIME(), "
             + " compute_id as id+5 ,"
             + " PRIMARY KEY (id) NOT ENFORCED "
-            + ") PARTITIONED BY(t) "
-            + " WITH ("
-            + " 'connector' = 'arctic'"
-            + ")");
+            + ") PARTITIONED BY(t) ");
 
     ArcticTable amoroTable =
-        getMixedFormatCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE));
+        getMixedFormatCatalog().loadTable(TableIdentifier.of(catalogName, DB, TABLE));
     String beforeExpr =
         amoroTable.properties().get(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, 2, EXPR));
     // change property "flink.computed-column.2.expr" from "`id` +5" to "`newId` +5"
@@ -322,15 +312,15 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
 
     // property for expr do not match any columns in amoro, will throw exception.
     Assert.assertThrows(
-        java.lang.IllegalStateException.class,
-        () -> sql("DESC " + CATALOG + "." + DB + "." + TABLE + ""));
+        IllegalStateException.class,
+        () -> sql("DESC " + catalogName + "." + DB + "." + TABLE + ""));
     amoroTable
         .updateProperties()
         .set(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, 2, EXPR), beforeExpr)
         .commit();
 
     // can get table normally
-    sql("DESC " + CATALOG + "." + DB + "." + TABLE + "");
+    sql("DESC " + catalogName + "." + DB + "." + TABLE + "");
   }
 
   @Test
@@ -352,7 +342,7 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
             + ")");
     sql(
         "CREATE TABLE "
-            + CATALOG
+            + catalogName
             + "."
             + DB
             + "."
@@ -362,14 +352,11 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
             + " name STRING,"
             + " t TIMESTAMP,"
             + " PRIMARY KEY (id) NOT ENFORCED "
-            + ") PARTITIONED BY(t) "
-            + " WITH ("
-            + " 'connector' = 'arctic'"
-            + ")");
+            + ") PARTITIONED BY(t) ");
 
     sql(
         "INSERT INTO "
-            + CATALOG
+            + catalogName
             + "."
             + DB
             + "."
@@ -379,7 +366,7 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
     List<Row> rows =
         sql(
             "SELECT * FROM "
-                + CATALOG
+                + catalogName
                 + "."
                 + DB
                 + "."
@@ -394,57 +381,59 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
 
   @Test
   public void testDefaultCatalogDDLWithVirtualColumn() {
+    // this test only for LEGACY_MIXED_IDENTIFIER
+    if (catalogFactoryType.equals(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER)) {
+      // create arctic table with only physical columns
+      sql(
+          "CREATE TABLE "
+              + catalogName
+              + "."
+              + DB
+              + "."
+              + TABLE
+              + " ("
+              + " id INT,"
+              + " t TIMESTAMP(6),"
+              + " PRIMARY KEY (id) NOT ENFORCED "
+              + ") PARTITIONED BY(t) "
+              + " WITH ("
+              + " 'connector' = 'arctic'"
+              + ")");
 
-    // create arctic table with only physical columns
-    sql(
-        "CREATE TABLE "
-            + CATALOG
-            + "."
-            + DB
-            + "."
-            + TABLE
-            + " ("
-            + " id INT,"
-            + " t TIMESTAMP(6),"
-            + " PRIMARY KEY (id) NOT ENFORCED "
-            + ") PARTITIONED BY(t) "
-            + " WITH ("
-            + " 'connector' = 'arctic'"
-            + ")");
+      // insert values into arctic table
+      insertValue();
 
-    // insert values into arctic table
-    insertValue();
+      // create Table with compute columns under default catalog
+      props = Maps.newHashMap();
+      props.put("connector", CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER);
+      props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
+      props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".catalog", catalogName);
+      props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".database", DB);
+      props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".table", TABLE);
 
-    // create Table with compute columns under default catalog
-    props = Maps.newHashMap();
-    props.put("connector", CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER);
-    props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
-    props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".catalog", CATALOG);
-    props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".database", DB);
-    props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".table", TABLE);
+      sql(
+          "CREATE TABLE default_catalog.default_database."
+              + TABLE
+              + " ("
+              + " id INT,"
+              + " t TIMESTAMP(6),"
+              + " compute_id as id+5 ,"
+              + " proc as PROCTIME(), "
+              + " PRIMARY KEY (id) NOT ENFORCED "
+              + ") PARTITIONED BY(t) "
+              + "WITH %s",
+          toWithClause(props));
 
-    sql(
-        "CREATE TABLE default_catalog.default_database."
-            + TABLE
-            + " ("
-            + " id INT,"
-            + " t TIMESTAMP(6),"
-            + " compute_id as id+5 ,"
-            + " proc as PROCTIME(), "
-            + " PRIMARY KEY (id) NOT ENFORCED "
-            + ") PARTITIONED BY(t) "
-            + "WITH %s",
-        toWithClause(props));
-
-    // select from arctic table with compute columns under default catalog
-    List<Row> rows =
-        sql(
-            "SELECT * FROM default_catalog.default_database."
-                + TABLE
-                + " /*+ OPTIONS("
-                + "'streaming'='false'"
-                + ") */");
-    checkRows(rows);
+      // select from arctic table with compute columns under default catalog
+      List<Row> rows =
+          sql(
+              "SELECT * FROM default_catalog.default_database."
+                  + TABLE
+                  + " /*+ OPTIONS("
+                  + "'streaming'='false'"
+                  + ") */");
+      checkRows(rows);
+    }
   }
 
   private void checkRows(List<Row> rows) {
@@ -562,7 +551,7 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
 
     sql(
         "INSERT INTO "
-            + CATALOG
+            + catalogName
             + "."
             + DB
             + "."
@@ -576,7 +565,9 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
   @Test
   public void testAlterUnKeyTable() throws Exception {
     sql(
-        "CREATE TABLE arcticCatalog."
+        "CREATE TABLE "
+            + catalogName
+            + "."
             + DB
             + "."
             + TABLE
@@ -586,21 +577,20 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
             + " t TIMESTAMP"
             + ") PARTITIONED BY(t) "
             + " WITH ("
-            + " 'connector' = 'arctic',"
             + " 'self-optimizing.enabled' = 'false'"
             + ")");
 
     sql(
-        "ALTER TABLE arcticCatalog."
+        "ALTER TABLE "
+            + catalogName
+            + "."
             + DB
             + "."
             + TABLE
             + " "
             + "SET ( 'write.metadata.delete-after-commit.enabled' = 'false')");
     Map<String, String> unKeyTableProperties =
-        getMixedFormatCatalog()
-            .loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE))
-            .properties();
+        getMixedFormatCatalog().loadTable(TableIdentifier.of(catalogName, DB, TABLE)).properties();
     Assert.assertEquals(
         unKeyTableProperties.get("write.metadata.delete-after-commit.enabled"), "false");
   }
@@ -608,7 +598,9 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
   @Test
   public void testAlterKeyTable() throws Exception {
     sql(
-        "CREATE TABLE arcticCatalog."
+        "CREATE TABLE "
+            + catalogName
+            + "."
             + DB
             + "."
             + TABLE
@@ -617,19 +609,20 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
             + " name STRING,"
             + " t TIMESTAMP,"
             + " PRIMARY KEY (id) NOT ENFORCED "
-            + ") PARTITIONED BY(t) "
-            + " WITH ("
-            + " 'connector' = 'arctic'"
-            + ")");
+            + ") PARTITIONED BY(t) ");
     sql(
-        "ALTER TABLE arcticCatalog."
+        "ALTER TABLE "
+            + catalogName
+            + "."
             + DB
             + "."
             + TABLE
             + " "
             + "SET ( 'self-optimizing.group' = 'flink')");
     sql(
-        "ALTER TABLE arcticCatalog."
+        "ALTER TABLE "
+            + catalogName
+            + "."
             + DB
             + "."
             + TABLE
@@ -637,7 +630,9 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
             + "SET ( 'self-optimizing.enabled' = 'true')");
 
     sql(
-        "ALTER TABLE arcticCatalog."
+        "ALTER TABLE "
+            + catalogName
+            + "."
             + DB
             + "."
             + TABLE
@@ -645,9 +640,7 @@ public class TestLegacyMixedCatalog extends CatalogTestBase {
             + "SET ( 'write.upsert.enabled' = 'true')");
 
     Map<String, String> keyTableProperties =
-        getMixedFormatCatalog()
-            .loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE))
-            .properties();
+        getMixedFormatCatalog().loadTable(TableIdentifier.of(catalogName, DB, TABLE)).properties();
     Assert.assertEquals(keyTableProperties.get("self-optimizing.enabled"), "true");
     Assert.assertEquals(keyTableProperties.get("self-optimizing.group"), "flink");
     Assert.assertEquals(keyTableProperties.get("write.upsert.enabled"), "true");
