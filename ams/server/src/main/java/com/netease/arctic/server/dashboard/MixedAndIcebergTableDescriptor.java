@@ -347,10 +347,10 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         arcticTable.isKeyedTable()
                             ? arcticTable.spec().partitionToPath(f.partition())
                             : arcticTable
-                            .asUnkeyedTable()
-                            .specs()
-                            .get(f.specId())
-                            .partitionToPath(f.partition()),
+                                .asUnkeyedTable()
+                                .specs()
+                                .get(f.specId())
+                                .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),
                         "remove")));
@@ -366,10 +366,10 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         arcticTable.isKeyedTable()
                             ? arcticTable.spec().partitionToPath(f.partition())
                             : arcticTable
-                            .asUnkeyedTable()
-                            .specs()
-                            .get(f.specId())
-                            .partitionToPath(f.partition()),
+                                .asUnkeyedTable()
+                                .specs()
+                                .get(f.specId())
+                                .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),
                         "add")));
@@ -385,10 +385,10 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         arcticTable.isKeyedTable()
                             ? arcticTable.spec().partitionToPath(f.partition())
                             : arcticTable
-                            .asUnkeyedTable()
-                            .specs()
-                            .get(f.specId())
-                            .partitionToPath(f.partition()),
+                                .asUnkeyedTable()
+                                .specs()
+                                .get(f.specId())
+                                .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),
                         "remove")));
