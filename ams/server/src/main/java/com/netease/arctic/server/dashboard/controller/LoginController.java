@@ -27,9 +27,7 @@ import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.Serializable;
 
-/**
- * The controller that handles login requests.
- */
+/** The controller that handles login requests. */
 public class LoginController {
 
   private final String adminUser;
@@ -40,17 +38,13 @@ public class LoginController {
     adminPassword = serviceConfig.get(ArcticManagementConf.ADMIN_PASSWORD);
   }
 
-  /**
-   * Get current user.
-   */
+  /** Get current user. */
   public void getCurrent(Context ctx) {
     SessionInfo user = ctx.sessionAttribute("user");
     ctx.json(OkResponse.of(user));
   }
 
-  /**
-   * handle login post request.
-   */
+  /** handle login post request. */
   public void login(Context ctx) {
     // ok
     JsonNode postBody = ctx.bodyAsClass(JsonNode.class);
@@ -64,9 +58,7 @@ public class LoginController {
     }
   }
 
-  /**
-   * handle logout post request.
-   */
+  /** handle logout post request. */
   public void logout(Context ctx) {
     ctx.removeCookie("JSESSIONID");
     ctx.json(OkResponse.ok());
