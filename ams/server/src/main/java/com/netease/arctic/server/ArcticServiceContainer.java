@@ -387,7 +387,6 @@ public class ArcticServiceContainer {
       initContainerConfig();
     }
 
-    @SuppressWarnings("unchecked")
     private void initServiceConfig(Map<String, Object> envConfig) throws IOException {
       LOG.info("initializing service configuration...");
       String configPath = Environments.getConfigPath() + "/" + SERVER_CONFIG_FILENAME;
@@ -499,7 +498,6 @@ public class ArcticServiceContainer {
           SystemProperties.WORKER_THREAD_POOL_SIZE_PROP, String.valueOf(workerThreadPoolSize));
     }
 
-    @SuppressWarnings("unchecked")
     private void initContainerConfig() {
       LOG.info("initializing container configuration...");
       JsonNode containers = yamlConfig.get(ArcticManagementConf.CONTAINER_LIST);

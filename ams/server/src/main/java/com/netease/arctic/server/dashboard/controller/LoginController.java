@@ -18,15 +18,18 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.utils.Configurations;
+import com.netease.arctic.utils.JacksonUtils;
 import io.javalin.http.Context;
+import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.Serializable;
 
-/** The controller that handles login requests. */
+/**
+ * The controller that handles login requests.
+ */
 public class LoginController {
 
   private final String adminUser;
@@ -37,26 +40,33 @@ public class LoginController {
     adminPassword = serviceConfig.get(ArcticManagementConf.ADMIN_PASSWORD);
   }
 
-  /** Get current user. */
+  /**
+   * Get current user.
+   */
   public void getCurrent(Context ctx) {
     SessionInfo user = ctx.sessionAttribute("user");
     ctx.json(OkResponse.of(user));
   }
 
-  /** handle login post request. */
+  /**
+   * handle login post request.
+   */
   public void login(Context ctx) {
     // ok
     JsonNode postBody = ctx.bodyAsClass(JsonNode.class);
-    if (adminUser.equals(postBody.get("user"))
-        && (adminPassword.equals(postBody.get("password")))) {
+    String user = JacksonUtils.getString(postBody, "user");
+    String pwd = JacksonUtils.getString(postBody, "password");
+    if (adminUser.equals(user) && (adminPassword.equals(pwd))) {
       ctx.sessionAttribute("user", new SessionInfo(adminUser, System.currentTimeMillis() + ""));
       ctx.json(OkResponse.of("success"));
     } else {
-      throw new RuntimeException("bad user " + postBody.get("user") + " or password!");
+      throw new RuntimeException("bad user " + user + " or password!");
     }
   }
 
-  /** handle logout post request. */
+  /**
+   * handle logout post request.
+   */
   public void logout(Context ctx) {
     ctx.removeCookie("JSESSIONID");
     ctx.json(OkResponse.ok());

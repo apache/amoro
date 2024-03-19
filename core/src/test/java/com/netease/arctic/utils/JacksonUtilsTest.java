@@ -18,179 +18,179 @@
 
 package com.netease.arctic.utils;
 
-import static org.junit.Assert.*;
-
 import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 
 public class JacksonUtilsTest {
 
-  @Test
-  public void jacksonTest() {
+    @Test
+    public void jacksonTest() {
 
-    JsonTestBean testObject = new JsonTestBean();
-    testObject.setBoolValue(true);
-    testObject.setIntValue(3);
-    testObject.setStringValue("abcd");
-    Map<String, String> map = new HashMap<>();
-    map.put("a", "b");
-    testObject.setMapValue(map);
+        JsonTestBean testObject = new JsonTestBean();
+        testObject.setBoolValue(true);
+        testObject.setIntValue(3);
+        testObject.setStringValue("abcd");
+        Map<String, String> map = new HashMap<>();
+        map.put("a", "b");
+        testObject.setMapValue(map);
 
-    String jasonString = JacksonUtils.toJSONString(testObject);
+        String jasonString = JacksonUtils.toJSONString(testObject);
 
-    String expectedValue =
-        "{\"stringValue\":\"abcd\",\"intValue\":3,\"boolValue\":true,\"mapValue\":{\"a\":\"b\"}}";
-    assertEquals(expectedValue, jasonString);
+        String expectedValue =
+                "{\"stringValue\":\"abcd\",\"intValue\":3,\"boolValue\":true,\"mapValue\":{\"a\":\"b\"}}";
+        assertEquals(expectedValue, jasonString);
 
-    JsonTestBean objReadFromJson = JacksonUtils.parseObject(jasonString, JsonTestBean.class);
-    assertEquals(testObject, objReadFromJson);
+        JsonTestBean objReadFromJson = JacksonUtils.parseObject(jasonString, JsonTestBean.class);
+        assertEquals(testObject, objReadFromJson);
 
-    JsonNode jsonNode = JacksonUtils.fromObjects(objReadFromJson);
+        JsonNode jsonNode = JacksonUtils.fromObjects(objReadFromJson);
 
-    Integer expectedInt = 3;
-    assertEquals(expectedInt, JacksonUtils.getInteger(jsonNode, "intValue"));
-    // return null if key does not exist
-    assertNull(JacksonUtils.getInteger(jsonNode, "NoIntValue"));
+        Integer expectedInt = 3;
+        assertEquals(expectedInt, JacksonUtils.getInteger(jsonNode, "intValue"));
+        // return null if key does not exist
+        assertNull(JacksonUtils.getInteger(jsonNode, "NoIntValue"));
 
-    String expectedString = "abcd";
-    assertEquals(expectedString, JacksonUtils.getString(jsonNode, "stringValue"));
-    // return null if key does not exist
-    assertNull(JacksonUtils.getString(jsonNode, "NoStringValue"));
-    // return default value if key does not exist, and default value passed
-    assertEquals("DefaultValue", JacksonUtils.getString(jsonNode, "NoStringValue", "DefaultValue"));
+        String expectedString = "abcd";
+        assertEquals(expectedString, JacksonUtils.getString(jsonNode, "stringValue"));
+        // return null if key does not exist
+        assertNull(JacksonUtils.getString(jsonNode, "NoStringValue"));
+        // return default value if key does not exist, and default value passed
+        assertEquals("DefaultValue", JacksonUtils.getString(jsonNode, "NoStringValue", "DefaultValue"));
 
-    assertTrue(JacksonUtils.getBoolean(jsonNode, "boolValue"));
-    // returns false if key does not exist
-    assertFalse(JacksonUtils.getBoolean(jsonNode, "NboolValue"));
-    assertTrue(JacksonUtils.getBoolean(jsonNode, "NboolValue", true));
+        assertTrue(JacksonUtils.getBoolean(jsonNode, "boolValue"));
+        // returns false if key does not exist
+        assertFalse(JacksonUtils.getBoolean(jsonNode, "NboolValue"));
+        assertTrue(JacksonUtils.getBoolean(jsonNode, "NboolValue", true));
 
-    Map<String, Object> yamlMap = new HashMap<>();
-    Map<String, Object> amsNode = new HashMap<>();
-    amsNode.put("arctic.ams.server-host.prefix", "127.");
-    amsNode.put("arctic.ams.thrift.port", 1260);
-    amsNode.put("arctic.ams.http.port", 1630);
-    amsNode.put("arctic.ams.optimize.check.thread.pool-size", 10);
-    amsNode.put("arctic.ams.optimize.commit.thread.pool-size", 10);
-    amsNode.put("arctic.ams.expire.thread.pool-size", 10);
-    amsNode.put("arctic.ams.orphan.clean.thread.pool-size", 10);
-    amsNode.put("arctic.ams.file.sync.thread.pool-size", 10);
-    amsNode.put(
-        "arctic.ams.mybatis.ConnectionDriverClassName", "org.apache.derby.jdbc.EmbeddedDriver");
-    amsNode.put("arctic.ams.mybatis.ConnectionURL", "jdbc:derby:/tmp/arctic/derby;create=true");
-    amsNode.put("arctic.ams.database.type", "derby");
-    amsNode.put("arctic.ams.ha.enabled", true);
-    yamlMap.put("ams", amsNode);
+        Map<String, Object> yamlMap = new HashMap<>();
+        Map<String, Object> amsNode = new HashMap<>();
+        amsNode.put("admin-username", "admin");
+        amsNode.put("admin-password", "admin");
+        amsNode.put("server-bind-host", "0.0.0.0");
+        amsNode.put("server-expose-host", "127.0.0.1");
 
-    yamlMap.put("extension_properties", null);
+        yamlMap.put("ams", amsNode);
 
-    List<Map<String, Object>> containersList = new ArrayList<>();
-    Map<String, Object> localContainer = new HashMap<>();
-    localContainer.put("name", "localContainer");
-    localContainer.put("type", "local");
-    localContainer.put("properties", Collections.singletonMap("hadoop_home", "/opt/hadoop"));
+        Map<String, Object> expireSnapshots = new HashMap<>();
+        expireSnapshots.put("enabled", true);
+        expireSnapshots.put("thread-count", 10);
+        yamlMap.put("expire-snapshots", expireSnapshots);
 
-    containersList.add(localContainer);
+        List<Map<String, Object>> containersList = new ArrayList<>();
+        Map<String, Object> localContainer = new HashMap<>();
+        localContainer.put("name", "localContainer");
+        localContainer.put("type", "local");
+        localContainer.put("properties", Collections.singletonMap("hadoop_home", "/opt/hadoop"));
 
-    Map<String, Object> flinkContainer = new HashMap<>();
-    flinkContainer.put("name", "flinkContainer");
-    flinkContainer.put("type", "flink");
-    Map<String, String> pro = new HashMap<>();
-    pro.put("FLINK_HOME", "/opt/flink/");
-    pro.put("HADOOP_CONF_DIR", "/etc/hadoop/conf/");
-    pro.put("HADOOP_USER_NAME", "hadoop");
-    pro.put("JVM_ARGS", "-Djava.security.krb5.conf=/opt/krb5.conf");
-    pro.put("FLINK_CONF_DIR", "/etc/hadoop/conf/");
-    flinkContainer.put("properties", pro);
-    containersList.add(flinkContainer);
+        containersList.add(localContainer);
 
-    yamlMap.put("containers", containersList);
+        Map<String, Object> flinkContainer = new HashMap<>();
+        flinkContainer.put("name", "flinkContainer");
+        flinkContainer.put("type", "flink");
+        Map<String, String> pro = new HashMap<>();
+        pro.put("FLINK_HOME", "/opt/flink/");
+        pro.put("HADOOP_CONF_DIR", "/etc/hadoop/conf/");
+        pro.put("HADOOP_USER_NAME", "hadoop");
+        pro.put("JVM_ARGS", "-Djava.security.krb5.conf=/opt/krb5.conf");
+        pro.put("FLINK_CONF_DIR", "/etc/hadoop/conf/");
+        flinkContainer.put("properties", pro);
+        containersList.add(flinkContainer);
 
-    JsonNode yamlNode = JacksonUtils.fromObjects(yamlMap);
+        yamlMap.put("containers", containersList);
 
-    Integer expectedPort = 1260;
-    JsonNode systemNode = yamlNode.get("ams");
-    assertEquals(expectedPort, JacksonUtils.getInteger(systemNode, "arctic.ams.thrift.port"));
-    assertEquals(
-        "jdbc:derby:/tmp/arctic/derby;create=true",
-        JacksonUtils.getString(systemNode, "arctic.ams.mybatis.ConnectionURL"));
-    assertTrue(JacksonUtils.getBoolean(systemNode, "arctic.ams.ha.enabled"));
+        JsonNode yamlNode = JacksonUtils.fromObjects(yamlMap);
 
-    JsonNode containersNode = yamlNode.get("containers");
-    assertEquals(2, containersNode.size());
-    JsonNode secondNode = containersNode.get(1);
-    assertEquals("flink", JacksonUtils.getString(secondNode, "type"));
-    assertEquals("flinkContainer", JacksonUtils.getString(secondNode, "name"));
-    JsonNode propertyiesNode = secondNode.get("properties");
-    assertEquals(5, propertyiesNode.size());
+        JsonNode expiredSnapshots = yamlNode.get("expire-snapshots");
+        assertTrue(JacksonUtils.getBoolean(expiredSnapshots, "enabled"));
+        Integer expectedThreadCount = 10;
+        assertEquals(expectedThreadCount, JacksonUtils.getInteger(expiredSnapshots, "thread-count"));
+        JsonNode containersNode = yamlNode.get("containers");
+        assertEquals(2, containersNode.size());
+        JsonNode secondNode = containersNode.get(1);
+        assertEquals("flink", JacksonUtils.getString(secondNode, "type"));
+        assertEquals("flinkContainer", JacksonUtils.getString(secondNode, "name"));
+        JsonNode propertyiesNode = secondNode.get("properties");
+        assertEquals(5, propertyiesNode.size());
 
-    assertEquals("/opt/flink/", JacksonUtils.getString(propertyiesNode, "FLINK_HOME"));
-    assertEquals("/etc/hadoop/conf/", JacksonUtils.getString(propertyiesNode, "HADOOP_CONF_DIR"));
-    assertEquals("hadoop", JacksonUtils.getString(propertyiesNode, "HADOOP_USER_NAME"));
-    assertEquals(
-        "-Djava.security.krb5.conf=/opt/krb5.conf",
-        JacksonUtils.getString(propertyiesNode, "JVM_ARGS"));
-    assertEquals("/etc/hadoop/conf/", JacksonUtils.getString(propertyiesNode, "FLINK_CONF_DIR"));
-  }
-
-  static class JsonTestBean {
-
-    private String stringValue;
-
-    private Integer intValue;
-
-    private Boolean boolValue;
-
-    private Map<String, String> mapValue;
-
-    public String getStringValue() {
-      return stringValue;
+        assertEquals("/opt/flink/", JacksonUtils.getString(propertyiesNode, "FLINK_HOME"));
+        assertEquals("/etc/hadoop/conf/", JacksonUtils.getString(propertyiesNode, "HADOOP_CONF_DIR"));
+        assertEquals("hadoop", JacksonUtils.getString(propertyiesNode, "HADOOP_USER_NAME"));
+        assertEquals(
+                "-Djava.security.krb5.conf=/opt/krb5.conf",
+                JacksonUtils.getString(propertyiesNode, "JVM_ARGS"));
+        assertEquals("/etc/hadoop/conf/", JacksonUtils.getString(propertyiesNode, "FLINK_CONF_DIR"));
     }
 
-    public void setStringValue(String stringValue) {
-      this.stringValue = stringValue;
+    static class JsonTestBean {
+
+        private String stringValue;
+
+        private Integer intValue;
+
+        private Boolean boolValue;
+
+        private Map<String, String> mapValue;
+
+        public String getStringValue() {
+            return stringValue;
+        }
+
+        public void setStringValue(String stringValue) {
+            this.stringValue = stringValue;
+        }
+
+        public Integer getIntValue() {
+            return intValue;
+        }
+
+        public void setIntValue(Integer intValue) {
+            this.intValue = intValue;
+        }
+
+        public Boolean getBoolValue() {
+            return boolValue;
+        }
+
+        public void setBoolValue(Boolean boolValue) {
+            this.boolValue = boolValue;
+        }
+
+        public Map<String, String> getMapValue() {
+            return mapValue;
+        }
+
+        public void setMapValue(Map<String, String> mapValue) {
+            this.mapValue = mapValue;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+
+            if (!(obj instanceof JsonTestBean)) {
+                return false;
+            }
+
+            JsonTestBean that = (JsonTestBean) obj;
+            return Objects.equals(intValue, that.intValue)
+                    && Objects.equals(boolValue, that.boolValue)
+                    && Objects.equals(stringValue, that.stringValue)
+                    && Objects.equals(mapValue, that.mapValue);
+        }
     }
-
-    public Integer getIntValue() {
-      return intValue;
-    }
-
-    public void setIntValue(Integer intValue) {
-      this.intValue = intValue;
-    }
-
-    public Boolean getBoolValue() {
-      return boolValue;
-    }
-
-    public void setBoolValue(Boolean boolValue) {
-      this.boolValue = boolValue;
-    }
-
-    public Map<String, String> getMapValue() {
-      return mapValue;
-    }
-
-    public void setMapValue(Map<String, String> mapValue) {
-      this.mapValue = mapValue;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == this) {
-        return true;
-      }
-
-      if (!(obj instanceof JsonTestBean)) {
-        return false;
-      }
-
-      JsonTestBean that = (JsonTestBean) obj;
-      return Objects.equals(intValue, that.intValue)
-          && Objects.equals(boolValue, that.boolValue)
-          && Objects.equals(stringValue, that.stringValue)
-          && Objects.equals(mapValue, that.mapValue);
-    }
-  }
 }
