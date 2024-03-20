@@ -567,7 +567,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
         String token, boolean isOptimizerExpired) {
       return task -> {
         if (isOptimizerExpired) {
-          return token.equals(task.getToken());
+          return TaskRuntime.Status.SUCCESS != task.getStatus() && token.equals(task.getToken());
         } else {
           return token.equals(task.getToken())
               && task.getStatus() == TaskRuntime.Status.SCHEDULED
