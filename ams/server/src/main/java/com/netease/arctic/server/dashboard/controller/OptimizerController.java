@@ -18,8 +18,6 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.base.Preconditions;
 import com.netease.arctic.api.resource.Resource;
 import com.netease.arctic.api.resource.ResourceGroup;
@@ -36,7 +34,10 @@ import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
+import com.netease.arctic.utils.JacksonUtil;
 import io.javalin.http.Context;
+import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 
 import javax.ws.rs.BadRequestException;
 
@@ -109,11 +110,11 @@ public class OptimizerController {
     }
     List<OptimizerInstance> optimizerList = new ArrayList<>(optimizers);
     optimizerList.sort(Comparator.comparingLong(OptimizerInstance::getStartTime).reversed());
-    List<JSONObject> result =
+    List<JsonNode> result =
         optimizerList.stream()
             .map(
                 e -> {
-                  JSONObject jsonObject = (JSONObject) JSON.toJSON(e);
+                  ObjectNode jsonObject = (ObjectNode) JacksonUtil.fromObjects(e);
                   jsonObject.put("jobId", e.getResourceId());
                   jsonObject.put("optimizerGroup", e.getGroupName());
                   jsonObject.put("coreNumber", e.getThreadCount());
@@ -124,13 +125,13 @@ public class OptimizerController {
                 })
             .collect(Collectors.toList());
 
-    PageResult<JSONObject> amsPageResult = PageResult.of(result, offset, pageSize);
+    PageResult<JsonNode> amsPageResult = PageResult.of(result, offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
   }
 
   /** get optimizerGroup: optimizerGroupId, optimizerGroupName url = /optimizerGroups. */
   public void getOptimizerGroups(Context ctx) {
-    List<JSONObject> result =
+    List<JsonNode> result =
         optimizerManager.listResourceGroups().stream()
             .filter(
                 resourceGroup ->
@@ -138,7 +139,8 @@ public class OptimizerController {
                         resourceGroup.getContainer()))
             .map(
                 e -> {
-                  JSONObject jsonObject = new JSONObject();
+                  ObjectNode jsonObject = JacksonUtil.createEmptyObjectNode();
+
                   jsonObject.put("optimizerGroupName", e.getName());
                   return jsonObject;
                 })
