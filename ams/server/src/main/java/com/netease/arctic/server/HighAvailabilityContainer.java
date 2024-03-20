@@ -21,7 +21,7 @@ package com.netease.arctic.server;
 import com.netease.arctic.client.AmsServerInfo;
 import com.netease.arctic.properties.AmsHAProperties;
 import com.netease.arctic.server.utils.Configurations;
-import com.netease.arctic.utils.JacksonUtils;
+import com.netease.arctic.utils.JacksonUtil;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
@@ -99,12 +99,12 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
             .setData()
             .forPath(
                 tableServiceMasterPath,
-                JacksonUtils.toJSONString(tableServiceServerInfo).getBytes(StandardCharsets.UTF_8));
+                JacksonUtil.toJSONString(tableServiceServerInfo).getBytes(StandardCharsets.UTF_8));
         zkClient
             .setData()
             .forPath(
                 optimizingServiceMasterPath,
-                JacksonUtils.toJSONString(optimizingServiceServerInfo)
+                JacksonUtil.toJSONString(optimizingServiceServerInfo)
                     .getBytes(StandardCharsets.UTF_8));
       }
     }

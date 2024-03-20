@@ -20,7 +20,7 @@ package com.netease.arctic.client;
 
 import com.netease.arctic.Constants;
 import com.netease.arctic.properties.AmsHAProperties;
-import com.netease.arctic.utils.JacksonUtils;
+import com.netease.arctic.utils.JacksonUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
@@ -194,12 +194,12 @@ public class ArcticThriftUrl {
       String serviceName, String zkServerAddress, String cluster) throws Exception {
     switch (serviceName) {
       case Constants.THRIFT_TABLE_SERVICE_NAME:
-        return JacksonUtils.parseObject(
+        return JacksonUtil.parseObject(
             ZookeeperService.getInstance(zkServerAddress)
                 .getData(AmsHAProperties.getTableServiceMasterPath(cluster)),
             AmsServerInfo.class);
       case Constants.THRIFT_OPTIMIZING_SERVICE_NAME:
-        return JacksonUtils.parseObject(
+        return JacksonUtil.parseObject(
             ZookeeperService.getInstance(zkServerAddress)
                 .getData(AmsHAProperties.getOptimizingServiceMasterPath(cluster)),
             AmsServerInfo.class);

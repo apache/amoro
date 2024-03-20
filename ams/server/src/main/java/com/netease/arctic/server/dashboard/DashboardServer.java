@@ -42,7 +42,7 @@ import com.netease.arctic.server.exception.SignatureCheckException;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.terminal.TerminalManager;
 import com.netease.arctic.server.utils.Configurations;
-import com.netease.arctic.utils.JacksonUtils;
+import com.netease.arctic.utils.JacksonUtil;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.ContentType;
 import io.javalin.http.Context;
@@ -396,7 +396,7 @@ public class DashboardServer {
     } else if (needLoginCheck(uriPath)) {
       if (null == ctx.sessionAttribute("user")) {
         ctx.sessionAttributeMap();
-        LOG.info("session info: {}", JacksonUtils.toJSONString(ctx.sessionAttributeMap()));
+        LOG.info("session info: {}", JacksonUtil.toJSONString(ctx.sessionAttributeMap()));
         throw new ForbiddenException();
       }
     }

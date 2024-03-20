@@ -22,7 +22,7 @@ import com.netease.arctic.api.ActivePlugin;
 import com.netease.arctic.server.Environments;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.LoadingPluginException;
-import com.netease.arctic.utils.JacksonUtils;
+import com.netease.arctic.utils.JacksonUtil;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
@@ -253,7 +253,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
     try {
       Object yamlObj = new Yaml().loadAs(Files.newInputStream(mangerConfigPath), Object.class);
       if (yamlObj instanceof Map) {
-        yamlConfig = JacksonUtils.fromObjects(yamlObj);
+        yamlConfig = JacksonUtil.fromObjects(yamlObj);
       }
     } catch (IOException e) {
       throw new LoadingPluginException(

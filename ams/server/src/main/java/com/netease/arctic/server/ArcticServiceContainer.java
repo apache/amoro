@@ -44,7 +44,7 @@ import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.ConfigurationUtil;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.ThriftServiceProxy;
-import com.netease.arctic.utils.JacksonUtils;
+import com.netease.arctic.utils.JacksonUtil;
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
@@ -392,10 +392,10 @@ public class ArcticServiceContainer {
       String configPath = Environments.getConfigPath() + "/" + SERVER_CONFIG_FILENAME;
       LOG.info("load config from path: {}", configPath);
       yamlConfig =
-          JacksonUtils.fromObjects(
+          JacksonUtil.fromObjects(
               new Yaml().loadAs(Files.newInputStream(Paths.get(configPath)), Map.class));
       Map<String, Object> systemConfig =
-          JacksonUtils.getMap(
+          JacksonUtil.getMap(
               yamlConfig,
               ArcticManagementConf.SYSTEM_CONFIG,
               new TypeReference<Map<String, Object>>() {});
@@ -511,7 +511,7 @@ public class ArcticServiceContainer {
 
           Map<String, String> containerProperties =
               new HashMap<>(
-                  JacksonUtils.getMap(
+                  JacksonUtil.getMap(
                       containerConfig,
                       ArcticManagementConf.CONTAINER_PROPERTIES,
                       new TypeReference<Map<String, String>>() {}));

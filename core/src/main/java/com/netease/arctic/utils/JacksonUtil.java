@@ -32,7 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /** Util class for Jackson. */
-public class JacksonUtils {
+public class JacksonUtil {
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -48,7 +48,7 @@ public class JacksonUtils {
     INDENT_OBJECT_MAPPER.configure(SerializationFeature.INDENT_OUTPUT, true);
   }
 
-  private JacksonUtils() {
+  private JacksonUtil() {
     // do nothing
   }
 

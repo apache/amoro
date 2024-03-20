@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.manager;
 
-import com.netease.arctic.utils.JacksonUtils;
+import com.netease.arctic.utils.JacksonUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.core.type.TypeReference;
@@ -47,9 +47,9 @@ public class PluginConfiguration {
     Preconditions.checkNotNull(nameNode, "plugin name is required");
     String name = nameNode.textValue();
 
-    boolean enabled = JacksonUtils.getBoolean(configOptions, ENABLED, true);
+    boolean enabled = JacksonUtil.getBoolean(configOptions, ENABLED, true);
     Map<String, String> props =
-        JacksonUtils.getMap(configOptions, PROPERTIES, new TypeReference<Map<String, String>>() {});
+        JacksonUtil.getMap(configOptions, PROPERTIES, new TypeReference<Map<String, String>>() {});
     if (props == null) {
       props = ImmutableMap.of();
     }

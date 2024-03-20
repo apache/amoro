@@ -63,6 +63,7 @@
                                     <include>com.netease.amoro:amoro-core</include>
                                     <include>com.netease.amoro:amoro-ams-api</include>
                                     <include>com.netease.amoro:amoro-mixed-format-hive</include>
+                                    <include>org.apache.paimon:paimon-shade-jackson-2</include>
                                     <include>org.apache.curator:curator-framework</include>
                                     <include>org.apache.curator:curator-client</include>
                                     <include>org.apache.curator:curator-recipes</include>

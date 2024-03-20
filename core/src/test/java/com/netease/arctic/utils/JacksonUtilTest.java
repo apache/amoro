@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class JacksonUtilsTest {
+public class JacksonUtilTest {
 
   @Test
   public void jacksonTest() {
@@ -46,33 +46,33 @@ public class JacksonUtilsTest {
     map.put("a", "b");
     testObject.setMapValue(map);
 
-    String jasonString = JacksonUtils.toJSONString(testObject);
+    String jasonString = JacksonUtil.toJSONString(testObject);
 
     String expectedValue =
         "{\"stringValue\":\"abcd\",\"intValue\":3,\"boolValue\":true,\"mapValue\":{\"a\":\"b\"}}";
     assertEquals(expectedValue, jasonString);
 
-    JsonTestBean objReadFromJson = JacksonUtils.parseObject(jasonString, JsonTestBean.class);
+    JsonTestBean objReadFromJson = JacksonUtil.parseObject(jasonString, JsonTestBean.class);
     assertEquals(testObject, objReadFromJson);
 
-    JsonNode jsonNode = JacksonUtils.fromObjects(objReadFromJson);
+    JsonNode jsonNode = JacksonUtil.fromObjects(objReadFromJson);
 
     Integer expectedInt = 3;
-    assertEquals(expectedInt, JacksonUtils.getInteger(jsonNode, "intValue"));
+    assertEquals(expectedInt, JacksonUtil.getInteger(jsonNode, "intValue"));
     // return null if key does not exist
-    assertNull(JacksonUtils.getInteger(jsonNode, "NoIntValue"));
+    assertNull(JacksonUtil.getInteger(jsonNode, "NoIntValue"));
 
     String expectedString = "abcd";
-    assertEquals(expectedString, JacksonUtils.getString(jsonNode, "stringValue"));
+    assertEquals(expectedString, JacksonUtil.getString(jsonNode, "stringValue"));
     // return null if key does not exist
-    assertNull(JacksonUtils.getString(jsonNode, "NoStringValue"));
+    assertNull(JacksonUtil.getString(jsonNode, "NoStringValue"));
     // return default value if key does not exist, and default value passed
-    assertEquals("DefaultValue", JacksonUtils.getString(jsonNode, "NoStringValue", "DefaultValue"));
+    assertEquals("DefaultValue", JacksonUtil.getString(jsonNode, "NoStringValue", "DefaultValue"));
 
-    assertTrue(JacksonUtils.getBoolean(jsonNode, "boolValue"));
+    assertTrue(JacksonUtil.getBoolean(jsonNode, "boolValue"));
     // returns false if key does not exist
-    assertFalse(JacksonUtils.getBoolean(jsonNode, "NboolValue"));
-    assertTrue(JacksonUtils.getBoolean(jsonNode, "NboolValue", true));
+    assertFalse(JacksonUtil.getBoolean(jsonNode, "NboolValue"));
+    assertTrue(JacksonUtil.getBoolean(jsonNode, "NboolValue", true));
 
     Map<String, Object> yamlMap = new HashMap<>();
     Map<String, Object> amsNode = new HashMap<>();
@@ -110,27 +110,27 @@ public class JacksonUtilsTest {
 
     yamlMap.put("containers", containersList);
 
-    JsonNode yamlNode = JacksonUtils.fromObjects(yamlMap);
+    JsonNode yamlNode = JacksonUtil.fromObjects(yamlMap);
 
     JsonNode expiredSnapshots = yamlNode.get("expire-snapshots");
-    assertTrue(JacksonUtils.getBoolean(expiredSnapshots, "enabled"));
+    assertTrue(JacksonUtil.getBoolean(expiredSnapshots, "enabled"));
     Integer expectedThreadCount = 10;
-    assertEquals(expectedThreadCount, JacksonUtils.getInteger(expiredSnapshots, "thread-count"));
+    assertEquals(expectedThreadCount, JacksonUtil.getInteger(expiredSnapshots, "thread-count"));
     JsonNode containersNode = yamlNode.get("containers");
     assertEquals(2, containersNode.size());
     JsonNode secondNode = containersNode.get(1);
-    assertEquals("flink", JacksonUtils.getString(secondNode, "type"));
-    assertEquals("flinkContainer", JacksonUtils.getString(secondNode, "name"));
+    assertEquals("flink", JacksonUtil.getString(secondNode, "type"));
+    assertEquals("flinkContainer", JacksonUtil.getString(secondNode, "name"));
     JsonNode propertyiesNode = secondNode.get("properties");
     assertEquals(5, propertyiesNode.size());
 
-    assertEquals("/opt/flink/", JacksonUtils.getString(propertyiesNode, "FLINK_HOME"));
-    assertEquals("/etc/hadoop/conf/", JacksonUtils.getString(propertyiesNode, "HADOOP_CONF_DIR"));
-    assertEquals("hadoop", JacksonUtils.getString(propertyiesNode, "HADOOP_USER_NAME"));
+    assertEquals("/opt/flink/", JacksonUtil.getString(propertyiesNode, "FLINK_HOME"));
+    assertEquals("/etc/hadoop/conf/", JacksonUtil.getString(propertyiesNode, "HADOOP_CONF_DIR"));
+    assertEquals("hadoop", JacksonUtil.getString(propertyiesNode, "HADOOP_USER_NAME"));
     assertEquals(
         "-Djava.security.krb5.conf=/opt/krb5.conf",
-        JacksonUtils.getString(propertyiesNode, "JVM_ARGS"));
-    assertEquals("/etc/hadoop/conf/", JacksonUtils.getString(propertyiesNode, "FLINK_CONF_DIR"));
+        JacksonUtil.getString(propertyiesNode, "JVM_ARGS"));
+    assertEquals("/etc/hadoop/conf/", JacksonUtil.getString(propertyiesNode, "FLINK_CONF_DIR"));
   }
 
   static class JsonTestBean {

@@ -21,7 +21,7 @@ package com.netease.arctic.server.dashboard.controller;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.utils.Configurations;
-import com.netease.arctic.utils.JacksonUtils;
+import com.netease.arctic.utils.JacksonUtil;
 import io.javalin.http.Context;
 import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 
@@ -48,8 +48,8 @@ public class LoginController {
   public void login(Context ctx) {
     // ok
     JsonNode postBody = ctx.bodyAsClass(JsonNode.class);
-    String user = JacksonUtils.getString(postBody, "user");
-    String pwd = JacksonUtils.getString(postBody, "password");
+    String user = JacksonUtil.getString(postBody, "user");
+    String pwd = JacksonUtil.getString(postBody, "password");
     if (adminUser.equals(user) && (adminPassword.equals(pwd))) {
       ctx.sessionAttribute("user", new SessionInfo(adminUser, System.currentTimeMillis() + ""));
       ctx.json(OkResponse.of("success"));
