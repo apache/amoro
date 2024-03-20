@@ -24,10 +24,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
-import com.netease.arctic.server.utils.ConfigurationUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
+import com.netease.arctic.utils.TimeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
@@ -38,7 +38,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/** TODO Use DataExpirationConfig class in API module, this class shall be removed after 0.7.0 */
+/**
+ * TODO Use {@link com.netease.arctic.api.config.DataExpirationConfig} class in API module, this
+ * class shall be removed after 0.7.0
+ */
 @Deprecated
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DataExpirationConfig {
@@ -141,14 +144,10 @@ public class DataExpirationConfig {
                 properties,
                 TableProperties.DATA_EXPIRATION_LEVEL,
                 TableProperties.DATA_EXPIRATION_LEVEL_DEFAULT));
-
-    String retention =
-        CompatiblePropertyUtil.propertyAsString(
-            properties, TableProperties.DATA_EXPIRATION_RETENTION_TIME, null);
-    if (StringUtils.isNotBlank(retention)) {
-      retentionTime = ConfigurationUtil.TimeUtils.parseDuration(retention).toMillis();
-    }
-
+    retentionTime =
+        parseDurationToMillis(
+            CompatiblePropertyUtil.propertyAsString(
+                properties, TableProperties.DATA_EXPIRATION_RETENTION_TIME, null));
     dateTimePattern =
         CompatiblePropertyUtil.propertyAsString(
             properties,
@@ -171,47 +170,55 @@ public class DataExpirationConfig {
     boolean gcEnabled =
         CompatiblePropertyUtil.propertyAsBoolean(
             properties, org.apache.iceberg.TableProperties.GC_ENABLED, true);
-    DataExpirationConfig config =
-        new DataExpirationConfig()
-            .setEnabled(
-                gcEnabled
-                    && CompatiblePropertyUtil.propertyAsBoolean(
-                        properties,
-                        TableProperties.ENABLE_DATA_EXPIRATION,
-                        TableProperties.ENABLE_DATA_EXPIRATION_DEFAULT))
-            .setExpirationLevel(
-                ExpireLevel.fromString(
-                    CompatiblePropertyUtil.propertyAsString(
-                        properties,
-                        TableProperties.DATA_EXPIRATION_LEVEL,
-                        TableProperties.DATA_EXPIRATION_LEVEL_DEFAULT)))
-            .setExpirationField(
-                CompatiblePropertyUtil.propertyAsString(
-                    properties, TableProperties.DATA_EXPIRATION_FIELD, null))
-            .setDateTimePattern(
+
+    return new DataExpirationConfig()
+        .setEnabled(
+            gcEnabled
+                && CompatiblePropertyUtil.propertyAsBoolean(
+                    properties,
+                    TableProperties.ENABLE_DATA_EXPIRATION,
+                    TableProperties.ENABLE_DATA_EXPIRATION_DEFAULT))
+        .setExpirationLevel(
+            ExpireLevel.fromString(
                 CompatiblePropertyUtil.propertyAsString(
                     properties,
-                    TableProperties.DATA_EXPIRATION_DATE_STRING_PATTERN,
-                    TableProperties.DATA_EXPIRATION_DATE_STRING_PATTERN_DEFAULT))
-            .setNumberDateFormat(
+                    TableProperties.DATA_EXPIRATION_LEVEL,
+                    TableProperties.DATA_EXPIRATION_LEVEL_DEFAULT)))
+        .setExpirationField(
+            CompatiblePropertyUtil.propertyAsString(
+                properties, TableProperties.DATA_EXPIRATION_FIELD, null))
+        .setDateTimePattern(
+            CompatiblePropertyUtil.propertyAsString(
+                properties,
+                TableProperties.DATA_EXPIRATION_DATE_STRING_PATTERN,
+                TableProperties.DATA_EXPIRATION_DATE_STRING_PATTERN_DEFAULT))
+        .setNumberDateFormat(
+            CompatiblePropertyUtil.propertyAsString(
+                properties,
+                TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT,
+                TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT))
+        .setBaseOnRule(
+            BaseOnRule.fromString(
                 CompatiblePropertyUtil.propertyAsString(
                     properties,
-                    TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT,
-                    TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT))
-            .setBaseOnRule(
-                BaseOnRule.fromString(
-                    CompatiblePropertyUtil.propertyAsString(
-                        properties,
-                        TableProperties.DATA_EXPIRATION_BASE_ON_RULE,
-                        TableProperties.DATA_EXPIRATION_BASE_ON_RULE_DEFAULT)));
-    String retention =
-        CompatiblePropertyUtil.propertyAsString(
-            properties, TableProperties.DATA_EXPIRATION_RETENTION_TIME, null);
+                    TableProperties.DATA_EXPIRATION_BASE_ON_RULE,
+                    TableProperties.DATA_EXPIRATION_BASE_ON_RULE_DEFAULT)))
+        .setRetentionTime(
+            parseDurationToMillis(
+                CompatiblePropertyUtil.propertyAsString(
+                    properties, TableProperties.DATA_EXPIRATION_RETENTION_TIME, null)));
+  }
+
+  private static long parseDurationToMillis(String retention) {
     if (StringUtils.isNotBlank(retention)) {
-      config.setRetentionTime(ConfigurationUtil.TimeUtils.parseDuration(retention).toMillis());
+      try {
+        return TimeUtils.parseDuration(retention).toMillis();
+      } catch (IllegalArgumentException e) {
+        // ignore
+      }
     }
 
-    return config;
+    return 0L;
   }
 
   public boolean isEnabled() {
