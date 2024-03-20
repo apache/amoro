@@ -148,7 +148,7 @@ object ArcticExtensionUtils {
       sparkSession: SparkSession,
       originIdentifier: TableIdentifier): (TableCatalog, Identifier) = {
     var identifier: Seq[String] = Seq.empty[String]
-    identifier :+= originIdentifier.database.get
+    identifier :+= originIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
     identifier :+= originIdentifier.table
     val catalogAndIdentifier =
       Spark3Util.catalogAndIdentifier(sparkSession, seqAsJavaList(identifier))
