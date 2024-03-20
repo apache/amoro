@@ -394,7 +394,6 @@ public class DashboardServer {
           ctx.queryParam("signature"),
           ctx.queryParamMap());
     } else if (needLoginCheck(uriPath)) {
-      LOG.error("---+++++: " + ctx.path());
       if (null == ctx.sessionAttribute("user")) {
         LOG.info("session info: {}", JSONObject.toJSONString(ctx.sessionAttributeMap()));
         throw new ForbiddenException();
