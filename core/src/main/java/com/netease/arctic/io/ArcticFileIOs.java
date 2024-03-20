@@ -21,7 +21,7 @@ package com.netease.arctic.io;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.util.PropertyUtil;
@@ -38,7 +38,8 @@ public class ArcticFileIOs {
       Map<String, String> tableProperties,
       TableMetaStore tableMetaStore,
       Map<String, String> catalogProperties) {
-    tableProperties = CatalogUtil.mergeCatalogPropertiesToTable(tableProperties, catalogProperties);
+    tableProperties =
+        ArcticCatalogUtil.mergeCatalogPropertiesToTable(tableProperties, catalogProperties);
     if (!CLOSE_TRASH
         && PropertyUtil.propertyAsBoolean(
             tableProperties,

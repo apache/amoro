@@ -18,17 +18,14 @@
 
 package com.netease.arctic.catalog;
 
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
-import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
-import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
-
 import com.netease.arctic.CommonUnifiedCatalog;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.UnifiedCatalog;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.properties.CatalogMetaProperties;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -46,7 +43,7 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
   }
 
   public BasicCatalogTestHelper(TableFormat tableFormat, Map<String, String> catalogProperties) {
-    this(CATALOG_TYPE_HADOOP, catalogProperties, tableFormat);
+    this(CatalogMetaProperties.CATALOG_TYPE_HADOOP, catalogProperties, tableFormat);
   }
 
   public BasicCatalogTestHelper(
@@ -90,8 +87,9 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
           "Cannot build iceberg catalog for table format:" + tableFormat);
     }
     Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
-    catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HADOOP);
-    return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(
+    catalogProperties.put(
+        CatalogUtil.ICEBERG_CATALOG_TYPE, CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP);
+    return CatalogUtil.buildIcebergCatalog(
         TEST_CATALOG_NAME, catalogProperties, new Configuration());
   }
 
@@ -102,7 +100,7 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
           "Cannot build mixed-tables for table format:" + tableFormat);
     }
     return new MixedTables(
-        catalogMeta.getCatalogProperties(), CatalogUtil.buildMetaStore(catalogMeta));
+        catalogMeta.getCatalogProperties(), ArcticCatalogUtil.buildMetaStore(catalogMeta));
   }
 
   @Override

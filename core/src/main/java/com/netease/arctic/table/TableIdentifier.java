@@ -44,20 +44,20 @@ public class TableIdentifier implements Serializable {
     return new TableIdentifier(catalog, database, tableName);
   }
 
-  public static TableIdentifier of(com.netease.arctic.ams.api.TableIdentifier identifier) {
+  public static TableIdentifier of(com.netease.arctic.api.TableIdentifier identifier) {
     return new TableIdentifier(
         identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName());
   }
 
-  public TableIdentifier(com.netease.arctic.ams.api.TableIdentifier tableIdentifier) {
+  public TableIdentifier(com.netease.arctic.api.TableIdentifier tableIdentifier) {
     this(
         tableIdentifier.getCatalog(),
         tableIdentifier.getDatabase(),
         tableIdentifier.getTableName());
   }
 
-  public com.netease.arctic.ams.api.TableIdentifier buildTableIdentifier() {
-    return new com.netease.arctic.ams.api.TableIdentifier(catalog, database, tableName);
+  public com.netease.arctic.api.TableIdentifier buildTableIdentifier() {
+    return new com.netease.arctic.api.TableIdentifier(catalog, database, tableName);
   }
 
   public String getCatalog() {

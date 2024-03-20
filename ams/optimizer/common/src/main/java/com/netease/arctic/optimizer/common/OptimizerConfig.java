@@ -18,7 +18,7 @@
 
 package com.netease.arctic.optimizer.common;
 
-import com.netease.arctic.ams.api.OptimizerProperties;
+import com.netease.arctic.api.OptimizerProperties;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;

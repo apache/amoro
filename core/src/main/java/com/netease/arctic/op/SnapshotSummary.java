@@ -18,7 +18,7 @@
 
 package com.netease.arctic.op;
 
-import com.netease.arctic.ams.api.CommitMetaProducer;
+import com.netease.arctic.api.CommitMetaProducer;
 
 public class SnapshotSummary {
   public static final String SNAPSHOT_PRODUCER = "snapshot.producer";

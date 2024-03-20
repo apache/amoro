@@ -19,13 +19,13 @@
 package com.netease.arctic.trace;
 
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.Constants;
 import com.netease.arctic.DataFileTestHelpers;
-import com.netease.arctic.ams.api.CommitMetaProducer;
-import com.netease.arctic.ams.api.Constants;
-import com.netease.arctic.ams.api.DataFile;
-import com.netease.arctic.ams.api.TableChange;
-import com.netease.arctic.ams.api.TableCommitMeta;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.CommitMetaProducer;
+import com.netease.arctic.api.DataFile;
+import com.netease.arctic.api.TableChange;
+import com.netease.arctic.api.TableCommitMeta;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.DataFileType;

@@ -18,8 +18,8 @@
 
 package com.netease.arctic.metrics.reporter.promethues;
 
-import com.netease.arctic.ams.api.metrics.MetricReporter;
-import com.netease.arctic.ams.api.metrics.MetricSet;
+import com.netease.arctic.api.metrics.MetricReporter;
+import com.netease.arctic.api.metrics.MetricSet;
 import io.prometheus.client.exporter.HTTPServer;
 
 import java.io.IOException;

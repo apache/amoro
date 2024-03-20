@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.metrics;
 
-import com.netease.arctic.ams.api.metrics.MetricReporter;
-import com.netease.arctic.ams.api.metrics.MetricSet;
+import com.netease.arctic.api.metrics.MetricReporter;
+import com.netease.arctic.api.metrics.MetricSet;
 
 import java.util.Map;
 

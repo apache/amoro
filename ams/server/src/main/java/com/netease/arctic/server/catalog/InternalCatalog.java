@@ -18,10 +18,10 @@
 
 package com.netease.arctic.server.catalog;
 
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableIDWithFormat;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.TableIdentifier;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;

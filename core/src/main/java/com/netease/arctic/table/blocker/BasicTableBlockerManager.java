@@ -19,8 +19,8 @@
 package com.netease.arctic.table.blocker;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.OperationConflictException;
+import com.netease.arctic.api.BlockableOperation;
+import com.netease.arctic.api.OperationConflictException;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -86,11 +86,11 @@ public class BasicTableBlockerManager implements TableBlockerManager {
     return tableIdentifier;
   }
 
-  private Blocker buildBlocker(com.netease.arctic.ams.api.Blocker blocker) {
+  private Blocker buildBlocker(com.netease.arctic.api.Blocker blocker) {
     return buildBlocker(blocker, false);
   }
 
-  private Blocker buildBlocker(com.netease.arctic.ams.api.Blocker blocker, boolean needInit) {
+  private Blocker buildBlocker(com.netease.arctic.api.Blocker blocker, boolean needInit) {
     if (blocker.getProperties() != null
         && blocker.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY) != null
         && blocker.getProperties().get(RenewableBlocker.BLOCKER_TIMEOUT) != null) {

@@ -21,7 +21,7 @@ package com.netease.arctic.server.table.executor;
 import static com.netease.arctic.server.optimizing.maintainer.TableMaintainer.ofTable;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;

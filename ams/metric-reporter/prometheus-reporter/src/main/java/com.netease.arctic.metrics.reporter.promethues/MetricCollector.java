@@ -18,13 +18,13 @@
 
 package com.netease.arctic.metrics.reporter.promethues;
 
-import com.netease.arctic.ams.api.metrics.Counter;
-import com.netease.arctic.ams.api.metrics.Gauge;
-import com.netease.arctic.ams.api.metrics.Metric;
-import com.netease.arctic.ams.api.metrics.MetricDefine;
-import com.netease.arctic.ams.api.metrics.MetricKey;
-import com.netease.arctic.ams.api.metrics.MetricSet;
-import com.netease.arctic.ams.api.metrics.MetricType;
+import com.netease.arctic.api.metrics.Counter;
+import com.netease.arctic.api.metrics.Gauge;
+import com.netease.arctic.api.metrics.Metric;
+import com.netease.arctic.api.metrics.MetricDefine;
+import com.netease.arctic.api.metrics.MetricKey;
+import com.netease.arctic.api.metrics.MetricSet;
+import com.netease.arctic.api.metrics.MetricType;
 import io.prometheus.client.Collector;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;

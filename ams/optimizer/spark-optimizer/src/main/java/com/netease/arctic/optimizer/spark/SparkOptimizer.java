@@ -18,7 +18,7 @@
 
 package com.netease.arctic.optimizer.spark;
 
-import com.netease.arctic.ams.api.resource.Resource;
+import com.netease.arctic.api.resource.Resource;
 import com.netease.arctic.optimizer.common.Optimizer;
 import com.netease.arctic.optimizer.common.OptimizerConfig;
 import com.netease.arctic.optimizer.common.OptimizerToucher;

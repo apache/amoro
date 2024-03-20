@@ -18,43 +18,31 @@
 
 package com.netease.arctic.catalog;
 
-import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
+import static com.netease.arctic.table.TableProperties.*;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.NoSuchDatabaseException;
 import com.netease.arctic.PooledAmsClient;
-import com.netease.arctic.ams.api.AlreadyExistsException;
-import com.netease.arctic.ams.api.NoSuchObjectException;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.AlreadyExistsException;
+import com.netease.arctic.api.NoSuchObjectException;
+import com.netease.arctic.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.mixed.InternalMixedIcebergCatalog;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.CreateTableTransaction;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableBuilder;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.properties.CatalogMetaProperties;
+import com.netease.arctic.table.*;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.SortOrder;
-import org.apache.iceberg.TableMetadata;
-import org.apache.iceberg.TableOperations;
-import org.apache.iceberg.Transaction;
-import org.apache.iceberg.Transactions;
+import org.apache.iceberg.*;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -213,7 +201,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
   protected TableMeta getArcticTableMeta(TableIdentifier identifier) {
     TableMeta tableMeta;
     try {
-      tableMeta = getClient().getTable(CatalogUtil.amsTaleId(identifier));
+      tableMeta = getClient().getTable(ArcticCatalogUtil.amsTaleId(identifier));
       return tableMeta;
     } catch (NoSuchObjectException e) {
       throw new NoSuchTableException(e, "load table failed %s.", identifier);
@@ -357,7 +345,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
     protected void checkProperties() {
       Map<String, String> mergedProperties =
-          CatalogUtil.mergeCatalogPropertiesToTable(properties, catalogProperties);
+          ArcticCatalogUtil.mergeCatalogPropertiesToTable(properties, catalogProperties);
       boolean enableStream =
           CompatiblePropertyUtil.propertyAsBoolean(
               mergedProperties,

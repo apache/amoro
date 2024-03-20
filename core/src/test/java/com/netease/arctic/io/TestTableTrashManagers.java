@@ -18,14 +18,13 @@
 
 package com.netease.arctic.io;
 
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.KEY_WAREHOUSE;
-
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.table.TableIdentifier;
 import org.junit.Assert;
 import org.junit.Test;
@@ -84,7 +83,8 @@ public class TestTableTrashManagers extends TableTestBase {
   }
 
   protected String getTableTrashLocation(TableIdentifier id) {
-    String catalogDir = getCatalogMeta().getCatalogProperties().get(KEY_WAREHOUSE);
+    String catalogDir =
+        getCatalogMeta().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
     return String.format(
         "%s/%s/%s/%s",
         catalogDir, id.getDatabase(), id.getTableName(), TableTrashManagers.DEFAULT_TRASH_DIR);

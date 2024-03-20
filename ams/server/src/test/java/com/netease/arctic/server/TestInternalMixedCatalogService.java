@@ -19,9 +19,8 @@
 package com.netease.arctic.server;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
@@ -29,11 +28,12 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.mixed.InternalMixedIcebergCatalog;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.catalog.Namespace;
@@ -233,7 +233,9 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
 
       ArcticCatalog catalog = new BasicArcticCatalog();
       catalog.initialize(
-          meta.getCatalogName(), meta.getCatalogProperties(), CatalogUtil.buildMetaStore(meta));
+          meta.getCatalogName(),
+          meta.getCatalogProperties(),
+          ArcticCatalogUtil.buildMetaStore(meta));
       this.historicalCatalog = catalog;
       this.historicalCatalog.createDatabase(database);
     }

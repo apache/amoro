@@ -25,12 +25,12 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import com.netease.arctic.ams.api.metrics.Counter;
-import com.netease.arctic.ams.api.metrics.Gauge;
-import com.netease.arctic.ams.api.metrics.Metric;
-import com.netease.arctic.ams.api.metrics.MetricDefine;
-import com.netease.arctic.ams.api.metrics.MetricKey;
-import com.netease.arctic.ams.api.metrics.MetricRegisterListener;
+import com.netease.arctic.api.metrics.Counter;
+import com.netease.arctic.api.metrics.Gauge;
+import com.netease.arctic.api.metrics.Metric;
+import com.netease.arctic.api.metrics.MetricDefine;
+import com.netease.arctic.api.metrics.MetricKey;
+import com.netease.arctic.api.metrics.MetricRegisterListener;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.jupiter.api.BeforeEach;

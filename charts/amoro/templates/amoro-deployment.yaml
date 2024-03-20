@@ -50,7 +50,7 @@ spec: {{/* TODO If Support Replica can be use more than 1 */}}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: [ "/entrypoint.sh", "ams" ]
           env:
-            {{- if eq .Values.amoroConf.database.type "mysql" }}
+            {{- if or (eq .Values.amoroConf.database.type "mysql") (eq .Values.amoroConf.database.type "postgres") }}
             - name: "AMS_DATABASE_USERNAME"
               valueFrom:
                 secretKeyRef:

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.exception;
 
-import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.api.TableIdentifier;
 
 public class AlreadyExistsException extends ArcticRuntimeException {
   public AlreadyExistsException(String object) {
