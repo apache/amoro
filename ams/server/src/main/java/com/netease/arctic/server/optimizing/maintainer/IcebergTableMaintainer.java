@@ -485,7 +485,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
       if (p.isDirectory()) {
         int deleted = deleteInvalidFilesInFs(fio, p.location(), lastTime, excludes);
         deleteCount += deleted;
-        if (!p.location().endsWith(METADATA_FOLDER_NAME)
+        if (fio.exists(p.location())
+            && !p.location().endsWith(METADATA_FOLDER_NAME)
             && !p.location().endsWith(DATA_FOLDER_NAME)
             && p.createdAtMillis() < lastTime
             && fio.isEmptyDirectory(p.location())) {
