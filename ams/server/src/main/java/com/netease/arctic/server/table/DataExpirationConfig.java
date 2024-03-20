@@ -145,7 +145,7 @@ public class DataExpirationConfig {
                 TableProperties.DATA_EXPIRATION_LEVEL,
                 TableProperties.DATA_EXPIRATION_LEVEL_DEFAULT));
     retentionTime =
-        parseDurationToMillis(
+        parseRetentionToMillis(
             CompatiblePropertyUtil.propertyAsString(
                 properties, TableProperties.DATA_EXPIRATION_RETENTION_TIME, null));
     dateTimePattern =
@@ -204,21 +204,17 @@ public class DataExpirationConfig {
                     TableProperties.DATA_EXPIRATION_BASE_ON_RULE,
                     TableProperties.DATA_EXPIRATION_BASE_ON_RULE_DEFAULT)))
         .setRetentionTime(
-            parseDurationToMillis(
+            parseRetentionToMillis(
                 CompatiblePropertyUtil.propertyAsString(
                     properties, TableProperties.DATA_EXPIRATION_RETENTION_TIME, null)));
   }
 
-  private static long parseDurationToMillis(String retention) {
-    if (StringUtils.isNotBlank(retention)) {
-      try {
-        return TimeUtils.parseDuration(retention).toMillis();
-      } catch (IllegalArgumentException e) {
-        // ignore
-      }
+  private static long parseRetentionToMillis(String retention) {
+    try {
+      return TimeUtils.parseTime(retention).toMillis();
+    } catch (Exception e) {
+      return 0L;
     }
-
-    return 0L;
   }
 
   public boolean isEnabled() {

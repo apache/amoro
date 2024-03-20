@@ -100,11 +100,15 @@ public class TimeUtils {
 
     /** @return duration in millis */
     public long toMillis() {
-      if (this.getUnit().isDateBased()) {
+      if (isPeriod()) {
         return parsePeriod(this).toTotalMonths() * 30 * 24 * 60 * 60 * 1000;
       } else {
         return parseDuration(this).toMillis();
       }
+    }
+
+    public boolean isPeriod() {
+      return unit.isDateBased() && !ChronoUnit.DAYS.equals(unit);
     }
   }
 
@@ -152,7 +156,7 @@ public class TimeUtils {
   }
 
   public static Duration parseDuration(Time time) {
-    if (!time.getUnit().isTimeBased()) {
+    if (time.isPeriod()) {
       throw new IllegalArgumentException(
           "The time unit '" + time.getUnit() + "' cannot parse to Duration");
     }
@@ -186,7 +190,7 @@ public class TimeUtils {
   }
 
   public static Period parsePeriod(Time time) {
-    if (!time.getUnit().isDateBased()) {
+    if (!time.isPeriod()) {
       throw new IllegalArgumentException(
           "The time unit '" + time.getUnit() + "' cannot parse to Period");
     }
