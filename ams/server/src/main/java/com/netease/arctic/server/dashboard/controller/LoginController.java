@@ -18,11 +18,12 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
-import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.utils.Configurations;
+import com.netease.arctic.utils.JacksonUtil;
 import io.javalin.http.Context;
+import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.Serializable;
 
@@ -46,13 +47,14 @@ public class LoginController {
   /** handle login post request. */
   public void login(Context ctx) {
     // ok
-    JSONObject postBody = ctx.bodyAsClass(JSONObject.class);
-    if (adminUser.equals(postBody.get("user"))
-        && (adminPassword.equals(postBody.get("password")))) {
+    JsonNode postBody = ctx.bodyAsClass(JsonNode.class);
+    String user = JacksonUtil.getString(postBody, "user");
+    String pwd = JacksonUtil.getString(postBody, "password");
+    if (adminUser.equals(user) && (adminPassword.equals(pwd))) {
       ctx.sessionAttribute("user", new SessionInfo(adminUser, System.currentTimeMillis() + ""));
       ctx.json(OkResponse.of("success"));
     } else {
-      throw new RuntimeException("bad user " + postBody.get("user") + " or password!");
+      throw new RuntimeException("bad user " + user + " or password!");
     }
   }
 

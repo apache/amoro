@@ -24,7 +24,6 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
-import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.server.DefaultOptimizingService;
 import com.netease.arctic.server.RestCatalogService;
 import com.netease.arctic.server.dashboard.controller.CatalogController;
@@ -43,6 +42,7 @@ import com.netease.arctic.server.exception.SignatureCheckException;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.terminal.TerminalManager;
 import com.netease.arctic.server.utils.Configurations;
+import com.netease.arctic.utils.JacksonUtil;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.ContentType;
 import io.javalin.http.Context;
@@ -395,7 +395,7 @@ public class DashboardServer {
           ctx.queryParamMap());
     } else if (needLoginCheck(uriPath)) {
       if (null == ctx.sessionAttribute("user")) {
-        LOG.info("session info: {}", JSONObject.toJSONString(ctx.sessionAttributeMap()));
+        LOG.info("session info: {}", JacksonUtil.toJSONString(ctx.sessionAttributeMap()));
         throw new ForbiddenException();
       }
     }

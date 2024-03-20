@@ -18,17 +18,17 @@
 
 package com.netease.arctic.server.manager;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.api.ActivePlugin;
 import com.netease.arctic.server.Environments;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.LoadingPluginException;
+import com.netease.arctic.utils.JacksonUtil;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -43,7 +43,12 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -240,7 +245,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
 
   @VisibleForTesting
   protected List<PluginConfiguration> loadPluginConfigurations() {
-    JSONObject yamlConfig = null;
+    JsonNode yamlConfig = null;
     Path mangerConfigPath = pluginManagerConfigFilePath();
     if (!Files.exists(mangerConfigPath)) {
       return ImmutableList.of();
@@ -248,7 +253,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
     try {
       Object yamlObj = new Yaml().loadAs(Files.newInputStream(mangerConfigPath), Object.class);
       if (yamlObj instanceof Map) {
-        yamlConfig = new JSONObject((Map) yamlObj);
+        yamlConfig = JacksonUtil.fromObjects(yamlObj);
       }
     } catch (IOException e) {
       throw new LoadingPluginException(
@@ -258,11 +263,11 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
     LOG.info("initializing plugin configuration for: " + pluginCategory());
     String pluginListKey = pluginCategory();
 
-    JSONArray pluginConfigList = yamlConfig != null ? yamlConfig.getJSONArray(pluginListKey) : null;
+    JsonNode pluginConfigList = yamlConfig != null ? yamlConfig.get(pluginListKey) : null;
     List<PluginConfiguration> configs = Lists.newArrayList();
     if (pluginConfigList != null && !pluginConfigList.isEmpty()) {
       for (int i = 0; i < pluginConfigList.size(); i++) {
-        JSONObject pluginConfiguration = pluginConfigList.getJSONObject(i);
+        JsonNode pluginConfiguration = pluginConfigList.get(i);
         PluginConfiguration configuration = PluginConfiguration.fromJSONObject(pluginConfiguration);
         configs.add(configuration);
       }
