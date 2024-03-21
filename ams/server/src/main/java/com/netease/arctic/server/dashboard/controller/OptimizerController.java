@@ -18,6 +18,9 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Preconditions;
 import com.netease.arctic.api.resource.Resource;
 import com.netease.arctic.api.resource.ResourceGroup;
@@ -34,10 +37,7 @@ import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
-import com.netease.arctic.utils.JacksonUtil;
 import io.javalin.http.Context;
-import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
-import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 
 import javax.ws.rs.BadRequestException;
 
@@ -114,7 +114,7 @@ public class OptimizerController {
         optimizerList.stream()
             .map(
                 e -> {
-                  ObjectNode jsonObject = (ObjectNode) JacksonUtil.fromObjects(e);
+                  ObjectNode jsonObject = new ObjectMapper().valueToTree(e);
                   jsonObject.put("jobId", e.getResourceId());
                   jsonObject.put("optimizerGroup", e.getGroupName());
                   jsonObject.put("coreNumber", e.getThreadCount());
@@ -139,8 +139,7 @@ public class OptimizerController {
                         resourceGroup.getContainer()))
             .map(
                 e -> {
-                  ObjectNode jsonObject = JacksonUtil.createEmptyObjectNode();
-
+                  ObjectNode jsonObject = new ObjectMapper().createObjectNode();
                   jsonObject.put("optimizerGroupName", e.getName());
                   return jsonObject;
                 })
