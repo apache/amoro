@@ -174,8 +174,8 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @VisibleForTesting
-  public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
-    if (instant.equals(Instant.MIN)) {
+  protected void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+    if (instant.equals(Instant.MIN) || !expirationConfig.isPositive()) {
       return;
     }
 

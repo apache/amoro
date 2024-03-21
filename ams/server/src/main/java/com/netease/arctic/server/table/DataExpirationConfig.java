@@ -63,6 +63,8 @@ public class DataExpirationConfig {
   // data-expire.base-on-rule
   @JsonProperty(defaultValue = TableProperties.DATA_EXPIRATION_BASE_ON_RULE_DEFAULT)
   private BaseOnRule baseOnRule;
+  // Retention time must be positive
+  public static final long INVALID_RETENTION_TIME = 0L;
 
   @VisibleForTesting
   public enum ExpireLevel {
@@ -213,8 +215,12 @@ public class DataExpirationConfig {
     try {
       return TimeUtils.parseTime(retention).toMillis();
     } catch (Exception e) {
-      return 0L;
+      return INVALID_RETENTION_TIME;
     }
+  }
+
+  public boolean isPositive() {
+    return retentionTime > INVALID_RETENTION_TIME;
   }
 
   public boolean isEnabled() {
@@ -312,7 +318,7 @@ public class DataExpirationConfig {
 
   public boolean isValid(Types.NestedField field, String name) {
     return isEnabled()
-        && getRetentionTime() > 0
+        && isPositive()
         && validateExpirationField(field, name, getExpirationField());
   }
 

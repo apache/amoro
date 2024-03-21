@@ -101,6 +101,7 @@ public class TimeUtils {
     /** @return duration in millis */
     public long toMillis() {
       if (isPeriod()) {
+        // Estimated 30 days per month
         return parsePeriod(this).toTotalMonths() * 30 * 24 * 60 * 60 * 1000;
       } else {
         return parseDuration(this).toMillis();
