@@ -112,13 +112,13 @@ public class OptimizingConfig {
     return this;
   }
 
+  public long getMinPlanInterval() {
+    return minPlanInterval;
+  }
+
   public OptimizingConfig setMinPlanInterval(long minPlanInterval) {
     this.minPlanInterval = minPlanInterval;
     return this;
-  }
-
-  public long getMinPlanInterval() {
-    return minPlanInterval;
   }
 
   public String getOptimizerGroup() {
@@ -179,8 +179,18 @@ public class OptimizingConfig {
     return fragmentRatio;
   }
 
+  public OptimizingConfig setFragmentRatio(int fragmentRatio) {
+    this.fragmentRatio = fragmentRatio;
+    return this;
+  }
+
   public double getMinTargetSizeRatio() {
     return minTargetSizeRatio;
+  }
+
+  public OptimizingConfig setMinTargetSizeRatio(double minTargetSizeRatio) {
+    this.minTargetSizeRatio = minTargetSizeRatio;
+    return this;
   }
 
   public long maxFragmentSize() {
@@ -189,16 +199,6 @@ public class OptimizingConfig {
 
   public long maxDuplicateSize() {
     return (long) (maxFragmentSize() * majorDuplicateRatio);
-  }
-
-  public OptimizingConfig setFragmentRatio(int fragmentRatio) {
-    this.fragmentRatio = fragmentRatio;
-    return this;
-  }
-
-  public OptimizingConfig setMinTargetSizeRatio(double minTargetSizeRatio) {
-    this.minTargetSizeRatio = minTargetSizeRatio;
-    return this;
   }
 
   public int getMinorLeastFileCount() {
@@ -275,8 +275,12 @@ public class OptimizingConfig {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     OptimizingConfig that = (OptimizingConfig) o;
     return enabled == that.enabled
         && Double.compare(that.targetQuota, targetQuota) == 0

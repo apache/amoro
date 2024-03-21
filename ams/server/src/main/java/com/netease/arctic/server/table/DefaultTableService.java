@@ -83,19 +83,16 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap =
       new ConcurrentHashMap<>();
 
-  private RuntimeHandlerChain headHandler;
-
   private final ScheduledExecutorService tableExplorerScheduler =
       Executors.newSingleThreadScheduledExecutor(
           new ThreadFactoryBuilder()
               .setNameFormat("table-explorer-scheduler-%d")
               .setDaemon(true)
               .build());
-
-  private ExecutorService tableExplorerExecutors;
-
   private final CompletableFuture<Boolean> initialized = new CompletableFuture<>();
   private final Configurations serverConfiguration;
+  private RuntimeHandlerChain headHandler;
+  private ExecutorService tableExplorerExecutors;
 
   public DefaultTableService(Configurations configuration) {
     this.externalCatalogRefreshingInterval =

@@ -48,7 +48,7 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
     catalog match {
       case _: ArcticSparkCatalog => true
       case _: ArcticSparkSessionCatalog[_] =>
-        provider.isDefined && MixedSessionCatalogBase.supportedProviders.contains(
+        provider.isDefined && MixedSessionCatalogBase.SUPPORTED_PROVIDERS.contains(
           provider.get.toLowerCase)
       case _ => false
     }

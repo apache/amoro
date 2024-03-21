@@ -39,7 +39,7 @@ import java.util.Map;
 
 public class IcebergHadoopCatalogTestHelper extends AbstractFormatCatalogTestHelper<Catalog> {
 
-  public static final Schema schema =
+  public static final Schema SCHEMA =
       new Schema(
           Lists.newArrayList(
               Types.NestedField.required(1, DEFAULT_SCHEMA_ID_NAME, Types.LongType.get()),
@@ -47,13 +47,13 @@ public class IcebergHadoopCatalogTestHelper extends AbstractFormatCatalogTestHel
               Types.NestedField.optional(3, DEFAULT_SCHEMA_AGE_NAME, Types.IntegerType.get())),
           Sets.newHashSet(1));
 
-  public static final PartitionSpec spec =
-      PartitionSpec.builderFor(schema).identity(DEFAULT_SCHEMA_AGE_NAME).build();
+  public static final PartitionSpec SPEC =
+      PartitionSpec.builderFor(SCHEMA).identity(DEFAULT_SCHEMA_AGE_NAME).build();
 
-  public static final Map<String, String> properties = new HashMap<>();
+  public static final Map<String, String> PROPERTIES = new HashMap<>();
 
   static {
-    properties.put(DEFAULT_TABLE_OPTION_KEY, DEFAULT_TABLE_OPTION_VALUE);
+    PROPERTIES.put(DEFAULT_TABLE_OPTION_KEY, DEFAULT_TABLE_OPTION_VALUE);
   }
 
   public IcebergHadoopCatalogTestHelper(String catalogName, Map<String, String> catalogProperties) {
@@ -126,7 +126,7 @@ public class IcebergHadoopCatalogTestHelper extends AbstractFormatCatalogTestHel
   @Override
   public void createTable(String db, String tableName) throws Exception {
     Catalog catalog = originalCatalog();
-    catalog.createTable(TableIdentifier.of(db, tableName), schema, spec, properties);
+    catalog.createTable(TableIdentifier.of(db, tableName), SCHEMA, SPEC, PROPERTIES);
   }
 
   @Override

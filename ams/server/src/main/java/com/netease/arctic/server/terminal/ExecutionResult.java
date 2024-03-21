@@ -27,13 +27,13 @@ import java.util.List;
 
 /** result of execution a script. */
 public class ExecutionResult {
-  static final SimpleDateFormat patten = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+  static final SimpleDateFormat PATTEN = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
   List<String> logs = Lists.newArrayList();
   List<StatementResult> results = Lists.newArrayList();
 
   public synchronized void appendLog(String log) {
-    String date = patten.format(new Date());
+    String date = PATTEN.format(new Date());
     this.logs.add(date + " " + log);
   }
 

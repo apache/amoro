@@ -56,9 +56,9 @@ public class TestSelectSQL extends MixedTableTestBase {
     List<TestTable> tests =
         Lists.newArrayList(
             TestTables.MixedIceberg.PK_PT,
-            TestTables.MixedIceberg.PK_NoPT,
+            TestTables.MixedIceberg.PK_NO_PT,
             TestTables.MixedHive.PK_PT,
-            TestTables.MixedHive.PK_NoPT);
+            TestTables.MixedHive.PK_NO_PT);
     return tests.stream()
         .map(t -> Arguments.of(t.format, t))
         .flatMap(

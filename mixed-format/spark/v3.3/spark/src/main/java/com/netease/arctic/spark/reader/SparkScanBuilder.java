@@ -179,7 +179,7 @@ public class SparkScanBuilder
   @Override
   public SupportsExtendIdentColumns withIdentifierColumns() {
     if (table.isUnkeyedTable()) {
-      this.metaColumns.addAll(UnkeyedSparkBatchScan.rowIdColumns);
+      this.metaColumns.addAll(UnkeyedSparkBatchScan.ROW_ID_COLUMNS);
     } else if (table.isKeyedTable()) {
       this.metaColumns.addAll(table.asKeyedTable().primaryKeySpec().fieldNames());
     }

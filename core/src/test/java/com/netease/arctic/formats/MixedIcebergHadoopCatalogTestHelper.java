@@ -39,7 +39,7 @@ import java.util.Map;
 public class MixedIcebergHadoopCatalogTestHelper
     extends AbstractFormatCatalogTestHelper<ArcticCatalog> {
 
-  public static final Schema schema =
+  public static final Schema SCHEMA =
       new Schema(
           Lists.newArrayList(
               Types.NestedField.required(1, DEFAULT_SCHEMA_ID_NAME, Types.LongType.get()),
@@ -47,8 +47,8 @@ public class MixedIcebergHadoopCatalogTestHelper
               Types.NestedField.optional(3, DEFAULT_SCHEMA_AGE_NAME, Types.IntegerType.get())),
           Sets.newHashSet(1));
 
-  public static final PartitionSpec spec =
-      PartitionSpec.builderFor(schema).identity(DEFAULT_SCHEMA_AGE_NAME).build();
+  public static final PartitionSpec SPEC =
+      PartitionSpec.builderFor(SCHEMA).identity(DEFAULT_SCHEMA_AGE_NAME).build();
 
   public MixedIcebergHadoopCatalogTestHelper(
       String catalogName, Map<String, String> catalogProperties) {
@@ -117,8 +117,8 @@ public class MixedIcebergHadoopCatalogTestHelper
   public void createTable(String db, String tableName) throws Exception {
     ArcticCatalog catalog = originalCatalog();
     catalog
-        .newTableBuilder(TableIdentifier.of(catalogName(), db, tableName), schema)
-        .withPartitionSpec(spec)
+        .newTableBuilder(TableIdentifier.of(catalogName(), db, tableName), SCHEMA)
+        .withPartitionSpec(SPEC)
         .create();
   }
 

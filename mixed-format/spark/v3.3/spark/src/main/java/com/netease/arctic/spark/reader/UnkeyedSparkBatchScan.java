@@ -61,7 +61,7 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
 
   public static final String FILE_NAME_COL = "_file";
   public static final String ROW_POS_COL = "_pos";
-  public static final List<String> rowIdColumns = Lists.newArrayList(FILE_NAME_COL, ROW_POS_COL);
+  public static final List<String> ROW_ID_COLUMNS = Lists.newArrayList(FILE_NAME_COL, ROW_POS_COL);
 
   private final UnkeyedTable table;
   private final boolean caseSensitive;

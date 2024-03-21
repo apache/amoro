@@ -61,7 +61,7 @@ public class TestLogRecordV1 extends FormatTestBase {
   public void testLogDataSerialize() throws IOException {
 
     LogDataJsonSerialization<RowData> logDataJsonSerialization =
-        new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
+        new LogDataJsonSerialization<>(userSchema, LogRecordV1.FIELD_GETTER_FACTORY);
     GenericRowData rowData = new GenericRowData(4);
     rowData.setField(0, true);
     rowData.setField(1, 1);
@@ -101,7 +101,7 @@ public class TestLogRecordV1 extends FormatTestBase {
   public void testLogDataSerializeNullList() throws IOException {
 
     LogDataJsonSerialization<RowData> logDataJsonSerialization =
-        new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
+        new LogDataJsonSerialization<>(userSchema, LogRecordV1.FIELD_GETTER_FACTORY);
     GenericRowData rowData = new GenericRowData(4);
     rowData.setField(0, true);
     rowData.setField(1, 1);
