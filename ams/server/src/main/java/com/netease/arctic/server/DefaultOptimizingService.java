@@ -570,7 +570,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     private Predicate<TaskRuntime> buildSuspendingPredication(Set<String> activeTokens) {
       return task ->
-          !activeTokens.contains(task.getToken())
+          !activeTokens.contains(task.getToken()) && task.getStatus() != TaskRuntime.Status.SUCCESS
               || task.getStatus() == TaskRuntime.Status.SCHEDULED
                   && task.getStartTime() + taskAckTimeout < System.currentTimeMillis();
     }
