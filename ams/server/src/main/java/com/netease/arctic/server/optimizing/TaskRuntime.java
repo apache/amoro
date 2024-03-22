@@ -30,7 +30,7 @@ import com.netease.arctic.server.exception.DuplicateRuntimeException;
 import com.netease.arctic.server.exception.IllegalTaskStateException;
 import com.netease.arctic.server.exception.OptimizingClosedException;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
-import com.netease.arctic.server.persistence.StatedPersistentBase;
+import com.netease.arctic.server.persistence.CasStatedPersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.resource.OptimizerThread;
@@ -41,7 +41,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class TaskRuntime extends StatedPersistentBase {
+public class TaskRuntime extends CasStatedPersistentBase<Integer> {
   private long tableId;
   private String partition;
   private OptimizingTaskId taskId;
@@ -73,9 +73,11 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public void complete(OptimizerThread thread, OptimizingTaskResult result) {
-    invokeConsisitency(
+    validThread(thread);
+    invokeConsistencyWithCas(
+        null,
+        thread.getThreadId(),
         () -> {
-          validThread(thread);
           if (result.getErrorMessage() != null) {
             statusMachine.accept(Status.FAILED);
             failReason = result.getErrorMessage();
@@ -107,6 +109,7 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   void reset() {
+    resetCasRef();
     invokeConsisitency(
         () -> {
           statusMachine.accept(Status.PLANNED);
