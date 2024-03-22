@@ -52,6 +52,7 @@ import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableProperties;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -570,7 +571,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     private Predicate<TaskRuntime> buildSuspendingPredication(Set<String> activeTokens) {
       return task ->
-          !activeTokens.contains(task.getToken()) && task.getStatus() != TaskRuntime.Status.SUCCESS
+          StringUtils.isNotBlank(task.getToken())
+                  && !activeTokens.contains(task.getToken())
+                  && task.getStatus() != TaskRuntime.Status.SUCCESS
               || task.getStatus() == TaskRuntime.Status.SCHEDULED
                   && task.getStartTime() + taskAckTimeout < System.currentTimeMillis();
     }
