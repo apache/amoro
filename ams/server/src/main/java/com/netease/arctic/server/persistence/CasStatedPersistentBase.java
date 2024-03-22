@@ -18,8 +18,9 @@
 
 package com.netease.arctic.server.persistence;
 
+import java.lang.reflect.Field;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 public abstract class CasStatedPersistentBase<T> extends StatedPersistentBase {
 
@@ -37,23 +38,19 @@ public abstract class CasStatedPersistentBase<T> extends StatedPersistentBase {
   }
 
   protected final void invokeConsistencyWithCas(T expected, T target, Runnable runnable) {
-    if (casRef.compareAndSet(expected, target)) {
-      super.invokeConsistency(runnable);
-    } else {
-      throw new IllegalStateException(
-          "State mismatch in CAS operation, expected: "
-              + expected
-              + ", target: "
-              + target
-              + ", actual: "
-              + casRef.get());
+    T original = casRef.get();
+    Map<Field, Object> states = retainStates();
+    try {
+      doAsTransaction(runnable, () -> setCasRefOrError(expected, target));
+    } catch (Throwable throwable) {
+      restoreStates(states);
+      casRef.set(original);
+      throw throwable;
     }
   }
 
-  protected final <R> R invokeConsistencyWithCas(T expected, T target, Supplier<R> supplier) {
-    if (casRef.compareAndSet(expected, target)) {
-      return super.invokeConsistency(supplier);
-    } else {
+  protected void setCasRefOrError(T expected, T target) {
+    if (!casRef.compareAndSet(expected, target)) {
       throw new IllegalStateException(
           "State mismatch in CAS operation, expected: "
               + expected
