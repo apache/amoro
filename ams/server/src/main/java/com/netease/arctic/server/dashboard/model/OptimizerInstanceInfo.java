@@ -18,12 +18,21 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.netease.arctic.server.resource.OptimizerInstance;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
-public class OptimizerInstanceInfo extends OptimizerInstance {
+import java.util.Objects;
+
+public class OptimizerInstanceInfo {
+
+  private String token;
+
+  private long startTime;
+
+  private long touchTime;
+
   private String jobId;
 
-  private String optimizerGroup;
+  private String groupName;
 
   private int coreNumber;
 
@@ -33,6 +42,34 @@ public class OptimizerInstanceInfo extends OptimizerInstance {
 
   private String container;
 
+  public static OptimizerInstanceInfo.Builder builder() {
+    return new OptimizerInstanceInfo.Builder();
+  }
+
+  public String getToken() {
+    return token;
+  }
+
+  public void setToken(String token) {
+    this.token = token;
+  }
+
+  public long getStartTime() {
+    return startTime;
+  }
+
+  public void setStartTime(long startTime) {
+    this.startTime = startTime;
+  }
+
+  public long getTouchTime() {
+    return touchTime;
+  }
+
+  public void setTouchTime(long touchTime) {
+    this.touchTime = touchTime;
+  }
+
   public String getJobId() {
     return jobId;
   }
@@ -41,12 +78,12 @@ public class OptimizerInstanceInfo extends OptimizerInstance {
     this.jobId = jobId;
   }
 
-  public String getOptimizerGroup() {
-    return optimizerGroup;
+  public String getGroupName() {
+    return groupName;
   }
 
-  public void setOptimizerGroup(String optimizerGroup) {
-    this.optimizerGroup = optimizerGroup;
+  public void setGroupName(String groupName) {
+    this.groupName = groupName;
   }
 
   public int getCoreNumber() {
@@ -79,5 +116,125 @@ public class OptimizerInstanceInfo extends OptimizerInstance {
 
   public void setContainer(String container) {
     this.container = container;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    OptimizerInstanceInfo that = (OptimizerInstanceInfo) o;
+    return Objects.equals(token, that.token)
+        && Objects.equals(startTime, that.startTime)
+        && Objects.equals(touchTime, that.touchTime)
+        && Objects.equals(jobId, that.jobId)
+        && Objects.equals(groupName, that.groupName)
+        && Objects.equals(coreNumber, that.coreNumber)
+        && Objects.equals(memory, that.memory)
+        && Objects.equals(jobStatus, that.jobStatus)
+        && Objects.equals(container, that.container);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        token, startTime, touchTime, jobId, groupName, coreNumber, memory, jobStatus, container);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("token", token)
+        .add("startTime", startTime)
+        .add("touchTime", touchTime)
+        .add("jobId", jobId)
+        .add("groupName", groupName)
+        .add("coreNumber", coreNumber)
+        .add("memory", memory)
+        .add("jobStatus", jobStatus)
+        .add("container", container)
+        .toString();
+  }
+
+  public static class Builder {
+    private String token;
+
+    private long startTime;
+
+    private long touchTime;
+
+    private String jobId;
+
+    private String groupName;
+
+    private int coreNumber;
+
+    private int memory;
+
+    private String jobStatus;
+
+    private String container;
+
+    public Builder token(String token) {
+      this.token = token;
+      return this;
+    }
+
+    public Builder startTime(long startTime) {
+      this.startTime = startTime;
+      return this;
+    }
+
+    public Builder touchTime(long touchTime) {
+      this.touchTime = touchTime;
+      return this;
+    }
+
+    public Builder jobId(String jobId) {
+      this.jobId = jobId;
+      return this;
+    }
+
+    public Builder groupName(String groupName) {
+      this.groupName = groupName;
+      return this;
+    }
+
+    public Builder coreNumber(int coreNumber) {
+      this.coreNumber = coreNumber;
+      return this;
+    }
+
+    public Builder memory(int memory) {
+      this.memory = memory;
+      return this;
+    }
+
+    public Builder jobStatus(String jobStatus) {
+      this.jobStatus = jobStatus;
+      return this;
+    }
+
+    public Builder container(String container) {
+      this.container = container;
+      return this;
+    }
+
+    public OptimizerInstanceInfo build() {
+      OptimizerInstanceInfo instanceInfo = new OptimizerInstanceInfo();
+      instanceInfo.setToken(token);
+      instanceInfo.setStartTime(startTime);
+      instanceInfo.setTouchTime(touchTime);
+      instanceInfo.setJobId(jobId);
+      instanceInfo.setGroupName(groupName);
+      instanceInfo.setCoreNumber(coreNumber);
+      instanceInfo.setMemory(memory);
+      instanceInfo.setJobStatus(jobStatus);
+      instanceInfo.setContainer(container);
+      return instanceInfo;
+    }
   }
 }

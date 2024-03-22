@@ -111,16 +111,18 @@ public class OptimizerController {
     List<OptimizerInstanceInfo> result =
         optimizerList.stream()
             .map(
-                e -> {
-                  OptimizerInstanceInfo instanceInfo = new OptimizerInstanceInfo();
-                  instanceInfo.setJobId(e.getResourceId());
-                  instanceInfo.setOptimizerGroup(e.getGroupName());
-                  instanceInfo.setCoreNumber(e.getThreadCount());
-                  instanceInfo.setMemory(e.getMemoryMb());
-                  instanceInfo.setJobStatus("RUNNING");
-                  instanceInfo.setContainer(e.getContainerName());
-                  return instanceInfo;
-                })
+                e ->
+                    OptimizerInstanceInfo.builder()
+                        .token(e.getToken())
+                        .startTime(e.getStartTime())
+                        .touchTime(e.getTouchTime())
+                        .jobId(e.getResourceId())
+                        .groupName(e.getGroupName())
+                        .coreNumber(e.getThreadCount())
+                        .memory(e.getMemoryMb())
+                        .jobStatus("RUNNING")
+                        .container(e.getContainerName())
+                        .build())
             .collect(Collectors.toList());
 
     PageResult<OptimizerInstanceInfo> amsPageResult = PageResult.of(result, offset, pageSize);
