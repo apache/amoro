@@ -52,7 +52,7 @@ public class TaskRuntime extends CasStatedPersistentBase<Integer> {
   @StateField private long endTime = ArcticServiceConstants.INVALID_TIME;
   @StateField private long costTime = ArcticServiceConstants.INVALID_TIME;
   @StateField private String token;
-  @StateField private int threadId = -1;
+  @StateField private int threadId = DUMMY_THREAD_ID;
   @StateField private String failReason;
   private TaskOwner owner;
   private RewriteFilesInput input;
@@ -60,10 +60,15 @@ public class TaskRuntime extends CasStatedPersistentBase<Integer> {
   @StateField private MetricsSummary summary;
   private Map<String, String> properties;
 
-  private TaskRuntime() {}
+  private static final int DUMMY_THREAD_ID = -1;
+
+  private TaskRuntime() {
+    super(DUMMY_THREAD_ID);
+  }
 
   public TaskRuntime(
       OptimizingTaskId taskId, TaskDescriptor taskDescriptor, Map<String, String> properties) {
+    super(-1);
     this.taskId = taskId;
     this.partition = taskDescriptor.getPartition();
     this.input = taskDescriptor.getInput();
@@ -75,7 +80,7 @@ public class TaskRuntime extends CasStatedPersistentBase<Integer> {
   public void complete(OptimizerThread thread, OptimizingTaskResult result) {
     validThread(thread);
     invokeConsistencyWithCas(
-        null,
+        DUMMY_THREAD_ID,
         thread.getThreadId(),
         () -> {
           if (result.getErrorMessage() != null) {
