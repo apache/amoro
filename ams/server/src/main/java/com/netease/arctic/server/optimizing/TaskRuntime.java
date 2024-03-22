@@ -68,7 +68,7 @@ public class TaskRuntime extends CasStatedPersistentBase<Integer> {
 
   public TaskRuntime(
       OptimizingTaskId taskId, TaskDescriptor taskDescriptor, Map<String, String> properties) {
-    super(-1);
+    super(DUMMY_THREAD_ID);
     this.taskId = taskId;
     this.partition = taskDescriptor.getPartition();
     this.input = taskDescriptor.getInput();
@@ -109,7 +109,7 @@ public class TaskRuntime extends CasStatedPersistentBase<Integer> {
           persistTaskRuntime(this);
           owner.acceptResult(this);
           token = null;
-          threadId = -1;
+          threadId = DUMMY_THREAD_ID;
         });
   }
 
@@ -121,7 +121,7 @@ public class TaskRuntime extends CasStatedPersistentBase<Integer> {
           startTime = ArcticServiceConstants.INVALID_TIME;
           endTime = ArcticServiceConstants.INVALID_TIME;
           token = null;
-          threadId = -1;
+          threadId = DUMMY_THREAD_ID;
           failReason = null;
           output = null;
           summary = new MetricsSummary(input);
