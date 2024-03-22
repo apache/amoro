@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
@@ -538,6 +539,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
           OptimizerKeepingTask keepingTask = suspendingQueue.take();
           String token = keepingTask.getToken();
           boolean isExpired = !keepingTask.tryKeeping();
+          Optional.ofNullable(keepingTask.getQueue())
+              .ifPresent(
+                  queue ->
+                      queue
+                          .collectTasks(buildSuspendingPredication(authOptimizers.keySet()))
+                          .forEach(task -> retryTask(task, queue)));
           if (isExpired) {
             LOG.info("Optimizer {} has been expired, unregister it", keepingTask.getOptimizer());
             unregisterOptimizer(token);
@@ -545,12 +552,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
             LOG.debug("Optimizer {} is being touched, keep it", keepingTask.getOptimizer());
             keepInTouch(keepingTask.getOptimizer());
           }
-          Optional.ofNullable(keepingTask.getQueue())
-              .ifPresent(
-                  queue ->
-                      queue
-                          .collectTasks(buildSuspendingPredication(token, isExpired))
-                          .forEach(task -> retryTask(task, queue)));
         } catch (InterruptedException ignored) {
         } catch (Throwable t) {
           LOG.error("OptimizerKeeper has encountered a problem.", t);
@@ -567,17 +568,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
       queue.retryTask(task);
     }
 
-    private Predicate<TaskRuntime> buildSuspendingPredication(
-        String token, boolean isOptimizerExpired) {
-      return task -> {
-        if (isOptimizerExpired) {
-          return TaskRuntime.Status.SUCCESS != task.getStatus() && token.equals(task.getToken());
-        } else {
-          return token.equals(task.getToken())
-              && task.getStatus() == TaskRuntime.Status.SCHEDULED
-              && task.getStartTime() + taskAckTimeout < System.currentTimeMillis();
-        }
-      };
+    private Predicate<TaskRuntime> buildSuspendingPredication(Set<String> activeTokens) {
+      return task ->
+          !activeTokens.contains(task.getToken())
+              || task.getStatus() == TaskRuntime.Status.SCHEDULED
+                  && task.getStartTime() + taskAckTimeout < System.currentTimeMillis();
     }
   }
 }
