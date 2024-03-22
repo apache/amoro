@@ -38,7 +38,7 @@ public abstract class CasStatedPersistentBase<T> extends StatedPersistentBase {
 
   protected final void invokeConsistencyWithCas(T expected, T target, Runnable runnable) {
     if (casRef.compareAndSet(expected, target)) {
-      super.invokeConsisitency(runnable);
+      super.invokeConsistency(runnable);
     } else {
       throw new IllegalStateException(
           "State mismatch in CAS operation, expected: "
@@ -52,7 +52,7 @@ public abstract class CasStatedPersistentBase<T> extends StatedPersistentBase {
 
   protected final <R> R invokeConsistencyWithCas(T expected, T target, Supplier<R> supplier) {
     if (casRef.compareAndSet(expected, target)) {
-      return super.invokeConsisitency(supplier);
+      return super.invokeConsistency(supplier);
     } else {
       throw new IllegalStateException(
           "State mismatch in CAS operation, expected: "
