@@ -24,8 +24,8 @@ import com.netease.arctic.api.InvalidObjectException;
 import com.netease.arctic.api.MetaException;
 import com.netease.arctic.api.NoSuchObjectException;
 import com.netease.arctic.api.OperationConflictException;
+import com.netease.arctic.api.ServerTableIdentifier;
 import com.netease.arctic.api.TableIdentifier;
-import com.netease.arctic.server.table.ServerTableIdentifier;
 import org.apache.thrift.TException;
 
 import java.util.HashMap;

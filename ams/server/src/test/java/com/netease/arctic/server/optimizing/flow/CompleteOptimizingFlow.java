@@ -18,13 +18,13 @@
 
 package com.netease.arctic.server.optimizing.flow;
 
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO;
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO;
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT;
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE;
+import static com.netease.arctic.table.TableProperties.*;
 
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.OptimizerProperties;
+import com.netease.arctic.api.ServerTableIdentifier;
+import com.netease.arctic.api.config.OptimizingConfig;
+import com.netease.arctic.api.config.TableConfiguration;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutor;
 import com.netease.arctic.optimizing.IcebergRewriteExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutor;
@@ -32,13 +32,10 @@ import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.KeyedTableCommit;
-import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
-import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;

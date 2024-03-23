@@ -18,17 +18,14 @@
 
 package com.netease.arctic.server.terminal.kyuubi;
 
-import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE;
-import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT;
-import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_PRINCIPAL;
-import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_USER;
+import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 
+import com.netease.arctic.api.config.ConfigOption;
+import com.netease.arctic.api.config.ConfigOptions;
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.server.terminal.SparkContextUtil;
 import com.netease.arctic.server.terminal.TerminalSession;
 import com.netease.arctic.server.terminal.TerminalSessionFactory;
-import com.netease.arctic.server.utils.ConfigOption;
-import com.netease.arctic.server.utils.ConfigOptions;
-import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;

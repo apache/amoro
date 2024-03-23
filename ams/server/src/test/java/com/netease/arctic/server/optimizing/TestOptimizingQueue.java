@@ -18,15 +18,7 @@
 
 package com.netease.arctic.server.optimizing;
 
-import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.GROUP_TAG;
-import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TABLES;
-import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TASKS;
-import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED;
-import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_OPTIMIZER_INSTANCES;
-import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TABLES;
-import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TASKS;
-import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
-import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_THREADS;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.*;
 
 import com.google.common.collect.ImmutableMap;
 import com.netease.arctic.BasicTableTestHelper;
@@ -35,6 +27,7 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.api.OptimizerRegisterInfo;
 import com.netease.arctic.api.OptimizingTaskId;
 import com.netease.arctic.api.OptimizingTaskResult;
+import com.netease.arctic.api.config.TableConfiguration;
 import com.netease.arctic.api.metrics.Gauge;
 import com.netease.arctic.api.metrics.MetricKey;
 import com.netease.arctic.api.resource.ResourceGroup;
@@ -49,7 +42,6 @@ import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.OptimizerThread;
 import com.netease.arctic.server.resource.QuotaProvider;
 import com.netease.arctic.server.table.AMSTableTestBase;
-import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;

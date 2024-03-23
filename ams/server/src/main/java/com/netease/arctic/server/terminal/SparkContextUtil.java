@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.terminal;
 
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.server.catalog.CatalogType;
-import com.netease.arctic.server.utils.Configurations;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.List;

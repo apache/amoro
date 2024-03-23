@@ -18,14 +18,12 @@
 
 package com.netease.arctic.spark.writer;
 
-import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.*;
 
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.reader.SparkParquetReaders;
 import com.netease.arctic.spark.test.MixedTableTestBase;

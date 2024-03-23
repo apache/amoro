@@ -23,6 +23,7 @@ import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.ServerTableIdentifier;
 import com.netease.arctic.api.TableMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;

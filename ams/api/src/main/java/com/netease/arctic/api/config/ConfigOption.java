@@ -16,19 +16,14 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.utils;
+package com.netease.arctic.api.config;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-
-import com.netease.arctic.server.ArcticManagementConf;
 
 /**
  * A {@code ConfigOption} describes a configuration parameter. It encapsulates the configuration
  * key, deprecated older versions of the key, and an optional default value for the configuration
  * parameter.
- *
- * <p>{@code ConfigOptions} are built via the {@link ArcticManagementConf} class. Once created, a
- * config option is immutable.
  *
  * @param <T> The type of value associated with the configuration option.
  */

@@ -25,7 +25,6 @@ import static com.netease.arctic.server.ArcticManagementConf.DB_USER_NAME;
 import static com.netease.arctic.server.ArcticManagementConf.SERVER_EXPOSE_HOST;
 
 import com.netease.arctic.server.ArcticManagementConf;
-import com.netease.arctic.server.utils.ConfigurationUtil;
 import org.junit.Assert;
 import org.junit.Test;
 

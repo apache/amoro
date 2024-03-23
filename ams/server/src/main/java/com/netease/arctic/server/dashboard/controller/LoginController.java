@@ -18,9 +18,9 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.dashboard.response.OkResponse;
-import com.netease.arctic.server.utils.Configurations;
 import io.javalin.http.Context;
 
 import java.io.Serializable;

@@ -18,16 +18,11 @@
 
 package com.netease.arctic.server.dashboard.utils;
 
-import static com.netease.arctic.server.ArcticManagementConf.HA_CLUSTER_NAME;
-import static com.netease.arctic.server.ArcticManagementConf.HA_ENABLE;
-import static com.netease.arctic.server.ArcticManagementConf.HA_ZOOKEEPER_ADDRESS;
-import static com.netease.arctic.server.ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT;
-import static com.netease.arctic.server.ArcticManagementConf.SERVER_EXPOSE_HOST;
-import static com.netease.arctic.server.ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT;
+import static com.netease.arctic.server.ArcticManagementConf.*;
 
 import com.netease.arctic.Constants;
 import com.netease.arctic.api.TableIdentifier;
-import com.netease.arctic.server.utils.Configurations;
+import com.netease.arctic.api.config.Configurations;
 
 import java.io.File;
 import java.io.PrintWriter;

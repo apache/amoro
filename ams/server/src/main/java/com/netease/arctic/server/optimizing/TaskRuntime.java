@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import com.netease.arctic.api.OptimizingTask;
 import com.netease.arctic.api.OptimizingTaskId;
 import com.netease.arctic.api.OptimizingTaskResult;
+import com.netease.arctic.api.StateField;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;

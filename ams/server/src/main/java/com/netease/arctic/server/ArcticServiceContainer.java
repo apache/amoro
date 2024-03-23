@@ -24,6 +24,9 @@ import com.netease.arctic.Constants;
 import com.netease.arctic.api.ArcticTableMetastore;
 import com.netease.arctic.api.OptimizerProperties;
 import com.netease.arctic.api.OptimizingService;
+import com.netease.arctic.api.config.ConfigHelpers;
+import com.netease.arctic.api.config.ConfigOption;
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.server.dashboard.DashboardServer;
 import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
@@ -40,9 +43,6 @@ import com.netease.arctic.server.table.RuntimeHandlerChain;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.table.executor.AsyncTableExecutors;
 import com.netease.arctic.server.terminal.TerminalManager;
-import com.netease.arctic.server.utils.ConfigOption;
-import com.netease.arctic.server.utils.ConfigurationUtil;
-import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.ThriftServiceProxy;
 import com.netease.arctic.utils.JacksonUtil;
 import io.javalin.Javalin;
@@ -412,7 +412,7 @@ public class ArcticServiceContainer {
     private Map<String, Object> initEnvConfig() {
       LOG.info("initializing system env configuration...");
       String prefix = ArcticManagementConf.SYSTEM_CONFIG.toUpperCase();
-      return ConfigurationUtil.convertConfigurationKeys(prefix, System.getenv());
+      return ConfigHelpers.convertConfigurationKeys(prefix, System.getenv());
     }
 
     private void validateConfig(Map<String, Object> systemConfig) {

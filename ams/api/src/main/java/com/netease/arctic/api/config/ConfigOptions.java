@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.utils;
+package com.netease.arctic.api.config;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
