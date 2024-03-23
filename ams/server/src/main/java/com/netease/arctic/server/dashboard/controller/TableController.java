@@ -523,15 +523,13 @@ public class TableController {
             .collect(Collectors.toList());
     String catalogType = serverCatalog.getMetadata().getCatalogType();
     if (catalogType.equals(CATALOG_TYPE_HIVE)) {
-      HMSClientPool hmsClientPool = null;
-      if (serverCatalog instanceof MixedHiveCatalogImpl) {
-        hmsClientPool = ((MixedHiveCatalogImpl) serverCatalog).getHiveClient();
-      } else {
-        hmsClientPool =
-            new CachedHiveClientPool(
-                ((ExternalCatalog) serverCatalog).getTableMetaStore(),
-                serverCatalog.getMetadata().catalogProperties);
-      }
+     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
+    CatalogMeta catalogMeta = serverCatalog,getMetadata();
+    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta );
+    HMSClientPool hmsClientPool =
+          new CachedHiveClientPool(
+              tableMetaStore,
+              catalogMeta.getCatalogProperties()); 
 
       if (hmsClientPool != null) {
         List<String> hiveTables = HiveTableUtil.getAllHiveTables(hmsClientPool, db);
