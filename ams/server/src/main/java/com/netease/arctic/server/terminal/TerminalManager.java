@@ -251,7 +251,7 @@ public class TerminalManager {
         || catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())) {
       if (tableFormatSet.size() > 1) {
         return "unified";
-      } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_HIVE.name())
+      } else if (tableFormatSet.contains(TableFormat.MIXED_HIVE)
           || StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_ICEBERG.name())) {
         return "arctic";
       } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.ICEBERG.name())) {
