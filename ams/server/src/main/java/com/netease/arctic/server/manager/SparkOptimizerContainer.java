@@ -44,8 +44,6 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
   private static final Logger LOG = LoggerFactory.getLogger(SparkOptimizerContainer.class);
 
   public static final String SPARK_HOME_PROPERTY = "spark-home";
-  public static final String SPARK_CONFIG_PATH = "/conf";
-  public static final String ENV_SPARK_CONF_DIR = "SPARK_CONF_DIR";
   public static final String ENV_HADOOP_USER_NAME = "HADOOP_USER_NAME";
   private static final String DEFAULT_JOB_URI = "/plugin/optimizer/spark/optimizer-job.jar";
   private static final String SPARK_JOB_MAIN_CLASS =
@@ -69,14 +67,12 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
   private String sparkMaster;
   private DeployMode deployMode;
   private String sparkHome;
-  private String sparkConfDir;
   private String jobUri;
 
   @Override
   public void init(String name, Map<String, String> containerProperties) {
     super.init(name, containerProperties);
     this.sparkHome = getSparkHome();
-    this.sparkConfDir = getSparkConfDir();
     this.sparkMaster = containerProperties.getOrDefault(SPARK_MASTER, "yarn");
     Preconditions.checkArgument(
         StringUtils.isNotEmpty(sparkMaster), "The property: %s is required", sparkMaster);
@@ -193,7 +189,7 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
       return Arrays.stream(new org.apache.spark.SparkConf().getAll())
           .collect(Collectors.toMap(Tuple2::_1, Tuple2::_2));
     } catch (Exception e) {
-      LOG.error("load spark conf failed: {}", e.getMessage());
+      LOG.error("Load spark conf failed.", e);
       return Collections.emptyMap();
     }
   }
@@ -312,16 +308,6 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
     Preconditions.checkNotNull(
         sparkHome, "Container property: %s is required", SPARK_HOME_PROPERTY);
     return sparkHome.replaceAll("/$", "");
-  }
-
-  private String getSparkConfDir() {
-    String sparkConfDir =
-        getContainerProperties()
-            .get(OptimizerProperties.EXPORT_PROPERTY_PREFIX + ENV_SPARK_CONF_DIR);
-    if (StringUtils.isNotEmpty(sparkConfDir)) {
-      return sparkConfDir;
-    }
-    return this.sparkHome + SPARK_CONFIG_PATH;
   }
 
   private String kubernetesDriverName(Resource resource) {
