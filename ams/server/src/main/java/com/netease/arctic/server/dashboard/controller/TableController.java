@@ -156,17 +156,12 @@ public class TableController {
             && StringUtils.isNotBlank(table),
         "catalog.database.tableName can not be empty in any element");
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
-    HMSClientPool hmsClientPool = null;
-    if (serverCatalog instanceof MixedHiveCatalogImpl) {
-      MixedHiveCatalogImpl mixedHiveCatalog = (MixedHiveCatalogImpl) serverCatalog;
-      hmsClientPool = mixedHiveCatalog.getHiveClient();
-    } else if (serverCatalog instanceof ExternalCatalog) {
-      ExternalCatalog externalCatalog = (ExternalCatalog) serverCatalog;
-      hmsClientPool =
+    CatalogMeta catalogMeta = serverCatalog,getMetadata();
+    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta );
+    HMSClientPool hmsClientPool =
           new CachedHiveClientPool(
-              externalCatalog.getTableMetaStore(),
-              externalCatalog.getMetadata().getCatalogProperties());
-    }
+              tableMetaStore,
+              catalogMeta.getCatalogProperties()); 
     Preconditions.checkArgument(
         hmsClientPool != null,
         String.format(
