@@ -23,8 +23,8 @@ import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRI
 import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT;
 import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE;
 
-import com.netease.arctic.ams.api.OptimizerProperties;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.OptimizerProperties;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutor;
 import com.netease.arctic.optimizing.IcebergRewriteExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutor;

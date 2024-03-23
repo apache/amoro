@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.exception;
 
-import com.netease.arctic.ams.api.OptimizingTaskId;
+import com.netease.arctic.api.OptimizingTaskId;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 
 public class IllegalTaskStateException extends ArcticRuntimeException {

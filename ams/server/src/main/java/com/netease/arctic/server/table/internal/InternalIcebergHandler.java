@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.table.internal;
 
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.utils.InternalTableUtil;

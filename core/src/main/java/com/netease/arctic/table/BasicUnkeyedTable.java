@@ -18,7 +18,7 @@
 
 package com.netease.arctic.table;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.ArcticAppendFiles;
 import com.netease.arctic.op.ArcticDeleteFiles;
@@ -29,7 +29,7 @@ import com.netease.arctic.op.ArcticRowDelta;
 import com.netease.arctic.op.ArcticTransaction;
 import com.netease.arctic.op.PartitionPropertiesUpdate;
 import com.netease.arctic.op.UpdatePartitionProperties;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
@@ -160,7 +160,7 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
     if (catalogProperties == null) {
       return icebergTable.properties();
     } else {
-      return CatalogUtil.mergeCatalogPropertiesToTable(
+      return ArcticCatalogUtil.mergeCatalogPropertiesToTable(
           icebergTable.properties(), catalogProperties);
     }
   }

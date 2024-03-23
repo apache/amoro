@@ -19,7 +19,7 @@
 package com.netease.arctic.server.manager;
 
 import com.clearspring.analytics.util.Lists;
-import com.netease.arctic.ams.api.ActivePlugin;
+import com.netease.arctic.api.ActivePlugin;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.LoadingPluginException;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;

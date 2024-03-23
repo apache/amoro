@@ -18,7 +18,7 @@
 
 package com.netease.arctic;
 
-import com.netease.arctic.ams.api.ArcticTableMetastore;
+import com.netease.arctic.api.ArcticTableMetastore;
 
 import java.io.Serializable;
 

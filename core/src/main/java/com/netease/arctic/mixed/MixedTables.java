@@ -18,10 +18,10 @@
 
 package com.netease.arctic.mixed;
 
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BasicKeyedTable;
@@ -30,7 +30,7 @@ import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -274,7 +274,7 @@ public class MixedTables {
   }
 
   private Table useArcticTableOperation(Table table, ArcticFileIO io) {
-    return CatalogUtil.useArcticTableOperations(
+    return ArcticCatalogUtil.useArcticTableOperations(
         table, table.location(), io, tableMetaStore.getConfiguration());
   }
 }

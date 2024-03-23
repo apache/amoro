@@ -18,8 +18,7 @@
 
 package com.netease.arctic.server.catalog;
 
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.formats.AmoroCatalogTestHelper;
 import com.netease.arctic.formats.IcebergHadoopCatalogTestHelper;
 import com.netease.arctic.formats.MixedIcebergHadoopCatalogTestHelper;
@@ -27,6 +26,7 @@ import com.netease.arctic.formats.PaimonHadoopCatalogTestHelper;
 import com.netease.arctic.hive.formats.IcebergHiveCatalogTestHelper;
 import com.netease.arctic.hive.formats.MixedIcebergHiveCatalogTestHelper;
 import com.netease.arctic.hive.formats.PaimonHiveCatalogTestHelper;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;

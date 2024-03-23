@@ -20,7 +20,7 @@ package com.netease.arctic.server.optimizing.maintainer;
 
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
-import com.netease.arctic.ams.api.CommitMetaProducer;
+import com.netease.arctic.api.CommitMetaProducer;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
 import com.netease.arctic.io.SupportsFileSystemOperations;
@@ -485,7 +485,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
       if (p.isDirectory()) {
         int deleted = deleteInvalidFilesInFs(fio, p.location(), lastTime, excludes);
         deleteCount += deleted;
-        if (!p.location().endsWith(METADATA_FOLDER_NAME)
+        if (fio.exists(p.location())
+            && !p.location().endsWith(METADATA_FOLDER_NAME)
             && !p.location().endsWith(DATA_FOLDER_NAME)
             && p.createdAtMillis() < lastTime
             && fio.isEmptyDirectory(p.location())) {

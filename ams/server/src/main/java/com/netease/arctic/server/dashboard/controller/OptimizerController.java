@@ -18,13 +18,12 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.base.Preconditions;
-import com.netease.arctic.ams.api.resource.Resource;
-import com.netease.arctic.ams.api.resource.ResourceGroup;
-import com.netease.arctic.ams.api.resource.ResourceType;
+import com.netease.arctic.api.resource.Resource;
+import com.netease.arctic.api.resource.ResourceGroup;
+import com.netease.arctic.api.resource.ResourceType;
 import com.netease.arctic.server.DefaultOptimizingService;
+import com.netease.arctic.server.dashboard.model.OptimizerInstanceInfo;
 import com.netease.arctic.server.dashboard.model.OptimizerResourceInfo;
 import com.netease.arctic.server.dashboard.model.TableOptimizingInfo;
 import com.netease.arctic.server.dashboard.response.OkResponse;
@@ -42,6 +41,7 @@ import javax.ws.rs.BadRequestException;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -100,7 +100,6 @@ public class OptimizerController {
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     int offset = (page - 1) * pageSize;
-
     List<OptimizerInstance> optimizers;
     if (optimizerGroup.equals("all")) {
       optimizers = optimizerManager.listOptimizers();
@@ -109,28 +108,30 @@ public class OptimizerController {
     }
     List<OptimizerInstance> optimizerList = new ArrayList<>(optimizers);
     optimizerList.sort(Comparator.comparingLong(OptimizerInstance::getStartTime).reversed());
-    List<JSONObject> result =
+    List<OptimizerInstanceInfo> result =
         optimizerList.stream()
             .map(
-                e -> {
-                  JSONObject jsonObject = (JSONObject) JSON.toJSON(e);
-                  jsonObject.put("jobId", e.getResourceId());
-                  jsonObject.put("optimizerGroup", e.getGroupName());
-                  jsonObject.put("coreNumber", e.getThreadCount());
-                  jsonObject.put("memory", e.getMemoryMb());
-                  jsonObject.put("jobStatus", "RUNNING");
-                  jsonObject.put("container", e.getContainerName());
-                  return jsonObject;
-                })
+                e ->
+                    OptimizerInstanceInfo.builder()
+                        .token(e.getToken())
+                        .startTime(e.getStartTime())
+                        .touchTime(e.getTouchTime())
+                        .jobId(e.getResourceId())
+                        .groupName(e.getGroupName())
+                        .coreNumber(e.getThreadCount())
+                        .memory(e.getMemoryMb())
+                        .jobStatus("RUNNING")
+                        .container(e.getContainerName())
+                        .build())
             .collect(Collectors.toList());
 
-    PageResult<JSONObject> amsPageResult = PageResult.of(result, offset, pageSize);
+    PageResult<OptimizerInstanceInfo> amsPageResult = PageResult.of(result, offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
   }
 
   /** get optimizerGroup: optimizerGroupId, optimizerGroupName url = /optimizerGroups. */
   public void getOptimizerGroups(Context ctx) {
-    List<JSONObject> result =
+    List<Map<String, String>> result =
         optimizerManager.listResourceGroups().stream()
             .filter(
                 resourceGroup ->
@@ -138,9 +139,9 @@ public class OptimizerController {
                         resourceGroup.getContainer()))
             .map(
                 e -> {
-                  JSONObject jsonObject = new JSONObject();
-                  jsonObject.put("optimizerGroupName", e.getName());
-                  return jsonObject;
+                  Map<String, String> mapObj = new HashMap<>();
+                  mapObj.put("optimizerGroupName", e.getName());
+                  return mapObj;
                 })
             .collect(Collectors.toList());
     ctx.json(OkResponse.of(result));

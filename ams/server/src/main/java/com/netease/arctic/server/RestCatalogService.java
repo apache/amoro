@@ -31,9 +31,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.events.IcebergReportEvent;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.events.IcebergReportEvent;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
@@ -43,7 +43,7 @@ import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.table.internal.InternalTableCreator;
 import com.netease.arctic.server.table.internal.InternalTableHandler;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.ContentType;
@@ -435,7 +435,7 @@ public class RestCatalogService extends PersistentBase {
     ServerCatalog internalCatalog = tableService.getServerCatalog(catalog);
     Preconditions.checkArgument(
         internalCatalog instanceof InternalCatalog, "The catalog is not an iceberg rest catalog");
-    Set<TableFormat> tableFormats = CatalogUtil.tableFormats(internalCatalog.getMetadata());
+    Set<TableFormat> tableFormats = ArcticCatalogUtil.tableFormats(internalCatalog.getMetadata());
     Preconditions.checkArgument(
         tableFormats.size() == 1
             && (tableFormats.contains(TableFormat.ICEBERG)

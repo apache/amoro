@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.events;
 
-import com.netease.arctic.ams.api.events.Event;
-import com.netease.arctic.ams.api.events.EventListener;
+import com.netease.arctic.api.events.Event;
+import com.netease.arctic.api.events.EventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

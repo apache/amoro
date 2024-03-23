@@ -19,9 +19,9 @@
 package com.netease.arctic.server;
 
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
@@ -30,6 +30,7 @@ import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -98,7 +99,7 @@ public abstract class RestCatalogServiceTestBase {
     clientProperties.putIfAbsent("warehouse", catalogName());
 
     CatalogMeta catalogMeta = serverCatalog.getMetadata();
-    TableMetaStore store = com.netease.arctic.utils.CatalogUtil.buildMetaStore(catalogMeta);
+    TableMetaStore store = ArcticCatalogUtil.buildMetaStore(catalogMeta);
 
     return (RESTCatalog)
         CatalogUtil.loadCatalog(

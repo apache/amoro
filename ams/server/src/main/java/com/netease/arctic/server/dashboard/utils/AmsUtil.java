@@ -25,8 +25,8 @@ import static com.netease.arctic.server.ArcticManagementConf.OPTIMIZING_SERVICE_
 import static com.netease.arctic.server.ArcticManagementConf.SERVER_EXPOSE_HOST;
 import static com.netease.arctic.server.ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT;
 
-import com.netease.arctic.ams.api.Constants;
-import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.Constants;
+import com.netease.arctic.api.TableIdentifier;
 import com.netease.arctic.server.utils.Configurations;
 
 import java.io.File;

@@ -18,39 +18,39 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
-import static com.netease.arctic.ams.api.TableFormat.ICEBERG;
-import static com.netease.arctic.ams.api.TableFormat.MIXED_HIVE;
-import static com.netease.arctic.ams.api.TableFormat.MIXED_ICEBERG;
-import static com.netease.arctic.ams.api.TableFormat.PAIMON;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_ACCESS_KEY;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_SECRET_KEY;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_AK_SK;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.KEY_WAREHOUSE;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_ENDPOINT;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_REGION;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_S3;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
+import static com.netease.arctic.TableFormat.ICEBERG;
+import static com.netease.arctic.TableFormat.MIXED_HIVE;
+import static com.netease.arctic.TableFormat.MIXED_ICEBERG;
+import static com.netease.arctic.TableFormat.PAIMON;
+import static com.netease.arctic.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_ACCESS_KEY;
+import static com.netease.arctic.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME;
+import static com.netease.arctic.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB;
+import static com.netease.arctic.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5;
+import static com.netease.arctic.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL;
+import static com.netease.arctic.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_SECRET_KEY;
+import static com.netease.arctic.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE;
+import static com.netease.arctic.properties.CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_AK_SK;
+import static com.netease.arctic.properties.CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS;
+import static com.netease.arctic.properties.CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE;
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+import static com.netease.arctic.properties.CatalogMetaProperties.KEY_WAREHOUSE;
+import static com.netease.arctic.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE;
+import static com.netease.arctic.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_ENDPOINT;
+import static com.netease.arctic.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE;
+import static com.netease.arctic.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE;
+import static com.netease.arctic.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_REGION;
+import static com.netease.arctic.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE;
+import static com.netease.arctic.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP;
+import static com.netease.arctic.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_S3;
+import static com.netease.arctic.properties.CatalogMetaProperties.TABLE_FORMATS;
 
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
@@ -63,7 +63,7 @@ import com.netease.arctic.server.dashboard.utils.DesensitizationUtil;
 import com.netease.arctic.server.dashboard.utils.PropertiesUtil;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import io.javalin.http.Context;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
@@ -236,12 +236,12 @@ public class CatalogController {
             AUTH_CONFIGS_KEY_PRINCIPAL, serverAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
         break;
       case AUTH_CONFIGS_VALUE_TYPE_AK_SK:
-        CatalogUtil.copyProperty(
+        ArcticCatalogUtil.copyProperty(
             serverAuthConfig,
             catalogMeta.getCatalogProperties(),
             AUTH_CONFIGS_KEY_ACCESS_KEY,
             S3FileIOProperties.ACCESS_KEY_ID);
-        CatalogUtil.copyProperty(
+        ArcticCatalogUtil.copyProperty(
             serverAuthConfig,
             catalogMeta.getCatalogProperties(),
             AUTH_CONFIGS_KEY_SECRET_KEY,
@@ -282,12 +282,12 @@ public class CatalogController {
                     catalogName, CONFIG_TYPE_AUTH, AUTH_CONFIGS_KEY_KRB5.replace("\\.", "-"))));
         break;
       case AUTH_CONFIGS_VALUE_TYPE_AK_SK:
-        CatalogUtil.copyProperty(
+        ArcticCatalogUtil.copyProperty(
             catalogMeta.getCatalogProperties(),
             serverAuthConfig,
             S3FileIOProperties.ACCESS_KEY_ID,
             AUTH_CONFIGS_KEY_ACCESS_KEY);
-        CatalogUtil.copyProperty(
+        ArcticCatalogUtil.copyProperty(
             catalogMeta.getCatalogProperties(),
             serverAuthConfig,
             S3FileIOProperties.SECRET_ACCESS_KEY,
@@ -302,7 +302,7 @@ public class CatalogController {
       String catalogName, CatalogMeta catalogMeta) {
     Map<String, Object> storageConfig = new HashMap<>();
     Map<String, String> config = catalogMeta.getStorageConfigs();
-    String storageType = CatalogUtil.getCompatibleStorageType(config);
+    String storageType = ArcticCatalogUtil.getCompatibleStorageType(config);
     storageConfig.put(STORAGE_CONFIGS_KEY_TYPE, storageType);
     if (STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equals(storageType)) {
       storageConfig.put(
@@ -332,12 +332,12 @@ public class CatalogController {
                   CONFIG_TYPE_STORAGE,
                   STORAGE_CONFIGS_KEY_HIVE_SITE.replace("\\.", "-"))));
     } else if (STORAGE_CONFIGS_VALUE_TYPE_S3.equals(storageType)) {
-      CatalogUtil.copyProperty(
+      ArcticCatalogUtil.copyProperty(
           catalogMeta.getCatalogProperties(),
           storageConfig,
           AwsClientProperties.CLIENT_REGION,
           STORAGE_CONFIGS_KEY_REGION);
-      CatalogUtil.copyProperty(
+      ArcticCatalogUtil.copyProperty(
           catalogMeta.getCatalogProperties(),
           storageConfig,
           S3FileIOProperties.ENDPOINT,
@@ -405,12 +405,12 @@ public class CatalogController {
         }
       }
     } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_S3)) {
-      CatalogUtil.copyProperty(
+      ArcticCatalogUtil.copyProperty(
           info.getStorageConfig(),
           catalogMeta.getCatalogProperties(),
           STORAGE_CONFIGS_KEY_REGION,
           AwsClientProperties.CLIENT_REGION);
-      CatalogUtil.copyProperty(
+      ArcticCatalogUtil.copyProperty(
           info.getStorageConfig(),
           catalogMeta.getCatalogProperties(),
           STORAGE_CONFIGS_KEY_ENDPOINT,

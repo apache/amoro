@@ -97,6 +97,21 @@ amoroConf:
   #    username: admin
   #    password: admin
 
+  #    type: postgres
+  #    driver: org.postgresql.Driver
+  #    url: jdbc:postgresql://127.0.0.1:5432/db
+  #    username: admin
+  #    password: admin
+
+  terminal:
+    backend: local
+    icebergHandleTimestampWithoutTimezone: false
+
+#  Kyuubi terminal backend configuration.
+#  terminal:
+#    backend: kyuubi
+#    kyuubiJdbcUrl: jdbc:hive2://127.0.0.1:10009/
+
   # The value (templated string) is used for conf.yaml file
   # See https://github.com/NetEase/amoro/blob/master/dist/src/main/arctic-bin/conf/config.yaml for more details
   #

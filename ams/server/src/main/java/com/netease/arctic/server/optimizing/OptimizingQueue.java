@@ -19,9 +19,9 @@
 package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.ams.api.OptimizerProperties;
-import com.netease.arctic.ams.api.OptimizingTaskId;
-import com.netease.arctic.ams.api.resource.ResourceGroup;
+import com.netease.arctic.api.OptimizerProperties;
+import com.netease.arctic.api.OptimizingTaskId;
+import com.netease.arctic.api.resource.ResourceGroup;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingClosedException;
@@ -196,7 +196,7 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   private TaskRuntime fetchTask() {
-    return Optional.ofNullable(retryTaskQueue.poll()).orElse(fetchScheduledTask());
+    return Optional.ofNullable(retryTaskQueue.poll()).orElseGet(() -> fetchScheduledTask());
   }
 
   private TaskRuntime fetchScheduledTask() {

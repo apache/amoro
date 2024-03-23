@@ -18,7 +18,7 @@
 
 package com.netease.arctic.optimizer.common;
 
-import com.netease.arctic.ams.api.OptimizerProperties;
+import com.netease.arctic.api.OptimizerProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

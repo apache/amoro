@@ -19,7 +19,7 @@
 package com.netease.arctic.server.optimizing.plan;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;

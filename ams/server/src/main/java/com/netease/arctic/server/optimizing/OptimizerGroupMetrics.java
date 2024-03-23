@@ -18,17 +18,17 @@
 
 package com.netease.arctic.server.optimizing;
 
-import static com.netease.arctic.ams.api.metrics.MetricDefine.defineGauge;
+import static com.netease.arctic.api.metrics.MetricDefine.defineGauge;
 import static com.netease.arctic.server.optimizing.OptimizingStatus.PENDING;
 import static com.netease.arctic.server.optimizing.OptimizingStatus.PLANNING;
 import static com.netease.arctic.server.optimizing.TaskRuntime.Status.ACKED;
 import static com.netease.arctic.server.optimizing.TaskRuntime.Status.PLANNED;
 import static com.netease.arctic.server.optimizing.TaskRuntime.Status.SCHEDULED;
 
-import com.netease.arctic.ams.api.metrics.Gauge;
-import com.netease.arctic.ams.api.metrics.Metric;
-import com.netease.arctic.ams.api.metrics.MetricDefine;
-import com.netease.arctic.ams.api.metrics.MetricKey;
+import com.netease.arctic.api.metrics.Gauge;
+import com.netease.arctic.api.metrics.Metric;
+import com.netease.arctic.api.metrics.MetricDefine;
+import com.netease.arctic.api.metrics.MetricKey;
 import com.netease.arctic.server.metrics.MetricRegistry;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;

@@ -18,10 +18,9 @@
 
 package com.netease.arctic;
 
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.properties.CatalogMetaProperties;
 
 public class TestedCatalogs {
   public static CatalogTestHelper internalCatalog(TableFormat... format) {

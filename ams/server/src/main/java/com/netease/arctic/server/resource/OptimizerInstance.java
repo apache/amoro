@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.resource;
 
-import com.netease.arctic.ams.api.OptimizerRegisterInfo;
-import com.netease.arctic.ams.api.resource.Resource;
+import com.netease.arctic.api.OptimizerRegisterInfo;
+import com.netease.arctic.api.resource.Resource;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.UUID;

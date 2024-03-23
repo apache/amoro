@@ -19,8 +19,8 @@
 package com.netease.arctic.formats.mixed;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableSnapshot;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Snapshot;

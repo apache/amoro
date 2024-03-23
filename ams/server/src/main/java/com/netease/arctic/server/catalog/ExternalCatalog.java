@@ -20,15 +20,15 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.CommonUnifiedCatalog;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.UnifiedCatalog;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public class ExternalCatalog extends ServerCatalog {
 
   protected ExternalCatalog(CatalogMeta metadata) {
     super(metadata);
-    this.tableMetaStore = CatalogUtil.buildMetaStore(metadata);
+    this.tableMetaStore = ArcticCatalogUtil.buildMetaStore(metadata);
     this.unifiedCatalog =
         this.tableMetaStore.doAs(
             () -> new CommonUnifiedCatalog(this::getMetadata, Maps.newHashMap()));
@@ -76,7 +76,7 @@ public class ExternalCatalog extends ServerCatalog {
   @Override
   public void updateMetadata(CatalogMeta metadata) {
     super.updateMetadata(metadata);
-    this.tableMetaStore = CatalogUtil.buildMetaStore(metadata);
+    this.tableMetaStore = ArcticCatalogUtil.buildMetaStore(metadata);
     this.unifiedCatalog.refresh();
     updateDatabaseFilter(metadata);
     updateTableFilter(metadata);

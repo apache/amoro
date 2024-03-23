@@ -19,8 +19,8 @@
 package com.netease.arctic.table.blocker;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.api.BlockableOperation;
+import com.netease.arctic.api.NoSuchObjectException;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.optimizer.flink;
 
-import com.netease.arctic.ams.api.resource.Resource;
+import com.netease.arctic.api.resource.Resource;
 import com.netease.arctic.optimizer.common.OptimizerToucher;
 import org.apache.flink.runtime.execution.Environment;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;

@@ -18,9 +18,9 @@
 
 package com.netease.arctic.utils;
 
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.ams.api.properties.MetaTableProperties;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.TableMeta;
+import com.netease.arctic.properties.MetaTableProperties;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Schema;
@@ -56,8 +56,8 @@ public class ConvertStructUtil {
       if (keySpec == null) {
         return this;
       }
-      com.netease.arctic.ams.api.PrimaryKeySpec primaryKeySpec =
-          new com.netease.arctic.ams.api.PrimaryKeySpec();
+      com.netease.arctic.api.PrimaryKeySpec primaryKeySpec =
+          new com.netease.arctic.api.PrimaryKeySpec();
       List<String> fields =
           keySpec.primaryKeyStruct().fields().stream()
               .map(Types.NestedField::name)

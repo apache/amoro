@@ -18,10 +18,11 @@
 
 package com.netease.arctic.server.optimizing;
 
-import com.google.common.collect.Sets;
-import com.netease.arctic.ams.api.OptimizingTask;
-import com.netease.arctic.ams.api.OptimizingTaskId;
-import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.netease.arctic.api.OptimizingTask;
+import com.netease.arctic.api.OptimizingTaskId;
+import com.netease.arctic.api.OptimizingTaskResult;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
@@ -37,7 +38,6 @@ import com.netease.arctic.server.resource.OptimizerThread;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -318,22 +318,20 @@ public class TaskRuntime extends StatedPersistentBase {
     return new TaskQuota(this);
   }
 
-  private static final Map<Status, Set<Status>> nextStatusMap = new HashMap<>();
-
-  static {
-    nextStatusMap.put(
-        Status.PLANNED, Sets.newHashSet(Status.PLANNED, Status.SCHEDULED, Status.CANCELED));
-    nextStatusMap.put(
-        Status.SCHEDULED,
-        Sets.newHashSet(Status.PLANNED, Status.SCHEDULED, Status.ACKED, Status.CANCELED));
-    nextStatusMap.put(
-        Status.ACKED,
-        Sets.newHashSet(
-            Status.PLANNED, Status.ACKED, Status.SUCCESS, Status.FAILED, Status.CANCELED));
-    nextStatusMap.put(Status.FAILED, Sets.newHashSet(Status.PLANNED, Status.FAILED));
-    nextStatusMap.put(Status.SUCCESS, Sets.newHashSet(Status.SUCCESS));
-    nextStatusMap.put(Status.CANCELED, Sets.newHashSet(Status.CANCELED));
-  }
+  private static final Map<Status, Set<Status>> nextStatusMap =
+      ImmutableMap.<Status, Set<Status>>builder()
+          .put(Status.PLANNED, ImmutableSet.of(Status.PLANNED, Status.SCHEDULED, Status.CANCELED))
+          .put(
+              Status.SCHEDULED,
+              ImmutableSet.of(Status.PLANNED, Status.SCHEDULED, Status.ACKED, Status.CANCELED))
+          .put(
+              Status.ACKED,
+              ImmutableSet.of(
+                  Status.PLANNED, Status.ACKED, Status.SUCCESS, Status.FAILED, Status.CANCELED))
+          .put(Status.FAILED, ImmutableSet.of(Status.PLANNED, Status.FAILED))
+          .put(Status.SUCCESS, ImmutableSet.of(Status.SUCCESS))
+          .put(Status.CANCELED, ImmutableSet.of(Status.CANCELED))
+          .build();
 
   private class TaskStatusMachine {
 

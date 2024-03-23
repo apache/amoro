@@ -15,7 +15,7 @@
   limitations under the License.
 */}}
 
-{{- if eq .Values.amoroConf.database.type "mysql" }}
+  {{- if or (eq .Values.amoroConf.database.type "mysql") (eq .Values.amoroConf.database.type "postgres") }}
 apiVersion: v1
 kind: Secret
 metadata:

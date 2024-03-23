@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.dashboard.utils;
 
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;

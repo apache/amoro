@@ -19,15 +19,15 @@
 package com.netease.arctic.formats.iceberg;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableSnapshot;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 
@@ -54,7 +54,7 @@ public class IcebergTable implements AmoroTable<UnkeyedTable> {
     UnkeyedTable wrapped =
         new BasicUnkeyedTable(
             identifier,
-            CatalogUtil.useArcticTableOperations(
+            ArcticCatalogUtil.useArcticTableOperations(
                 icebergTable, icebergTable.location(), io, metaStore.getConfiguration()),
             io,
             catalogProperties) {

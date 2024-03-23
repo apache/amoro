@@ -19,7 +19,7 @@
 package com.netease.arctic.server.optimizing.flow.view;
 
 import com.google.common.collect.Lists;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;

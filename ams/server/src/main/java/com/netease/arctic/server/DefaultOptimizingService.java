@@ -19,16 +19,16 @@
 package com.netease.arctic.server;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.OptimizerProperties;
-import com.netease.arctic.ams.api.OptimizerRegisterInfo;
-import com.netease.arctic.ams.api.OptimizingService;
-import com.netease.arctic.ams.api.OptimizingTask;
-import com.netease.arctic.ams.api.OptimizingTaskId;
-import com.netease.arctic.ams.api.OptimizingTaskResult;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.api.resource.Resource;
-import com.netease.arctic.ams.api.resource.ResourceGroup;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.OptimizerProperties;
+import com.netease.arctic.api.OptimizerRegisterInfo;
+import com.netease.arctic.api.OptimizingService;
+import com.netease.arctic.api.OptimizingTask;
+import com.netease.arctic.api.OptimizingTaskId;
+import com.netease.arctic.api.OptimizingTaskResult;
+import com.netease.arctic.api.resource.Resource;
+import com.netease.arctic.api.resource.ResourceGroup;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.server.exception.ForbiddenException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
@@ -567,7 +567,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
         String token, boolean isOptimizerExpired) {
       return task -> {
         if (isOptimizerExpired) {
-          return token.equals(task.getToken());
+          return TaskRuntime.Status.SUCCESS != task.getStatus() && token.equals(task.getToken());
         } else {
           return token.equals(task.getToken())
               && task.getStatus() == TaskRuntime.Status.SCHEDULED

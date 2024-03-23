@@ -35,7 +35,7 @@ You can build based on the master branch without compiling Trino. The compilatio
 git clone https://github.com/NetEase/amoro.git
 cd amoro
 base_dir=$(pwd) 
-mvn clean package -DskipTests -pl '!mixed/trino'
+mvn clean package -DskipTests -pl '!mixed-format/trino'
 cd ams/dist/target/
 ls
 amoro-x.y.z-bin.zip # AMS release package
@@ -44,19 +44,19 @@ dist-x.y.z.jar
 archive-tmp/
 maven-archiver/
 
-cd ${base_dir}/mixed/flink/v1.15/flink-runtime/target
+cd ${base_dir}/mixed-format/flink/v1.15/flink-runtime/target
 ls 
-amoro-mixed-flink-runtime-1.15-x.y.z-tests.jar
-amoro-mixed-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
-original-amoro-mixed-flink-runtime-1.15-x.y.z.jar
+amoro-mixed-format-flink-runtime-1.15-x.y.z-tests.jar
+amoro-mixed-format-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
+original-amoro-mixed-format-flink-runtime-1.15-x.y.z.jar
 maven-archiver/
 
-cd ${base_dir}/mixed/spark/v3.2/spark-runtime/target
+cd ${base_dir}/mixed-format/spark/v3.2/spark-runtime/target
 ls
-amoro-mixed-spark-3.2-runtime-x.y.z.jar # Spark v3.2 runtime package)
-amoro-mixed-spark-3.2-runtime-x.y.z-tests.jar
-amoro-mixed-spark-3.2-runtime-x.y.z-sources.jar
-original-amoro-mixed-spark-3.2-runtime-x.y.z.jar
+amoro-mixed-format-spark-3.2-runtime-x.y.z.jar # Spark v3.2 runtime package)
+amoro-mixed-format-spark-3.2-runtime-x.y.z-tests.jar
+amoro-mixed-format-spark-3.2-runtime-x.y.z-sources.jar
+original-amoro-mixed-format-spark-3.2-runtime-x.y.z.jar
 ```
 
 If the Flink version in the ams/optimizer/flink-optimizer module you compiled is lower than 1.15, you must add the `-Pflink-pre-1.15` parameter before mvn.

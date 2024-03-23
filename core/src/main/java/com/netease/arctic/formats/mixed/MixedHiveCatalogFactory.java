@@ -18,7 +18,7 @@
 
 package com.netease.arctic.formats.mixed;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 
 public class MixedHiveCatalogFactory extends MixedIcebergCatalogFactory {
   @Override
