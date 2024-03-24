@@ -567,7 +567,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   private OptimizingConfig getConfig() {
-    return OptimizingConfig.parseOptimizingConfig(getArcticTable().properties());
+    return OptimizingConfig.parse(getArcticTable().properties());
   }
 
   protected void updateChangeHashBucket(int bucket) {
