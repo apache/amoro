@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.api.resource.ResourceGroup;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.DefaultOptimizingService;
