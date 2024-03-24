@@ -299,17 +299,17 @@ public class TaskRuntime extends StatedPersistentBase {
 
   private void validThread(OptimizerThread thread) {
     if (token == null) {
-      throw new TaskRuntimeException("Task has been reset or not yet scheduled, taskId:{}", taskId);
+      throw new TaskRuntimeException("Task has been reset or not yet scheduled, taskId:%s", taskId);
     }
     if (!thread.getToken().equals(getToken())) {
       throw new TaskRuntimeException(
-          "The optimizer thread does not match, token in the task is [], token in the request is {}.",
+          "The optimizer thread does not match, token in the task is %s, token in the request is %s.",
           getToken(),
           thread.getToken());
     }
     if (thread.getThreadId() != threadId) {
       throw new TaskRuntimeException(
-          "The optimizer thread does not match, threadId in the task is {}, threadId in the request is {}.",
+          "The optimizer thread does not match, threadId in the task is %s, threadId in the request is %s.",
           threadId,
           thread.getThreadId());
     }
