@@ -141,7 +141,7 @@
                                     <shadedPattern>com.netease.arctic.shade.org.apache.parquet</shadedPattern>
                                 </relocation>
                             </relocations>
-                            <finalName>${project.artifactId}-${project.version}</finalName>
+                            <finalName>${project.artifactId}-${project.version}-jar-with-dependencies</finalName>
                         </configuration>
                     </execution>
                 </executions>
