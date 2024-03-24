@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.persistence;
 
+import com.netease.arctic.server.exception.ConcurrentStateException;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.lang.annotation.Retention;
@@ -28,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
@@ -80,31 +82,37 @@ public abstract class StatedPersistentBase extends PersistentBase {
     }
   }
 
-  protected final void invokeConsistencyInterruptibly(Runnable runnable)
+  protected final void invokeConsistencyWithTimeout(Runnable runnable, long time, TimeUnit unit)
       throws InterruptedException {
-    stateLock.lockInterruptibly();
-    Map<Field, Object> states = retainStates();
-    try {
-      doAsTransaction(runnable);
-    } catch (Throwable throwable) {
-      restoreStates(states);
-      throw throwable;
-    } finally {
-      stateLock.unlock();
+    if (stateLock.tryLock(time, unit)) {
+      Map<Field, Object> states = retainStates();
+      try {
+        doAsTransaction(runnable);
+      } catch (Throwable throwable) {
+        restoreStates(states);
+        throw throwable;
+      } finally {
+        stateLock.unlock();
+      }
+    } else {
+      throw new ConcurrentStateException("Unable to acquire lock within timeout.");
     }
   }
 
-  protected final <T> T invokeConsistencyInterruptibly(Supplier<T> supplier)
+  protected final <T> T invokeConsistencyWithTimeout(Supplier<T> supplier, long time, TimeUnit unit)
       throws InterruptedException {
-    stateLock.lockInterruptibly();
-    Map<Field, Object> states = retainStates();
-    try {
-      return supplier.get();
-    } catch (Throwable throwable) {
-      restoreStates(states);
-      throw throwable;
-    } finally {
-      stateLock.unlock();
+    if (stateLock.tryLock(time, unit)) {
+      Map<Field, Object> states = retainStates();
+      try {
+        return supplier.get();
+      } catch (Throwable throwable) {
+        restoreStates(states);
+        throw throwable;
+      } finally {
+        stateLock.unlock();
+      }
+    } else {
+      throw new ConcurrentStateException("Unable to acquire lock within timeout.");
     }
   }
 

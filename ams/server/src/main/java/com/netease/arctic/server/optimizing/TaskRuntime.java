@@ -40,6 +40,7 @@ import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class TaskRuntime extends StatedPersistentBase {
   private long tableId;
@@ -142,9 +143,9 @@ public class TaskRuntime extends StatedPersistentBase {
         });
   }
 
-  void tryCanceling() {
+  void tryCanceling(long time, TimeUnit unit) {
     try {
-      invokeConsistencyInterruptibly(
+      invokeConsistencyWithTimeout(
           () -> {
             if (statusMachine.tryAccepting(Status.CANCELED)) {
               endTime = System.currentTimeMillis();
@@ -153,7 +154,9 @@ public class TaskRuntime extends StatedPersistentBase {
               }
               persistTaskRuntime(this);
             }
-          });
+          },
+          time,
+          unit);
     } catch (InterruptedException e) {
       // ignore the interrupted cancellation
     }

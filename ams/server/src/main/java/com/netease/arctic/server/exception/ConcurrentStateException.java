@@ -16,25 +16,11 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.utils;
+package com.netease.arctic.server.exception;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+public class ConcurrentStateException extends ArcticRuntimeException {
 
-public class TimeoutUtils {
-
-  public static void runWithTimeout(
-      Runnable runnable, ExecutorService executorService, long timeout, TimeUnit timeUnit) {
-    Future<?> future = executorService.submit(runnable);
-    try {
-      future.get(timeout, timeUnit);
-    } catch (InterruptedException | TimeoutException e) {
-      future.cancel(true);
-    } catch (ExecutionException e) {
-      throw new RuntimeException(e);
+    public ConcurrentStateException(String message) {
+        super(message);
     }
-  }
 }
