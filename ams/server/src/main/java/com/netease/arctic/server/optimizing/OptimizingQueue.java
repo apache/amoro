@@ -449,6 +449,10 @@ public class OptimizingQueue extends PersistentBase {
           }
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
           if (taskRuntime.getRetry() < tableRuntime.getMaxExecuteRetryCount()) {
+            LOG.info(
+                "Put task {} to retry queue, because {}",
+                taskRuntime.getTaskId(),
+                taskRuntime.getFailReason());
             retryTask(taskRuntime);
           } else {
             clearProcess(this);

@@ -52,6 +52,7 @@ import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableProperties;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -64,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
@@ -220,7 +222,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
   @Override
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
-    LOG.info("Optimizer {} complete task {}", authToken, taskResult.getTaskId());
+    LOG.info(
+        "Optimizer {} (threadId {}) complete task {}",
+        authToken,
+        taskResult.getThreadId(),
+        taskResult.getTaskId());
     OptimizingQueue queue = getQueueByToken(authToken);
     OptimizerThread thread =
         getAuthenticatedOptimizer(authToken).getThread(taskResult.getThreadId());
@@ -538,7 +544,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
               .ifPresent(
                   queue ->
                       queue
-                          .collectTasks(buildSuspendingPredication(token, isExpired))
+                          .collectTasks(buildSuspendingPredication(authOptimizers.keySet()))
                           .forEach(task -> retryTask(task, queue)));
           if (isExpired) {
             LOG.info("Optimizer {} has been expired, unregister it", keepingTask.getOptimizer());
@@ -563,17 +569,13 @@ public class DefaultOptimizingService extends StatedPersistentBase
       queue.retryTask(task);
     }
 
-    private Predicate<TaskRuntime> buildSuspendingPredication(
-        String token, boolean isOptimizerExpired) {
-      return task -> {
-        if (isOptimizerExpired) {
-          return TaskRuntime.Status.SUCCESS != task.getStatus() && token.equals(task.getToken());
-        } else {
-          return token.equals(task.getToken())
-              && task.getStatus() == TaskRuntime.Status.SCHEDULED
-              && task.getStartTime() + taskAckTimeout < System.currentTimeMillis();
-        }
-      };
+    private Predicate<TaskRuntime> buildSuspendingPredication(Set<String> activeTokens) {
+      return task ->
+          StringUtils.isNotBlank(task.getToken())
+                  && !activeTokens.contains(task.getToken())
+                  && task.getStatus() != TaskRuntime.Status.SUCCESS
+              || task.getStatus() == TaskRuntime.Status.SCHEDULED
+                  && task.getStartTime() + taskAckTimeout < System.currentTimeMillis();
     }
   }
 }
