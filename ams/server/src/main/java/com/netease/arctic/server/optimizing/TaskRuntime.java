@@ -27,6 +27,7 @@ import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.dashboard.utils.OptimizingUtil;
+import com.netease.arctic.server.exception.ConcurrentStateException;
 import com.netease.arctic.server.exception.IllegalTaskStateException;
 import com.netease.arctic.server.exception.OptimizingClosedException;
 import com.netease.arctic.server.exception.TaskRuntimeException;
@@ -157,8 +158,8 @@ public class TaskRuntime extends StatedPersistentBase {
           },
           time,
           unit);
-    } catch (InterruptedException e) {
-      // ignore the interrupted cancellation
+    } catch (InterruptedException | ConcurrentStateException e) {
+      // ignore failed cancellations
     }
   }
 
