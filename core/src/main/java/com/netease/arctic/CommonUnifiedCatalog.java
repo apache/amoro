@@ -204,7 +204,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   }
 
   /** get format catalogs as given format order */
-  public Stream<FormatCatalog> formatCatalogAsOrder(TableFormat... formats) {
+  private Stream<FormatCatalog> formatCatalogAsOrder(TableFormat... formats) {
     return Stream.of(formats).filter(formatCatalogs::containsKey).map(formatCatalogs::get);
   }
 

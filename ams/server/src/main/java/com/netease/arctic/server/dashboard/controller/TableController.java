@@ -31,8 +31,6 @@ import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
 import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.server.catalog.ExternalCatalog;
-import com.netease.arctic.server.catalog.MixedHiveCatalogImpl;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
 import com.netease.arctic.server.dashboard.ServerTableProperties;
@@ -61,7 +59,9 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import io.javalin.http.Context;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
@@ -156,12 +156,10 @@ public class TableController {
             && StringUtils.isNotBlank(table),
         "catalog.database.tableName can not be empty in any element");
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
-    CatalogMeta catalogMeta = serverCatalog,getMetadata();
-    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta );
+    CatalogMeta catalogMeta = serverCatalog.getMetadata();
+    TableMetaStore tableMetaStore = ArcticCatalogUtil.buildMetaStore(catalogMeta);
     HMSClientPool hmsClientPool =
-          new CachedHiveClientPool(
-              tableMetaStore,
-              catalogMeta.getCatalogProperties()); 
+        new CachedHiveClientPool(tableMetaStore, catalogMeta.getCatalogProperties());
     Preconditions.checkArgument(
         hmsClientPool != null,
         String.format(
@@ -203,19 +201,17 @@ public class TableController {
     UpgradeHiveMeta upgradeHiveMeta = ctx.bodyAsClass(UpgradeHiveMeta.class);
 
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
-    CatalogMeta catalogMeta = serverCatalog,getMetadata();
-    String amsUri = CatalogLoader.load(
-                  String.join(
-                      "/",
-                      AmsUtil.getAMSThriftAddress(
-                          serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME));
+    CatalogMeta catalogMeta = serverCatalog.getMetadata();
+    String amsUri = AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME);
     catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, amsUri);
-    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
-    ArcticHiveCatalog arcticHiveCatalog = CatalogLoader.createCatalog(
-                  catalog,
-                  catalogMeta.getCatalogType(),
-                  catalogMeta.getCatalogProperties(),
-                  tableMetaStore);
+    TableMetaStore tableMetaStore = ArcticCatalogUtil.buildMetaStore(catalogMeta);
+    ArcticHiveCatalog arcticHiveCatalog =
+        (ArcticHiveCatalog)
+            CatalogLoader.createCatalog(
+                catalog,
+                catalogMeta.getCatalogType(),
+                catalogMeta.getCatalogProperties(),
+                tableMetaStore);
 
     tableUpgradeExecutor.execute(
         () -> {
@@ -223,7 +219,7 @@ public class TableController {
           upgradeRunningInfo.put(tableIdentifier, new UpgradeRunningInfo());
           try {
             UpgradeHiveTableUtil.upgradeHiveTable(
-                finalArcticHiveCatalog,
+                arcticHiveCatalog,
                 TableIdentifier.of(catalog, db, table),
                 upgradeHiveMeta.getPkList().stream()
                     .map(UpgradeHiveMeta.PrimaryKeyField::getFieldName)
@@ -512,13 +508,10 @@ public class TableController {
             .collect(Collectors.toList());
     String catalogType = serverCatalog.getMetadata().getCatalogType();
     if (catalogType.equals(CATALOG_TYPE_HIVE)) {
-     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
-    CatalogMeta catalogMeta = serverCatalog,getMetadata();
-    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta );
-    HMSClientPool hmsClientPool =
-          new CachedHiveClientPool(
-              tableMetaStore,
-              catalogMeta.getCatalogProperties()); 
+      CatalogMeta catalogMeta = serverCatalog.getMetadata();
+      TableMetaStore tableMetaStore = ArcticCatalogUtil.buildMetaStore(catalogMeta);
+      HMSClientPool hmsClientPool =
+          new CachedHiveClientPool(tableMetaStore, catalogMeta.getCatalogProperties());
 
       if (hmsClientPool != null) {
         List<String> hiveTables = HiveTableUtil.getAllHiveTables(hmsClientPool, db);
