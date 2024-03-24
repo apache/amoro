@@ -116,13 +116,16 @@ public abstract class StatedPersistentBase extends PersistentBase {
     }
   }
 
-  protected final void invokeInStateLockInterruptibly(Runnable runnable)
+  protected final void invokeInStateLockWithTimeout(Runnable runnable, long time, TimeUnit unit)
       throws InterruptedException {
-    stateLock.lockInterruptibly();
-    try {
-      runnable.run();
-    } finally {
-      stateLock.unlock();
+    if (stateLock.tryLock(time, unit)) {
+      try {
+        runnable.run();
+      } finally {
+        stateLock.unlock();
+      }
+    } else {
+      throw new ConcurrentStateException("Unable to acquire lock within timeout.");
     }
   }
 
