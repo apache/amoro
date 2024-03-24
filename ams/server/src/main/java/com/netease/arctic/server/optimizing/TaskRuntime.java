@@ -304,14 +304,12 @@ public class TaskRuntime extends StatedPersistentBase {
     if (!thread.getToken().equals(getToken())) {
       throw new TaskRuntimeException(
           "The optimizer thread does not match, token in the task is %s, token in the request is %s.",
-          getToken(),
-          thread.getToken());
+          getToken(), thread.getToken());
     }
     if (thread.getThreadId() != threadId) {
       throw new TaskRuntimeException(
           "The optimizer thread does not match, threadId in the task is %s, threadId in the request is %s.",
-          threadId,
-          thread.getThreadId());
+          threadId, thread.getThreadId());
     }
   }
 
