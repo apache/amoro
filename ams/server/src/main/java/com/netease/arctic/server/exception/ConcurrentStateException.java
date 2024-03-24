@@ -20,7 +20,7 @@ package com.netease.arctic.server.exception;
 
 public class ConcurrentStateException extends ArcticRuntimeException {
 
-    public ConcurrentStateException(String message) {
-        super(message);
-    }
+  public ConcurrentStateException(String message) {
+    super(message);
+  }
 }

@@ -626,11 +626,7 @@ public class OptimizingQueue extends PersistentBase {
     private void persistProcessCompleted(boolean success) {
       if (!success) {
         doAsTransaction(
-            () ->
-                taskMap
-                    .values()
-                    .forEach(
-                        task -> task.tryCanceling(5, TimeUnit.SECONDS)),
+            () -> taskMap.values().forEach(task -> task.tryCanceling(5, TimeUnit.SECONDS)),
             () ->
                 doAs(
                     OptimizingMapper.class,
