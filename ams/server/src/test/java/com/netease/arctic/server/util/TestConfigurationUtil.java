@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.util;
 
+import static com.netease.arctic.server.ArcticManagementConf.*;
+
 import com.netease.arctic.api.config.ConfigHelpers;
 import com.netease.arctic.server.ArcticManagementConf;
 import org.junit.Assert;
@@ -25,8 +27,6 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.netease.arctic.server.ArcticManagementConf.*;
 
 public class TestConfigurationUtil {
 
