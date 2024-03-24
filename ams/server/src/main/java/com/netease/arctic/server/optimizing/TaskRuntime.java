@@ -301,15 +301,10 @@ public class TaskRuntime extends StatedPersistentBase {
     if (token == null) {
       throw new TaskRuntimeException("Task has been reset or not yet scheduled, taskId:%s", taskId);
     }
-    if (!thread.getToken().equals(getToken())) {
+    if (!thread.getToken().equals(getToken()) || thread.getThreadId() != threadId) {
       throw new TaskRuntimeException(
-          "The optimizer thread does not match, token in the task is %s, token in the request is %s.",
-          getToken(), thread.getToken());
-    }
-    if (thread.getThreadId() != threadId) {
-      throw new TaskRuntimeException(
-          "The optimizer thread does not match, threadId in the task is %s, threadId in the request is %s.",
-          threadId, thread.getThreadId());
+          "The optimizer thread does not match, the thread in the task is OptimizerThread(token=%s, threadId=%s), and the thread in the request is OptimizerThread(token=%s, threadId=%s).",
+          getToken(), threadId, thread.getToken(), thread.getThreadId());
     }
   }
 

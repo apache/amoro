@@ -547,7 +547,7 @@ public class OptimizingQueue extends PersistentBase {
         endTime = System.currentTimeMillis();
         persistProcessCompleted(true);
       } catch (Exception e) {
-        LOG.warn("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
+        LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
         status = Status.FAILED;
         failedReason = ExceptionUtil.getErrorMessage(e, 4000);
         endTime = System.currentTimeMillis();
