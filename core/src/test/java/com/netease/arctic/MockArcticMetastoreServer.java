@@ -411,7 +411,7 @@ public class MockArcticMetastoreServer implements Runnable {
       Map<Integer, OptimizingTaskId> executingTasksMap = executingTasks.get(authToken);
       if (executingTasksMap.containsKey(threadId)) {
         throw new ArcticException(
-            ErrorCodes.DUPLICATED_TASK_ERROR_CODE,
+            ErrorCodes.TASK_RUNTIME_ERROR_CODE,
             "DuplicateTask",
             String.format(
                 "Optimizer:%s" + " thread:%d is executing another task", authToken, threadId));

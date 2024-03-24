@@ -27,9 +27,9 @@ import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.dashboard.utils.OptimizingUtil;
-import com.netease.arctic.server.exception.DuplicateRuntimeException;
 import com.netease.arctic.server.exception.IllegalTaskStateException;
 import com.netease.arctic.server.exception.OptimizingClosedException;
+import com.netease.arctic.server.exception.TaskRuntimeException;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
@@ -299,10 +299,12 @@ public class TaskRuntime extends StatedPersistentBase {
 
   private void validThread(OptimizerThread thread) {
     if (token == null) {
-      throw new IllegalStateException("Task not scheduled yet, taskId:" + taskId);
+      throw new TaskRuntimeException("Task has been reset or not yet scheduled, taskId:%s", taskId);
     }
     if (!thread.getToken().equals(getToken()) || thread.getThreadId() != threadId) {
-      throw new DuplicateRuntimeException("Task already acked by optimizer thread + " + thread);
+      throw new TaskRuntimeException(
+          "The optimizer thread does not match, the thread in the task is OptimizerThread(token=%s, threadId=%s), and the thread in the request is OptimizerThread(token=%s, threadId=%s).",
+          getToken(), threadId, thread.getToken(), thread.getThreadId());
     }
   }
 
