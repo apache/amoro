@@ -203,30 +203,19 @@ public class TableController {
     UpgradeHiveMeta upgradeHiveMeta = ctx.bodyAsClass(UpgradeHiveMeta.class);
 
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
-    ArcticHiveCatalog arcticHiveCatalog = null;
-    if (serverCatalog instanceof ExternalCatalog) {
-      // todo: we may need to check whether the catalog supports mixed-hive table format
-      // we need to create a ArcticHiveCatalog with mixed hive table format.
-      Map<String, String> catalogProperties = serverCatalog.getMetadata().getCatalogProperties();
-      catalogProperties.put(CatalogMetaProperties.TABLE_FORMATS, TableFormat.MIXED_HIVE.name());
-      arcticHiveCatalog =
-          (ArcticHiveCatalog)
-              CatalogLoader.createCatalog(
-                  catalog,
-                  serverCatalog.getMetadata().getCatalogType(),
-                  catalogProperties,
-                  ((ExternalCatalog) serverCatalog).getTableMetaStore());
-    } else {
-      arcticHiveCatalog =
-          (ArcticHiveCatalog)
-              CatalogLoader.load(
+    CatalogMeta catalogMeta = serverCatalog,getMetadata();
+    String amsUri = CatalogLoader.load(
                   String.join(
                       "/",
                       AmsUtil.getAMSThriftAddress(
-                          serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME),
-                      catalog));
-    }
-    final ArcticHiveCatalog finalArcticHiveCatalog = arcticHiveCatalog;
+                          serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME));
+    catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, amsUri);
+    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
+    ArcticHiveCatalog arcticHiveCatalog = CatalogLoader.createCatalog(
+                  catalog,
+                  catalogMeta.getCatalogType(),
+                  catalogMeta.getCatalogProperties(),
+                  tableMetaStore);
 
     tableUpgradeExecutor.execute(
         () -> {
