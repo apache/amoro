@@ -33,7 +33,7 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.PartitionSpec;
@@ -81,7 +81,7 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     Catalog catalog = buildIcebergCatalog(name, properties, metaStore.getConfiguration());
     this.name = name;
     this.tableMetaStore = metaStore;
-    this.icebergCatalog = CatalogUtil.buildCacheCatalog(catalog, properties);
+    this.icebergCatalog = ArcticCatalogUtil.buildCacheCatalog(catalog, properties);
     if (catalog instanceof SupportsNamespaces) {
       this.asNamespaceCatalog = (SupportsNamespaces) catalog;
     }

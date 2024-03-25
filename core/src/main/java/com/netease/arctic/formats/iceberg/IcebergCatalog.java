@@ -21,7 +21,7 @@ package com.netease.arctic.formats.iceberg;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.FormatCatalog;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
@@ -41,7 +41,7 @@ public class IcebergCatalog implements FormatCatalog {
   private final Map<String, String> properties;
 
   public IcebergCatalog(Catalog catalog, Map<String, String> properties, TableMetaStore metaStore) {
-    this.icebergCatalog = CatalogUtil.buildCacheCatalog(catalog, properties);
+    this.icebergCatalog = ArcticCatalogUtil.buildCacheCatalog(catalog, properties);
     if (catalog instanceof SupportsNamespaces) {
       this.asNamespaceCatalog = (SupportsNamespaces) catalog;
     }
