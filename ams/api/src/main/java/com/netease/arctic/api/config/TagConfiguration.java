@@ -18,6 +18,7 @@
 
 package com.netease.arctic.api.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
@@ -31,6 +32,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /** Configuration for auto creating tags. */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TagConfiguration {
   // tag.auto-create.enabled
   private boolean autoCreateTag = false;

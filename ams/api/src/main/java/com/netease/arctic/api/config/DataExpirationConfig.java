@@ -18,6 +18,7 @@
 
 package com.netease.arctic.api.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 
 /** Data expiration configuration. */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DataExpirationConfig {
   // data-expire.enabled
   private boolean enabled;
