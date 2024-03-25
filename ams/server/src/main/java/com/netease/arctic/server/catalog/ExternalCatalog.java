@@ -54,10 +54,6 @@ public class ExternalCatalog extends ServerCatalog {
     updateDatabaseFilter(metadata);
   }
 
-  public TableMetaStore getTableMetaStore() {
-    return this.tableMetaStore;
-  }
-
   public void syncTable(String database, String tableName, TableFormat format) {
     ServerTableIdentifier tableIdentifier =
         ServerTableIdentifier.of(getMetadata().getCatalogName(), database, tableName, format);
