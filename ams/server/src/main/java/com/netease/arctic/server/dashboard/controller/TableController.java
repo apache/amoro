@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+
 import com.netease.arctic.Constants;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.CatalogMeta;
@@ -85,8 +87,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
 /** The controller that handles table requests. */
 public class TableController {
