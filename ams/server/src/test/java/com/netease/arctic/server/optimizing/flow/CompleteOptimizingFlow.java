@@ -18,7 +18,10 @@
 
 package com.netease.arctic.server.optimizing.flow;
 
-import static com.netease.arctic.table.TableProperties.*;
+import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO;
+import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO;
+import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT;
+import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE;
 
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.OptimizerProperties;
