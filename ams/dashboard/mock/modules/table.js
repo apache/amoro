@@ -192,7 +192,49 @@ export default [
   {
     url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/optimizing-processes',
     method: 'get',
-    response: () => ({ "message": "success", "code": 200, "result": { "list": [], "total": 0 } }),
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": {
+        "list": [
+          {
+            "tableId": 1,
+            "catalogName": "test_catalog",
+            "dbName": "db",
+            "tableName": "user",
+            "processId": 1711355266007,
+            "startTime": 1711355266007,
+            "optimizingType": "MINOR",
+            "status": "SUCCESS",
+            "failReason": null,
+            "duration": 3561,
+            "successTasks": 2,
+            "totalTasks": 2,
+            "runningTasks": 0,
+            "finishTime": 1711355269568,
+            "inputFiles": {
+              "fileCnt": 6,
+              "totalSize": 5511,
+              "averageSize": 918
+            },
+            "outputFiles": {
+              "fileCnt": 2,
+              "totalSize": 2188,
+              "averageSize": 1094
+            },
+            "summary": {
+              "input-data-files(rewrite)": "6",
+              "input-data-size(rewrite)": "5.38KB",
+              "input-data-records(rewrite)": "9",
+              "output-data-files": "2",
+              "output-data-size": "2.14KB",
+              "output-data-records": "9"
+            }
+          }
+        ],
+        "total": 1
+      }
+    }),
   },
   {
     url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/operations',
