@@ -239,8 +239,9 @@
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.github</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.com.github
+                                    <pattern>com.github.ben-manes</pattern>
+                                    <shadedPattern>
+                                        com.netease.arctic.shade.com.github.ben-manes
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>

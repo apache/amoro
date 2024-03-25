@@ -449,6 +449,10 @@ public class OptimizingQueue extends PersistentBase {
           }
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
           if (taskRuntime.getRetry() < tableRuntime.getMaxExecuteRetryCount()) {
+            LOG.info(
+                "Put task {} to retry queue, because {}",
+                taskRuntime.getTaskId(),
+                taskRuntime.getFailReason());
             retryTask(taskRuntime);
           } else {
             clearProcess(this);
@@ -547,7 +551,7 @@ public class OptimizingQueue extends PersistentBase {
         endTime = System.currentTimeMillis();
         persistProcessCompleted(true);
       } catch (Exception e) {
-        LOG.warn("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
+        LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
         status = Status.FAILED;
         failedReason = ExceptionUtil.getErrorMessage(e, 4000);
         endTime = System.currentTimeMillis();

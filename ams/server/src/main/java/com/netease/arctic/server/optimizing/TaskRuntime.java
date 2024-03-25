@@ -18,7 +18,8 @@
 
 package com.netease.arctic.server.optimizing;
 
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.netease.arctic.api.OptimizingTask;
 import com.netease.arctic.api.OptimizingTaskId;
 import com.netease.arctic.api.OptimizingTaskResult;
@@ -26,9 +27,9 @@ import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.dashboard.utils.OptimizingUtil;
-import com.netease.arctic.server.exception.DuplicateRuntimeException;
 import com.netease.arctic.server.exception.IllegalTaskStateException;
 import com.netease.arctic.server.exception.OptimizingClosedException;
+import com.netease.arctic.server.exception.TaskRuntimeException;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
@@ -37,7 +38,6 @@ import com.netease.arctic.server.resource.OptimizerThread;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -299,10 +299,12 @@ public class TaskRuntime extends StatedPersistentBase {
 
   private void validThread(OptimizerThread thread) {
     if (token == null) {
-      throw new IllegalStateException("Task not scheduled yet, taskId:" + taskId);
+      throw new TaskRuntimeException("Task has been reset or not yet scheduled, taskId:%s", taskId);
     }
     if (!thread.getToken().equals(getToken()) || thread.getThreadId() != threadId) {
-      throw new DuplicateRuntimeException("Task already acked by optimizer thread + " + thread);
+      throw new TaskRuntimeException(
+          "The optimizer thread does not match, the thread in the task is OptimizerThread(token=%s, threadId=%s), and the thread in the request is OptimizerThread(token=%s, threadId=%s).",
+          getToken(), threadId, thread.getToken(), thread.getThreadId());
     }
   }
 
@@ -318,22 +320,20 @@ public class TaskRuntime extends StatedPersistentBase {
     return new TaskQuota(this);
   }
 
-  private static final Map<Status, Set<Status>> nextStatusMap = new HashMap<>();
-
-  static {
-    nextStatusMap.put(
-        Status.PLANNED, Sets.newHashSet(Status.PLANNED, Status.SCHEDULED, Status.CANCELED));
-    nextStatusMap.put(
-        Status.SCHEDULED,
-        Sets.newHashSet(Status.PLANNED, Status.SCHEDULED, Status.ACKED, Status.CANCELED));
-    nextStatusMap.put(
-        Status.ACKED,
-        Sets.newHashSet(
-            Status.PLANNED, Status.ACKED, Status.SUCCESS, Status.FAILED, Status.CANCELED));
-    nextStatusMap.put(Status.FAILED, Sets.newHashSet(Status.PLANNED, Status.FAILED));
-    nextStatusMap.put(Status.SUCCESS, Sets.newHashSet(Status.SUCCESS));
-    nextStatusMap.put(Status.CANCELED, Sets.newHashSet(Status.CANCELED));
-  }
+  private static final Map<Status, Set<Status>> nextStatusMap =
+      ImmutableMap.<Status, Set<Status>>builder()
+          .put(Status.PLANNED, ImmutableSet.of(Status.PLANNED, Status.SCHEDULED, Status.CANCELED))
+          .put(
+              Status.SCHEDULED,
+              ImmutableSet.of(Status.PLANNED, Status.SCHEDULED, Status.ACKED, Status.CANCELED))
+          .put(
+              Status.ACKED,
+              ImmutableSet.of(
+                  Status.PLANNED, Status.ACKED, Status.SUCCESS, Status.FAILED, Status.CANCELED))
+          .put(Status.FAILED, ImmutableSet.of(Status.PLANNED, Status.FAILED))
+          .put(Status.SUCCESS, ImmutableSet.of(Status.SUCCESS))
+          .put(Status.CANCELED, ImmutableSet.of(Status.CANCELED))
+          .build();
 
   private class TaskStatusMachine {
 

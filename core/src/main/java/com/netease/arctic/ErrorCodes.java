@@ -29,7 +29,7 @@ public final class ErrorCodes {
   public static final int FORBIDDEN_ERROR_CODE = 1004;
 
   public static final int TASK_NOT_FOUND_ERROR_CODE = 2001;
-  public static final int DUPLICATED_TASK_ERROR_CODE = 2002;
+  public static final int TASK_RUNTIME_ERROR_CODE = 2002;
   public static final int OPTIMIZING_CLOSED_ERROR_CODE = 2003;
   public static final int ILLEGAL_TASK_STATE_ERROR_CODE = 2004;
   public static final int PLUGIN_AUTH_ERROR_CODE = 2005;
