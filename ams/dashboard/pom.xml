@@ -32,7 +32,6 @@
     <url>https://amoro.netease.com</url>
 
     <properties>
-        <maven.resources.overwrite>true</maven.resources.overwrite>
         <node.version>v18.0.0</node.version>
         <npm.version>8.15.5</npm.version>
         <maven-frontend-plugin.version>1.12.0</maven-frontend-plugin.version>
