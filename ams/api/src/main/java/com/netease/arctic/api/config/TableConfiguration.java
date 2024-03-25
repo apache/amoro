@@ -19,9 +19,9 @@
 package com.netease.arctic.api.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.google.common.base.Objects;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
+import org.apache.iceberg.relocated.com.google.common.base.Objects;
 
 import java.util.Map;
 import java.util.Optional;

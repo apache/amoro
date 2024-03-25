@@ -18,8 +18,6 @@
 
 package com.netease.arctic.spark.writer;
 
-import static com.netease.arctic.table.TableProperties.*;
-
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.table.SupportHive;
@@ -31,6 +29,7 @@ import com.netease.arctic.spark.test.utils.RecordGenerator;
 import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Files;
@@ -177,9 +176,9 @@ public class TestMixedWriter extends MixedTableTestBase {
             tableBuilder ->
                 tableBuilder
                     .withPrimaryKeySpec(keySpec)
-                    .withProperty(CHANGE_FILE_FORMAT, fileFormat.name())
-                    .withProperty(BASE_FILE_FORMAT, fileFormat.name())
-                    .withProperty(DEFAULT_FILE_FORMAT, fileFormat.name())
+                    .withProperty(TableProperties.CHANGE_FILE_FORMAT, fileFormat.name())
+                    .withProperty(TableProperties.BASE_FILE_FORMAT, fileFormat.name())
+                    .withProperty(TableProperties.DEFAULT_FILE_FORMAT, fileFormat.name())
                     .withPartitionSpec(ptSpec));
     Map<String, String> map = new HashMap<>();
     map.put(WriteMode.WRITE_MODE_KEY, writeMode.mode);

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.api.config;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +48,7 @@ public class StructuredOptionsSplitter {
    * @return a list of splits
    */
   public static List<String> splitEscaped(String string, char delimiter) {
-    List<Token> tokens = tokenize(checkNotNull(string), delimiter);
+    List<Token> tokens = tokenize(Preconditions.checkNotNull(string), delimiter);
     return processTokens(tokens);
   }
 

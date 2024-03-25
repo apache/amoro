@@ -18,11 +18,10 @@
 
 package com.netease.arctic.server.dashboard.utils;
 
-import static com.netease.arctic.server.ArcticManagementConf.*;
-
 import com.netease.arctic.Constants;
 import com.netease.arctic.api.TableIdentifier;
 import com.netease.arctic.api.config.Configurations;
+import com.netease.arctic.server.ArcticManagementConf;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -115,7 +114,8 @@ public class AmsUtil {
 
   public static InetAddress lookForBindHost(String prefix) {
     if (prefix.startsWith("0")) {
-      throw new RuntimeException("config " + SERVER_EXPOSE_HOST.key() + " can't start with 0");
+      throw new RuntimeException(
+          "config " + ArcticManagementConf.SERVER_EXPOSE_HOST.key() + " can't start with 0");
     }
     try {
       Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
@@ -136,22 +136,22 @@ public class AmsUtil {
   }
 
   public static String getAMSThriftAddress(Configurations conf, String serviceName) {
-    if (conf.getBoolean(HA_ENABLE)) {
+    if (conf.getBoolean(ArcticManagementConf.HA_ENABLE)) {
       return String.format(
           ZOOKEEPER_ADDRESS_FORMAT,
-          conf.getString(HA_ZOOKEEPER_ADDRESS),
-          conf.getString(HA_CLUSTER_NAME));
+          conf.getString(ArcticManagementConf.HA_ZOOKEEPER_ADDRESS),
+          conf.getString(ArcticManagementConf.HA_CLUSTER_NAME));
     } else {
       if (Constants.THRIFT_TABLE_SERVICE_NAME.equals(serviceName)) {
         return String.format(
             THRIFT_ADDRESS_FORMAT,
-            conf.getString(SERVER_EXPOSE_HOST),
-            conf.getInteger(TABLE_SERVICE_THRIFT_BIND_PORT));
+            conf.getString(ArcticManagementConf.SERVER_EXPOSE_HOST),
+            conf.getInteger(ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT));
       } else if (Constants.THRIFT_OPTIMIZING_SERVICE_NAME.equals(serviceName)) {
         return String.format(
             THRIFT_ADDRESS_FORMAT,
-            conf.getString(SERVER_EXPOSE_HOST),
-            conf.getInteger(OPTIMIZING_SERVICE_THRIFT_BIND_PORT));
+            conf.getString(ArcticManagementConf.SERVER_EXPOSE_HOST),
+            conf.getInteger(ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT));
       } else {
         throw new IllegalArgumentException(String.format("Unknown service name %s", serviceName));
       }

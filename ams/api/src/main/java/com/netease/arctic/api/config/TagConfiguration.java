@@ -18,10 +18,10 @@
 
 package com.netease.arctic.api.config;
 
-import com.google.common.base.Objects;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+import org.apache.iceberg.relocated.com.google.common.base.Objects;
 
 import java.time.Duration;
 import java.time.LocalDateTime;

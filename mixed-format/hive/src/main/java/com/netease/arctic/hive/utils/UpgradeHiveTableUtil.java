@@ -18,7 +18,11 @@
 
 package com.netease.arctic.hive.utils;
 
-import static com.netease.arctic.table.TableProperties.*;
+import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
+import static com.netease.arctic.table.TableProperties.FILE_FORMAT_PARQUET;
 
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;

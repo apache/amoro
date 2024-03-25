@@ -18,7 +18,11 @@
 
 package com.netease.arctic.server.dashboard;
 
-import static io.javalin.apibuilder.ApiBuilder.*;
+import static io.javalin.apibuilder.ApiBuilder.delete;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.path;
+import static io.javalin.apibuilder.ApiBuilder.post;
+import static io.javalin.apibuilder.ApiBuilder.put;
 
 import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.server.DefaultOptimizingService;

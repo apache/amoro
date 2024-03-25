@@ -18,7 +18,15 @@
 
 package com.netease.arctic.server.optimizing;
 
-import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.*;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.GROUP_TAG;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TABLES;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TASKS;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_OPTIMIZER_INSTANCES;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TABLES;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TASKS;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
+import static com.netease.arctic.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_THREADS;
 
 import com.google.common.collect.ImmutableMap;
 import com.netease.arctic.BasicTableTestHelper;
