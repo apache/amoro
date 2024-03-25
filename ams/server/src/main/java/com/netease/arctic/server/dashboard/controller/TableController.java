@@ -160,12 +160,6 @@ public class TableController {
     TableMetaStore tableMetaStore = ArcticCatalogUtil.buildMetaStore(catalogMeta);
     HMSClientPool hmsClientPool =
         new CachedHiveClientPool(tableMetaStore, catalogMeta.getCatalogProperties());
-    Preconditions.checkArgument(
-        hmsClientPool != null,
-        String.format(
-            "catalog {} is neither a mixed hive catalog nor a external catalog support hive, "
-                + "so not support load hive tables",
-            catalog));
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     HiveTableInfo hiveTableInfo;
