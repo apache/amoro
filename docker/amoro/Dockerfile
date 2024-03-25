@@ -38,6 +38,7 @@ RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.
     && cp ams/dist/target/*.zip /usr/local \
     && unzip /usr/local/amoro-${AMORO_VERSION}-bin.zip -d /usr/local \
     && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/flink -rf \
+    && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/spark -rf \
     && mv /usr/local/amoro-${AMORO_VERSION} /usr/local/amoro \
     && rm -rf /workspace/amoro
 

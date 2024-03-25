@@ -58,8 +58,8 @@ helm install --dry-run --debug --generate-name ../amoro
 
 ## Documentation
 
-Configuration guide documentation for Amoro lives [on the website](https://amoro.netease.com/docs/latest). (Not just for Helm Chart)
+Configuration guide documentation for Amoro lives [on the website](https://amoro.netease.com/docs/latest/). (Not just for Helm Chart)
 
 ## Contributing
 
-Want to help build Amoro? Check out our [contributing documentation](https://amoro.netease.com/join-community).
+Want to help build Amoro? Check out our [contributing documentation](https://amoro.netease.com/join-community/).

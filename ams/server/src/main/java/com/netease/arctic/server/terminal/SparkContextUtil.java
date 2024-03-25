@@ -36,6 +36,10 @@ public class SparkContextUtil {
   public static final String PAIMON_CATALOG = "org.apache.paimon.spark.SparkCatalog";
   public static final String MIXED_FORMAT_SESSION_CATALOG =
       "com.netease.arctic.spark.ArcticSparkSessionCatalog";
+  public static final String UNIFIED_SESSION_CATALOG =
+      "com.netease.arctic.spark.SparkUnifiedSessionCatalog";
+  public static final String UNIFIED_CATALOG = "com.netease.arctic.spark.SparkUnifiedCatalog";
+
   public static final String MIXED_FORMAT_PROPERTY_REFRESH_BEFORE_USAGE =
       "spark.sql.arctic.refresh-catalog-before-usage";
 
@@ -64,6 +68,18 @@ public class SparkContextUtil {
           catalogClassName = MIXED_FORMAT_SESSION_CATALOG;
         }
         sparkConf.put(sparkCatalogPrefix + ".url", catalogUrlBase + "/" + catalog);
+      } else if ("unified".equalsIgnoreCase(connector)) {
+        catalogClassName = UNIFIED_CATALOG;
+        String type =
+            sessionConfig.get(
+                TerminalSessionFactory.SessionConfigOptions.catalogProperty(catalog, "type"));
+        if (sessionConfig.getBoolean(
+                TerminalSessionFactory.SessionConfigOptions.USING_SESSION_CATALOG_FOR_HIVE)
+            && CatalogType.HIVE.name().equalsIgnoreCase(type)) {
+          sparkCatalogPrefix = "spark.sql.catalog.spark_catalog";
+          catalogClassName = UNIFIED_SESSION_CATALOG;
+        }
+        sparkConf.put(sparkCatalogPrefix + ".uri", catalogUrlBase + "/" + catalog);
       } else {
         catalogClassName = "iceberg".equalsIgnoreCase(connector) ? ICEBERG_CATALOG : PAIMON_CATALOG;
         Map<String, String> properties =

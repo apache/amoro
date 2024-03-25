@@ -18,12 +18,18 @@
 
 package com.netease.arctic.server.catalog;
 
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.properties.CatalogMetaProperties;
+import com.netease.arctic.server.ArcticManagementConf;
+import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.utils.ArcticCatalogUtil;
-import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -36,20 +42,23 @@ public class CatalogBuilder {
   /** matrix of catalog type and supported table formats */
   private static final Map<String, Set<TableFormat>> formatSupportedMatrix =
       ImmutableMap.of(
-          CatalogMetaProperties.CATALOG_TYPE_HADOOP,
-          Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.PAIMON),
-          CatalogMetaProperties.CATALOG_TYPE_GLUE,
-          Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
-          CatalogMetaProperties.CATALOG_TYPE_CUSTOM,
-          Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
-          CatalogMetaProperties.CATALOG_TYPE_HIVE,
-          Sets.newHashSet(
-              TableFormat.ICEBERG,
-              TableFormat.MIXED_ICEBERG,
-              TableFormat.MIXED_HIVE,
-              TableFormat.PAIMON),
-          CatalogMetaProperties.CATALOG_TYPE_AMS,
-          Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
+          CATALOG_TYPE_HADOOP,
+              Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.PAIMON),
+          CATALOG_TYPE_GLUE, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
+          CATALOG_TYPE_CUSTOM, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
+          CATALOG_TYPE_HIVE,
+              Sets.newHashSet(
+                  TableFormat.ICEBERG,
+                  TableFormat.MIXED_ICEBERG,
+                  TableFormat.MIXED_HIVE,
+                  TableFormat.PAIMON),
+          CATALOG_TYPE_AMS, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
+
+  private static String getAmsURI(Configurations serviceConfig) {
+    String host = serviceConfig.getString(ArcticManagementConf.SERVER_EXPOSE_HOST);
+    Integer port = serviceConfig.getInteger(ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT);
+    return String.format("thrift://%s:%d", host, port);
+  }
 
   public static ServerCatalog buildServerCatalog(
       CatalogMeta catalogMeta, Configurations serverConfiguration) {
@@ -58,10 +67,6 @@ public class CatalogBuilder {
 
     Preconditions.checkState(
         formatSupportedMatrix.containsKey(type), "unsupported catalog type: %s", type);
-    Preconditions.checkState(
-        tableFormats.size() == 1,
-        "only 1 types format is supported: %s",
-        Joiner.on(",").join(tableFormats));
 
     Set<TableFormat> supportedFormats = formatSupportedMatrix.get(type);
     TableFormat tableFormat = tableFormats.iterator().next();
@@ -72,16 +77,19 @@ public class CatalogBuilder {
         type);
 
     switch (type) {
-      case CatalogMetaProperties.CATALOG_TYPE_HADOOP:
-      case CatalogMetaProperties.CATALOG_TYPE_GLUE:
-      case CatalogMetaProperties.CATALOG_TYPE_CUSTOM:
+      case CATALOG_TYPE_HADOOP:
+      case CATALOG_TYPE_GLUE:
+      case CATALOG_TYPE_CUSTOM:
         return new ExternalCatalog(catalogMeta);
-      case CatalogMetaProperties.CATALOG_TYPE_HIVE:
-        if (tableFormat.equals(TableFormat.MIXED_HIVE)) {
+      case CATALOG_TYPE_HIVE:
+        if (tableFormats.size() == 1 && tableFormat.equals(TableFormat.MIXED_HIVE)) {
           return new MixedHiveCatalogImpl(catalogMeta);
         }
+        // if tableFormats.size() > 1 , we nned fullfill the ams uri in catalogProperty
+        String amsUri = getAmsURI(serverConfiguration);
+        catalogMeta.getCatalogProperties().put(CatalogMetaProperties.AMS_URI, amsUri);
         return new ExternalCatalog(catalogMeta);
-      case CatalogMetaProperties.CATALOG_TYPE_AMS:
+      case CATALOG_TYPE_AMS:
         if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
           return new InternalMixedCatalogImpl(catalogMeta, serverConfiguration);
         } else if (tableFormat.equals(TableFormat.ICEBERG)) {
