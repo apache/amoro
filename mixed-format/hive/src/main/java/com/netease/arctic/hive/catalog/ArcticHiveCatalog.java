@@ -21,6 +21,9 @@ package com.netease.arctic.hive.catalog;
 import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS;
 import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
 import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.NoSuchDatabaseException;
@@ -28,7 +31,6 @@ import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.TableMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.HMSClient;
@@ -37,6 +39,10 @@ import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.utils.CompatibleHivePropertyUtil;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.ArcticFileIOs;
+import com.netease.arctic.op.ArcticHadoopTableOperations;
+import com.netease.arctic.op.CreateTableTransaction;
 import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.properties.MetaTableProperties;
 import com.netease.arctic.table.ArcticTable;
@@ -45,8 +51,13 @@ import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.blocker.BasicTableBlockerManager;
+import com.netease.arctic.table.blocker.TableBlockerManager;
+import com.netease.arctic.utils.ArcticCatalogUtil;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
@@ -56,8 +67,13 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableMetadata;
+import org.apache.iceberg.TableOperations;
+import org.apache.iceberg.Transaction;
+import org.apache.iceberg.Transactions;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +84,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -93,9 +110,9 @@ public class ArcticHiveCatalog implements ArcticCatalog {
   @Override
   public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
     Preconditions.checkArgument(
-            properties.containsKey(CatalogMetaProperties.AMS_URI),
-            "property: %s must be set",
-            CatalogMetaProperties.AMS_URI);
+        properties.containsKey(CatalogMetaProperties.AMS_URI),
+        "property: %s must be set",
+        CatalogMetaProperties.AMS_URI);
     this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
     this.name = name;
     this.catalogProperties = properties;
@@ -141,6 +158,17 @@ public class ArcticHiveCatalog implements ArcticCatalog {
     }
   }
 
+  @Override
+  public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
+    validate(tableIdentifier);
+    return BasicTableBlockerManager.build(tableIdentifier, client);
+  }
+
+  @Override
+  public Map<String, String> properties() {
+    return catalogProperties;
+  }
+
   public static void putNotNullProperties(
       Map<String, String> properties, String key, String value) {
     if (value != null) {
@@ -149,9 +177,9 @@ public class ArcticHiveCatalog implements ArcticCatalog {
   }
 
   /** HMS is case-insensitive for table name and database */
-  @Override
   protected TableMeta getArcticTableMeta(TableIdentifier identifier) {
     org.apache.hadoop.hive.metastore.api.Table hiveTable = null;
+    identifier = identifier.toLowCaseIdentifier();
     try {
       hiveTable = HiveTableUtil.loadHmsTable(this.hiveClientPool, identifier);
     } catch (RuntimeException e) {
@@ -243,6 +271,11 @@ public class ArcticHiveCatalog implements ArcticCatalog {
     return new MixedHiveTableBuilder(identifier, schema);
   }
 
+  @Override
+  public void renameTable(TableIdentifier from, String newTableName) {
+    throw new UnsupportedOperationException("unsupported rename arctic table for now.");
+  }
+
   public HMSClientPool getHMSClient() {
     return hiveClientPool;
   }
@@ -325,26 +358,428 @@ public class ArcticHiveCatalog implements ArcticCatalog {
   }
 
   @Override
+  public boolean dropTable(TableIdentifier identifier, boolean purge) {
+    validate(identifier);
+    TableMeta meta;
+    try {
+      meta = getArcticTableMeta(identifier);
+    } catch (NoSuchTableException e) {
+      return false;
+    }
+
+    doDropTable(meta, purge);
+    return true;
+  }
+
   protected void doDropTable(TableMeta meta, boolean purge) {
     tables.dropTableByMeta(meta, purge);
   }
 
-  class MixedHiveTableBuilder extends ArcticTableBuilder {
+  protected class ArcticTableBuilder implements TableBuilder {
+    protected TableIdentifier identifier;
+    protected Schema schema;
+    protected PartitionSpec partitionSpec;
+    protected SortOrder sortOrder;
+    protected Map<String, String> properties = new HashMap<>();
+    protected PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.noPrimaryKey();
+    protected String location;
+
+    public ArcticTableBuilder(TableIdentifier identifier, Schema schema) {
+      Preconditions.checkArgument(
+          identifier.getCatalog().equals(name()),
+          "Illegal table id:%s for catalog:%s",
+          identifier.toString(),
+          name());
+      this.identifier = identifier;
+      this.schema = schema;
+      this.partitionSpec = PartitionSpec.unpartitioned();
+      this.sortOrder = SortOrder.unsorted();
+    }
+
+    @Override
+    public TableBuilder withPartitionSpec(PartitionSpec partitionSpec) {
+      this.partitionSpec = partitionSpec;
+      return this;
+    }
+
+    @Override
+    public TableBuilder withSortOrder(SortOrder sortOrder) {
+      this.sortOrder = sortOrder;
+      return this;
+    }
+
+    @Override
+    public TableBuilder withProperties(Map<String, String> properties) {
+      this.properties.putAll(properties);
+      return this;
+    }
+
+    @Override
+    public TableBuilder withProperty(String key, String value) {
+      this.properties.put(key, value);
+      return this;
+    }
+
+    @Override
+    public TableBuilder withPrimaryKeySpec(PrimaryKeySpec primaryKeySpec) {
+      this.primaryKeySpec = primaryKeySpec;
+      return this;
+    }
+
+    @Override
+    public ArcticTable create() {
+      ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
+      doCreateCheck();
+      TableMeta meta = builder.build();
+      ArcticTable table = createTableByMeta(meta, schema, primaryKeySpec, partitionSpec);
+      return table;
+    }
+
+    @Override
+    public Transaction createTransaction() {
+      ArcticFileIO arcticFileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
+      ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
+      TableMeta meta = builder.build();
+      String location = getTableLocationForCreate();
+      TableOperations tableOperations =
+          new ArcticHadoopTableOperations(
+              new Path(location), arcticFileIO, tableMetaStore.getConfiguration());
+      TableMetadata tableMetadata =
+          tableMetadata(schema, partitionSpec, sortOrder, properties, location);
+      Transaction transaction =
+          Transactions.createTableTransaction(
+              identifier.getTableName(), tableOperations, tableMetadata);
+      return new CreateTableTransaction(
+          transaction,
+          this::create,
+          () -> {
+            doRollbackCreateTable(meta);
+            try {
+              client.removeTable(identifier.buildTableIdentifier(), true);
+            } catch (TException e) {
+              throw new RuntimeException(e);
+            }
+          });
+    }
+
+    protected ArcticTable createTableByMeta(
+        TableMeta tableMeta,
+        Schema schema,
+        PrimaryKeySpec primaryKeySpec,
+        PartitionSpec partitionSpec) {
+      return tables.createTableByMeta(tableMeta, schema, primaryKeySpec, partitionSpec);
+    }
+
+    protected void checkAmsTableMetadata() {
+      try {
+        client.getTable(identifier.buildTableIdentifier());
+        throw new org.apache.iceberg.exceptions.AlreadyExistsException("table already exist");
+      } catch (com.netease.arctic.api.NoSuchObjectException e) {
+        checkProperties();
+      } catch (TException e) {
+        throw new IllegalStateException("failed when load table", e);
+      }
+    }
+
+    protected void doCreateCheck() {
+      if (primaryKeySpec.primaryKeyExisted()) {
+        primaryKeySpec
+            .fieldNames()
+            .forEach(
+                primaryKey -> {
+                  if (schema.findField(primaryKey).isOptional()) {
+                    throw new IllegalArgumentException(
+                        "please check your schema, the primary key nested field must"
+                            + " be required and field name is "
+                            + primaryKey);
+                  }
+                });
+      }
+      listDatabases().stream()
+          .filter(d -> d.equals(identifier.getDatabase()))
+          .findFirst()
+          .orElseThrow(() -> new NoSuchDatabaseException(identifier.getDatabase()));
+
+      checkAmsTableMetadata();
+    }
+
+    protected void checkProperties() {
+      Map<String, String> mergedProperties =
+          ArcticCatalogUtil.mergeCatalogPropertiesToTable(properties, catalogProperties);
+      boolean enableStream =
+          CompatiblePropertyUtil.propertyAsBoolean(
+              mergedProperties,
+              TableProperties.ENABLE_LOG_STORE,
+              TableProperties.ENABLE_LOG_STORE_DEFAULT);
+      if (enableStream) {
+        Preconditions.checkArgument(
+            mergedProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC),
+            "log-store.topic must not be null when log-store.enabled is true.");
+        Preconditions.checkArgument(
+            mergedProperties.containsKey(TableProperties.LOG_STORE_ADDRESS),
+            "log-store.address must not be null when log-store.enabled is true.");
+        String logStoreType = mergedProperties.get(LOG_STORE_TYPE);
+        Preconditions.checkArgument(
+            logStoreType == null
+                || logStoreType.equals(LOG_STORE_STORAGE_TYPE_KAFKA)
+                || logStoreType.equals(LOG_STORE_STORAGE_TYPE_PULSAR),
+            String.format(
+                "%s can not be set %s, valid values are: [%s, %s].",
+                LOG_STORE_TYPE,
+                logStoreType,
+                LOG_STORE_STORAGE_TYPE_KAFKA,
+                LOG_STORE_STORAGE_TYPE_PULSAR));
+        properties.putIfAbsent(
+            TableProperties.LOG_STORE_DATA_FORMAT, TableProperties.LOG_STORE_DATA_FORMAT_DEFAULT);
+      }
+    }
+
+    protected void doRollbackCreateTable(TableMeta meta) {
+      tables.dropTableByMeta(meta, true);
+    }
+
+    protected ConvertStructUtil.TableMetaBuilder createTableMataBuilder() {
+      ConvertStructUtil.TableMetaBuilder builder =
+          ConvertStructUtil.newTableMetaBuilder(this.identifier, this.schema);
+      String tableLocation = getTableLocationForCreate();
+
+      builder
+          .withTableLocation(tableLocation)
+          .withProperties(this.properties)
+          .withFormat(TableFormat.MIXED_ICEBERG)
+          .withPrimaryKeySpec(this.primaryKeySpec);
+
+      if (this.primaryKeySpec.primaryKeyExisted()) {
+        builder =
+            builder
+                .withBaseLocation(tableLocation + "/base")
+                .withChangeLocation(tableLocation + "/change");
+      } else {
+        builder = builder.withBaseLocation(tableLocation + "/base");
+      }
+      return builder;
+    }
+
+    private String getTableLocationForCreate() {
+      if (org.apache.commons.lang3.StringUtils.isNotBlank(location)) {
+        return location;
+      }
+
+      if (properties.containsKey(TableProperties.LOCATION)) {
+        String tableLocation = properties.get(TableProperties.LOCATION);
+        if (!Objects.equals("/", tableLocation) && tableLocation.endsWith("/")) {
+          tableLocation = tableLocation.substring(0, tableLocation.length() - 1);
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(tableLocation)) {
+          return tableLocation;
+        }
+      }
+
+      String databaseLocation = getDatabaseLocation();
+
+      if (org.apache.commons.lang3.StringUtils.isNotBlank(databaseLocation)) {
+        return databaseLocation + '/' + identifier.getTableName();
+      } else {
+        throw new IllegalStateException(
+            "either `location` in table properties or "
+                + "`warehouse` in catalog properties is specified");
+      }
+    }
+
+    protected void fillTableProperties(TableMeta meta) {
+      meta.putToProperties(
+          TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
+      meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+      meta.putToProperties(
+          org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED, "true");
+      meta.putToProperties("flink.max-continuous-empty-commits", String.valueOf(Integer.MAX_VALUE));
+    }
+
+    protected String getDatabaseLocation() {
+      if (catalogProperties != null) {
+        String catalogWarehouse =
+            catalogProperties.getOrDefault(CatalogMetaProperties.KEY_WAREHOUSE, null);
+        if (catalogWarehouse == null) {
+          catalogWarehouse =
+              catalogProperties.getOrDefault(CatalogMetaProperties.KEY_WAREHOUSE_DIR, null);
+        }
+        if (catalogWarehouse == null) {
+          throw new NullPointerException("Catalog warehouse is null.");
+        }
+        if (!Objects.equals("/", catalogWarehouse) && catalogWarehouse.endsWith("/")) {
+          catalogWarehouse = catalogWarehouse.substring(0, catalogWarehouse.length() - 1);
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(catalogWarehouse)) {
+          return catalogWarehouse + '/' + identifier.getDatabase();
+        }
+      }
+      return null;
+    }
+
+    protected TableMetadata tableMetadata(
+        Schema schema,
+        PartitionSpec spec,
+        SortOrder order,
+        Map<String, String> properties,
+        String location) {
+      Preconditions.checkNotNull(schema, "A table schema is required");
+
+      Map<String, String> tableProps = properties == null ? ImmutableMap.of() : properties;
+      PartitionSpec partitionSpec = spec == null ? PartitionSpec.unpartitioned() : spec;
+      SortOrder sortOrder = order == null ? SortOrder.unsorted() : order;
+      return TableMetadata.newTableMetadata(schema, partitionSpec, sortOrder, location, tableProps);
+    }
+  }
+
+  class MixedHiveTableBuilder implements TableBuilder {
+    protected TableIdentifier identifier;
+    protected Schema schema;
+    protected PartitionSpec partitionSpec;
+    protected SortOrder sortOrder;
+    protected Map<String, String> properties = new HashMap<>();
+    protected PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.noPrimaryKey();
+    protected String location;
+
+    @Override
+    public ArcticTable create() {
+      ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
+      doCreateCheck();
+      TableMeta meta = builder.build();
+      ArcticTable table = createTableByMeta(meta, schema, primaryKeySpec, partitionSpec);
+      //      createTableMeta(meta);
+      return table;
+    }
+
+    @Override
+    public Transaction createTransaction() {
+      ArcticFileIO arcticFileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
+      ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
+      TableMeta meta = builder.build();
+      String location = getTableLocationForCreate();
+      TableOperations tableOperations =
+          new ArcticHadoopTableOperations(
+              new Path(location), arcticFileIO, tableMetaStore.getConfiguration());
+      TableMetadata tableMetadata =
+          tableMetadata(schema, partitionSpec, sortOrder, properties, location);
+      Transaction transaction =
+          Transactions.createTableTransaction(
+              identifier.getTableName(), tableOperations, tableMetadata);
+      return new CreateTableTransaction(
+          transaction,
+          this::create,
+          () -> {
+            doRollbackCreateTable(meta);
+            try {
+              client.removeTable(identifier.buildTableIdentifier(), true);
+            } catch (TException e) {
+              throw new RuntimeException(e);
+            }
+          });
+    }
+
+    protected ArcticTable createTableByMeta(
+        TableMeta tableMeta,
+        Schema schema,
+        PrimaryKeySpec primaryKeySpec,
+        PartitionSpec partitionSpec) {
+      return tables.createTableByMeta(tableMeta, schema, primaryKeySpec, partitionSpec);
+    }
+
+    protected void checkProperties() {
+      Map<String, String> mergedProperties =
+          ArcticCatalogUtil.mergeCatalogPropertiesToTable(properties, catalogProperties);
+      boolean enableStream =
+          CompatiblePropertyUtil.propertyAsBoolean(
+              mergedProperties,
+              TableProperties.ENABLE_LOG_STORE,
+              TableProperties.ENABLE_LOG_STORE_DEFAULT);
+      if (enableStream) {
+        Preconditions.checkArgument(
+            mergedProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC),
+            "log-store.topic must not be null when log-store.enabled is true.");
+        Preconditions.checkArgument(
+            mergedProperties.containsKey(TableProperties.LOG_STORE_ADDRESS),
+            "log-store.address must not be null when log-store.enabled is true.");
+        String logStoreType = mergedProperties.get(LOG_STORE_TYPE);
+        Preconditions.checkArgument(
+            logStoreType == null
+                || logStoreType.equals(LOG_STORE_STORAGE_TYPE_KAFKA)
+                || logStoreType.equals(LOG_STORE_STORAGE_TYPE_PULSAR),
+            String.format(
+                "%s can not be set %s, valid values are: [%s, %s].",
+                LOG_STORE_TYPE,
+                logStoreType,
+                LOG_STORE_STORAGE_TYPE_KAFKA,
+                LOG_STORE_STORAGE_TYPE_PULSAR));
+        properties.putIfAbsent(
+            TableProperties.LOG_STORE_DATA_FORMAT, TableProperties.LOG_STORE_DATA_FORMAT_DEFAULT);
+      }
+    }
+
+    private String getTableLocationForCreate() {
+      if (org.apache.commons.lang3.StringUtils.isNotBlank(location)) {
+        return location;
+      }
+
+      if (properties.containsKey(TableProperties.LOCATION)) {
+        String tableLocation = properties.get(TableProperties.LOCATION);
+        if (!Objects.equals("/", tableLocation) && tableLocation.endsWith("/")) {
+          tableLocation = tableLocation.substring(0, tableLocation.length() - 1);
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(tableLocation)) {
+          return tableLocation;
+        }
+      }
+
+      String databaseLocation = getDatabaseLocation();
+
+      if (org.apache.commons.lang3.StringUtils.isNotBlank(databaseLocation)) {
+        return databaseLocation + '/' + identifier.getTableName();
+      } else {
+        throw new IllegalStateException(
+            "either `location` in table properties or "
+                + "`warehouse` in catalog properties is specified");
+      }
+    }
+
+    protected TableMetadata tableMetadata(
+        Schema schema,
+        PartitionSpec spec,
+        SortOrder order,
+        Map<String, String> properties,
+        String location) {
+      Preconditions.checkNotNull(schema, "A table schema is required");
+
+      Map<String, String> tableProps = properties == null ? ImmutableMap.of() : properties;
+      PartitionSpec partitionSpec = spec == null ? PartitionSpec.unpartitioned() : spec;
+      SortOrder sortOrder = order == null ? SortOrder.unsorted() : order;
+      return TableMetadata.newTableMetadata(schema, partitionSpec, sortOrder, location, tableProps);
+    }
 
     public MixedHiveTableBuilder(TableIdentifier identifier, Schema schema) {
-      super(identifier.toLowCaseIdentifier(), HiveSchemaUtil.changeFieldNameToLowercase(schema));
+      Preconditions.checkArgument(
+          identifier.getCatalog().equals(name()),
+          "Illegal table id:%s for catalog:%s",
+          identifier.toString(),
+          name());
+      this.identifier = identifier.toLowCaseIdentifier();
+      this.schema = HiveSchemaUtil.changeFieldNameToLowercase(schema);
+      this.partitionSpec = PartitionSpec.unpartitioned();
+      this.sortOrder = SortOrder.unsorted();
     }
 
     boolean allowExistedHiveTable = false;
 
     @Override
     public TableBuilder withPartitionSpec(PartitionSpec partitionSpec) {
-      return super.withPartitionSpec(IcebergSchemaUtil.copyPartitionSpec(partitionSpec, schema));
+      this.partitionSpec = IcebergSchemaUtil.copyPartitionSpec(partitionSpec, schema);
+      return this;
     }
 
     @Override
     public TableBuilder withSortOrder(SortOrder sortOrder) {
-      return super.withSortOrder(IcebergSchemaUtil.copySortOrderSpec(sortOrder, schema));
+      this.sortOrder = IcebergSchemaUtil.copySortOrderSpec(sortOrder, schema);
+      return this;
     }
 
     @Override
@@ -355,18 +790,19 @@ public class ArcticHiveCatalog implements ArcticCatalog {
           .forEach(
               primaryKeyField ->
                   builder.addColumn(primaryKeyField.fieldName().toLowerCase(Locale.ROOT)));
-      return super.withPrimaryKeySpec(builder.build());
+      this.primaryKeySpec = builder.build();
+      return this;
     }
 
     @Override
     public TableBuilder withProperty(String key, String value) {
       if (key.equals(HiveTableProperties.ALLOW_HIVE_TABLE_EXISTED) && value.equals("true")) {
         allowExistedHiveTable = true;
-        super.withProperty(key, value);
+        this.properties.put(key, value);
       } else if (key.equals(TableProperties.TABLE_EVENT_TIME_FIELD)) {
-        super.withProperty(key, value.toLowerCase(Locale.ROOT));
+        this.properties.put(key, value.toLowerCase(Locale.ROOT));
       } else {
-        super.withProperty(key, value);
+        this.properties.put(key, value);
       }
       return this;
     }
@@ -376,16 +812,26 @@ public class ArcticHiveCatalog implements ArcticCatalog {
       properties.forEach(this::withProperty);
       return this;
     }
-    /** for we saved metadata in base table properties, we do nothing here */
-    @Override
-    protected void checkAmsTableMetadata() {
-      // do nothing here for mixed-hive table
-    }
 
-    @Override
     protected void doCreateCheck() {
+      if (primaryKeySpec.primaryKeyExisted()) {
+        primaryKeySpec
+            .fieldNames()
+            .forEach(
+                primaryKey -> {
+                  if (schema.findField(primaryKey).isOptional()) {
+                    throw new IllegalArgumentException(
+                        "please check your schema, the primary key nested field must"
+                            + " be required and field name is "
+                            + primaryKey);
+                  }
+                });
+      }
+      listDatabases().stream()
+          .filter(d -> d.equals(identifier.getDatabase()))
+          .findFirst()
+          .orElseThrow(() -> new NoSuchDatabaseException(identifier.getDatabase()));
 
-      super.doCreateCheck();
       try {
         org.apache.hadoop.hive.metastore.api.Table hiveTable =
             hiveClientPool.run(
@@ -423,9 +869,10 @@ public class ArcticHiveCatalog implements ArcticCatalog {
               "Partition field should be at last of " + "schema");
         }
       }
+
+      checkProperties();
     }
 
-    @Override
     protected String getDatabaseLocation() {
       try {
         return hiveClientPool.run(
@@ -436,7 +883,6 @@ public class ArcticHiveCatalog implements ArcticCatalog {
       }
     }
 
-    @Override
     protected void doRollbackCreateTable(TableMeta meta) {
       if (allowExistedHiveTable) {
         LOG.info(
@@ -445,19 +891,29 @@ public class ArcticHiveCatalog implements ArcticCatalog {
             meta.getTableIdentifier().getTableName());
         tables.dropTableByMeta(meta, false);
       } else {
-        super.doRollbackCreateTable(meta);
+        tables.dropTableByMeta(meta, true);
       }
     }
 
-    @Override
     protected ConvertStructUtil.TableMetaBuilder createTableMataBuilder() {
-      ConvertStructUtil.TableMetaBuilder builder = super.createTableMataBuilder();
-      return builder.withFormat(TableFormat.MIXED_HIVE);
-    }
+      ConvertStructUtil.TableMetaBuilder builder =
+          ConvertStructUtil.newTableMetaBuilder(this.identifier, this.schema);
+      String tableLocation = getTableLocationForCreate();
 
-    @Override
-    protected void createTableMeta(TableMeta meta) {
-      // for we save metadata in iceberg table properties, we do nothing here
+      builder
+          .withTableLocation(tableLocation)
+          .withProperties(this.properties)
+          .withPrimaryKeySpec(this.primaryKeySpec);
+
+      if (this.primaryKeySpec.primaryKeyExisted()) {
+        builder =
+            builder
+                .withBaseLocation(tableLocation + "/base")
+                .withChangeLocation(tableLocation + "/change");
+      } else {
+        builder = builder.withBaseLocation(tableLocation + "/base");
+      }
+      return builder.withFormat(TableFormat.MIXED_HIVE);
     }
   }
 }
