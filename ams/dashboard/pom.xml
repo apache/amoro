@@ -86,7 +86,7 @@
                         <goals>
                             <goal>pnpm</goal>
                         </goals>
-                        <phase>package</phase>
+                        <phase>generate-resources</phase>
                         <configuration>
                             <arguments>run build</arguments>
                         </configuration>
