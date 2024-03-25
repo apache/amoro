@@ -513,15 +513,13 @@ public class TableController {
       HMSClientPool hmsClientPool =
           new CachedHiveClientPool(tableMetaStore, catalogMeta.getCatalogProperties());
 
-      if (hmsClientPool != null) {
-        List<String> hiveTables = HiveTableUtil.getAllHiveTables(hmsClientPool, db);
-        Set<String> arcticTables =
-            tables.stream().map(TableMeta::getName).collect(Collectors.toSet());
-        hiveTables.stream()
-            .filter(e -> !arcticTables.contains(e))
-            .sorted(String::compareTo)
-            .forEach(e -> tables.add(new TableMeta(e, TableMeta.TableType.HIVE.toString())));
-      }
+      List<String> hiveTables = HiveTableUtil.getAllHiveTables(hmsClientPool, db);
+      Set<String> arcticTables =
+          tables.stream().map(TableMeta::getName).collect(Collectors.toSet());
+      hiveTables.stream()
+          .filter(e -> !arcticTables.contains(e))
+          .sorted(String::compareTo)
+          .forEach(e -> tables.add(new TableMeta(e, TableMeta.TableType.HIVE.toString())));
     }
 
     ctx.json(
