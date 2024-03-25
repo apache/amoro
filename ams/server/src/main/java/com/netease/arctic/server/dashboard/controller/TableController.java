@@ -18,19 +18,19 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
-import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
-
 import com.netease.arctic.Constants;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.ServerTableIdentifier;
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.HMSClientPool;
-import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
 import com.netease.arctic.properties.CatalogMetaProperties;
+import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
 import com.netease.arctic.server.dashboard.ServerTableProperties;
@@ -54,10 +54,8 @@ import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.CommonUtil;
-import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
-import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
@@ -87,6 +85,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
 /** The controller that handles table requests. */
 public class TableController {
