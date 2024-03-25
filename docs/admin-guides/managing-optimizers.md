@@ -251,15 +251,19 @@ You can submit optimizer in your own Flink task development platform or local Fl
 ```
 The description of the relevant parameters is shown in the following table:
 
-| Property | Required | Description                                                                                                                                                                                                                               |
-|----------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| -a       | Yes      | The address of the AMS thrift service, for example: thrift://127.0.0.1:1261, can be obtained from the config.yaml configuration.                                                                                                          |
-| -g       | Yes      | Group name created in advance under external container.                                                                                                                                                                                   |
-| -p       | Yes      | Optimizer parallelism usage.                                                                                                                                                                                                              |
-| -hb      | No       | Heart beat interval with ams, should be smaller than configuration ams.optimizer.heart-beat-timeout in AMS configuration conf/config.yaml which is 60000 milliseconds by default, default 10000(ms).                                      |
-| -eds     | No       | Whether extend storage to disk, default false.                                                                                                                                                                                            |
-| -dsp     | No       | Defines the directory where the storage files are saved, the default temporary-file directory is specified by the system property `java.io.tmpdir`. On UNIX systems the default value of this property is typically "/tmp" or "/var/tmp". |
-| -msz     | No       | Memory storage size limit when extending disk storage(MB), default 512(MB).                                                                                                                                                               |
+| Property | Required | Default                          | Description                                                                                                                                                                                                                               |
+|----------|----------|----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -a       | Yes      | -                                | The address of the AMS thrift service, for example: thrift://127.0.0.1:1261, can be obtained from the config.yaml configuration.                                                                                                          |
+| -g       | Yes      | -                                | Group name created in advance under external container.                                                                                                                                                                                   |
+| -p       | Yes      | -                                | Optimizer parallelism usage.                                                                                                                                                                                                              |
+| -hb      | No       | 10000                            | Heart beat interval with ams, should be smaller than configuration ams.optimizer.heart-beat-timeout in AMS configuration conf/config.yaml which is 60000 milliseconds by default, default 10000(ms).                                      |
+| -eds     | No       | false                            | Whether extend storage to disk.                                                                                                                                                                                                           |
+| -dsp     | No       | System property `java.io.tmpdir` | Defines the directory where the storage files are saved, the default temporary-file directory is specified by the system property `java.io.tmpdir`. On UNIX systems the default value of this property is typically "/tmp" or "/var/tmp". |
+| -msz     | No       | 512 (M)                          | Memory storage size limit when extending disk storage(MB), default 512(MB).                                                                                                                                                               |
+| -ce      | No       | true                             | Whether cache EQ delete files.                                                                                                                                                                                                            |
+| -ct      | No       | 10 (min)                         | Cache timeout.                                                                                                                                                                                                                            |
+| -cmes    | No       | 64 (M)                           | Cache max entry size.                                                                                                                                                                                                                     |
+| -cmts    | No       | 128 (M)                          | Cache max total size.                                                                                                                                                                                                                     |
 
 
 Or you can submit optimizer in your own Spark task development platform or local Spark environment with the following configuration. The main parameters include:
@@ -277,8 +281,13 @@ Or you can submit optimizer in your own Spark task development platform or local
  -p 1 \
  -eds \
  -dsp /tmp \
- -msz 512
+ -msz 512 \
+ -ce \
+ -ct 10 \
+ -cmes 64 \
+ -cmts 128
 ```
+
 The description of the relevant parameters is shown in the following table:
 
 | Property | Required | Description                                                                                                                                                                                                                               |

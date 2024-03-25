@@ -99,19 +99,19 @@ public class OptimizerConfig implements Serializable {
   @Option(
       name = "-ct",
       aliases = "--" + OptimizerProperties.OPTIMIZER_CACHE_TIMEOUT,
-      usage = "Memory storage size limit when extending disk storage(MB), default 512MB")
+      usage = "Cache timeout")
   private long cacheTimeout = OPTIMIZER_CACHE_TIMEOUT_DEFAULT; // 10 Min
 
   @Option(
       name = "-cmes",
       aliases = "--" + OptimizerProperties.OPTIMIZER_CACHE_MAX_ENTRY_SIZE,
-      usage = "Memory storage size limit when extending disk storage(MB), default 512MB")
+      usage = "Cache max entry size, default 64MB")
   private long cacheMaxEntrySize = OPTIMIZER_CACHE_MAX_ENTRY_SIZE_DEFAULT;
 
   @Option(
       name = "-cmts",
       aliases = "--" + OptimizerProperties.OPTIMIZER_CACHE_MAX_TOTAL_SIZE,
-      usage = "Memory storage size limit when extending disk storage(MB), default 512MB")
+      usage = "Cache max total size, default 128MB")
   private long cacheMaxTotalSize = OPTIMIZER_CACHE_MAX_TOTAL_SIZE_DEFAULT;
 
   public OptimizerConfig() {}
