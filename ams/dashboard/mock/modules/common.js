@@ -62,4 +62,13 @@ export default [
       }
     })
   },
+  {
+    url: '/mock/ams/v1/logout',
+    method: 'post',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: null
+    })
+  },
 ]

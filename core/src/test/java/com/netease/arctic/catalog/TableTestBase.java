@@ -23,8 +23,8 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.CatalogUtil;
 import org.junit.After;
 import org.junit.Before;
 
@@ -41,7 +41,7 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   @Before
   public void setupTable() {
-    this.tableMetaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
+    this.tableMetaStore = ArcticCatalogUtil.buildMetaStore(getCatalogMeta());
 
     getUnifiedCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     switch (getTestFormat()) {

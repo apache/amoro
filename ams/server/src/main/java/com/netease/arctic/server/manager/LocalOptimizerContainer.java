@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.manager;
 
-import com.netease.arctic.ams.api.resource.Resource;
+import com.netease.arctic.api.resource.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

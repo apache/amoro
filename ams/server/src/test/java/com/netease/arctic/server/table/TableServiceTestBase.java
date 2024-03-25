@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.table;
 
-import com.netease.arctic.ams.api.resource.ResourceGroup;
+import com.netease.arctic.api.resource.ResourceGroup;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.DefaultOptimizingService;
 import com.netease.arctic.server.manager.EventsManager;

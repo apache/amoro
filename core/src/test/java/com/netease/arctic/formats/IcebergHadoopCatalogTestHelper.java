@@ -21,10 +21,10 @@ package com.netease.arctic.formats;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.netease.arctic.AmoroCatalog;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.formats.iceberg.IcebergCatalogFactory;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -73,7 +73,7 @@ public class IcebergHadoopCatalogTestHelper extends AbstractFormatCatalogTestHel
   @Override
   public AmoroCatalog amoroCatalog() {
     IcebergCatalogFactory icebergCatalogFactory = new IcebergCatalogFactory();
-    TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
+    TableMetaStore metaStore = ArcticCatalogUtil.buildMetaStore(getCatalogMeta());
     Map<String, String> properties =
         icebergCatalogFactory.convertCatalogProperties(
             catalogName, getMetastoreType(), catalogProperties);
@@ -83,9 +83,9 @@ public class IcebergHadoopCatalogTestHelper extends AbstractFormatCatalogTestHel
   @Override
   public Catalog originalCatalog() {
     Map<String, String> props =
-        CatalogUtil.withIcebergCatalogInitializeProperties(
+        ArcticCatalogUtil.withIcebergCatalogInitializeProperties(
             catalogName, getMetastoreType(), catalogProperties);
-    TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
+    TableMetaStore metaStore = ArcticCatalogUtil.buildMetaStore(getCatalogMeta());
     return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(
         catalogName, props, metaStore.getConfiguration());
   }
@@ -127,6 +127,15 @@ public class IcebergHadoopCatalogTestHelper extends AbstractFormatCatalogTestHel
   public void createTable(String db, String tableName) throws Exception {
     Catalog catalog = originalCatalog();
     catalog.createTable(TableIdentifier.of(db, tableName), schema, spec, properties);
+  }
+
+  @Override
+  public void createDatabase(String database) {
+    Catalog catalog = originalCatalog();
+    if (catalog instanceof SupportsNamespaces) {
+      Namespace ns = Namespace.of(database);
+      ((SupportsNamespaces) catalog).createNamespace(ns);
+    }
   }
 
   public static IcebergHadoopCatalogTestHelper defaultHelper() {

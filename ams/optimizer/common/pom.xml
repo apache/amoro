@@ -35,22 +35,17 @@
     <dependencies>
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
+            <artifactId>amoro-ams-api</artifactId>
         </dependency>
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-mixed-hive</artifactId>
+            <artifactId>amoro-mixed-format-hive</artifactId>
         </dependency>
 
         <dependency>
             <groupId>args4j</groupId>
             <artifactId>args4j</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
         </dependency>
 
         <dependency>

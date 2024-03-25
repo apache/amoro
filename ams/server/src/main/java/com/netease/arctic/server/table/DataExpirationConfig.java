@@ -19,6 +19,7 @@
 package com.netease.arctic.server.table;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
@@ -37,6 +38,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+/** TODO Use DataExpirationConfig class in API module, this class shall be removed after 0.7.0 */
+@Deprecated
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DataExpirationConfig {
   // data-expire.enabled
@@ -44,14 +47,18 @@ public class DataExpirationConfig {
   // data-expire.field
   private String expirationField;
   // data-expire.level
+  @JsonProperty(defaultValue = TableProperties.DATA_EXPIRATION_LEVEL_DEFAULT)
   private ExpireLevel expirationLevel;
   // data-expire.retention-time
   private long retentionTime;
   // data-expire.datetime-string-pattern
+  @JsonProperty(defaultValue = TableProperties.DATA_EXPIRATION_DATE_STRING_PATTERN_DEFAULT)
   private String dateTimePattern;
   // data-expire.datetime-number-format
+  @JsonProperty(defaultValue = TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT)
   private String numberDateFormat;
   // data-expire.base-on-rule
+  @JsonProperty(defaultValue = TableProperties.DATA_EXPIRATION_BASE_ON_RULE_DEFAULT)
   private BaseOnRule baseOnRule;
 
   @VisibleForTesting

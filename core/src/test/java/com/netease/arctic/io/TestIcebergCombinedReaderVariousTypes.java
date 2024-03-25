@@ -19,7 +19,7 @@
 package com.netease.arctic.io;
 
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
@@ -139,6 +139,7 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
                 table.io(),
                 table.schema(),
                 table.spec(),
+                table.encryption(),
                 null,
                 false,
                 IdentityPartitionConverters::convertConstant,
@@ -189,6 +190,7 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
             table.io(),
             table.schema(),
             table.spec(),
+            table.encryption(),
             null,
             false,
             IdentityPartitionConverters::convertConstant,

@@ -38,6 +38,7 @@
         <module>dashboard</module>
         <module>optimizer</module>
         <module>dist</module>
+        <module>metric-reporter</module>
     </modules>
 
 </project>

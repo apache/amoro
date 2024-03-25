@@ -38,12 +38,12 @@
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
+            <artifactId>amoro-ams-api</artifactId>
         </dependency>
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-mixed-hive</artifactId>
+            <artifactId>amoro-mixed-format-hive</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.eclipse.jetty.orbit</groupId>
@@ -65,7 +65,7 @@
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.parquet</groupId>
-                    <artifactId>parquet-column</artifactId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -73,15 +73,7 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>jul-to-slf4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>jcl-over-slf4j</artifactId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.avro</groupId>
@@ -89,11 +81,7 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.curator</groupId>
-                    <artifactId>curator-framework</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.curator</groupId>
-                    <artifactId>curator-recipes</artifactId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>
@@ -113,7 +101,7 @@
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.parquet</groupId>
-                    <artifactId>parquet-column</artifactId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>
@@ -215,12 +203,27 @@
 
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-1.2-api</artifactId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
+            <artifactId>log4j-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <!-- API bridge between log4j 1 and 2 -->
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
@@ -267,7 +270,7 @@
         <!-- runtime dependencies -->
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-mixed-spark-${terminal.spark.major.version}</artifactId>
+            <artifactId>amoro-mixed-format-spark-${terminal.spark.major.version}</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
@@ -302,52 +305,10 @@
             <scope>test</scope>
             <classifier>tests</classifier>
         </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito2</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <version>${mockito.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-junit-jupiter</artifactId>
-            <version>${mockito.version}</version>
-            <scope>test</scope>
-        </dependency>
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-mixed-hive</artifactId>
+            <artifactId>amoro-mixed-format-hive</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>

@@ -22,8 +22,8 @@ import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.DataFileTestHelpers;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;

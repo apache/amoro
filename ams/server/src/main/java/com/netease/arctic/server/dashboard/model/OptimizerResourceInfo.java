@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.netease.arctic.ams.api.resource.ResourceGroup;
+import com.netease.arctic.api.resource.ResourceGroup;
 
 public class OptimizerResourceInfo {
   private ResourceGroup resourceGroup;

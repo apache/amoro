@@ -20,13 +20,13 @@ package com.netease.arctic.server;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.OptimizerProperties;
-import com.netease.arctic.ams.api.OptimizerRegisterInfo;
-import com.netease.arctic.ams.api.OptimizingTask;
-import com.netease.arctic.ams.api.OptimizingTaskId;
-import com.netease.arctic.ams.api.OptimizingTaskResult;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.api.OptimizerProperties;
+import com.netease.arctic.api.OptimizerRegisterInfo;
+import com.netease.arctic.api.OptimizingTask;
+import com.netease.arctic.api.OptimizingTaskId;
+import com.netease.arctic.api.OptimizingTaskResult;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.io.MixedDataTestHelpers;
@@ -231,8 +231,11 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     Assertions.assertThrows(PluginRetryAuthException.class, () -> optimizingService().touch(token));
     Assertions.assertThrows(
         PluginRetryAuthException.class, () -> optimizingService().pollTask(token, THREAD_ID));
-    assertTaskStatus(TaskRuntime.Status.PLANNED);
+    assertTaskStatus(TaskRuntime.Status.SCHEDULED);
     token = optimizingService().authenticate(buildRegisterInfo());
+    toucher = new Toucher();
+    Thread.sleep(1000);
+    assertTaskStatus(TaskRuntime.Status.PLANNED);
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertEquals(task2, task);
   }

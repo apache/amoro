@@ -19,8 +19,8 @@
 package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.formats.mixed.MixedTable;
 import com.netease.arctic.hive.CachedHiveClientPool;
@@ -30,7 +30,7 @@ import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.internal.InternalTableCreator;
 import com.netease.arctic.server.table.internal.InternalTableHandler;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.thrift.TException;
@@ -45,7 +45,7 @@ public class MixedHiveCatalogImpl extends InternalCatalog {
     super(catalogMeta);
     this.tables =
         new MixedHiveTables(
-            catalogMeta.getCatalogProperties(), CatalogUtil.buildMetaStore(catalogMeta));
+            catalogMeta.getCatalogProperties(), ArcticCatalogUtil.buildMetaStore(catalogMeta));
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
   }
 
@@ -54,7 +54,8 @@ public class MixedHiveCatalogImpl extends InternalCatalog {
     super.updateMetadata(metadata);
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
     this.tables =
-        new MixedHiveTables(metadata.getCatalogProperties(), CatalogUtil.buildMetaStore(metadata));
+        new MixedHiveTables(
+            metadata.getCatalogProperties(), ArcticCatalogUtil.buildMetaStore(metadata));
   }
 
   @Override

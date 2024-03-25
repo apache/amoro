@@ -19,16 +19,16 @@
 package com.netease.arctic.server;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.OptimizerProperties;
-import com.netease.arctic.ams.api.OptimizerRegisterInfo;
-import com.netease.arctic.ams.api.OptimizingService;
-import com.netease.arctic.ams.api.OptimizingTask;
-import com.netease.arctic.ams.api.OptimizingTaskId;
-import com.netease.arctic.ams.api.OptimizingTaskResult;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.api.resource.Resource;
-import com.netease.arctic.ams.api.resource.ResourceGroup;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.OptimizerProperties;
+import com.netease.arctic.api.OptimizerRegisterInfo;
+import com.netease.arctic.api.OptimizingService;
+import com.netease.arctic.api.OptimizingTask;
+import com.netease.arctic.api.OptimizingTaskId;
+import com.netease.arctic.api.OptimizingTaskResult;
+import com.netease.arctic.api.resource.Resource;
+import com.netease.arctic.api.resource.ResourceGroup;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.server.exception.ForbiddenException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
@@ -52,6 +52,7 @@ import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableProperties;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -64,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
@@ -151,16 +153,19 @@ public class DefaultOptimizingService extends StatedPersistentBase
     if (needPersistency) {
       doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
     }
+
+    OptimizingQueue optimizingQueue = optimizingQueueByGroup.get(optimizer.getGroupName());
+    optimizingQueue.addOptimizer(optimizer);
     authOptimizers.put(optimizer.getToken(), optimizer);
-    optimizingQueueByToken.put(
-        optimizer.getToken(), optimizingQueueByGroup.get(optimizer.getGroupName()));
+    optimizingQueueByToken.put(optimizer.getToken(), optimizingQueue);
     optimizerKeeper.keepInTouch(optimizer);
   }
 
   private void unregisterOptimizer(String token) {
     doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(token));
-    optimizingQueueByToken.remove(token);
-    authOptimizers.remove(token);
+    OptimizingQueue optimizingQueue = optimizingQueueByToken.remove(token);
+    OptimizerInstance optimizer = authOptimizers.remove(token);
+    optimizingQueue.removeOptimizer(optimizer);
   }
 
   @Override
@@ -188,16 +193,14 @@ public class DefaultOptimizingService extends StatedPersistentBase
     LOG.debug("Optimizer {} (threadId {}) try polling task", authToken, threadId);
     OptimizingQueue queue = getQueueByToken(authToken);
     return Optional.ofNullable(queue.pollTask(pollingTimeout))
-        .map(
-            task ->
-                extractOptimizingTask(
-                    task, getAuthenticatedOptimizer(authToken).getThread(threadId), queue))
+        .map(task -> extractOptimizingTask(task, authToken, threadId, queue))
         .orElse(null);
   }
 
   private OptimizingTask extractOptimizingTask(
-      TaskRuntime task, OptimizerThread optimizerThread, OptimizingQueue queue) {
+      TaskRuntime task, String authToken, int threadId, OptimizingQueue queue) {
     try {
+      OptimizerThread optimizerThread = getAuthenticatedOptimizer(authToken).getThread(threadId);
       task.schedule(optimizerThread);
       LOG.info("OptimizerThread {} polled task {}", optimizerThread, task.getTaskId());
       return task.getOptimizingTask();
@@ -219,7 +222,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
   @Override
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
-    LOG.info("Optimizer {} complete task {}", authToken, taskResult.getTaskId());
+    LOG.info(
+        "Optimizer {} (threadId {}) complete task {}",
+        authToken,
+        taskResult.getThreadId(),
+        taskResult.getTaskId());
     OptimizingQueue queue = getQueueByToken(authToken);
     OptimizerThread thread =
         getAuthenticatedOptimizer(authToken).getThread(taskResult.getThreadId());
@@ -317,7 +324,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
   public void deleteResourceGroup(String groupName) {
     if (canDeleteResourceGroup(groupName)) {
       doAs(ResourceMapper.class, mapper -> mapper.deleteResourceGroup(groupName));
-      optimizingQueueByGroup.remove(groupName);
+      OptimizingQueue optimizingQueue = optimizingQueueByGroup.remove(groupName);
+      optimizingQueue.dispose();
     } else {
       throw new RuntimeException(
           String.format(
@@ -457,9 +465,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     @Override
-    protected void doDispose() {
-      DefaultOptimizingService.this.dispose();
-    }
+    protected void doDispose() {}
   }
 
   private class OptimizerKeepingTask implements Delayed {
@@ -538,7 +544,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
               .ifPresent(
                   queue ->
                       queue
-                          .collectTasks(buildSuspendingPredication(token, isExpired))
+                          .collectTasks(buildSuspendingPredication(authOptimizers.keySet()))
                           .forEach(task -> retryTask(task, queue)));
           if (isExpired) {
             LOG.info("Optimizer {} has been expired, unregister it", keepingTask.getOptimizer());
@@ -563,17 +569,13 @@ public class DefaultOptimizingService extends StatedPersistentBase
       queue.retryTask(task);
     }
 
-    private Predicate<TaskRuntime> buildSuspendingPredication(
-        String token, boolean isOptimizerExpired) {
-      return task -> {
-        if (isOptimizerExpired) {
-          return token.equals(task.getToken());
-        } else {
-          return token.equals(task.getToken())
-              && task.getStatus() == TaskRuntime.Status.SCHEDULED
-              && task.getStartTime() + taskAckTimeout < System.currentTimeMillis();
-        }
-      };
+    private Predicate<TaskRuntime> buildSuspendingPredication(Set<String> activeTokens) {
+      return task ->
+          StringUtils.isNotBlank(task.getToken())
+                  && !activeTokens.contains(task.getToken())
+                  && task.getStatus() != TaskRuntime.Status.SUCCESS
+              || task.getStatus() == TaskRuntime.Status.SCHEDULED
+                  && task.getStartTime() + taskAckTimeout < System.currentTimeMillis();
     }
   }
 }

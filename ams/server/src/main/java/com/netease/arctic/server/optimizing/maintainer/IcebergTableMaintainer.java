@@ -20,7 +20,7 @@ package com.netease.arctic.server.optimizing.maintainer;
 
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
-import com.netease.arctic.ams.api.CommitMetaProducer;
+import com.netease.arctic.api.CommitMetaProducer;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
 import com.netease.arctic.io.SupportsFileSystemOperations;
@@ -203,11 +203,22 @@ public class IcebergTableMaintainer implements TableMaintainer {
             })
         .cleanExpiredFiles(true)
         .commit();
-    if (arcticFileIO().supportFileSystemOperations()) {
-      parentDirectory.forEach(
-          parent -> TableFileUtil.deleteEmptyDirectory(arcticFileIO(), parent, exclude));
-    }
-    LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
+
+    parentDirectory.forEach(
+        parent -> {
+          try {
+            TableFileUtil.deleteEmptyDirectory(arcticFileIO(), parent, exclude);
+          } catch (Exception e) {
+            // Ignore exceptions to remove as many directories as possible
+            LOG.warn("Fail to delete empty directory " + parent, e);
+          }
+        });
+
+    LOG.info(
+        "to delete {} files in {}, success delete {} files",
+        toDeleteFiles.get(),
+        getTable().name(),
+        deleteFiles.get());
   }
 
   @Override
@@ -455,7 +466,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
   public static long fetchLatestNonOptimizedSnapshotTime(Table table) {
     Optional<Snapshot> snapshot =
         IcebergTableUtil.findFirstMatchSnapshot(
-            table, s -> !s.summary().containsValue(CommitMetaProducer.OPTIMIZE.name()));
+            table,
+            s ->
+                !s.summary().containsValue(CommitMetaProducer.OPTIMIZE.name())
+                    && !s.summary().containsValue(CommitMetaProducer.DATA_EXPIRATION.name()));
     return snapshot.map(Snapshot::timestampMillis).orElse(Long.MAX_VALUE);
   }
 
@@ -471,7 +485,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
       if (p.isDirectory()) {
         int deleted = deleteInvalidFilesInFs(fio, p.location(), lastTime, excludes);
         deleteCount += deleted;
-        if (!p.location().endsWith(METADATA_FOLDER_NAME)
+        if (fio.exists(p.location())
+            && !p.location().endsWith(METADATA_FOLDER_NAME)
             && !p.location().endsWith(DATA_FOLDER_NAME)
             && p.createdAtMillis() < lastTime
             && fio.isEmptyDirectory(p.location())) {
@@ -703,13 +718,17 @@ public class IcebergTableMaintainer implements TableMaintainer {
     // expire data files
     DeleteFiles delete = table.newDelete();
     dataFiles.forEach(delete::deleteFile);
-    delete.set(com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER, "DATA_EXPIRATION");
+    delete.set(
+        com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER,
+        CommitMetaProducer.DATA_EXPIRATION.name());
     delete.commit();
     // expire delete files
     if (!deleteFiles.isEmpty()) {
       RewriteFiles rewriteFiles = table.newRewrite().validateFromSnapshot(snapshotId);
       deleteFiles.forEach(rewriteFiles::deleteFile);
-      rewriteFiles.set(com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER, "DATA_EXPIRATION");
+      rewriteFiles.set(
+          com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER,
+          CommitMetaProducer.DATA_EXPIRATION.name());
       rewriteFiles.commit();
     }
 

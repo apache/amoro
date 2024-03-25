@@ -19,9 +19,9 @@
 package com.netease.arctic.server.table;
 
 import com.netease.arctic.TableIDWithFormat;
-import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.Blocker;
-import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.api.BlockableOperation;
+import com.netease.arctic.api.Blocker;
+import com.netease.arctic.api.TableIdentifier;
 import com.netease.arctic.server.catalog.CatalogService;
 
 import java.util.List;

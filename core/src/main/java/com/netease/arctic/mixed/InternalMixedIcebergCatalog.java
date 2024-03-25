@@ -19,7 +19,7 @@
 package com.netease.arctic.mixed;
 
 import com.google.common.collect.Maps;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.hadoop.conf.Configuration;

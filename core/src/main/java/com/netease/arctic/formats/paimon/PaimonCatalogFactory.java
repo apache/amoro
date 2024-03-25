@@ -19,8 +19,8 @@
 package com.netease.arctic.formats.paimon;
 
 import com.netease.arctic.FormatCatalogFactory;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;

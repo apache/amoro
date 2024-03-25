@@ -18,14 +18,14 @@
 
 package com.netease.arctic;
 
-import com.netease.arctic.ams.api.ArcticTableMetastore;
-import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.Blocker;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableCommitMeta;
-import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.ams.api.client.AmsClientPools;
+import com.netease.arctic.api.ArcticTableMetastore;
+import com.netease.arctic.api.BlockableOperation;
+import com.netease.arctic.api.Blocker;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.TableCommitMeta;
+import com.netease.arctic.api.TableIdentifier;
+import com.netease.arctic.api.TableMeta;
+import com.netease.arctic.client.AmsClientPools;
 import org.apache.thrift.TException;
 
 import java.util.List;

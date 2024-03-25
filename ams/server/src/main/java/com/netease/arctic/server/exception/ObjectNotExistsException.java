@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.exception;
 
-import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.api.TableIdentifier;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 
 public class ObjectNotExistsException extends ArcticRuntimeException {

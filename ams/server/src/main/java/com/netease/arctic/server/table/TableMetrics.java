@@ -18,12 +18,12 @@
 
 package com.netease.arctic.server.table;
 
-import static com.netease.arctic.ams.api.metrics.MetricDefine.defineGauge;
+import static com.netease.arctic.api.metrics.MetricDefine.defineGauge;
 
-import com.netease.arctic.ams.api.metrics.Gauge;
-import com.netease.arctic.ams.api.metrics.Metric;
-import com.netease.arctic.ams.api.metrics.MetricDefine;
-import com.netease.arctic.ams.api.metrics.MetricKey;
+import com.netease.arctic.api.metrics.Gauge;
+import com.netease.arctic.api.metrics.Metric;
+import com.netease.arctic.api.metrics.MetricDefine;
+import com.netease.arctic.api.metrics.MetricKey;
 import com.netease.arctic.server.metrics.MetricRegistry;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;

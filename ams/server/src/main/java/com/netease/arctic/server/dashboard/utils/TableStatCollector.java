@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.dashboard.utils;
 
-import com.netease.arctic.ams.api.Constants;
+import com.netease.arctic.Constants;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.SnapshotInfo;
 import com.netease.arctic.server.dashboard.model.TableStatistics;

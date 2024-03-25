@@ -85,11 +85,23 @@ public class SchemaUtil {
   public static Schema selectInOrder(Schema baseSchema, List<String> fieldNames) {
     Preconditions.checkNotNull(fieldNames);
     Preconditions.checkNotNull(baseSchema);
+    validateSchemaFields(baseSchema, fieldNames);
 
     int schemaId = baseSchema.schemaId();
     List<Types.NestedField> fields =
         fieldNames.stream().map(baseSchema::findField).collect(Collectors.toList());
 
     return new Schema(schemaId, fields);
+  }
+
+  private static void validateSchemaFields(Schema schema, List<String> requiredFields) {
+    Set<String> existingFields =
+        schema.columns().stream().map(Types.NestedField::name).collect(Collectors.toSet());
+    for (String requiredField : requiredFields) {
+      if (!existingFields.contains(requiredField)) {
+        throw new IllegalArgumentException(
+            "The required field in schema is missing: " + requiredField);
+      }
+    }
   }
 }

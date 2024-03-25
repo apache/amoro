@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.table;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.OptimizingType;

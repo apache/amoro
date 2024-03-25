@@ -18,13 +18,13 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
-import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.utils.Configurations;
 import io.javalin.http.Context;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /** The controller that handles login requests. */
 public class LoginController {
@@ -46,13 +46,14 @@ public class LoginController {
   /** handle login post request. */
   public void login(Context ctx) {
     // ok
-    JSONObject postBody = ctx.bodyAsClass(JSONObject.class);
-    if (adminUser.equals(postBody.get("user"))
-        && (adminPassword.equals(postBody.get("password")))) {
+    Map<String, String> bodyParams = ctx.bodyAsClass(Map.class);
+    String user = bodyParams.get("user");
+    String pwd = bodyParams.get("password");
+    if (adminUser.equals(user) && (adminPassword.equals(pwd))) {
       ctx.sessionAttribute("user", new SessionInfo(adminUser, System.currentTimeMillis() + ""));
       ctx.json(OkResponse.of("success"));
     } else {
-      throw new RuntimeException("bad user " + postBody.get("user") + " or password!");
+      throw new RuntimeException("bad user " + user + " or password!");
     }
   }
 

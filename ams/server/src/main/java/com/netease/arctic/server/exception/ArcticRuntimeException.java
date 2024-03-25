@@ -18,13 +18,13 @@
 
 package com.netease.arctic.server.exception;
 
-import com.netease.arctic.ams.api.ArcticException;
-import com.netease.arctic.ams.api.ErrorCodes;
-import com.netease.arctic.ams.api.InvalidObjectException;
-import com.netease.arctic.ams.api.MetaException;
-import com.netease.arctic.ams.api.NoSuchObjectException;
-import com.netease.arctic.ams.api.OperationConflictException;
-import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.ErrorCodes;
+import com.netease.arctic.api.ArcticException;
+import com.netease.arctic.api.InvalidObjectException;
+import com.netease.arctic.api.MetaException;
+import com.netease.arctic.api.NoSuchObjectException;
+import com.netease.arctic.api.OperationConflictException;
+import com.netease.arctic.api.TableIdentifier;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import org.apache.thrift.TException;
 
@@ -46,7 +46,7 @@ public class ArcticRuntimeException extends RuntimeException {
     CODE_MAP.put(ForbiddenException.class, ErrorCodes.FORBIDDEN_ERROR_CODE);
 
     CODE_MAP.put(TaskNotFoundException.class, ErrorCodes.TASK_NOT_FOUND_ERROR_CODE);
-    CODE_MAP.put(DuplicateRuntimeException.class, ErrorCodes.DUPLICATED_TASK_ERROR_CODE);
+    CODE_MAP.put(TaskRuntimeException.class, ErrorCodes.TASK_RUNTIME_ERROR_CODE);
     CODE_MAP.put(OptimizingClosedException.class, ErrorCodes.OPTIMIZING_CLOSED_ERROR_CODE);
     CODE_MAP.put(IllegalTaskStateException.class, ErrorCodes.ILLEGAL_TASK_STATE_ERROR_CODE);
     CODE_MAP.put(PluginAuthException.class, ErrorCodes.PLUGIN_AUTH_ERROR_CODE);
@@ -121,7 +121,7 @@ public class ArcticRuntimeException extends RuntimeException {
     if (throwable.getClass().equals(ObjectNotExistsException.class)) {
       return new NoSuchObjectException(throwable.getMessage());
     } else if (throwable.getClass().equals(AlreadyExistsException.class)) {
-      return new com.netease.arctic.ams.api.AlreadyExistsException(throwable.getMessage());
+      return new com.netease.arctic.api.AlreadyExistsException(throwable.getMessage());
     } else if (throwable.getClass().equals(IllegalMetadataException.class)
         || throwable.getClass().equals(PersistenceException.class)) {
       return new MetaException(throwable.getMessage());

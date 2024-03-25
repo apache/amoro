@@ -22,8 +22,8 @@ import static com.netease.arctic.data.DataFileType.INSERT_FILE;
 import static org.apache.paimon.operation.FileStoreScan.Plan.groupByPartFiles;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.ams.api.CommitMetaProducer;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.CommitMetaProducer;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
 import com.netease.arctic.server.dashboard.component.reverser.PaimonTableMetaExtract;
@@ -216,7 +216,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         throw new RuntimeException(e);
       }
     }
-    return snapshotsOfTables;
+    return snapshotsOfTables.stream()
+        .sorted((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()))
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -238,7 +240,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
             new PartitionFileBaseInfo(
                 null,
                 DataFileType.BASE_FILE,
-                entry.file().creationTime().getMillisecond(),
+                entry.file().creationTimeEpochMillis(),
                 partitionString(entry.partition(), entry.bucket(), fileStorePathFactory),
                 fullFilePath(store, entry),
                 entry.file().fileSize(),
@@ -279,7 +281,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         for (DataFileMeta dataFileMeta : groupByBucketEntry.getValue()) {
           fileCount++;
           fileSize += dataFileMeta.fileSize();
-          lastCommitTime = Math.max(lastCommitTime, dataFileMeta.creationTime().getMillisecond());
+          lastCommitTime = Math.max(lastCommitTime, dataFileMeta.creationTimeEpochMillis());
         }
         partitionBaseInfoList.add(
             new PartitionBaseInfo(partitionSt, 0, fileCount, fileSize, lastCommitTime));
@@ -345,7 +347,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
           new PartitionFileBaseInfo(
               snapshotId == null ? null : snapshotId.toString(),
               INSERT_FILE,
-              manifestEntry.file().creationTime().getMillisecond(),
+              manifestEntry.file().creationTimeEpochMillis(),
               partitionSt,
               0,
               fullFilePath(store, manifestEntry),
@@ -409,11 +411,11 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
                           minCreateTime =
                               Math.min(
                                   minCreateTime,
-                                  compactManifestEntry.file().creationTime().getMillisecond());
+                                  compactManifestEntry.file().creationTimeEpochMillis());
                           maxCreateTime =
                               Math.max(
                                   maxCreateTime,
-                                  compactManifestEntry.file().creationTime().getMillisecond());
+                                  compactManifestEntry.file().creationTimeEpochMillis());
                           outputBuilder.addFile(compactManifestEntry.file().fileSize());
                         }
                       }
@@ -500,11 +502,16 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable) {
     FileStoreTable table = getTable(amoroTable);
-    SortedMap<Snapshot, String> tags = table.tagManager().tags();
-    return tags.entrySet().stream()
-        .map(
-            e -> new TagOrBranchInfo(e.getValue(), e.getKey().id(), 0, 0L, 0L, TagOrBranchInfo.TAG))
-        .collect(Collectors.toList());
+    SortedMap<Snapshot, List<String>> tags = table.tagManager().tags();
+    List<TagOrBranchInfo> tagOrBranchInfos = new ArrayList<>();
+    tags.forEach(
+        (snapshot, tagList) -> {
+          for (String tagName : tagList) {
+            tagOrBranchInfos.add(
+                new TagOrBranchInfo(tagName, snapshot.id(), 0, 0L, 0L, TagOrBranchInfo.TAG));
+          }
+        });
+    return tagOrBranchInfos;
   }
 
   @Override

@@ -18,10 +18,10 @@
 
 package com.netease.arctic.server.manager;
 
-import com.netease.arctic.ams.api.OptimizerProperties;
-import com.netease.arctic.ams.api.resource.Resource;
-import com.netease.arctic.ams.api.resource.ResourceContainer;
-import com.netease.arctic.ams.api.resource.ResourceStatus;
+import com.netease.arctic.api.OptimizerProperties;
+import com.netease.arctic.api.resource.Resource;
+import com.netease.arctic.api.resource.ResourceContainer;
+import com.netease.arctic.api.resource.ResourceStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 

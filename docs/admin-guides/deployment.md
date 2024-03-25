@@ -35,7 +35,7 @@ You can build based on the master branch without compiling Trino. The compilatio
 git clone https://github.com/NetEase/amoro.git
 cd amoro
 base_dir=$(pwd) 
-mvn clean package -DskipTests -pl '!mixed/trino'
+mvn clean package -DskipTests -pl '!mixed-format/trino'
 cd ams/dist/target/
 ls
 amoro-x.y.z-bin.zip # AMS release package
@@ -44,20 +44,23 @@ dist-x.y.z.jar
 archive-tmp/
 maven-archiver/
 
-cd ${base_dir}/mixed/flink/v1.15/flink-runtime/target
+cd ${base_dir}/mixed-format/flink/v1.15/flink-runtime/target
 ls 
-amoro-mixed-flink-runtime-1.15-x.y.z-tests.jar
-amoro-mixed-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
-original-amoro-mixed-flink-runtime-1.15-x.y.z.jar
+amoro-mixed-format-flink-runtime-1.15-x.y.z-tests.jar
+amoro-mixed-format-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
+original-amoro-mixed-format-flink-runtime-1.15-x.y.z.jar
 maven-archiver/
 
-cd ${base_dir}/mixed/spark/v3.1/spark-runtime/target
+cd ${base_dir}/mixed-format/spark/v3.2/spark-runtime/target
 ls
-amoro-mixed-spark-3.1-runtime-x.y.z.jar # Spark v3.1 runtime package)
-amoro-mixed-spark-3.1-runtime-x.y.z-tests.jar
-amoro-mixed-spark-3.1-runtime-x.y.z-sources.jar
-original-amoro-mixed-spark-3.1-runtime-x.y.z.jar
+amoro-mixed-format-spark-3.2-runtime-x.y.z.jar # Spark v3.2 runtime package)
+amoro-mixed-format-spark-3.2-runtime-x.y.z-tests.jar
+amoro-mixed-format-spark-3.2-runtime-x.y.z-sources.jar
+original-amoro-mixed-format-spark-3.2-runtime-x.y.z.jar
 ```
+
+If the Flink version in the ams/optimizer/flink-optimizer module you compiled is lower than 1.15, you must add the `-Pflink-pre-1.15` parameter before mvn.
+for example `mvn clean package -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6 -DskipTests` to compile.
 
 If you need to compile the Trino module at the same time, you need to install jdk17 locally and configure `toolchains.xml` in the user's `${user.home}/.m2/` directory,
 then run `mvn package -P toolchain` to compile the entire project.
@@ -196,6 +199,48 @@ ams:
     # When the catalog type is Hive, it automatically uses the Spark session catalog to access Hive tables.
     local.using-session-catalog-for-hive: true
 ```
+
+### Configure metric reporter
+
+Amoro provides metric reporters by plugin mechanism to connect to  external metric systems.
+
+All metric-reporter plugins are configured in `$AMORO_CONF_DIR/plugins/metric-repoters.yaml` .
+
+The configuration format of the plug-in is:
+
+```yaml
+
+metric-reporters:
+  - name:                 # the unified plugin name.
+    enabled:              # if this plugin is enabled, default is true.
+    properties:           # a map defines properties of plugin.
+```
+
+Currently, there is only one reporter is available.
+
+#### Prometheus Exporter
+
+By enable the `prometheus-exporter` plugin, the AMS will start a prometheus http exporter server.
+
+```yaml
+metric-reporters:
+  - name: prometheus-exporter            # configs for prometheus exporter
+    enabled: true
+    properties:
+       port: 9090                        # the port that the prometheus-exporter listens on.
+```
+
+You can add a scrape job in your prometheus configs
+
+```yaml
+# Your prometheus configs file.
+scrape_configs:
+  - job_name: 'amoro-exporter'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['localhost:9090']  # The host and port that you configured in Amoro plugins configs file.
+```
+
 
 ### Environments variables
 

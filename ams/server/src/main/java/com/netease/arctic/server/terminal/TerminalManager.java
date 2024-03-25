@@ -18,10 +18,10 @@
 
 package com.netease.arctic.server.terminal;
 
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.Constants;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.Constants;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.CatalogType;
 import com.netease.arctic.server.dashboard.model.LatestSessionInfo;
@@ -35,8 +35,7 @@ import com.netease.arctic.server.terminal.local.LocalSessionFactory;
 import com.netease.arctic.server.utils.ConfigOptions;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.CatalogUtil;
-import org.apache.commons.lang.StringUtils;
+import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -237,22 +236,24 @@ public class TerminalManager {
 
   private String catalogConnectorType(CatalogMeta catalogMeta) {
     String catalogType = catalogMeta.getCatalogType();
-    String tableFormats =
-        catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
+    Set<TableFormat> tableFormatSet = ArcticCatalogUtil.tableFormats(catalogMeta);
+
     if (catalogType.equalsIgnoreCase(CatalogType.AMS.name())) {
-      if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_ICEBERG.name())) {
+      if (tableFormatSet.contains(TableFormat.MIXED_ICEBERG)) {
         return "arctic";
-      } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.ICEBERG.name())) {
+      } else if (tableFormatSet.contains(TableFormat.ICEBERG)) {
         return "iceberg";
       }
     } else if (catalogType.equalsIgnoreCase(CatalogType.HIVE.name())
         || catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())) {
-      if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_HIVE.name())
-          || StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_ICEBERG.name())) {
+      if (tableFormatSet.size() > 1) {
+        return "unified";
+      } else if (tableFormatSet.contains(TableFormat.MIXED_HIVE)
+          || tableFormatSet.contains(TableFormat.MIXED_ICEBERG)) {
         return "arctic";
-      } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.ICEBERG.name())) {
+      } else if (tableFormatSet.contains(TableFormat.ICEBERG)) {
         return "iceberg";
-      } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.PAIMON.name())) {
+      } else if (tableFormatSet.contains(TableFormat.PAIMON)) {
         return "paimon";
       }
     } else if (catalogType.equalsIgnoreCase(CatalogType.CUSTOM.name())) {
@@ -278,7 +279,7 @@ public class TerminalManager {
     if (catalogMeta.getStorageConfigs() != null) {
       Map<String, String> storageConfigs = catalogMeta.getStorageConfigs();
       if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equalsIgnoreCase(
-          CatalogUtil.getCompatibleStorageType(storageConfigs))) {
+          ArcticCatalogUtil.getCompatibleStorageType(storageConfigs))) {
         builder
             .withBase64MetaStoreSite(
                 catalogMeta
@@ -360,7 +361,7 @@ public class TerminalManager {
   }
 
   private void applyClientProperties(CatalogMeta catalogMeta) {
-    Set<TableFormat> formats = CatalogUtil.tableFormats(catalogMeta);
+    Set<TableFormat> formats = ArcticCatalogUtil.tableFormats(catalogMeta);
     String catalogType = catalogMeta.getCatalogType();
     if (formats.contains(TableFormat.ICEBERG)) {
       if (CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(catalogType)) {

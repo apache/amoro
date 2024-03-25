@@ -19,7 +19,7 @@
 package com.netease.arctic.server.metrics;
 
 import com.google.common.collect.Maps;
-import com.netease.arctic.ams.api.metrics.*;
+import com.netease.arctic.api.metrics.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;

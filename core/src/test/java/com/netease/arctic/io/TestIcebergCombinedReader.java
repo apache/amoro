@@ -19,7 +19,7 @@
 package com.netease.arctic.io;
 
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.io.reader.CombinedDeleteFilter;
@@ -191,6 +191,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
             getArcticTable().io(),
             getArcticTable().schema(),
             getArcticTable().spec(),
+            getArcticTable().asUnkeyedTable().encryption(),
             null,
             false,
             IdentityPartitionConverters::convertConstant,
@@ -212,6 +213,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
             getArcticTable().io(),
             getArcticTable().schema(),
             getArcticTable().spec(),
+            getArcticTable().asUnkeyedTable().encryption(),
             null,
             false,
             IdentityPartitionConverters::convertConstant,
@@ -235,6 +237,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
             getArcticTable().io(),
             getArcticTable().schema(),
             getArcticTable().spec(),
+            getArcticTable().asUnkeyedTable().encryption(),
             null,
             false,
             IdentityPartitionConverters::convertConstant,
@@ -254,6 +257,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
             getArcticTable().io(),
             getArcticTable().schema(),
             getArcticTable().spec(),
+            getArcticTable().asUnkeyedTable().encryption(),
             null,
             false,
             IdentityPartitionConverters::convertConstant,
@@ -274,6 +278,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
             getArcticTable().io(),
             getArcticTable().schema(),
             getArcticTable().spec(),
+            getArcticTable().asUnkeyedTable().encryption(),
             null,
             false,
             IdentityPartitionConverters::convertConstant,

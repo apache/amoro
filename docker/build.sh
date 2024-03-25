@@ -25,11 +25,14 @@ cd $CURRENT_DIR
 
 AMORO_VERSION=`cat $PROJECT_HOME/pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
 FLINK_VERSION=1.15.3
+SPARK_VERSION=3.3.3
 HADOOP_VERSION=2.10.2
 DEBIAN_MIRROR=http://deb.debian.org
 APACHE_ARCHIVE=https://archive.apache.org/dist
-OPTIMIZER_JOB_PATH=ams/optimizer/flink-optimizer/target/flink-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
-OPTIMIZER_JOB=${PROJECT_HOME}/${OPTIMIZER_JOB_PATH}
+FLINK_OPTIMIZER_JOB_PATH=ams/optimizer/flink-optimizer/target/flink-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
+FLINK_OPTIMIZER_JOB=${PROJECT_HOME}/${FLINK_OPTIMIZER_JOB_PATH}
+SPARK_OPTIMIZER_JOB_PATH=ams/optimizer/spark-optimizer/target/spark-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
+SPARK_OPTIMIZER_JOB=${PROJECT_HOME}/${SPARK_OPTIMIZER_JOB_PATH}
 AMORO_TAG=$AMORO_VERSION
 ALSO_MAKE=true
 MAVEN_MIRROR=https://repo.maven.apache.org/maven2
@@ -45,16 +48,18 @@ Images:
     namenode                Build a hadoop namenode container for quick start demo.
     datanode                Build a hadoop datanode container for quick start demo.
     optimizer-flink         Build official Amoro optimizer deployed with flink engine for production environments.
+    optimizer-spark         Build official Amoro optimizer deployed with spark engine for production environments.
     amoro                   Build official Amoro image used for production environments.
 
 Options:
     --flink-version         Flink binary release version, default is 1.15.3, format must be x.y.z
+    --spark-version         Spark binary release version, default is 3.3.3, format must be x.y.z
     --hadoop-version        Hadoop binary release version, default is 2.10.2, format must be x.y.z
     --apache-archive        Apache Archive url, default is https://archive.apache.org/dist
     --debian-mirror         Mirror url of debian, default is http://deb.debian.org
     --maven-mirror          Mirror url of maven, default is https://repo.maven.apache.org/maven2
-    --optimizer-job         Location of optimizer job
-    --tag                   Tag for amoro/optimizer-flink/quickdemo image.
+    --optimizer-job         Location of flink/spark optimizer job
+    --tag                   Tag for amoro/optimizer-flink/optimizer-spark/quickdemo image.
     --also-make             Also make amoro when build quickdemo, if set to false, it will pull from hub or use exists dependency.
     --dry-run               If this set to true, will not call 'docker build'
 EOF
@@ -67,7 +72,7 @@ i=1;
 j=$#;
 while [ $i -le $j ]; do
   case $1 in
-    quickdemo|namenode|datanode|optimizer-flink|amoro)
+    quickdemo|namenode|datanode|optimizer-flink|optimizer-spark|amoro)
     ACTION=$1;
     i=$((i+1))
     shift 1
@@ -76,6 +81,13 @@ while [ $i -le $j ]; do
     '--flink-version')
     shift 1
     FLINK_VERSION=$1
+    i=$((i+2))
+    shift 1
+    ;;
+
+    '--spark-version')
+    shift 1
+    SPARK_VERSION=$1
     i=$((i+2))
     shift 1
     ;;
@@ -134,10 +146,13 @@ while [ $i -le $j ]; do
 done
 
 FLINK_MAJOR_VERSION=${FLINK_VERSION%.*}
+SPARK_MAJOR_VERSION=${SPARK_VERSION%.*}
 
 function print_env() {
   echo "SET FLINK_VERSION=${FLINK_VERSION}"
   echo "SET FLINK_MAJOR_VERSION=${FLINK_MAJOR_VERSION}"
+  echo "SET SPARK_VERSION=${SPARK_VERSION}"
+  echo "SET SPARK_MAJOR_VERSION=${SPARK_MAJOR_VERSION}"
   echo "SET HADOOP_VERSION=${HADOOP_VERSION}"
   echo "SET APACHE_ARCHIVE=${APACHE_ARCHIVE}"
   echo "SET DEBIAN_MIRROR=${DEBIAN_MIRROR}"
@@ -192,11 +207,11 @@ function build_optimizer_flink() {
     local IMAGE_TAG=$AMORO_TAG-flink${FLINK_MAJOR_VERSION}
     print_image $IMAGE_REF $IMAGE_TAG
 
-    FLINK_OPTIMIZER_JOB=${OPTIMIZER_JOB}
+    OPTIMIZER_JOB=${FLINK_OPTIMIZER_JOB}
 
-    if [ ! -f "${FLINK_OPTIMIZER_JOB}" ]; then
+    if [ ! -f "${OPTIMIZER_JOB}" ]; then
       BUILD_CMD="mvn clean package -pl ams/optimizer/flink-optimizer -am -e -DskipTests"
-      echo "flink optimizer job not exists in ${FLINK_OPTIMIZER_JOB}"
+      echo "flink optimizer job not exists in ${OPTIMIZER_JOB}"
       echo "please check the file or run '${BUILD_CMD}' first. "
       exit  1
     fi
@@ -205,9 +220,32 @@ function build_optimizer_flink() {
     cd "$PROJECT_HOME" || exit
     docker build -t ${IMAGE_REF}:${IMAGE_TAG} \
       --build-arg FLINK_VERSION=$FLINK_VERSION \
-      --build-arg OPTIMIZER_JOB=$OPTIMIZER_JOB_PATH \
+      --build-arg OPTIMIZER_JOB=$FLINK_OPTIMIZER_JOB_PATH \
       --build-arg MAVEN_MIRROR=$MAVEN_MIRROR \
       -f ./docker/optimizer-flink/Dockerfile .
+}
+
+function build_optimizer_spark() {
+    local IMAGE_REF=arctic163/optimizer-spark
+    local IMAGE_TAG=$AMORO_TAG-spark${SPARK_MAJOR_VERSION}
+    print_image $IMAGE_REF $IMAGE_TAG
+
+    OPTIMIZER_JOB=${SPARK_OPTIMIZER_JOB}
+
+    if [ ! -f "${OPTIMIZER_JOB}" ]; then
+      BUILD_CMD="mvn clean package -pl ams/optimizer/spark-optimizer -am -e -DskipTests"
+      echo "spark optimizer job not exists in ${OPTIMIZER_JOB}"
+      echo "please check the file or run '${BUILD_CMD}' first. "
+      exit  1
+    fi
+
+    set -x
+    cd "$PROJECT_HOME" || exit
+    docker build -t ${IMAGE_REF}:${IMAGE_TAG} \
+      --build-arg SPARK_VERSION=$SPARK_VERSION \
+      --build-arg OPTIMIZER_JOB=$SPARK_OPTIMIZER_JOB_PATH \
+      --build-arg MAVEN_MIRROR=$MAVEN_MIRROR \
+      -f ./docker/optimizer-spark/Dockerfile .
 }
 
 function build_amoro() {
@@ -235,9 +273,15 @@ function build_quickdemo() {
     local IMAGE_TAG=$AMORO_TAG
 
     local FLINK_CONNECTOR_BINARY=${PROJECT_HOME}/mixed/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-mixed-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
+    local SPARK_CONNECTOR_BINARY=${PROJECT_HOME}/mixed/spark/v${SPARK_MAJOR_VERSION}/spark-runtime/target/amoro-mixed-spark-runtime-${SPARK_MAJOR_VERSION}-${AMORO_VERSION}.jar
 
     if [ ! -f "${FLINK_CONNECTOR_BINARY}" ]; then
         echo "amoro-mixed-flink-connector not exists in ${FLINK_CONNECTOR_BINARY}, run 'mvn clean package -pl !mixed/trino' first. "
+        exit  1
+    fi
+
+    if [ ! -f "${SPARK_CONNECTOR_BINARY}" ]; then
+        echo "amoro-mixed-spark-connector not exists in ${SPARK_CONNECTOR_BINARY}, run 'mvn clean package -pl !mixed/trino' first. "
         exit  1
     fi
 
@@ -260,6 +304,7 @@ function build_quickdemo() {
       --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
       --build-arg APACHE_ARCHIVE=${APACHE_ARCHIVE} \
       --build-arg FLINK_VERSION=${FLINK_VERSION} \
+      --build-arg SPARK_VERSION=${SPARK_VERSION} \
       -f docker/quickdemo/Dockerfile .
 }
 
@@ -280,6 +325,10 @@ case "$ACTION" in
   optimizer-flink)
     print_env
     build_optimizer_flink
+    ;;
+  optimizer-spark)
+    print_env
+    build_optimizer_spark
     ;;
   amoro)
     print_env

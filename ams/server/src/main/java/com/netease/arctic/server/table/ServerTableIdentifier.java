@@ -18,11 +18,13 @@
 
 package com.netease.arctic.server.table;
 
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.TableIdentifier;
 
 import java.util.Objects;
 
+/** TODO Use ServerTableIdentifier class in API module, this class shall be removed after 0.7.0 */
+@Deprecated
 public class ServerTableIdentifier {
 
   private Long id;

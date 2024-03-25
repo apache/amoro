@@ -18,7 +18,7 @@
 
 package com.netease.arctic.table;
 
-import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.TableFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;

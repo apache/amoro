@@ -18,14 +18,12 @@
 
 package com.netease.arctic.server;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.netease.arctic.ams.api.ArcticTableMetastore;
-import com.netease.arctic.ams.api.Constants;
-import com.netease.arctic.ams.api.OptimizerProperties;
-import com.netease.arctic.ams.api.OptimizingService;
+import com.netease.arctic.Constants;
+import com.netease.arctic.api.ArcticTableMetastore;
+import com.netease.arctic.api.OptimizerProperties;
+import com.netease.arctic.api.OptimizingService;
 import com.netease.arctic.server.dashboard.DashboardServer;
 import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
@@ -46,11 +44,14 @@ import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.ConfigurationUtil;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.ThriftServiceProxy;
+import com.netease.arctic.utils.JacksonUtil;
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.SystemProperties;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -377,7 +378,7 @@ public class ArcticServiceContainer {
 
   private class ConfigurationHelper {
 
-    private JSONObject yamlConfig;
+    private JsonNode yamlConfig;
 
     public void init() throws IOException {
       Map<String, Object> envConfig = initEnvConfig();
@@ -386,14 +387,18 @@ public class ArcticServiceContainer {
       initContainerConfig();
     }
 
-    @SuppressWarnings("unchecked")
     private void initServiceConfig(Map<String, Object> envConfig) throws IOException {
       LOG.info("initializing service configuration...");
       String configPath = Environments.getConfigPath() + "/" + SERVER_CONFIG_FILENAME;
       LOG.info("load config from path: {}", configPath);
       yamlConfig =
-          new JSONObject(new Yaml().loadAs(Files.newInputStream(Paths.get(configPath)), Map.class));
-      JSONObject systemConfig = yamlConfig.getJSONObject(ArcticManagementConf.SYSTEM_CONFIG);
+          JacksonUtil.fromObjects(
+              new Yaml().loadAs(Files.newInputStream(Paths.get(configPath)), Map.class));
+      Map<String, Object> systemConfig =
+          JacksonUtil.getMap(
+              yamlConfig,
+              ArcticManagementConf.SYSTEM_CONFIG,
+              new TypeReference<Map<String, Object>>() {});
       Map<String, Object> expandedConfigurationMap = Maps.newHashMap();
       expandConfigMap(systemConfig, "", expandedConfigurationMap);
       // If same configurations in files and environment variables, environment variables have
@@ -493,23 +498,24 @@ public class ArcticServiceContainer {
           SystemProperties.WORKER_THREAD_POOL_SIZE_PROP, String.valueOf(workerThreadPoolSize));
     }
 
-    @SuppressWarnings("unchecked")
     private void initContainerConfig() {
       LOG.info("initializing container configuration...");
-      JSONArray containers = yamlConfig.getJSONArray(ArcticManagementConf.CONTAINER_LIST);
+      JsonNode containers = yamlConfig.get(ArcticManagementConf.CONTAINER_LIST);
       List<ContainerMetadata> containerList = new ArrayList<>();
-      if (containers != null) {
-        for (int i = 0; i < containers.size(); i++) {
-          JSONObject containerConfig = containers.getJSONObject(i);
+      if (containers != null && containers.isArray()) {
+        for (final JsonNode containerConfig : containers) {
           ContainerMetadata container =
               new ContainerMetadata(
-                  containerConfig.getString(ArcticManagementConf.CONTAINER_NAME),
-                  containerConfig.getString(ArcticManagementConf.CONTAINER_IMPL));
-          Map<String, String> containerProperties = new HashMap<>();
-          if (containerConfig.containsKey(ArcticManagementConf.CONTAINER_PROPERTIES)) {
-            containerProperties.putAll(
-                containerConfig.getObject(ArcticManagementConf.CONTAINER_PROPERTIES, Map.class));
-          }
+                  containerConfig.get(ArcticManagementConf.CONTAINER_NAME).asText(),
+                  containerConfig.get(ArcticManagementConf.CONTAINER_IMPL).asText());
+
+          Map<String, String> containerProperties =
+              new HashMap<>(
+                  JacksonUtil.getMap(
+                      containerConfig,
+                      ArcticManagementConf.CONTAINER_PROPERTIES,
+                      new TypeReference<Map<String, String>>() {}));
+
           // put properties in config.yaml first.
           containerProperties.put(OptimizerProperties.AMS_HOME, Environments.getHomePath());
           containerProperties.putIfAbsent(

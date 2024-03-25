@@ -19,7 +19,7 @@
 package com.netease.arctic.formats;
 
 import com.netease.arctic.AmoroCatalog;
-import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.api.CatalogMeta;
 import org.apache.hadoop.conf.Configuration;
 
 /** Helper Interface for testing AmoroCatalog. */
@@ -85,4 +85,7 @@ public interface AmoroCatalogTestHelper<T> {
 
   /** Create a table. The schema, properties, etc. of a table depend on its implementation. */
   void createTable(String db, String tableName) throws Exception;
+
+  /** Create database. */
+  void createDatabase(String database) throws Exception;
 }
