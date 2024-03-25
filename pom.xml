@@ -83,6 +83,7 @@
         <maven-thrift-plugin.version>0.1.11</maven-thrift-plugin.version>
         <maven-build-helper-plugin.version>3.2.0</maven-build-helper-plugin.version>
         <maven-apache-rat-plugin.version>0.15</maven-apache-rat-plugin.version>
+        <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
 
         <iceberg.version>1.4.3</iceberg.version>
         <paimon.version>0.7.0-incubating</paimon.version>
@@ -1039,6 +1040,11 @@
                             <phase>verify</phase>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${maven-clean-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
