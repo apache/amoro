@@ -33,7 +33,7 @@
 
     <properties>
         <node.version>v18.0.0</node.version>
-        <npm.version>8.15.5</npm.version>
+        <pnpm.version>8.15.5</pnpm.version>
         <maven-frontend-plugin.version>1.12.0</maven-frontend-plugin.version>
     </properties>
 
@@ -68,7 +68,7 @@
                         </goals>
                         <configuration>
                             <nodeVersion>${node.version}</nodeVersion>
-                            <pnpmVersion>${npm.version}</pnpmVersion>
+                            <pnpmVersion>${pnpm.version}</pnpmVersion>
                         </configuration>
                     </execution>
                     <execution>
