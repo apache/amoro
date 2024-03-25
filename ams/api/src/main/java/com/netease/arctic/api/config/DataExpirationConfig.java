@@ -57,7 +57,7 @@ public class DataExpirationConfig {
   @JsonProperty(defaultValue = TableProperties.DATA_EXPIRATION_BASE_ON_RULE_DEFAULT)
   private BaseOnRule baseOnRule;
 
-  @com.google.common.annotations.VisibleForTesting
+  @VisibleForTesting
   public enum ExpireLevel {
     PARTITION,
     FILE;
