@@ -18,6 +18,7 @@
 
 package com.netease.arctic.optimizer.flink;
 
+import com.netease.arctic.io.reader.OptimizerExecutorCache;
 import com.netease.arctic.optimizer.common.Optimizer;
 import com.netease.arctic.optimizer.common.OptimizerConfig;
 import com.netease.arctic.optimizer.common.OptimizerToucher;
@@ -32,6 +33,8 @@ import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.kohsuke.args4j.CmdLineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
 
 public class FlinkOptimizer extends Optimizer {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkOptimizer.class);
@@ -49,6 +52,13 @@ public class FlinkOptimizer extends Optimizer {
 
     // calculate optimizer memory allocation
     calcOptimizerMemory(optimizerConfig, env);
+
+    if (optimizerConfig.isCacheEnabled()) {
+      OptimizerExecutorCache.create(
+          Duration.ofMinutes(optimizerConfig.getCacheTimeout()),
+          optimizerConfig.getCacheMaxEntrySize() * 1024 * 1024,
+          optimizerConfig.getCacheMaxTotalSize() * 1024 * 1024);
+    }
 
     Optimizer optimizer = new FlinkOptimizer(optimizerConfig);
     env.addSource(new FlinkToucher(optimizer.getToucher()))

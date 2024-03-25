@@ -61,6 +61,7 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
   @Override
   protected OptimizingDataReader dataReader() {
     return new GenericCombinedIcebergDataReader(
+        table,
         io,
         table.schema(),
         table.spec(),

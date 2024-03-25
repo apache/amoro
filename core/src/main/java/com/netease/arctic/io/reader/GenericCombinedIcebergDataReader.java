@@ -22,9 +22,11 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.optimizing.OptimizingDataReader;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -52,6 +54,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -61,6 +65,7 @@ import java.util.stream.Collectors;
  */
 public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
 
+  private final ArcticTable table;
   protected final Schema tableSchema;
   protected final String nameMapping;
   protected final boolean caseSensitive;
@@ -75,6 +80,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected RewriteFilesInput input;
 
   public GenericCombinedIcebergDataReader(
+      ArcticTable table,
       ArcticFileIO fileIO,
       Schema tableSchema,
       PartitionSpec spec,
@@ -85,6 +91,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
       boolean reuseContainer,
       StructLikeCollections structLikeCollections,
       RewriteFilesInput rewriteFilesInput) {
+    this.table = table;
     this.tableSchema = tableSchema;
     this.spec = spec;
     this.encryptionManager = encryptionManager;
@@ -316,6 +323,30 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     @Override
     protected ArcticFileIO getArcticFileIo() {
       return fileIO;
+    }
+
+    @Override
+    protected CombinedBaseDeleteLoader newDeleteLoader() {
+      return new CachingDeleteLoader(this::loadInputFile);
+    }
+
+    private class CachingDeleteLoader extends CombinedBaseDeleteLoader {
+      private final OptimizerExecutorCache cache;
+
+      CachingDeleteLoader(Function<DeleteFile, InputFile> loadInputFile) {
+        super(loadInputFile);
+        this.cache = OptimizerExecutorCache.getInstance();
+      }
+
+      @Override
+      protected boolean canCache(long size) {
+        return cache != null && size < cache.maxEntrySize();
+      }
+
+      @Override
+      protected <V> V getOrLoad(String key, Supplier<V> valueSupplier, long valueSize) {
+        return cache.getOrLoad(table.name(), key, valueSupplier, valueSize);
+      }
     }
   }
 }

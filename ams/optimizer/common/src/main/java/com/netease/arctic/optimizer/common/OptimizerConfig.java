@@ -18,6 +18,11 @@
 
 package com.netease.arctic.optimizer.common;
 
+import static com.netease.arctic.api.OptimizerProperties.OPTIMIZER_CACHE_ENABLED_DEFAULT;
+import static com.netease.arctic.api.OptimizerProperties.OPTIMIZER_CACHE_MAX_ENTRY_SIZE_DEFAULT;
+import static com.netease.arctic.api.OptimizerProperties.OPTIMIZER_CACHE_MAX_TOTAL_SIZE_DEFAULT;
+import static com.netease.arctic.api.OptimizerProperties.OPTIMIZER_CACHE_TIMEOUT_DEFAULT;
+
 import com.netease.arctic.api.OptimizerProperties;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.kohsuke.args4j.CmdLineException;
@@ -84,6 +89,30 @@ public class OptimizerConfig implements Serializable {
 
   @Option(name = "-id", aliases = "--" + OptimizerProperties.RESOURCE_ID, usage = "Resource id")
   private String resourceId;
+
+  @Option(
+      name = "-ce",
+      aliases = "--" + OptimizerProperties.OPTIMIZER_CACHE_ENABLED,
+      usage = "Whether cache position delete files, default true")
+  private boolean cacheEnabled = OPTIMIZER_CACHE_ENABLED_DEFAULT;
+
+  @Option(
+      name = "-ct",
+      aliases = "--" + OptimizerProperties.OPTIMIZER_CACHE_TIMEOUT,
+      usage = "Memory storage size limit when extending disk storage(MB), default 512MB")
+  private long cacheTimeout = OPTIMIZER_CACHE_TIMEOUT_DEFAULT; // 10 Min
+
+  @Option(
+      name = "-cmes",
+      aliases = "--" + OptimizerProperties.OPTIMIZER_CACHE_MAX_ENTRY_SIZE,
+      usage = "Memory storage size limit when extending disk storage(MB), default 512MB")
+  private long cacheMaxEntrySize = OPTIMIZER_CACHE_MAX_ENTRY_SIZE_DEFAULT;
+
+  @Option(
+      name = "-cmts",
+      aliases = "--" + OptimizerProperties.OPTIMIZER_CACHE_MAX_TOTAL_SIZE,
+      usage = "Memory storage size limit when extending disk storage(MB), default 512MB")
+  private long cacheMaxTotalSize = OPTIMIZER_CACHE_MAX_TOTAL_SIZE_DEFAULT;
 
   public OptimizerConfig() {}
 
@@ -164,6 +193,38 @@ public class OptimizerConfig implements Serializable {
     this.resourceId = resourceId;
   }
 
+  public boolean isCacheEnabled() {
+    return cacheEnabled;
+  }
+
+  public void setCacheEnabled(boolean cacheEnabled) {
+    this.cacheEnabled = cacheEnabled;
+  }
+
+  public long getCacheTimeout() {
+    return cacheTimeout;
+  }
+
+  public void setCacheTimeout(long cacheTimeout) {
+    this.cacheTimeout = cacheTimeout;
+  }
+
+  public long getCacheMaxEntrySize() {
+    return cacheMaxEntrySize;
+  }
+
+  public void setCacheMaxEntrySize(long cacheMaxEntrySize) {
+    this.cacheMaxEntrySize = cacheMaxEntrySize;
+  }
+
+  public long getCacheMaxTotalSize() {
+    return cacheMaxTotalSize;
+  }
+
+  public void setCacheMaxTotalSize(long cacheMaxTotalSize) {
+    this.cacheMaxTotalSize = cacheMaxTotalSize;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
@@ -176,6 +237,10 @@ public class OptimizerConfig implements Serializable {
         .add("rocksDBBasePath", diskStoragePath)
         .add("memoryStorageSize", memoryStorageSize)
         .add("resourceId", resourceId)
+        .add("cacheEnabled", cacheEnabled)
+        .add("cacheTimeout", cacheTimeout)
+        .add("cacheMaxEntrySize", cacheMaxEntrySize)
+        .add("cacheMaxTotalSize", cacheMaxTotalSize)
         .toString();
   }
 }

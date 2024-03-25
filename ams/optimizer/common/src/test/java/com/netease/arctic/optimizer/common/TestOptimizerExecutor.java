@@ -143,7 +143,7 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
     public void initialize(Map<String, String> properties) {}
 
     @Override
-    public OptimizingExecutor createExecutor(TestOptimizingInput input) {
+    public OptimizingExecutor<?> createExecutor(TestOptimizingInput input) {
       return new TestOptimizingExecutor(input);
     }
   }

@@ -18,6 +18,9 @@
 
 package com.netease.arctic.optimizer.common;
 
+import static com.netease.arctic.api.OptimizerProperties.OPTIMIZER_CACHE_MAX_ENTRY_SIZE_DEFAULT;
+import static com.netease.arctic.api.OptimizerProperties.OPTIMIZER_CACHE_MAX_TOTAL_SIZE_DEFAULT;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.kohsuke.args4j.CmdLineException;
@@ -28,7 +31,8 @@ public class TestOptimizerConfig {
 
   @Test
   public void testParseArguments() throws CmdLineException {
-    String cmd = "-a thrift://127.0.0.1:1260 -p 11 -g g1 -hb 2000 -eds -dsp /tmp/arctic -msz 512";
+    String cmd =
+        "-a thrift://127.0.0.1:1260 -p 11 -g g1 -hb 2000 -eds -dsp /tmp/arctic -msz 512 -ce -ct 10 -cmes 64 -cmts 128";
     String[] args = cmd.split(" ");
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
     Assert.assertEquals("thrift://127.0.0.1:1260", optimizerConfig.getAmsUrl());
@@ -38,6 +42,10 @@ public class TestOptimizerConfig {
     Assert.assertTrue(optimizerConfig.isExtendDiskStorage());
     Assert.assertEquals("/tmp/arctic", optimizerConfig.getDiskStoragePath());
     Assert.assertEquals(512, optimizerConfig.getMemoryStorageSize());
+    Assert.assertTrue(optimizerConfig.isCacheEnabled());
+    Assert.assertEquals(10, optimizerConfig.getCacheTimeout());
+    Assert.assertEquals(64, optimizerConfig.getCacheMaxEntrySize());
+    Assert.assertEquals(128, optimizerConfig.getCacheMaxTotalSize());
   }
 
   @Test
@@ -50,6 +58,7 @@ public class TestOptimizerConfig {
     String diskStoragePath = "/tmp";
     long memoryStorageSize = 1024;
     String resourceId = UUID.randomUUID().toString();
+    long cacheTimeout = 10;
 
     config.setAmsUrl(amsUrl);
     config.setExecutionParallel(executionParallel);
@@ -59,6 +68,10 @@ public class TestOptimizerConfig {
     config.setDiskStoragePath(diskStoragePath);
     config.setMemoryStorageSize(memoryStorageSize);
     config.setResourceId(resourceId);
+    config.setCacheEnabled(true);
+    config.setCacheTimeout(cacheTimeout);
+    config.setCacheMaxEntrySize(OPTIMIZER_CACHE_MAX_ENTRY_SIZE_DEFAULT);
+    config.setCacheMaxTotalSize(OPTIMIZER_CACHE_MAX_TOTAL_SIZE_DEFAULT);
 
     Assert.assertEquals(amsUrl, config.getAmsUrl());
     Assert.assertEquals(executionParallel, config.getExecutionParallel());
@@ -68,6 +81,10 @@ public class TestOptimizerConfig {
     Assert.assertEquals(diskStoragePath, config.getDiskStoragePath());
     Assert.assertEquals(memoryStorageSize, config.getMemoryStorageSize());
     Assert.assertEquals(resourceId, config.getResourceId());
+    Assert.assertTrue(config.isCacheEnabled());
+    Assert.assertEquals(cacheTimeout, config.getCacheTimeout());
+    Assert.assertEquals(OPTIMIZER_CACHE_MAX_ENTRY_SIZE_DEFAULT, config.getCacheMaxEntrySize());
+    Assert.assertEquals(OPTIMIZER_CACHE_MAX_TOTAL_SIZE_DEFAULT, config.getCacheMaxTotalSize());
   }
 
   @Test(expected = CmdLineException.class)

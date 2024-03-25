@@ -38,7 +38,7 @@ public class MixFormatRewriteExecutorFactory
   }
 
   @Override
-  public OptimizingExecutor createExecutor(RewriteFilesInput input) {
+  public OptimizingExecutor<?> createExecutor(RewriteFilesInput input) {
     OptimizingInputProperties optimizingConfig = OptimizingInputProperties.parse(properties);
     return new MixFormatRewriteExecutor(
         input,

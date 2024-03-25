@@ -188,6 +188,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
   public void readAllData() throws IOException {
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
+            getArcticTable(),
             getArcticTable().io(),
             getArcticTable().schema(),
             getArcticTable().spec(),
@@ -210,6 +211,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
   public void readAllDataNegate() throws IOException {
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
+            getArcticTable(),
             getArcticTable().io(),
             getArcticTable().schema(),
             getArcticTable().spec(),
@@ -234,6 +236,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
   public void readOnlyData() throws IOException {
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
+            getArcticTable(),
             getArcticTable().io(),
             getArcticTable().schema(),
             getArcticTable().spec(),
@@ -254,6 +257,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
   public void readOnlyDataNegate() throws IOException {
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
+            getArcticTable(),
             getArcticTable().io(),
             getArcticTable().schema(),
             getArcticTable().spec(),
@@ -275,6 +279,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
     CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 100L;
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
+            getArcticTable(),
             getArcticTable().io(),
             getArcticTable().schema(),
             getArcticTable().spec(),

@@ -47,7 +47,6 @@ import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTest
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.Filter;
@@ -107,6 +106,8 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
   private final long dataRecordCnt;
   private final boolean filterEqDelete;
+
+  private volatile CombinedBaseDeleteLoader deleteLoader = null;
 
   protected CombinedDeleteFilter(
       RewriteFilesInput rewriteFilesInput,
@@ -196,6 +197,25 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     eqPredicate = null;
   }
 
+  protected InputFile loadInputFile(DeleteFile deleteFile) {
+    return getInputFile(deleteFile);
+  }
+
+  protected CombinedBaseDeleteLoader newDeleteLoader() {
+    return new CombinedBaseDeleteLoader(this::loadInputFile);
+  }
+
+  private CombinedBaseDeleteLoader deleteLoader() {
+    if (deleteLoader == null) {
+      synchronized (this) {
+        if (deleteLoader == null) {
+          this.deleteLoader = newDeleteLoader();
+        }
+      }
+    }
+    return deleteLoader;
+  }
+
   public CloseableIterable<StructForDelete<T>> filter(
       CloseableIterable<StructForDelete<T>> records) {
     return applyEqDeletes(applyPosDeletes(records));
@@ -251,40 +271,29 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       }
     }
 
-    CloseableIterable<RecordWithLsn> deleteRecords =
-        CloseableIterable.transform(
-            CloseableIterable.concat(
-                Iterables.transform(
-                    eqDeletes,
-                    s ->
-                        CloseableIterable.transform(
-                            openFile(s, deleteSchema),
-                            r -> new RecordWithLsn(s.dataSequenceNumber(), r)))),
-            RecordWithLsn::recordCopy);
+    Iterable<CombinedBaseDeleteLoader.RecordWithLsn> deleteRecords =
+        deleteLoader().loadEqualityDeletes(eqDeletes, deleteSchema);
 
     StructLikeBaseMap<Long> structLikeMap =
         structLikeCollections.createStructLikeMap(deleteSchema.asStruct());
 
     // init map
-    try (CloseableIterable<RecordWithLsn> deletes = deleteRecords) {
-      Iterator<RecordWithLsn> it =
-          getArcticFileIo() == null
-              ? deletes.iterator()
-              : getArcticFileIo().doAs(deletes::iterator);
-      while (it.hasNext()) {
-        RecordWithLsn recordWithLsn = it.next();
-        StructLike deletePK = internalRecordWrapper.copyFor(recordWithLsn.getRecord());
-        if (filterEqDelete && !bloomFilter.mightContain(deletePK)) {
-          continue;
-        }
-        Long lsn = recordWithLsn.getLsn();
-        Long old = structLikeMap.get(deletePK);
-        if (old == null || old.compareTo(lsn) <= 0) {
-          structLikeMap.put(deletePK, lsn);
-        }
+    Iterator<CombinedBaseDeleteLoader.RecordWithLsn> it =
+        getArcticFileIo() == null
+            ? deleteRecords.iterator()
+            : getArcticFileIo().doAs(deleteRecords::iterator);
+
+    while (it.hasNext()) {
+      CombinedBaseDeleteLoader.RecordWithLsn recordWithLsn = it.next();
+      StructLike deletePK = internalRecordWrapper.copyFor(recordWithLsn.getRecord());
+      if (filterEqDelete && !bloomFilter.mightContain(deletePK)) {
+        continue;
       }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+      Long lsn = recordWithLsn.getLsn();
+      Long old = structLikeMap.get(deletePK);
+      if (old == null || old.compareTo(lsn) <= 0) {
+        structLikeMap.put(deletePK, lsn);
+      }
     }
 
     Predicate<StructForDelete<T>> isInDeleteSet =
@@ -299,9 +308,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
           return deleteLsn.compareTo(dataLSN) > 0;
         };
 
-    CloseablePredicate<StructForDelete<T>> closeablePredicate =
-        new CloseablePredicate<>(isInDeleteSet, structLikeMap);
-    this.eqPredicate = closeablePredicate;
+    this.eqPredicate = new CloseablePredicate<>(isInDeleteSet, structLikeMap);
     return isInDeleteSet;
   }
 
@@ -416,29 +423,6 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
             String.format(
                 "Cannot read deletes, %s is not a supported format: %s",
                 contentFile.format().name(), contentFile.path()));
-    }
-  }
-
-  static class RecordWithLsn {
-    private final Long lsn;
-    private Record record;
-
-    public RecordWithLsn(Long lsn, Record record) {
-      this.lsn = lsn;
-      this.record = record;
-    }
-
-    public Long getLsn() {
-      return lsn;
-    }
-
-    public Record getRecord() {
-      return record;
-    }
-
-    public RecordWithLsn recordCopy() {
-      record = record.copy();
-      return this;
     }
   }
 }

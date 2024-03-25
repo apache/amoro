@@ -32,5 +32,5 @@ public interface OptimizingExecutorFactory<I extends TableOptimizing.OptimizingI
   void initialize(Map<String, String> properties);
 
   /** Create factory by input */
-  OptimizingExecutor createExecutor(I input);
+  OptimizingExecutor<?> createExecutor(I input);
 }
