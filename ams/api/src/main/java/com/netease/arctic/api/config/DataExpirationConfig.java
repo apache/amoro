@@ -65,7 +65,7 @@ public class DataExpirationConfig {
     FILE;
 
     public static ExpireLevel fromString(String level) {
-      com.google.common.base.Preconditions.checkArgument(null != level, "Invalid level type: null");
+      Preconditions.checkArgument(null != level, "Invalid level type: null");
       try {
         return ExpireLevel.valueOf(level.toUpperCase(Locale.ENGLISH));
       } catch (IllegalArgumentException e) {
@@ -80,7 +80,7 @@ public class DataExpirationConfig {
     CURRENT_TIME;
 
     public static BaseOnRule fromString(String since) {
-      com.google.common.base.Preconditions.checkArgument(
+      Preconditions.checkArgument(
           null != since, TableProperties.DATA_EXPIRATION_BASE_ON_RULE + " is invalid: null");
       try {
         return BaseOnRule.valueOf(since.toUpperCase(Locale.ENGLISH));
@@ -121,7 +121,7 @@ public class DataExpirationConfig {
         CompatiblePropertyUtil.propertyAsString(
             properties, TableProperties.DATA_EXPIRATION_FIELD, null);
     Types.NestedField field = table.schema().findField(expirationField);
-    com.google.common.base.Preconditions.checkArgument(
+    Preconditions.checkArgument(
         StringUtils.isNoneBlank(expirationField) && null != field,
         String.format(
             "Field(%s) used to determine data expiration is illegal for table(%s)",
@@ -286,10 +286,10 @@ public class DataExpirationConfig {
     DataExpirationConfig config = (DataExpirationConfig) o;
     return enabled == config.enabled
         && retentionTime == config.retentionTime
-        && com.google.common.base.Objects.equal(expirationField, config.expirationField)
+        && Objects.equal(expirationField, config.expirationField)
         && expirationLevel == config.expirationLevel
-        && com.google.common.base.Objects.equal(dateTimePattern, config.dateTimePattern)
-        && com.google.common.base.Objects.equal(numberDateFormat, config.numberDateFormat)
+        && Objects.equal(dateTimePattern, config.dateTimePattern)
+        && Objects.equal(numberDateFormat, config.numberDateFormat)
         && baseOnRule == config.baseOnRule;
   }
 
