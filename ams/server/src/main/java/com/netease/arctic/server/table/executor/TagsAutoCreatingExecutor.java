@@ -22,8 +22,8 @@ import static com.netease.arctic.server.optimizing.maintainer.TableMaintainer.of
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.config.TableConfiguration;
 import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
-import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import org.slf4j.Logger;

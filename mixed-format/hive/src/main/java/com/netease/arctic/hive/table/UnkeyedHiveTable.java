@@ -18,11 +18,10 @@
 
 package com.netease.arctic.hive.table;
 
-import static com.netease.arctic.hive.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
+import static com.netease.arctic.properties.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
 
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.hive.HMSClientPool;
-import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.HiveOperationTransaction;
 import com.netease.arctic.hive.op.HiveSchemaUpdate;
 import com.netease.arctic.hive.op.OverwriteHiveFiles;
@@ -31,6 +30,7 @@ import com.netease.arctic.hive.op.RewriteHiveFiles;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticHadoopFileIO;
+import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;

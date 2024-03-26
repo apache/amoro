@@ -1,0 +1,201 @@
+<?xml version="1.0"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<!DOCTYPE suppressions PUBLIC
+		"-//Puppy Crawl//DTD Suppressions 1.1//EN"
+		"http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
+
+<suppressions>
+		<suppress
+			files="com/netease/arctic/api/config/ConfigOptions\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/api/config/ConfigOption\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/utils/StatisticsFileUtil\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/log/LogDataJsonSerialization\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/log/LogDataToJsonConverters\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/log/LogDataJsonDeserialization\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/log/JsonToLogDataConverters\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/utils/TablePropertyUtil\.java"
+			checks="Regexp"/>
+	    <suppress
+			files="com/netease/arctic/api/config/OptimizingConfig\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/api/config/DataExpirationConfig\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/api/config/TagConfiguration\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/api/config/TableConfiguration\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/utils/Configurations\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/utils/StructuredOptionsSplitter\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/utils/ConfigOption\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/utils/ConfigurationUtil\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/RestCatalogService\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/dashboard/controller/OptimizerController\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/dashboard/controller/PlatformFileInfoController\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/table/DefaultTableService\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/table/DataExpirationConfig\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/table/TableMetadata\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/persistence/NestedSqlSession\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/persistence/converter/JsonObjectConverter\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/persistence/PersistentBase\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/optimizing/OptimizingConfig\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/optimizing/plan/OptimizingEvaluator\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/optimizing/MetricsSummary\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/resource/ContainerMetadata\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/resource/ResourceContainers\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/resource/ResourceContainers\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/optimizing/flow/view/KeyedTableDataView\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/utils/ConfigOptions\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/table/TagConfiguration\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/server/table/TableConfiguration\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/flink/interceptor/ProxyFactory\.java"
+			checks="TodoComment"/>
+		<suppress
+			files="org/apache/hadoop/util/VersionInfo\.java"
+			checks="MethodName"/>
+		<suppress
+			files="org/apache/hadoop/hive/metastore/HiveMetaStoreClient\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/iceberg/BaseConnectorTest\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/iceberg/ArcticQueryRunner\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/iceberg/TestBaseArcticConnectorTest\.java"
+			checks="FileLength"/>
+		<suppress
+			files="com/netease/arctic/trino/ArcticTransactionManager\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/keyed/KeyedConnectorSplit\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/keyed/KeyedConnectorPageSource\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/keyed/KeyedTableHandle\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/keyed/KeyedConnectorMetadata\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/delete/TrinoRow\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/delete/TrinoDeleteFile\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/unkeyed/IcebergPageSource\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/unkeyed/IcebergSplit\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/unkeyed/IcebergPageSourceProvider\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/unkeyed/IcebergMetadata\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/unkeyed/IcebergSplitSource\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/unkeyed/AdaptHiveIcebergTableHandle\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/iceberg/TestBaseArcticConnectorTest\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/api/config/Configurations\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/api/config/ConfigHelpers\.java"
+			checks="Regexp"/>
+		<suppress
+			files="com/netease/arctic/trino/iceberg/BaseConnectorTest.java"
+			checks="FileLength"/>
+
+</suppressions>

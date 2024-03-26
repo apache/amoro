@@ -19,19 +19,24 @@
 package com.netease.arctic.api.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Objects;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Locale;
+import java.util.Map;
 
 /** Configuration for auto creating tags. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TagConfiguration {
   // tag.auto-create.enabled
   private boolean autoCreateTag = false;
-  // tag.auto-create.daily.tag-format
+  // tag.auto-create.tag-format
   private String tagFormat;
   // tag.auto-create.trigger.period
   private Period triggerPeriod;
@@ -39,15 +44,32 @@ public class TagConfiguration {
   private int triggerOffsetMinutes;
   // tag.auto-create.trigger.max-delay.minutes
   private int maxDelayMinutes;
+  // tag.auto-create.max-age-ms
+  private long tagMaxAgeMs;
 
   /** The interval for periodically triggering creating tags */
   public enum Period {
     DAILY("daily") {
       @Override
-      public long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
-        LocalTime offsetTime = LocalTime.ofSecondOfDay(triggerOffsetMinutes * 60L);
-        LocalDateTime triggerTime = LocalDateTime.of(checkTime.toLocalDate(), offsetTime);
-        return triggerTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+      protected Duration periodDuration() {
+        return Duration.ofDays(1);
+      }
+
+      @Override
+      public LocalDateTime getTagTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
+        return checkTime.minusMinutes(triggerOffsetMinutes).truncatedTo(ChronoUnit.DAYS);
+      }
+    },
+
+    HOURLY("hourly") {
+      @Override
+      protected Duration periodDuration() {
+        return Duration.ofHours(1);
+      }
+
+      @Override
+      public LocalDateTime getTagTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
+        return checkTime.minusMinutes(triggerOffsetMinutes).truncatedTo(ChronoUnit.HOURS);
       }
     };
 
@@ -61,14 +83,73 @@ public class TagConfiguration {
       return propertyName;
     }
 
+    protected abstract Duration periodDuration();
+
     /**
-     * Obtain the trigger time for creating a tag, which is the idea time of the last tag before the
+     * Obtain the tag time for creating a tag, which is the ideal time of the last tag before the
      * check time.
      *
      * <p>For example, when creating a daily tag, the check time is 2022-08-08 11:00:00 and the
-     * offset is set to be 5 min, the idea trigger time is 2022-08-08 00:05:00.
+     * offset is set to be 5 min, the idea tag time is 2022-08-08 00:00:00.
+     *
+     * <p>For example, when creating a daily tag, the offset is set to be 30 min, if the check time
+     * is 2022-08-08 02:00:00, the ideal tag time is 2022-08-08 00:00:00; if the check time is
+     * 2022-08-09 00:20:00 (before 00:30 of the next day), the ideal tag time is still 2022-08-08
+     * 00:00:00.
      */
-    public abstract long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes);
+    public abstract LocalDateTime getTagTime(LocalDateTime checkTime, int triggerOffsetMinutes);
+
+    public String generateTagName(LocalDateTime tagTime, String tagFormat) {
+      return tagTime.minus(periodDuration()).format(DateTimeFormatter.ofPattern(tagFormat));
+    }
+  }
+
+  public static TagConfiguration parse(Map<String, String> tableProperties) {
+    TagConfiguration tagConfig = new TagConfiguration();
+    tagConfig.setAutoCreateTag(
+        CompatiblePropertyUtil.propertyAsBoolean(
+            tableProperties,
+            TableProperties.ENABLE_AUTO_CREATE_TAG,
+            TableProperties.ENABLE_AUTO_CREATE_TAG_DEFAULT));
+    tagConfig.setTriggerPeriod(
+        Period.valueOf(
+            CompatiblePropertyUtil.propertyAsString(
+                    tableProperties,
+                    TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD,
+                    TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD_DEFAULT)
+                .toUpperCase(Locale.ROOT)));
+
+    String defaultFormat;
+    switch (tagConfig.getTriggerPeriod()) {
+      case DAILY:
+        defaultFormat = TableProperties.AUTO_CREATE_TAG_FORMAT_DAILY_DEFAULT;
+        break;
+      case HOURLY:
+        defaultFormat = TableProperties.AUTO_CREATE_TAG_FORMAT_HOURLY_DEFAULT;
+        break;
+      default:
+        throw new IllegalArgumentException(
+            "Unsupported trigger period: " + tagConfig.getTriggerPeriod());
+    }
+    tagConfig.setTagFormat(
+        CompatiblePropertyUtil.propertyAsString(
+            tableProperties, TableProperties.AUTO_CREATE_TAG_FORMAT, defaultFormat));
+    tagConfig.setTriggerOffsetMinutes(
+        CompatiblePropertyUtil.propertyAsInt(
+            tableProperties,
+            TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES,
+            TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES_DEFAULT));
+    tagConfig.setMaxDelayMinutes(
+        CompatiblePropertyUtil.propertyAsInt(
+            tableProperties,
+            TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES,
+            TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES_DEFAULT));
+    tagConfig.setTagMaxAgeMs(
+        CompatiblePropertyUtil.propertyAsLong(
+            tableProperties,
+            TableProperties.AUTO_CREATE_TAG_MAX_AGE_MS,
+            TableProperties.AUTO_CREATE_TAG_MAX_AGE_MS_DEFAULT));
+    return tagConfig;
   }
 
   public boolean isAutoCreateTag() {
@@ -111,22 +192,40 @@ public class TagConfiguration {
     this.maxDelayMinutes = maxDelayMinutes;
   }
 
+  public long getTagMaxAgeMs() {
+    return tagMaxAgeMs;
+  }
+
+  public void setTagMaxAgeMs(long tagMaxAgeMs) {
+    this.tagMaxAgeMs = tagMaxAgeMs;
+  }
+
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     TagConfiguration that = (TagConfiguration) o;
     return autoCreateTag == that.autoCreateTag
         && triggerOffsetMinutes == that.triggerOffsetMinutes
         && maxDelayMinutes == that.maxDelayMinutes
-        && Objects.equal(tagFormat, that.tagFormat)
-        && triggerPeriod == that.triggerPeriod;
+        && com.google.common.base.Objects.equal(tagFormat, that.tagFormat)
+        && triggerPeriod == that.triggerPeriod
+        && tagMaxAgeMs == that.tagMaxAgeMs;
   }
 
   @Override
   public int hashCode() {
     return Objects.hashCode(
-        autoCreateTag, tagFormat, triggerPeriod, triggerOffsetMinutes, maxDelayMinutes);
+        autoCreateTag,
+        tagFormat,
+        triggerPeriod,
+        triggerOffsetMinutes,
+        maxDelayMinutes,
+        tagMaxAgeMs);
   }
 
   @Override
@@ -137,6 +236,7 @@ public class TagConfiguration {
         .add("triggerPeriod", triggerPeriod)
         .add("triggerOffsetMinutes", triggerOffsetMinutes)
         .add("maxDelayMinutes", maxDelayMinutes)
+        .add("tagMaxAgeMs", tagMaxAgeMs)
         .toString();
   }
 }

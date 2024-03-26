@@ -43,7 +43,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
         "spark.sql.catalog.spark_catalog",
         SparkUnifiedSessionCatalog.class.getName(),
         "spark.sql.catalog.spark_catalog.uri",
-        context.amsCatalogUrl(null));
+        CONTEXT.amsCatalogUrl(null));
   }
 
   public static List<Arguments> testTableFormats() {
@@ -172,7 +172,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     }
     UnifiedCatalog unifiedCatalog =
         UnifiedCatalogLoader.loadUnifiedCatalog(
-            context.amsThriftUrl(), format.name().toLowerCase(), Maps.newHashMap());
+            CONTEXT.amsThriftUrl(), format.name().toLowerCase(), Maps.newHashMap());
     if (!unifiedCatalog().exist(database())) {
       unifiedCatalog.createDatabase(database());
     }

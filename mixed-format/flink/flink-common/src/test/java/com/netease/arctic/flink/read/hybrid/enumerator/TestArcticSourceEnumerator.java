@@ -76,7 +76,7 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
 
   public static final String SCAN_STARTUP_MODE_EARLIEST = "earliest";
 
-  protected static final LocalDateTime ldt =
+  protected static final LocalDateTime LDT =
       LocalDateTime.of(LocalDate.of(2022, 1, 1), LocalTime.of(0, 0, 0, 0));
 
   @Before
@@ -93,29 +93,29 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
                       RowKind.INSERT,
                       1,
                       StringData.fromString("john"),
-                      ldt.toEpochSecond(ZoneOffset.UTC),
-                      TimestampData.fromLocalDateTime(ldt)));
+                      LDT.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(LDT)));
               add(
                   GenericRowData.ofKind(
                       RowKind.INSERT,
                       2,
                       StringData.fromString("lily"),
-                      ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-                      TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+                      LDT.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(LDT.plusDays(1))));
               add(
                   GenericRowData.ofKind(
                       RowKind.INSERT,
                       3,
                       StringData.fromString("jake"),
-                      ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-                      TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+                      LDT.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(LDT.plusDays(1))));
               add(
                   GenericRowData.ofKind(
                       RowKind.INSERT,
                       4,
                       StringData.fromString("sam"),
-                      ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-                      TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+                      LDT.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(LDT.plusDays(1))));
             }
           };
       for (RowData record : insert) {

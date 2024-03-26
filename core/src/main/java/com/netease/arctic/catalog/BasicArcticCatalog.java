@@ -18,7 +18,9 @@
 
 package com.netease.arctic.catalog;
 
-import static com.netease.arctic.table.TableProperties.*;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.NoSuchDatabaseException;
@@ -33,7 +35,11 @@ import com.netease.arctic.mixed.InternalMixedIcebergCatalog;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.CreateTableTransaction;
 import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.table.*;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.table.TableBuilder;
+import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
@@ -42,7 +48,13 @@ import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
-import org.apache.iceberg.*;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.SortOrder;
+import org.apache.iceberg.TableMetadata;
+import org.apache.iceberg.TableOperations;
+import org.apache.iceberg.Transaction;
+import org.apache.iceberg.Transactions;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;

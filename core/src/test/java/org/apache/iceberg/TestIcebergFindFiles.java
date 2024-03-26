@@ -134,7 +134,7 @@ public class TestIcebergFindFiles extends TableTestBase {
         .commit();
     table.updateSpec().removeField(Expressions.bucket("data", 16)).commit();
 
-    DataFile FILE_DROP_PARTITION_FIELD =
+    DataFile fileDropPartitionField =
         DataFiles.builder(table.spec())
             .withPath("/path/to/data-drop-partition.parquet")
             .withFileSizeInBytes(10L)
@@ -142,7 +142,7 @@ public class TestIcebergFindFiles extends TableTestBase {
             .build();
     table
         .newAppend()
-        .appendFile(FILE_DROP_PARTITION_FIELD) // without partition field
+        .appendFile(fileDropPartitionField) // without partition field
         .commit();
 
     Iterable<ContentFile<?>> files =
@@ -161,7 +161,7 @@ public class TestIcebergFindFiles extends TableTestBase {
                 .inPartitions(table.spec(), StaticDataTask.Row.of(new Object[] {null}))
                 .entries());
 
-    Assert.assertEquals(pathSet(FILE_DROP_PARTITION_FIELD), pathSet(files2));
+    Assert.assertEquals(pathSet(fileDropPartitionField), pathSet(files2));
   }
 
   @Test
@@ -176,7 +176,7 @@ public class TestIcebergFindFiles extends TableTestBase {
 
     table.updateSpec().addField(Expressions.bucket("id", 16)).commit();
 
-    DataFile FILE_ADD_PARTITION_FIELD =
+    DataFile fileAddPartitionField =
         DataFiles.builder(table.spec())
             .withPath("/path/to/data-add-partition.parquet")
             .withFileSizeInBytes(10)
@@ -185,7 +185,7 @@ public class TestIcebergFindFiles extends TableTestBase {
             .withRecordCount(1)
             .build();
 
-    table.newAppend().appendFile(FILE_ADD_PARTITION_FIELD).commit();
+    table.newAppend().appendFile(fileAddPartitionField).commit();
 
     Iterable<ContentFile<?>> files =
         transform(
@@ -202,7 +202,7 @@ public class TestIcebergFindFiles extends TableTestBase {
                 .inPartitions(table.specs().get(1), StaticDataTask.Row.of(0, 1))
                 .entries());
 
-    Assert.assertEquals(pathSet(FILE_ADD_PARTITION_FIELD), pathSet(files2));
+    Assert.assertEquals(pathSet(fileAddPartitionField), pathSet(files2));
   }
 
   @Test
@@ -222,7 +222,7 @@ public class TestIcebergFindFiles extends TableTestBase {
         .addField(Expressions.bucket("id", 16))
         .commit();
 
-    DataFile FILE_REPLACE_PARTITION_FIELD =
+    DataFile fileReplacePartitionField =
         DataFiles.builder(table.spec())
             .withPath("/path/to/data-add-partition.parquet")
             .withFileSizeInBytes(10)
@@ -232,7 +232,7 @@ public class TestIcebergFindFiles extends TableTestBase {
             .withRecordCount(1)
             .build();
 
-    table.newAppend().appendFile(FILE_REPLACE_PARTITION_FIELD).commit();
+    table.newAppend().appendFile(fileReplacePartitionField).commit();
 
     Iterable<ContentFile<?>> files =
         transform(
@@ -249,7 +249,7 @@ public class TestIcebergFindFiles extends TableTestBase {
                 .inPartitions(table.specs().get(1), StaticDataTask.Row.of(1))
                 .entries());
 
-    Assert.assertEquals(pathSet(FILE_REPLACE_PARTITION_FIELD), pathSet(files2));
+    Assert.assertEquals(pathSet(fileReplacePartitionField), pathSet(files2));
   }
 
   @Test

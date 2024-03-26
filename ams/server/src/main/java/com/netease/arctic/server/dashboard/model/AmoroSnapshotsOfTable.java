@@ -70,12 +70,12 @@ public class AmoroSnapshotsOfTable {
     return AmsUtil.byteToXB(fileSize);
   }
 
-  public long getOriginalFileSize() {
-    return fileSize;
-  }
-
   public void setFileSize(long fileSize) {
     this.fileSize = fileSize;
+  }
+
+  public long getOriginalFileSize() {
+    return fileSize;
   }
 
   public long getCommitTime() {
@@ -144,8 +144,12 @@ public class AmoroSnapshotsOfTable {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     AmoroSnapshotsOfTable that = (AmoroSnapshotsOfTable) o;
     return fileCount == that.fileCount
         && fileSize == that.fileSize

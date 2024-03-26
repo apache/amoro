@@ -18,13 +18,13 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.api.resource.ResourceGroup;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
-import com.netease.arctic.server.utils.Configurations;
 import io.javalin.http.Context;
 import org.glassfish.jersey.internal.guava.Sets;
 

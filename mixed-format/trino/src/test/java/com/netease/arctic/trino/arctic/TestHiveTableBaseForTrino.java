@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
 public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   protected static final String HIVE_DB_NAME = "hivedb";
   protected static final String HIVE_CATALOG_NAME = "hive_catalog";
-  protected static final AtomicInteger testCount = new AtomicInteger(0);
+  protected static final AtomicInteger TEST_COUNT = new AtomicInteger(0);
 
   private static final TemporaryFolder tempFolder = new TemporaryFolder();
 
@@ -117,7 +117,7 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   protected KeyedHiveTable testUnPartitionKeyedHiveTable;
 
   protected static void startMetastore() throws Exception {
-    int ref = testCount.incrementAndGet();
+    int ref = TEST_COUNT.incrementAndGet();
     if (ref == 1) {
       tempFolder.create();
       hms = new HMSMockServer(tempFolder.newFolder("hive"));
@@ -132,7 +132,7 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   }
 
   protected static void stopMetastore() {
-    int ref = testCount.decrementAndGet();
+    int ref = TEST_COUNT.decrementAndGet();
     if (ref == 0) {
       hms.stop();
       hms = null;
