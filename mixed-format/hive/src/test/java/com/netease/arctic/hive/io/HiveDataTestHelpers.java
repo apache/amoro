@@ -19,13 +19,13 @@
 package com.netease.arctic.hive.io;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericKeyedDataReader;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.MixedDataTestHelpers;
+import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;

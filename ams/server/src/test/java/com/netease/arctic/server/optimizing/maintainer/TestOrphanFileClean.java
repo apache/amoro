@@ -24,12 +24,12 @@ import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMainta
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.api.ServerTableIdentifier;
+import com.netease.arctic.api.config.TableConfiguration;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
-import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.executor.ExecutorTestBase;
 import com.netease.arctic.table.KeyedTable;

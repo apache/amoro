@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.persistence.mapper;
 
+import com.netease.arctic.api.ServerTableIdentifier;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.optimizing.MetricsSummary;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
@@ -30,7 +31,6 @@ import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
 import com.netease.arctic.server.persistence.converter.MapLong2StringConverter;
 import com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert;
-import com.netease.arctic.server.table.ServerTableIdentifier;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;

@@ -25,7 +25,7 @@ import com.netease.arctic.TableFormat;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.UnifiedCatalogLoader;
 import com.netease.arctic.client.ArcticThriftUrl;
-import com.netease.arctic.hive.HiveTableProperties;
+import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.spark.test.utils.TestTableUtil;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;

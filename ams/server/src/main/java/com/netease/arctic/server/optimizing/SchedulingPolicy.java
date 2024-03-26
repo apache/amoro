@@ -20,8 +20,8 @@ package com.netease.arctic.server.optimizing;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.api.BlockableOperation;
+import com.netease.arctic.api.ServerTableIdentifier;
 import com.netease.arctic.api.resource.ResourceGroup;
-import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
