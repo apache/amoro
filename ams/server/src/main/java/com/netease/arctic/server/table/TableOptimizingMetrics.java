@@ -21,6 +21,7 @@ package com.netease.arctic.server.table;
 import static com.netease.arctic.api.metrics.MetricDefine.defineCounter;
 import static com.netease.arctic.api.metrics.MetricDefine.defineGauge;
 
+import com.netease.arctic.api.ServerTableIdentifier;
 import com.netease.arctic.api.metrics.Counter;
 import com.netease.arctic.api.metrics.Gauge;
 import com.netease.arctic.api.metrics.Metric;
@@ -35,48 +36,48 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import java.util.List;
 
 /** Table self optimizing metrics */
-public class TableSelfOptimizingMetrics {
+public class TableOptimizingMetrics {
   /** Table is no need optimizing. */
-  public static final String STATE_IDLE = "idle";
+  public static final String STATUS_IDLE = "idle";
 
   /** Table is need optimizing, but waiting for resource */
-  public static final String STATE_PENDING = "pending";
+  public static final String STATUS_PENDING = "pending";
 
   /** Table is doing optimizing process planing. */
-  public static final String STATE_PLANING = "planing";
+  public static final String STATUS_PLANING = "planing";
 
   /** Table is executing optimizing process */
-  public static final String STATE_EXECUTING = "executing";
+  public static final String STATUS_EXECUTING = "executing";
 
   /** All optimizing process task is done, and process is committing. */
-  public static final String STATE_COMMITTING = "committing";
+  public static final String STATUS_COMMITTING = "committing";
 
   // table optimizing status duration metrics
-  public static final MetricDefine TABLE_OPTIMIZING_STATE_IDLE_DURATION =
+  public static final MetricDefine TABLE_OPTIMIZING_STATUS_IDLE_DURATION =
       defineGauge("table_optimizing_status_idle_duration_mills")
           .withDescription("Duration in seconds after table be in idle state")
           .withTags("catalog", "database", "table")
           .build();
 
-  public static final MetricDefine TABLE_OPTIMIZING_STATE_PENDING_DURATION =
+  public static final MetricDefine TABLE_OPTIMIZING_STATUS_PENDING_DURATION =
       defineGauge("table_optimizing_status_pending_duration_mills")
           .withDescription("Duration in seconds after table be in pending state")
           .withTags("catalog", "database", "table")
           .build();
 
-  public static final MetricDefine TABLE_OPTIMIZING_STATE_PLANNING_DURATION =
+  public static final MetricDefine TABLE_OPTIMIZING_STATUS_PLANNING_DURATION =
       defineGauge("table_optimizing_status_planning_duration_mills")
           .withDescription("Duration in seconds after table be in planning state")
           .withTags("catalog", "database", "table")
           .build();
 
-  public static final MetricDefine TABLE_OPTIMIZING_STATE_EXECUTING_DURATION =
+  public static final MetricDefine TABLE_OPTIMIZING_STATUS_EXECUTING_DURATION =
       defineGauge("table_optimizing_status_executing_duration_mills")
           .withDescription("Duration in seconds after table be in executing state")
           .withTags("catalog", "database", "table")
           .build();
 
-  public static final MetricDefine TABLE_OPTIMIZING_STATE_COMMITTING_DURATION =
+  public static final MetricDefine TABLE_OPTIMIZING_STATUS_COMMITTING_DURATION =
       defineGauge("table_optimizing_status_committing_duration_mills")
           .withDescription("Duration in seconds after table be in committing state")
           .withTags("catalog", "database", "table")
@@ -178,7 +179,7 @@ public class TableSelfOptimizingMetrics {
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
   private MetricRegistry globalRegistry;
 
-  public TableSelfOptimizingMetrics(ServerTableIdentifier identifier) {
+  public TableOptimizingMetrics(ServerTableIdentifier identifier) {
     this.identifier = identifier;
   }
 
@@ -201,32 +202,34 @@ public class TableSelfOptimizingMetrics {
     if (globalRegistry == null) {
       // register state duration metrics
       registerMetric(
-          registry, TABLE_OPTIMIZING_STATE_IDLE_DURATION, new StateDurationGauge(STATE_IDLE));
-      registerMetric(
-          registry, TABLE_OPTIMIZING_STATE_PENDING_DURATION, new StateDurationGauge(STATE_PENDING));
+          registry, TABLE_OPTIMIZING_STATUS_IDLE_DURATION, new StateDurationGauge(STATUS_IDLE));
       registerMetric(
           registry,
-          TABLE_OPTIMIZING_STATE_PLANNING_DURATION,
-          new StateDurationGauge(STATE_PLANING));
+          TABLE_OPTIMIZING_STATUS_PENDING_DURATION,
+          new StateDurationGauge(STATUS_PENDING));
       registerMetric(
           registry,
-          TABLE_OPTIMIZING_STATE_EXECUTING_DURATION,
-          new StateDurationGauge(STATE_EXECUTING));
+          TABLE_OPTIMIZING_STATUS_PLANNING_DURATION,
+          new StateDurationGauge(STATUS_PLANING));
       registerMetric(
           registry,
-          TABLE_OPTIMIZING_STATE_COMMITTING_DURATION,
-          new StateDurationGauge(STATE_COMMITTING));
+          TABLE_OPTIMIZING_STATUS_EXECUTING_DURATION,
+          new StateDurationGauge(STATUS_EXECUTING));
+      registerMetric(
+          registry,
+          TABLE_OPTIMIZING_STATUS_COMMITTING_DURATION,
+          new StateDurationGauge(STATUS_COMMITTING));
 
       // register table in status metrics
-      registerMetric(registry, TABLE_OPTIMIZING_STATUS_IN_IDLE, new InStatusGauge(STATE_IDLE));
+      registerMetric(registry, TABLE_OPTIMIZING_STATUS_IN_IDLE, new InStatusGauge(STATUS_IDLE));
       registerMetric(
-          registry, TABLE_OPTIMIZING_STATUS_IN_PENDING, new InStatusGauge(STATE_PENDING));
+          registry, TABLE_OPTIMIZING_STATUS_IN_PENDING, new InStatusGauge(STATUS_PENDING));
       registerMetric(
-          registry, TABLE_OPTIMIZING_STATUS_IN_PLANNING, new InStatusGauge(STATE_PLANING));
+          registry, TABLE_OPTIMIZING_STATUS_IN_PLANNING, new InStatusGauge(STATUS_PLANING));
       registerMetric(
-          registry, TABLE_OPTIMIZING_STATUS_IN_EXECUTING, new InStatusGauge(STATE_EXECUTING));
+          registry, TABLE_OPTIMIZING_STATUS_IN_EXECUTING, new InStatusGauge(STATUS_EXECUTING));
       registerMetric(
-          registry, TABLE_OPTIMIZING_STATUS_IN_COMMITTING, new InStatusGauge(STATE_COMMITTING));
+          registry, TABLE_OPTIMIZING_STATUS_IN_COMMITTING, new InStatusGauge(STATUS_COMMITTING));
 
       // register table process count metrics
       registerMetric(registry, TABLE_OPTIMIZING_PROCESS_TOTAL_COUNT, processTotalCount);
@@ -294,17 +297,17 @@ public class TableSelfOptimizingMetrics {
   private String optimizingStatusToMetricState(OptimizingStatus status) {
     switch (status) {
       case IDLE:
-        return STATE_IDLE;
+        return STATUS_IDLE;
       case PENDING:
-        return STATE_PENDING;
+        return STATUS_PENDING;
       case PLANNING:
-        return STATE_PLANING;
+        return STATUS_PLANING;
       case FULL_OPTIMIZING:
       case MAJOR_OPTIMIZING:
       case MINOR_OPTIMIZING:
-        return STATE_EXECUTING;
+        return STATUS_EXECUTING;
       case COMMITTING:
-        return STATE_COMMITTING;
+        return STATUS_COMMITTING;
       default:
         return status.name();
     }

@@ -94,7 +94,7 @@ public class TableRuntime extends StatedPersistentBase {
   @StateField private volatile long processId;
   @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
   private volatile long lastPlanTime;
-  private final TableSelfOptimizingMetrics selfOptimizingMetrics;
+  private final TableOptimizingMetrics selfOptimizingMetrics;
   private final ReentrantLock blockerLock = new ReentrantLock();
 
   protected TableRuntime(
@@ -107,7 +107,7 @@ public class TableRuntime extends StatedPersistentBase {
     this.tableConfiguration = TableConfiguration.parseConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
-    selfOptimizingMetrics = new TableSelfOptimizingMetrics(tableIdentifier);
+    selfOptimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
   }
 
   protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
@@ -136,7 +136,7 @@ public class TableRuntime extends StatedPersistentBase {
             ? OptimizingStatus.PENDING
             : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
-    selfOptimizingMetrics = new TableSelfOptimizingMetrics(tableIdentifier);
+    selfOptimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
     selfOptimizingMetrics.stateChanged(optimizingStatus, this.currentStatusStartTime);
   }
 
