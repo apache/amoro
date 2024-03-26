@@ -97,10 +97,10 @@ containers:
     container-impl: com.netease.arctic.server.manager.FlinkOptimizerContainer
     properties:
       flink-home: /opt/flink/                                                        # Flink install home
-      target: session                                                                # Flink run as native kubernetes
-      job-uri: "local:///opt/flink/usrlib/optimizer-job.jar"                         # Optimizer job main jar for kubernetes application
+      target: session                                                                # Flink run in session cluster
+      job-uri: "local:///opt/flink/usrlib/optimizer-job.jar"                         # Optimizer job main jar
       ams-optimizing-uri: thrift://ams.amoro.service.local:1261                      # AMS optimizing uri 
-      export.FLINK_CONF_DIR: /opt/flink/conf/                                        # Flink config dir, flink-conf.yaml should be in this dir, contains the rest connection parameters of the session cluster
+      export.FLINK_CONF_DIR: /opt/flink/conf/                                        # Flink config dir, flink-conf.yaml should e in this dir, contains the rest connection parameters of the session cluster
 ```
 
 
