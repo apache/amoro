@@ -18,12 +18,12 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.api.resource.ResourceGroup;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.DefaultOptimizingService;
 import com.netease.arctic.server.manager.EventsManager;
 import com.netease.arctic.server.manager.MetricManager;
-import com.netease.arctic.server.utils.Configurations;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;

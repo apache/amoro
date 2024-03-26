@@ -18,8 +18,8 @@
 
 package com.netease.arctic.hive.op;
 
-import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
+import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;

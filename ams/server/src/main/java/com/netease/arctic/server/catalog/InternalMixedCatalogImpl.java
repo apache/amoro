@@ -23,6 +23,7 @@ import static com.netease.arctic.server.table.internal.InternalTableConstants.CH
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.formats.mixed.MixedTable;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.mixed.InternalMixedIcebergCatalog;
@@ -32,7 +33,6 @@ import com.netease.arctic.server.table.internal.InternalMixedIcebergCreator;
 import com.netease.arctic.server.table.internal.InternalMixedIcebergHandler;
 import com.netease.arctic.server.table.internal.InternalTableCreator;
 import com.netease.arctic.server.table.internal.InternalTableHandler;
-import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.InternalTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BasicKeyedTable;

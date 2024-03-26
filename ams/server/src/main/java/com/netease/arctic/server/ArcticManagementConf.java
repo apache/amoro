@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server;
 
-import com.netease.arctic.server.utils.ConfigOption;
-import com.netease.arctic.server.utils.ConfigOptions;
+import com.netease.arctic.api.config.ConfigOption;
+import com.netease.arctic.api.config.ConfigOptions;
 
 import java.time.Duration;
 
