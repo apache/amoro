@@ -42,7 +42,7 @@ public abstract class MixedSessionCatalogBase<T extends TableCatalog & SupportsN
   public static final String MIXED_HIVE_PROVIDER = "mixed_hive";
 
   /** Supported providers */
-  public static final Set<String> supportedProviders =
+  public static final Set<String> SUPPORTED_PROVIDERS =
       ImmutableSet.of(LEGACY_MIXED_FORMAT_PROVIDER, MIXED_ICEBERG_PROVIDER, MIXED_HIVE_PROVIDER);
 
   /**
@@ -70,6 +70,6 @@ public abstract class MixedSessionCatalogBase<T extends TableCatalog & SupportsN
 
   @Override
   protected boolean isManagedProvider(String provider) {
-    return StringUtils.isNotBlank(provider) && supportedProviders.contains(provider);
+    return StringUtils.isNotBlank(provider) && SUPPORTED_PROVIDERS.contains(provider);
   }
 }

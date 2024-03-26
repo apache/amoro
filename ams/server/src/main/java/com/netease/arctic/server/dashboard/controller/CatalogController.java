@@ -86,17 +86,12 @@ import java.util.Set;
 
 /** The controller that handles catalog requests. */
 public class CatalogController {
-  private final PlatformFileManager platformFileInfoService;
-
   private static final String CONFIG_TYPE_STORAGE = "storage-config";
   private static final String CONFIG_TYPE_AUTH = "auth-config";
   // <configuration></configuration>  encoded with base64
   private static final String EMPTY_XML_BASE64 = "PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==";
-
   private static final Map<String, List<String>> CATALOG_REQUIRED_PROPERTIES;
   private static final Set<CatalogDescriptor> VALIDATE_CATALOGS;
-
-  private final TableService tableService;
 
   static {
     CATALOG_REQUIRED_PROPERTIES = Maps.newHashMap();
@@ -145,6 +140,14 @@ public class CatalogController {
             CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
   }
 
+  private final PlatformFileManager platformFileInfoService;
+  private final TableService tableService;
+
+  public CatalogController(TableService tableService, PlatformFileManager platformFileInfoService) {
+    this.tableService = tableService;
+    this.platformFileInfoService = platformFileInfoService;
+  }
+
   private static Set<String> getHiddenCatalogTableProperties() {
     return Sets.newHashSet(TableProperties.SELF_OPTIMIZING_GROUP);
   }
@@ -175,11 +178,6 @@ public class CatalogController {
       hiddenProperties.add(S3FileIOProperties.ENDPOINT);
     }
     return hiddenProperties;
-  }
-
-  public CatalogController(TableService tableService, PlatformFileManager platformFileInfoService) {
-    this.tableService = tableService;
-    this.platformFileInfoService = platformFileInfoService;
   }
 
   /** Get catalog Type list */
@@ -652,8 +650,12 @@ public class CatalogController {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       CatalogDescriptor that = (CatalogDescriptor) o;
       return Objects.equal(catalogType, that.catalogType)
           && Objects.equal(storageType, that.storageType)

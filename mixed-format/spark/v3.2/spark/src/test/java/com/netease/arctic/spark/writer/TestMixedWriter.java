@@ -73,89 +73,104 @@ import java.util.stream.Stream;
 
 public class TestMixedWriter extends MixedTableTestBase {
 
-  static final Schema schema =
+  static final Schema SCHEMA =
       new Schema(
           Types.NestedField.required(1, "id", Types.IntegerType.get()),
           Types.NestedField.required(2, "data", Types.StringType.get()),
           Types.NestedField.required(3, "pt", Types.StringType.get()));
 
-  static final PrimaryKeySpec idPrimaryKeySpec =
-      PrimaryKeySpec.builderFor(schema).addColumn("id").build();
+  static final PrimaryKeySpec ID_PRIMARY_KEY_SPEC =
+      PrimaryKeySpec.builderFor(SCHEMA).addColumn("id").build();
 
-  static final PartitionSpec ptSpec = PartitionSpec.builderFor(schema).identity("pt").build();
+  static final PartitionSpec PT_SPEC = PartitionSpec.builderFor(SCHEMA).identity("pt").build();
 
   public static Stream<Arguments> testWrite() {
     return Stream.of(
         Arguments.of(
-            MIXED_HIVE, WriteMode.APPEND, schema, idPrimaryKeySpec, ptSpec, FileFormat.PARQUET),
+            MIXED_HIVE, WriteMode.APPEND, SCHEMA, ID_PRIMARY_KEY_SPEC, PT_SPEC, FileFormat.PARQUET),
         Arguments.of(
-            MIXED_HIVE, WriteMode.APPEND, schema, noPrimaryKey, ptSpec, FileFormat.PARQUET),
+            MIXED_HIVE, WriteMode.APPEND, SCHEMA, NO_PRIMARY_KEY, PT_SPEC, FileFormat.PARQUET),
         Arguments.of(
             MIXED_HIVE,
             WriteMode.APPEND,
-            schema,
-            idPrimaryKeySpec,
-            unpartitioned,
-            FileFormat.PARQUET),
-        Arguments.of(
-            MIXED_HIVE, WriteMode.APPEND, schema, noPrimaryKey, unpartitioned, FileFormat.PARQUET),
-        Arguments.of(
-            MIXED_HIVE, WriteMode.APPEND, schema, idPrimaryKeySpec, ptSpec, FileFormat.ORC),
-        Arguments.of(MIXED_HIVE, WriteMode.APPEND, schema, noPrimaryKey, ptSpec, FileFormat.ORC),
-        Arguments.of(
-            MIXED_HIVE, WriteMode.APPEND, schema, idPrimaryKeySpec, unpartitioned, FileFormat.ORC),
-        Arguments.of(
-            MIXED_HIVE, WriteMode.APPEND, schema, noPrimaryKey, unpartitioned, FileFormat.ORC),
-        Arguments.of(
-            MIXED_HIVE,
-            WriteMode.OVERWRITE_DYNAMIC,
-            schema,
-            idPrimaryKeySpec,
-            ptSpec,
+            SCHEMA,
+            ID_PRIMARY_KEY_SPEC,
+            UNPARTITIONED,
             FileFormat.PARQUET),
         Arguments.of(
             MIXED_HIVE,
-            WriteMode.OVERWRITE_DYNAMIC,
-            schema,
-            noPrimaryKey,
-            ptSpec,
+            WriteMode.APPEND,
+            SCHEMA,
+            NO_PRIMARY_KEY,
+            UNPARTITIONED,
             FileFormat.PARQUET),
         Arguments.of(
-            MIXED_HIVE,
-            WriteMode.OVERWRITE_DYNAMIC,
-            schema,
-            idPrimaryKeySpec,
-            unpartitioned,
-            FileFormat.PARQUET),
+            MIXED_HIVE, WriteMode.APPEND, SCHEMA, ID_PRIMARY_KEY_SPEC, PT_SPEC, FileFormat.ORC),
+        Arguments.of(MIXED_HIVE, WriteMode.APPEND, SCHEMA, NO_PRIMARY_KEY, PT_SPEC, FileFormat.ORC),
         Arguments.of(
             MIXED_HIVE,
-            WriteMode.OVERWRITE_DYNAMIC,
-            schema,
-            noPrimaryKey,
-            unpartitioned,
-            FileFormat.PARQUET),
-        Arguments.of(
-            MIXED_HIVE,
-            WriteMode.OVERWRITE_DYNAMIC,
-            schema,
-            idPrimaryKeySpec,
-            ptSpec,
+            WriteMode.APPEND,
+            SCHEMA,
+            ID_PRIMARY_KEY_SPEC,
+            UNPARTITIONED,
             FileFormat.ORC),
         Arguments.of(
-            MIXED_HIVE, WriteMode.OVERWRITE_DYNAMIC, schema, noPrimaryKey, ptSpec, FileFormat.ORC),
+            MIXED_HIVE, WriteMode.APPEND, SCHEMA, NO_PRIMARY_KEY, UNPARTITIONED, FileFormat.ORC),
         Arguments.of(
             MIXED_HIVE,
             WriteMode.OVERWRITE_DYNAMIC,
-            schema,
-            idPrimaryKeySpec,
-            unpartitioned,
+            SCHEMA,
+            ID_PRIMARY_KEY_SPEC,
+            PT_SPEC,
+            FileFormat.PARQUET),
+        Arguments.of(
+            MIXED_HIVE,
+            WriteMode.OVERWRITE_DYNAMIC,
+            SCHEMA,
+            NO_PRIMARY_KEY,
+            PT_SPEC,
+            FileFormat.PARQUET),
+        Arguments.of(
+            MIXED_HIVE,
+            WriteMode.OVERWRITE_DYNAMIC,
+            SCHEMA,
+            ID_PRIMARY_KEY_SPEC,
+            UNPARTITIONED,
+            FileFormat.PARQUET),
+        Arguments.of(
+            MIXED_HIVE,
+            WriteMode.OVERWRITE_DYNAMIC,
+            SCHEMA,
+            NO_PRIMARY_KEY,
+            UNPARTITIONED,
+            FileFormat.PARQUET),
+        Arguments.of(
+            MIXED_HIVE,
+            WriteMode.OVERWRITE_DYNAMIC,
+            SCHEMA,
+            ID_PRIMARY_KEY_SPEC,
+            PT_SPEC,
             FileFormat.ORC),
         Arguments.of(
             MIXED_HIVE,
             WriteMode.OVERWRITE_DYNAMIC,
-            schema,
-            noPrimaryKey,
-            unpartitioned,
+            SCHEMA,
+            NO_PRIMARY_KEY,
+            PT_SPEC,
+            FileFormat.ORC),
+        Arguments.of(
+            MIXED_HIVE,
+            WriteMode.OVERWRITE_DYNAMIC,
+            SCHEMA,
+            ID_PRIMARY_KEY_SPEC,
+            UNPARTITIONED,
+            FileFormat.ORC),
+        Arguments.of(
+            MIXED_HIVE,
+            WriteMode.OVERWRITE_DYNAMIC,
+            SCHEMA,
+            NO_PRIMARY_KEY,
+            UNPARTITIONED,
             FileFormat.ORC));
   }
 
@@ -256,19 +271,19 @@ public class TestMixedWriter extends MixedTableTestBase {
   public void testConsistentWrite(TableFormat format, boolean enableConsistentWrite) {
     ArcticTable table =
         createTarget(
-            schema,
+            SCHEMA,
             builder ->
                 builder.withProperty(
                     HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED, enableConsistentWrite + ""));
-    StructType dsSchema = SparkSchemaUtil.convert(schema);
-    List<Record> records = RecordGenerator.buildFor(schema).build().records(10);
+    StructType dsSchema = SparkSchemaUtil.convert(SCHEMA);
+    List<Record> records = RecordGenerator.buildFor(SCHEMA).build().records(10);
     try (TaskWriter<InternalRow> writer =
         TaskWriters.of(table)
             .withOrderedWriter(false)
             .withDataSourceSchema(dsSchema)
             .newBaseWriter(true)) {
       records.stream()
-          .map(r -> TestTableUtil.recordToInternalRow(schema, r))
+          .map(r -> TestTableUtil.recordToInternalRow(SCHEMA, r))
           .forEach(
               i -> {
                 try {

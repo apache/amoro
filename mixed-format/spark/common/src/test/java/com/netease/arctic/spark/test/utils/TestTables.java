@@ -22,40 +22,40 @@ import com.netease.arctic.TableFormat;
 import org.apache.iceberg.types.Types;
 
 public class TestTables {
-  static final Types.NestedField id = Types.NestedField.optional(1, "id", Types.IntegerType.get());
-  static final Types.NestedField data =
+  static final Types.NestedField ID = Types.NestedField.optional(1, "id", Types.IntegerType.get());
+  static final Types.NestedField DATA =
       Types.NestedField.optional(2, "data", Types.StringType.get(), "test comment");
-  static final Types.NestedField d = Types.NestedField.optional(3, "d", Types.DoubleType.get());
-  static final Types.NestedField ts_long =
+  static final Types.NestedField D = Types.NestedField.optional(3, "d", Types.DoubleType.get());
+  static final Types.NestedField TS_LONG =
       Types.NestedField.optional(4, "ts_long", Types.LongType.get());
-  static final Types.NestedField ts =
+  static final Types.NestedField TS =
       Types.NestedField.optional(8, "ts", Types.TimestampType.withoutZone());
-  static final Types.NestedField pt = Types.NestedField.optional(20, "pt", Types.StringType.get());
-  static Types.NestedField[] fields = new Types.NestedField[] {id, data, d, ts_long, ts, pt};
+  static final Types.NestedField PT = Types.NestedField.optional(20, "pt", Types.StringType.get());
+  static Types.NestedField[] fields = new Types.NestedField[] {ID, DATA, D, TS_LONG, TS, PT};
 
   public static class MixedHive {
     public static final TestTable PK_PT =
-        TestTable.format(TableFormat.MIXED_HIVE, fields).pk(id.name()).pt(pt.name()).build();
-    public static final TestTable PK_NoPT =
-        TestTable.format(TableFormat.MIXED_HIVE, fields).pk(id.name()).build();
+        TestTable.format(TableFormat.MIXED_HIVE, fields).pk(ID.name()).pt(PT.name()).build();
+    public static final TestTable PK_NO_PT =
+        TestTable.format(TableFormat.MIXED_HIVE, fields).pk(ID.name()).build();
 
-    public static final TestTable NoPK_PT =
-        TestTable.format(TableFormat.MIXED_HIVE, fields).pt(pt.name()).build();
+    public static final TestTable NO_PK_PT =
+        TestTable.format(TableFormat.MIXED_HIVE, fields).pt(PT.name()).build();
 
-    public static final TestTable NoPK_NoPT =
+    public static final TestTable NO_PK_NO_PT =
         TestTable.format(TableFormat.MIXED_HIVE, fields).build();
   }
 
   public static class MixedIceberg {
     public static final TestTable PK_PT =
-        TestTable.format(TableFormat.MIXED_ICEBERG, fields).pk(id.name()).pt(pt.name()).build();
-    public static final TestTable PK_NoPT =
-        TestTable.format(TableFormat.MIXED_ICEBERG, fields).pk(id.name()).build();
+        TestTable.format(TableFormat.MIXED_ICEBERG, fields).pk(ID.name()).pt(PT.name()).build();
+    public static final TestTable PK_NO_PT =
+        TestTable.format(TableFormat.MIXED_ICEBERG, fields).pk(ID.name()).build();
 
-    public static final TestTable NoPK_PT =
-        TestTable.format(TableFormat.MIXED_ICEBERG, fields).pt(pt.name()).build();
+    public static final TestTable NO_PK_PT =
+        TestTable.format(TableFormat.MIXED_ICEBERG, fields).pt(PT.name()).build();
 
-    public static final TestTable NoPK_NoPT =
+    public static final TestTable NO_PK_NO_PT =
         TestTable.format(TableFormat.MIXED_ICEBERG, fields).build();
   }
 }

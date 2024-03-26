@@ -202,8 +202,12 @@ public class TagConfiguration {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     TagConfiguration that = (TagConfiguration) o;
     return autoCreateTag == that.autoCreateTag
         && triggerOffsetMinutes == that.triggerOffsetMinutes

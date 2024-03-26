@@ -243,6 +243,7 @@ public class FlinkSchemaUtil {
                               "Arctic primary key should be declared in table")));
         });
   }
+
   /**
    * Generate table properties for watermark and computed columns from flink TableSchema.
    *

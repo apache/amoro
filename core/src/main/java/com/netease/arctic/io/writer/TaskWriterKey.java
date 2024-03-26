@@ -50,8 +50,12 @@ public class TaskWriterKey {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     TaskWriterKey writerKey = (TaskWriterKey) o;
     return Objects.equals(partitionKey, writerKey.partitionKey)
         && Objects.equals(treeNode, writerKey.treeNode)

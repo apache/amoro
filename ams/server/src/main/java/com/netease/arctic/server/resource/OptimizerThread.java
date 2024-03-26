@@ -41,8 +41,12 @@ public class OptimizerThread {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     OptimizerThread that = (OptimizerThread) o;
     return threadId == that.threadId && Objects.equals(optimizer, that.optimizer);
   }

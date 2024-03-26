@@ -22,8 +22,8 @@ import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.getPropertiesByTopic;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
+import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.USER_SCHEMA;
 import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.createLogDataDeserialization;
-import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.userSchema;
 
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSource;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
@@ -75,8 +75,8 @@ import java.util.Properties;
 /** Hidden log operator tests. */
 public class TestHiddenLogOperators {
   private static final Logger LOG = LoggerFactory.getLogger(TestHiddenLogOperators.class);
-  public static final String topic = "produce-consume-topic";
-  public static final TestGlobalAggregateManager globalAggregateManger =
+  public static final String TOPIC = "produce-consume-topic";
+  public static final TestGlobalAggregateManager GLOBAL_AGGREGATE_MANGER =
       new TestGlobalAggregateManager();
 
   @BeforeClass
@@ -298,7 +298,7 @@ public class TestHiddenLogOperators {
   }
 
   public static RowData createRowData(int i) {
-    GenericRowData rowData = new GenericRowData(userSchema.columns().size());
+    GenericRowData rowData = new GenericRowData(USER_SCHEMA.columns().size());
     rowData.setField(0, true);
     rowData.setField(1, i);
     rowData.setField(2, 1L);
@@ -382,7 +382,7 @@ public class TestHiddenLogOperators {
 
     DataStream<RowData> streamWithTimestamps =
         env.fromSource(
-            LogKafkaSource.builder(userSchema, configuration)
+            LogKafkaSource.builder(USER_SCHEMA, configuration)
                 .setTopics(topics)
                 .setStartingOffsets(OffsetsInitializer.earliest())
                 .setProperties(properties)
@@ -432,14 +432,14 @@ public class TestHiddenLogOperators {
         subTaskId,
         restoredCheckpointId,
         jobId,
-        globalAggregateManger,
+        GLOBAL_AGGREGATE_MANGER,
         topic);
   }
 
   public static TestOneInputStreamOperatorIntern<RowData, RowData> createProducer(
       int maxParallelism, int subTaskId, byte[] jobId, String topic) throws Exception {
     return createProducer(
-        maxParallelism, maxParallelism, subTaskId, null, jobId, globalAggregateManger, topic);
+        maxParallelism, maxParallelism, subTaskId, null, jobId, GLOBAL_AGGREGATE_MANGER, topic);
   }
 
   private static TestOneInputStreamOperatorIntern<RowData, RowData> createProducer(
@@ -453,11 +453,11 @@ public class TestHiddenLogOperators {
       throws Exception {
     HiddenLogWriter writer =
         new HiddenLogWriter(
-            userSchema,
+            USER_SCHEMA,
             getPropertiesByTopic(topic),
             topic,
             new HiddenKafkaFactory<>(),
-            LogRecordV1.fieldGetterFactory,
+            LogRecordV1.FIELD_GETTER_FACTORY,
             jobId,
             ShuffleHelper.EMPTY);
 
