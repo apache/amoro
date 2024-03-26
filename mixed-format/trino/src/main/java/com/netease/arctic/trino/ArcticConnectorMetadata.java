@@ -18,11 +18,6 @@
 
 package com.netease.arctic.trino;
 
-import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
-import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterators;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -58,6 +53,8 @@ import io.trino.spi.expression.ConnectorExpression;
 import io.trino.spi.statistics.ComputedStatistics;
 import io.trino.spi.statistics.TableStatistics;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -68,6 +65,9 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
+import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 
 /**
  * {@link ArcticConnectorMetadata} is a Union {@link ConnectorMetadata} contain {@link
@@ -269,10 +269,10 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
 
   @Override
   public BeginTableExecuteResult<ConnectorTableExecuteHandle, ConnectorTableHandle>
-      beginTableExecute(
-          ConnectorSession session,
-          ConnectorTableExecuteHandle tableExecuteHandle,
-          ConnectorTableHandle updatedSourceTableHandle) {
+  beginTableExecute(
+      ConnectorSession session,
+      ConnectorTableExecuteHandle tableExecuteHandle,
+      ConnectorTableHandle updatedSourceTableHandle) {
     return icebergMetadata.beginTableExecute(session, tableExecuteHandle, updatedSourceTableHandle);
   }
 

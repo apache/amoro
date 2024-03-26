@@ -18,29 +18,29 @@
 
 package com.netease.arctic.trino.iceberg;
 
-import static com.google.common.base.Preconditions.checkState;
-import static io.airlift.testing.Closeables.closeAllSuppress;
-import static io.trino.testing.TestingSession.testSessionBuilder;
-import static java.util.Objects.requireNonNull;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import io.airlift.log.Logger;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.tpch.TpchTable;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static io.airlift.testing.Closeables.closeAllSuppress;
+import static io.trino.testing.TestingSession.testSessionBuilder;
+import static java.util.Objects.requireNonNull;
+
 public final class ArcticQueryRunner {
   private static final Logger log = Logger.get(ArcticQueryRunner.class);
 
   public static final String ARCTIC_CATALOG = "arctic";
 
-  private ArcticQueryRunner() {}
+  private ArcticQueryRunner() {
+  }
 
   public static DistributedQueryRunner createIcebergQueryRunner(TpchTable<?>... tables)
       throws Exception {

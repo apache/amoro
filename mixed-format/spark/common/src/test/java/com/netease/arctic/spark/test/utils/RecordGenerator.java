@@ -18,12 +18,12 @@
 
 package com.netease.arctic.spark.test.utils;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.RandomUtil;

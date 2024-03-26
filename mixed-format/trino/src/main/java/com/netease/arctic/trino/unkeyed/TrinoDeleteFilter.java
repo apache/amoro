@@ -18,10 +18,6 @@
 
 package com.netease.arctic.trino.unkeyed;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static java.util.Objects.requireNonNull;
-
 import com.netease.arctic.io.reader.DeleteFilter;
 import com.netease.arctic.trino.delete.TrinoRow;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
@@ -36,6 +32,10 @@ import org.apache.iceberg.types.Types;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet.toImmutableSet;
 
 /**
  * Iceberg original TrinoDeleteFilter has some problems for arctic, such as iceberg version, table

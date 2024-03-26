@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
-import com.google.common.base.Preconditions;
 import com.netease.arctic.server.dashboard.PlatformFileManager;
 import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.response.OkResponse;
@@ -26,6 +25,7 @@ import io.javalin.http.Context;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -34,7 +34,9 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-/** The controller that handles file requests. */
+/**
+ * The controller that handles file requests.
+ */
 public class PlatformFileInfoController {
 
   private final PlatformFileManager platformFileInfoService;
@@ -43,7 +45,9 @@ public class PlatformFileInfoController {
     this.platformFileInfoService = platformFileInfoService;
   }
 
-  /** Upload file. */
+  /**
+   * Upload file.
+   */
   public void uploadFile(Context ctx) throws IOException {
     InputStream bodyAsInputStream = ctx.uploadedFile("file").getContent();
     String name = ctx.uploadedFile("file").getFilename();
@@ -68,7 +72,9 @@ public class PlatformFileInfoController {
     ctx.json(OkResponse.of(result));
   }
 
-  /** Download file. */
+  /**
+   * Download file.
+   */
   public void downloadFile(Context ctx) {
     String fileId = ctx.pathParam("fileId");
     Preconditions.checkArgument(StringUtils.isNumeric(fileId), "Invalid file id");

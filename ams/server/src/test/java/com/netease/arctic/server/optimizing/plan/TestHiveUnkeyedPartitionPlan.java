@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
@@ -33,6 +32,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;

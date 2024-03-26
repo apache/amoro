@@ -18,52 +18,64 @@
 
 package com.netease.arctic.trino.delete;
 
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static io.airlift.slice.SizeOf.SIZE_OF_INT;
-import static io.airlift.slice.SizeOf.SIZE_OF_LONG;
-import static io.airlift.slice.SizeOf.estimatedSizeOf;
-import static java.util.Objects.requireNonNull;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.openjdk.jol.info.ClassLayout;
 
 import javax.annotation.Nullable;
-
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.function.ToLongFunction;
 
-/** Copy from trino-iceberg TrinoDeleteFile and do some change to adapt Arctic */
+import static io.airlift.slice.SizeOf.SIZE_OF_INT;
+import static io.airlift.slice.SizeOf.SIZE_OF_LONG;
+import static io.airlift.slice.SizeOf.estimatedSizeOf;
+import static java.util.Objects.requireNonNull;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap.toImmutableMap;
+
+/**
+ * Copy from trino-iceberg TrinoDeleteFile and do some change to adapt Arctic
+ */
 public class TrinoDeleteFile implements DeleteFile {
   private static final long INSTANCE_SIZE =
       ClassLayout.parseClass(TrinoDeleteFile.class).instanceSize();
 
-  @Nullable private final Long pos;
+  @Nullable
+  private final Long pos;
   private final int specId;
   private final FileContent fileContent;
   private final String path;
   private final FileFormat format;
   private final long recordCount;
   private final long fileSizeInBytes;
-  @Nullable private final Map<Integer, Long> columnSizes;
-  @Nullable private final Map<Integer, Long> valueCounts;
-  @Nullable private final Map<Integer, Long> nullValueCounts;
-  @Nullable private final Map<Integer, Long> nanValueCounts;
-  @Nullable private final Map<Integer, byte[]> lowerBounds;
-  @Nullable private final Map<Integer, byte[]> upperBounds;
-  @Nullable private final byte[] keyMetadata;
-  @Nullable private final List<Integer> equalityFieldIds;
-  @Nullable private final Integer sortOrderId;
-  @Nullable private final List<Long> splitOffsets;
+  @Nullable
+  private final Map<Integer, Long> columnSizes;
+  @Nullable
+  private final Map<Integer, Long> valueCounts;
+  @Nullable
+  private final Map<Integer, Long> nullValueCounts;
+  @Nullable
+  private final Map<Integer, Long> nanValueCounts;
+  @Nullable
+  private final Map<Integer, byte[]> lowerBounds;
+  @Nullable
+  private final Map<Integer, byte[]> upperBounds;
+  @Nullable
+  private final byte[] keyMetadata;
+  @Nullable
+  private final List<Integer> equalityFieldIds;
+  @Nullable
+  private final Integer sortOrderId;
+  @Nullable
+  private final List<Long> splitOffsets;
 
   public static TrinoDeleteFile copyOf(DeleteFile deleteFile) {
     return new TrinoDeleteFile(
@@ -81,15 +93,15 @@ public class TrinoDeleteFile implements DeleteFile {
         deleteFile.lowerBounds() == null
             ? null
             : deleteFile.lowerBounds().entrySet().stream()
-                .collect(
-                    toImmutableMap(
-                        Map.Entry<Integer, ByteBuffer>::getKey, entry -> entry.getValue().array())),
+            .collect(
+                toImmutableMap(
+                    Map.Entry<Integer, ByteBuffer>::getKey, entry -> entry.getValue().array())),
         deleteFile.upperBounds() == null
             ? null
             : deleteFile.upperBounds().entrySet().stream()
-                .collect(
-                    toImmutableMap(
-                        Map.Entry<Integer, ByteBuffer>::getKey, entry -> entry.getValue().array())),
+            .collect(
+                toImmutableMap(
+                    Map.Entry<Integer, ByteBuffer>::getKey, entry -> entry.getValue().array())),
         deleteFile.keyMetadata() == null ? null : deleteFile.keyMetadata().array(),
         deleteFile.equalityFieldIds(),
         deleteFile.sortOrderId(),

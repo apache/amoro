@@ -18,98 +18,6 @@
 
 package com.netease.arctic.trino.unkeyed;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Verify.verify;
-import static com.google.common.base.Verify.verifyNotNull;
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Maps.transformValues;
-import static io.trino.plugin.base.util.Procedures.checkProcedureArgument;
-import static io.trino.plugin.hive.HiveApplyProjectionUtil.extractSupportedProjectedColumns;
-import static io.trino.plugin.hive.HiveApplyProjectionUtil.replaceWithNewVariables;
-import static io.trino.plugin.hive.util.HiveUtil.isStructuralType;
-import static io.trino.plugin.iceberg.ExpressionConverter.toIcebergExpression;
-import static io.trino.plugin.iceberg.IcebergAnalyzeProperties.getColumnNames;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_FILE_RECORD_COUNT;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_DATA;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_SPEC_ID;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_ROW_ID;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_ROW_ID_NAME;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnHandle;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnMetadata;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.pathColumnHandle;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.pathColumnMetadata;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_COMMIT_ERROR;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_FILESYSTEM_ERROR;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_INVALID_METADATA;
-import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_MODIFIED_TIME;
-import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_PATH;
-import static io.trino.plugin.iceberg.IcebergMetadataColumn.isMetadataColumnId;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getExpireSnapshotMinRetention;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getRemoveOrphanFilesMinRetention;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.isExtendedStatisticsEnabled;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.isProjectionPushdownEnabled;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.isStatisticsEnabled;
-import static io.trino.plugin.iceberg.IcebergTableProperties.FILE_FORMAT_PROPERTY;
-import static io.trino.plugin.iceberg.IcebergTableProperties.FORMAT_VERSION_PROPERTY;
-import static io.trino.plugin.iceberg.IcebergTableProperties.PARTITIONING_PROPERTY;
-import static io.trino.plugin.iceberg.IcebergTableProperties.getPartitioning;
-import static io.trino.plugin.iceberg.IcebergUtil.commit;
-import static io.trino.plugin.iceberg.IcebergUtil.deserializePartitionValue;
-import static io.trino.plugin.iceberg.IcebergUtil.fileName;
-import static io.trino.plugin.iceberg.IcebergUtil.getColumnHandle;
-import static io.trino.plugin.iceberg.IcebergUtil.getColumns;
-import static io.trino.plugin.iceberg.IcebergUtil.getFileFormat;
-import static io.trino.plugin.iceberg.IcebergUtil.getPartitionKeys;
-import static io.trino.plugin.iceberg.IcebergUtil.getTableComment;
-import static io.trino.plugin.iceberg.IcebergUtil.newCreateTableTransaction;
-import static io.trino.plugin.iceberg.IcebergUtil.schemaFromMetadata;
-import static io.trino.plugin.iceberg.PartitionFields.parsePartitionFields;
-import static io.trino.plugin.iceberg.PartitionFields.toPartitionFields;
-import static io.trino.plugin.iceberg.TableStatisticsReader.TRINO_STATS_COLUMN_ID_PATTERN;
-import static io.trino.plugin.iceberg.TableStatisticsReader.TRINO_STATS_PREFIX;
-import static io.trino.plugin.iceberg.TableType.DATA;
-import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
-import static io.trino.plugin.iceberg.TypeConverter.toTrinoType;
-import static io.trino.plugin.iceberg.catalog.hms.TrinoHiveCatalog.DEPENDS_ON_TABLES;
-import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.DROP_EXTENDED_STATS;
-import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.EXPIRE_SNAPSHOTS;
-import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.OPTIMIZE;
-import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.REMOVE_ORPHAN_FILES;
-import static io.trino.spi.StandardErrorCode.INVALID_ANALYZE_PROPERTY;
-import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
-import static io.trino.spi.connector.MaterializedViewFreshness.Freshness.FRESH;
-import static io.trino.spi.connector.MaterializedViewFreshness.Freshness.STALE;
-import static io.trino.spi.connector.MaterializedViewFreshness.Freshness.UNKNOWN;
-import static io.trino.spi.connector.RetryMode.NO_RETRIES;
-import static java.lang.String.format;
-import static java.util.Locale.ENGLISH;
-import static java.util.Objects.requireNonNull;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.joining;
-import static org.apache.iceberg.FileContent.POSITION_DELETES;
-import static org.apache.iceberg.ReachableFileUtil.metadataFileLocations;
-import static org.apache.iceberg.ReachableFileUtil.versionHintLocation;
-import static org.apache.iceberg.SnapshotSummary.DELETED_RECORDS_PROP;
-import static org.apache.iceberg.SnapshotSummary.REMOVED_EQ_DELETES_PROP;
-import static org.apache.iceberg.SnapshotSummary.REMOVED_POS_DELETES_PROP;
-import static org.apache.iceberg.TableProperties.DELETE_ISOLATION_LEVEL;
-import static org.apache.iceberg.TableProperties.DELETE_ISOLATION_LEVEL_DEFAULT;
-import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
-import static org.apache.iceberg.TableProperties.WRITE_LOCATION_PROVIDER_IMPL;
-import static org.apache.iceberg.types.TypeUtil.indexParents;
-
-import com.google.common.base.Splitter;
-import com.google.common.base.Suppliers;
-import com.google.common.base.VerifyException;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import io.airlift.json.JsonCodec;
@@ -241,6 +149,14 @@ import org.apache.iceberg.UpdateStatistics;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.base.Splitter;
+import org.apache.iceberg.relocated.com.google.common.base.Suppliers;
+import org.apache.iceberg.relocated.com.google.common.base.VerifyException;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.types.Types.IntegerType;
@@ -272,6 +188,90 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import static io.trino.plugin.base.util.Procedures.checkProcedureArgument;
+import static io.trino.plugin.hive.HiveApplyProjectionUtil.extractSupportedProjectedColumns;
+import static io.trino.plugin.hive.HiveApplyProjectionUtil.replaceWithNewVariables;
+import static io.trino.plugin.hive.util.HiveUtil.isStructuralType;
+import static io.trino.plugin.iceberg.ExpressionConverter.toIcebergExpression;
+import static io.trino.plugin.iceberg.IcebergAnalyzeProperties.getColumnNames;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_FILE_RECORD_COUNT;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_DATA;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_SPEC_ID;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_ROW_ID;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_ROW_ID_NAME;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnHandle;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnMetadata;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.pathColumnHandle;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.pathColumnMetadata;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_COMMIT_ERROR;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_FILESYSTEM_ERROR;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_INVALID_METADATA;
+import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_MODIFIED_TIME;
+import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_PATH;
+import static io.trino.plugin.iceberg.IcebergMetadataColumn.isMetadataColumnId;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getExpireSnapshotMinRetention;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getRemoveOrphanFilesMinRetention;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isExtendedStatisticsEnabled;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isProjectionPushdownEnabled;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isStatisticsEnabled;
+import static io.trino.plugin.iceberg.IcebergTableProperties.FILE_FORMAT_PROPERTY;
+import static io.trino.plugin.iceberg.IcebergTableProperties.FORMAT_VERSION_PROPERTY;
+import static io.trino.plugin.iceberg.IcebergTableProperties.PARTITIONING_PROPERTY;
+import static io.trino.plugin.iceberg.IcebergTableProperties.getPartitioning;
+import static io.trino.plugin.iceberg.IcebergUtil.commit;
+import static io.trino.plugin.iceberg.IcebergUtil.deserializePartitionValue;
+import static io.trino.plugin.iceberg.IcebergUtil.fileName;
+import static io.trino.plugin.iceberg.IcebergUtil.getColumnHandle;
+import static io.trino.plugin.iceberg.IcebergUtil.getColumns;
+import static io.trino.plugin.iceberg.IcebergUtil.getFileFormat;
+import static io.trino.plugin.iceberg.IcebergUtil.getPartitionKeys;
+import static io.trino.plugin.iceberg.IcebergUtil.getTableComment;
+import static io.trino.plugin.iceberg.IcebergUtil.newCreateTableTransaction;
+import static io.trino.plugin.iceberg.IcebergUtil.schemaFromMetadata;
+import static io.trino.plugin.iceberg.PartitionFields.parsePartitionFields;
+import static io.trino.plugin.iceberg.PartitionFields.toPartitionFields;
+import static io.trino.plugin.iceberg.TableStatisticsReader.TRINO_STATS_COLUMN_ID_PATTERN;
+import static io.trino.plugin.iceberg.TableStatisticsReader.TRINO_STATS_PREFIX;
+import static io.trino.plugin.iceberg.TableType.DATA;
+import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
+import static io.trino.plugin.iceberg.TypeConverter.toTrinoType;
+import static io.trino.plugin.iceberg.catalog.hms.TrinoHiveCatalog.DEPENDS_ON_TABLES;
+import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.DROP_EXTENDED_STATS;
+import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.EXPIRE_SNAPSHOTS;
+import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.OPTIMIZE;
+import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.REMOVE_ORPHAN_FILES;
+import static io.trino.spi.StandardErrorCode.INVALID_ANALYZE_PROPERTY;
+import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
+import static io.trino.spi.connector.MaterializedViewFreshness.Freshness.FRESH;
+import static io.trino.spi.connector.MaterializedViewFreshness.Freshness.STALE;
+import static io.trino.spi.connector.MaterializedViewFreshness.Freshness.UNKNOWN;
+import static io.trino.spi.connector.RetryMode.NO_RETRIES;
+import static java.lang.String.format;
+import static java.util.Locale.ENGLISH;
+import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
+import static org.apache.iceberg.FileContent.POSITION_DELETES;
+import static org.apache.iceberg.ReachableFileUtil.metadataFileLocations;
+import static org.apache.iceberg.ReachableFileUtil.versionHintLocation;
+import static org.apache.iceberg.SnapshotSummary.DELETED_RECORDS_PROP;
+import static org.apache.iceberg.SnapshotSummary.REMOVED_EQ_DELETES_PROP;
+import static org.apache.iceberg.SnapshotSummary.REMOVED_POS_DELETES_PROP;
+import static org.apache.iceberg.TableProperties.DELETE_ISOLATION_LEVEL;
+import static org.apache.iceberg.TableProperties.DELETE_ISOLATION_LEVEL_DEFAULT;
+import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
+import static org.apache.iceberg.TableProperties.WRITE_LOCATION_PROVIDER_IMPL;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkState;
+import static org.apache.iceberg.relocated.com.google.common.base.Verify.verify;
+import static org.apache.iceberg.relocated.com.google.common.base.Verify.verifyNotNull;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap.toImmutableMap;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet.toImmutableSet;
+import static org.apache.iceberg.relocated.com.google.common.collect.Maps.transformValues;
+import static org.apache.iceberg.types.TypeUtil.indexParents;
 
 /**
  * Iceberg original metadata has some problems for arctic, such as iceberg version, table type. So
@@ -1338,10 +1338,10 @@ public class IcebergMetadata implements ConnectorMetadata {
 
   @Override
   public BeginTableExecuteResult<ConnectorTableExecuteHandle, ConnectorTableHandle>
-      beginTableExecute(
-          ConnectorSession session,
-          ConnectorTableExecuteHandle tableExecuteHandle,
-          ConnectorTableHandle updatedSourceTableHandle) {
+  beginTableExecute(
+      ConnectorSession session,
+      ConnectorTableExecuteHandle tableExecuteHandle,
+      ConnectorTableHandle updatedSourceTableHandle) {
     IcebergTableExecuteHandle executeHandle = (IcebergTableExecuteHandle) tableExecuteHandle;
     IcebergTableHandle table = (IcebergTableHandle) updatedSourceTableHandle;
     switch (executeHandle.getProcedureId()) {
@@ -1679,7 +1679,7 @@ public class IcebergMetadata implements ConnectorMetadata {
 
         validMetadataFileNames.add(fileName(manifest.path()));
         try (ManifestReader<? extends ContentFile<?>> manifestReader =
-            readerForManifest(table, manifest)) {
+                 readerForManifest(table, manifest)) {
           for (ContentFile<?> contentFile : manifestReader) {
             validDataFileNames.add(fileName(contentFile.path().toString()));
           }

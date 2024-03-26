@@ -18,9 +18,6 @@
 
 package com.netease.arctic.trino.keyed;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
-
 import com.netease.arctic.hive.io.reader.AdaptHiveArcticDeleteFilter;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -35,7 +32,12 @@ import org.apache.iceberg.types.Types;
 import java.util.List;
 import java.util.Optional;
 
-/** KeyedDeleteFilter is used to do MOR for Keyed Table */
+import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
+
+/**
+ * KeyedDeleteFilter is used to do MOR for Keyed Table
+ */
 public class KeyedDeleteFilter extends AdaptHiveArcticDeleteFilter<TrinoRow> {
 
   private final FileIO fileIO;

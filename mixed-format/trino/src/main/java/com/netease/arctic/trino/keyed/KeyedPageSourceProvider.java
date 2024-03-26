@@ -18,7 +18,6 @@
 
 package com.netease.arctic.trino.keyed;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveArcticDeleteFilter;
@@ -40,11 +39,14 @@ import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.type.TypeManager;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SchemaParser;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** ConnectorPageSourceProvider for Keyed Table */
+/**
+ * ConnectorPageSourceProvider for Keyed Table
+ */
 public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
 
   private final IcebergPageSourceProvider icebergPageSourceProvider;
@@ -83,11 +85,11 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
     List<IcebergColumnHandle> deleteFilterRequiredSchema =
         IcebergUtil.getColumns(
             new KeyedDeleteFilter(
-                    keyedTableScanTask,
-                    tableSchema,
-                    ImmutableList.of(),
-                    keyedTableHandle.getPrimaryKeySpec(),
-                    fileSystemFactory.create(session).toFileIo())
+                keyedTableScanTask,
+                tableSchema,
+                ImmutableList.of(),
+                keyedTableHandle.getPrimaryKeySpec(),
+                fileSystemFactory.create(session).toFileIo())
                 .requiredSchema(),
             typeManager);
     ImmutableList.Builder<IcebergColumnHandle> requiredColumnsBuilder = ImmutableList.builder();

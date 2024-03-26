@@ -18,14 +18,6 @@
 
 package com.netease.arctic.trino.arctic;
 
-import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
-import static org.assertj.core.api.Assertions.assertThat;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.netease.arctic.MockArcticMetastoreServer;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
@@ -52,6 +44,8 @@ import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
@@ -62,6 +56,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestHiveTable extends TestHiveTableBaseForTrino {
 

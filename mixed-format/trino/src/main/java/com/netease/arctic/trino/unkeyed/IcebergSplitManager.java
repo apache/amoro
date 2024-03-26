@@ -18,11 +18,6 @@
 
 package com.netease.arctic.trino.unkeyed;
 
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getDynamicFilteringWaitTimeout;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getMinimumAssignedSplitWeight;
-import static java.util.Objects.requireNonNull;
-
-import com.google.common.collect.ImmutableList;
 import com.netease.arctic.trino.ArcticTransactionManager;
 import com.netease.arctic.trino.TableNameResolve;
 import io.airlift.units.Duration;
@@ -40,8 +35,13 @@ import io.trino.spi.connector.FixedSplitSource;
 import io.trino.spi.type.TypeManager;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableScan;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
 import javax.inject.Inject;
+
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getDynamicFilteringWaitTimeout;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getMinimumAssignedSplitWeight;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Iceberg original IcebergSplitManager has some problems for arctic, such as iceberg version, table

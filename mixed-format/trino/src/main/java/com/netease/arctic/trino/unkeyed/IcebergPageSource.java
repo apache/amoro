@@ -18,12 +18,6 @@
 
 package com.netease.arctic.trino.unkeyed;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Throwables.throwIfInstanceOf;
-import static io.trino.plugin.base.util.Closables.closeAllSuppress;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
-import static java.util.Objects.requireNonNull;
-
 import com.netease.arctic.io.reader.DeleteFilter;
 import com.netease.arctic.trino.delete.TrinoRow;
 import io.trino.plugin.hive.ReaderProjectionsAdapter;
@@ -36,13 +30,18 @@ import io.trino.spi.type.Type;
 import org.apache.iceberg.io.CloseableIterable;
 
 import javax.annotation.Nullable;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.function.Supplier;
+
+import static io.trino.plugin.base.util.Closables.closeAllSuppress;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
+import static java.util.Objects.requireNonNull;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.iceberg.relocated.com.google.common.base.Throwables.throwIfInstanceOf;
 
 /**
  * Iceberg original IcebergPageSource has some problems for arctic, such as iceberg version, table
@@ -56,7 +55,8 @@ public class IcebergPageSource implements ConnectorPageSource {
   private final Optional<DeleteFilter<TrinoRow>> deleteFilter;
   private final Supplier<IcebergPositionDeletePageSink> positionDeleteSinkSupplier;
 
-  @Nullable private IcebergPositionDeletePageSink positionDeleteSink;
+  @Nullable
+  private IcebergPositionDeletePageSink positionDeleteSink;
 
   public IcebergPageSource(
       List<IcebergColumnHandle> expectedColumns,
@@ -122,11 +122,11 @@ public class IcebergPageSource implements ConnectorPageSource {
         int positionCount = dataPage.getPositionCount();
         int[] positionsToKeep = new int[positionCount];
         try (CloseableIterable<TrinoRow> filteredRows =
-            deleteFilter
-                .get()
-                .filter(
-                    CloseableIterable.withNoopClose(
-                        TrinoRow.fromPage(columnTypes, dataPage, positionCount)))) {
+                 deleteFilter
+                     .get()
+                     .filter(
+                         CloseableIterable.withNoopClose(
+                             TrinoRow.fromPage(columnTypes, dataPage, positionCount)))) {
           int positionsToKeepCount = 0;
           for (TrinoRow rowToKeep : filteredRows) {
             positionsToKeep[positionsToKeepCount] = rowToKeep.getPosition();

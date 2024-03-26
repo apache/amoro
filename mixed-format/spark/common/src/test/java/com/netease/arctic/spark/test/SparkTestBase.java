@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.test;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.AlreadyExistsException;
 import com.netease.arctic.Constants;
 import com.netease.arctic.TableFormat;
@@ -36,6 +35,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;

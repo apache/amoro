@@ -18,70 +18,6 @@
 
 package com.netease.arctic.trino.unkeyed;
 
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Verify.verify;
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Maps.uniqueIndex;
-import static io.airlift.slice.Slices.utf8Slice;
-import static io.trino.memory.context.AggregatedMemoryContext.newSimpleAggregatedMemoryContext;
-import static io.trino.orc.OrcReader.INITIAL_BATCH_SIZE;
-import static io.trino.orc.OrcReader.ProjectedLayout;
-import static io.trino.orc.OrcReader.fullyProjectedLayout;
-import static io.trino.parquet.ParquetTypeUtils.getColumnIO;
-import static io.trino.parquet.ParquetTypeUtils.getDescriptors;
-import static io.trino.parquet.predicate.PredicateUtils.buildPredicate;
-import static io.trino.parquet.predicate.PredicateUtils.predicateMatches;
-import static io.trino.parquet.reader.ParquetReaderColumn.getParquetReaderFields;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_FILE_RECORD_COUNT;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_DATA;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_SPEC_ID;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_CANNOT_OPEN_SPLIT;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_CURSOR_ERROR;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_MISSING_DATA;
-import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_MODIFIED_TIME;
-import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_PATH;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getOrcLazyReadSmallRanges;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getOrcMaxBufferSize;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getOrcMaxMergeDistance;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getOrcMaxReadBlockSize;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getOrcStreamBufferSize;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getOrcTinyStripeThreshold;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getParquetMaxReadBlockRowCount;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getParquetMaxReadBlockSize;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.isOrcBloomFiltersEnabled;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.isOrcNestedLazy;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.isParquetOptimizedReaderEnabled;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.isUseFileSizeFromMetadata;
-import static io.trino.plugin.iceberg.IcebergSplitManager.ICEBERG_DOMAIN_COMPACTION_THRESHOLD;
-import static io.trino.plugin.iceberg.IcebergUtil.deserializePartitionValue;
-import static io.trino.plugin.iceberg.IcebergUtil.getColumns;
-import static io.trino.plugin.iceberg.IcebergUtil.getLocationProvider;
-import static io.trino.plugin.iceberg.IcebergUtil.getPartitionKeys;
-import static io.trino.plugin.iceberg.TypeConverter.ICEBERG_BINARY_TYPE;
-import static io.trino.plugin.iceberg.TypeConverter.ORC_ICEBERG_ID_KEY;
-import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
-import static io.trino.spi.predicate.Utils.nativeValueToBlock;
-import static io.trino.spi.type.BigintType.BIGINT;
-import static io.trino.spi.type.BooleanType.BOOLEAN;
-import static io.trino.spi.type.DateTimeEncoding.packDateTimeWithZone;
-import static io.trino.spi.type.TimeZoneKey.UTC_KEY;
-import static io.trino.spi.type.UuidType.UUID;
-import static java.lang.String.format;
-import static java.util.Locale.ENGLISH;
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toUnmodifiableList;
-import static org.apache.iceberg.MetadataColumns.ROW_POSITION;
-import static org.joda.time.DateTimeZone.UTC;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.graph.Traverser;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.io.reader.DeleteFilter;
@@ -169,6 +105,9 @@ import org.apache.iceberg.mapping.MappedFields;
 import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.parquet.ParquetSchemaUtil;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.relocated.com.google.common.graph.Traverser;
 import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
 import org.apache.parquet.hadoop.metadata.FileMetaData;
@@ -179,7 +118,6 @@ import org.apache.parquet.schema.MessageType;
 import org.joda.time.DateTimeZone;
 
 import javax.inject.Inject;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -192,6 +130,67 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import static io.airlift.slice.Slices.utf8Slice;
+import static io.trino.memory.context.AggregatedMemoryContext.newSimpleAggregatedMemoryContext;
+import static io.trino.orc.OrcReader.INITIAL_BATCH_SIZE;
+import static io.trino.orc.OrcReader.ProjectedLayout;
+import static io.trino.orc.OrcReader.fullyProjectedLayout;
+import static io.trino.parquet.ParquetTypeUtils.getColumnIO;
+import static io.trino.parquet.ParquetTypeUtils.getDescriptors;
+import static io.trino.parquet.predicate.PredicateUtils.buildPredicate;
+import static io.trino.parquet.predicate.PredicateUtils.predicateMatches;
+import static io.trino.parquet.reader.ParquetReaderColumn.getParquetReaderFields;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_FILE_RECORD_COUNT;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_DATA;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_SPEC_ID;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_CANNOT_OPEN_SPLIT;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_CURSOR_ERROR;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_MISSING_DATA;
+import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_MODIFIED_TIME;
+import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_PATH;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getOrcLazyReadSmallRanges;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getOrcMaxBufferSize;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getOrcMaxMergeDistance;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getOrcMaxReadBlockSize;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getOrcStreamBufferSize;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getOrcTinyStripeThreshold;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getParquetMaxReadBlockRowCount;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getParquetMaxReadBlockSize;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isOrcBloomFiltersEnabled;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isOrcNestedLazy;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isParquetOptimizedReaderEnabled;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isUseFileSizeFromMetadata;
+import static io.trino.plugin.iceberg.IcebergSplitManager.ICEBERG_DOMAIN_COMPACTION_THRESHOLD;
+import static io.trino.plugin.iceberg.IcebergUtil.deserializePartitionValue;
+import static io.trino.plugin.iceberg.IcebergUtil.getColumns;
+import static io.trino.plugin.iceberg.IcebergUtil.getLocationProvider;
+import static io.trino.plugin.iceberg.IcebergUtil.getPartitionKeys;
+import static io.trino.plugin.iceberg.TypeConverter.ICEBERG_BINARY_TYPE;
+import static io.trino.plugin.iceberg.TypeConverter.ORC_ICEBERG_ID_KEY;
+import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
+import static io.trino.spi.predicate.Utils.nativeValueToBlock;
+import static io.trino.spi.type.BigintType.BIGINT;
+import static io.trino.spi.type.BooleanType.BOOLEAN;
+import static io.trino.spi.type.DateTimeEncoding.packDateTimeWithZone;
+import static io.trino.spi.type.TimeZoneKey.UTC_KEY;
+import static io.trino.spi.type.UuidType.UUID;
+import static java.lang.String.format;
+import static java.util.Locale.ENGLISH;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toUnmodifiableList;
+import static org.apache.iceberg.MetadataColumns.ROW_POSITION;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkState;
+import static org.apache.iceberg.relocated.com.google.common.base.Verify.verify;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap.toImmutableMap;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet.toImmutableSet;
+import static org.apache.iceberg.relocated.com.google.common.collect.Maps.uniqueIndex;
+import static org.joda.time.DateTimeZone.UTC;
 
 /**
  * Extend IcebergPageSourceProvider to provider idToConstant that the map of columns id to constant
@@ -291,7 +290,7 @@ public class IcebergPageSourceProvider implements ConnectorPageSourceProvider {
         getColumns(
             useIcebergDelete
                 ? new TrinoDeleteFilter(dummyFileScanTask, tableSchema, ImmutableList.of(), fileIO)
-                    .requiredSchema()
+                .requiredSchema()
                 : tableSchema,
             typeManager);
 
@@ -776,11 +775,11 @@ public class IcebergPageSourceProvider implements ConnectorPageSourceProvider {
       return RowType.from(
           ((RowType) columnType)
               .getFields().stream()
-                  .map(
-                      field ->
-                          new RowType.Field(
-                              field.getName(), getOrcReadType(field.getType(), typeManager)))
-                  .collect(toImmutableList()));
+              .map(
+                  field ->
+                      new RowType.Field(
+                          field.getName(), getOrcReadType(field.getType(), typeManager)))
+              .collect(toImmutableList()));
     }
 
     return columnType;
@@ -933,15 +932,15 @@ public class IcebergPageSourceProvider implements ConnectorPageSourceProvider {
         if (start <= firstDataPage
             && firstDataPage < start + length
             && predicateMatches(
-                parquetPredicate,
-                block,
-                dataSource,
-                descriptorsByPath,
-                parquetTupleDomain,
-                Optional.empty(),
-                Optional.empty(),
-                dateTimeZone,
-                ICEBERG_DOMAIN_COMPACTION_THRESHOLD)) {
+            parquetPredicate,
+            block,
+            dataSource,
+            descriptorsByPath,
+            parquetTupleDomain,
+            Optional.empty(),
+            Optional.empty(),
+            dateTimeZone,
+            ICEBERG_DOMAIN_COMPACTION_THRESHOLD)) {
           blocks.add(block);
           blockStarts.add(nextStart);
           if (startRowPosition.isEmpty()) {
@@ -1113,7 +1112,7 @@ public class IcebergPageSourceProvider implements ConnectorPageSourceProvider {
 
     // The column orders in the generated schema might be different from the original order
     try (DataFileStream<?> avroFileReader =
-        new DataFileStream<>(file.newStream(), new GenericDatumReader<>())) {
+             new DataFileStream<>(file.newStream(), new GenericDatumReader<>())) {
       org.apache.avro.Schema avroSchema = avroFileReader.getSchema();
       List<org.apache.avro.Schema.Field> fileFields = avroSchema.getFields();
       if (nameMapping.isPresent()
@@ -1294,7 +1293,9 @@ public class IcebergPageSourceProvider implements ConnectorPageSourceProvider {
     }
   }
 
-  /** Creates a mapping between the input {@code columns} and base columns if required. */
+  /**
+   * Creates a mapping between the input {@code columns} and base columns if required.
+   */
   public static Optional<ReaderColumns> projectColumns(List<IcebergColumnHandle> columns) {
     requireNonNull(columns, "columns is null");
 
@@ -1343,8 +1344,8 @@ public class IcebergPageSourceProvider implements ConnectorPageSourceProvider {
               // primitives
               if (columnHandle.isBaseColumn()
                   && (!baseType.equals(StandardTypes.MAP)
-                      && !baseType.equals(StandardTypes.ARRAY)
-                      && !baseType.equals(StandardTypes.ROW))) {
+                  && !baseType.equals(StandardTypes.ARRAY)
+                  && !baseType.equals(StandardTypes.ROW))) {
                 ColumnDescriptor descriptor =
                     descriptorsByPath.get(ImmutableList.of(columnHandle.getName()));
                 if (descriptor != null) {

@@ -18,10 +18,6 @@
 
 package org.apache.hadoop.hive.metastore;
 
-import static org.apache.hadoop.hive.metastore.MetaStoreUtils.DEFAULT_DATABASE_NAME;
-import static org.apache.hadoop.hive.metastore.MetaStoreUtils.isIndexTable;
-
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.hive.common.ObjectPair;
 import org.apache.hadoop.hive.common.ValidTxnList;
 import org.apache.hadoop.hive.common.classification.InterfaceAudience;
@@ -127,6 +123,7 @@ import org.apache.hadoop.hive.shims.Utils;
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -140,7 +137,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
-
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
@@ -166,7 +162,12 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** Copy form hive 2.1.1 to change some code to adapt jdk 11. */
+import static org.apache.hadoop.hive.metastore.MetaStoreUtils.DEFAULT_DATABASE_NAME;
+import static org.apache.hadoop.hive.metastore.MetaStoreUtils.isIndexTable;
+
+/**
+ * Copy form hive 2.1.1 to change some code to adapt jdk 11.
+ */
 @Public
 @Unstable
 public class HiveMetaStoreClient implements IMetaStoreClient {
@@ -339,8 +340,8 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
       String newVar = conf.get(oneVar.varname, "");
       if (oldVar == null
           || (oneVar.isCaseSensitive()
-              ? !oldVar.equals(newVar)
-              : !oldVar.equalsIgnoreCase(newVar))) {
+          ? !oldVar.equals(newVar)
+          : !oldVar.equalsIgnoreCase(newVar))) {
         LOG.info(
             "Mestastore configuration "
                 + oneVar.varname
@@ -384,7 +385,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @throws MetaException
    * @throws TException
    * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#alter_table(
-   *     java.lang.String, java.lang.String, org.apache.hadoop.hive.metastore.api.Table)
+   *java.lang.String, java.lang.String, org.apache.hadoop.hive.metastore.api.Table)
    */
   @Override
   public void alter_table(String dbname, String tblName, Table newTbl)
@@ -407,8 +408,8 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @throws MetaException
    * @throws TException
    * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#rename_partition(
-   *     java.lang.String, java.lang.String, java.util.List,
-   *     org.apache.hadoop.hive.metastore.api.Partition)
+   *java.lang.String, java.lang.String, java.util.List,
+   * org.apache.hadoop.hive.metastore.api.Partition)
    */
   @Override
   public void renamePartition(
@@ -598,7 +599,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @throws MetaException
    * @throws TException
    * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#add_partition(
-   *     org.apache.hadoop.hive.metastore.api.Partition)
+   *org.apache.hadoop.hive.metastore.api.Partition)
    */
   @Override
   public Partition add_partition(Partition newPart)
@@ -654,9 +655,8 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @throws AlreadyExistsException
    * @throws MetaException
    * @throws TException
-   * @see
-   *     org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#append_partition(java.lang.String,
-   *     java.lang.String, java.util.List)
+   * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#append_partition(java.lang.String,
+   * java.lang.String, java.util.List)
    */
   @Override
   public Partition appendPartition(String dbName, String tableName, List<String> partVals)
@@ -690,8 +690,8 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
   /**
    * Exchange the partition between two tables
    *
-   * @param partitionSpecs partitions specs of the parent partition to be exchanged
-   * @param destDb the db of the destination table
+   * @param partitionSpecs       partitions specs of the parent partition to be exchanged
+   * @param destDb               the db of the destination table
    * @param destinationTableName the destination table name @ @return new partition after exchanging
    */
   @Override
@@ -709,10 +709,10 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
   /**
    * Exchange the partitions between two tables
    *
-   * @param partitionSpecs partitions specs of the parent partition to be exchanged
-   * @param destDb the db of the destination table
+   * @param partitionSpecs       partitions specs of the parent partition to be exchanged
+   * @param destDb               the db of the destination table
    * @param destinationTableName the destination table name @ @return new partitions after
-   *     exchanging
+   *                             exchanging
    */
   @Override
   public List<Partition> exchange_partitions(
@@ -753,7 +753,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @throws NoSuchObjectException
    * @throws TException
    * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#create_table(
-   *     org.apache.hadoop.hive.metastore.api.Table)
+   *org.apache.hadoop.hive.metastore.api.Table)
    */
   @Override
   public void createTable(Table tbl) throws MetaException, NoSuchObjectException, TException {
@@ -827,7 +827,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @throws MetaException
    * @throws TException
    * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#create_type(
-   *     org.apache.hadoop.hive.metastore.api.Type)
+   *org.apache.hadoop.hive.metastore.api.Type)
    */
   public boolean createType(Type type)
       throws AlreadyExistsException, InvalidObjectException, MetaException, TException {
@@ -841,7 +841,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @throws MetaException
    * @throws TException
    * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#drop_database(
-   *     java.lang.String, boolean, boolean)
+   *java.lang.String, boolean, boolean)
    */
   @Override
   public void dropDatabase(String name)
@@ -905,9 +905,8 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @throws NoSuchObjectException
    * @throws MetaException
    * @throws TException
-   * @see
-   *     org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#drop_partition(java.lang.String,
-   *     java.lang.String, java.util.List, boolean)
+   * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#drop_partition(java.lang.String,
+   * java.lang.String, java.util.List, boolean)
    */
   @Override
   public boolean dropPartition(
@@ -947,9 +946,8 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @throws NoSuchObjectException
    * @throws MetaException
    * @throws TException
-   * @see
-   *     org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#drop_partition(java.lang.String,
-   *     java.lang.String, java.util.List, boolean)
+   * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#drop_partition(java.lang.String,
+   * java.lang.String, java.util.List, boolean)
    */
   public boolean dropPartition(String dbName, String tblName, List<String> partVals)
       throws NoSuchObjectException, MetaException, TException {
@@ -1074,7 +1072,9 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     dropTable(dbname, name, deleteData, ignoreUnknownTab, envContext);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   @Deprecated
   public void dropTable(String tableName, boolean deleteData) throws TException {
@@ -1095,16 +1095,15 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    *
    * @param dbname
    * @param name
-   * @param deleteData delete the underlying data or just delete the table in metadata
+   * @param deleteData       delete the underlying data or just delete the table in metadata
    * @param ignoreUnknownTab don't throw if the requested table doesn't exist
-   * @param envContext for communicating with thrift
-   * @throws MetaException could not drop table properly
-   * @throws NoSuchObjectException the table wasn't found
-   * @throws TException a thrift communication error occurred
+   * @param envContext       for communicating with thrift
+   * @throws MetaException                 could not drop table properly
+   * @throws NoSuchObjectException         the table wasn't found
+   * @throws TException                    a thrift communication error occurred
    * @throws UnsupportedOperationException dropping an index table is not allowed
-   * @see
-   *     org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#drop_table(java.lang.String,
-   *     java.lang.String, boolean)
+   * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#drop_table(java.lang.String,
+   * java.lang.String, boolean)
    */
   public void dropTable(
       String dbname,
@@ -1163,8 +1162,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @return map of types
    * @throws MetaException
    * @throws TException
-   * @see
-   *     org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#get_type_all(java.lang.String)
+   * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#get_type_all(java.lang.String)
    */
   public Map<String, Type> getTypeAll(String name) throws MetaException, TException {
     Map<String, Type> result = null;
@@ -1178,7 +1176,9 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     return result;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public List<String> getDatabases(String databasePattern) throws MetaException {
     try {
@@ -1189,7 +1189,9 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     return null;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public List<String> getAllDatabases() throws MetaException {
     try {
@@ -1257,12 +1259,12 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
   /**
    * Get list of partitions matching specified filter
    *
-   * @param dbName the database name
-   * @param tblName the table name
-   * @param filter the filter string, for example "part1 = \"p1_abc\" and part2 <= "\p2_test\"".
-   *     Filtering can be done only on string partition keys.
+   * @param dbName   the database name
+   * @param tblName  the table name
+   * @param filter   the filter string, for example "part1 = \"p1_abc\" and part2 <= "\p2_test\"".
+   *                 Filtering can be done only on string partition keys.
    * @param maxParts the maximum number of partitions to return, all partitions are returned if -1
-   *     is passed
+   *                 is passed
    * @return list of partitions
    * @throws MetaException
    * @throws NoSuchObjectException
@@ -1330,8 +1332,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @throws NoSuchObjectException
    * @throws MetaException
    * @throws TException
-   * @see
-   *     org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#get_database(java.lang.String)
+   * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#get_database(java.lang.String)
    */
   @Override
   public Database getDatabase(String name) throws NoSuchObjectException, MetaException, TException {
@@ -1346,9 +1347,8 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @return the partition
    * @throws MetaException
    * @throws TException
-   * @see
-   *     org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#get_partition(java.lang.String,
-   *     java.lang.String, java.util.List)
+   * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#get_partition(java.lang.String,
+   * java.lang.String, java.util.List)
    */
   @Override
   public Partition getPartition(String dbName, String tblName, List<String> partVals)
@@ -1391,7 +1391,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @throws TException
    * @throws NoSuchObjectException
    * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#get_table(java.lang.String,
-   *     java.lang.String)
+   * java.lang.String)
    */
   @Override
   public Table getTable(String dbname, String name)
@@ -1400,7 +1400,9 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     return fastpath ? t : deepCopy(filterHook.filterTable(t));
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   @Deprecated
   public Table getTable(String tableName) throws TException {
@@ -1408,7 +1410,9 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     return fastpath ? t : filterHook.filterTable(t);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public List<Table> getTableObjectsByName(String dbName, List<String> tableNames)
       throws TException {
@@ -1416,7 +1420,9 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     return fastpath ? tabs : deepCopyTables(filterHook.filterTables(tabs));
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public List<String> listTableNamesByFilter(String dbName, String filter, short maxTables)
       throws TException {
@@ -1436,7 +1442,9 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     return deepCopy(client.get_type(name));
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public List<String> getTables(String dbname, String tablePattern) throws MetaException {
     try {
@@ -1478,7 +1486,9 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     return filtered;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public List<String> getAllTables(String dbname) throws MetaException {
     try {
@@ -1498,7 +1508,9 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   @Deprecated
   public boolean tableExists(String tableName) throws TException {
@@ -1522,10 +1534,10 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
   /**
    * Get number of partitions matching specified filter
    *
-   * @param dbName the database name
+   * @param dbName  the database name
    * @param tblName the table name
-   * @param filter the filter string, for example "part1 = \"p1_abc\" and part2 <= "\p2_test\"".
-   *     Filtering can be done only on string partition keys.
+   * @param filter  the filter string, for example "part1 = \"p1_abc\" and part2 <= "\p2_test\"".
+   *                Filtering can be done only on string partition keys.
    * @return number of partitions
    * @throws MetaException
    * @throws NoSuchObjectException
@@ -1565,9 +1577,8 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @throws UnknownDBException
    * @throws MetaException
    * @throws TException
-   * @see
-   *     org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#get_fields(java.lang.String,
-   *     java.lang.String)
+   * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#get_fields(java.lang.String,
+   * java.lang.String)
    */
   @Override
   public List<FieldSchema> getFields(String db, String tableName)
@@ -1579,7 +1590,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
   /**
    * create an index
    *
-   * @param index the index object
+   * @param index      the index object
    * @param indexTable which stores the index data
    * @throws InvalidObjectException
    * @throws MetaException
@@ -1590,7 +1601,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
   @Override
   public void createIndex(Index index, Table indexTable)
       throws AlreadyExistsException, InvalidObjectException, MetaException, NoSuchObjectException,
-          TException {
+      TException {
     client.add_index(index, indexTable);
   }
 
@@ -1602,9 +1613,8 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @throws InvalidOperationException
    * @throws MetaException
    * @throws TException
-   * @see
-   *     org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#alter_index(java.lang.String,
-   *     java.lang.String, java.lang.String, org.apache.hadoop.hive.metastore.api.Index)
+   * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#alter_index(java.lang.String,
+   * java.lang.String, java.lang.String, org.apache.hadoop.hive.metastore.api.Index)
    */
   @Override
   public void alter_index(String dbname, String baseTblName, String idxName, Index newIdx)
@@ -1672,7 +1682,9 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     return client.get_foreign_keys(req).getForeignKeys();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   @Deprecated
   // use setPartitionColumnStatistics instead
@@ -1680,7 +1692,9 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     return client.update_table_column_statistics(statsObj);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   @Deprecated
   // use setPartitionColumnStatistics instead
@@ -1688,7 +1702,9 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     return client.update_partition_column_statistics(statsObj);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean setPartitionColumnStatistics(SetPartitionsStatsRequest request) throws TException {
     return client.set_aggr_stats_for(request);
@@ -1704,7 +1720,9 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public List<ColumnStatisticsObj> getTableColumnStatistics(
       String dbName, String tableName, List<String> colNames) throws TException {
@@ -1713,7 +1731,9 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
         .getTableStats();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Map<String, List<ColumnStatisticsObj>> getPartitionColumnStatistics(
       String dbName, String tableName, List<String> partNames, List<String> colNames)
@@ -1724,14 +1744,18 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
         .getPartStats();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean deletePartitionColumnStatistics(
       String dbName, String tableName, String partName, String colName) throws TException {
     return client.delete_partition_column_statistics(dbName, tableName, partName, colName);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean deleteTableColumnStatistics(String dbName, String tableName, String colName)
       throws TException {
@@ -1745,9 +1769,8 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
    * @throws UnknownDBException
    * @throws MetaException
    * @throws TException
-   * @see
-   *     org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#get_schema(java.lang.String,
-   *     java.lang.String)
+   * @see org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface#get_schema(java.lang.String,
+   * java.lang.String)
    */
   @Override
   public List<FieldSchema> getSchema(String db, String tableName)
@@ -2316,7 +2339,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     return (IMetaStoreClient)
         Proxy.newProxyInstance(
             HiveMetaStoreClient.class.getClassLoader(),
-            new Class[] {IMetaStoreClient.class},
+            new Class[]{IMetaStoreClient.class},
             new SynchronizedHandler(client));
   }
 

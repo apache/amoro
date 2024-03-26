@@ -18,21 +18,22 @@
 
 package com.netease.arctic.trino;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.Objects.requireNonNull;
-
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.inject.Inject;
-
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/** This is used to guarantee one transaction to one {@link ArcticConnectorMetadata} */
+import static java.util.Objects.requireNonNull;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkState;
+
+/**
+ * This is used to guarantee one transaction to one {@link ArcticConnectorMetadata}
+ */
 public class ArcticTransactionManager {
   private final ArcticMetadataFactory metadataFactory;
   private final ClassLoader classLoader;
