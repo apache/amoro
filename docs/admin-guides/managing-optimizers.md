@@ -96,7 +96,6 @@ containers:
   - name: flinkContainer
     container-impl: com.netease.arctic.server.manager.FlinkOptimizerContainer
     properties:
-      flink-home: /opt/flink/                                                        # Flink install home
       target: session                                                                # Flink run in session cluster
       job-uri: "local:///opt/flink/usrlib/optimizer-job.jar"                         # Optimizer job main jar
       ams-optimizing-uri: thrift://ams.amoro.service.local:1261                      # AMS optimizing uri 
