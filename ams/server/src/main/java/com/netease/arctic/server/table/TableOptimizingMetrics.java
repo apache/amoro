@@ -202,34 +202,34 @@ public class TableOptimizingMetrics {
     if (globalRegistry == null) {
       // register state duration metrics
       registerMetric(
-          registry, TABLE_OPTIMIZING_STATUS_IDLE_DURATION, new StateDurationGauge(STATUS_IDLE));
+          registry, TABLE_OPTIMIZING_STATUS_IDLE_DURATION, new StatusDurattionGauge(STATUS_IDLE));
       registerMetric(
           registry,
           TABLE_OPTIMIZING_STATUS_PENDING_DURATION,
-          new StateDurationGauge(STATUS_PENDING));
+          new StatusDurattionGauge(STATUS_PENDING));
       registerMetric(
           registry,
           TABLE_OPTIMIZING_STATUS_PLANNING_DURATION,
-          new StateDurationGauge(STATUS_PLANING));
+          new StatusDurattionGauge(STATUS_PLANING));
       registerMetric(
           registry,
           TABLE_OPTIMIZING_STATUS_EXECUTING_DURATION,
-          new StateDurationGauge(STATUS_EXECUTING));
+          new StatusDurattionGauge(STATUS_EXECUTING));
       registerMetric(
           registry,
           TABLE_OPTIMIZING_STATUS_COMMITTING_DURATION,
-          new StateDurationGauge(STATUS_COMMITTING));
+          new StatusDurattionGauge(STATUS_COMMITTING));
 
       // register table in status metrics
-      registerMetric(registry, TABLE_OPTIMIZING_STATUS_IN_IDLE, new InStatusGauge(STATUS_IDLE));
+      registerMetric(registry, TABLE_OPTIMIZING_STATUS_IN_IDLE, new IsInStatusGauge(STATUS_IDLE));
       registerMetric(
-          registry, TABLE_OPTIMIZING_STATUS_IN_PENDING, new InStatusGauge(STATUS_PENDING));
+          registry, TABLE_OPTIMIZING_STATUS_IN_PENDING, new IsInStatusGauge(STATUS_PENDING));
       registerMetric(
-          registry, TABLE_OPTIMIZING_STATUS_IN_PLANNING, new InStatusGauge(STATUS_PLANING));
+          registry, TABLE_OPTIMIZING_STATUS_IN_PLANNING, new IsInStatusGauge(STATUS_PLANING));
       registerMetric(
-          registry, TABLE_OPTIMIZING_STATUS_IN_EXECUTING, new InStatusGauge(STATUS_EXECUTING));
+          registry, TABLE_OPTIMIZING_STATUS_IN_EXECUTING, new IsInStatusGauge(STATUS_EXECUTING));
       registerMetric(
-          registry, TABLE_OPTIMIZING_STATUS_IN_COMMITTING, new InStatusGauge(STATUS_COMMITTING));
+          registry, TABLE_OPTIMIZING_STATUS_IN_COMMITTING, new IsInStatusGauge(STATUS_COMMITTING));
 
       // register table process count metrics
       registerMetric(registry, TABLE_OPTIMIZING_PROCESS_TOTAL_COUNT, processTotalCount);
@@ -313,10 +313,10 @@ public class TableOptimizingMetrics {
     }
   }
 
-  class StateDurationGauge implements Gauge<Long> {
+  class StatusDurattionGauge implements Gauge<Long> {
     final String targetState;
 
-    StateDurationGauge(String targetState) {
+    StatusDurattionGauge(String targetState) {
       this.targetState = targetState;
     }
 
@@ -334,10 +334,10 @@ public class TableOptimizingMetrics {
     }
   }
 
-  class InStatusGauge implements Gauge<Long> {
+  class IsInStatusGauge implements Gauge<Long> {
     final String targetState;
 
-    InStatusGauge(String targetState) {
+    IsInStatusGauge(String targetState) {
       this.targetState = targetState;
     }
 
