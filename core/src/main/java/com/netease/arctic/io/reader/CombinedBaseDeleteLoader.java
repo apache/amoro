@@ -108,20 +108,21 @@ public class CombinedBaseDeleteLoader implements CombinedDeleteLoader {
     long estimatedSize = estimateEqDeletesSize(deleteFile, projection);
     if (canCache(estimatedSize)) {
       String cacheKey = deleteFile.path().toString();
-      return getOrLoad(cacheKey, () -> readEqDeletes(deleteFile, projection), estimatedSize);
+      return getOrLoad(cacheKey, () -> readEqDeletes(deleteFile, projection, true), estimatedSize);
     } else {
-      return readEqDeletes(deleteFile, projection);
+      return readEqDeletes(deleteFile, projection, false);
     }
   }
 
-  private Iterable<RecordWithLsn> readEqDeletes(DeleteFile deleteFile, Schema projection) {
+  private Iterable<RecordWithLsn> readEqDeletes(
+      DeleteFile deleteFile, Schema projection, boolean materialize) {
     CloseableIterable<RecordWithLsn> recordWithLsns =
         CloseableIterable.transform(
             openDeletes(deleteFile, projection),
             r -> new RecordWithLsn(deleteFile.dataSequenceNumber(), r));
     CloseableIterable<RecordWithLsn> copiedDeletes =
         CloseableIterable.transform(recordWithLsns, RecordWithLsn::recordCopy);
-    return materialize(copiedDeletes);
+    return materialize ? materialize(copiedDeletes) : copiedDeletes;
   }
 
   // materializes the iterable and releases resources so that the result can be cached
