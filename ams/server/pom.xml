@@ -267,6 +267,20 @@
             <artifactId>hadoop-aws</artifactId>
         </dependency>
 
+        <!-- flink dependencies -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-clients</artifactId>
+            <version>1.18.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-runtime-web</artifactId>
+            <version>1.18.1</version>
+        </dependency>
+
+
         <!-- runtime dependencies -->
         <dependency>
             <groupId>com.netease.amoro</groupId>
