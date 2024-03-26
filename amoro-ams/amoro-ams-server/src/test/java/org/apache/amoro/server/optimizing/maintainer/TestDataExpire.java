@@ -503,7 +503,7 @@ public class TestDataExpire extends ExecutorTestBase {
 
   @Test
   public void testInvalidRetentionTime() {
-    ArcticTable testTable = getArcticTable();
+    MixedTable testTable = getMixedTable();
     testTable.updateProperties().set(TableProperties.DATA_EXPIRATION_RETENTION_TIME, "0d").commit();
 
     ArrayList<Record> baseRecords =
@@ -513,7 +513,7 @@ public class TestDataExpire extends ExecutorTestBase {
         testTable, tableTestHelper().writeBaseStore(testTable, 0, baseRecords, false));
 
     DataExpirationConfig config = new DataExpirationConfig(testTable);
-    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getArcticTable());
+    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable());
     mixedTableMaintainer.expireDataFrom(
         config,
         LocalDateTime.parse("2024-01-01T00:00:00.000")
