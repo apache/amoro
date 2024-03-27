@@ -19,7 +19,6 @@
 package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.HMSClientPool;
-import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HiveCommitUtil;
@@ -27,6 +26,7 @@ import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
+import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.Path;

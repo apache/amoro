@@ -18,9 +18,9 @@
 
 package com.netease.arctic.server.table.executor;
 
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.table.TableManager;
-import com.netease.arctic.server.utils.Configurations;
 
 public class AsyncTableExecutors {
 

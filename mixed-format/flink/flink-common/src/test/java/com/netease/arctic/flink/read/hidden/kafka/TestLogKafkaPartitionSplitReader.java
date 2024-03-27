@@ -21,8 +21,8 @@ package com.netease.arctic.flink.read.hidden.kafka;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
 import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
+import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.USER_SCHEMA;
 import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.createLogDataDeserialization;
-import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.userSchema;
 import static com.netease.arctic.flink.write.hidden.kafka.TestHiddenLogOperators.createRowData;
 import static org.junit.Assert.assertEquals;
 
@@ -135,7 +135,7 @@ public class TestLogKafkaPartitionSplitReader {
   private void write(String topic, int offset) throws Exception {
     KafkaProducer producer = KafkaContainerTest.getProducer();
     LogDataJsonSerialization<RowData> serialization =
-        new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
+        new LogDataJsonSerialization<>(USER_SCHEMA, LogRecordV1.FIELD_GETTER_FACTORY);
     for (int j = 0; j < offset; j++) {
       producer.send(createLogData(topic, 0, 1, false, serialization));
     }
@@ -275,7 +275,7 @@ public class TestLogKafkaPartitionSplitReader {
         props,
         new TestingReaderContext(new Configuration(), sourceReaderMetricGroup),
         new KafkaSourceReaderMetrics(sourceReaderMetricGroup),
-        userSchema,
+        USER_SCHEMA,
         true,
         new LogSourceHelper(),
         "all-kinds");

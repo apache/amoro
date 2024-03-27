@@ -43,7 +43,7 @@ import java.util.regex.Pattern;
  *   <li>count: auto increment count within writer
  * </ul>
  *
- * like:
+ * <p>like:
  *
  * <ul>
  *   <li>1-B-100-0-0-4217271085623029157-0.parquet

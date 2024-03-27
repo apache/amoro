@@ -37,15 +37,15 @@ import java.util.Map;
 
 public class TestSessionCatalog extends MixedTableTestBase {
 
-  public static final Schema schema =
+  public static final Schema SCHEMA =
       new Schema(
           Types.NestedField.required(1, "id", Types.IntegerType.get()),
           Types.NestedField.required(2, "data", Types.StringType.get()),
           Types.NestedField.required(3, "pt", Types.StringType.get()));
-  public static final PrimaryKeySpec pkSpec =
-      PrimaryKeySpec.builderFor(schema).addColumn("id").build();
-  public static final PartitionSpec ptSpec =
-      PartitionSpec.builderFor(schema).identity("pt").build();
+  public static final PrimaryKeySpec PK_SPEC =
+      PrimaryKeySpec.builderFor(SCHEMA).addColumn("id").build();
+  public static final PartitionSpec PT_SPEC =
+      PartitionSpec.builderFor(SCHEMA).identity("pt").build();
 
   @Override
   protected Map<String, String> sparkSessionConfig() {
@@ -53,12 +53,12 @@ public class TestSessionCatalog extends MixedTableTestBase {
         "spark.sql.catalog.spark_catalog",
         SparkTestContext.SESSION_CATALOG_IMPL,
         "spark.sql.catalog.spark_catalog.url",
-        context.amsCatalogUrl(TableFormat.MIXED_ICEBERG));
+        CONTEXT.amsCatalogUrl(TableFormat.MIXED_ICEBERG));
   }
 
   @Test
   public void testLoadTables() throws NoSuchTableException {
-    createTarget(schema, builder -> builder.withPrimaryKeySpec(pkSpec).withPartitionSpec(ptSpec));
+    createTarget(SCHEMA, builder -> builder.withPrimaryKeySpec(PK_SPEC).withPartitionSpec(PT_SPEC));
 
     TableCatalog sessionCatalog =
         (TableCatalog) spark().sessionState().catalogManager().catalog(SPARK_SESSION_CATALOG);

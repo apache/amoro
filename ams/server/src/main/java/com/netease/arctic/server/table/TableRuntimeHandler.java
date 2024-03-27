@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.api.config.TableConfiguration;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 
 public interface TableRuntimeHandler {

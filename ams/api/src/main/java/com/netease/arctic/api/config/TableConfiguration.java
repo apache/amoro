@@ -19,67 +19,29 @@
 package com.netease.arctic.api.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.netease.arctic.api.Action;
+import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Objects;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
-/**
- * Configuration for a table, containing {@link OptimizingConfig}, {@link DataExpirationConfig}, and
- * {@link TagConfiguration}.
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TableConfiguration {
-
-  // The maximum retry count for executing process.
-  private int maxExecuteRetryCount;
-  // Whether to expire snapshots.
-  private boolean expireOperationEnabled;
-  // The time to live for snapshots.
+  private boolean expireSnapshotEnabled;
   private long snapshotTTLMinutes;
-  // The time to live for change store data.
   private long changeDataTTLMinutes;
-  // Whether to clean orphaned files.
   private boolean cleanOrphanEnabled;
-  // The time to live for orphaned files.
   private long orphanExistingMinutes;
-  // Whether to delete dangling delete files.
   private boolean deleteDanglingDeleteFilesEnabled;
-  // The optimizing configuration.
   private OptimizingConfig optimizingConfig;
-  // The data expiration configuration.
   private DataExpirationConfig expiringDataConfig;
-  // The tag configuration.
   private TagConfiguration tagConfiguration;
 
   public TableConfiguration() {}
 
-  public Map<Action, Long> getActionMinIntervals(Set<Action> actions) {
-    Map<Action, Long> minIntervals = new HashMap<>();
-    if (actions.contains(Action.REFRESH_METADATA)) {
-      minIntervals.put(Action.REFRESH_METADATA, optimizingConfig.getRefreshMinInterval());
-    } else if (actions.contains(Action.EXPIRE_DATA) && isExpireOperationEnabled()) {
-      minIntervals.put(Action.EXPIRE_DATA, getSnapshotTTLMinutes() * 60 * 1000);
-    } else if (actions.contains(Action.DELETE_ORPHAN_FILES)) {
-      minIntervals.put(Action.DELETE_ORPHAN_FILES, getOrphanExistingMinutes() * 60 * 1000);
-    }
-    return minIntervals;
-  }
-
-  /**
-   * Get the maximum retry count for executing process.
-   *
-   * @return the maximum retry count
-   */
-  public int getMaxExecuteRetryCount() {
-    return maxExecuteRetryCount;
-  }
-
-  public boolean isExpireOperationEnabled() {
-    return expireOperationEnabled;
+  public boolean isExpireSnapshotEnabled() {
+    return expireSnapshotEnabled;
   }
 
   public long getSnapshotTTLMinutes() {
@@ -102,18 +64,13 @@ public class TableConfiguration {
     return optimizingConfig;
   }
 
-  public TableConfiguration setMaxExecuteRetryCount(int maxExecuteRetryCount) {
-    this.maxExecuteRetryCount = maxExecuteRetryCount;
-    return this;
-  }
-
   public TableConfiguration setOptimizingConfig(OptimizingConfig optimizingConfig) {
     this.optimizingConfig = optimizingConfig;
     return this;
   }
 
-  public TableConfiguration setExpireOperationEnabled(boolean expireOperationEnabled) {
-    this.expireOperationEnabled = expireOperationEnabled;
+  public TableConfiguration setExpireSnapshotEnabled(boolean expireSnapshotEnabled) {
+    this.expireSnapshotEnabled = expireSnapshotEnabled;
     return this;
   }
 
@@ -167,10 +124,14 @@ public class TableConfiguration {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     TableConfiguration that = (TableConfiguration) o;
-    return expireOperationEnabled == that.expireOperationEnabled
+    return expireSnapshotEnabled == that.expireSnapshotEnabled
         && snapshotTTLMinutes == that.snapshotTTLMinutes
         && changeDataTTLMinutes == that.changeDataTTLMinutes
         && cleanOrphanEnabled == that.cleanOrphanEnabled
@@ -184,7 +145,7 @@ public class TableConfiguration {
   @Override
   public int hashCode() {
     return Objects.hashCode(
-        expireOperationEnabled,
+        expireSnapshotEnabled,
         snapshotTTLMinutes,
         changeDataTTLMinutes,
         cleanOrphanEnabled,
@@ -193,5 +154,48 @@ public class TableConfiguration {
         optimizingConfig,
         expiringDataConfig,
         tagConfiguration);
+  }
+
+  public static TableConfiguration parseConfig(Map<String, String> properties) {
+    boolean gcEnabled =
+        CompatiblePropertyUtil.propertyAsBoolean(
+            properties, org.apache.iceberg.TableProperties.GC_ENABLED, true);
+    return new TableConfiguration()
+        .setExpireSnapshotEnabled(
+            gcEnabled
+                && CompatiblePropertyUtil.propertyAsBoolean(
+                    properties,
+                    TableProperties.ENABLE_TABLE_EXPIRE,
+                    TableProperties.ENABLE_TABLE_EXPIRE_DEFAULT))
+        .setSnapshotTTLMinutes(
+            CompatiblePropertyUtil.propertyAsLong(
+                properties,
+                TableProperties.BASE_SNAPSHOT_KEEP_MINUTES,
+                TableProperties.BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT))
+        .setChangeDataTTLMinutes(
+            CompatiblePropertyUtil.propertyAsLong(
+                properties,
+                TableProperties.CHANGE_DATA_TTL,
+                TableProperties.CHANGE_DATA_TTL_DEFAULT))
+        .setCleanOrphanEnabled(
+            gcEnabled
+                && CompatiblePropertyUtil.propertyAsBoolean(
+                    properties,
+                    TableProperties.ENABLE_ORPHAN_CLEAN,
+                    TableProperties.ENABLE_ORPHAN_CLEAN_DEFAULT))
+        .setOrphanExistingMinutes(
+            CompatiblePropertyUtil.propertyAsLong(
+                properties,
+                TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME,
+                TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT))
+        .setDeleteDanglingDeleteFilesEnabled(
+            gcEnabled
+                && CompatiblePropertyUtil.propertyAsBoolean(
+                    properties,
+                    TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN,
+                    TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT))
+        .setOptimizingConfig(OptimizingConfig.parse(properties))
+        .setExpiringDataConfig(DataExpirationConfig.parse(properties))
+        .setTagConfiguration(TagConfiguration.parse(properties));
   }
 }

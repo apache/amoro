@@ -51,7 +51,7 @@ public class MergeOnReadIncrementalPlanner extends ContinuousSplitPlannerImpl {
   protected ContinuousEnumerationResult discoverInitialSplits(List<Expression> filters) {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
 
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.mergeOnReadPlan(table, filters, splitCount);
+    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.mergeOnReadPlan(table, filters, SPLIT_COUNT);
 
     long changeStartSnapshotId =
         changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;

@@ -30,7 +30,10 @@ import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.api.BlockableOperation;
 import com.netease.arctic.api.Blocker;
 import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.ServerTableIdentifier;
 import com.netease.arctic.api.TableIdentifier;
+import com.netease.arctic.api.config.Configurations;
+import com.netease.arctic.api.config.TableConfiguration;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.CatalogBuilder;
 import com.netease.arctic.server.catalog.ExternalCatalog;
@@ -45,7 +48,6 @@ import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.blocker.TableBlocker;
-import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
@@ -78,11 +80,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private final Map<String, InternalCatalog> internalCatalogMap = new ConcurrentHashMap<>();
   private final Map<String, ExternalCatalog> externalCatalogMap = new ConcurrentHashMap<>();
 
-  @StateField
   private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap =
       new ConcurrentHashMap<>();
-
-  private RuntimeHandlerChain headHandler;
 
   private final ScheduledExecutorService tableExplorerScheduler =
       Executors.newSingleThreadScheduledExecutor(
@@ -90,11 +89,10 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
               .setNameFormat("table-explorer-scheduler-%d")
               .setDaemon(true)
               .build());
-
-  private ExecutorService tableExplorerExecutors;
-
   private final CompletableFuture<Boolean> initialized = new CompletableFuture<>();
   private final Configurations serverConfiguration;
+  private RuntimeHandlerChain headHandler;
+  private ExecutorService tableExplorerExecutors;
 
   public DefaultTableService(Configurations configuration) {
     this.externalCatalogRefreshingInterval =

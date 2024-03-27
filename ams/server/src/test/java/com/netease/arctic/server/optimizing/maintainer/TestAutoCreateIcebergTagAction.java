@@ -20,9 +20,9 @@ package com.netease.arctic.server.optimizing.maintainer;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableFormat;
+import com.netease.arctic.api.config.TagConfiguration;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.server.table.TagConfiguration;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.Snapshot;

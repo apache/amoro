@@ -138,7 +138,9 @@ public class ArcticTreeNodePosDeleteWriter<T>
 
   @Override
   public void setTreeNode(DataTreeNode treeNode) {
-    if (currentTreeNode != null && currentTreeNode.equals(treeNode)) return;
+    if (currentTreeNode != null && currentTreeNode.equals(treeNode)) {
+      return;
+    }
 
     currentDeleteWriter = posDeletes.computeIfAbsent(treeNode, this::generatePosDelete);
     this.currentTreeNode = treeNode;

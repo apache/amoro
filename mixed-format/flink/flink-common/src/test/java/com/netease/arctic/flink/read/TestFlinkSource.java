@@ -64,7 +64,7 @@ import java.util.Set;
 
 public class TestFlinkSource extends FlinkTestBase {
 
-  protected static final FileFormat fileFormat =
+  protected static final FileFormat FILE_FORMAT =
       FileFormat.valueOf("parquet".toUpperCase(Locale.ENGLISH));
 
   public TestFlinkSource() {
@@ -82,7 +82,7 @@ public class TestFlinkSource extends FlinkTestBase {
   protected static void write(Collection<Object[]> data, Table table, RowType rowType)
       throws IOException {
     try (TaskWriter<RowData> taskWriter =
-        createUnkeyedTaskWriter(table, TARGET_FILE_SIZE, fileFormat, rowType)) {
+        createUnkeyedTaskWriter(table, TARGET_FILE_SIZE, FILE_FORMAT, rowType)) {
       data.forEach(
           d -> {
             try {
