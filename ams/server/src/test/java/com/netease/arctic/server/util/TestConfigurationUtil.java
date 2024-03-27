@@ -24,8 +24,8 @@ import static com.netease.arctic.server.ArcticManagementConf.DB_PASSWORD;
 import static com.netease.arctic.server.ArcticManagementConf.DB_USER_NAME;
 import static com.netease.arctic.server.ArcticManagementConf.SERVER_EXPOSE_HOST;
 
+import com.netease.arctic.api.config.ConfigHelpers;
 import com.netease.arctic.server.ArcticManagementConf;
-import com.netease.arctic.server.utils.ConfigurationUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -43,7 +43,7 @@ public class TestConfigurationUtil {
     dummyEnv.put("AMS_SERVER__EXPOSE__HOST", "127.0.0.1");
     dummyEnv.put("AMS_ADMIN__USERNAME", "admin");
     dummyEnv.put("AMS_ADMIN__PASSWORD", "admin");
-    Map<String, Object> result = ConfigurationUtil.convertConfigurationKeys(prefix, dummyEnv);
+    Map<String, Object> result = ConfigHelpers.convertConfigurationKeys(prefix, dummyEnv);
     Assert.assertNotNull("AMS_DATABASE_USERNAME Convert Failed", result.get(DB_USER_NAME.key()));
     Assert.assertNotNull("AMS_DATABASE_PASSWORD Convert Failed", result.get(DB_PASSWORD.key()));
     Assert.assertNotNull(

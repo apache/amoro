@@ -231,8 +231,11 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     Assertions.assertThrows(PluginRetryAuthException.class, () -> optimizingService().touch(token));
     Assertions.assertThrows(
         PluginRetryAuthException.class, () -> optimizingService().pollTask(token, THREAD_ID));
-    assertTaskStatus(TaskRuntime.Status.PLANNED);
+    assertTaskStatus(TaskRuntime.Status.SCHEDULED);
     token = optimizingService().authenticate(buildRegisterInfo());
+    toucher = new Toucher();
+    Thread.sleep(1000);
+    assertTaskStatus(TaskRuntime.Status.PLANNED);
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertEquals(task2, task);
   }

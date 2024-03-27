@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.hive;
+package com.netease.arctic.properties;
 
 import java.util.HashSet;
 import java.util.Set;

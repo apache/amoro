@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink.write;
 
-import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.io.writer.AdaptHiveOperateToTableRelation;
 import com.netease.arctic.hive.io.writer.AdaptHiveOutputFileFactory;
 import com.netease.arctic.hive.table.HiveLocationKind;
@@ -28,6 +27,7 @@ import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.io.writer.TaskWriterBuilder;
+import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;

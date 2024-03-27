@@ -58,25 +58,84 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase {
-  private static final Logger LOG = LoggerFactory.getLogger(TestInternalMixedCatalogService.class);
-
-  private ArcticCatalog catalog;
-
-  static final List<Record> baseRecords =
+  static final List<Record> BASE_RECORDS =
       Lists.newArrayList(
           MixedDataTestHelpers.createRecord(1, "111", 0, "2022-01-01T12:00:00"),
           MixedDataTestHelpers.createRecord(2, "222", 0, "2022-01-02T12:00:00"),
           MixedDataTestHelpers.createRecord(3, "333", 0, "2022-01-03T12:00:00"));
-  static final List<Record> changeInsert =
+  static final List<Record> CHANGE_INSERT =
       Lists.newArrayList(
           MixedDataTestHelpers.createRecord(4, "444", 0, "2022-01-01T12:00:00"),
           MixedDataTestHelpers.createRecord(5, "555", 0, "2022-01-02T12:00:00"),
           MixedDataTestHelpers.createRecord(6, "666", 0, "2022-01-03T12:00:00"));
-
-  static final List<Record> changeDelete =
+  static final List<Record> CHANGE_DELETE =
       Lists.newArrayList(
           MixedDataTestHelpers.createRecord(3, "333", 0, "2022-01-03T12:00:00"),
           MixedDataTestHelpers.createRecord(4, "444", 0, "2022-01-01T12:00:00"));
+  private static final Logger LOG = LoggerFactory.getLogger(TestInternalMixedCatalogService.class);
+  private ArcticCatalog catalog;
+
+  private static List<Record> writeTestData(ArcticTable table) {
+    return writeTestData(table, BASE_RECORDS, CHANGE_INSERT, CHANGE_DELETE);
+  }
+
+  /** write test records to the target table and return the expected records */
+  private static List<Record> writeTestData(
+      ArcticTable table,
+      List<Record> baseAdded,
+      List<Record> changeAdded,
+      List<Record> changeDelete) {
+    table.refresh();
+    List<Record> initRecords =
+        Lists.newArrayList(MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue()));
+    List<Record> finalRecords = null;
+    long txId;
+    if (baseAdded != null && !baseAdded.isEmpty()) {
+      txId = table.isKeyedTable() ? table.asKeyedTable().beginTransaction("") : 1L;
+      List<DataFile> files = MixedDataTestHelpers.writeBaseStore(table, txId, baseAdded, false);
+      UnkeyedTable baseStore = ArcticTableUtil.baseStore(table);
+      AppendFiles appendFiles = baseStore.newAppend();
+      files.forEach(appendFiles::appendFile);
+      appendFiles.commit();
+      initRecords.addAll(baseAdded);
+    }
+
+    if (table.isKeyedTable()) {
+      if (changeAdded != null && !changeAdded.isEmpty()) {
+        txId = table.asKeyedTable().beginTransaction("");
+        List<DataFile> changeInsertFiles =
+            MixedDataTestHelpers.writeChangeStore(
+                table.asKeyedTable(), txId, ChangeAction.INSERT, changeAdded, false);
+        UnkeyedTable changeStore = table.asKeyedTable().changeTable();
+        AppendFiles appendFiles = changeStore.newAppend();
+        changeInsertFiles.forEach(appendFiles::appendFile);
+        appendFiles.commit();
+        initRecords.addAll(changeAdded);
+        finalRecords =
+            Lists.newArrayList(MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue()));
+        System.out.println(finalRecords.size());
+      }
+
+      if (changeDelete != null && !changeDelete.isEmpty()) {
+        txId = table.asKeyedTable().beginTransaction("");
+        List<DataFile> changeDeleteFiles =
+            MixedDataTestHelpers.writeChangeStore(
+                table.asKeyedTable(), txId, ChangeAction.DELETE, changeDelete, false);
+        UnkeyedTable changeStore = table.asKeyedTable().changeTable();
+        AppendFiles appendFiles = changeStore.newAppend();
+        changeDeleteFiles.forEach(appendFiles::appendFile);
+        appendFiles.commit();
+        Map<Integer, Record> results = Maps.newHashMap();
+        initRecords.forEach(r -> results.put(r.get(0, Integer.class), r));
+        changeDelete.forEach(r -> results.remove(r.get(0, Integer.class)));
+        initRecords = Lists.newArrayList(results.values());
+      }
+    }
+    finalRecords =
+        Lists.newArrayList(MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue()));
+    System.out.println(finalRecords.size());
+    return initRecords;
+  }
 
   @BeforeEach
   public void setMixedCatalog() {
@@ -92,6 +151,10 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
   public void testCatalogLoader() {
     Assertions.assertEquals(
         InternalMixedIcebergCatalog.class.getName(), catalog.getClass().getName());
+  }
+
+  private ArcticCatalog loadMixedIcebergCatalog() {
+    return CatalogLoader.load(ams.getTableServiceUrl() + "/" + catalogName());
   }
 
   @Nested
@@ -224,6 +287,15 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
   @Nested
   public class CompatibilityCatalogTests {
 
+    final List<Record> newChangeAdded =
+        Lists.newArrayList(
+            MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
+            MixedDataTestHelpers.createRecord(8, "888", 0, "2022-01-02T12:00:00"),
+            MixedDataTestHelpers.createRecord(9, "999", 0, "2022-01-03T12:00:00"));
+    final List<Record> newChangeDelete =
+        Lists.newArrayList(
+            MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
+            MixedDataTestHelpers.createRecord(1, "111", 0, "2022-01-01T12:00:00"));
     ArcticCatalog historicalCatalog;
 
     @BeforeEach
@@ -244,17 +316,6 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
     public void cleanDatabase() {
       catalog.dropDatabase(database);
     }
-
-    final List<Record> newChangeAdded =
-        Lists.newArrayList(
-            MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
-            MixedDataTestHelpers.createRecord(8, "888", 0, "2022-01-02T12:00:00"),
-            MixedDataTestHelpers.createRecord(9, "999", 0, "2022-01-03T12:00:00"));
-
-    final List<Record> newChangeDelete =
-        Lists.newArrayList(
-            MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
-            MixedDataTestHelpers.createRecord(1, "111", 0, "2022-01-01T12:00:00"));
 
     @ParameterizedTest(name = "Test-NewCatalog-Load-HistoricalTable[withPrimaryKey={0}]")
     @ValueSource(booleans = {false, true})
@@ -336,71 +397,5 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
       // clean up the table.
       catalog.dropTable(tableIdentifier, true);
     }
-  }
-
-  private static List<Record> writeTestData(ArcticTable table) {
-    return writeTestData(table, baseRecords, changeInsert, changeDelete);
-  }
-
-  /** write test records to the target table and return the expected records */
-  private static List<Record> writeTestData(
-      ArcticTable table,
-      List<Record> baseAdded,
-      List<Record> changeAdded,
-      List<Record> changeDelete) {
-    table.refresh();
-    List<Record> initRecords =
-        Lists.newArrayList(MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue()));
-    List<Record> finalRecords = null;
-    long txId;
-    if (baseAdded != null && !baseAdded.isEmpty()) {
-      txId = table.isKeyedTable() ? table.asKeyedTable().beginTransaction("") : 1L;
-      List<DataFile> files = MixedDataTestHelpers.writeBaseStore(table, txId, baseAdded, false);
-      UnkeyedTable baseStore = ArcticTableUtil.baseStore(table);
-      AppendFiles appendFiles = baseStore.newAppend();
-      files.forEach(appendFiles::appendFile);
-      appendFiles.commit();
-      initRecords.addAll(baseAdded);
-    }
-
-    if (table.isKeyedTable()) {
-      if (changeAdded != null && !changeAdded.isEmpty()) {
-        txId = table.asKeyedTable().beginTransaction("");
-        List<DataFile> changeInsertFiles =
-            MixedDataTestHelpers.writeChangeStore(
-                table.asKeyedTable(), txId, ChangeAction.INSERT, changeAdded, false);
-        UnkeyedTable changeStore = table.asKeyedTable().changeTable();
-        AppendFiles appendFiles = changeStore.newAppend();
-        changeInsertFiles.forEach(appendFiles::appendFile);
-        appendFiles.commit();
-        initRecords.addAll(changeAdded);
-        finalRecords =
-            Lists.newArrayList(MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue()));
-        System.out.println(finalRecords.size());
-      }
-
-      if (changeDelete != null && !changeDelete.isEmpty()) {
-        txId = table.asKeyedTable().beginTransaction("");
-        List<DataFile> changeDeleteFiles =
-            MixedDataTestHelpers.writeChangeStore(
-                table.asKeyedTable(), txId, ChangeAction.DELETE, changeDelete, false);
-        UnkeyedTable changeStore = table.asKeyedTable().changeTable();
-        AppendFiles appendFiles = changeStore.newAppend();
-        changeDeleteFiles.forEach(appendFiles::appendFile);
-        appendFiles.commit();
-        Map<Integer, Record> results = Maps.newHashMap();
-        initRecords.forEach(r -> results.put(r.get(0, Integer.class), r));
-        changeDelete.forEach(r -> results.remove(r.get(0, Integer.class)));
-        initRecords = Lists.newArrayList(results.values());
-      }
-    }
-    finalRecords =
-        Lists.newArrayList(MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue()));
-    System.out.println(finalRecords.size());
-    return initRecords;
-  }
-
-  private ArcticCatalog loadMixedIcebergCatalog() {
-    return CatalogLoader.load(ams.getTableServiceUrl() + "/" + catalogName());
   }
 }

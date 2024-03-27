@@ -22,11 +22,11 @@ import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.mi
 
 import com.netease.arctic.api.CommitMetaProducer;
 import com.netease.arctic.api.config.DataExpirationConfig;
+import com.netease.arctic.api.config.TableConfiguration;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
 import com.netease.arctic.io.SupportsFileSystemOperations;
 import com.netease.arctic.server.ArcticServiceConstants;
-import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.utils.TableFileUtil;
@@ -265,8 +265,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
    *     zone
    */
   @VisibleForTesting
-  protected void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
-    if (instant.equals(Instant.MIN) || !expirationConfig.isPositive()) {
+  public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+    if (instant.equals(Instant.MIN)) {
       return;
     }
 

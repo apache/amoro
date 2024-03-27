@@ -37,7 +37,7 @@ import java.util.Map;
 
 public class PaimonHadoopCatalogTestHelper extends AbstractFormatCatalogTestHelper<Catalog> {
 
-  public static final Schema schema =
+  public static final Schema SCHEMA =
       Schema.newBuilder()
           .column("id", DataTypes.INT())
           .column("name", DataTypes.STRING())
@@ -123,7 +123,7 @@ public class PaimonHadoopCatalogTestHelper extends AbstractFormatCatalogTestHelp
   @Override
   public void createTable(String db, String tableName) throws Exception {
     try (Catalog catalog = originalCatalog()) {
-      catalog.createTable(Identifier.create(db, tableName), schema, false);
+      catalog.createTable(Identifier.create(db, tableName), SCHEMA, false);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

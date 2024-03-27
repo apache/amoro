@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.persistence;
 
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.persistence.mapper.ApiTokensMapper;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
@@ -27,7 +28,6 @@ import com.netease.arctic.server.persistence.mapper.PlatformFileMapper;
 import com.netease.arctic.server.persistence.mapper.ResourceMapper;
 import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
-import com.netease.arctic.server.utils.Configurations;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.pool2.impl.BaseObjectPoolConfig;

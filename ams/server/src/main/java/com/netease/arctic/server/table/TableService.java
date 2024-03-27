@@ -21,6 +21,7 @@ package com.netease.arctic.server.table;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.api.BlockableOperation;
 import com.netease.arctic.api.Blocker;
+import com.netease.arctic.api.ServerTableIdentifier;
 import com.netease.arctic.api.TableIdentifier;
 import com.netease.arctic.server.catalog.CatalogService;
 

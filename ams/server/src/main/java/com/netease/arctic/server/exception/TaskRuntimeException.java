@@ -18,9 +18,13 @@
 
 package com.netease.arctic.server.exception;
 
-public class DuplicateRuntimeException extends ArcticRuntimeException {
+public class TaskRuntimeException extends ArcticRuntimeException {
 
-  public DuplicateRuntimeException(String message) {
+  public TaskRuntimeException(String message) {
     super(message);
+  }
+
+  public TaskRuntimeException(String format, Object... args) {
+    super(String.format(format, args));
   }
 }

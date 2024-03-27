@@ -18,8 +18,8 @@
 
 package com.netease.arctic.hive.catalog;
 
-import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_FLAG;
-import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
+import static com.netease.arctic.properties.HiveTableProperties.ARCTIC_TABLE_FLAG;
+import static com.netease.arctic.properties.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableFormat;

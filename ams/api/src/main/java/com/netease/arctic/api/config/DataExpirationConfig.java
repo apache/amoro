@@ -20,15 +20,15 @@ package com.netease.arctic.api.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TimeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.base.Objects;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
@@ -59,16 +59,17 @@ public class DataExpirationConfig {
   // data-expire.base-on-rule
   @JsonProperty(defaultValue = TableProperties.DATA_EXPIRATION_BASE_ON_RULE_DEFAULT)
   private BaseOnRule baseOnRule;
+
   // Retention time must be positive
   public static final long INVALID_RETENTION_TIME = 0L;
 
-  @com.google.common.annotations.VisibleForTesting
+  @VisibleForTesting
   public enum ExpireLevel {
     PARTITION,
     FILE;
 
     public static ExpireLevel fromString(String level) {
-      com.google.common.base.Preconditions.checkArgument(null != level, "Invalid level type: null");
+      Preconditions.checkArgument(null != level, "Invalid level type: null");
       try {
         return ExpireLevel.valueOf(level.toUpperCase(Locale.ENGLISH));
       } catch (IllegalArgumentException e) {
@@ -83,7 +84,7 @@ public class DataExpirationConfig {
     CURRENT_TIME;
 
     public static BaseOnRule fromString(String since) {
-      com.google.common.base.Preconditions.checkArgument(
+      Preconditions.checkArgument(
           null != since, TableProperties.DATA_EXPIRATION_BASE_ON_RULE + " is invalid: null");
       try {
         return BaseOnRule.valueOf(since.toUpperCase(Locale.ENGLISH));
@@ -130,7 +131,7 @@ public class DataExpirationConfig {
             "Field(%s) used to determine data expiration is illegal for table(%s)",
             expirationField, table.name()));
     Type.TypeID typeID = field.type().typeId();
-    Preconditions.checkArgument(
+    com.google.common.base.Preconditions.checkArgument(
         FIELD_TYPES.contains(typeID),
         String.format(
             "The type(%s) of filed(%s) is incompatible for table(%s)",
@@ -173,9 +174,9 @@ public class DataExpirationConfig {
         .setEnabled(
             gcEnabled
                 && CompatiblePropertyUtil.propertyAsBoolean(
-                    properties,
-                    TableProperties.ENABLE_DATA_EXPIRATION,
-                    TableProperties.ENABLE_DATA_EXPIRATION_DEFAULT))
+                properties,
+                TableProperties.ENABLE_DATA_EXPIRATION,
+                TableProperties.ENABLE_DATA_EXPIRATION_DEFAULT))
         .setExpirationLevel(
             ExpireLevel.fromString(
                 CompatiblePropertyUtil.propertyAsString(
@@ -293,10 +294,10 @@ public class DataExpirationConfig {
     DataExpirationConfig config = (DataExpirationConfig) o;
     return enabled == config.enabled
         && retentionTime == config.retentionTime
-        && com.google.common.base.Objects.equal(expirationField, config.expirationField)
+        && Objects.equal(expirationField, config.expirationField)
         && expirationLevel == config.expirationLevel
-        && com.google.common.base.Objects.equal(dateTimePattern, config.dateTimePattern)
-        && com.google.common.base.Objects.equal(numberDateFormat, config.numberDateFormat)
+        && Objects.equal(dateTimePattern, config.dateTimePattern)
+        && Objects.equal(numberDateFormat, config.numberDateFormat)
         && baseOnRule == config.baseOnRule;
   }
 

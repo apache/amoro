@@ -18,8 +18,21 @@
 
 package com.netease.arctic;
 
-import com.netease.arctic.api.*;
 import com.netease.arctic.api.AlreadyExistsException;
+import com.netease.arctic.api.ArcticException;
+import com.netease.arctic.api.ArcticTableMetastore;
+import com.netease.arctic.api.BlockableOperation;
+import com.netease.arctic.api.Blocker;
+import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.NoSuchObjectException;
+import com.netease.arctic.api.OptimizerRegisterInfo;
+import com.netease.arctic.api.OptimizingService;
+import com.netease.arctic.api.OptimizingTask;
+import com.netease.arctic.api.OptimizingTaskId;
+import com.netease.arctic.api.OptimizingTaskResult;
+import com.netease.arctic.api.TableCommitMeta;
+import com.netease.arctic.api.TableIdentifier;
+import com.netease.arctic.api.TableMeta;
 import org.apache.thrift.TException;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -34,8 +47,22 @@ import org.slf4j.LoggerFactory;
 
 import java.net.BindException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -411,7 +438,7 @@ public class MockArcticMetastoreServer implements Runnable {
       Map<Integer, OptimizingTaskId> executingTasksMap = executingTasks.get(authToken);
       if (executingTasksMap.containsKey(threadId)) {
         throw new ArcticException(
-            ErrorCodes.DUPLICATED_TASK_ERROR_CODE,
+            ErrorCodes.TASK_RUNTIME_ERROR_CODE,
             "DuplicateTask",
             String.format(
                 "Optimizer:%s" + " thread:%d is executing another task", authToken, threadId));

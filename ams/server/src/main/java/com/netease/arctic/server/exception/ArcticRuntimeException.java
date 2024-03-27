@@ -24,8 +24,8 @@ import com.netease.arctic.api.InvalidObjectException;
 import com.netease.arctic.api.MetaException;
 import com.netease.arctic.api.NoSuchObjectException;
 import com.netease.arctic.api.OperationConflictException;
+import com.netease.arctic.api.ServerTableIdentifier;
 import com.netease.arctic.api.TableIdentifier;
-import com.netease.arctic.server.table.ServerTableIdentifier;
 import org.apache.thrift.TException;
 
 import java.util.HashMap;
@@ -46,7 +46,7 @@ public class ArcticRuntimeException extends RuntimeException {
     CODE_MAP.put(ForbiddenException.class, ErrorCodes.FORBIDDEN_ERROR_CODE);
 
     CODE_MAP.put(TaskNotFoundException.class, ErrorCodes.TASK_NOT_FOUND_ERROR_CODE);
-    CODE_MAP.put(DuplicateRuntimeException.class, ErrorCodes.DUPLICATED_TASK_ERROR_CODE);
+    CODE_MAP.put(TaskRuntimeException.class, ErrorCodes.TASK_RUNTIME_ERROR_CODE);
     CODE_MAP.put(OptimizingClosedException.class, ErrorCodes.OPTIMIZING_CLOSED_ERROR_CODE);
     CODE_MAP.put(IllegalTaskStateException.class, ErrorCodes.ILLEGAL_TASK_STATE_ERROR_CODE);
     CODE_MAP.put(PluginAuthException.class, ErrorCodes.PLUGIN_AUTH_ERROR_CODE);

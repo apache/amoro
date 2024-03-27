@@ -25,12 +25,12 @@ import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
 import static com.netease.arctic.table.TableProperties.FILE_FORMAT_PARQUET;
 
 import com.netease.arctic.hive.HMSClientPool;
-import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
+import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;

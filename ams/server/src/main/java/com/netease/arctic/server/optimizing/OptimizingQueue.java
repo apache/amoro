@@ -21,6 +21,7 @@ package com.netease.arctic.server.optimizing;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.api.OptimizerProperties;
 import com.netease.arctic.api.OptimizingTaskId;
+import com.netease.arctic.api.ServerTableIdentifier;
 import com.netease.arctic.api.resource.ResourceGroup;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.ArcticServiceConstants;
@@ -33,7 +34,6 @@ import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.QuotaProvider;
-import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
@@ -449,6 +449,10 @@ public class OptimizingQueue extends PersistentBase {
           }
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
           if (taskRuntime.getRetry() < tableRuntime.getMaxExecuteRetryCount()) {
+            LOG.info(
+                "Put task {} to retry queue, because {}",
+                taskRuntime.getTaskId(),
+                taskRuntime.getFailReason());
             retryTask(taskRuntime);
           } else {
             clearProcess(this);
@@ -547,7 +551,7 @@ public class OptimizingQueue extends PersistentBase {
         endTime = System.currentTimeMillis();
         persistProcessCompleted(true);
       } catch (Exception e) {
-        LOG.warn("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
+        LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
         status = Status.FAILED;
         failedReason = ExceptionUtil.getErrorMessage(e, 4000);
         endTime = System.currentTimeMillis();

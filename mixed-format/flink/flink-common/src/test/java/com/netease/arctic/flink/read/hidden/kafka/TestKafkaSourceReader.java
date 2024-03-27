@@ -23,8 +23,8 @@ import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.getPro
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
 import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
+import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.USER_SCHEMA;
 import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.createLogDataDeserialization;
-import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.userSchema;
 import static com.netease.arctic.flink.write.hidden.kafka.TestHiddenLogOperators.createRowData;
 import static org.junit.Assert.assertEquals;
 
@@ -150,7 +150,7 @@ public class TestKafkaSourceReader {
   private void write(String topic, int numRecords) throws Exception {
     KafkaProducer producer = KafkaContainerTest.getProducer();
     LogDataJsonSerialization<RowData> serialization =
-        new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
+        new LogDataJsonSerialization<>(USER_SCHEMA, LogRecordV1.FIELD_GETTER_FACTORY);
     for (int i = 0; i < numRecords; i++) {
       producer.send(createLogData(topic, 0, 1, false, serialization));
     }
@@ -185,7 +185,7 @@ public class TestKafkaSourceReader {
     Map<String, String> configuration = new HashMap<>();
     configuration.put(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), String.valueOf(retract));
 
-    return LogKafkaSource.builder(userSchema, configuration)
+    return LogKafkaSource.builder(USER_SCHEMA, configuration)
         .setTopics(topics)
         .setStartingOffsets(OffsetsInitializer.earliest())
         .setProperties(properties)
@@ -208,6 +208,7 @@ public class TestKafkaSourceReader {
   }
 
   // ---------------- helper classes -----------------
+
   /** A source output that validates the output. */
   public static class ValidatingSourceOutput implements ReaderOutput<RowData> {
     private final Set<RowData> consumedValues = new HashSet<>();
