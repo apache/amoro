@@ -418,10 +418,10 @@ public class OptimizingQueue extends PersistentBase {
         this.endTime = System.currentTimeMillis();
         persistProcessCompleted(false);
         clearProcess(this);
-        cancelTasks();
       } finally {
         lock.unlock();
       }
+      cancelTasks();
     }
 
     @Override
