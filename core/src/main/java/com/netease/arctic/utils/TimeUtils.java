@@ -18,11 +18,10 @@
 
 package com.netease.arctic.utils;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Objects;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.time.Duration;
 import java.time.Period;
@@ -36,7 +35,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-/** Collection of utilities about time intervals. */
+/** Copy from org.apache.flink.util.TimeUtils */
 public class TimeUtils {
 
   private static Map<String, ChronoUnit> initMap() {
@@ -52,68 +51,7 @@ public class TimeUtils {
   private static final Map<String, ChronoUnit> LABEL_TO_UNIT_MAP =
       Collections.unmodifiableMap(initMap());
 
-  public static class Time {
-    String number;
-    ChronoUnit unit;
-
-    public Time(String number, String unitLabel) {
-      if (StringUtils.isBlank(number)) {
-        throw new IllegalArgumentException("Number text cannot be empty");
-      }
-
-      if (!LABEL_TO_UNIT_MAP.containsKey(unitLabel)) {
-        throw new IllegalArgumentException(
-            "Time interval unit label '"
-                + unitLabel
-                + "' does not match any of the recognized units: "
-                + TimeUnit.getAllUnits());
-      }
-
-      this.number = number;
-      this.unit = LABEL_TO_UNIT_MAP.get(unitLabel);
-    }
-
-    public String getNumber() {
-      return number;
-    }
-
-    public ChronoUnit getUnit() {
-      return unit;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (!(o instanceof Time)) {
-        return false;
-      }
-      Time time = (Time) o;
-      return Objects.equal(number, time.number) && Objects.equal(unit, time.unit);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hashCode(number, unit);
-    }
-
-    /** @return duration in millis */
-    public long toMillis() {
-      if (isPeriod()) {
-        // Estimated 30 days per month
-        return parsePeriod(this).toTotalMonths() * 30 * 24 * 60 * 60 * 1000;
-      } else {
-        return parseDuration(this).toMillis();
-      }
-    }
-
-    public boolean isPeriod() {
-      return unit.isDateBased() && !ChronoUnit.DAYS.equals(unit);
-    }
-  }
-
-  public static Time parseTime(String text) {
+  private static Pair<String, ChronoUnit> parseTimeWithUnit(String text) {
     checkNotNull(text);
 
     final String trimmed = text.trim();
@@ -130,7 +68,27 @@ public class TimeUtils {
     String number = trimmed.substring(0, pos);
     String unitLabel = trimmed.substring(pos).trim().toLowerCase(Locale.US);
 
-    return new Time(number, unitLabel);
+    if (!LABEL_TO_UNIT_MAP.containsKey(unitLabel)) {
+      throw new UnsupportedOperationException(
+          String.format(
+              "Time unit %s is not supported, please use the following units: %s",
+              unitLabel, TimeUnit.getAllUnits()));
+    }
+
+    return Pair.of(number, LABEL_TO_UNIT_MAP.get(unitLabel));
+  }
+
+  public static long estimatedMills(String text) {
+    Pair<String, ChronoUnit> timeWithUnit = parseTimeWithUnit(text);
+    String time = timeWithUnit.getLeft();
+    ChronoUnit unit = timeWithUnit.getRight();
+
+    if (unit.isDateBased() && !ChronoUnit.DAYS.equals(unit)) {
+      // convert to period, estimated 30 days per month
+      return parsePeriod(time, unit).toTotalMonths() * 30 * 24 * 60 * 60 * 1000;
+    } else {
+      return parseDuration(time, unit).toMillis();
+    }
   }
 
   /**
@@ -153,23 +111,20 @@ public class TimeUtils {
    * @param text string to parse.
    */
   public static Duration parseDuration(String text) {
-    return parseDuration(parseTime(text));
+    Pair<String, ChronoUnit> timeWithUnit = parseTimeWithUnit(text);
+    String time = timeWithUnit.getLeft();
+    ChronoUnit unit = timeWithUnit.getRight();
+
+    return parseDuration(time, unit);
   }
 
-  public static Duration parseDuration(Time time) {
-    if (time.isPeriod()) {
-      throw new IllegalArgumentException(
-          "The time unit '" + time.getUnit() + "' cannot parse to Duration");
-    }
-
+  public static Duration parseDuration(String time, ChronoUnit unit) {
     try {
-      long value = Long.parseLong(time.getNumber());
-      return Duration.of(value, time.getUnit());
+      long value = Long.parseLong(time);
+      return Duration.of(value, unit);
     } catch (NumberFormatException e) {
       throw new IllegalArgumentException(
-          "The value '"
-              + time.getNumber()
-              + "' cannot be re represented as 64bit number (numeric overflow).");
+          "The value '" + time + "' cannot be re represented as 64bit number (numeric overflow).");
     }
   }
 
@@ -187,30 +142,29 @@ public class TimeUtils {
    * @param text string to parse.
    */
   public static Period parsePeriod(String text) {
-    return parsePeriod(parseTime(text));
+    Pair<String, ChronoUnit> timeWithUnit = parseTimeWithUnit(text);
+    String time = timeWithUnit.getLeft();
+    ChronoUnit unit = timeWithUnit.getRight();
+
+    return parsePeriod(time, unit);
   }
 
-  public static Period parsePeriod(Time time) {
-    if (!time.isPeriod()) {
-      throw new IllegalArgumentException(
-          "The time unit '" + time.getUnit() + "' cannot parse to Period");
-    }
-
+  public static Period parsePeriod(String time, ChronoUnit unit) {
     try {
-      int value = Integer.parseInt(time.getNumber());
-      switch (time.getUnit()) {
+      int value = Integer.parseInt(time);
+      switch (unit) {
+        case DAYS:
+          return Period.ofDays(value);
         case MONTHS:
           return Period.ofMonths(value);
         case YEARS:
           return Period.ofYears(value);
         default:
-          throw new IllegalArgumentException("Unsupported time unit: " + time.getUnit());
+          throw new IllegalArgumentException("Unsupported period unit: " + unit);
       }
     } catch (NumberFormatException e) {
       throw new IllegalArgumentException(
-          "The value '"
-              + time.getNumber()
-              + "' cannot be re represented as 32bit number (numeric overflow).");
+          "The value '" + time + "' cannot be re represented as 32bit number (numeric overflow).");
     }
   }
 

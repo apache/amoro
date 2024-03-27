@@ -38,11 +38,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * TODO Use {@link com.netease.arctic.api.config.DataExpirationConfig} class in API module, this
- * class shall be removed after 0.7.0
- */
-@Deprecated
+/** Data expiration configuration. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DataExpirationConfig {
   // data-expire.enabled
@@ -66,13 +62,13 @@ public class DataExpirationConfig {
   // Retention time must be positive
   public static final long INVALID_RETENTION_TIME = 0L;
 
-  @VisibleForTesting
+  @com.google.common.annotations.VisibleForTesting
   public enum ExpireLevel {
     PARTITION,
     FILE;
 
     public static ExpireLevel fromString(String level) {
-      Preconditions.checkArgument(null != level, "Invalid level type: null");
+      com.google.common.base.Preconditions.checkArgument(null != level, "Invalid level type: null");
       try {
         return ExpireLevel.valueOf(level.toUpperCase(Locale.ENGLISH));
       } catch (IllegalArgumentException e) {
@@ -87,7 +83,7 @@ public class DataExpirationConfig {
     CURRENT_TIME;
 
     public static BaseOnRule fromString(String since) {
-      Preconditions.checkArgument(
+      com.google.common.base.Preconditions.checkArgument(
           null != since, TableProperties.DATA_EXPIRATION_BASE_ON_RULE + " is invalid: null");
       try {
         return BaseOnRule.valueOf(since.toUpperCase(Locale.ENGLISH));
@@ -128,7 +124,7 @@ public class DataExpirationConfig {
         CompatiblePropertyUtil.propertyAsString(
             properties, TableProperties.DATA_EXPIRATION_FIELD, null);
     Types.NestedField field = table.schema().findField(expirationField);
-    Preconditions.checkArgument(
+    com.google.common.base.Preconditions.checkArgument(
         StringUtils.isNoneBlank(expirationField) && null != field,
         String.format(
             "Field(%s) used to determine data expiration is illegal for table(%s)",
@@ -213,7 +209,7 @@ public class DataExpirationConfig {
 
   private static long parseRetentionToMillis(String retention) {
     try {
-      return TimeUtils.parseTime(retention).toMillis();
+      return TimeUtils.estimatedMills(retention);
     } catch (Exception e) {
       return INVALID_RETENTION_TIME;
     }
@@ -297,10 +293,10 @@ public class DataExpirationConfig {
     DataExpirationConfig config = (DataExpirationConfig) o;
     return enabled == config.enabled
         && retentionTime == config.retentionTime
-        && Objects.equal(expirationField, config.expirationField)
+        && com.google.common.base.Objects.equal(expirationField, config.expirationField)
         && expirationLevel == config.expirationLevel
-        && Objects.equal(dateTimePattern, config.dateTimePattern)
-        && Objects.equal(numberDateFormat, config.numberDateFormat)
+        && com.google.common.base.Objects.equal(dateTimePattern, config.dateTimePattern)
+        && com.google.common.base.Objects.equal(numberDateFormat, config.numberDateFormat)
         && baseOnRule == config.baseOnRule;
   }
 

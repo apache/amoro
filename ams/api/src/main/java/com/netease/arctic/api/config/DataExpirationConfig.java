@@ -209,7 +209,7 @@ public class DataExpirationConfig {
 
   private static long parseRetentionToMillis(String retention) {
     try {
-      return TimeUtils.parseTime(retention).toMillis();
+      return TimeUtils.estimatedMills(retention);
     } catch (Exception e) {
       return INVALID_RETENTION_TIME;
     }
