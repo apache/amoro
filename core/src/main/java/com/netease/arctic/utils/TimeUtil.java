@@ -78,6 +78,15 @@ public class TimeUtil {
     return Pair.of(number, LABEL_TO_UNIT_MAP.get(unitLabel));
   }
 
+  /**
+   * Parse the given string to an estimated number of milliseconds. The string is in format "{length
+   * value}{time unit label}", e.g. "1h", "13 m". In cases where the time unit exceeds DAYS, the
+   * duration is interpreted as a {@link Period} and estimated with the assumption of 30 days per
+   * month.
+   *
+   * @param text string to parse
+   * @return estimated milliseconds
+   */
   public static long estimatedMills(String text) {
     Pair<String, ChronoUnit> timeWithUnit = parseTimeWithUnit(text);
     String time = timeWithUnit.getLeft();
