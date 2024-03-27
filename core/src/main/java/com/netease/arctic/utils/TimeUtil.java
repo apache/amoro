@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /** Copy from org.apache.flink.util.TimeUtils */
-public class TimeUtils {
+public class TimeUtil {
 
   private static Map<String, ChronoUnit> initMap() {
     Map<String, ChronoUnit> labelToUnit = new HashMap<>();
@@ -160,7 +160,7 @@ public class TimeUtils {
         case YEARS:
           return Period.ofYears(value);
         default:
-          throw new IllegalArgumentException("Unsupported period unit: " + unit);
+          throw new UnsupportedOperationException("Unsupported period unit: " + unit);
       }
     } catch (NumberFormatException e) {
       throw new IllegalArgumentException(

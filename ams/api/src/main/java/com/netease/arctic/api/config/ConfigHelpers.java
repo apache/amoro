@@ -20,7 +20,7 @@ package com.netease.arctic.api.config;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.netease.arctic.utils.TimeUtils;
+import com.netease.arctic.utils.TimeUtil;
 
 import javax.annotation.Nonnull;
 
@@ -184,7 +184,7 @@ public class ConfigHelpers {
       return (Duration) o;
     }
 
-    return TimeUtils.parseDuration(o.toString());
+    return TimeUtil.parseDuration(o.toString());
   }
 
   public static String convertToString(Object o) {

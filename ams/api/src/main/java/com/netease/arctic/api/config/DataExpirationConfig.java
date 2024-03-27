@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
-import com.netease.arctic.utils.TimeUtils;
+import com.netease.arctic.utils.TimeUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Objects;
@@ -174,9 +174,9 @@ public class DataExpirationConfig {
         .setEnabled(
             gcEnabled
                 && CompatiblePropertyUtil.propertyAsBoolean(
-                properties,
-                TableProperties.ENABLE_DATA_EXPIRATION,
-                TableProperties.ENABLE_DATA_EXPIRATION_DEFAULT))
+                    properties,
+                    TableProperties.ENABLE_DATA_EXPIRATION,
+                    TableProperties.ENABLE_DATA_EXPIRATION_DEFAULT))
         .setExpirationLevel(
             ExpireLevel.fromString(
                 CompatiblePropertyUtil.propertyAsString(
@@ -210,7 +210,7 @@ public class DataExpirationConfig {
 
   private static long parseRetentionToMillis(String retention) {
     try {
-      return TimeUtils.estimatedMills(retention);
+      return TimeUtil.estimatedMills(retention);
     } catch (Exception e) {
       return INVALID_RETENTION_TIME;
     }
