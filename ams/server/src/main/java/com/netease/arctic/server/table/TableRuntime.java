@@ -163,7 +163,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void beginPlanning() {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           OptimizingStatus originalStatus = optimizingStatus;
           updateOptimizingStatus(OptimizingStatus.PLANNING);
@@ -173,7 +173,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void planFailed() {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           OptimizingStatus originalStatus = optimizingStatus;
           updateOptimizingStatus(OptimizingStatus.PENDING);
@@ -183,7 +183,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void beginProcess(OptimizingProcess optimizingProcess) {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           OptimizingStatus originalStatus = optimizingStatus;
           this.optimizingProcess = optimizingProcess;
@@ -196,7 +196,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void beginCommitting() {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           OptimizingStatus originalStatus = optimizingStatus;
           updateOptimizingStatus(OptimizingStatus.COMMITTING);
@@ -206,7 +206,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void setPendingInput(OptimizingEvaluator.PendingInput pendingInput) {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           this.pendingInput = pendingInput;
           if (optimizingStatus == OptimizingStatus.IDLE) {
@@ -222,7 +222,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public TableRuntime refresh(AmoroTable<?> table) {
-    return invokeConsisitency(
+    return invokeConsistency(
         () -> {
           TableConfiguration configuration = tableConfiguration;
           boolean configChanged = updateConfigInternal(table.properties());
@@ -237,7 +237,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void cleanPendingInput() {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           pendingInput = null;
           if (optimizingStatus == OptimizingStatus.PLANNING
@@ -267,7 +267,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void completeProcess(boolean success) {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           OptimizingStatus originalStatus = optimizingStatus;
           if (success) {
