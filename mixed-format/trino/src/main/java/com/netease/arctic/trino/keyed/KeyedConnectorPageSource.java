@@ -18,6 +18,12 @@
 
 package com.netease.arctic.trino.keyed;
 
+import static com.netease.arctic.ArcticErrorCode.ARCTIC_BAD_DATA;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
+import static java.util.Objects.requireNonNull;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.iceberg.relocated.com.google.common.base.Throwables.throwIfInstanceOf;
+
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveArcticDeleteFilter;
@@ -52,15 +58,7 @@ import java.util.OptionalLong;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.ArcticErrorCode.ARCTIC_BAD_DATA;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
-import static java.util.Objects.requireNonNull;
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
-import static org.apache.iceberg.relocated.com.google.common.base.Throwables.throwIfInstanceOf;
-
-/**
- * ConnectorPageSource for Keyed Table
- */
+/** ConnectorPageSource for Keyed Table */
 public class KeyedConnectorPageSource implements ConnectorPageSource {
 
   private final IcebergPageSourceProvider icebergPageSourceProvider;
@@ -170,9 +168,9 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
         int positionCount = page.getPositionCount();
         int[] positionsToKeep = new int[positionCount];
         try (CloseableIterable<TrinoRow> filteredRows =
-                 arcticDeleteFilter.filter(
-                     CloseableIterable.withNoopClose(
-                         TrinoRow.fromPage(requireColumnTypes, page, positionCount)))) {
+            arcticDeleteFilter.filter(
+                CloseableIterable.withNoopClose(
+                    TrinoRow.fromPage(requireColumnTypes, page, positionCount)))) {
           int positionsToKeepCount = 0;
           for (TrinoRow rowToKeep : filteredRows) {
             positionsToKeep[positionsToKeepCount] = rowToKeep.getPosition();

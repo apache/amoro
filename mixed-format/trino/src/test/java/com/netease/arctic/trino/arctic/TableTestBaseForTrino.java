@@ -18,6 +18,9 @@
 
 package com.netease.arctic.trino.arctic;
 
+import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.MockArcticMetastoreServer.TEST_DB_NAME;
+
 import com.netease.arctic.MockArcticMetastoreServer;
 import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
@@ -62,9 +65,6 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-
-import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.MockArcticMetastoreServer.TEST_DB_NAME;
 
 public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
 
@@ -169,7 +169,7 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
     KeyedTable table = testCatalog.loadTable(identifier).asKeyedTable();
     long txId = table.beginTransaction("");
     try (GenericBaseTaskWriter writer =
-             GenericTaskWriters.builderFor(table).withTransactionId(txId).buildBaseWriter()) {
+        GenericTaskWriters.builderFor(table).withTransactionId(txId).buildBaseWriter()) {
       records.forEach(
           d -> {
             try {
@@ -192,7 +192,7 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
       TableIdentifier identifier, ChangeAction action, List<Record> records) {
     KeyedTable table = testCatalog.loadTable(identifier).asKeyedTable();
     try (GenericChangeTaskWriter writer =
-             GenericTaskWriters.builderFor(table).withChangeAction(action).buildChangeWriter()) {
+        GenericTaskWriters.builderFor(table).withChangeAction(action).buildChangeWriter()) {
       records.forEach(
           d -> {
             try {
@@ -293,7 +293,7 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
   protected static List<DataFile> writeBaseNoCommit(
       KeyedTable table, long txId, List<Record> records) {
     try (GenericBaseTaskWriter writer =
-             GenericTaskWriters.builderFor(table).withTransactionId(txId).buildBaseWriter()) {
+        GenericTaskWriters.builderFor(table).withTransactionId(txId).buildBaseWriter()) {
       records.forEach(
           d -> {
             try {

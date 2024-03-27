@@ -18,6 +18,9 @@
 
 package com.netease.arctic.trino;
 
+import static io.trino.spi.session.PropertyMetadata.booleanProperty;
+import static io.trino.spi.session.PropertyMetadata.doubleProperty;
+
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.iceberg.IcebergSessionProperties;
 import io.trino.spi.connector.ConnectorSession;
@@ -25,14 +28,10 @@ import io.trino.spi.session.PropertyMetadata;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
 import javax.inject.Inject;
+
 import java.util.List;
 
-import static io.trino.spi.session.PropertyMetadata.booleanProperty;
-import static io.trino.spi.session.PropertyMetadata.doubleProperty;
-
-/**
- * Arctic supporting session properties
- */
+/** Arctic supporting session properties */
 public final class ArcticSessionProperties implements SessionPropertiesProvider {
 
   private static final String ARCTIC_STATISTICS_ENABLED = "arctic_table_statistics_enabled";

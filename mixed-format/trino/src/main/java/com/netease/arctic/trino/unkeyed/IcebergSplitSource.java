@@ -18,6 +18,32 @@
 
 package com.netease.arctic.trino.unkeyed;
 
+import static io.airlift.slice.Slices.utf8Slice;
+import static io.trino.plugin.iceberg.ExpressionConverter.toIcebergExpression;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnHandle;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.pathColumnHandle;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_FILESYSTEM_ERROR;
+import static io.trino.plugin.iceberg.IcebergMetadataColumn.isMetadataColumnId;
+import static io.trino.plugin.iceberg.IcebergSplitManager.ICEBERG_DOMAIN_COMPACTION_THRESHOLD;
+import static io.trino.plugin.iceberg.IcebergTypes.convertIcebergValueToTrino;
+import static io.trino.plugin.iceberg.IcebergUtil.deserializePartitionValue;
+import static io.trino.plugin.iceberg.IcebergUtil.getColumnHandle;
+import static io.trino.plugin.iceberg.IcebergUtil.getPartitionKeys;
+import static io.trino.plugin.iceberg.IcebergUtil.primitiveFieldTypes;
+import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
+import static io.trino.spi.type.DateTimeEncoding.packDateTimeWithZone;
+import static io.trino.spi.type.TimeZoneKey.UTC_KEY;
+import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkState;
+import static org.apache.iceberg.relocated.com.google.common.base.Suppliers.memoize;
+import static org.apache.iceberg.relocated.com.google.common.base.Verify.verify;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet.toImmutableSet;
+import static org.apache.iceberg.relocated.com.google.common.collect.Sets.intersection;
+import static org.apache.iceberg.types.Conversions.fromByteBuffer;
+
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.scan.ArcticFileScanTask;
@@ -62,6 +88,7 @@ import org.apache.iceberg.types.Type;
 import org.apache.iceberg.util.TableScanUtil;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
@@ -73,32 +100,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-
-import static io.airlift.slice.Slices.utf8Slice;
-import static io.trino.plugin.iceberg.ExpressionConverter.toIcebergExpression;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnHandle;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.pathColumnHandle;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_FILESYSTEM_ERROR;
-import static io.trino.plugin.iceberg.IcebergMetadataColumn.isMetadataColumnId;
-import static io.trino.plugin.iceberg.IcebergSplitManager.ICEBERG_DOMAIN_COMPACTION_THRESHOLD;
-import static io.trino.plugin.iceberg.IcebergTypes.convertIcebergValueToTrino;
-import static io.trino.plugin.iceberg.IcebergUtil.deserializePartitionValue;
-import static io.trino.plugin.iceberg.IcebergUtil.getColumnHandle;
-import static io.trino.plugin.iceberg.IcebergUtil.getPartitionKeys;
-import static io.trino.plugin.iceberg.IcebergUtil.primitiveFieldTypes;
-import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
-import static io.trino.spi.type.DateTimeEncoding.packDateTimeWithZone;
-import static io.trino.spi.type.TimeZoneKey.UTC_KEY;
-import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.CompletableFuture.completedFuture;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkState;
-import static org.apache.iceberg.relocated.com.google.common.base.Suppliers.memoize;
-import static org.apache.iceberg.relocated.com.google.common.base.Verify.verify;
-import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
-import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet.toImmutableSet;
-import static org.apache.iceberg.relocated.com.google.common.collect.Sets.intersection;
-import static org.apache.iceberg.types.Conversions.fromByteBuffer;
 
 /**
  * Iceberg original IcebergSplitSource has some problems for arctic, such as iceberg version, table
@@ -431,7 +432,7 @@ public class IcebergSplitSource implements ConnectorSplitSource {
 
     if (constraint.predicate().isEmpty()
         || intersection(constraint.getPredicateColumns().orElseThrow(), identityPartitionColumns)
-        .isEmpty()) {
+            .isEmpty()) {
       return true;
     }
     return constraint.predicate().get().test(partitionValues.get());

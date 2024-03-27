@@ -18,6 +18,10 @@
 
 package com.netease.arctic.trino.unkeyed;
 
+import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
+import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
+import static java.util.Locale.ENGLISH;
+
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -43,13 +47,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
-import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
-import static java.util.Locale.ENGLISH;
-
-/**
- * A TrinoCatalog for Arctic, this is in order to reuse iceberg code
- */
+/** A TrinoCatalog for Arctic, this is in order to reuse iceberg code */
 public class ArcticTrinoCatalog implements TrinoCatalog {
 
   private final ArcticCatalog arcticCatalog;

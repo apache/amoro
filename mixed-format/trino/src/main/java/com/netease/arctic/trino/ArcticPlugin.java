@@ -22,9 +22,7 @@ import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
-/**
- * Arctic Plugin Impl of {@link Plugin}
- */
+/** Arctic Plugin Impl of {@link Plugin} */
 public class ArcticPlugin implements Plugin {
 
   @Override

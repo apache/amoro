@@ -18,6 +18,10 @@
 
 package com.netease.arctic.trino.delete;
 
+import static io.trino.plugin.iceberg.IcebergPageSink.getIcebergValue;
+import static java.util.Objects.requireNonNull;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
+
 import io.trino.spi.Page;
 import io.trino.spi.type.Type;
 import org.apache.iceberg.StructLike;
@@ -25,13 +29,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.AbstractIterator;
 
 import javax.annotation.Nullable;
 
-import static io.trino.plugin.iceberg.IcebergPageSink.getIcebergValue;
-import static java.util.Objects.requireNonNull;
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
-
-/**
- * Copy from trino-iceberg TrinoRow and do some change to adapt Arctic
- */
+/** Copy from trino-iceberg TrinoRow and do some change to adapt Arctic */
 public class TrinoRow implements StructLike {
   private final Type[] types;
   private final Page page;
@@ -44,9 +42,7 @@ public class TrinoRow implements StructLike {
     this.position = position;
   }
 
-  /**
-   * Gets the position in the Block this row was originally created from.
-   */
+  /** Gets the position in the Block this row was originally created from. */
   public int getPosition() {
     return position;
   }

@@ -18,6 +18,9 @@
 
 package com.netease.arctic.trino;
 
+import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
+import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
+
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -65,9 +68,6 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
-import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
-import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 
 /**
  * {@link ArcticConnectorMetadata} is a Union {@link ConnectorMetadata} contain {@link
@@ -269,10 +269,10 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
 
   @Override
   public BeginTableExecuteResult<ConnectorTableExecuteHandle, ConnectorTableHandle>
-  beginTableExecute(
-      ConnectorSession session,
-      ConnectorTableExecuteHandle tableExecuteHandle,
-      ConnectorTableHandle updatedSourceTableHandle) {
+      beginTableExecute(
+          ConnectorSession session,
+          ConnectorTableExecuteHandle tableExecuteHandle,
+          ConnectorTableHandle updatedSourceTableHandle) {
     return icebergMetadata.beginTableExecute(session, tableExecuteHandle, updatedSourceTableHandle);
   }
 

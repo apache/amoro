@@ -18,6 +18,10 @@
 
 package com.netease.arctic.trino.iceberg;
 
+import static io.trino.plugin.tpch.TpchMetadata.TINY_SCHEMA_NAME;
+import static io.trino.testing.QueryAssertions.copyTpchTables;
+import static java.util.Objects.requireNonNull;
+
 import io.trino.testing.QueryRunner;
 import io.trino.tpch.TpchTable;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -26,10 +30,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import static io.trino.plugin.tpch.TpchMetadata.TINY_SCHEMA_NAME;
-import static io.trino.testing.QueryAssertions.copyTpchTables;
-import static java.util.Objects.requireNonNull;
 
 public class SchemaInitializer implements Consumer<QueryRunner> {
   private final String schemaName;

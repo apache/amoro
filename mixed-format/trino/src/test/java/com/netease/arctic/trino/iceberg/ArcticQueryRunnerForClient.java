@@ -18,6 +18,8 @@
 
 package com.netease.arctic.trino.iceberg;
 
+import static io.trino.testing.TestingSession.testSessionBuilder;
+
 import com.netease.arctic.trino.ArcticPlugin;
 import io.airlift.log.Logger;
 import io.airlift.log.Logging;
@@ -28,15 +30,12 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import java.nio.file.Path;
 import java.util.Map;
 
-import static io.trino.testing.TestingSession.testSessionBuilder;
-
 public final class ArcticQueryRunnerForClient {
   private static final Logger log = Logger.get(ArcticQueryRunnerForClient.class);
 
   public static final String ARCTIC_CATALOG = "arctic";
 
-  private ArcticQueryRunnerForClient() {
-  }
+  private ArcticQueryRunnerForClient() {}
 
   public static DistributedQueryRunner createIcebergQueryRunner(
       Map<String, String> extraProperties, String url) throws Exception {

@@ -18,6 +18,11 @@
 
 package com.netease.arctic.trino.unkeyed;
 
+import static io.airlift.slice.SizeOf.estimatedSizeOf;
+import static java.lang.Math.toIntExact;
+import static java.util.Objects.requireNonNull;
+import static org.apache.iceberg.relocated.com.google.common.base.MoreObjects.toStringHelper;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.netease.arctic.data.DataFileType;
@@ -30,11 +35,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.openjdk.jol.info.ClassLayout;
 
 import java.util.List;
-
-import static io.airlift.slice.SizeOf.estimatedSizeOf;
-import static java.lang.Math.toIntExact;
-import static java.util.Objects.requireNonNull;
-import static org.apache.iceberg.relocated.com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Iceberg original IcebergSplit has some problems for arctic, such as iceberg version, table type.

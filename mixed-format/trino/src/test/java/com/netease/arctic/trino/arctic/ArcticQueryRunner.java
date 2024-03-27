@@ -18,6 +18,10 @@
 
 package com.netease.arctic.trino.arctic;
 
+import static io.airlift.testing.Closeables.closeAllSuppress;
+import static io.trino.testing.TestingSession.testSessionBuilder;
+import static java.util.Objects.requireNonNull;
+
 import com.netease.arctic.trino.ArcticPlugin;
 import io.airlift.log.Logger;
 import io.trino.plugin.tpch.TpchPlugin;
@@ -29,17 +33,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.airlift.testing.Closeables.closeAllSuppress;
-import static io.trino.testing.TestingSession.testSessionBuilder;
-import static java.util.Objects.requireNonNull;
-
 public final class ArcticQueryRunner {
   private static final Logger log = Logger.get(ArcticQueryRunner.class);
 
   public static final String ARCTIC_CATALOG = "arctic";
 
-  private ArcticQueryRunner() {
-  }
+  private ArcticQueryRunner() {}
 
   public static Builder builder() {
     return new Builder();

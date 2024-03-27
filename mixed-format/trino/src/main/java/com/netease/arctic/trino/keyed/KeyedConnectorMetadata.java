@@ -18,6 +18,19 @@
 
 package com.netease.arctic.trino.keyed;
 
+import static com.netease.arctic.trino.ArcticSessionProperties.isArcticStatisticsEnabled;
+import static io.trino.plugin.hive.HiveApplyProjectionUtil.extractSupportedProjectedColumns;
+import static io.trino.plugin.hive.HiveApplyProjectionUtil.replaceWithNewVariables;
+import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
+import static io.trino.plugin.hive.util.HiveUtil.isStructuralType;
+import static io.trino.plugin.iceberg.IcebergUtil.getColumns;
+import static io.trino.plugin.iceberg.TypeConverter.toTrinoType;
+import static io.trino.spi.connector.RetryMode.NO_RETRIES;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap.toImmutableMap;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet.toImmutableSet;
+
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -73,22 +86,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.trino.ArcticSessionProperties.isArcticStatisticsEnabled;
-import static io.trino.plugin.hive.HiveApplyProjectionUtil.extractSupportedProjectedColumns;
-import static io.trino.plugin.hive.HiveApplyProjectionUtil.replaceWithNewVariables;
-import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
-import static io.trino.plugin.hive.util.HiveUtil.isStructuralType;
-import static io.trino.plugin.iceberg.IcebergUtil.getColumns;
-import static io.trino.plugin.iceberg.TypeConverter.toTrinoType;
-import static io.trino.spi.connector.RetryMode.NO_RETRIES;
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
-import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
-import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap.toImmutableMap;
-import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet.toImmutableSet;
-
-/**
- * Metadata for Keyed Table
- */
+/** Metadata for Keyed Table */
 public class KeyedConnectorMetadata implements ConnectorMetadata {
 
   private static final Logger log = LoggerFactory.getLogger(KeyedConnectorMetadata.class);
@@ -325,11 +323,11 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
 
     Map<ConnectorExpression, HiveApplyProjectionUtil.ProjectedColumnRepresentation>
         columnProjections =
-        projectedExpressions.stream()
-            .collect(
-                toImmutableMap(
-                    Function.identity(),
-                    HiveApplyProjectionUtil::createProjectedColumnRepresentation));
+            projectedExpressions.stream()
+                .collect(
+                    toImmutableMap(
+                        Function.identity(),
+                        HiveApplyProjectionUtil::createProjectedColumnRepresentation));
 
     KeyedTableHandle keyedTableHandle = (KeyedTableHandle) handle;
     IcebergTableHandle icebergTableHandle = keyedTableHandle.getIcebergTableHandle();

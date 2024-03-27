@@ -18,57 +18,6 @@
 
 package com.netease.arctic.trino.iceberg;
 
-import io.airlift.units.Duration;
-import io.trino.Session;
-import io.trino.connector.CatalogName;
-import io.trino.cost.StatsAndCosts;
-import io.trino.dispatcher.DispatchManager;
-import io.trino.execution.QueryInfo;
-import io.trino.execution.QueryManager;
-import io.trino.metadata.FunctionManager;
-import io.trino.metadata.Metadata;
-import io.trino.metadata.QualifiedObjectName;
-import io.trino.server.BasicQueryInfo;
-import io.trino.sql.planner.OptimizerConfig.JoinDistributionType;
-import io.trino.sql.planner.Plan;
-import io.trino.sql.planner.plan.LimitNode;
-import io.trino.testing.AbstractTestQueries;
-import io.trino.testing.DistributedQueryRunner;
-import io.trino.testing.LocalQueryRunner;
-import io.trino.testing.MaterializedResult;
-import io.trino.testing.MaterializedResultWithQueryId;
-import io.trino.testing.MaterializedRow;
-import io.trino.testing.TestingConnectorBehavior;
-import io.trino.testing.sql.TestTable;
-import org.apache.iceberg.relocated.com.google.common.base.Stopwatch;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
-import org.apache.iceberg.relocated.com.google.common.util.concurrent.UncheckedTimeoutException;
-import org.intellij.lang.annotations.Language;
-import org.testng.Assert;
-import org.testng.SkipException;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-import java.lang.reflect.Method;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-
 import static io.airlift.units.Duration.nanosSince;
 import static io.trino.SystemSessionProperties.IGNORE_STATS_CALCULATOR_FAILURES;
 import static io.trino.connector.informationschema.InformationSchemaTable.INFORMATION_SCHEMA;
@@ -131,9 +80,58 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-/**
- * Generic test for connectors.
- */
+import io.airlift.units.Duration;
+import io.trino.Session;
+import io.trino.connector.CatalogName;
+import io.trino.cost.StatsAndCosts;
+import io.trino.dispatcher.DispatchManager;
+import io.trino.execution.QueryInfo;
+import io.trino.execution.QueryManager;
+import io.trino.metadata.FunctionManager;
+import io.trino.metadata.Metadata;
+import io.trino.metadata.QualifiedObjectName;
+import io.trino.server.BasicQueryInfo;
+import io.trino.sql.planner.OptimizerConfig.JoinDistributionType;
+import io.trino.sql.planner.Plan;
+import io.trino.sql.planner.plan.LimitNode;
+import io.trino.testing.AbstractTestQueries;
+import io.trino.testing.DistributedQueryRunner;
+import io.trino.testing.LocalQueryRunner;
+import io.trino.testing.MaterializedResult;
+import io.trino.testing.MaterializedResultWithQueryId;
+import io.trino.testing.MaterializedRow;
+import io.trino.testing.TestingConnectorBehavior;
+import io.trino.testing.sql.TestTable;
+import org.apache.iceberg.relocated.com.google.common.base.Stopwatch;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.UncheckedTimeoutException;
+import org.intellij.lang.annotations.Language;
+import org.testng.Assert;
+import org.testng.SkipException;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import java.lang.reflect.Method;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+/** Generic test for connectors. */
 public abstract class BaseConnectorTest extends AbstractTestQueries {
 
   private Method method;
@@ -302,13 +300,13 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
 
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute,
-                 "test_char_varchar",
-                 "(k, v) AS VALUES"
-                     + "   (-1, CAST(NULL AS char(3))), "
-                     + "   (3, CAST('   ' AS char(3))),"
-                     + "   (6, CAST('x  ' AS char(3)))")) {
+        new TestTable(
+            getQueryRunner()::execute,
+            "test_char_varchar",
+            "(k, v) AS VALUES"
+                + "   (-1, CAST(NULL AS char(3))), "
+                + "   (3, CAST('   ' AS char(3))),"
+                + "   (6, CAST('x  ' AS char(3)))")) {
       // varchar of length shorter than column's length
       assertQuery(
           "SELECT k, v FROM " + table.getName() + " WHERE v = CAST('  ' AS varchar(2))",
@@ -337,18 +335,18 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
 
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute,
-                 "test_varchar_char",
-                 "(k, v) AS VALUES"
-                     + "   (-1, CAST(NULL AS varchar(3))), "
-                     + "   (0, CAST('' AS varchar(3))),"
-                     + "   (1, CAST(' ' AS varchar(3))), "
-                     + "   (2, CAST('  ' AS varchar(3))), "
-                     + "   (3, CAST('   ' AS varchar(3))),"
-                     + "   (4, CAST('x' AS varchar(3))),"
-                     + "   (5, CAST('x ' AS varchar(3))),"
-                     + "   (6, CAST('x  ' AS varchar(3)))")) {
+        new TestTable(
+            getQueryRunner()::execute,
+            "test_varchar_char",
+            "(k, v) AS VALUES"
+                + "   (-1, CAST(NULL AS varchar(3))), "
+                + "   (0, CAST('' AS varchar(3))),"
+                + "   (1, CAST(' ' AS varchar(3))), "
+                + "   (2, CAST('  ' AS varchar(3))), "
+                + "   (3, CAST('   ' AS varchar(3))),"
+                + "   (4, CAST('x' AS varchar(3))),"
+                + "   (5, CAST('x ' AS varchar(3))),"
+                + "   (6, CAST('x  ' AS varchar(3)))")) {
       assertQuery(
           "SELECT k, v FROM " + table.getName() + " WHERE v = CAST('  ' AS char(2))",
           // The 3-spaces value is included because both sides of the comparison are coerced to
@@ -575,9 +573,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     return Stream.of(JoinDistributionType.values()).collect(toDataProvider());
   }
 
-  /**
-   * Test interactions between optimizer (including CBO) and connector metadata APIs.
-   */
+  /** Test interactions between optimizer (including CBO) and connector metadata APIs. */
   @Test
   public void testJoin() {
     Session session =
@@ -655,14 +651,14 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     MaterializedResult materializedRows = computeActual("SHOW CREATE VIEW " + testViewWithComment);
     assertThat((String) materializedRows.getOnlyValue()).contains("COMMENT 'orders'");
     assertThat(
-        query(
-            "SELECT table_name, comment FROM system.metadata.table_comments "
-                + "WHERE catalog_name = '"
-                + catalogName
-                + "' AND "
-                + "schema_name = '"
-                + schemaName
-                + "'"))
+            query(
+                "SELECT table_name, comment FROM system.metadata.table_comments "
+                    + "WHERE catalog_name = '"
+                    + catalogName
+                    + "' AND "
+                    + "schema_name = '"
+                    + schemaName
+                    + "'"))
         .skippingTypesCheck()
         .containsAll(
             "VALUES ('" + testView + "', null), ('" + testViewWithComment + "', 'orders')");
@@ -684,11 +680,11 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     // information_schema.views without table_name filter
     assertThat(
-        query(
-            "SELECT table_name, regexp_replace(view_definition, '\\s', '') FROM information_schema.views "
-                + "WHERE table_schema = '"
-                + schemaName
-                + "'"))
+            query(
+                "SELECT table_name, regexp_replace(view_definition, '\\s', '') FROM information_schema.views "
+                    + "WHERE table_schema = '"
+                    + schemaName
+                    + "'"))
         .skippingTypesCheck()
         .containsAll("VALUES ('" + testView + "', '" + query.replaceAll("\\s", "") + "')");
     // information_schema.views with table_name filter
@@ -705,11 +701,11 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     assertThat(query("SHOW TABLES")).skippingTypesCheck().containsAll("VALUES '" + testView + "'");
     // information_schema.tables without table_name filter
     assertThat(
-        query(
-            "SELECT table_name, table_type FROM information_schema.tables "
-                + "WHERE table_schema = '"
-                + schemaName
-                + "'"))
+            query(
+                "SELECT table_name, table_type FROM information_schema.tables "
+                    + "WHERE table_schema = '"
+                    + schemaName
+                    + "'"))
         .skippingTypesCheck()
         .containsAll("VALUES ('" + testView + "', 'VIEW')");
     // information_schema.tables with table_name filter
@@ -755,12 +751,12 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     // information_schema.columns without table_name filter
     assertThat(
-        query(
-            "SELECT table_name, column_name "
-                + "FROM information_schema.columns "
-                + "WHERE table_schema = '"
-                + schemaName
-                + "'"))
+            query(
+                "SELECT table_name, column_name "
+                    + "FROM information_schema.columns "
+                    + "WHERE table_schema = '"
+                    + schemaName
+                    + "'"))
         .skippingTypesCheck()
         .containsAll(
             "SELECT * FROM (VALUES '"
@@ -770,14 +766,14 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     // information_schema.columns with table_name filter
     assertThat(
-        query(
-            "SELECT table_name, column_name "
-                + "FROM information_schema.columns "
-                + "WHERE table_schema = '"
-                + schemaName
-                + "' and table_name = '"
-                + testView
-                + "'"))
+            query(
+                "SELECT table_name, column_name "
+                    + "FROM information_schema.columns "
+                    + "WHERE table_schema = '"
+                    + schemaName
+                    + "' and table_name = '"
+                    + testView
+                    + "'"))
         .skippingTypesCheck()
         .containsAll(
             "SELECT * FROM (VALUES '"
@@ -787,10 +783,10 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     // view-specific listings
     assertThat(
-        query(
-            "SELECT table_name FROM information_schema.views WHERE table_schema = '"
-                + schemaName
-                + "'"))
+            query(
+                "SELECT table_name FROM information_schema.views WHERE table_schema = '"
+                    + schemaName
+                    + "'"))
         .skippingTypesCheck()
         .containsAll("VALUES '" + testView + "'");
 
@@ -807,12 +803,12 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     // system.jdbc.columns with schema filter
     assertThat(
-        query(
-            "SELECT table_schem, table_name, column_name "
-                + "FROM system.jdbc.columns "
-                + "WHERE table_schem LIKE '%"
-                + schemaName
-                + "%'"))
+            query(
+                "SELECT table_schem, table_name, column_name "
+                    + "FROM system.jdbc.columns "
+                    + "WHERE table_schem LIKE '%"
+                    + schemaName
+                    + "%'"))
         .skippingTypesCheck()
         .containsAll(
             "SELECT * FROM (VALUES ('"
@@ -824,12 +820,12 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     // system.jdbc.columns with table filter
     assertThat(
-        query(
-            "SELECT table_schem, table_name, column_name "
-                + "FROM system.jdbc.columns "
-                + "WHERE table_name LIKE '%"
-                + testView
-                + "%'"))
+            query(
+                "SELECT table_schem, table_name, column_name "
+                    + "FROM system.jdbc.columns "
+                    + "WHERE table_name LIKE '%"
+                    + testView
+                    + "%'"))
         .skippingTypesCheck()
         .containsAll(
             "SELECT * FROM (VALUES ('"
@@ -892,14 +888,14 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
         computeActual("SHOW CREATE MATERIALIZED VIEW " + viewWithComment);
     assertThat((String) materializedRows.getOnlyValue()).contains("COMMENT 'mv_comment'");
     assertThat(
-        query(
-            "SELECT table_name, comment FROM system.metadata.table_comments "
-                + "WHERE catalog_name = '"
-                + view.getCatalogName()
-                + "' AND "
-                + "schema_name = '"
-                + view.getSchemaName()
-                + "'"))
+            query(
+                "SELECT table_name, comment FROM system.metadata.table_comments "
+                    + "WHERE catalog_name = '"
+                    + view.getCatalogName()
+                    + "' AND "
+                    + "schema_name = '"
+                    + view.getSchemaName()
+                    + "'"))
         .skippingTypesCheck()
         .containsAll(
             "VALUES ('"
@@ -920,11 +916,11 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
         .containsAll("VALUES '" + view.getObjectName() + "'");
     // information_schema.tables without table_name filter
     assertThat(
-        query(
-            "SELECT table_name, table_type FROM information_schema.tables "
-                + "WHERE table_schema = '"
-                + view.getSchemaName()
-                + "'"))
+            query(
+                "SELECT table_name, table_type FROM information_schema.tables "
+                    + "WHERE table_schema = '"
+                    + view.getSchemaName()
+                    + "'"))
         .skippingTypesCheck()
         .containsAll(
             "VALUES ('"
@@ -974,12 +970,12 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     // information_schema.columns without table_name filter
     assertThat(
-        query(
-            "SELECT table_name, column_name "
-                + "FROM information_schema.columns "
-                + "WHERE table_schema = '"
-                + view.getSchemaName()
-                + "'"))
+            query(
+                "SELECT table_name, column_name "
+                    + "FROM information_schema.columns "
+                    + "WHERE table_schema = '"
+                    + view.getSchemaName()
+                    + "'"))
         .skippingTypesCheck()
         .containsAll(
             "SELECT * FROM (VALUES '"
@@ -989,14 +985,14 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     // information_schema.columns with table_name filter
     assertThat(
-        query(
-            "SELECT table_name, column_name "
-                + "FROM information_schema.columns "
-                + "WHERE table_schema = '"
-                + view.getSchemaName()
-                + "' and table_name = '"
-                + view.getObjectName()
-                + "'"))
+            query(
+                "SELECT table_name, column_name "
+                    + "FROM information_schema.columns "
+                    + "WHERE table_schema = '"
+                    + view.getSchemaName()
+                    + "' and table_name = '"
+                    + view.getObjectName()
+                    + "'"))
         .skippingTypesCheck()
         .containsAll(
             "SELECT * FROM (VALUES '"
@@ -1020,12 +1016,12 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     // system.jdbc.columns with schema filter
     assertThat(
-        query(
-            "SELECT table_schem, table_name, column_name "
-                + "FROM system.jdbc.columns "
-                + "WHERE table_schem LIKE '%"
-                + view.getSchemaName()
-                + "%'"))
+            query(
+                "SELECT table_schem, table_name, column_name "
+                    + "FROM system.jdbc.columns "
+                    + "WHERE table_schem LIKE '%"
+                    + view.getSchemaName()
+                    + "%'"))
         .skippingTypesCheck()
         .containsAll(
             "SELECT * FROM (VALUES ('"
@@ -1037,12 +1033,12 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     // system.jdbc.columns with table filter
     assertThat(
-        query(
-            "SELECT table_schem, table_name, column_name "
-                + "FROM system.jdbc.columns "
-                + "WHERE table_name LIKE '%"
-                + view.getObjectName()
-                + "%'"))
+            query(
+                "SELECT table_schem, table_name, column_name "
+                    + "FROM system.jdbc.columns "
+                    + "WHERE table_name LIKE '%"
+                    + view.getObjectName()
+                    + "%'"))
         .skippingTypesCheck()
         .containsAll(
             "SELECT * FROM (VALUES ('"
@@ -1074,19 +1070,19 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
         .containsAll(getTestingMaterializedViewsResultRows(view, otherView));
 
     assertThat(
-        query(
-            listMaterializedViewsSql(
-                "catalog_name = '" + otherView.getCatalogName() + "'",
-                "schema_name = '" + otherView.getSchemaName() + "'")))
+            query(
+                listMaterializedViewsSql(
+                    "catalog_name = '" + otherView.getCatalogName() + "'",
+                    "schema_name = '" + otherView.getSchemaName() + "'")))
         .skippingTypesCheck()
         .containsAll(getTestingMaterializedViewsResultRow(otherView, "sarcastic comment"));
 
     assertThat(
-        query(
-            listMaterializedViewsSql(
-                "catalog_name = '" + view.getCatalogName() + "'",
-                "schema_name = '" + view.getSchemaName() + "'",
-                "name = '" + view.getObjectName() + "'")))
+            query(
+                listMaterializedViewsSql(
+                    "catalog_name = '" + view.getCatalogName() + "'",
+                    "schema_name = '" + view.getSchemaName() + "'",
+                    "name = '" + view.getObjectName() + "'")))
         .skippingTypesCheck()
         .containsAll(getTestingMaterializedViewsResultRow(view, ""));
 
@@ -1101,9 +1097,9 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     // verify write in transaction
     if (!hasBehavior(SUPPORTS_MULTI_STATEMENT_WRITES)) {
       assertThatThrownBy(
-          () ->
-              inTransaction(
-                  session -> computeActual(session, "REFRESH MATERIALIZED VIEW " + view)))
+              () ->
+                  inTransaction(
+                      session -> computeActual(session, "REFRESH MATERIALIZED VIEW " + view)))
           .hasMessageMatching("Catalog only supports writes using autocommit: \\w+");
     }
 
@@ -1227,13 +1223,13 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     // test SHOW CREATE VIEW
     String expectedSql =
         formatSqlText(
-            format(
-                "CREATE VIEW %s.%s.%s SECURITY %s AS %s",
-                getSession().getCatalog().get(),
-                getSession().getSchema().get(),
-                viewName,
-                securityClauseInShowCreate,
-                query))
+                format(
+                    "CREATE VIEW %s.%s.%s SECURITY %s AS %s",
+                    getSession().getCatalog().get(),
+                    getSession().getSchema().get(),
+                    viewName,
+                    securityClauseInShowCreate,
+                    query))
             .trim();
 
     actual = computeActual("SHOW CREATE VIEW " + viewName);
@@ -1253,10 +1249,10 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
   @DataProvider
   public static Object[][] testViewMetadataDataProvider() {
-    return new Object[][]{
-        {"", "DEFINER"},
-        {" SECURITY DEFINER", "DEFINER"},
-        {" SECURITY INVOKER", "INVOKER"},
+    return new Object[][] {
+      {"", "DEFINER"},
+      {" SECURITY DEFINER", "DEFINER"},
+      {" SECURITY INVOKER", "INVOKER"},
     };
   }
 
@@ -1485,10 +1481,10 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     // TODO: actually it is not the cased now hence overridable
     // `checkInformationSchemaViewsForMaterializedView`
     assertThat(
-        query(
-            "SELECT table_name FROM information_schema.views WHERE table_schema = '"
-                + schemaName
-                + "'"))
+            query(
+                "SELECT table_name FROM information_schema.views WHERE table_schema = '"
+                    + schemaName
+                    + "'"))
         .skippingTypesCheck()
         .containsAll("VALUES '" + regularViewName + "'");
     checkInformationSchemaViewsForMaterializedView(schemaName, materializedViewName);
@@ -1505,10 +1501,10 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
   protected void checkInformationSchemaViewsForMaterializedView(
       String schemaName, String viewName) {
     assertThat(
-        query(
-            "SELECT table_name FROM information_schema.views WHERE table_schema = '"
-                + schemaName
-                + "'"))
+            query(
+                "SELECT table_name FROM information_schema.views WHERE table_schema = '"
+                    + schemaName
+                    + "'"))
         .skippingTypesCheck()
         .containsAll("VALUES '" + viewName + "'");
   }
@@ -1910,13 +1906,13 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
             + "' AND table_name LIKE '_rder_'",
         ordersTableWithColumns);
     assertThat(
-        query(
-            "SELECT table_name, column_name FROM information_schema.columns "
-                + "WHERE table_catalog = '"
-                + catalog
-                + "' AND table_schema = '"
-                + schema
-                + "' AND table_name LIKE '%orders%'"))
+            query(
+                "SELECT table_name, column_name FROM information_schema.columns "
+                    + "WHERE table_catalog = '"
+                    + catalog
+                    + "' AND table_schema = '"
+                    + schema
+                    + "' AND table_name LIKE '%orders%'"))
         .skippingTypesCheck()
         .containsAll(ordersTableWithColumns);
 
@@ -1997,19 +1993,18 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     computeActual(format("CREATE TABLE %s (x int)", table));
 
     assertThatThrownBy(
-        () ->
-            inTransaction(
-                session -> {
-                  assertUpdate(session, format("INSERT INTO %s VALUES (42)", table), 1);
-                  throw new RollbackException();
-                }))
+            () ->
+                inTransaction(
+                    session -> {
+                      assertUpdate(session, format("INSERT INTO %s VALUES (42)", table), 1);
+                      throw new RollbackException();
+                    }))
         .isInstanceOf(RollbackException.class);
 
     assertQuery(format("SELECT count(*) FROM %s", table), "SELECT 0");
   }
 
-  private static class RollbackException extends RuntimeException {
-  }
+  private static class RollbackException extends RuntimeException {}
 
   @Test
   public void testWriteNotAllowedInTransaction() {
@@ -2078,8 +2073,8 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     String tableName;
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute, "test_add_column_", tableDefinitionForAddColumn())) {
+        new TestTable(
+            getQueryRunner()::execute, "test_add_column_", tableDefinitionForAddColumn())) {
       tableName = table.getName();
       assertUpdate("INSERT INTO " + table.getName() + " SELECT 'first'", 1);
       assertQueryFails(
@@ -2118,9 +2113,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     assertFalse(getQueryRunner().tableExists(getSession(), tableName));
   }
 
-  /**
-   * The table must have one column 'x' of varchar type.
-   */
+  /** The table must have one column 'x' of varchar type. */
   protected String tableDefinitionForAddColumn() {
     return "(x VARCHAR)";
   }
@@ -2139,7 +2132,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     }
 
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_add_col_desc_", "(a_varchar varchar)")) {
+        new TestTable(getQueryRunner()::execute, "test_add_col_desc_", "(a_varchar varchar)")) {
       String tableName = table.getName();
 
       assertUpdate(
@@ -2166,8 +2159,8 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     String tableName;
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute, "test_drop_column_", "AS SELECT 123 x, 456 y, 111 a")) {
+        new TestTable(
+            getQueryRunner()::execute, "test_drop_column_", "AS SELECT 123 x, 456 y, 111 a")) {
       tableName = table.getName();
       assertUpdate("ALTER TABLE " + tableName + " DROP COLUMN x");
       assertUpdate("ALTER TABLE " + tableName + " DROP COLUMN IF EXISTS y");
@@ -2199,8 +2192,8 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     String tableName;
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute, "test_rename_column_", "AS SELECT 'some value' x")) {
+        new TestTable(
+            getQueryRunner()::execute, "test_rename_column_", "AS SELECT 'some value' x")) {
       tableName = table.getName();
       assertUpdate("ALTER TABLE " + tableName + " RENAME COLUMN x TO before_y");
       assertUpdate("ALTER TABLE " + tableName + " RENAME COLUMN IF EXISTS before_y TO y");
@@ -2483,7 +2476,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     assertQuery(
         "SELECT x FROM "
             + uppercaseName.toLowerCase(
-            ENGLISH), // Ensure select allows for lower-case, not delimited identifier
+                ENGLISH), // Ensure select allows for lower-case, not delimited identifier
         "VALUES 123");
 
     assertUpdate("DROP TABLE " + uppercaseName);
@@ -2574,7 +2567,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     String catalogName = getSession().getCatalog().orElseThrow();
     String schemaName = getSession().getSchema().orElseThrow();
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_comment_", "(a integer)")) {
+        new TestTable(getQueryRunner()::execute, "test_comment_", "(a integer)")) {
       // comment set
       assertUpdate("COMMENT ON TABLE " + table.getName() + " IS 'new comment'");
       assertThat((String) computeActual("SHOW CREATE TABLE " + table.getName()).getOnlyValue())
@@ -2582,14 +2575,14 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
       assertThat(getTableComment(catalogName, schemaName, table.getName()))
           .isEqualTo("new comment");
       assertThat(
-          query(
-              "SELECT table_name, comment FROM system.metadata.table_comments "
-                  + "WHERE catalog_name = '"
-                  + catalogName
-                  + "' AND "
-                  + "schema_name = '"
-                  + schemaName
-                  + "'"))
+              query(
+                  "SELECT table_name, comment FROM system.metadata.table_comments "
+                      + "WHERE catalog_name = '"
+                      + catalogName
+                      + "' AND "
+                      + "schema_name = '"
+                      + schemaName
+                      + "'"))
           .skippingTypesCheck()
           .containsAll("VALUES ('" + table.getName() + "', 'new comment')");
 
@@ -2639,7 +2632,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     }
 
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_comment_column_", "(a integer)")) {
+        new TestTable(getQueryRunner()::execute, "test_comment_column_", "(a integer)")) {
       // comment set
       assertUpdate("COMMENT ON COLUMN " + table.getName() + ".a IS 'new comment'");
       assertThat((String) computeActual("SHOW CREATE TABLE " + table.getName()).getOnlyValue())
@@ -2689,7 +2682,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     String query = "SELECT phone, custkey, acctbal FROM customer";
 
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_insert_", "AS " + query + " WITH NO DATA")) {
+        new TestTable(getQueryRunner()::execute, "test_insert_", "AS " + query + " WITH NO DATA")) {
       assertQuery("SELECT count(*) FROM " + table.getName(), "SELECT 0");
 
       assertUpdate("INSERT INTO " + table.getName() + " " + query, "SELECT count(*) FROM customer");
@@ -2759,7 +2752,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     skipTestUnless(hasBehavior(SUPPORTS_INSERT));
 
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_insert_unicode_", "(test varchar(50))")) {
+        new TestTable(getQueryRunner()::execute, "test_insert_unicode_", "(test varchar(50))")) {
       assertUpdate(
           "INSERT INTO "
               + table.getName()
@@ -2770,7 +2763,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     }
 
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_insert_unicode_", "(test varchar(50))")) {
+        new TestTable(getQueryRunner()::execute, "test_insert_unicode_", "(test varchar(50))")) {
       assertUpdate("INSERT INTO " + table.getName() + "(test) VALUES 'aa', 'bé'", 2);
       assertQuery("SELECT test FROM " + table.getName(), "VALUES 'aa', 'bé'");
       assertQuery("SELECT test FROM " + table.getName() + " WHERE test = 'aa'", "VALUES 'aa'");
@@ -2780,7 +2773,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     }
 
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_insert_unicode_", "(test varchar(50))")) {
+        new TestTable(getQueryRunner()::execute, "test_insert_unicode_", "(test varchar(50))")) {
       assertUpdate("INSERT INTO " + table.getName() + "(test) VALUES 'a', 'é'", 2);
       assertQuery("SELECT test FROM " + table.getName(), "VALUES 'a', 'é'");
       assertQuery("SELECT test FROM " + table.getName() + " WHERE test = 'a'", "VALUES 'a'");
@@ -2795,7 +2788,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     skipTestUnless(hasBehavior(SUPPORTS_INSERT));
 
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_insert_unicode_", "(test varchar(50))")) {
+        new TestTable(getQueryRunner()::execute, "test_insert_unicode_", "(test varchar(50))")) {
       assertUpdate(
           "INSERT INTO "
               + table.getName()
@@ -2819,10 +2812,10 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     }
 
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute,
-                 "test_insert_array_",
-                 "(a ARRAY<DOUBLE>, b ARRAY<BIGINT>)")) {
+        new TestTable(
+            getQueryRunner()::execute,
+            "test_insert_array_",
+            "(a ARRAY<DOUBLE>, b ARRAY<BIGINT>)")) {
       assertUpdate("INSERT INTO " + table.getName() + " (a) VALUES (ARRAY[null])", 1);
       assertUpdate(
           "INSERT INTO " + table.getName() + " (a, b) VALUES (ARRAY[1.23E1], ARRAY[1.23E1])", 1);
@@ -2893,8 +2886,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
         query,
         queryStats ->
             assertThat(queryStats.getPhysicalWrittenDataSize().toBytes()).isGreaterThan(0L),
-        results -> {
-        });
+        results -> {});
   }
 
   @Test
@@ -2911,10 +2903,10 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     }
 
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute,
-                 "insert_not_null",
-                 "(nullable_col INTEGER, not_null_col INTEGER NOT NULL)")) {
+        new TestTable(
+            getQueryRunner()::execute,
+            "insert_not_null",
+            "(nullable_col INTEGER, not_null_col INTEGER NOT NULL)")) {
       assertUpdate(format("INSERT INTO %s (not_null_col) VALUES (2)", table.getName()), 1);
       assertQuery("SELECT * FROM " + table.getName(), "VALUES (NULL, 2)");
       // The error message comes from remote databases when
@@ -2925,10 +2917,10 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     }
 
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute,
-                 "commuted_not_null",
-                 "(nullable_col BIGINT, not_null_col BIGINT NOT NULL)")) {
+        new TestTable(
+            getQueryRunner()::execute,
+            "commuted_not_null",
+            "(nullable_col BIGINT, not_null_col BIGINT NOT NULL)")) {
       assertUpdate(format("INSERT INTO %s (not_null_col) VALUES (2)", table.getName()), 1);
       assertQuery("SELECT * FROM " + table.getName(), "VALUES (NULL, 2)");
       // This is enforced by the engine and not the connector
@@ -2951,7 +2943,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
             SUPPORTS_MULTI_STATEMENT_WRITES)); // covered by testWriteNotAllowedInTransaction
 
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_tx_insert", "(a bigint)")) {
+        new TestTable(getQueryRunner()::execute, "test_tx_insert", "(a bigint)")) {
       String tableName = table.getName();
       inTransaction(session -> assertUpdate(session, "INSERT INTO " + tableName + " VALUES 42", 1));
       assertQuery("TABLE " + tableName, "VALUES 42");
@@ -2964,7 +2956,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     // delete successive parts of the table
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_delete_", "AS SELECT * FROM orders")) {
+        new TestTable(getQueryRunner()::execute, "test_delete_", "AS SELECT * FROM orders")) {
       assertUpdate(
           "DELETE FROM " + table.getName() + " WHERE custkey <= 100",
           "SELECT count(*) FROM orders WHERE custkey <= 100");
@@ -2983,13 +2975,13 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
 
     // delete without matching any rows
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_delete_", "AS SELECT * FROM orders")) {
+        new TestTable(getQueryRunner()::execute, "test_delete_", "AS SELECT * FROM orders")) {
       assertUpdate("DELETE FROM " + table.getName() + " WHERE orderkey < 0", 0);
     }
 
     // delete with a predicate that optimizes to false
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_delete_", "AS SELECT * FROM orders")) {
+        new TestTable(getQueryRunner()::execute, "test_delete_", "AS SELECT * FROM orders")) {
       assertUpdate("DELETE FROM " + table.getName() + " WHERE orderkey > 5 AND orderkey < 4", 0);
     }
 
@@ -3020,7 +3012,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     skipTestUnless(hasBehavior(SUPPORTS_DELETE));
 
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_with_like_", "AS SELECT * FROM nation")) {
+        new TestTable(getQueryRunner()::execute, "test_with_like_", "AS SELECT * FROM nation")) {
       assertUpdate("DELETE FROM " + table.getName() + " WHERE name LIKE '%a%'", "VALUES 0");
       assertUpdate(
           "DELETE FROM " + table.getName() + " WHERE name LIKE '%A%'",
@@ -3035,8 +3027,8 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     // TODO (https://github.com/trinodb/trino/issues/5901) Use longer table name once Oracle version
     // is updated
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute, "test_delete_complex_", "AS SELECT * FROM orders")) {
+        new TestTable(
+            getQueryRunner()::execute, "test_delete_complex_", "AS SELECT * FROM orders")) {
       // delete half the table, then delete the rest
       assertUpdate(
           "DELETE FROM " + table.getName() + " WHERE orderkey % 2 = 0",
@@ -3059,8 +3051,8 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     // TODO (https://github.com/trinodb/trino/issues/5901) Use longer table name once Oracle version
     // is updated
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute, "test_delete_subquery", "AS SELECT * FROM nation")) {
+        new TestTable(
+            getQueryRunner()::execute, "test_delete_subquery", "AS SELECT * FROM nation")) {
       // delete using a subquery
       assertUpdate(
           "DELETE FROM "
@@ -3075,8 +3067,8 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     // TODO (https://github.com/trinodb/trino/issues/5901) Use longer table name once Oracle version
     // is updated
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute, "test_delete_subquery", "AS SELECT * FROM orders")) {
+        new TestTable(
+            getQueryRunner()::execute, "test_delete_subquery", "AS SELECT * FROM orders")) {
       // delete using a scalar and EXISTS subquery
       assertUpdate(
           "DELETE FROM "
@@ -3118,8 +3110,8 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     // TODO (https://github.com/trinodb/trino/issues/5901) Use longer table name once Oracle version
     // is updated
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute, "test_delete_semijoin", "AS SELECT * FROM nation")) {
+        new TestTable(
+            getQueryRunner()::execute, "test_delete_semijoin", "AS SELECT * FROM nation")) {
       // delete with multiple SemiJoin
       assertUpdate(
           "DELETE FROM "
@@ -3138,8 +3130,8 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     // TODO (https://github.com/trinodb/trino/issues/5901) Use longer table name once Oracle version
     // is updated
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute, "test_delete_semijoin", "AS SELECT * FROM orders")) {
+        new TestTable(
+            getQueryRunner()::execute, "test_delete_semijoin", "AS SELECT * FROM orders")) {
       // delete with SemiJoin null handling
       assertUpdate(
           "DELETE FROM "
@@ -3160,10 +3152,10 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     skipTestUnless(hasBehavior(SUPPORTS_DELETE));
 
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute,
-                 "test_delete_with_varchar_predicate_",
-                 "AS SELECT * FROM orders")) {
+        new TestTable(
+            getQueryRunner()::execute,
+            "test_delete_with_varchar_predicate_",
+            "AS SELECT * FROM orders")) {
       assertUpdate(
           "DELETE FROM " + table.getName() + " WHERE orderstatus = 'O'",
           "SELECT count(*) FROM orders WHERE orderstatus = 'O'");
@@ -3176,8 +3168,8 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
   public void testDeleteAllDataFromTable() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE) && hasBehavior(SUPPORTS_DELETE));
     try (TestTable table =
-             new TestTable(
-                 getQueryRunner()::execute, "test_delete_all_data", "AS SELECT * FROM region")) {
+        new TestTable(
+            getQueryRunner()::execute, "test_delete_all_data", "AS SELECT * FROM region")) {
       // not using assertUpdate as some connectors provide update count and some not
       getQueryRunner().execute("DELETE FROM " + table.getName());
       assertQuery("SELECT count(*) FROM " + table.getName(), "VALUES 0");
@@ -3190,7 +3182,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     // TODO (https://github.com/trinodb/trino/issues/5901) Use longer table name once Oracle version
     // is updated
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_row_delete", "AS SELECT * FROM region")) {
+        new TestTable(getQueryRunner()::execute, "test_row_delete", "AS SELECT * FROM region")) {
       assertUpdate("DELETE FROM " + table.getName() + " WHERE regionkey = 2", 1);
       assertQuery("SELECT count(*) FROM " + table.getName(), "VALUES 4");
     }
@@ -3207,7 +3199,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     }
 
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_update", "AS TABLE tpch.tiny.nation")) {
+        new TestTable(getQueryRunner()::execute, "test_update", "AS TABLE tpch.tiny.nation")) {
       String tableName = table.getName();
       assertUpdate(
           "UPDATE " + tableName + " SET nationkey = 100 + nationkey WHERE regionkey = 2", 5);
@@ -3260,7 +3252,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
 
     try (TestTable table =
-             new TestTable(getQueryRunner()::execute, "test_truncate", "AS SELECT * FROM region")) {
+        new TestTable(getQueryRunner()::execute, "test_truncate", "AS SELECT * FROM region")) {
       assertUpdate("TRUNCATE TABLE " + table.getName());
       assertQuery("SELECT count(*) FROM " + table.getName(), "VALUES 0");
     }
@@ -3319,9 +3311,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
         });
   }
 
-  /**
-   * The table must have two columns foo_1 and foo_2_4 of any type.
-   */
+  /** The table must have two columns foo_1 and foo_2_4 of any type. */
   @Language("SQL")
   protected String tableDefinitionForQueryLoggingCount() {
     return "(foo_1 int, foo_2_4 int)";

@@ -18,6 +18,13 @@
 
 package com.netease.arctic.trino;
 
+import static io.trino.spi.connector.ConnectorCapabilities.NOT_NULL_COLUMN_CONSTRAINT;
+import static io.trino.spi.transaction.IsolationLevel.SERIALIZABLE;
+import static io.trino.spi.transaction.IsolationLevel.checkConnectorSupports;
+import static java.util.Objects.requireNonNull;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
+import static org.apache.iceberg.relocated.com.google.common.collect.Sets.immutableEnumSet;
+
 import io.airlift.bootstrap.LifeCycleManager;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorMetadata;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
@@ -42,20 +49,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static io.trino.spi.connector.ConnectorCapabilities.NOT_NULL_COLUMN_CONSTRAINT;
-import static io.trino.spi.transaction.IsolationLevel.SERIALIZABLE;
-import static io.trino.spi.transaction.IsolationLevel.checkConnectorSupports;
-import static java.util.Objects.requireNonNull;
-import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
-import static org.apache.iceberg.relocated.com.google.common.collect.Sets.immutableEnumSet;
-
-/**
- * A Connector of arctic to Trino
- */
+/** A Connector of arctic to Trino */
 public class ArcticConnector implements Connector {
 
   private static final Logger log = LoggerFactory.getLogger(ArcticConnector.class);

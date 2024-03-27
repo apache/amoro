@@ -18,6 +18,8 @@
 
 package com.netease.arctic.trino.unkeyed;
 
+import static java.util.Objects.requireNonNull;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.airlift.units.DataSize;
@@ -34,8 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import static java.util.Objects.requireNonNull;
 
 public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
 
