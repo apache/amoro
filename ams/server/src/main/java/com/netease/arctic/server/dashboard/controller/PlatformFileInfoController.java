@@ -20,6 +20,7 @@ package com.netease.arctic.server.dashboard.controller;
 
 import com.google.common.base.Preconditions;
 import com.netease.arctic.server.dashboard.PlatformFileManager;
+import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import io.javalin.http.Context;
 import org.apache.commons.io.IOUtils;
@@ -55,7 +56,8 @@ public class PlatformFileInfoController {
         configuration.addResource(new ByteArrayInputStream(bytes));
         configuration.setDeprecatedProperties();
       } catch (Exception e) {
-        throw new IllegalArgumentException("Uploaded file is not in valid XML format");
+        ctx.json(new ErrorResponse("Uploaded file is not in valid XML format"));
+        return;
       }
     }
     String content = Base64.getEncoder().encodeToString(bytes);
