@@ -14,19 +14,23 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG FLINK_VERSION=1.14
+ARG FLINK_VERSION=1.18.1-java8
 
 FROM flink:${FLINK_VERSION}
 
 ARG MAVEN_MIRROR=https://repo.maven.apache.org/maven2
 ARG OPTIMIZER_JOB=optimizer-job.jar
+ARG AWS_VERSION=2.24.12
 
-RUN cd $FLINK_HOME/lib \
-    && wget ${MAVEN_MIRROR}/software/amazon/awssdk/bundle/2.20.5/bundle-2.20.5.jar \
-    && wget ${MAVEN_MIRROR}/software/amazon/awssdk/url-connection-client/2.20.5/url-connection-client-2.20.5.jar \
-    && wget ${MAVEN_MIRROR}/org/apache/flink/flink-shaded-hadoop-2-uber/2.8.3-10.0/flink-shaded-hadoop-2-uber-2.8.3-10.0.jar \
-    && chown flink:flink *.jar \
-    && mkdir -p $FLINK_HOME/usrlib
+WORKDIR $FLINK_HOME/lib
 
-ADD $OPTIMIZER_JOB $FLINK_HOME/usrlib/optimizer-job.jar
+RUN wget ${MAVEN_MIRROR}/software/amazon/awssdk/bundle/${AWS_VERSION}/bundle-${AWS_VERSION}.jar \
+ && wget ${MAVEN_MIRROR}/software/amazon/awssdk/url-connection-client/${AWS_VERSION}/url-connection-client-${AWS_VERSION}.jar \
+ && wget ${MAVEN_MIRROR}/org/apache/flink/flink-shaded-hadoop-2-uber/2.8.3-10.0/flink-shaded-hadoop-2-uber-2.8.3-10.0.jar \
+ && chown flink:flink *.jar \
+ && mkdir -p $FLINK_HOME/usrlib
+
+COPY $OPTIMIZER_JOB $FLINK_HOME/usrlib/optimizer-job.jar
+
+WORKDIR /
 
