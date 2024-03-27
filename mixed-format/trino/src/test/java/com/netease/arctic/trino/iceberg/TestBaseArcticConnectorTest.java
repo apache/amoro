@@ -18,6 +18,7 @@
 
 package com.netease.arctic.trino.iceberg;
 
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static io.trino.SystemSessionProperties.PREFERRED_WRITE_PARTITIONING_MIN_NUMBER_OF_PARTITIONS;
 import static io.trino.SystemSessionProperties.SCALE_WRITERS;
 import static io.trino.plugin.iceberg.IcebergFileFormat.AVRO;
@@ -49,7 +50,6 @@ import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableLi
 import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap.toImmutableMap;
 import static org.apache.iceberg.relocated.com.google.common.collect.Iterables.concat;
 import static org.apache.iceberg.relocated.com.google.common.collect.Iterables.getOnlyElement;
-import static org.apache.iceberg.relocated.com.google.common.collect.MoreCollectors.onlyElement;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testng.Assert.assertFalse;

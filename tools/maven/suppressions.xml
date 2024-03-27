@@ -194,8 +194,13 @@ under the License.
 		<suppress
 			files="com/netease/arctic/api/config/ConfigHelpers\.java"
 			checks="Regexp"/>
+                <!-- BaseConnectorTest and TestBaseArcticConnectorTest can be replace by shaded guava
+                      because the shaded guava version is too low -->
 		<suppress
 			files="com/netease/arctic/trino/iceberg/BaseConnectorTest.java"
-			checks="FileLength"/>
+			checks=".*"/>
+                <suppress
+                        files="com/netease/arctic/trino/iceberg/TestBaseArcticConnectorTest.java"
+                        checks="IllegalImport"/>
 
 </suppressions>

@@ -80,6 +80,7 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import io.airlift.units.Duration;
 import io.trino.Session;
 import io.trino.connector.CatalogName;
@@ -106,7 +107,6 @@ import org.apache.iceberg.relocated.com.google.common.base.Stopwatch;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
-import org.apache.iceberg.relocated.com.google.common.util.concurrent.UncheckedTimeoutException;
 import org.intellij.lang.annotations.Language;
 import org.testng.Assert;
 import org.testng.SkipException;
