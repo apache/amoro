@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 /** The {@code SparkOptimizer} acts as an entrypoint of the spark program */
 public class SparkOptimizer extends Optimizer {
   private static final Logger LOG = LoggerFactory.getLogger(SparkOptimizer.class);
-  private static final String APP_NAME_FORMAT = "amoro-spark-optimizer-%s-%s";
+  private static final String APP_NAME_FORMAT = "amoro-spark-optimizer-%s";
 
   public SparkOptimizer(OptimizerConfig config, JavaSparkContext jsc) {
     super(
@@ -44,7 +44,7 @@ public class SparkOptimizer extends Optimizer {
     OptimizerConfig config = new OptimizerConfig(args);
     SparkSession spark =
         SparkSession.builder()
-            .appName(String.format(APP_NAME_FORMAT, config.getGroupName(), config.getResourceId()))
+            .appName(String.format(APP_NAME_FORMAT, config.getResourceId()))
             .getOrCreate();
     JavaSparkContext jsc = new JavaSparkContext(spark.sparkContext());
     if (!jsc.getConf().getBoolean("spark.dynamicAllocation.enabled", false)) {
