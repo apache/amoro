@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 public class FlinkOptimizer extends Optimizer {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkOptimizer.class);
 
-  private static final String JOB_NAME = "amoro-flink-optimizer";
+  private static final String JOB_NAME_FORMAT = "amoro-flink-optimizer-%s-%s";
 
   public FlinkOptimizer(OptimizerConfig config) {
     super(config, () -> new OptimizerToucher(config), (i) -> new FlinkOptimizerExecutor(config, i));
@@ -64,7 +64,9 @@ public class FlinkOptimizer extends Optimizer {
         .setParallelism(1);
 
     try {
-      env.execute(JOB_NAME);
+      env.execute(
+          String.format(
+              JOB_NAME_FORMAT, optimizerConfig.getGroupName(), optimizerConfig.getResourceId()));
     } catch (Exception e) {
       LOG.error("Execute flink optimizer failed", e);
     }
