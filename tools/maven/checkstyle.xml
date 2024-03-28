@@ -106,10 +106,10 @@ This file is based on the checkstyle file of Apache Beam.
         -->
 
         <module name="IllegalImport">
-                    <property name="illegalPkgs" value="com.google.common"/>
-                    <message key="import.illegal" value="{0}; Use iceberg-shaded-guava instead."/>
+            <property name="illegalPkgs" value="com.google.common"/>
+            <message key="import.illegal" value="{0}; Use iceberg-shaded-guava instead."/>
         </module>
-        
+
         <module name="Regexp">
             <property name="format" value="import com\.fasterxml\.jackson"/>
             <property name="illegalPattern" value="true"/>
