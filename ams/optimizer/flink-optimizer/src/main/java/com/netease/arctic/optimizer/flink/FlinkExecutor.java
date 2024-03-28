@@ -51,8 +51,12 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
         getRuntimeContext().getTaskManagerRuntimeInfo().getConfiguration().getString(HA_CLUSTER_ID);
     executor = (FlinkOptimizerExecutor) allExecutors[subTaskIndex];
     // set optimizer flink runtime info, including application_id, tm_id, host
-    executor.addRuntimeContext("application_id", applicationId);
-    executor.addRuntimeContext("tm_id", taskManagerId);
+    if (applicationId != null) {
+      executor.addRuntimeContext("application_id", applicationId);
+    }
+    if (taskManagerId != null) {
+      executor.addRuntimeContext("tm_id", taskManagerId);
+    }
     // add label optimize_group;
     getMetricGroup().getAllVariables().put("<optimizer_group>", optimizeGroupName);
     executor.initOperatorMetric(getMetricGroup());
