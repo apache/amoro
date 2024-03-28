@@ -46,7 +46,7 @@ public class TestStatedPersistentBase {
   public void testStateField() throws Throwable {
     ExtendedPersistency proxy = new ExtendedPersistency();
     try {
-      proxy.invokeConsisitency(
+      proxy.invokeConsistency(
           () -> {
             proxy.stringState = "test";
             proxy.intState = 42;
@@ -64,7 +64,7 @@ public class TestStatedPersistentBase {
   public void testNormalField() throws Throwable {
     ExtendedPersistency proxy = new ExtendedPersistency();
     try {
-      proxy.invokeConsisitency(
+      proxy.invokeConsistency(
           () -> {
             proxy.booleanField = true;
             proxy.longField = 123456789L;

@@ -44,7 +44,7 @@ public abstract class StatedPersistentBase extends PersistentBase {
     consistentFields = getOrCreateConsistentFields();
   }
 
-  protected final void invokeConsisitency(Runnable runnable) {
+  protected final void invokeConsistency(Runnable runnable) {
     stateLock.lock();
     Map<Field, Object> states = retainStates();
     try {
@@ -57,7 +57,7 @@ public abstract class StatedPersistentBase extends PersistentBase {
     }
   }
 
-  protected final <T> T invokeConsisitency(Supplier<T> supplier) {
+  protected final <T> T invokeConsistency(Supplier<T> supplier) {
     stateLock.lock();
     Map<Field, Object> states = retainStates();
     try {
