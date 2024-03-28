@@ -64,9 +64,7 @@ public class FlinkOptimizer extends Optimizer {
         .setParallelism(1);
 
     try {
-      env.execute(
-          String.format(
-              JOB_NAME_FORMAT, optimizerConfig.getResourceId()));
+      env.execute(String.format(JOB_NAME_FORMAT, optimizerConfig.getResourceId()));
     } catch (Exception e) {
       LOG.error("Execute flink optimizer failed", e);
     }
