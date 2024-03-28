@@ -22,12 +22,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.time.Period;
 
 public class TestTimeUtil {
   @Test
   public void testParse() {
     Assertions.assertEquals(Duration.ofMinutes(10), TimeUtil.parseDuration("10min"));
     Assertions.assertEquals(Duration.ofDays(3), TimeUtil.parseDuration("3d"));
+    Assertions.assertEquals(Period.ofMonths(13), TimeUtil.parsePeriod("13m"));
     Assertions.assertEquals(Duration.ofDays(13 * 30).toMillis(), TimeUtil.estimatedMills("13m"));
   }
 

@@ -144,6 +144,7 @@ public class TimeUtil {
    * <p>Supported time unit labels are:
    *
    * <ul>
+   *   <li>DAYS: "d", "day"
    *   <li>MONTHS: "m", "month"
    *   <li>YEARS: "y", "year"
    * </ul>

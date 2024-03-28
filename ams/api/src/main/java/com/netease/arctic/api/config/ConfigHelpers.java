@@ -18,7 +18,7 @@
 
 package com.netease.arctic.api.config;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
 
 import com.netease.arctic.utils.TimeUtil;
 
