@@ -319,31 +319,34 @@ public class ArcticManagementConf {
       ConfigOptions.key("terminal.backend")
           .stringType()
           .defaultValue("local")
-          .withDescription("terminal backend implement. local, kyuubi are supported");
+          .withDescription(
+              "Terminal backend implementation. local, kyuubi and custom are valid values.");
 
   public static final ConfigOption<String> TERMINAL_SESSION_FACTORY =
       ConfigOptions.key("terminal.factory")
           .stringType()
           .noDefaultValue()
-          .withDescription("session factory implement of terminal.");
+          .withDescription(
+              "Session factory implement of terminal, `terminal.backend` must be `custom` if this is set.");
 
   public static final ConfigOption<Integer> TERMINAL_RESULT_LIMIT =
       ConfigOptions.key("terminal.result.limit")
           .intType()
           .defaultValue(1000)
-          .withDescription("limit of result-set");
+          .withDescription("Row limit of result-set");
 
   public static final ConfigOption<Boolean> TERMINAL_STOP_ON_ERROR =
       ConfigOptions.key("terminal.stop-on-error")
           .booleanType()
           .defaultValue(false)
-          .withDescription("stop script execution if any statement execute failed.");
+          .withDescription(
+              "When a statement fails to execute, stop execution or continue executing the remaining statements.");
 
   public static final ConfigOption<Integer> TERMINAL_SESSION_TIMEOUT =
       ConfigOptions.key("terminal.session.timeout")
           .intType()
           .defaultValue(30)
-          .withDescription("session timeout in minute");
+          .withDescription("Session timeout in minutes.");
 
   /** configs of data expiration */
   public static final ConfigOption<Boolean> DATA_EXPIRATION_ENABLED =
