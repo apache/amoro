@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.dashboard.model;
 
+import com.netease.arctic.api.ServerTableIdentifier;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
-import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 

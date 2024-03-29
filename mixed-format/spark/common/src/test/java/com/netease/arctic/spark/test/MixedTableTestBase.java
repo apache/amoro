@@ -46,8 +46,8 @@ public class MixedTableTestBase extends SparkTestBase {
   protected static final TableFormat MIXED_HIVE = TableFormat.MIXED_HIVE;
   protected static final TableFormat MIXED_ICEBERG = TableFormat.MIXED_ICEBERG;
   protected static final TableFormat ICEBERG = TableFormat.ICEBERG;
-  protected static final PartitionSpec unpartitioned = PartitionSpec.unpartitioned();
-  protected static final PrimaryKeySpec noPrimaryKey = PrimaryKeySpec.noPrimaryKey();
+  protected static final PartitionSpec UNPARTITIONED = PartitionSpec.unpartitioned();
+  protected static final PrimaryKeySpec NO_PRIMARY_KEY = PrimaryKeySpec.noPrimaryKey();
 
   private ArcticCatalog mixedCatalog = null;
   private String currentSparkCatalog = null;
@@ -57,7 +57,7 @@ public class MixedTableTestBase extends SparkTestBase {
         mixedCatalog == null || (!currentCatalog.equals(currentSparkCatalog));
     if (reInitMixedCatalog) {
       String amsCatalogName = sparkCatalogToAMSCatalog(currentCatalog);
-      mixedCatalog = CatalogLoader.load(context.ams.getServerUrl() + "/" + amsCatalogName);
+      mixedCatalog = CatalogLoader.load(CONTEXT.ams.getServerUrl() + "/" + amsCatalogName);
       this.currentSparkCatalog = currentCatalog;
     }
     return mixedCatalog;
@@ -102,7 +102,7 @@ public class MixedTableTestBase extends SparkTestBase {
     if (TestIdentifier.SOURCE_TYPE_ARCTIC.equalsIgnoreCase(source.sourceType)) {
       catalog().dropTable(source.toArcticIdentifier(), true);
     } else if (TestIdentifier.SOURCE_TYPE_HIVE.equalsIgnoreCase(source.sourceType)) {
-      context.dropHiveTable(source.database, source.table);
+      CONTEXT.dropHiveTable(source.database, source.table);
     } else if (TestIdentifier.SOURCE_TYPE_VIEW.equalsIgnoreCase(source.sourceType)) {
       spark().sessionState().catalog().dropTempView(source.table);
     }

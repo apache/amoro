@@ -53,7 +53,7 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
 
   protected transient KeyedTable table;
   protected final ArcticTableLoader loader;
-  protected static final AtomicInteger splitCount = new AtomicInteger();
+  protected static final AtomicInteger SPLIT_COUNT = new AtomicInteger();
 
   public ContinuousSplitPlannerImpl(ArcticTableLoader loader) {
     this.loader = loader;
@@ -99,7 +99,7 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
         changeTableScan = changeTableScan.fromSequence(snapshot.sequenceNumber());
       }
 
-      List<ArcticSplit> arcticChangeSplit = planChangeTable(changeTableScan, splitCount);
+      List<ArcticSplit> arcticChangeSplit = planChangeTable(changeTableScan, SPLIT_COUNT);
       return new ContinuousEnumerationResult(
           arcticChangeSplit, lastPosition, ArcticEnumeratorOffset.of(snapshotId, null));
     }
@@ -111,7 +111,7 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
     // todo ShuffleSplitAssigner doesn't support MergeOnReadSplit right now,
     //  because it doesn't implement the dataTreeNode() method
     //  fix AMORO-1950 in the future.
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(table, filters, splitCount);
+    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(table, filters, SPLIT_COUNT);
 
     long changeStartSnapshotId =
         changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;

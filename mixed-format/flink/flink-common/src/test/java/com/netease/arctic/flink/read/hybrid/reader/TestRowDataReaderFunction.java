@@ -232,36 +232,36 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
             RowKind.INSERT,
             7,
             StringData.fromString("syan"),
-            ldt.toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt)));
+            LDT.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT)));
     excepts.add(
         GenericRowData.ofKind(
             RowKind.UPDATE_BEFORE,
             2,
             StringData.fromString("lily"),
-            ldt.toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt)));
+            LDT.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT)));
     excepts.add(
         GenericRowData.ofKind(
             RowKind.UPDATE_AFTER,
             2,
             StringData.fromString("daniel"),
-            ldt.toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt)));
+            LDT.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT)));
     excepts.add(
         GenericRowData.ofKind(
             RowKind.UPDATE_BEFORE,
             7,
             StringData.fromString("syan"),
-            ldt.toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt)));
+            LDT.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT)));
     excepts.add(
         GenericRowData.ofKind(
             RowKind.UPDATE_AFTER,
             7,
             StringData.fromString("syan2"),
-            ldt.toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt)));
+            LDT.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT)));
     return excepts;
   }
 
@@ -272,15 +272,15 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
             RowKind.UPDATE_BEFORE,
             5,
             StringData.fromString("lind"),
-            ldt.toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt)));
+            LDT.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT)));
     excepts.add(
         GenericRowData.ofKind(
             RowKind.UPDATE_AFTER,
             5,
             StringData.fromString("lina"),
-            ldt.toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt)));
+            LDT.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT)));
     return excepts;
   }
 
@@ -335,57 +335,57 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
             RowKind.INSERT,
             1,
             StringData.fromString("john"),
-            ldt.toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt)));
+            LDT.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT)));
     excepts.add(
         GenericRowData.ofKind(
             RowKind.INSERT,
             2,
             StringData.fromString("lily"),
-            ldt.toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt)));
+            LDT.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT)));
     excepts.add(
         GenericRowData.ofKind(
             RowKind.INSERT,
             3,
             StringData.fromString("jake"),
-            ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+            LDT.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT.plusDays(1))));
     excepts.add(
         GenericRowData.ofKind(
             RowKind.INSERT,
             4,
             StringData.fromString("sam"),
-            ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+            LDT.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT.plusDays(1))));
     excepts.add(
         GenericRowData.ofKind(
             RowKind.INSERT,
             5,
             StringData.fromString("mary"),
-            ldt.toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt)));
+            LDT.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT)));
     excepts.add(
         GenericRowData.ofKind(
             RowKind.INSERT,
             6,
             StringData.fromString("mack"),
-            ldt.toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt)));
+            LDT.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT)));
     excepts.add(
         GenericRowData.ofKind(
             RowKind.DELETE,
             5,
             StringData.fromString("mary"),
-            ldt.toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt)));
+            LDT.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT)));
     excepts.add(
         GenericRowData.ofKind(
             RowKind.INSERT,
             5,
             StringData.fromString("lind"),
-            ldt.toEpochSecond(ZoneOffset.UTC),
-            TimestampData.fromLocalDateTime(ldt)));
+            LDT.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(LDT)));
     return excepts;
   }
 }

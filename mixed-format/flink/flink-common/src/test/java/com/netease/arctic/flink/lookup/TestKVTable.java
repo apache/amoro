@@ -520,10 +520,11 @@ public class TestKVTable extends TestRowDataPredicateBase {
     }
     Assert.assertEquals(expects.length, values.size());
     values = values.stream().sorted(compare()).collect(Collectors.toList());
-    List<RowData> expects_ = Arrays.stream(expects).sorted(compare()).collect(Collectors.toList());
+    List<RowData> expectsAfterSort =
+        Arrays.stream(expects).sorted(compare()).collect(Collectors.toList());
     for (int i = 0; i < expects.length; i = i + 1) {
       // Get the key and expected value at the current index and the next index
-      RowData expected = expects_.get(i);
+      RowData expected = expectsAfterSort.get(i);
 
       RowData actual = values.get(i);
       assertRecord(expected, actual);

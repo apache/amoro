@@ -18,17 +18,12 @@
 
 package com.netease.arctic.server.terminal.kyuubi;
 
-import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE;
-import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT;
-import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_PRINCIPAL;
-import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_USER;
-
+import com.netease.arctic.api.config.ConfigOption;
+import com.netease.arctic.api.config.ConfigOptions;
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.server.terminal.SparkContextUtil;
 import com.netease.arctic.server.terminal.TerminalSession;
 import com.netease.arctic.server.terminal.TerminalSessionFactory;
-import com.netease.arctic.server.utils.ConfigOption;
-import com.netease.arctic.server.utils.ConfigOptions;
-import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -129,8 +124,8 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     Properties properties = new Properties();
 
     if (!metaStore.isKerberosAuthMethod()) {
-      properties.put(AUTH_USER, metaStore.getHadoopUsername());
-      sessionConf.put(AUTH_USER, metaStore.getHadoopUsername());
+      properties.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
+      sessionConf.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
     }
 
     Connection connection = metaStore.doAs(() -> driver.connect(kyuubiJdbcUrl, properties));
@@ -169,13 +164,17 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
 
   private void checkAndFillKerberosInfo(
       JdbcConnectionParams connectionParams, TableMetaStore metaStore) {
-    if (connectionParams.getSessionVars().containsKey(AUTH_PRINCIPAL)) {
+    if (connectionParams.getSessionVars().containsKey(JdbcConnectionParams.AUTH_PRINCIPAL)) {
       throw new RuntimeException(
           "jdbc url should not contain principal when kyuubi kerberos enable");
     }
     connectionParams
         .getSessionVars()
-        .put(AUTH_KERBEROS_AUTH_TYPE, AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT);
-    connectionParams.getSessionVars().put(AUTH_PRINCIPAL, metaStore.getKrbPrincipal());
+        .put(
+            JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE,
+            JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT);
+    connectionParams
+        .getSessionVars()
+        .put(JdbcConnectionParams.AUTH_PRINCIPAL, metaStore.getKrbPrincipal());
   }
 }

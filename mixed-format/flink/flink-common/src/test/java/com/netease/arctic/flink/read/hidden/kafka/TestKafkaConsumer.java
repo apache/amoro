@@ -21,7 +21,7 @@ package com.netease.arctic.flink.read.hidden.kafka;
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getProperties;
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
-import static com.netease.arctic.flink.write.hidden.kafka.TestHiddenLogOperators.topic;
+import static com.netease.arctic.flink.write.hidden.kafka.TestHiddenLogOperators.TOPIC;
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -99,7 +99,7 @@ public class TestKafkaConsumer extends TestBaseLog {
   @Test
   public void testResetOffset() {
     final int countNum = 20;
-    String topicIntern = topic;
+    String topicIntern = TOPIC;
     Properties properties = new Properties();
     properties.put(BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
     properties = getPropertiesWithByteArray(KafkaConfigGenerate.getStandardProperties(properties));
@@ -111,7 +111,7 @@ public class TestKafkaConsumer extends TestBaseLog {
     String[] expects = new String[countNum];
     for (int i = 0; i < countNum; i++) {
       expects[i] = "test-value-" + i;
-      reuse.send(new ProducerRecord<>(topic, expects[i].getBytes()));
+      reuse.send(new ProducerRecord<>(TOPIC, expects[i].getBytes()));
     }
     reuse.commitTransaction();
     reuse.close(Duration.ofMillis(1000));

@@ -79,7 +79,8 @@ public class TestCreateTableLikeSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testCreateTableLikeHiveTable() {
     return Stream.of(
-        Arguments.of(TestTables.MixedHive.NoPK_NoPT), Arguments.of(TestTables.MixedHive.NoPK_PT));
+        Arguments.of(TestTables.MixedHive.NO_PK_NO_PT),
+        Arguments.of(TestTables.MixedHive.NO_PK_PT));
   }
 
   @DisplayName("Test SQL: CREATE TABLE LIKE hive table")
@@ -101,14 +102,14 @@ public class TestCreateTableLikeSQL extends MixedTableTestBase {
   public static Stream<Arguments> testCreateTableLikeDataLakeTable() {
     List<TestTable> tables =
         Lists.newArrayList(
-            TestTables.MixedHive.NoPK_NoPT,
-            TestTables.MixedHive.NoPK_PT,
-            TestTables.MixedHive.PK_NoPT,
+            TestTables.MixedHive.NO_PK_NO_PT,
+            TestTables.MixedHive.NO_PK_PT,
+            TestTables.MixedHive.PK_NO_PT,
             TestTables.MixedHive.PK_PT,
-            TestTables.MixedIceberg.NoPK_NoPT,
-            TestTables.MixedIceberg.PK_NoPT,
+            TestTables.MixedIceberg.NO_PK_NO_PT,
+            TestTables.MixedIceberg.PK_NO_PT,
             TestTables.MixedIceberg.PK_PT,
-            TestTables.MixedIceberg.NoPK_PT);
+            TestTables.MixedIceberg.NO_PK_PT);
     return tables.stream().map(t -> Arguments.of(t.format, t));
   }
 
@@ -160,7 +161,7 @@ public class TestCreateTableLikeSQL extends MixedTableTestBase {
     if (!expectCreate) {
       // not an arctic table.
       TestIdentifier target = target();
-      context.dropHiveTable(target.database, target.table);
+      CONTEXT.dropHiveTable(target.database, target.table);
     }
   }
 }

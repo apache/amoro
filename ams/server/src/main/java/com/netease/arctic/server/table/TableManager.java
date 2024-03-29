@@ -19,6 +19,7 @@
 package com.netease.arctic.server.table;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.api.ServerTableIdentifier;
 
 public interface TableManager extends TableRuntimeHandler {
 

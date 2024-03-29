@@ -18,7 +18,7 @@
 
 package com.netease.arctic.hive.utils;
 
-import com.netease.arctic.hive.HiveTableProperties;
+import com.netease.arctic.properties.HiveTableProperties;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Map;

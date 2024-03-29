@@ -179,7 +179,7 @@ public class ArcticUtils {
             producerConfig,
             topic,
             new HiddenKafkaFactory<>(),
-            LogRecordV1.fieldGetterFactory,
+            LogRecordV1.FIELD_GETTER_FACTORY,
             IdGenerator.generateUpstreamId(),
             helper,
             tableLoader,
@@ -192,7 +192,7 @@ public class ArcticUtils {
           producerConfig,
           topic,
           new HiddenKafkaFactory<>(),
-          LogRecordV1.fieldGetterFactory,
+          LogRecordV1.FIELD_GETTER_FACTORY,
           IdGenerator.generateUpstreamId(),
           helper);
     }

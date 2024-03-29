@@ -95,7 +95,7 @@ import java.util.stream.Collectors;
 public class TestAutomaticLogWriter extends FlinkTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestAutomaticLogWriter.class);
   public ArcticTableLoader tableLoader;
-  public static final TestGlobalAggregateManager globalAggregateManger =
+  public static final TestGlobalAggregateManager GLOBAL_AGGREGATE_MANGER =
       new TestGlobalAggregateManager();
 
   private final boolean isGapNone;
@@ -359,7 +359,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
         0,
         null,
         jobId,
-        globalAggregateManger,
+        GLOBAL_AGGREGATE_MANGER,
         topic,
         writeLogstoreWatermarkGap);
   }
@@ -380,7 +380,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
             getPropertiesByTopic(topic),
             topic,
             new HiddenKafkaFactory<>(),
-            LogRecordV1.fieldGetterFactory,
+            LogRecordV1.FIELD_GETTER_FACTORY,
             jobId,
             ShuffleHelper.EMPTY,
             tableLoader,
