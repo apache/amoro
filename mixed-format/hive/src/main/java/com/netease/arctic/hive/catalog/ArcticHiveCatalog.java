@@ -18,8 +18,8 @@
 
 package com.netease.arctic.hive.catalog;
 
-import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS;
-import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
+import static com.netease.arctic.properties.HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS;
+import static com.netease.arctic.properties.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
 import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
@@ -31,11 +31,9 @@ import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.TableMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.HMSClientPool;
-import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.utils.CompatibleHivePropertyUtil;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
@@ -44,6 +42,7 @@ import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.CreateTableTransaction;
 import com.netease.arctic.properties.CatalogMetaProperties;
+import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.properties.MetaTableProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -99,7 +98,7 @@ public class ArcticHiveCatalog implements ArcticCatalog {
   private CachedHiveClientPool hiveClientPool;
   protected String name;
   protected Map<String, String> catalogProperties;
-  protected MixedTables tables;
+  protected MixedHiveTables tables;
   protected transient TableMetaStore tableMetaStore;
 
   @Override
@@ -109,23 +108,25 @@ public class ArcticHiveCatalog implements ArcticCatalog {
 
   @Override
   public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
-    Preconditions.checkArgument(
-        properties.containsKey(CatalogMetaProperties.AMS_URI),
-        "property: %s must be set",
-        CatalogMetaProperties.AMS_URI);
-    this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
+    //    Preconditions.checkArgument(
+    //        properties.containsKey(CatalogMetaProperties.AMS_URI),
+    //        "property: %s must be set",
+    //        CatalogMetaProperties.AMS_URI);
+    if (properties.get(CatalogMetaProperties.AMS_URI) != null) {
+      this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
+    }
     this.name = name;
     this.catalogProperties = properties;
     this.tableMetaStore = metaStore;
-    this.tables = newMixedTables(properties, metaStore);
+    this.tables = newMixedHiveTables(properties, metaStore);
     this.hiveClientPool = ((MixedHiveTables) tables).getHiveClientPool();
   }
 
-  protected MixedTables getTables() {
+  protected MixedHiveTables getTables() {
     return tables;
   }
 
-  protected MixedTables newMixedTables(
+  protected MixedHiveTables newMixedHiveTables(
       Map<String, String> catalogProperties, TableMetaStore metaStore) {
     return new MixedHiveTables(catalogProperties, metaStore);
   }
