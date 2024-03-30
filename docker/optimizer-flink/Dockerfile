@@ -22,15 +22,12 @@ ARG MAVEN_MIRROR=https://repo.maven.apache.org/maven2
 ARG OPTIMIZER_JOB=optimizer-job.jar
 ARG AWS_VERSION=2.24.12
 
-WORKDIR $FLINK_HOME/lib
-
-RUN wget ${MAVEN_MIRROR}/software/amazon/awssdk/bundle/${AWS_VERSION}/bundle-${AWS_VERSION}.jar \
+RUN cd $FLINK_HOME/lib \
+ && wget ${MAVEN_MIRROR}/software/amazon/awssdk/bundle/${AWS_VERSION}/bundle-${AWS_VERSION}.jar \
  && wget ${MAVEN_MIRROR}/software/amazon/awssdk/url-connection-client/${AWS_VERSION}/url-connection-client-${AWS_VERSION}.jar \
  && wget ${MAVEN_MIRROR}/org/apache/flink/flink-shaded-hadoop-2-uber/2.8.3-10.0/flink-shaded-hadoop-2-uber-2.8.3-10.0.jar \
  && chown flink:flink *.jar \
  && mkdir -p $FLINK_HOME/usrlib
 
 COPY $OPTIMIZER_JOB $FLINK_HOME/usrlib/optimizer-job.jar
-
-WORKDIR /
 
