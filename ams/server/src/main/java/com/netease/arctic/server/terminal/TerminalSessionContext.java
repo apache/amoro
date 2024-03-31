@@ -25,6 +25,8 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.LineNumberReader;
@@ -186,7 +188,7 @@ public class TerminalSessionContext {
     private final String catalog;
     private final TableMetaStore tableMetaStore;
 
-    private final String proxyUser;
+    @Nullable private final String proxyUser;
 
     public ExecutionTask(
         String catalog,
@@ -210,7 +212,8 @@ public class TerminalSessionContext {
     @Override
     public ExecutionStatus get() {
       try {
-        return metaStore.doAs(
+        return metaStore.doAsImpersonating(
+            proxyUser,
             () -> {
               TerminalSession session = lazyLoadSession(this);
               executionResult.appendLog("fetch terminal session: " + sessionId);
