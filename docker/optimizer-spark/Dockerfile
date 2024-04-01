@@ -20,14 +20,15 @@ FROM apache/spark:${SPARK_VERSION}
 
 ARG MAVEN_MIRROR=https://repo.maven.apache.org/maven2
 ARG OPTIMIZER_JOB=optimizer-job.jar
+ARG AWS_VERSION=2.24.12
 USER root
 
 RUN apt-get update \
     && apt-get install -y wget
 
 RUN cd $SPARK_HOME/jars \
-    && wget ${MAVEN_MIRROR}/software/amazon/awssdk/bundle/2.20.5/bundle-2.20.5.jar \
-    && wget ${MAVEN_MIRROR}/software/amazon/awssdk/url-connection-client/2.20.5/url-connection-client-2.20.5.jar \
+    && wget ${MAVEN_MIRROR}/software/amazon/awssdk/bundle/${AWS_VERSION}/bundle-${AWS_VERSION}.jar \
+    && wget ${MAVEN_MIRROR}/software/amazon/awssdk/url-connection-client/${AWS_VERSION}/url-connection-client-${AWS_VERSION}.jar \
     && chown spark:spark *.jar \
     && mkdir -p $SPARK_HOME/usrlib
 
