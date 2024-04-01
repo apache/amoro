@@ -137,6 +137,14 @@ containers:
       export.JAVA_HOME: "/opt/java"   # JDK environment
 
 #containers:
+
+# - name: KubernetesContainer
+#   container-impl: com.netease.arctic.server.manager.KubernetesOptimizerContainer
+#    properties:
+#     kube-config-path: ～/.kube/config
+#     image: arctic163/amoro:0.6
+#     namespace: default
+
 #  - name: flinkContainer
 #    container-impl: org.apache.amoro.server.manager.FlinkOptimizerContainer
 #    properties:
