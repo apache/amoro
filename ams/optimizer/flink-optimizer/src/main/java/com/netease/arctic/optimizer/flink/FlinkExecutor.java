@@ -57,6 +57,7 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
     if (taskManagerId != null) {
       executor.addRuntimeContext("tm_id", taskManagerId);
     }
+    executor.addRuntimeContext("subtask_index", String.valueOf(subTaskIndex));
     // add label optimize_group;
     getMetricGroup().getAllVariables().put("<optimizer_group>", optimizeGroupName);
     executor.initOperatorMetric(getMetricGroup());
