@@ -34,6 +34,7 @@ export default {
   logout: 'Logout',
   logoutModalTitle: 'Log out of the ams?',
   order: 'Order',
+  token: 'Token',
   cluster: 'Cluster',
   database: 'Database | Databases',
   table: 'Table | Tables',
