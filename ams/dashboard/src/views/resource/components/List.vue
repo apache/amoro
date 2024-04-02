@@ -69,6 +69,7 @@ import { mbToSize } from '@/utils'
 import { Modal, message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import ScaleOut from '@/views/resource/components/ScaleOut.vue'
+import { dateFormat } from '@/utils/index'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -97,10 +98,13 @@ const tableColumns = shallowReactive([
 ])
 const optimizerColumns = shallowReactive([
   { dataIndex: 'index', title: t('order'), width: 80, ellipsis: true },
+  { dataIndex: 'jobId', title: t('optimizerId'), width: '20%', ellipsis: true },
   { dataIndex: 'groupName', title: t('optimizerGroup'), ellipsis: true },
   { dataIndex: 'container', title: t('container'), ellipsis: true },
   { dataIndex: 'jobStatus', title: t('status'), ellipsis: true },
-  { dataIndex: 'resourceAllocation', title: t('resourceAllocation'), width: '20%', ellipsis: true },
+  { dataIndex: 'resourceAllocation', title: t('resourceAllocation'), width: '10%', ellipsis: true },
+  { dataIndex: 'startTime', title: t('startTime'), width: 172, ellipsis: true },
+  { dataIndex: 'touchTime', title: t('touchTime'), width: 172, ellipsis: true },
   { dataIndex: 'operation', title: t('operation'), key: 'operation', ellipsis: true, width: 160, scopedSlots: { customRender: 'operationGroup' } }
 ])
 const pagination = reactive(usePagination())
@@ -169,6 +173,8 @@ async function getOptimizersList () {
     (list || []).forEach((p: IOptimizeResourceTableItem, index: number) => {
       p.resourceAllocation = `${p.coreNumber} ${t('core')} ${mbToSize(p.memory)}`
       p.index = (pagination.current - 1) * pagination.pageSize + index + 1
+      p.startTime = p.startTime ? dateFormat(p.startTime) : '-'
+      p.touchTime = p.touchTime ? dateFormat(p.touchTime) : '-'
       optimizersList.push(p)
     })
   } catch (error) {
