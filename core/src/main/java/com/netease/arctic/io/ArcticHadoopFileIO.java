@@ -26,6 +26,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.hadoop.Util;
+import org.apache.iceberg.io.BulkDeletionFailureException;
 import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
@@ -235,7 +236,21 @@ public class ArcticHadoopFileIO extends HadoopFileIO
   }
 
   @Override
+  public void deleteFiles(Iterable<String> pathsToDelete) throws BulkDeletionFailureException {
+    tableMetaStore.doAs(
+        () -> {
+          super.deleteFiles(pathsToDelete);
+          return null;
+        });
+  }
+
+  @Override
   public boolean supportPrefixOperations() {
+    return true;
+  }
+
+  @Override
+  public boolean supportBulkOperations() {
     return true;
   }
 

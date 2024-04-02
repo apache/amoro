@@ -20,12 +20,16 @@ package com.netease.arctic.utils;
 
 import com.netease.arctic.io.ArcticFileIO;
 import org.apache.hadoop.fs.Path;
+import org.apache.iceberg.io.BulkDeletionFailureException;
+import org.apache.iceberg.util.Tasks;
+import org.apache.iceberg.util.ThreadPools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URI;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TableFileUtil {
   private static final Logger LOG = LoggerFactory.getLogger(TableFileUtil.class);
@@ -62,7 +66,7 @@ public class TableFileUtil {
   public static void deleteEmptyDirectory(
       ArcticFileIO io, String directoryPath, Set<String> exclude) {
     if (!io.exists(directoryPath)) {
-      LOG.warn("The target directory {} does not exist or has been deleted", directoryPath);
+      LOG.debug("The target directory {} does not exist or has been deleted", directoryPath);
       return;
     }
     String parent = new Path(directoryPath).getParent().toString();
@@ -78,6 +82,56 @@ public class TableFileUtil {
       LOG.debug("success delete empty directory {}", directoryPath);
       deleteEmptyDirectory(io, parent, exclude);
     }
+  }
+
+  /**
+   * Helper to delete files. Bulk deletion is used if possible.
+   *
+   * @param tableName table name
+   * @param io arctic file io
+   * @param files files to delete
+   * @param concurrent controls concurrent deletion. Only applicable for non-bulk FileIO
+   * @return deleted file count
+   */
+  public static int deleteFiles(
+      String tableName, ArcticFileIO io, Set<String> files, boolean concurrent) {
+    AtomicInteger failedFileCnt = new AtomicInteger(0);
+    if (io.supportBulkOperations()) {
+      try {
+        io.asBulkFileIO().deleteFiles(files);
+      } catch (BulkDeletionFailureException e) {
+        failedFileCnt.set(e.numberFailedObjects());
+        LOG.warn("Failed to bulk delete {} files in {}", e.numberFailedObjects(), tableName);
+      } catch (RuntimeException e) {
+        failedFileCnt.set(files.size());
+        LOG.warn("Failed to bulk delete files in {}", tableName, e);
+      }
+    } else {
+      if (concurrent) {
+        Tasks.foreach(files)
+            .executeWith(ThreadPools.getWorkerPool())
+            .noRetry()
+            .suppressFailureWhenFinished()
+            .onFailure(
+                (file, exc) -> {
+                  failedFileCnt.addAndGet(1);
+                  LOG.warn("Failed to delete file {}", file, exc);
+                })
+            .run(io::deleteFile);
+      } else {
+        files.forEach(
+            f -> {
+              try {
+                io.deleteFile(f);
+              } catch (RuntimeException e) {
+                failedFileCnt.addAndGet(1);
+                LOG.warn("Failed to delete file {}", f, e);
+              }
+            });
+      }
+    }
+
+    return files.size() - failedFileCnt.get();
   }
 
   /**

@@ -175,36 +175,35 @@ public class IcebergTableMaintainer implements TableMaintainer {
   private void expireSnapshots(long olderThan, Set<String> exclude) {
     LOG.debug("start expire snapshots older than {}, the exclude is {}", olderThan, exclude);
     final AtomicInteger toDeleteFiles = new AtomicInteger(0);
-    final AtomicInteger deleteFiles = new AtomicInteger(0);
-    Set<String> parentDirectory = new HashSet<>();
+    Set<String> parentDirectories = new HashSet<>();
+    Set<String> expiredFiles = new HashSet<>();
     table
         .expireSnapshots()
         .retainLast(1)
         .expireOlderThan(olderThan)
         .deleteWith(
             file -> {
-              try {
-                if (exclude.isEmpty()) {
-                  arcticFileIO().deleteFile(file);
-                } else {
-                  String fileUriPath = TableFileUtil.getUriPath(file);
-                  if (!exclude.contains(fileUriPath)
-                      && !exclude.contains(new Path(fileUriPath).getParent().toString())) {
-                    arcticFileIO().deleteFile(file);
-                  }
+              if (exclude.isEmpty()) {
+                expiredFiles.add(file);
+              } else {
+                String fileUriPath = TableFileUtil.getUriPath(file);
+                if (!exclude.contains(fileUriPath)
+                    && !exclude.contains(new Path(fileUriPath).getParent().toString())) {
+                  expiredFiles.add(file);
                 }
-                parentDirectory.add(new Path(file).getParent().toString());
-                deleteFiles.incrementAndGet();
-              } catch (Throwable t) {
-                LOG.warn("failed to delete file " + file, t);
-              } finally {
-                toDeleteFiles.incrementAndGet();
               }
+
+              parentDirectories.add(new Path(file).getParent().toString());
+              toDeleteFiles.incrementAndGet();
             })
-        .cleanExpiredFiles(true)
+        .cleanExpiredFiles(
+            true) /* enable clean only for collecting the expired files, will delete them later */
         .commit();
 
-    parentDirectory.forEach(
+    // try to batch delete files
+    int deletedFiles = TableFileUtil.deleteFiles(table.name(), arcticFileIO(), expiredFiles, true);
+
+    parentDirectories.forEach(
         parent -> {
           try {
             TableFileUtil.deleteEmptyDirectory(arcticFileIO(), parent, exclude);
@@ -214,11 +213,15 @@ public class IcebergTableMaintainer implements TableMaintainer {
           }
         });
 
-    LOG.info(
-        "to delete {} files in {}, success delete {} files",
-        toDeleteFiles.get(),
-        getTable().name(),
-        deleteFiles.get());
+    runWithCondition(
+        toDeleteFiles.get() > 0,
+        () ->
+            LOG.info(
+                "To delete {} files in {}, success delete {} files",
+                toDeleteFiles.get(),
+                getTable().name(),
+                deletedFiles),
+        () -> {});
   }
 
   @Override
@@ -297,21 +300,32 @@ public class IcebergTableMaintainer implements TableMaintainer {
     // so acquire in advance
     // to prevent repeated acquisition
     Set<String> validFiles = orphanFileCleanNeedToExcludeFiles();
-    LOG.info("{} start clean content files of change store", table.name());
+    LOG.info("{} start cleaning orphan files in content", table.name());
     int deleteFilesCnt = clearInternalTableContentsFiles(lastTime, validFiles);
-    LOG.info("{} total delete {} files from change store", table.name(), deleteFilesCnt);
+    runWithCondition(
+        deleteFilesCnt > 0,
+        () -> LOG.info("{} total delete {} orphan files in content", table.name(), deleteFilesCnt),
+        () -> LOG.info("{} doesn't have orphan files in content", table.name()));
   }
 
   protected void cleanMetadata(long lastTime) {
     LOG.info("{} start clean metadata files", table.name());
     int deleteFilesCnt = clearInternalTableMetadata(lastTime);
-    LOG.info("{} total delete {} metadata files", table.name(), deleteFilesCnt);
+    runWithCondition(
+        deleteFilesCnt > 0,
+        () -> LOG.info("{} total delete {} metadata files", table.name(), deleteFilesCnt),
+        () -> LOG.info("{} doesn't have orphan files in metadata", table.name()));
   }
 
   protected void cleanDanglingDeleteFiles() {
     LOG.info("{} start delete dangling delete files", table.name());
     int danglingDeleteFilesCnt = clearInternalTableDanglingDeleteFiles();
-    LOG.info("{} total delete {} dangling delete files", table.name(), danglingDeleteFilesCnt);
+    runWithCondition(
+        danglingDeleteFilesCnt > 0,
+        () ->
+            LOG.info(
+                "{} total delete {} dangling delete files", table.name(), danglingDeleteFilesCnt),
+        () -> LOG.info("{} doesn't have dangling delete files", table.name()));
   }
 
   protected long mustOlderThan(TableRuntime tableRuntime, long now) {
@@ -473,7 +487,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return snapshot.map(Snapshot::timestampMillis).orElse(Long.MAX_VALUE);
   }
 
-  private static int deleteInvalidFilesInFs(
+  private int deleteInvalidFilesInFs(
       SupportsFileSystemOperations fio, String location, long lastTime, Set<String> excludes) {
     if (!fio.exists(location)) {
       return 0;
@@ -495,28 +509,31 @@ public class IcebergTableMaintainer implements TableMaintainer {
       } else {
         String parentLocation = TableFileUtil.getParent(p.location());
         String parentUriPath = TableFileUtil.getUriPath(parentLocation);
+        Set<String> filesToDelete = new HashSet<>();
         if (!excludes.contains(uriPath)
             && !excludes.contains(parentUriPath)
             && p.createdAtMillis() < lastTime) {
-          fio.deleteFile(p.location());
-          deleteCount += 1;
+          filesToDelete.add(p.location());
         }
+        int deletedCnt =
+            TableFileUtil.deleteFiles(table.name(), arcticFileIO(), filesToDelete, false);
+        deleteCount += deletedCnt;
       }
     }
     return deleteCount;
   }
 
-  private static int deleteInvalidFilesByPrefix(
+  private int deleteInvalidFilesByPrefix(
       SupportsPrefixOperations pio, String prefix, long lastTime, Set<String> excludes) {
-    int deleteCount = 0;
+    Set<String> filesToDelete = new HashSet<>();
     for (FileInfo fileInfo : pio.listPrefix(prefix)) {
       String uriPath = TableFileUtil.getUriPath(fileInfo.location());
       if (!excludes.contains(uriPath) && fileInfo.createdAtMillis() < lastTime) {
-        pio.deleteFile(fileInfo.location());
-        deleteCount += 1;
+        filesToDelete.add(fileInfo.location());
       }
     }
-    return deleteCount;
+
+    return TableFileUtil.deleteFiles(table.name(), arcticFileIO(), filesToDelete, false);
   }
 
   private static Set<String> getValidMetadataFiles(Table internalTable) {
@@ -575,24 +592,24 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return null;
   }
 
-  private static int deleteInvalidMetadataFile(
+  private int deleteInvalidMetadataFile(
       SupportsPrefixOperations pio,
       String location,
       long lastTime,
       Set<String> exclude,
       Pattern excludeRegex) {
-    int count = 0;
+    Set<String> filesToDelete = new HashSet<>();
     for (FileInfo fileInfo : pio.listPrefix(location)) {
       String uriPath = TableFileUtil.getUriPath(fileInfo.location());
       if (!exclude.contains(uriPath)
           && fileInfo.createdAtMillis() < lastTime
           && (excludeRegex == null
               || !excludeRegex.matcher(TableFileUtil.getFileName(fileInfo.location())).matches())) {
-        pio.deleteFile(fileInfo.location());
-        count += 1;
+        filesToDelete.add(fileInfo.location());
       }
     }
-    return count;
+
+    return TableFileUtil.deleteFiles(table.name(), arcticFileIO(), filesToDelete, false);
   }
 
   private static String formatTime(long timestamp) {
@@ -934,6 +951,14 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
     public Literal<Long> getTsBound() {
       return tsBound;
+    }
+  }
+
+  private void runWithCondition(boolean condition, Runnable fun, Runnable other) {
+    if (condition) {
+      fun.run();
+    } else {
+      other.run();
     }
   }
 }
