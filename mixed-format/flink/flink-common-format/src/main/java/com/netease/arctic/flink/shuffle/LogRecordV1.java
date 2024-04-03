@@ -262,7 +262,7 @@ public class LogRecordV1 implements LogData<RowData>, Serializable {
     }
   }
 
-  public static final FieldGetterFactory<RowData> fieldGetterFactory =
+  public static final FieldGetterFactory<RowData> FIELD_GETTER_FACTORY =
       new FieldGetterFactory<RowData>() {
         private static final long serialVersionUID = 1L;
 

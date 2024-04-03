@@ -41,7 +41,7 @@ public class MergeOnReadPlannerImpl implements ContinuousSplitPlanner {
 
   protected transient KeyedTable table;
   protected final ArcticTableLoader loader;
-  protected static final AtomicInteger splitCount = new AtomicInteger();
+  protected static final AtomicInteger SPLIT_COUNT = new AtomicInteger();
 
   public MergeOnReadPlannerImpl(ArcticTableLoader loader) {
     this.loader = loader;
@@ -60,7 +60,7 @@ public class MergeOnReadPlannerImpl implements ContinuousSplitPlanner {
 
   protected ContinuousEnumerationResult discoverInitialSplits(List<Expression> filters) {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.mergeOnReadPlan(table, filters, splitCount);
+    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.mergeOnReadPlan(table, filters, SPLIT_COUNT);
 
     long changeStartSnapshotId =
         changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.optimizing.maintainer;
 
-import com.netease.arctic.server.table.TagConfiguration;
+import com.netease.arctic.api.config.TagConfiguration;
 import org.apache.iceberg.ManageSnapshots;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;

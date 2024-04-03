@@ -18,10 +18,9 @@
 
 package com.netease.arctic.server.persistence;
 
+import com.netease.arctic.api.StateField;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,7 +44,7 @@ public abstract class StatedPersistentBase extends PersistentBase {
     consistentFields = getOrCreateConsistentFields();
   }
 
-  protected final void invokeConsisitency(Runnable runnable) {
+  protected final void invokeConsistency(Runnable runnable) {
     stateLock.lock();
     Map<Field, Object> states = retainStates();
     try {
@@ -58,7 +57,7 @@ public abstract class StatedPersistentBase extends PersistentBase {
     }
   }
 
-  protected final <T> T invokeConsisitency(Supplier<T> supplier) {
+  protected final <T> T invokeConsistency(Supplier<T> supplier) {
     stateLock.lock();
     Map<Field, Object> states = retainStates();
     try {
@@ -120,9 +119,4 @@ public abstract class StatedPersistentBase extends PersistentBase {
       throw new IllegalStateException(e);
     }
   }
-
-  /** TODO Use StateField in API module, this class shall be removed after 0.7.0 */
-  @Deprecated
-  @Retention(RetentionPolicy.RUNTIME)
-  public @interface StateField {}
 }

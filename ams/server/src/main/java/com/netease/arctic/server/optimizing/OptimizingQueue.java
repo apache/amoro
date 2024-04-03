@@ -21,6 +21,7 @@ package com.netease.arctic.server.optimizing;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.api.OptimizerProperties;
 import com.netease.arctic.api.OptimizingTaskId;
+import com.netease.arctic.api.ServerTableIdentifier;
 import com.netease.arctic.api.resource.ResourceGroup;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.ArcticServiceConstants;
@@ -33,7 +34,6 @@ import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.QuotaProvider;
-import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
@@ -421,6 +421,7 @@ public class OptimizingQueue extends PersistentBase {
       } finally {
         lock.unlock();
       }
+      cancelTasks();
     }
 
     @Override
@@ -466,6 +467,10 @@ public class OptimizingQueue extends PersistentBase {
         LOG.error("accept result error:", e);
       } finally {
         lock.unlock();
+      }
+      // the cleanup of task should be done after unlock to avoid deadlock
+      if (this.status == OptimizingProcess.Status.FAILED) {
+        cancelTasks();
       }
     }
 
@@ -559,6 +564,9 @@ public class OptimizingQueue extends PersistentBase {
       } finally {
         clearProcess(this);
         lock.unlock();
+        if (this.status == OptimizingProcess.Status.FAILED) {
+          cancelTasks();
+        }
       }
     }
 
@@ -624,36 +632,24 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     private void persistProcessCompleted(boolean success) {
-      if (!success) {
-        doAsTransaction(
-            () -> taskMap.values().forEach(TaskRuntime::tryCanceling),
-            () ->
-                doAs(
-                    OptimizingMapper.class,
-                    mapper ->
-                        mapper.updateOptimizingProcess(
-                            tableRuntime.getTableIdentifier().getId(),
-                            processId,
-                            status,
-                            endTime,
-                            getSummary(),
-                            getFailedReason())),
-            () -> tableRuntime.completeProcess(false));
-      } else {
-        doAsTransaction(
-            () ->
-                doAs(
-                    OptimizingMapper.class,
-                    mapper ->
-                        mapper.updateOptimizingProcess(
-                            tableRuntime.getTableIdentifier().getId(),
-                            processId,
-                            status,
-                            endTime,
-                            getSummary(),
-                            getFailedReason())),
-            () -> tableRuntime.completeProcess(true));
-      }
+      doAsTransaction(
+          () ->
+              doAs(
+                  OptimizingMapper.class,
+                  mapper ->
+                      mapper.updateOptimizingProcess(
+                          tableRuntime.getTableIdentifier().getId(),
+                          processId,
+                          status,
+                          endTime,
+                          getSummary(),
+                          getFailedReason())),
+          () -> tableRuntime.completeProcess(success));
+    }
+
+    /** The cancellation should be invoked outside the process lock to avoid deadlock. */
+    private void cancelTasks() {
+      taskMap.values().forEach(TaskRuntime::tryCanceling);
     }
 
     private void loadTaskRuntimes(OptimizingProcess optimizingProcess) {

@@ -88,9 +88,9 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
   public static Stream<Arguments> args() {
     return Stream.of(
         Arguments.arguments(MIXED_ICEBERG, pk),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY),
         Arguments.arguments(MIXED_HIVE, pk),
-        Arguments.arguments(MIXED_HIVE, noPrimaryKey));
+        Arguments.arguments(MIXED_HIVE, NO_PRIMARY_KEY));
   }
 
   @DisplayName("SQL: MERGE INTO for all actions with condition")

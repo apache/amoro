@@ -24,6 +24,7 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.server.DefaultOptimizingService;
 import com.netease.arctic.server.RestCatalogService;
 import com.netease.arctic.server.dashboard.controller.CatalogController;
@@ -41,7 +42,6 @@ import com.netease.arctic.server.exception.ForbiddenException;
 import com.netease.arctic.server.exception.SignatureCheckException;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.terminal.TerminalManager;
-import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.utils.JacksonUtil;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.ContentType;

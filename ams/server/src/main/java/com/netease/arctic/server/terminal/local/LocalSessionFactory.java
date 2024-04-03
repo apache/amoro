@@ -18,12 +18,12 @@
 
 package com.netease.arctic.server.terminal.local;
 
+import com.netease.arctic.api.config.ConfigOption;
+import com.netease.arctic.api.config.ConfigOptions;
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.server.terminal.SparkContextUtil;
 import com.netease.arctic.server.terminal.TerminalSession;
 import com.netease.arctic.server.terminal.TerminalSessionFactory;
-import com.netease.arctic.server.utils.ConfigOption;
-import com.netease.arctic.server.utils.ConfigOptions;
-import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;

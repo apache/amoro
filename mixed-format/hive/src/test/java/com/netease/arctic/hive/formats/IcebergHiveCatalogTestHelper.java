@@ -35,7 +35,7 @@ public class IcebergHiveCatalogTestHelper extends IcebergHadoopCatalogTestHelper
 
   @Override
   public void initHiveConf(Configuration hiveConf) {
-    properties.put(CatalogProperties.URI, hiveConf.get(HiveConf.ConfVars.METASTOREURIS.varname));
+    PROPERTIES.put(CatalogProperties.URI, hiveConf.get(HiveConf.ConfVars.METASTOREURIS.varname));
   }
 
   protected String getMetastoreType() {

@@ -120,10 +120,10 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
               .build());
 
   protected KeyedTable testFailoverTable;
-  protected static final String sinkTableName = "test_sink_exactly_once";
+  protected static final String SINK_TABLE_NAME = "test_sink_exactly_once";
   protected static final TableIdentifier FAIL_TABLE_ID =
       TableIdentifier.of(
-          TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME, sinkTableName);
+          TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME, SINK_TABLE_NAME);
 
   @Before
   public void testSetup() throws IOException {
@@ -312,29 +312,29 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
                     RowKind.INSERT,
                     1,
                     StringData.fromString("john"),
-                    ldt.toEpochSecond(ZoneOffset.UTC),
-                    TimestampData.fromLocalDateTime(ldt)));
+                    LDT.toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(LDT)));
             add(
                 GenericRowData.ofKind(
                     RowKind.INSERT,
                     2,
                     StringData.fromString("lily"),
-                    ldt.toEpochSecond(ZoneOffset.UTC),
-                    TimestampData.fromLocalDateTime(ldt)));
+                    LDT.toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(LDT)));
             add(
                 GenericRowData.ofKind(
                     RowKind.INSERT,
                     3,
                     StringData.fromString("jake"),
-                    ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-                    TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+                    LDT.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(LDT.plusDays(1))));
             add(
                 GenericRowData.ofKind(
                     RowKind.INSERT,
                     4,
                     StringData.fromString("sam"),
-                    ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-                    TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+                    LDT.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(LDT.plusDays(1))));
           }
         };
     for (RowData record : baseData) {
@@ -370,12 +370,12 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
 
   @Test
   public void testArcticSourceEnumeratorWithChangeExpired() throws Exception {
-    final String MAX_CONTINUOUS_EMPTY_COMMITS = "flink.max-continuous-empty-commits";
+    final String maxContinuousEmptyCommits = "flink.max-continuous-empty-commits";
     TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_keyed_tb");
     KeyedTable table =
         getMixedFormatCatalog()
             .newTableBuilder(tableId, TABLE_SCHEMA)
-            .withProperty(MAX_CONTINUOUS_EMPTY_COMMITS, "1")
+            .withProperty(maxContinuousEmptyCommits, "1")
             .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
             .create()
             .asKeyedTable();
@@ -389,29 +389,29 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
                     RowKind.INSERT,
                     1,
                     StringData.fromString("john"),
-                    ldt.toEpochSecond(ZoneOffset.UTC),
-                    TimestampData.fromLocalDateTime(ldt)));
+                    LDT.toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(LDT)));
             add(
                 GenericRowData.ofKind(
                     RowKind.INSERT,
                     2,
                     StringData.fromString("lily"),
-                    ldt.toEpochSecond(ZoneOffset.UTC),
-                    TimestampData.fromLocalDateTime(ldt)));
+                    LDT.toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(LDT)));
             add(
                 GenericRowData.ofKind(
                     RowKind.INSERT,
                     3,
                     StringData.fromString("jake"),
-                    ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-                    TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+                    LDT.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(LDT.plusDays(1))));
             add(
                 GenericRowData.ofKind(
                     RowKind.INSERT,
                     4,
                     StringData.fromString("sam"),
-                    ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-                    TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+                    LDT.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(LDT.plusDays(1))));
           }
         };
     for (RowData record : changeData) {
@@ -472,12 +472,12 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
 
   @Test
   public void testArcticSourceEnumeratorWithBaseExpired() throws Exception {
-    final String MAX_CONTINUOUS_EMPTY_COMMITS = "flink.max-continuous-empty-commits";
+    final String maxContinuousEmptyCommits = "flink.max-continuous-empty-commits";
     TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_keyed_tb");
     KeyedTable table =
         getMixedFormatCatalog()
             .newTableBuilder(tableId, TABLE_SCHEMA)
-            .withProperty(MAX_CONTINUOUS_EMPTY_COMMITS, "1")
+            .withProperty(maxContinuousEmptyCommits, "1")
             .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
             .create()
             .asKeyedTable();
@@ -491,29 +491,29 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
                     RowKind.INSERT,
                     1,
                     StringData.fromString("john"),
-                    ldt.toEpochSecond(ZoneOffset.UTC),
-                    TimestampData.fromLocalDateTime(ldt)));
+                    LDT.toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(LDT)));
             add(
                 GenericRowData.ofKind(
                     RowKind.INSERT,
                     2,
                     StringData.fromString("lily"),
-                    ldt.toEpochSecond(ZoneOffset.UTC),
-                    TimestampData.fromLocalDateTime(ldt)));
+                    LDT.toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(LDT)));
             add(
                 GenericRowData.ofKind(
                     RowKind.INSERT,
                     3,
                     StringData.fromString("jake"),
-                    ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-                    TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+                    LDT.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(LDT.plusDays(1))));
             add(
                 GenericRowData.ofKind(
                     RowKind.INSERT,
                     4,
                     StringData.fromString("sam"),
-                    ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-                    TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+                    LDT.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(LDT.plusDays(1))));
           }
         };
     for (RowData record : baseData) {
@@ -718,15 +718,15 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
               RowKind.INSERT,
               pk + index,
               StringData.fromString("jo" + index + i),
-              ldt.toEpochSecond(ZoneOffset.UTC),
-              TimestampData.fromLocalDateTime(ldt)));
+              LDT.toEpochSecond(ZoneOffset.UTC),
+              TimestampData.fromLocalDateTime(LDT)));
       records.add(
           GenericRowData.ofKind(
               RowKind.DELETE,
               pk + index,
               StringData.fromString("jo" + index + i),
-              ldt.toEpochSecond(ZoneOffset.UTC),
-              TimestampData.fromLocalDateTime(ldt)));
+              LDT.toEpochSecond(ZoneOffset.UTC),
+              TimestampData.fromLocalDateTime(LDT)));
     }
     return records;
   }

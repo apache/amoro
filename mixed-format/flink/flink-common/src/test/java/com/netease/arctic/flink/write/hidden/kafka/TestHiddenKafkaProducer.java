@@ -112,9 +112,9 @@ public class TestHiddenKafkaProducer extends TestBaseLog {
     final String topic = "test-recover-transactions";
     int numPartitions = 3;
     KafkaContainerTest.createTopics(numPartitions, 1, topic);
-    LogData.FieldGetterFactory<RowData> fieldGetterFactory = LogRecordV1.fieldGetterFactory;
+    LogData.FieldGetterFactory<RowData> fieldGetterFactory = LogRecordV1.FIELD_GETTER_FACTORY;
     LogDataJsonSerialization<RowData> logDataJsonSerialization =
-        new LogDataJsonSerialization<>(checkNotNull(userSchema), checkNotNull(fieldGetterFactory));
+        new LogDataJsonSerialization<>(checkNotNull(USER_SCHEMA), checkNotNull(fieldGetterFactory));
     Properties properties = new Properties();
     properties.put(BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
     properties = getPropertiesWithByteArray(KafkaConfigGenerate.getStandardProperties(properties));
@@ -136,7 +136,8 @@ public class TestHiddenKafkaProducer extends TestBaseLog {
   public void testLogDataNullValueSerialize() throws IOException {
 
     LogDataJsonSerialization<RowData> logDataJsonSerialization =
-        new LogDataJsonSerialization<>(userSchemaWithAllDataType, LogRecordV1.fieldGetterFactory);
+        new LogDataJsonSerialization<>(
+            USER_SCHEMA_WITH_ALL_DATA_TYPE, LogRecordV1.FIELD_GETTER_FACTORY);
 
     GenericRowData rowData = new GenericRowData(17);
     rowData.setRowKind(RowKind.INSERT);
@@ -185,7 +186,7 @@ public class TestHiddenKafkaProducer extends TestBaseLog {
   public void testLogDataJsonSerializationClassSerialize()
       throws IOException, ClassNotFoundException {
     LogDataJsonSerialization<RowData> actual =
-        new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
+        new LogDataJsonSerialization<>(USER_SCHEMA, LogRecordV1.FIELD_GETTER_FACTORY);
     byte[] bytes = InstantiationUtil.serializeObject(actual);
     LogDataJsonSerialization<RowData> result =
         InstantiationUtil.deserializeObject(bytes, actual.getClass().getClassLoader());

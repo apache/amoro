@@ -190,3 +190,59 @@ Hint Options
 | properties.pulsar.admin.adminUrl                 | (none)        | String   | If the LogStore is Pulsar and it is required for querying, it must be filled in, otherwise it can be left empty.<img width=100/> | The HTTP URL for Pulsar Admin is in the format: http://my-broker.example.com:8080.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | properties.*                                     | (none)        | String   | No                                                                                                                               | Parameters for Logstore: For Logstore with Kafka ('log-store.type'='kafka' default value), all other parameters supported by the Kafka Consumer can be set by prefixing properties. to the parameter name, for example, 'properties.batch.size'='16384'. The complete parameter information can be found in the [Kafka official documentation](https://kafka.apache.org/documentation/#consumerconfigs); For LogStore set to Pulsar ('log-store.type'='pulsar'), all relevant configurations supported by Pulsar can be set by prefixing properties. to the parameter name, for example: 'properties.pulsar.client.requestTimeoutMs'='60000'. For complete parameter information, refer to the [Flink-Pulsar-Connector documentation](https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/connectors/datastream/pulsar) |
 | other table parameters                           | (none)        | String   | No                                                                                                                               | All parameters of an Amoro table can be dynamically modified through SQL Hints, but they only take effect for this specific task. For the specific parameter list, please refer to the [Table Configuration](../configurations/). For permissions-related configurations on the catalog, they can also be configured in Hint using parameters such as [properties.auth.XXX in catalog DDL](../flink-ddl/#flink-sql)                                                                                                                                                                                                                                                                                                                                                                                                             |
+
+## Lookup join with SQL
+
+A Lookup Join is used to enrich a table with data that is queried from Amoro Table. The join requires one table to have a processing time attribute and the other table to be backed by a lookup source connector.
+
+The following example shows the syntax to specify a lookup join.
+
+```sql
+-- amoro flink connector and can be used for lookup joins
+CREATE TEMPORARY TABLE Customers (
+    id INT,
+    name STRING,
+    country STRING,
+    zip STRING
+) WITH (
+    'connector' = 'arctic',
+    'metastore.url' = '',
+    'arctic.catalog' = '',
+    'arctic.database' = '',
+    'arctic.table' = '',
+    'lookup.cache.max-rows' = ''
+);
+       
+-- Create a temporary left table, like from kafka
+CREATE TEMPORARY TABLE orders (
+    order_id INT,
+    total INT,
+    customer_id INT,
+    proc_time AS PROCTIME()
+) WITH (
+    'connector' = 'kafka',
+    'topic' = '...',
+    'properties.bootstrap.servers' = '...',
+    'format' = 'json'
+    ...
+);
+
+-- enrich each order with customer information
+SELECT o.order_id, o.total, c.country, c.zip
+FROM Orders AS o
+JOIN Customers FOR SYSTEM_TIME AS OF o.proc_time AS c
+ON o.customer_id = c.id;
+```
+
+Lookup Options
+
+| Key                                                | Default Value | Type     | Required | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+|----------------------------------------------------|---------------|----------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| lookup.cache.max-rows                              | 10000         | Long     | No       | The maximum number of rows in the lookup cache, beyond which the oldest row will expire.                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| lookup.reloading.interval                          | 10s           | Duration | No       | Configuration option for specifying the interval in seconds to reload lookup data in RocksDB.                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| lookup.cache.ttl-after-write                       | 0s            | Duration | No       | The TTL after which the row will expire in the lookup cache.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| rocksdb.auto-compactions                           | false         | Boolean  | No       | Enable automatic compactions during the initialization process. After the initialization completed, will enable the auto_compaction.                                                                                                                                                                                                                                                                                                                                                                                                                |
+| rocksdb.writing-threads                            | 5             | Int      | No       | Writing data into rocksDB thread number.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| rocksdb.block-cache.capacity                       | 1048576       | Long     | No       | Use the LRUCache strategy for blocks, the size of the BlockCache can be configured based on your memory requirements and available system resources.                                                                                                                                                                                                                                                                                                                                                                                                |
+| rocksdb.block-cache.numShardBits                   | -1            | Int      | No       | Use the LRUCache strategy for blocks. The cache is sharded to 2^numShardBits shards, by hash of the key. Default is -1, means it is automatically determined: every shard will be at least 512KB and number of shard bits will not exceed 6.                                                                                                                                                                                                                                                                                                        |
+| other table parameters                             | (none)        | String   | No       | All parameters of an Amoro table can be dynamically modified through SQL Hints, but they only take effect for this specific task. For the specific parameter list, please refer to the [Table Configuration](../configurations/). For permissions-related configurations on the catalog, they can also be configured in Hint using parameters such as [properties.auth.XXX in catalog DDL](../flink-ddl/#flink-sql)                                                                                                                                 |

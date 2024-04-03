@@ -21,11 +21,14 @@ package com.netease.arctic.server.table;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.BlockableOperation;
+import com.netease.arctic.api.ServerTableIdentifier;
+import com.netease.arctic.api.StateField;
+import com.netease.arctic.api.config.OptimizingConfig;
+import com.netease.arctic.api.config.TableConfiguration;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.metrics.MetricRegistry;
-import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.OptimizingType;
@@ -163,7 +166,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void beginPlanning() {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           OptimizingStatus originalStatus = optimizingStatus;
           updateOptimizingStatus(OptimizingStatus.PLANNING);
@@ -173,7 +176,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void planFailed() {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           OptimizingStatus originalStatus = optimizingStatus;
           updateOptimizingStatus(OptimizingStatus.PENDING);
@@ -183,7 +186,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void beginProcess(OptimizingProcess optimizingProcess) {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           OptimizingStatus originalStatus = optimizingStatus;
           this.optimizingProcess = optimizingProcess;
@@ -196,7 +199,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void beginCommitting() {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           OptimizingStatus originalStatus = optimizingStatus;
           updateOptimizingStatus(OptimizingStatus.COMMITTING);
@@ -206,7 +209,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void setPendingInput(OptimizingEvaluator.PendingInput pendingInput) {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           this.pendingInput = pendingInput;
           if (optimizingStatus == OptimizingStatus.IDLE) {
@@ -222,7 +225,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public TableRuntime refresh(AmoroTable<?> table) {
-    return invokeConsisitency(
+    return invokeConsistency(
         () -> {
           TableConfiguration configuration = tableConfiguration;
           boolean configChanged = updateConfigInternal(table.properties());
@@ -237,7 +240,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void cleanPendingInput() {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           pendingInput = null;
           if (optimizingStatus == OptimizingStatus.PLANNING
@@ -267,7 +270,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void completeProcess(boolean success) {
-    invokeConsisitency(
+    invokeConsistency(
         () -> {
           OptimizingStatus originalStatus = optimizingStatus;
           if (success) {

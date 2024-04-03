@@ -20,11 +20,14 @@ package com.netease.arctic.server.dashboard.controller;
 
 import com.google.common.base.Preconditions;
 import com.netease.arctic.server.dashboard.PlatformFileManager;
+import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import io.javalin.http.Context;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.conf.Configuration;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
@@ -45,6 +48,18 @@ public class PlatformFileInfoController {
     InputStream bodyAsInputStream = ctx.uploadedFile("file").getContent();
     String name = ctx.uploadedFile("file").getFilename();
     byte[] bytes = IOUtils.toByteArray(bodyAsInputStream);
+
+    // validate xml config
+    if (name.toLowerCase().endsWith(".xml")) {
+      try {
+        Configuration configuration = new Configuration();
+        configuration.addResource(new ByteArrayInputStream(bytes));
+        configuration.setDeprecatedProperties();
+      } catch (Exception e) {
+        ctx.json(new ErrorResponse("Uploaded file is not in valid XML format"));
+        return;
+      }
+    }
     String content = Base64.getEncoder().encodeToString(bytes);
     Integer fid = platformFileInfoService.addFile(name, content);
     Map<String, String> result = new HashMap<>();
