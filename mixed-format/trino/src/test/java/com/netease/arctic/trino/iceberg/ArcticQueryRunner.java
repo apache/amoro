@@ -18,17 +18,17 @@
 
 package com.netease.arctic.trino.iceberg;
 
-import static com.google.common.base.Preconditions.checkState;
 import static io.airlift.testing.Closeables.closeAllSuppress;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import io.airlift.log.Logger;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.tpch.TpchTable;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 
 import java.io.File;
 import java.util.HashMap;
@@ -87,7 +87,8 @@ public final class ArcticQueryRunner {
     }
 
     public Builder setSchemaInitializer(SchemaInitializer schemaInitializer) {
-      checkState(this.schemaInitializer.isEmpty(), "schemaInitializer is already set");
+      Preconditions.checkState(
+          this.schemaInitializer.isEmpty(), "schemaInitializer is already set");
       this.schemaInitializer =
           Optional.of(requireNonNull(schemaInitializer, "schemaInitializer is null"));
       amendSession(sessionBuilder -> sessionBuilder.setSchema(schemaInitializer.getSchemaName()));

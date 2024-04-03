@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.optimizing;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.server.AmsEnvironment;
 import com.netease.arctic.server.RestCatalogService;
@@ -40,6 +39,7 @@ import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.hadoop.HadoopCatalog;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.types.Types;

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.utils;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;

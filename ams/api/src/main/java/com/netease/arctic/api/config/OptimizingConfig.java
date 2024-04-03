@@ -300,7 +300,7 @@ public class OptimizingConfig {
         && baseHashBucket == that.baseHashBucket
         && baseRefreshInterval == that.baseRefreshInterval
         && hiveRefreshInterval == that.hiveRefreshInterval
-        && com.google.common.base.Objects.equal(optimizerGroup, that.optimizerGroup);
+        && Objects.equal(optimizerGroup, that.optimizerGroup);
   }
 
   @Override
