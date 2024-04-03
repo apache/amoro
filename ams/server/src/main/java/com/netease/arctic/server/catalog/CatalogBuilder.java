@@ -85,7 +85,7 @@ public class CatalogBuilder {
         if (tableFormats.size() == 1 && tableFormat.equals(TableFormat.MIXED_HIVE)) {
           return new MixedHiveCatalogImpl(catalogMeta);
         }
-        // if tableFormats.size() > 1 , we nned fullfill the ams uri in catalogProperty
+        // if tableFormats.size() > 1 , we need fulfill the ams uri in catalogProperty
         String amsUri = getAmsURI(serverConfiguration);
         catalogMeta.getCatalogProperties().put(CatalogMetaProperties.AMS_URI, amsUri);
         return new ExternalCatalog(catalogMeta);

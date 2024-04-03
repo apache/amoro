@@ -33,7 +33,7 @@
     <url>https://amoro.netease.com</url>
 
     <properties>
-        <spark-optimizer.spark-version>3.3.2</spark-optimizer.spark-version>
+        <spark-optimizer.spark-version>3.3.3</spark-optimizer.spark-version>
         <spark-optimizer.scala-version>2.12</spark-optimizer.scala-version>
     </properties>
 
@@ -165,7 +165,7 @@
                 </property>
             </activation>
             <properties>
-                <spark-optimizer.spark-version>3.3.2</spark-optimizer.spark-version>
+                <spark-optimizer.spark-version>3.3.3</spark-optimizer.spark-version>
                 <spark-optimizer.scala-version>2.12</spark-optimizer.scala-version>
             </properties>
         </profile>
