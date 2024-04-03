@@ -56,40 +56,40 @@ import java.util.stream.Stream;
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestInsertIntoSQL extends MixedTableTestBase {
 
-  static final Schema schema =
+  static final Schema SCHEMA =
       new Schema(
           Types.NestedField.required(1, "id", Types.IntegerType.get()),
           Types.NestedField.required(2, "data", Types.StringType.get()),
           Types.NestedField.required(3, "pt", Types.StringType.get()));
 
-  static final PrimaryKeySpec idPrimaryKeySpec =
-      PrimaryKeySpec.builderFor(schema).addColumn("id").build();
+  static final PrimaryKeySpec ID_PRIMARY_KEY_SPEC =
+      PrimaryKeySpec.builderFor(SCHEMA).addColumn("id").build();
 
-  static final PartitionSpec ptSpec = PartitionSpec.builderFor(schema).identity("pt").build();
+  static final PartitionSpec PT_SPEC = PartitionSpec.builderFor(SCHEMA).identity("pt").build();
 
   List<Record> base =
       Lists.newArrayList(
-          RecordGenerator.newRecord(schema, 1, "aaa", "AAA"),
-          RecordGenerator.newRecord(schema, 2, "bbb", "AAA"),
-          RecordGenerator.newRecord(schema, 3, "ccc", "AAA"),
-          RecordGenerator.newRecord(schema, 4, "ddd", "AAA"),
-          RecordGenerator.newRecord(schema, 5, "eee", "BBB"),
-          RecordGenerator.newRecord(schema, 6, "fff", "BBB"),
-          RecordGenerator.newRecord(schema, 7, "ggg", "BBB"),
-          RecordGenerator.newRecord(schema, 8, "hhh", "BBB"));
+          RecordGenerator.newRecord(SCHEMA, 1, "aaa", "AAA"),
+          RecordGenerator.newRecord(SCHEMA, 2, "bbb", "AAA"),
+          RecordGenerator.newRecord(SCHEMA, 3, "ccc", "AAA"),
+          RecordGenerator.newRecord(SCHEMA, 4, "ddd", "AAA"),
+          RecordGenerator.newRecord(SCHEMA, 5, "eee", "BBB"),
+          RecordGenerator.newRecord(SCHEMA, 6, "fff", "BBB"),
+          RecordGenerator.newRecord(SCHEMA, 7, "ggg", "BBB"),
+          RecordGenerator.newRecord(SCHEMA, 8, "hhh", "BBB"));
   List<Record> source =
       Lists.newArrayList(
-          RecordGenerator.newRecord(schema, 1, "xxx", "AAA"),
-          RecordGenerator.newRecord(schema, 2, "xxx", "AAA"),
-          RecordGenerator.newRecord(schema, 7, "xxx", "BBB"),
-          RecordGenerator.newRecord(schema, 8, "xxx", "BBB"),
-          RecordGenerator.newRecord(schema, 9, "xxx", "CCC"),
-          RecordGenerator.newRecord(schema, 10, "xxx", "CCC"));
+          RecordGenerator.newRecord(SCHEMA, 1, "xxx", "AAA"),
+          RecordGenerator.newRecord(SCHEMA, 2, "xxx", "AAA"),
+          RecordGenerator.newRecord(SCHEMA, 7, "xxx", "BBB"),
+          RecordGenerator.newRecord(SCHEMA, 8, "xxx", "BBB"),
+          RecordGenerator.newRecord(SCHEMA, 9, "xxx", "CCC"),
+          RecordGenerator.newRecord(SCHEMA, 10, "xxx", "CCC"));
   List<Record> duplicateSource =
       Lists.newArrayList(
-          RecordGenerator.newRecord(schema, 1, "xxx", "AAA"),
-          RecordGenerator.newRecord(schema, 2, "xxx", "AAA"),
-          RecordGenerator.newRecord(schema, 2, "xxx", "BBB"));
+          RecordGenerator.newRecord(SCHEMA, 1, "xxx", "AAA"),
+          RecordGenerator.newRecord(SCHEMA, 2, "xxx", "AAA"),
+          RecordGenerator.newRecord(SCHEMA, 2, "xxx", "BBB"));
 
   Comparator<Record> pkComparator = Comparator.comparing(r -> r.get(0, Integer.class));
 
@@ -101,14 +101,14 @@ public class TestInsertIntoSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testNoUpsert() {
     return Stream.of(
-            Arguments.of(MIXED_HIVE, schema, idPrimaryKeySpec, ptSpec),
-            Arguments.of(MIXED_HIVE, schema, noPrimaryKey, ptSpec),
-            Arguments.of(MIXED_HIVE, schema, idPrimaryKeySpec, unpartitioned),
-            Arguments.of(MIXED_HIVE, schema, noPrimaryKey, unpartitioned),
-            Arguments.of(MIXED_ICEBERG, schema, idPrimaryKeySpec, ptSpec),
-            Arguments.of(MIXED_ICEBERG, schema, noPrimaryKey, ptSpec),
-            Arguments.of(MIXED_ICEBERG, schema, idPrimaryKeySpec, unpartitioned),
-            Arguments.of(MIXED_ICEBERG, schema, noPrimaryKey, unpartitioned))
+            Arguments.of(MIXED_HIVE, SCHEMA, ID_PRIMARY_KEY_SPEC, PT_SPEC),
+            Arguments.of(MIXED_HIVE, SCHEMA, NO_PRIMARY_KEY, PT_SPEC),
+            Arguments.of(MIXED_HIVE, SCHEMA, ID_PRIMARY_KEY_SPEC, UNPARTITIONED),
+            Arguments.of(MIXED_HIVE, SCHEMA, NO_PRIMARY_KEY, UNPARTITIONED),
+            Arguments.of(MIXED_ICEBERG, SCHEMA, ID_PRIMARY_KEY_SPEC, PT_SPEC),
+            Arguments.of(MIXED_ICEBERG, SCHEMA, NO_PRIMARY_KEY, PT_SPEC),
+            Arguments.of(MIXED_ICEBERG, SCHEMA, ID_PRIMARY_KEY_SPEC, UNPARTITIONED),
+            Arguments.of(MIXED_ICEBERG, SCHEMA, NO_PRIMARY_KEY, UNPARTITIONED))
         .flatMap(
             e -> {
               List parquet = Lists.newArrayList(e.get());
@@ -156,14 +156,14 @@ public class TestInsertIntoSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testUpsert() {
     return Stream.of(
-            Arguments.of(MIXED_HIVE, schema, idPrimaryKeySpec, ptSpec),
-            Arguments.of(MIXED_HIVE, schema, noPrimaryKey, ptSpec),
-            Arguments.of(MIXED_HIVE, schema, idPrimaryKeySpec, unpartitioned),
-            Arguments.of(MIXED_HIVE, schema, noPrimaryKey, unpartitioned),
-            Arguments.of(MIXED_ICEBERG, schema, idPrimaryKeySpec, ptSpec),
-            Arguments.of(MIXED_ICEBERG, schema, noPrimaryKey, ptSpec),
-            Arguments.of(MIXED_ICEBERG, schema, idPrimaryKeySpec, unpartitioned),
-            Arguments.of(MIXED_ICEBERG, schema, noPrimaryKey, unpartitioned))
+            Arguments.of(MIXED_HIVE, SCHEMA, ID_PRIMARY_KEY_SPEC, PT_SPEC),
+            Arguments.of(MIXED_HIVE, SCHEMA, NO_PRIMARY_KEY, PT_SPEC),
+            Arguments.of(MIXED_HIVE, SCHEMA, ID_PRIMARY_KEY_SPEC, UNPARTITIONED),
+            Arguments.of(MIXED_HIVE, SCHEMA, NO_PRIMARY_KEY, UNPARTITIONED),
+            Arguments.of(MIXED_ICEBERG, SCHEMA, ID_PRIMARY_KEY_SPEC, PT_SPEC),
+            Arguments.of(MIXED_ICEBERG, SCHEMA, NO_PRIMARY_KEY, PT_SPEC),
+            Arguments.of(MIXED_ICEBERG, SCHEMA, ID_PRIMARY_KEY_SPEC, UNPARTITIONED),
+            Arguments.of(MIXED_ICEBERG, SCHEMA, NO_PRIMARY_KEY, UNPARTITIONED))
         .flatMap(
             e -> {
               List parquet = Lists.newArrayList(e.get());
@@ -239,12 +239,12 @@ public class TestInsertIntoSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testDuplicateSourceCheck() {
     return Stream.of(
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, true, true),
-        Arguments.arguments(MIXED_HIVE, noPrimaryKey, true, false),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, false, false),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, true, true),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, true, false),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, false, false));
+        Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, true, true),
+        Arguments.arguments(MIXED_HIVE, NO_PRIMARY_KEY, true, false),
+        Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, false, false),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, true, true),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, true, false),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, false, false));
   }
 
   @DisplayName("TestSQL: INSERT INTO duplicate source check")
@@ -256,10 +256,10 @@ public class TestInsertIntoSQL extends MixedTableTestBase {
       boolean duplicateSource,
       boolean expectException) {
     spark().conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, "true");
-    createTarget(schema, tableBuilder -> tableBuilder.withPrimaryKeySpec(keySpec));
+    createTarget(SCHEMA, tableBuilder -> tableBuilder.withPrimaryKeySpec(keySpec));
 
     List<Record> source = duplicateSource ? this.duplicateSource : this.source;
-    createViewSource(schema, source);
+    createViewSource(SCHEMA, source);
 
     boolean getException = false;
 

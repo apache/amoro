@@ -50,7 +50,7 @@ public class TestContinuousSplitPlannerImpl extends FlinkTestBase {
   protected static final RowType ROW_TYPE = FlinkSchemaUtil.convert(TABLE_SCHEMA);
   protected KeyedTable testKeyedTable;
 
-  protected static final LocalDateTime ldt =
+  protected static final LocalDateTime LDT =
       LocalDateTime.of(LocalDate.of(2022, 1, 1), LocalTime.of(0, 0, 0, 0));
 
   public TestContinuousSplitPlannerImpl(
@@ -74,29 +74,29 @@ public class TestContinuousSplitPlannerImpl extends FlinkTestBase {
                       RowKind.INSERT,
                       1,
                       StringData.fromString("john"),
-                      ldt.toEpochSecond(ZoneOffset.UTC),
-                      TimestampData.fromLocalDateTime(ldt)));
+                      LDT.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(LDT)));
               add(
                   GenericRowData.ofKind(
                       RowKind.INSERT,
                       2,
                       StringData.fromString("lily"),
-                      ldt.toEpochSecond(ZoneOffset.UTC),
-                      TimestampData.fromLocalDateTime(ldt)));
+                      LDT.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(LDT)));
               add(
                   GenericRowData.ofKind(
                       RowKind.INSERT,
                       3,
                       StringData.fromString("jake"),
-                      ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-                      TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+                      LDT.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(LDT.plusDays(1))));
               add(
                   GenericRowData.ofKind(
                       RowKind.INSERT,
                       4,
                       StringData.fromString("sam"),
-                      ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-                      TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+                      LDT.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(LDT.plusDays(1))));
             }
           };
       for (RowData record : baseData) {
@@ -116,15 +116,15 @@ public class TestContinuousSplitPlannerImpl extends FlinkTestBase {
                       RowKind.INSERT,
                       5,
                       StringData.fromString("mary"),
-                      ldt.toEpochSecond(ZoneOffset.UTC),
-                      TimestampData.fromLocalDateTime(ldt)));
+                      LDT.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(LDT)));
               add(
                   GenericRowData.ofKind(
                       RowKind.INSERT,
                       6,
                       StringData.fromString("mack"),
-                      ldt.toEpochSecond(ZoneOffset.UTC),
-                      TimestampData.fromLocalDateTime(ldt)));
+                      LDT.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(LDT)));
             }
           };
       for (RowData record : insert) {
@@ -144,15 +144,15 @@ public class TestContinuousSplitPlannerImpl extends FlinkTestBase {
                       RowKind.DELETE,
                       5,
                       StringData.fromString("mary"),
-                      ldt.toEpochSecond(ZoneOffset.UTC),
-                      TimestampData.fromLocalDateTime(ldt)));
+                      LDT.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(LDT)));
               add(
                   GenericRowData.ofKind(
                       RowKind.INSERT,
                       5,
                       StringData.fromString("lind"),
-                      ldt.toEpochSecond(ZoneOffset.UTC),
-                      TimestampData.fromLocalDateTime(ldt)));
+                      LDT.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(LDT)));
             }
           };
 

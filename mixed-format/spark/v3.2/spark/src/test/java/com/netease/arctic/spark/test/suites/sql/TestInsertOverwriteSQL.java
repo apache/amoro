@@ -68,41 +68,41 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
   static final String DYNAMIC = "DYNAMIC";
   static final String STATIC = "STATIC";
 
-  static final Schema schema =
+  static final Schema SCHEMA =
       new Schema(
           Types.NestedField.required(1, "id", Types.IntegerType.get()),
           Types.NestedField.required(2, "data", Types.StringType.get()),
           Types.NestedField.required(3, "pt", Types.StringType.get()));
 
-  static final PrimaryKeySpec idPrimaryKeySpec =
-      PrimaryKeySpec.builderFor(schema).addColumn("id").build();
+  static final PrimaryKeySpec ID_PRIMARY_KEY_SPEC =
+      PrimaryKeySpec.builderFor(SCHEMA).addColumn("id").build();
 
-  static final PartitionSpec ptSpec = PartitionSpec.builderFor(schema).identity("pt").build();
+  static final PartitionSpec PT_SPEC = PartitionSpec.builderFor(SCHEMA).identity("pt").build();
 
   List<Record> base =
       Lists.newArrayList(
-          RecordGenerator.newRecord(schema, 1, "aaa", "AAA"),
-          RecordGenerator.newRecord(schema, 2, "bbb", "AAA"),
-          RecordGenerator.newRecord(schema, 3, "ccc", "BBB"),
-          RecordGenerator.newRecord(schema, 4, "ddd", "BBB"),
-          RecordGenerator.newRecord(schema, 5, "eee", "CCC"),
-          RecordGenerator.newRecord(schema, 6, "fff", "CCC"));
+          RecordGenerator.newRecord(SCHEMA, 1, "aaa", "AAA"),
+          RecordGenerator.newRecord(SCHEMA, 2, "bbb", "AAA"),
+          RecordGenerator.newRecord(SCHEMA, 3, "ccc", "BBB"),
+          RecordGenerator.newRecord(SCHEMA, 4, "ddd", "BBB"),
+          RecordGenerator.newRecord(SCHEMA, 5, "eee", "CCC"),
+          RecordGenerator.newRecord(SCHEMA, 6, "fff", "CCC"));
 
   List<Record> change =
       Lists.newArrayList(
-          RecordGenerator.newRecord(schema, 7, "ggg", "DDD"),
-          RecordGenerator.newRecord(schema, 8, "hhh", "DDD"),
-          RecordGenerator.newRecord(schema, 9, "jjj", "AAA"),
-          RecordGenerator.newRecord(schema, 10, "kkk", "AAA"));
+          RecordGenerator.newRecord(SCHEMA, 7, "ggg", "DDD"),
+          RecordGenerator.newRecord(SCHEMA, 8, "hhh", "DDD"),
+          RecordGenerator.newRecord(SCHEMA, 9, "jjj", "AAA"),
+          RecordGenerator.newRecord(SCHEMA, 10, "kkk", "AAA"));
 
   List<Record> source =
       Lists.newArrayList(
-          RecordGenerator.newRecord(schema, 1, "xxx", "AAA"),
-          RecordGenerator.newRecord(schema, 2, "xxx", "AAA"),
-          RecordGenerator.newRecord(schema, 11, "xxx", "DDD"),
-          RecordGenerator.newRecord(schema, 12, "xxx", "DDD"),
-          RecordGenerator.newRecord(schema, 13, "xxx", "EEE"),
-          RecordGenerator.newRecord(schema, 14, "xxx", "EEE"));
+          RecordGenerator.newRecord(SCHEMA, 1, "xxx", "AAA"),
+          RecordGenerator.newRecord(SCHEMA, 2, "xxx", "AAA"),
+          RecordGenerator.newRecord(SCHEMA, 11, "xxx", "DDD"),
+          RecordGenerator.newRecord(SCHEMA, 12, "xxx", "DDD"),
+          RecordGenerator.newRecord(SCHEMA, 13, "xxx", "EEE"),
+          RecordGenerator.newRecord(SCHEMA, 14, "xxx", "EEE"));
 
   private ArcticTable table;
   private List<Record> target;
@@ -111,7 +111,7 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
   private void initTargetTable(PrimaryKeySpec keySpec, PartitionSpec ptSpec) {
     table =
         createTarget(
-            schema, builder -> builder.withPartitionSpec(ptSpec).withPrimaryKeySpec(keySpec));
+            SCHEMA, builder -> builder.withPartitionSpec(ptSpec).withPrimaryKeySpec(keySpec));
     initFiles = TestTableUtil.writeToBase(table, base);
     target = Lists.newArrayList(base);
 
@@ -122,7 +122,7 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
       target.addAll(change);
     }
 
-    createViewSource(schema, source);
+    createViewSource(SCHEMA, source);
   }
 
   private void assertFileLayout(TableFormat format) {
@@ -147,10 +147,10 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testDynamic() {
     return Stream.of(
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec),
-        Arguments.arguments(MIXED_HIVE, noPrimaryKey));
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY),
+        Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC),
+        Arguments.arguments(MIXED_HIVE, NO_PRIMARY_KEY));
   }
 
   @DisplayName("TestSQL: INSERT OVERWRITE dynamic mode")
@@ -159,7 +159,7 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
   public void testDynamic(TableFormat format, PrimaryKeySpec keySpec) {
     spark().conf().set(OVERWRITE_MODE_KEY, DYNAMIC);
 
-    initTargetTable(keySpec, ptSpec);
+    initTargetTable(keySpec, PT_SPEC);
 
     sql("INSERT OVERWRITE " + target() + " SELECT * FROM " + source());
 
@@ -188,18 +188,23 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
     Function<Record, Record> ptDDD = r -> setPtValue(r, "DDD");
 
     return Stream.of(
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, "", "*", alwaysTrue, noTrans),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, "", "*", alwaysTrue, noTrans),
         Arguments.arguments(
-            MIXED_ICEBERG, idPrimaryKeySpec, "PARTITION(pt = 'AAA')", "id, data", deleteAAA, ptAAA),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, "", "*", alwaysTrue, noTrans),
+            MIXED_ICEBERG,
+            ID_PRIMARY_KEY_SPEC,
+            "PARTITION(pt = 'AAA')",
+            "id, data",
+            deleteAAA,
+            ptAAA),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, "", "*", alwaysTrue, noTrans),
         Arguments.arguments(
-            MIXED_ICEBERG, noPrimaryKey, "PARTITION(pt = 'DDD')", "id, data", deleteDDD, ptDDD),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, "", "*", alwaysTrue, noTrans),
+            MIXED_ICEBERG, NO_PRIMARY_KEY, "PARTITION(pt = 'DDD')", "id, data", deleteDDD, ptDDD),
+        Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, "", "*", alwaysTrue, noTrans),
         Arguments.arguments(
-            MIXED_HIVE, idPrimaryKeySpec, "PARTITION(pt = 'AAA')", "id, data", deleteAAA, ptAAA),
-        Arguments.arguments(MIXED_HIVE, noPrimaryKey, "", "*", alwaysTrue, noTrans),
+            MIXED_HIVE, ID_PRIMARY_KEY_SPEC, "PARTITION(pt = 'AAA')", "id, data", deleteAAA, ptAAA),
+        Arguments.arguments(MIXED_HIVE, NO_PRIMARY_KEY, "", "*", alwaysTrue, noTrans),
         Arguments.arguments(
-            MIXED_HIVE, noPrimaryKey, "PARTITION(pt = 'DDD')", "id, data", deleteDDD, ptDDD));
+            MIXED_HIVE, NO_PRIMARY_KEY, "PARTITION(pt = 'DDD')", "id, data", deleteDDD, ptDDD));
   }
 
   @DisplayName("TestSQL: INSERT OVERWRITE static mode")
@@ -213,7 +218,7 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
       Function<Record, Boolean> deleteFilter,
       Function<Record, Record> sourceTrans) {
     spark().conf().set(OVERWRITE_MODE_KEY, STATIC);
-    initTargetTable(keySpec, ptSpec);
+    initTargetTable(keySpec, PT_SPEC);
 
     sql(
         "INSERT OVERWRITE "
@@ -240,14 +245,14 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
   public static Stream<Arguments> testUnPartitioned() {
 
     return Stream.of(
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, DYNAMIC),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, STATIC),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, DYNAMIC),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, DYNAMIC),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, DYNAMIC),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, STATIC),
-        Arguments.arguments(MIXED_HIVE, noPrimaryKey, DYNAMIC),
-        Arguments.arguments(MIXED_HIVE, noPrimaryKey, DYNAMIC));
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, DYNAMIC),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, STATIC),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, DYNAMIC),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, DYNAMIC),
+        Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, DYNAMIC),
+        Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, STATIC),
+        Arguments.arguments(MIXED_HIVE, NO_PRIMARY_KEY, DYNAMIC),
+        Arguments.arguments(MIXED_HIVE, NO_PRIMARY_KEY, DYNAMIC));
   }
 
   @DisplayName("TestSQL: INSERT OVERWRITE un-partitioned")
@@ -285,19 +290,20 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testHiddenPartitions() {
     return Stream.of(
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().year("ts").build()),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().month("ts").build()),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().day("ts").build()),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().hour("ts").build()),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().bucket("id", 8).build()),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, ptBuilder().year("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, ptBuilder().month("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, ptBuilder().day("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, ptBuilder().hour("ts").build()),
         Arguments.arguments(
-            MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().truncate("id", 10).build()),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().year("ts").build()),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().month("ts").build()),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().day("ts").build()),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().hour("ts").build()),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().bucket("id", 8).build()),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().truncate("id", 10).build()));
+            MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, ptBuilder().bucket("id", 8).build()),
+        Arguments.arguments(
+            MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, ptBuilder().truncate("id", 10).build()),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, ptBuilder().year("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, ptBuilder().month("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, ptBuilder().day("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, ptBuilder().hour("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, ptBuilder().bucket("id", 8).build()),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, ptBuilder().truncate("id", 10).build()));
   }
 
   @DisplayName("TestSQL: INSERT OVERWRITE hidden partition optimize write")
@@ -323,30 +329,30 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testOptimizeWrite() {
     return Stream.of(
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, STATIC, 4, true),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, unpartitioned, STATIC, 4, true),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptSpec, STATIC, 4, true),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, unpartitioned, STATIC, 4, true),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, STATIC, 1, true),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, STATIC, 4, false),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, DYNAMIC, 4, true),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, unpartitioned, DYNAMIC, 4, true),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptSpec, DYNAMIC, 4, true),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, unpartitioned, DYNAMIC, 4, true),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, DYNAMIC, 1, true),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, DYNAMIC, 4, false),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, STATIC, 4, true),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, unpartitioned, STATIC, 4, true),
-        Arguments.arguments(MIXED_HIVE, noPrimaryKey, ptSpec, STATIC, 4, true),
-        Arguments.arguments(MIXED_HIVE, noPrimaryKey, unpartitioned, STATIC, 4, true),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, STATIC, 1, true),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, STATIC, 4, false),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, DYNAMIC, 4, true),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, unpartitioned, DYNAMIC, 4, true),
-        Arguments.arguments(MIXED_HIVE, noPrimaryKey, ptSpec, DYNAMIC, 4, true),
-        Arguments.arguments(MIXED_HIVE, noPrimaryKey, unpartitioned, DYNAMIC, 4, true),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, DYNAMIC, 1, true),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, DYNAMIC, 4, false));
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, PT_SPEC, STATIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, UNPARTITIONED, STATIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, PT_SPEC, STATIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, UNPARTITIONED, STATIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, PT_SPEC, STATIC, 1, true),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, PT_SPEC, STATIC, 4, false),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, PT_SPEC, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, UNPARTITIONED, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, PT_SPEC, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, UNPARTITIONED, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, PT_SPEC, DYNAMIC, 1, true),
+        Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, PT_SPEC, DYNAMIC, 4, false),
+        Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, PT_SPEC, STATIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, UNPARTITIONED, STATIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, NO_PRIMARY_KEY, PT_SPEC, STATIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, NO_PRIMARY_KEY, UNPARTITIONED, STATIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, PT_SPEC, STATIC, 1, true),
+        Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, PT_SPEC, STATIC, 4, false),
+        Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, PT_SPEC, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, UNPARTITIONED, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, NO_PRIMARY_KEY, PT_SPEC, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, NO_PRIMARY_KEY, UNPARTITIONED, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, PT_SPEC, DYNAMIC, 1, true),
+        Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, PT_SPEC, DYNAMIC, 4, false));
   }
 
   @DisplayName("TestSQL: INSERT OVERWRITE optimize write works")
@@ -364,7 +370,7 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
 
     this.table =
         createTarget(
-            schema,
+            SCHEMA,
             builder ->
                 builder
                     .withPrimaryKeySpec(keySpec)
@@ -379,9 +385,9 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
             .map(
                 i ->
                     RecordGenerator.newRecord(
-                        schema, i, "index" + i, ptValues[i % ptValues.length]))
+                        SCHEMA, i, "index" + i, ptValues[i % ptValues.length]))
             .collect(Collectors.toList());
-    createViewSource(schema, source);
+    createViewSource(SCHEMA, source);
 
     sql("INSERT OVERWRITE " + target() + " SELECT * FROM " + source());
 
@@ -399,16 +405,16 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
 
   public static Arguments[] testSourceDuplicateCheck() {
     return new Arguments[] {
-      Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, STATIC, true, true),
-      Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptSpec, STATIC, true, false),
-      Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, DYNAMIC, true, true),
-      Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptSpec, DYNAMIC, true, false),
-      Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, DYNAMIC, false, false),
-      Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, STATIC, true, true),
-      Arguments.arguments(MIXED_HIVE, noPrimaryKey, ptSpec, STATIC, true, false),
-      Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, DYNAMIC, true, true),
-      Arguments.arguments(MIXED_HIVE, noPrimaryKey, ptSpec, DYNAMIC, true, false),
-      Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, DYNAMIC, false, false),
+      Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, PT_SPEC, STATIC, true, true),
+      Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, PT_SPEC, STATIC, true, false),
+      Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, PT_SPEC, DYNAMIC, true, true),
+      Arguments.arguments(MIXED_ICEBERG, NO_PRIMARY_KEY, PT_SPEC, DYNAMIC, true, false),
+      Arguments.arguments(MIXED_ICEBERG, ID_PRIMARY_KEY_SPEC, PT_SPEC, DYNAMIC, false, false),
+      Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, PT_SPEC, STATIC, true, true),
+      Arguments.arguments(MIXED_HIVE, NO_PRIMARY_KEY, PT_SPEC, STATIC, true, false),
+      Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, PT_SPEC, DYNAMIC, true, true),
+      Arguments.arguments(MIXED_HIVE, NO_PRIMARY_KEY, PT_SPEC, DYNAMIC, true, false),
+      Arguments.arguments(MIXED_HIVE, ID_PRIMARY_KEY_SPEC, PT_SPEC, DYNAMIC, false, false),
     };
   }
 
@@ -427,12 +433,12 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
 
     table =
         createTarget(
-            schema, builder -> builder.withPartitionSpec(ptSpec).withPrimaryKeySpec(keySpec));
+            SCHEMA, builder -> builder.withPartitionSpec(ptSpec).withPrimaryKeySpec(keySpec));
     List<Record> sourceData = Lists.newArrayList(this.base);
     if (duplicateSource) {
       sourceData.addAll(this.source);
     }
-    createViewSource(schema, sourceData);
+    createViewSource(SCHEMA, sourceData);
 
     boolean failed = false;
     try {

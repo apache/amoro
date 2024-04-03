@@ -25,7 +25,6 @@ import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_
 import com.netease.arctic.api.CommitMetaProducer;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.HMSClientPool;
-import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
@@ -33,6 +32,7 @@ import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.op.SnapshotSummary;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
+import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingCommitException;
 import com.netease.arctic.server.utils.IcebergTableUtil;

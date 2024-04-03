@@ -26,7 +26,7 @@ import java.io.Serializable;
  * @param <F> The type of the element to be converted.
  * @param <O> The output type.
  * @param <C> The context for passing optional conversion instructions.
- * @param <T> The type which is inside of <F> type.
+ * @param <T> The type which is inside of the source type.
  */
 public interface Converter<F, O, C, T> extends Serializable {
   /**

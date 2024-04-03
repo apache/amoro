@@ -182,7 +182,7 @@ jobs:
     if: ${{ startsWith(github.repository, 'NetEase/') }}
     strategy:
       matrix:
-        spark: [ "3.2.2", "3.3.2" ]
+        spark: [ "3.3.3" ]
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 8
@@ -206,12 +206,8 @@ jobs:
           images: |
             name=arctic163/optimizer-spark
           tags: |
-            type=ref,event=branch,enable=${{ matrix.spark == '3.2.2' }},suffix=-snapshot
-            type=ref,event=branch,enable=${{ matrix.spark == '3.2.2' }},suffix=-snapshot-spark3.2
-            type=ref,event=branch,enable=${{ matrix.spark == '3.3.2' }},suffix=-snapshot-spark3.3
-            type=semver,enable=${{ matrix.spark == '3.2.2' }},pattern={{version}}
-            type=semver,enable=${{ matrix.spark == '3.2.2' }},pattern={{version}}-spark3.2
-            type=semver,enable=${{ matrix.spark == '3.3.2' }},pattern={{version}}-spark3.3
+            type=ref,event=branch,enable=${{ matrix.spark == '3.3.3' }},suffix=-snapshot-spark3.3
+            type=semver,enable=${{ matrix.spark == '3.3.3' }},pattern={{version}}-spark3.3
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
