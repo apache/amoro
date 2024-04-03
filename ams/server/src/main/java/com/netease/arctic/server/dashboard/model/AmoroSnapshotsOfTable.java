@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.google.common.base.Objects;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
+import org.apache.iceberg.relocated.com.google.common.base.Objects;
 
 import java.util.Map;
 

@@ -18,14 +18,14 @@
 
 package com.netease.arctic.trino.delete;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static io.trino.plugin.iceberg.IcebergPageSink.getIcebergValue;
 import static java.util.Objects.requireNonNull;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.collect.AbstractIterator;
 import io.trino.spi.Page;
 import io.trino.spi.type.Type;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.relocated.com.google.common.collect.AbstractIterator;
 
 import javax.annotation.Nullable;
 

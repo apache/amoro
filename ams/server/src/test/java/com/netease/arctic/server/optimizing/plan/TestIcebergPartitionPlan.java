@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
@@ -29,6 +28,7 @@ import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.utils.IcebergTableUtil;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

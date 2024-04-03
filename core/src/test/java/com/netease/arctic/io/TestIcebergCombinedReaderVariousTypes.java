@@ -43,6 +43,7 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Type;
@@ -92,7 +93,7 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
   @NotNull
   private static Schema getSchema(Type type) {
     return new Schema(
-        com.google.common.collect.Lists.newArrayList(
+        Lists.newArrayList(
             Types.NestedField.of(1, false, "pk1", type),
             Types.NestedField.of(2, false, "pk2", Types.StringType.get()),
             Types.NestedField.of(3, true, "v1", Types.StringType.get())),

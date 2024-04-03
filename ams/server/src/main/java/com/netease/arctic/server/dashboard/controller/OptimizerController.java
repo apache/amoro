@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
-import com.google.common.base.Preconditions;
 import com.netease.arctic.api.ServerTableIdentifier;
 import com.netease.arctic.api.resource.Resource;
 import com.netease.arctic.api.resource.ResourceGroup;
@@ -36,6 +35,7 @@ import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
 import io.javalin.http.Context;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import javax.ws.rs.BadRequestException;
 
