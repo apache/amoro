@@ -51,8 +51,8 @@ import java.util.stream.Stream;
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestCreateTableAsSelect extends MixedTableTestBase {
 
-  public static final Schema simpleSourceSchema = TestTables.MixedIceberg.NoPK_PT.schema;
-  public static final List<Record> simpleSourceData =
+  public static final Schema SIMPLE_SOURCE_SCHEMA = TestTables.MixedIceberg.NO_PK_PT.schema;
+  public static final List<Record> SIMPLE_SOURCE_DATA =
       TestTables.MixedIceberg.PK_PT.newDateGen().records(10);
 
   public static Stream<Arguments> testTimestampZoneHandle() {
@@ -75,7 +75,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
       String primaryKeyDDL,
       boolean timestampWithoutZone,
       Types.TimestampType expectType) {
-    createViewSource(simpleSourceSchema, simpleSourceData);
+    createViewSource(SIMPLE_SOURCE_SCHEMA, SIMPLE_SOURCE_DATA);
     spark()
         .conf()
         .set(
@@ -98,14 +98,14 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
   }
 
   private static PartitionSpec.Builder ptBuilder() {
-    return PartitionSpec.builderFor(simpleSourceSchema);
+    return PartitionSpec.builderFor(SIMPLE_SOURCE_SCHEMA);
   }
 
   public static Stream<Arguments> testSchemaAndData() {
     PrimaryKeySpec keyIdPtSpec =
-        PrimaryKeySpec.builderFor(simpleSourceSchema).addColumn("id").addColumn("pt").build();
+        PrimaryKeySpec.builderFor(SIMPLE_SOURCE_SCHEMA).addColumn("id").addColumn("pt").build();
     PrimaryKeySpec keyIdSpec =
-        PrimaryKeySpec.builderFor(simpleSourceSchema).addColumn("id").build();
+        PrimaryKeySpec.builderFor(SIMPLE_SOURCE_SCHEMA).addColumn("id").build();
 
     return Stream.of(
         Arguments.of(
@@ -203,7 +203,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
       PrimaryKeySpec keySpec,
       PartitionSpec ptSpec) {
     spark().conf().set("spark.sql.session.timeZone", "UTC");
-    createViewSource(simpleSourceSchema, simpleSourceData);
+    createViewSource(SIMPLE_SOURCE_SCHEMA, SIMPLE_SOURCE_DATA);
 
     spark().conf().set(SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, true);
 
@@ -220,7 +220,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
             + source();
     sql(sqlText);
 
-    Schema expectSchema = TestTableUtil.toSchemaWithPrimaryKey(simpleSourceSchema, keySpec);
+    Schema expectSchema = TestTableUtil.toSchemaWithPrimaryKey(SIMPLE_SOURCE_SCHEMA, keySpec);
     expectSchema = TestTableUtil.timestampToWithoutZone(expectSchema);
 
     ArcticTable table = loadTable();
@@ -241,22 +241,22 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
     }
 
     List<Record> records = TestTableUtil.tableRecords(table);
-    DataComparator.build(simpleSourceData, records)
+    DataComparator.build(SIMPLE_SOURCE_DATA, records)
         .ignoreOrder(Comparator.comparing(r -> (Integer) r.get(0)))
         .assertRecordsEqual();
   }
 
   public static Stream<Arguments> testSourceDuplicateCheck() {
-    List<Record> duplicateSource = Lists.newArrayList(simpleSourceData);
-    duplicateSource.add(simpleSourceData.get(0));
+    List<Record> duplicateSource = Lists.newArrayList(SIMPLE_SOURCE_DATA);
+    duplicateSource.add(SIMPLE_SOURCE_DATA.get(0));
 
     return Stream.of(
-        Arguments.of(TableFormat.MIXED_ICEBERG, simpleSourceData, "PRIMARY KEY(id, pt)", false),
-        Arguments.of(TableFormat.MIXED_ICEBERG, simpleSourceData, "", false),
+        Arguments.of(TableFormat.MIXED_ICEBERG, SIMPLE_SOURCE_DATA, "PRIMARY KEY(id, pt)", false),
+        Arguments.of(TableFormat.MIXED_ICEBERG, SIMPLE_SOURCE_DATA, "", false),
         Arguments.of(TableFormat.MIXED_ICEBERG, duplicateSource, "", false),
         Arguments.of(TableFormat.MIXED_ICEBERG, duplicateSource, "PRIMARY KEY(id, pt)", true),
-        Arguments.of(TableFormat.MIXED_HIVE, simpleSourceData, "PRIMARY KEY(id, pt)", false),
-        Arguments.of(TableFormat.MIXED_HIVE, simpleSourceData, "", false),
+        Arguments.of(TableFormat.MIXED_HIVE, SIMPLE_SOURCE_DATA, "PRIMARY KEY(id, pt)", false),
+        Arguments.of(TableFormat.MIXED_HIVE, SIMPLE_SOURCE_DATA, "", false),
         Arguments.of(TableFormat.MIXED_HIVE, duplicateSource, "", false),
         Arguments.of(TableFormat.MIXED_HIVE, duplicateSource, "PRIMARY KEY(id, pt)", true));
   }
@@ -269,7 +269,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
       String primaryKeyDDL,
       boolean duplicateCheckFailed) {
     spark().conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, "true");
-    createViewSource(simpleSourceSchema, sourceData);
+    createViewSource(SIMPLE_SOURCE_SCHEMA, sourceData);
     String sqlText =
         "CREATE TABLE "
             + target()
@@ -313,7 +313,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
       String primaryKeyDDL,
       String propertiesDDL,
       Map<String, String> expectProperties) {
-    createViewSource(simpleSourceSchema, simpleSourceData);
+    createViewSource(SIMPLE_SOURCE_SCHEMA, SIMPLE_SOURCE_DATA);
     String sqlText =
         "CREATE TABLE "
             + target()

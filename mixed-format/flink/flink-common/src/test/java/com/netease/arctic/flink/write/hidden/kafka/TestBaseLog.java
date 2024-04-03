@@ -38,7 +38,7 @@ import org.apache.iceberg.types.Types;
 import java.util.ArrayList;
 
 public class TestBaseLog {
-  public static final Schema userSchema =
+  public static final Schema USER_SCHEMA =
       new Schema(
           new ArrayList<Types.NestedField>() {
             {
@@ -96,7 +96,7 @@ public class TestBaseLog {
             }
           });
 
-  public static final Schema userSchemaWithAllDataType =
+  public static final Schema USER_SCHEMA_WITH_ALL_DATA_TYPE =
       new Schema(
           new ArrayList<Types.NestedField>() {
             {
@@ -177,9 +177,9 @@ public class TestBaseLog {
           });
 
   private final PrimaryKeySpec primaryKeySpec =
-      PrimaryKeySpec.builderFor(userSchema).addColumn(1).build();
+      PrimaryKeySpec.builderFor(USER_SCHEMA).addColumn(1).build();
 
-  public final RowType flinkUserSchema = FlinkSchemaUtil.convert(userSchema);
+  public final RowType flinkUserSchema = FlinkSchemaUtil.convert(USER_SCHEMA);
 
   public final LogData<RowData> FLIP_LOG =
       new LogRecordV1(
@@ -192,6 +192,6 @@ public class TestBaseLog {
 
   public static LogDataJsonDeserialization<RowData> createLogDataDeserialization() {
     return new LogDataJsonDeserialization<>(
-        userSchema, LogRecordV1.factory, arrayFactory, mapFactory);
+        USER_SCHEMA, LogRecordV1.factory, arrayFactory, mapFactory);
   }
 }

@@ -26,9 +26,9 @@ import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_H
 
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.CatalogMeta;
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.server.ArcticManagementConf;
-import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -85,7 +85,7 @@ public class CatalogBuilder {
         if (tableFormats.size() == 1 && tableFormat.equals(TableFormat.MIXED_HIVE)) {
           return new MixedHiveCatalogImpl(catalogMeta);
         }
-        // if tableFormats.size() > 1 , we nned fullfill the ams uri in catalogProperty
+        // if tableFormats.size() > 1 , we need fulfill the ams uri in catalogProperty
         String amsUri = getAmsURI(serverConfiguration);
         catalogMeta.getCatalogProperties().put(CatalogMetaProperties.AMS_URI, amsUri);
         return new ExternalCatalog(catalogMeta);

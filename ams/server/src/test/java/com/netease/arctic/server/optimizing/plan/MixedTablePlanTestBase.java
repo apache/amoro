@@ -20,6 +20,8 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.api.ServerTableIdentifier;
+import com.netease.arctic.api.config.OptimizingConfig;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.DataTreeNode;
@@ -29,10 +31,8 @@ import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
-import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.TableProperties;
@@ -567,7 +567,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   private OptimizingConfig getConfig() {
-    return OptimizingConfig.parseOptimizingConfig(getArcticTable().properties());
+    return OptimizingConfig.parse(getArcticTable().properties());
   }
 
   protected void updateChangeHashBucket(int bucket) {

@@ -42,7 +42,7 @@ public class ArcticThriftUrl {
   public static final String ZOOKEEPER_FLAG = "zookeeper";
   public static final String THRIFT_FLAG = "thrift";
   public static final String THRIFT_URL_FORMAT = "thrift://%s:%d/%s%s";
-  public static final int maxRetries = 3;
+  public static final int MAX_RETRIES = 3;
   private static final Logger logger = LoggerFactory.getLogger(ArcticThriftUrl.class);
   private static final Pattern PATTERN = Pattern.compile("zookeeper://(\\S+)/([\\w-]+)");
   private final String schema;
@@ -132,7 +132,7 @@ public class ArcticThriftUrl {
         cluster = m.group(2);
       }
       int retryCount = 0;
-      while (retryCount < maxRetries) {
+      while (retryCount < MAX_RETRIES) {
         try {
           AmsServerInfo serverInfo = findAmsServerInfo(serviceName, zkServerAddress, cluster);
           url =

@@ -19,8 +19,8 @@
 package com.netease.arctic.spark.mixed;
 
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.utils.CompatibleHivePropertyUtil;
+import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.table.TableProperties;
 import org.apache.spark.sql.connector.catalog.Table;
 

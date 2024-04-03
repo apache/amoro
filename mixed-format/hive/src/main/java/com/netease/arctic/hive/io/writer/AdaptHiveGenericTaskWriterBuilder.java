@@ -19,7 +19,6 @@
 package com.netease.arctic.hive.io.writer;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
@@ -29,6 +28,7 @@ import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.io.writer.TaskWriterBuilder;
+import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;

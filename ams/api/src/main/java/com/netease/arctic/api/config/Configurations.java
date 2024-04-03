@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.utils;
+package com.netease.arctic.api.config;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -433,7 +433,7 @@ public class Configurations implements java.io.Serializable, Cloneable {
 
     Object rawValue = getRawValueFromOption(configOption).orElseGet(configOption::defaultValue);
     try {
-      return ConfigurationUtil.convertToEnum(rawValue, enumClass);
+      return ConfigHelpers.convertToEnum(rawValue, enumClass);
     } catch (IllegalArgumentException ex) {
       final String errorMessage =
           String.format(
@@ -538,9 +538,9 @@ public class Configurations implements java.io.Serializable, Cloneable {
 
     try {
       if (option.isList()) {
-        return rawValue.map(v -> ConfigurationUtil.convertToList(v, clazz));
+        return rawValue.map(v -> ConfigHelpers.convertToList(v, clazz));
       } else {
-        return rawValue.map(v -> ConfigurationUtil.convertValue(v, clazz));
+        return rawValue.map(v -> ConfigHelpers.convertValue(v, clazz));
       }
     } catch (Exception e) {
       throw new IllegalArgumentException(
@@ -562,7 +562,7 @@ public class Configurations implements java.io.Serializable, Cloneable {
     synchronized (this.confData) {
       Map<String, String> ret = new HashMap<>(this.confData.size());
       for (Map.Entry<String, Object> entry : confData.entrySet()) {
-        ret.put(entry.getKey(), ConfigurationUtil.convertToString(entry.getValue()));
+        ret.put(entry.getKey(), ConfigHelpers.convertToString(entry.getValue()));
       }
       return ret;
     }

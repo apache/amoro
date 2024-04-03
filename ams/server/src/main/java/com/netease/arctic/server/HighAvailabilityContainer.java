@@ -18,9 +18,9 @@
 
 package com.netease.arctic.server;
 
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.client.AmsServerInfo;
 import com.netease.arctic.properties.AmsHAProperties;
-import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.utils.JacksonUtil;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;

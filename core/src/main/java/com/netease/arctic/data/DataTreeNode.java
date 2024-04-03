@@ -34,7 +34,7 @@ import java.util.Objects;
  *   <li>index: index of tree node(starting from 0)
  * </ul>
  *
- * index = hashCode(data) & mask;
+ * <p>index = hashCode(data) & mask;
  */
 public final class DataTreeNode implements Serializable {
 
@@ -112,8 +112,12 @@ public final class DataTreeNode implements Serializable {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     DataTreeNode treeNode = (DataTreeNode) o;
     return mask == treeNode.mask && index == treeNode.index;
   }

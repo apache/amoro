@@ -40,6 +40,7 @@ public interface TableMaintainer {
   default void cleanDanglingDeleteFiles(TableRuntime tableRuntime) {
     // DO nothing by default
   }
+
   /**
    * Expire snapshots. The optimizing based on the snapshot that the current table relies on will
    * not expire according to TableRuntime.

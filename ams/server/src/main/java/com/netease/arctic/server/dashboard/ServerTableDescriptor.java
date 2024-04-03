@@ -21,6 +21,7 @@ package com.netease.arctic.server.dashboard;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.TableIdentifier;
+import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
@@ -33,7 +34,6 @@ import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.table.TableService;
-import com.netease.arctic.server.utils.Configurations;
 import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.ThreadPools;
 

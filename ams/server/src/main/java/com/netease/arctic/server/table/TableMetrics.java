@@ -20,6 +20,7 @@ package com.netease.arctic.server.table;
 
 import static com.netease.arctic.api.metrics.MetricDefine.defineGauge;
 
+import com.netease.arctic.api.ServerTableIdentifier;
 import com.netease.arctic.api.metrics.Gauge;
 import com.netease.arctic.api.metrics.Metric;
 import com.netease.arctic.api.metrics.MetricDefine;

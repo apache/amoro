@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.utils;
+package com.netease.arctic.api.config;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -38,12 +38,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /** Utility class for {@link Configurations} related helper functions. */
-public class ConfigurationUtil {
+public class ConfigHelpers {
 
   private static final String[] EMPTY = new String[0];
 
   // Make sure that we cannot instantiate this class
-  private ConfigurationUtil() {}
+  private ConfigHelpers() {}
 
   /**
    * Creates a new {@link Configurations} from the given {@link Properties}.

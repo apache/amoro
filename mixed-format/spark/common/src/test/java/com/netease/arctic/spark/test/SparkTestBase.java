@@ -25,7 +25,7 @@ import com.netease.arctic.TableFormat;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.UnifiedCatalogLoader;
 import com.netease.arctic.client.ArcticThriftUrl;
-import com.netease.arctic.hive.HiveTableProperties;
+import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.spark.test.utils.TestTableUtil;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
@@ -56,17 +56,17 @@ import java.util.stream.Collectors;
 
 public class SparkTestBase {
   protected static final Logger LOG = LoggerFactory.getLogger(SparkTestBase.class);
-  public static final SparkTestContext context = new SparkTestContext();
+  public static final SparkTestContext CONTEXT = new SparkTestContext();
   public static final String SPARK_SESSION_CATALOG = "spark_catalog";
 
   @BeforeAll
   public static void setupContext() throws Exception {
-    context.initialize();
+    CONTEXT.initialize();
   }
 
   @AfterAll
   public static void tearDownContext() {
-    context.close();
+    CONTEXT.close();
   }
 
   private SparkSession spark;
@@ -83,7 +83,7 @@ public class SparkTestBase {
         "spark.sql.catalog.spark_catalog",
         SparkTestContext.SESSION_CATALOG_IMPL,
         "spark.sql.catalog.spark_catalog.uri",
-        context.amsCatalogUrl(TableFormat.MIXED_HIVE));
+        CONTEXT.amsCatalogUrl(TableFormat.MIXED_HIVE));
   }
 
   @AfterEach
@@ -115,7 +115,7 @@ public class SparkTestBase {
       // pass
     }
     try {
-      context.dropHiveTable(database(), table());
+      CONTEXT.dropHiveTable(database(), table());
     } catch (Exception e) {
       // pass
     }
@@ -140,13 +140,13 @@ public class SparkTestBase {
   protected UnifiedCatalog unifiedCatalog() {
     String amsCatalogName = sparkCatalogToAMSCatalog(currentCatalog);
     return UnifiedCatalogLoader.loadUnifiedCatalog(
-        context.ams.getServerUrl(), amsCatalogName, Maps.newHashMap());
+        CONTEXT.ams.getServerUrl(), amsCatalogName, Maps.newHashMap());
   }
 
   protected SparkSession spark() {
     if (this.spark == null) {
       Map<String, String> conf = sparkSessionConfig();
-      this.spark = context.getSparkSession(conf);
+      this.spark = CONTEXT.getSparkSession(conf);
     }
     return spark;
   }
@@ -212,7 +212,7 @@ public class SparkTestBase {
     source.setSd(storageDescriptor);
     source.setParameters(properties);
     try {
-      context.getHiveClient().createTable(source);
+      CONTEXT.getHiveClient().createTable(source);
       this.source = TestIdentifier.ofHiveSource(database, sourceTable);
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -236,7 +236,7 @@ public class SparkTestBase {
 
   protected Table loadHiveTable() {
     TestIdentifier identifier = target();
-    return context.loadHiveTable(identifier.database, identifier.table);
+    return CONTEXT.loadHiveTable(identifier.database, identifier.table);
   }
 
   protected String provider(TableFormat format) {

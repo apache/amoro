@@ -265,6 +265,18 @@ The following JVM options could be set in `${AMORO_CONF_DIR}/jvm.properties`.
 | jmx.remote.port | "-Dcom.sun.management.jmxremote.port=${value}  | Enable remote debug      |
 | extra.options   | "JAVA_OPTS="${JAVA_OPTS} ${JVM_EXTRA_CONFIG}"  | The addition jvm options |
 
+### Terminal configurations
+
+Terminal support local and kyuubi, the default is local. If the user uses local to run in the spark local context, you can set the **spark.*** configuration, and if you use kyuubi, you can set the **kyuubi.*** configuration
+
+| Key                      | Default | Description                                                                                       |
+|--------------------------|---------|---------------------------------------------------------------------------------------------------|
+| terminal.backend         | local   | Terminal backend implementation. local, kyuubi and custom are valid values.                       |
+| terminal.factory         | -       | Session factory implement of terminal, `terminal.backend` must be `custom` if this is set.        |
+| terminal.result.limit    | 1000    | Row limit of result-set                                                                           |
+| terminal.stop-on-error   | false   | When a statement fails to execute, stop execution or continue executing the remaining statements. |
+| terminal.session.timeout | 30      | Session timeout in minutes.                                                                       |
+
 
 ## Start AMS
 

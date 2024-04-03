@@ -671,7 +671,8 @@ function uploadFile(info: UploadChangeParam, config, type?) {
     if (info.file.status === 'done') {
       const { code } = info.file.response
       if (code !== 200) {
-        throw new Error('failed')
+        const { message } = info.file.response
+        throw new Error(message)
       }
       const { url, id } = info.file.response.result
       config.isSuccess = true
@@ -684,7 +685,7 @@ function uploadFile(info: UploadChangeParam, config, type?) {
       message.error(`${info.file.name} ${t('uploaded')} ${t('failed')}`)
     }
   } catch (error) {
-    message.error(`${t('uploaded')} ${t('failed')}`)
+    message.error((error as Error).message)
   }
 }
 function viewFileDetail(url: string) {
