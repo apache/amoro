@@ -20,7 +20,6 @@ package com.netease.arctic.server.table;
 
 import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.api.ServerTableIdentifier;
@@ -32,6 +31,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 

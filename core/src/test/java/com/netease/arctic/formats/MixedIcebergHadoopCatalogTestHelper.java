@@ -18,8 +18,6 @@
 
 package com.netease.arctic.formats;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.netease.arctic.AmoroCatalog;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.CatalogMeta;
@@ -31,6 +29,8 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.ArcticCatalogUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
 
 import java.util.HashMap;

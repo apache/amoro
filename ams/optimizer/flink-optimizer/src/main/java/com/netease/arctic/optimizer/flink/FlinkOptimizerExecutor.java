@@ -18,13 +18,13 @@
 
 package com.netease.arctic.optimizer.flink;
 
-import com.google.common.base.Strings;
 import com.netease.arctic.api.OptimizingTask;
 import com.netease.arctic.api.OptimizingTaskResult;
 import com.netease.arctic.optimizer.common.OptimizerConfig;
 import com.netease.arctic.optimizer.common.OptimizerExecutor;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.MetricGroup;
+import org.apache.iceberg.relocated.com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

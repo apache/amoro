@@ -21,11 +21,11 @@ package com.netease.arctic.trino.arctic;
 import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.collect.ImmutableMap;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.TestedCatalogs;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import io.trino.testing.QueryRunner;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 

@@ -18,7 +18,6 @@
 
 package com.netease.arctic.optimizer.common;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.api.OptimizerRegisterInfo;
 import com.netease.arctic.api.OptimizingTask;
 import com.netease.arctic.api.OptimizingTaskId;
@@ -29,6 +28,7 @@ import com.netease.arctic.optimizing.OptimizingExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.TableOptimizing;
 import com.netease.arctic.utils.SerializationUtil;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;

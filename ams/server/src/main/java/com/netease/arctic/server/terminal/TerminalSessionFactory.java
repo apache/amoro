@@ -18,11 +18,11 @@
 
 package com.netease.arctic.server.terminal;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.api.config.ConfigOption;
 import com.netease.arctic.api.config.ConfigOptions;
 import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.table.TableMetaStore;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.List;
 import java.util.Map;
