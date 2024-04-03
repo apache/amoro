@@ -548,6 +548,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
                           .forEach(task -> retryTask(task, queue)));
           if (isExpired) {
             LOG.info("Optimizer {} has been expired, unregister it", keepingTask.getOptimizer());
+            deleteResource(keepingTask.getOptimizer().getResourceId());
             unregisterOptimizer(token);
           } else {
             LOG.debug("Optimizer {} is being touched, keep it", keepingTask.getOptimizer());
