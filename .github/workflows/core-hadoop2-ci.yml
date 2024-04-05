@@ -23,8 +23,8 @@ on:
       - "mixed-format/flink/**"
       - "mixed-format/hive/**"
       - "mixed-format/spark/**"
-      - "pom.xml"
       - "tools/maven"
+      - "pom.xml"
 
 jobs:
   build:
