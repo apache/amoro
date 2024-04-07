@@ -67,5 +67,9 @@ conf/
 */.gitignore
 *.tgz
 
+# dashboard static resources
+ams/dashboard/src/main/resources/static/
+ams/dashboard/node/
+
 !ams/dist/src/main/arctic-bin/bin/
 !ams/dist/src/main/arctic-bin/conf/

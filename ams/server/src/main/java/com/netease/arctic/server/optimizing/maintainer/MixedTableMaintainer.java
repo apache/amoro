@@ -50,6 +50,7 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
@@ -231,8 +232,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     IcebergTableMaintainer.ExpireFiles baseExpiredFiles = new IcebergTableMaintainer.ExpireFiles();
 
     try (CloseableIterable<MixedFileEntry> entries =
-        CloseableIterable.withNoopClose(
-            com.google.common.collect.Iterables.concat(changeEntries, baseEntries))) {
+        CloseableIterable.withNoopClose(Iterables.concat(changeEntries, baseEntries))) {
       Queue<MixedFileEntry> fileEntries = new LinkedTransferQueue<>();
       entries.forEach(
           e -> {

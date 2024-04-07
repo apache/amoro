@@ -21,7 +21,6 @@ package com.netease.arctic.server.table;
 import static com.netease.arctic.TableTestHelper.TEST_DB_NAME;
 import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
 
-import com.google.common.collect.Lists;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
@@ -30,6 +29,7 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;

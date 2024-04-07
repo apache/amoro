@@ -21,7 +21,6 @@ package com.netease.arctic.server.optimizing.maintainer;
 import static com.netease.arctic.BasicTableTestHelper.PRIMARY_KEY_SPEC;
 import static com.netease.arctic.BasicTableTestHelper.SPEC;
 
-import com.google.common.collect.Lists;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
@@ -54,6 +53,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;

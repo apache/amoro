@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.terminal;
 
-import com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.text.SimpleDateFormat;
 import java.util.Collection;
