@@ -24,7 +24,7 @@ on:
       - "mixed-format/hive/**"
       - "mixed-format/spark/**"
       - "pom.xml"
-      - "tools/maven"
+      - "tools/maven/**"
 
 jobs:
   build:
