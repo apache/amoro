@@ -55,31 +55,31 @@ public class TableOptimizingMetrics {
   // table optimizing status duration metrics
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_IDLE_DURATION =
       defineGauge("table_optimizing_status_idle_duration_mills")
-          .withDescription("Duration in seconds after table be in idle state")
+          .withDescription("Duration in seconds after table be in idle status")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_PENDING_DURATION =
       defineGauge("table_optimizing_status_pending_duration_mills")
-          .withDescription("Duration in seconds after table be in pending state")
+          .withDescription("Duration in seconds after table be in pending status")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_PLANNING_DURATION =
       defineGauge("table_optimizing_status_planning_duration_mills")
-          .withDescription("Duration in seconds after table be in planning state")
+          .withDescription("Duration in seconds after table be in planning status")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_EXECUTING_DURATION =
       defineGauge("table_optimizing_status_executing_duration_mills")
-          .withDescription("Duration in seconds after table be in executing state")
+          .withDescription("Duration in seconds after table be in executing status")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_COMMITTING_DURATION =
       defineGauge("table_optimizing_status_committing_duration_mills")
-          .withDescription("Duration in seconds after table be in committing state")
+          .withDescription("Duration in seconds after table be in committing status")
           .withTags("catalog", "database", "table")
           .build();
 
@@ -141,7 +141,7 @@ public class TableOptimizingMetrics {
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_IN_PENDING =
       defineGauge("table_optimizing_status_in_pending")
-          .withDescription("If currently table is in pending idle")
+          .withDescription("If currently table is in status pending")
           .withTags("catalog", "database", "table")
           .build();
 
@@ -202,23 +202,23 @@ public class TableOptimizingMetrics {
     if (globalRegistry == null) {
       // register state duration metrics
       registerMetric(
-          registry, TABLE_OPTIMIZING_STATUS_IDLE_DURATION, new StatusDurattionGauge(STATUS_IDLE));
+          registry, TABLE_OPTIMIZING_STATUS_IDLE_DURATION, new StatusDurationGauge(STATUS_IDLE));
       registerMetric(
           registry,
           TABLE_OPTIMIZING_STATUS_PENDING_DURATION,
-          new StatusDurattionGauge(STATUS_PENDING));
+          new StatusDurationGauge(STATUS_PENDING));
       registerMetric(
           registry,
           TABLE_OPTIMIZING_STATUS_PLANNING_DURATION,
-          new StatusDurattionGauge(STATUS_PLANING));
+          new StatusDurationGauge(STATUS_PLANING));
       registerMetric(
           registry,
           TABLE_OPTIMIZING_STATUS_EXECUTING_DURATION,
-          new StatusDurattionGauge(STATUS_EXECUTING));
+          new StatusDurationGauge(STATUS_EXECUTING));
       registerMetric(
           registry,
           TABLE_OPTIMIZING_STATUS_COMMITTING_DURATION,
-          new StatusDurattionGauge(STATUS_COMMITTING));
+          new StatusDurationGauge(STATUS_COMMITTING));
 
       // register table in status metrics
       registerMetric(registry, TABLE_OPTIMIZING_STATUS_IN_IDLE, new IsInStatusGauge(STATUS_IDLE));
@@ -313,10 +313,10 @@ public class TableOptimizingMetrics {
     }
   }
 
-  class StatusDurattionGauge implements Gauge<Long> {
+  class StatusDurationGauge implements Gauge<Long> {
     final String targetState;
 
-    StatusDurattionGauge(String targetState) {
+    StatusDurationGauge(String targetState) {
       this.targetState = targetState;
     }
 

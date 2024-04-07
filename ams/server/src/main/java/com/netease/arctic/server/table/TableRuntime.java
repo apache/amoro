@@ -94,7 +94,7 @@ public class TableRuntime extends StatedPersistentBase {
   @StateField private volatile long processId;
   @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
   private volatile long lastPlanTime;
-  private final TableOptimizingMetrics selfOptimizingMetrics;
+  private final TableOptimizingMetrics optimizingMetrics;
   private final ReentrantLock blockerLock = new ReentrantLock();
 
   protected TableRuntime(
@@ -107,7 +107,7 @@ public class TableRuntime extends StatedPersistentBase {
     this.tableConfiguration = TableConfiguration.parseConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
-    selfOptimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
+    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
   }
 
   protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
@@ -136,8 +136,8 @@ public class TableRuntime extends StatedPersistentBase {
             ? OptimizingStatus.PENDING
             : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
-    selfOptimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
-    selfOptimizingMetrics.stateChanged(optimizingStatus, this.currentStatusStartTime);
+    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
+    optimizingMetrics.stateChanged(optimizingStatus, this.currentStatusStartTime);
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -149,7 +149,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void registerMetric(MetricRegistry metricRegistry) {
-    this.selfOptimizingMetrics.register(metricRegistry);
+    this.optimizingMetrics.register(metricRegistry);
   }
 
   public void dispose() {
@@ -162,7 +162,7 @@ public class TableRuntime extends StatedPersistentBase {
                       TableMetaMapper.class,
                       mapper -> mapper.deleteOptimizingRuntime(tableIdentifier.getId())));
         });
-    selfOptimizingMetrics.unregister();
+    optimizingMetrics.unregister();
   }
 
   public void beginPlanning() {
@@ -288,7 +288,7 @@ public class TableRuntime extends StatedPersistentBase {
           updateOptimizingStatus(OptimizingStatus.IDLE);
           optimizingProcess = null;
           persistUpdatingRuntime();
-          selfOptimizingMetrics.processComplete(processType, success);
+          optimizingMetrics.processComplete(processType, success);
           tableHandler.handleTableChanged(this, originalStatus);
         });
   }
@@ -296,7 +296,7 @@ public class TableRuntime extends StatedPersistentBase {
   private void updateOptimizingStatus(OptimizingStatus status) {
     this.optimizingStatus = status;
     this.currentStatusStartTime = System.currentTimeMillis();
-    this.selfOptimizingMetrics.stateChanged(status, currentStatusStartTime);
+    this.optimizingMetrics.stateChanged(status, currentStatusStartTime);
   }
 
   private boolean refreshSnapshots(AmoroTable<?> amoroTable) {
