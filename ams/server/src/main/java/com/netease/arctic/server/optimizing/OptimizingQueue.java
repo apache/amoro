@@ -544,27 +544,32 @@ public class OptimizingQueue extends PersistentBase {
           taskMap.size(),
           taskMap.values());
 
+      boolean needCleanupTasks = false;
       lock.lock();
       try {
         if (hasCommitted) {
           LOG.warn("{} has already committed, give up", tableRuntime.getTableIdentifier());
           throw new IllegalStateException("repeat commit, and last error " + failedReason);
         }
-        hasCommitted = true;
-        buildCommit().commit();
-        status = Status.SUCCESS;
-        endTime = System.currentTimeMillis();
-        persistProcessCompleted(true);
-      } catch (Exception e) {
-        LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
-        status = Status.FAILED;
-        failedReason = ExceptionUtil.getErrorMessage(e, 4000);
-        endTime = System.currentTimeMillis();
-        persistProcessCompleted(false);
+        try {
+          hasCommitted = true;
+          buildCommit().commit();
+          status = Status.SUCCESS;
+          endTime = System.currentTimeMillis();
+          persistProcessCompleted(true);
+        } catch (Exception e) {
+          LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
+          status = Status.FAILED;
+          needCleanupTasks = true;
+          failedReason = ExceptionUtil.getErrorMessage(e, 4000);
+          endTime = System.currentTimeMillis();
+          persistProcessCompleted(false);
+        } finally {
+          clearProcess(this);
+        }
       } finally {
-        clearProcess(this);
         lock.unlock();
-        if (this.status == OptimizingProcess.Status.FAILED) {
+        if (needCleanupTasks) {
           cancelTasks();
         }
       }
