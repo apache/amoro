@@ -23,91 +23,93 @@ under the License.
         "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
 
 <suppressions>
+    <!-- Using ([/\\]) as the file path separator instead of (/)
+    enables it to be compatible with both Linux and Windows systems. -->
     <suppress
-            files="com/netease/arctic/utils/StatisticsFileUtil\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]utils[/\\]StatisticsFileUtil\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/log/LogDataJsonSerialization\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]log[/\\]LogDataJsonSerialization\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/log/LogDataToJsonConverters\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]log[/\\]LogDataToJsonConverters\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/log/LogDataJsonDeserialization\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]log[/\\]LogDataJsonDeserialization\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/log/JsonToLogDataConverters\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]log[/\\]JsonToLogDataConverters\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/utils/TablePropertyUtil\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]utils[/\\]TablePropertyUtil\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/api/config/OptimizingConfig\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]api[/\\]config[/\\]OptimizingConfig\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/api/config/DataExpirationConfig\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]api[/\\]config[/\\]DataExpirationConfig\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/api/config/TagConfiguration\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]api[/\\]config[/\\]TagConfiguration\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/api/config/TableConfiguration\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]api[/\\]config[/\\]TableConfiguration\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/server/RestCatalogService\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]RestCatalogService\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/server/persistence/converter/JsonObjectConverter\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]persistence[/\\]converter[/\\]JsonObjectConverter\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/server/optimizing/OptimizingConfig\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]optimizing[/\\]OptimizingConfig\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/server/optimizing/plan/OptimizingEvaluator\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]optimizing[/\\]plan[/\\]OptimizingEvaluator\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/server/optimizing/MetricsSummary\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]optimizing[/\\]MetricsSummary\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/server/table/TagConfiguration\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]table[/\\]TagConfiguration\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/server/table/TableConfiguration\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]table[/\\]TableConfiguration\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/flink/interceptor/ProxyFactory\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]flink[/\\]interceptor[/\\]ProxyFactory\.java"
             checks="TodoComment"/>
     <suppress
-            files="org/apache/hadoop/util/VersionInfo\.java"
+            files="org[/\\]apache[/\\]hadoop[/\\]util[/\\]VersionInfo\.java"
             checks="MethodName"/>
     <suppress
-            files="com/netease/arctic/trino/iceberg/TestBaseArcticConnectorTest\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]iceberg[/\\]TestBaseArcticConnectorTest\.java"
             checks="FileLength"/>
     <suppress
-            files="com/netease/arctic/trino/iceberg/BaseConnectorTest\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]iceberg[/\\]BaseConnectorTest\.java"
             checks="FileLength"/>
     <suppress
-            files="com/netease/arctic/trino/keyed/KeyedConnectorSplit\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]keyed[/\\]KeyedConnectorSplit\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/trino/keyed/KeyedTableHandle\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]keyed[/\\]KeyedTableHandle\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/trino/delete/TrinoDeleteFile\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]delete[/\\]TrinoDeleteFile\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/trino/unkeyed/IcebergSplit\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]unkeyed[/\\]IcebergSplit\.java"
             checks="Regexp"/>
     <suppress
-            files="com/netease/arctic/trino/unkeyed/AdaptHiveIcebergTableHandle\.java"
+            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]unkeyed[/\\]AdaptHiveIcebergTableHandle\.java"
             checks="Regexp"/>
     <!-- BaseConnectorTest and TestBaseArcticConnectorTest can be replace by shaded guava
           because the shaded guava version is too low -->
     <suppress
-            files="com/netease/arctic/trino/iceberg/BaseConnectorTest.java"
+            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]iceberg[/\\]BaseConnectorTest.java"
             checks="IllegalImport"/>
     <suppress
-            files="com/netease/arctic/trino/iceberg/TestBaseArcticConnectorTest.java"
+            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]iceberg[/\\]TestBaseArcticConnectorTest.java"
             checks="IllegalImport"/>
 
 </suppressions>
