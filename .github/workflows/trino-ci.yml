@@ -23,6 +23,7 @@ on:
       - "mixed-format/hive/**"
       - "mixed-format/trino/**"
       - "pom.xml"
+      - "tools/maven/**"
 
 jobs:
   build:
