@@ -24,7 +24,6 @@ import static com.netease.arctic.server.table.internal.InternalTableConstants.MI
 import static com.netease.arctic.server.table.internal.InternalTableConstants.PROPERTIES_METADATA_LOCATION;
 import static com.netease.arctic.server.utils.InternalTableUtil.genNewMetadataFileLocation;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.server.table.TableMetadata;
@@ -35,6 +34,7 @@ import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 
 import java.util.Map;
