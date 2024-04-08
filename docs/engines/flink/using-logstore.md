@@ -77,7 +77,7 @@ CREATE TABLE db.log_table (
 
 ### Double write LogStore and FileStore
 
-![Introduce](../images/flink/auto-writer.png)
+![Introduce](../../images/flink/double-write.png)
 
 Amoro Connector writes data to LogStore and ChangeStore at the same time through double-write operations, without opening Kafka transactions to ensure data consistency between the two, because opening transactions will bring a few minutes of delay to downstream tasks (the specific delay time depends on upstream tasks checkpoint interval).
 
