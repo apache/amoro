@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.metrics;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.api.metrics.Metric;
 import com.netease.arctic.api.metrics.MetricDefine;
 import com.netease.arctic.api.metrics.MetricKey;
@@ -27,6 +26,7 @@ import com.netease.arctic.api.metrics.MetricSet;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Collections;
 import java.util.List;

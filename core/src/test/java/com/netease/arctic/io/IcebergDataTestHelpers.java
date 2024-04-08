@@ -21,7 +21,6 @@ package com.netease.arctic.io;
 import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
 import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT;
 
-import com.google.common.collect.Lists;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericIcebergPartitionedFanoutWriter;
 import com.netease.arctic.io.writer.RecordWithAction;
@@ -42,6 +41,7 @@ import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.UnpartitionedWriter;
 import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.ArrayUtil;
 import org.apache.iceberg.util.PropertyUtil;

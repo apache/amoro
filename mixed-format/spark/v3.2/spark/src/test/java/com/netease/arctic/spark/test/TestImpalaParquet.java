@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.test;
 
-import com.google.common.collect.Iterators;
 import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.spark.reader.SparkParquetReaders;
 import com.netease.arctic.spark.test.utils.ResourceInputFile;
@@ -29,6 +28,7 @@ import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.mapping.MappedField;
 import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.junit.jupiter.api.Assertions;

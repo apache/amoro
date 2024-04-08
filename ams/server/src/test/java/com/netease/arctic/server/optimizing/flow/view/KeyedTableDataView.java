@@ -20,7 +20,6 @@ package com.netease.arctic.server.optimizing.flow.view;
 
 import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
 
-import com.google.common.base.Preconditions;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.RecordWithAction;
@@ -36,6 +35,7 @@ import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;

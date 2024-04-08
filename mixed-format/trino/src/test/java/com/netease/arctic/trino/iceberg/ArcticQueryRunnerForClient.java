@@ -20,12 +20,12 @@ package com.netease.arctic.trino.iceberg;
 
 import static io.trino.testing.TestingSession.testSessionBuilder;
 
-import com.google.common.collect.ImmutableMap;
 import com.netease.arctic.trino.ArcticPlugin;
 import io.airlift.log.Logger;
 import io.airlift.log.Logging;
 import io.trino.Session;
 import io.trino.testing.DistributedQueryRunner;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 
 import java.nio.file.Path;
 import java.util.Map;

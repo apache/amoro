@@ -18,9 +18,9 @@
 
 package com.netease.arctic.server.dashboard.component.reverser;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import java.util.ArrayList;

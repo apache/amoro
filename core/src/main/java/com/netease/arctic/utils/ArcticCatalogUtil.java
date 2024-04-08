@@ -32,9 +32,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.BaseTable;
+import org.apache.iceberg.CachingCatalog;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.aws.glue.GlueCatalog;
+import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.hadoop.HadoopTableOperations;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -320,5 +322,44 @@ public class ArcticCatalogUtil {
     if (StringUtils.isNotEmpty(fromProperties.get(fromKey))) {
       toProperties.put(toKey, (T) fromProperties.get(fromKey));
     }
+  }
+
+  /**
+   * Build cache catalog.
+   *
+   * @param catalog The catalog of the wrap that needs to be cached
+   * @param properties table properties
+   * @return If Cache is enabled, CachingCatalog is returned, otherwise, the input catalog is
+   *     returned
+   */
+  public static Catalog buildCacheCatalog(Catalog catalog, Map<String, String> properties) {
+    boolean cacheEnabled =
+        PropertyUtil.propertyAsBoolean(
+            properties, CatalogProperties.CACHE_ENABLED, CatalogProperties.CACHE_ENABLED_DEFAULT);
+
+    boolean cacheCaseSensitive =
+        PropertyUtil.propertyAsBoolean(
+            properties,
+            CatalogProperties.CACHE_CASE_SENSITIVE,
+            CatalogProperties.CACHE_CASE_SENSITIVE_DEFAULT);
+
+    long cacheExpirationIntervalMs =
+        PropertyUtil.propertyAsLong(
+            properties,
+            CatalogProperties.CACHE_EXPIRATION_INTERVAL_MS,
+            CatalogProperties.CACHE_EXPIRATION_INTERVAL_MS_DEFAULT);
+
+    // An expiration interval of 0ms effectively disables caching.
+    // Do not wrap with CachingCatalog.
+    if (cacheExpirationIntervalMs <= 0) {
+      LOG.warn(
+          "Configuration `{}` is {}, less than or equal to 0, then the cache will not take effect.",
+          CatalogProperties.CACHE_EXPIRATION_INTERVAL_MS,
+          cacheExpirationIntervalMs);
+      cacheEnabled = false;
+    }
+    return cacheEnabled
+        ? CachingCatalog.wrap(catalog, cacheCaseSensitive, cacheExpirationIntervalMs)
+        : catalog;
   }
 }
