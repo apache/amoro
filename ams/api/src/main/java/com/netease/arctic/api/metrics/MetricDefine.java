@@ -18,10 +18,10 @@
 
 package com.netease.arctic.api.metrics;
 
-import com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
 import java.util.Objects;

@@ -18,12 +18,12 @@
 
 package com.netease.arctic.utils.map;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.data.ChangedLsn;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeWrapper;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.junit.Assert;

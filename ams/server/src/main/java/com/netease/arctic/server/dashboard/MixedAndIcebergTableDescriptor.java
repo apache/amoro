@@ -263,8 +263,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT));
 
                 // normalize summary
-                Map<String, String> normalizeSummary =
-                    com.google.common.collect.Maps.newHashMap(summary);
+                Map<String, String> normalizeSummary = Maps.newHashMap(summary);
                 normalizeSummary.computeIfPresent(
                     SnapshotSummary.TOTAL_FILE_SIZE_PROP,
                     (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
@@ -660,7 +659,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   private void fillTableProperties(
       ServerTableMeta serverTableMeta, Map<String, String> tableProperties) {
-    Map<String, String> properties = com.google.common.collect.Maps.newHashMap(tableProperties);
+    Map<String, String> properties = Maps.newHashMap(tableProperties);
     serverTableMeta.setTableWatermark(properties.remove(TableProperties.WATERMARK_TABLE));
     serverTableMeta.setBaseWatermark(properties.remove(TableProperties.WATERMARK_BASE_STORE));
     serverTableMeta.setCreateTime(

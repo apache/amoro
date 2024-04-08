@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.persistence;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.Closeable;
