@@ -22,7 +22,6 @@ import org.apache.flink.client.program.rest.RestClusterClient;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.rest.RestClient;
 
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 public class FlinkClientUtil {
@@ -30,22 +29,20 @@ public class FlinkClientUtil {
   /**
    * Get Flink RestClusterClient.
    *
-   * @param flinkRestConf {@link org.apache.flink.configuration.RestOptions}
+   * @param configuration {@link org.apache.flink.configuration.RestOptions}
    */
-  public static RestClusterClient<String> getRestClusterClient(Map<String, String> flinkRestConf)
+  public static RestClusterClient<String> getRestClusterClient(Configuration configuration)
       throws Exception {
-    Configuration configuration = Configuration.fromMap(flinkRestConf);
     return new RestClusterClient<>(configuration, "Amoro-optimizer-session-cluster");
   }
 
   /**
    * Get Flink RestClient.
    *
-   * @param flinkRestConf {@link org.apache.flink.configuration.RestOptions}
+   * @param configuration {@link org.apache.flink.configuration.RestOptions}
    */
-  public static RestClient getRestClient(Map<String, String> flinkRestConf, ExecutorService service)
+  public static RestClient getRestClient(Configuration configuration, ExecutorService service)
       throws Exception {
-    Configuration configuration = Configuration.fromMap(flinkRestConf);
     return new RestClient(configuration, service);
   }
 }

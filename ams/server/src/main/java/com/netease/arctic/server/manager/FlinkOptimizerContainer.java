@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.manager;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.api.OptimizerProperties;
 import com.netease.arctic.api.resource.Resource;
 import com.netease.arctic.server.utils.FlinkClientUtil;
@@ -26,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.client.program.rest.RestClusterClient;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.jobgraph.RestoreMode;
 import org.apache.flink.runtime.messages.Acknowledge;
 import org.apache.flink.runtime.rest.FileUpload;
@@ -48,6 +48,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Supplier;
 import org.apache.iceberg.relocated.com.google.common.base.Suppliers;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -62,11 +63,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -123,7 +126,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
               Executors.newFixedThreadPool(
                   5,
                   new ThreadFactoryBuilder()
-                      .setNameFormat("Flink-RestClusterClient-IO-%d")
+                      .setNameFormat("flink-rest-cluster-client-io-%d")
                       .setDaemon(true)
                       .build()));
 
@@ -172,7 +175,12 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   protected Map<String, String> doScaleOut(Resource resource) {
     if (target.runByFlinkRestClient()) {
       try {
-        JobID jobID = runFlinkOptimizerJob(resource, loadFlinkConfig());
+        Configuration configuration =
+            FlinkConf.buildFor(loadFlinkConfig(), getContainerProperties())
+                .withGroupProperties(resource.getProperties())
+                .build()
+                .toConfiguration();
+        JobID jobID = runFlinkOptimizerJob(resource, configuration);
         Map<String, String> startUpStatesMap = Maps.newHashMap();
         startUpStatesMap.put(SESSION_CLUSTER_JOB_ID, jobID.toString());
         return startUpStatesMap;
@@ -366,9 +374,24 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
           "Cannot find {} from optimizer start up stats",
           SESSION_CLUSTER_JOB_ID);
       String jobId = resource.getProperties().get(SESSION_CLUSTER_JOB_ID);
+      Configuration configuration =
+          FlinkConf.buildFor(loadFlinkConfig(), getContainerProperties())
+              .withGroupProperties(resource.getProperties())
+              .build()
+              .toConfiguration();
+
       try (RestClusterClient<String> restClusterClient =
-          FlinkClientUtil.getRestClusterClient(loadFlinkConfig())) {
-        Acknowledge ignore = restClusterClient.cancel(JobID.fromHexString(jobId)).get();
+          FlinkClientUtil.getRestClusterClient(configuration)) {
+        Acknowledge ignore =
+            restClusterClient
+                .cancel(JobID.fromHexString(jobId))
+                .get(flinkClientTimeoutSecond, TimeUnit.SECONDS);
+      } catch (TimeoutException timeoutException) {
+        throw new RuntimeException(
+            String.format(
+                "Timed out stopping the optimizer in Flink cluster, "
+                    + "please configure a larger timeout via '%s'",
+                FLINK_CLIENT_TIMEOUT_SECOND));
       } catch (Exception e) {
         throw new RuntimeException("Failed to release flink optimizer", e);
       }
@@ -439,33 +462,29 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   }
 
   /** Submit the OptimizerJob to the flink cluster through Flink RestClient. */
-  protected JobID runFlinkOptimizerJob(Resource resource, Map<String, String> flinkRestConf)
+  protected JobID runFlinkOptimizerJob(Resource resource, Configuration configuration)
       throws Exception {
-    try (RestClusterClient<String> client = FlinkClientUtil.getRestClusterClient(flinkRestConf)) {
+    try (RestClusterClient<String> client = FlinkClientUtil.getRestClusterClient(configuration)) {
       ClusterOverviewWithVersion overviewWithVersion =
           client.getClusterOverview().get(flinkClientTimeoutSecond, TimeUnit.SECONDS);
       LOG.debug("cluster overview: {}", overviewWithVersion);
-      int numSlotsAvailable = overviewWithVersion.getNumSlotsAvailable();
-      if (numSlotsAvailable < resource.getThreadCount()) {
-        throw new RuntimeException("No enough slots available in the cluster.");
-      }
       File jarFile = new File(jobUri);
       Preconditions.checkArgument(
           jarFile.exists(), String.format("The jar file %s not exists", jarFile.getAbsolutePath()));
 
       URL url = new URL(client.getWebInterfaceURL());
       return runJar(
-          uploadJar(jarFile, url.getHost(), url.getPort(), flinkRestConf), flinkRestConf, resource);
+          uploadJar(jarFile, url.getHost(), url.getPort(), configuration), configuration, resource);
     }
   }
 
   @VisibleForTesting
-  protected String uploadJar(File jarFile, String host, int port, Map<String, String> flinkRestConf)
+  protected String uploadJar(File jarFile, String host, int port, Configuration configuration)
       throws Exception {
     Preconditions.checkArgument(
         jarFile.exists(), String.format("The jar file %s not exists", jarFile.getAbsolutePath()));
     try (RestClient restClient =
-        FlinkClientUtil.getRestClient(flinkRestConf, clientExecutorServiceSupplier.get())) {
+        FlinkClientUtil.getRestClient(configuration, clientExecutorServiceSupplier.get())) {
       // First check whether the jar already exists in the cluster. If it exists, there is no need
       // to upload it multiple times. If it does not exist, upload and return jarId.
       JarListHeaders jarListHeaders = JarListHeaders.getInstance();
@@ -504,7 +523,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   }
 
   @VisibleForTesting
-  protected JobID runJar(String jarId, Map<String, String> flinkRestConf, Resource resource)
+  protected JobID runJar(String jarId, Configuration configuration, Resource resource)
       throws Exception {
     JarRunHeaders headers = JarRunHeaders.getInstance();
     JarRunMessageParameters parameters = headers.getUnresolvedMessageParameters();
@@ -516,7 +535,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
             FLINK_JOB_MAIN_CLASS, args, null, null, jobID, true, null, RestoreMode.DEFAULT, null);
     LOG.info("Submitting job: {} to session cluster, args: {}", jobID, args);
     try (RestClusterClient<String> restClusterClient =
-        FlinkClientUtil.getRestClusterClient(flinkRestConf)) {
+        FlinkClientUtil.getRestClusterClient(configuration)) {
       JarRunResponseBody jarRunResponseBody =
           restClusterClient
               .sendRequest(headers, parameters, runRequestBody)
@@ -641,6 +660,13 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     public static Builder buildFor(
         Map<String, String> flinkConf, Map<String, String> containerProperties) {
       return new Builder(flinkConf, containerProperties);
+    }
+
+    public Configuration toConfiguration() {
+      HashMap<String, String> config = new HashMap<>();
+      config.putAll(flinkConf);
+      config.putAll(flinkOptions);
+      return Configuration.fromMap(config);
     }
 
     public static class Builder {
