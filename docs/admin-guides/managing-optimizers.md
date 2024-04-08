@@ -100,6 +100,12 @@ containers:
       job-uri: "local:///opt/flink/usrlib/optimizer-job.jar"                         # Optimizer job main jar
       ams-optimizing-uri: thrift://ams.amoro.service.local:1261                      # AMS optimizing uri 
       export.FLINK_CONF_DIR: /opt/flink/conf/                                        # Flink config dir, flink-conf.yaml should e in this dir, contains the rest connection parameters of the session cluster
+      flink-conf.high-availability: zookeeper                                        # Flink high availability mode, reference: https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/deployment/config/#high-availability
+      flink-conf.high-availability.zookeeper.quorum: xxx:2181
+      flink-conf.high-availability.zookeeper.path.root: /flink
+      flink-conf.high-availability.cluster-id: amoro-optimizer-cluster
+      flink-conf.high-availability.storageDir: hdfs://xxx/xxx/xxx
+      flink-conf.rest.address: localhost:8081                                        # If the session cluster is not high availability mode, please configure the restaddress of jobmanager
 ```
 
 
