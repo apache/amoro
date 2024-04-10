@@ -544,7 +544,6 @@ public class OptimizingQueue extends PersistentBase {
           taskMap.size(),
           taskMap.values());
 
-      boolean needCleanupTasks = false;
       lock.lock();
       try {
         if (hasCommitted) {
@@ -560,7 +559,6 @@ public class OptimizingQueue extends PersistentBase {
         } catch (Exception e) {
           LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
           status = Status.FAILED;
-          needCleanupTasks = true;
           failedReason = ExceptionUtil.getErrorMessage(e, 4000);
           endTime = System.currentTimeMillis();
           persistProcessCompleted(false);
@@ -569,9 +567,6 @@ public class OptimizingQueue extends PersistentBase {
         }
       } finally {
         lock.unlock();
-        if (needCleanupTasks) {
-          cancelTasks();
-        }
       }
     }
 
