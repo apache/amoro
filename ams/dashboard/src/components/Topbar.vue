@@ -131,8 +131,8 @@ export default defineComponent ({
   .topbar-tooltip .ant-tooltip-inner {
     font-size: 12px;
   }
-  .logout-button {
-    border-color: transparent;
+  .logout-button.ant-btn {
+      border: none;
   }
   .logout-button:hover {
     border-color: unset;
