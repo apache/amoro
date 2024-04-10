@@ -207,7 +207,8 @@ public class TableController {
         catalog);
     // we should only keep MIXED_HIVE format，
     // so `CatalogLoader.createCatalog` can get right CatalogImpl through calling catalogImpl.
-    Map<String, String> catalogProperties = catalogMeta.getCatalogProperties();
+    Map<String, String> originCatalogProperties = catalogMeta.getCatalogProperties();
+    Map<String, String> catalogProperties = new HashMap<>(originCatalogProperties);
     catalogProperties.put(CatalogMetaProperties.TABLE_FORMATS, TableFormat.MIXED_HIVE.name());
 
     ArcticHiveCatalog arcticHiveCatalog =

@@ -55,7 +55,7 @@ import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.utils.ArcticCatalogUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
@@ -108,10 +108,6 @@ public class ArcticHiveCatalog implements ArcticCatalog {
 
   @Override
   public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
-    //    Preconditions.checkArgument(
-    //        properties.containsKey(CatalogMetaProperties.AMS_URI),
-    //        "property: %s must be set",
-    //        CatalogMetaProperties.AMS_URI);
     if (properties.get(CatalogMetaProperties.AMS_URI) != null) {
       this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
     }
@@ -244,7 +240,7 @@ public class ArcticHiveCatalog implements ArcticCatalog {
       }
     }
     // set table format to mixed-hive format
-    tableMeta.setFormat(TableFormat.MIXED_HIVE.toString());
+    tableMeta.setFormat(TableFormat.MIXED_HIVE.name());
     return tableMeta;
   }
 
@@ -391,7 +387,6 @@ public class ArcticHiveCatalog implements ArcticCatalog {
       doCreateCheck();
       TableMeta meta = builder.build();
       ArcticTable table = createTableByMeta(meta, schema, primaryKeySpec, partitionSpec);
-      //      createTableMeta(meta);
       return table;
     }
 
@@ -462,7 +457,7 @@ public class ArcticHiveCatalog implements ArcticCatalog {
     }
 
     private String getTableLocationForCreate() {
-      if (org.apache.commons.lang3.StringUtils.isNotBlank(location)) {
+      if (StringUtils.isNotBlank(location)) {
         return location;
       }
 
@@ -471,14 +466,14 @@ public class ArcticHiveCatalog implements ArcticCatalog {
         if (!Objects.equals("/", tableLocation) && tableLocation.endsWith("/")) {
           tableLocation = tableLocation.substring(0, tableLocation.length() - 1);
         }
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(tableLocation)) {
+        if (StringUtils.isNotBlank(tableLocation)) {
           return tableLocation;
         }
       }
 
       String databaseLocation = getDatabaseLocation();
 
-      if (org.apache.commons.lang3.StringUtils.isNotBlank(databaseLocation)) {
+      if (StringUtils.isNotBlank(databaseLocation)) {
         return databaseLocation + '/' + identifier.getTableName();
       } else {
         throw new IllegalStateException(
