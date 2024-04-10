@@ -89,11 +89,10 @@ public class TableFileUtil {
    *
    * @param io arctic file io
    * @param files files to delete
-   * @param concurrent controls concurrent deletion. Only applicable for non-bulk FileIO
+   * @param workPool executor pool. Only applicable for non-bulk FileIO
    * @return deleted file count
    */
-  public static int deleteFiles(
-      ArcticFileIO io, Set<String> files, boolean concurrent, ExecutorService svc) {
+  public static int deleteFiles(ArcticFileIO io, Set<String> files, ExecutorService workPool) {
     if (files == null || files.isEmpty()) {
       return 0;
     }
@@ -110,9 +109,9 @@ public class TableFileUtil {
         LOG.warn("Failed to bulk delete files", e);
       }
     } else {
-      if (concurrent) {
+      if (workPool != null) {
         Tasks.foreach(files)
-            .executeWith(svc)
+            .executeWith(workPool)
             .noRetry()
             .suppressFailureWhenFinished()
             .onFailure(
@@ -145,7 +144,7 @@ public class TableFileUtil {
    * @return deleted file count
    */
   public static int deleteFiles(ArcticFileIO io, Set<String> files) {
-    return deleteFiles(io, files, false, null);
+    return deleteFiles(io, files, null);
   }
 
   /**
@@ -153,10 +152,12 @@ public class TableFileUtil {
    *
    * @param io arctic file io
    * @param files to deleted files
+   * @param workPool executor pool
    * @return deleted file count
    */
-  public static int parallelDeleteFiles(ArcticFileIO io, Set<String> files, ExecutorService svc) {
-    return deleteFiles(io, files, true, svc);
+  public static int parallelDeleteFiles(
+      ArcticFileIO io, Set<String> files, ExecutorService workPool) {
+    return deleteFiles(io, files, workPool);
   }
 
   /**
