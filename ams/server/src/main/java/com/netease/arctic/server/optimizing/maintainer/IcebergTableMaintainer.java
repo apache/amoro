@@ -62,6 +62,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.ThreadPools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,9 +142,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
     if (currentSnapshot == null) {
       return;
     }
-    java.util.Optional<String> totalDeleteFiles =
-        java.util.Optional.ofNullable(
-            currentSnapshot.summary().get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
+    Optional<String> totalDeleteFiles =
+        Optional.ofNullable(currentSnapshot.summary().get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
     if (totalDeleteFiles.isPresent() && Long.parseLong(totalDeleteFiles.get()) > 0) {
       // clear dangling delete files
       cleanDanglingDeleteFiles();
@@ -201,7 +201,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
         .commit();
 
     // try to batch delete files
-    int deletedFiles = TableFileUtil.deleteFiles(table.name(), arcticFileIO(), expiredFiles, true);
+    int deletedFiles =
+        TableFileUtil.parallelDeleteFiles(
+            arcticFileIO(), expiredFiles, ThreadPools.getWorkerPool());
 
     parentDirectories.forEach(
         parent -> {
@@ -305,7 +307,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     runWithCondition(
         deleteFilesCnt > 0,
         () -> LOG.info("{} total delete {} orphan files in content", table.name(), deleteFilesCnt),
-        () -> LOG.info("{} doesn't have orphan files in content", table.name()));
+        () -> {});
   }
 
   protected void cleanMetadata(long lastTime) {
@@ -314,7 +316,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     runWithCondition(
         deleteFilesCnt > 0,
         () -> LOG.info("{} total delete {} metadata files", table.name(), deleteFilesCnt),
-        () -> LOG.info("{} doesn't have orphan files in metadata", table.name()));
+        () -> {});
   }
 
   protected void cleanDanglingDeleteFiles() {
@@ -325,7 +327,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
         () ->
             LOG.info(
                 "{} total delete {} dangling delete files", table.name(), danglingDeleteFilesCnt),
-        () -> LOG.info("{} doesn't have dangling delete files", table.name()));
+        () -> {});
   }
 
   protected long mustOlderThan(TableRuntime tableRuntime, long now) {
@@ -366,10 +368,18 @@ public class IcebergTableMaintainer implements TableMaintainer {
       // dir.
       if (io.supportFileSystemOperations()) {
         SupportsFileSystemOperations fio = io.asFileSystemIO();
-        return deleteInvalidFilesInFs(fio, dataLocation, lastTime, exclude);
+        Set<PathInfo> directories = new HashSet<>();
+        Set<String> filesToDelete =
+            deleteInvalidFilesInFs(fio, dataLocation, lastTime, exclude, directories);
+        int deleted = TableFileUtil.deleteFiles(io, filesToDelete);
+        /* delete empty directories */
+        deleteEmptyDirectories(fio, directories, lastTime, exclude);
+        return deleted;
       } else if (io.supportPrefixOperations()) {
         SupportsPrefixOperations pio = io.asPrefixFileIO();
-        return deleteInvalidFilesByPrefix(pio, dataLocation, lastTime, exclude);
+        Set<String> filesToDelete =
+            deleteInvalidFilesByPrefix(pio, dataLocation, lastTime, exclude);
+        return TableFileUtil.deleteFiles(io, filesToDelete);
       } else {
         LOG.warn(
             String.format(
@@ -393,8 +403,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
     try (ArcticFileIO io = arcticFileIO()) {
       if (io.supportPrefixOperations()) {
         SupportsPrefixOperations pio = io.asPrefixFileIO();
-        return deleteInvalidMetadataFile(
-            pio, metadataLocation, lastTime, validFiles, excludeFileNameRegex);
+        Set<String> filesToDelete =
+            deleteInvalidMetadataFile(
+                pio, metadataLocation, lastTime, validFiles, excludeFileNameRegex);
+        return TableFileUtil.deleteFiles(io, filesToDelete);
       } else {
         LOG.warn(
             String.format(
@@ -487,43 +499,51 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return snapshot.map(Snapshot::timestampMillis).orElse(Long.MAX_VALUE);
   }
 
-  private int deleteInvalidFilesInFs(
-      SupportsFileSystemOperations fio, String location, long lastTime, Set<String> excludes) {
+  private Set<String> deleteInvalidFilesInFs(
+      SupportsFileSystemOperations fio,
+      String location,
+      long lastTime,
+      Set<String> excludes,
+      Set<PathInfo> directories) {
     if (!fio.exists(location)) {
-      return 0;
+      return Collections.emptySet();
     }
 
-    int deleteCount = 0;
+    Set<String> filesToDelete = new HashSet<>();
     for (PathInfo p : fio.listDirectory(location)) {
       String uriPath = TableFileUtil.getUriPath(p.location());
       if (p.isDirectory()) {
-        int deleted = deleteInvalidFilesInFs(fio, p.location(), lastTime, excludes);
-        deleteCount += deleted;
-        if (fio.exists(p.location())
-            && !p.location().endsWith(METADATA_FOLDER_NAME)
-            && !p.location().endsWith(DATA_FOLDER_NAME)
-            && p.createdAtMillis() < lastTime
-            && fio.isEmptyDirectory(p.location())) {
-          TableFileUtil.deleteEmptyDirectory(fio, p.location(), excludes);
-        }
+        directories.add(p);
+        filesToDelete.addAll(
+            deleteInvalidFilesInFs(fio, p.location(), lastTime, excludes, directories));
       } else {
         String parentLocation = TableFileUtil.getParent(p.location());
         String parentUriPath = TableFileUtil.getUriPath(parentLocation);
-        Set<String> filesToDelete = new HashSet<>();
         if (!excludes.contains(uriPath)
             && !excludes.contains(parentUriPath)
             && p.createdAtMillis() < lastTime) {
           filesToDelete.add(p.location());
         }
-        int deletedCnt =
-            TableFileUtil.deleteFiles(table.name(), arcticFileIO(), filesToDelete, false);
-        deleteCount += deletedCnt;
       }
     }
-    return deleteCount;
+    return filesToDelete;
   }
 
-  private int deleteInvalidFilesByPrefix(
+  private void deleteEmptyDirectories(
+      SupportsFileSystemOperations fio, Set<PathInfo> paths, long lastTime, Set<String> excludes) {
+    paths.forEach(
+        p -> {
+          if (fio.exists(p.location())
+              && !p.location().endsWith(METADATA_FOLDER_NAME)
+              && !p.location().endsWith(DATA_FOLDER_NAME)
+              && p.createdAtMillis() < lastTime
+              && fio.isEmptyDirectory(p.location())) {
+            TableFileUtil.deleteEmptyDirectory(fio, p.location(), excludes);
+          }
+        });
+  }
+
+  private Set<String> deleteInvalidFilesByPrefix(
       SupportsPrefixOperations pio, String prefix, long lastTime, Set<String> excludes) {
     Set<String> filesToDelete = new HashSet<>();
     for (FileInfo fileInfo : pio.listPrefix(prefix)) {
@@ -533,7 +553,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
       }
     }
 
-    return TableFileUtil.deleteFiles(table.name(), arcticFileIO(), filesToDelete, false);
+    return filesToDelete;
   }
 
   private static Set<String> getValidMetadataFiles(Table internalTable) {
@@ -592,7 +612,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return null;
   }
 
-  private int deleteInvalidMetadataFile(
+  private Set<String> deleteInvalidMetadataFile(
       SupportsPrefixOperations pio,
       String location,
       long lastTime,
@@ -609,7 +629,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
       }
     }
 
-    return TableFileUtil.deleteFiles(table.name(), arcticFileIO(), filesToDelete, false);
+    return filesToDelete;
   }
 
   private static String formatTime(long timestamp) {
@@ -634,9 +654,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     }
     long deleteFileCnt =
         Long.parseLong(
-            snapshot
-                .summary()
-                .getOrDefault(org.apache.iceberg.SnapshotSummary.TOTAL_DELETE_FILES_PROP, "0"));
+            snapshot.summary().getOrDefault(SnapshotSummary.TOTAL_DELETE_FILES_PROP, "0"));
     CloseableIterable<DataFile> dataFiles =
         CloseableIterable.transform(tasks, ContentScanTask::file);
     CloseableIterable<FileScanTask> hasDeleteTask =
