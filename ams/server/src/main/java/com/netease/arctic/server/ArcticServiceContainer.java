@@ -425,9 +425,14 @@ public class ArcticServiceContainer {
               (String) systemConfig.get(ArcticManagementConf.SERVER_EXPOSE_HOST.key()));
       systemConfig.put(ArcticManagementConf.SERVER_EXPOSE_HOST.key(), inetAddress.getHostAddress());
 
+      if (!systemConfig.containsKey(ArcticManagementConf.DB_TYPE.key())) {
+        throw new IllegalArgumentException(
+            "configuration " + ArcticManagementConf.DB_TYPE.key() + " must be set");
+      }
+
       // mysql config
-      if (((String) systemConfig.get(ArcticManagementConf.DB_TYPE.key()))
-          .equalsIgnoreCase(ArcticManagementConf.DB_TYPE_MYSQL)) {
+      if (ArcticManagementConf.DB_TYPE_MYSQL.equalsIgnoreCase(
+          (String) systemConfig.get(ArcticManagementConf.DB_TYPE.key()))) {
         if (!systemConfig.containsKey(ArcticManagementConf.DB_PASSWORD.key())
             || !systemConfig.containsKey(ArcticManagementConf.DB_USER_NAME.key())) {
           throw new IllegalArgumentException(
