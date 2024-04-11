@@ -28,7 +28,7 @@
 
     <artifactId>dist</artifactId>
     <name>Amoro Project AMS Dist</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>

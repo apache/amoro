@@ -30,7 +30,7 @@
 
     <artifactId>standalone-optimizer</artifactId>
     <name>Amoro Project AMS Standalone Optimizer</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
 
     <dependencies>

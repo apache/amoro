@@ -29,7 +29,7 @@
     <artifactId>amoro-mixed-format-spark</artifactId>
     <packaging>pom</packaging>
     <name>Amoro Project Mixed Format Spark Parent</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <modules>
         <module>common</module>

@@ -28,7 +28,7 @@
 
     <artifactId>amoro-mixed-format-flink-common-iceberg-bridge</artifactId>
     <name>Amoro Project Mixed Format Flink Iceberg Bridge</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <properties>
         <kafka.version>3.2.3</kafka.version>

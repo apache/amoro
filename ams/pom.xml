@@ -30,7 +30,7 @@
     <artifactId>amoro-ams</artifactId>
     <packaging>pom</packaging>
     <name>Amoro Project AMS Parent</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <modules>
         <module>api</module>

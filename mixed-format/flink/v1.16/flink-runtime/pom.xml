@@ -29,7 +29,7 @@
 
     <artifactId>amoro-mixed-format-flink-runtime-1.16</artifactId>
     <name>Amoro Project Mixed Format Flink 1.16 Runtime</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <properties>
         <flink.version>1.16.2</flink.version>

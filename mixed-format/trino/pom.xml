@@ -28,7 +28,7 @@
 
     <artifactId>amoro-mixed-format-trino</artifactId>
     <name>Amoro Project Mixed Format Trino</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

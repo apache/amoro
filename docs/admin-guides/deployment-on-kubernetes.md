@@ -65,7 +65,7 @@ $ tar zxvf amoro-*.tgz
 Alternatively, you can find the latest charts directly from the Github source code.
 
 ```shell
-$ git clone https://github.com/NetEase/amoro.git
+$ git clone https://github.com/apache/amoro.git
 $ cd amoro/charts
 $ helm dependency build ./amoro
 ```

@@ -30,7 +30,7 @@
 
     <artifactId>flink-optimizer</artifactId>
     <name>Amoro Project AMS Flink Optimizer</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <properties>
         <flink-optimizer.flink-version>1.18.1</flink-optimizer.flink-version>

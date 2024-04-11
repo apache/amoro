@@ -275,7 +275,7 @@ public class ArcticServiceContainer {
             + " / ___ | / /  / // /_/ // _, _// /_/ / \n"
             + "/_/  |_|/_/  /_/ \\____//_/ |_| \\____/  \n"
             + "                                       \n"
-            + "      https://amoro.netease.com/       \n");
+            + "      https://amoro.apache.org/       \n");
 
     LOG.info("Http server start at {}.", port);
   }

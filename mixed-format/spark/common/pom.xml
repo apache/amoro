@@ -30,7 +30,7 @@
     <artifactId>amoro-mixed-format-spark-3-common</artifactId>
     <packaging>jar</packaging>
     <name>Amoro Project Mixed Format Spark 3 Common</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <properties>
         <spark.version>3.2.2</spark.version>

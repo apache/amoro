@@ -31,7 +31,7 @@
     <artifactId>amoro-mixed-format-spark-3.3-runtime</artifactId>
     <packaging>jar</packaging>
     <name>Amoro Project Mixed Format Spark 3.3 Runtime</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <dependencies>
         <dependency>

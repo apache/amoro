@@ -32,7 +32,7 @@
     <artifactId>amoro-mixed-format</artifactId>
     <packaging>pom</packaging>
     <name>Amoro Project Mixed Format Parent</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <modules>
         <module>flink</module>

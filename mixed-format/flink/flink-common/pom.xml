@@ -29,7 +29,7 @@
 
     <artifactId>amoro-mixed-format-flink-common</artifactId>
     <name>Amoro Project Mixed Format Flink Common</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <packaging>jar</packaging>
 
