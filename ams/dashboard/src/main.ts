@@ -49,6 +49,21 @@ RegisterComponents(app);
 (async () => {
   try {
     const store = useStore()
+
+    const fromPath = window.location.pathname
+    const fromQuery = window.location.search
+    if (!store.historyPathInfo.path && fromPath!='/login') {
+      const queryParams = new URLSearchParams(fromQuery)
+      const queryObj = {}
+      for (const [key, value] of queryParams.entries()) {
+          queryObj[key] = value
+      }
+      store.setHistoryPath({
+        path: fromPath,
+        query: queryObj
+      })
+    }
+
     const token = getQueryString('token') || ''
     const res = await loginService.getCurUserInfo(token)
     if (res) {
@@ -70,8 +85,8 @@ RegisterComponents(app);
       }
       next()
     })
-    app.use(router)
 
+    app.use(router)
     app.mount('#app')
   }
 })()

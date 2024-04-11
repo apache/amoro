@@ -395,7 +395,6 @@ public class DashboardServer {
           ctx.queryParamMap());
     } else if (needLoginCheck(uriPath)) {
       if (null == ctx.sessionAttribute("user")) {
-        ctx.sessionAttributeMap();
         LOG.info("session info: {}", JacksonUtil.toJSONString(ctx.sessionAttributeMap()));
         throw new ForbiddenException();
       }
