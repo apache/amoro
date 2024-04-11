@@ -28,7 +28,7 @@
 
     <name>Amoro Project Parent</name>
     <description>Amoro is a Lakehouse management system built on open data formats.</description>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <licenses>
         <license>
@@ -53,7 +53,7 @@
 
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>https://github.com/NetEase/amoro/issues</url>
+        <url>https://github.com/apache/amoro/issues</url>
     </issueManagement>
 
     <properties>

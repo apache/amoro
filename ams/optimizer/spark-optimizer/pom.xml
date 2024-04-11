@@ -30,7 +30,7 @@
 
     <artifactId>spark-optimizer</artifactId>
     <name>Amoro Project AMS Spark Optimizer</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <properties>
         <spark-optimizer.spark-version>3.3.3</spark-optimizer.spark-version>

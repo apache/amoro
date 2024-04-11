@@ -32,7 +32,7 @@
     <artifactId>amoro-ams-server</artifactId>
     <packaging>jar</packaging>
     <name>Amoro Project AMS Server</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <dependencies>
 

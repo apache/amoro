@@ -95,7 +95,7 @@ export default defineComponent ({
     }
 
     const goDocs = () => {
-      window.open('https://amoro.netease.com/docs/latest/')
+      window.open('https://amoro.apache.org/docs/latest/')
     }
 
     onMounted(() => {

@@ -28,7 +28,7 @@
 
     <artifactId>amoro-mixed-format-flink-common-format</artifactId>
     <name>Amoro Project Mixed Format Flink Common Format</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <properties>
         <flink.version>1.17.1</flink.version>
