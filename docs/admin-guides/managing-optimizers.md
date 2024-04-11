@@ -40,7 +40,7 @@ FlinkOptimizerContainer support the following properties:
 | Property Name             | Required | Default Value | Description                                                                                                                                                                                                                                                                          |
 |---------------------------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | flink-home                | true     | N/A           | Flink installation location                                                                                                                                                                                                                                                          |
-| target                    | true     | yarn-per-job  | flink job deployed target, available values `yarn-per-job`, `yarn-application`, `kubernetes-application`                                                                                                                                                                             |
+| target                    | true     | yarn-per-job  | flink job deployed target, available values `yarn-per-job`, `yarn-application`, `kubernetes-application`, `session`                                                                                                                                                                  |
 | job-uri                   | false    | N/A           | The jar uri of flink optimizer job. This is required if target is application mode.                                                                                                                                                                                                  |
 | ams-optimizing-uri        | false | N/A           | uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available                                                                                                                                                                        |
 | export.\<key\>            | false | N/A           | environment variables will be exported during job submit                                                                                                                                                                                                                             |
@@ -48,7 +48,7 @@ FlinkOptimizerContainer support the following properties:
 | export.HADOOP_CONF_DIR    | false | N/A           | Direction which holds the configuration files for the hadoop cluster (including hdfs-site.xml, core-site.xml, yarn-site.xml ). If the hadoop cluster has kerberos authentication enabled, you need to prepare an additional krb5.conf and a keytab file for the user to submit tasks |
 | export.JVM_ARGS           | false | N/A           | you can configure flink to run additional configuration parameters, here is an example of configuring krb5.conf, specify the address of krb5.conf to be used by Flink when committing via `-Djava.security.krb5.conf=/opt/krb5.conf`                                                 |
 | export.HADOOP_USER_NAME   | false | N/A           | the username used to submit tasks to yarn, used for simple authentication                                                                                                                                                                                                            |
-| export.FLINK_CONF_DIR     | false | N/A           | the directory where flink_conf.yaml is located                                                                                                                                                                                         |
+| export.FLINK_CONF_DIR     | false | N/A           | the directory where flink_conf.yaml is located                                                                                                                                                                                                                                       |
 | flink-conf.\<key\>        | false | N/A           | [Flink Configuration Options](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/config/) will be passed to cli by `-Dkey=value`,                                                                                                                                  |
 
 {{< hint info >}}
@@ -87,6 +87,25 @@ containers:
       export.FLINK_CONF_DIR: /opt/flink/conf/                                        # Flink config dir
       flink-conf.kubernetes.container.image: "arctic163/optimizer-flink:{version}"   # Optimizer image ref
       flink-conf.kubernetes.service-account: flink                                   # Service account that is used within kubernetes cluster.
+```
+
+An example for flink session mode:
+
+```yaml
+containers:
+  - name: flinkContainer
+    container-impl: com.netease.arctic.server.manager.FlinkOptimizerContainer
+    properties:
+      target: session                                                                # Flink run in session cluster
+      job-uri: "local:///opt/flink/usrlib/optimizer-job.jar"                         # Optimizer job main jar
+      ams-optimizing-uri: thrift://ams.amoro.service.local:1261                      # AMS optimizing uri 
+      export.FLINK_CONF_DIR: /opt/flink/conf/                                        # Flink config dir, flink-conf.yaml should e in this dir, contains the rest connection parameters of the session cluster
+      flink-conf.high-availability: zookeeper                                        # Flink high availability mode, reference: https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/deployment/config/#high-availability
+      flink-conf.high-availability.zookeeper.quorum: xxx:2181
+      flink-conf.high-availability.zookeeper.path.root: /flink
+      flink-conf.high-availability.cluster-id: amoro-optimizer-cluster
+      flink-conf.high-availability.storageDir: hdfs://xxx/xxx/xxx
+      flink-conf.rest.address: localhost:8081                                        # If the session cluster is not high availability mode, please configure the restaddress of jobmanager
 ```
 
 
