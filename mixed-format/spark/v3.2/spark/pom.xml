@@ -31,7 +31,7 @@
     <artifactId>amoro-mixed-format-spark-3.2</artifactId>
     <packaging>jar</packaging>
     <name>Amoro Project Mixed Format Spark 3.2</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <properties>
         <hive.version>2.3.9</hive.version>

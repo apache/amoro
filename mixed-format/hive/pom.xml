@@ -29,7 +29,7 @@
 
     <artifactId>amoro-mixed-format-hive</artifactId>
     <name>Amoro Project Mixed Hive Format</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <dependencies>
         <dependency>

@@ -29,7 +29,7 @@
     <artifactId>amoro-ams-dashboard</artifactId>
     <packaging>jar</packaging>
     <name>Amoro Project AMS Dashboard</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <properties>
         <node.version>v18.0.0</node.version>

@@ -31,7 +31,7 @@
     <artifactId>amoro-mixed-format-flink</artifactId>
     <packaging>pom</packaging>
     <name>Amoro Project Mixed Format Flink Parent</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <modules>
         <module>flink-common</module>
