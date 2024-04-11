@@ -22,7 +22,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>amoro-optimizer</artifactId>
-        <groupId>com.netease.amoro</groupId>
+        <groupId>org.apache.amoro</groupId>
         <version>0.7.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -39,7 +39,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>optimizer-common</artifactId>
             <version>${project.version}</version>
         </dependency>

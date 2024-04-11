@@ -22,7 +22,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>amoro-mixed-format-spark</artifactId>
-        <groupId>com.netease.amoro</groupId>
+        <groupId>org.apache.amoro</groupId>
         <version>0.7.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
@@ -35,7 +35,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-format-spark-3.3</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
@@ -58,11 +58,11 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
                                 <includes>
-                                    <include>com.netease.amoro:amoro-mixed-format-spark-3-common</include>
-                                    <include>com.netease.amoro:amoro-mixed-format-spark-3.3</include>
-                                    <include>com.netease.amoro:amoro-core</include>
-                                    <include>com.netease.amoro:amoro-ams-api</include>
-                                    <include>com.netease.amoro:amoro-mixed-format-hive</include>
+                                    <include>org.apache.amoro:amoro-mixed-format-spark-3-common</include>
+                                    <include>org.apache.amoro:amoro-mixed-format-spark-3.3</include>
+                                    <include>org.apache.amoro:amoro-core</include>
+                                    <include>org.apache.amoro:amoro-ams-api</include>
+                                    <include>org.apache.amoro:amoro-mixed-format-hive</include>
                                     <include>org.apache.paimon:paimon-shade-jackson-2</include>
                                     <include>org.apache.curator:curator-framework</include>
                                     <include>org.apache.curator:curator-client</include>

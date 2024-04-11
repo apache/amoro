@@ -22,7 +22,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>amoro-mixed-format-spark</artifactId>
-        <groupId>com.netease.amoro</groupId>
+        <groupId>org.apache.amoro</groupId>
         <version>0.7.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
@@ -189,7 +189,7 @@
 
         <!-- amoro dependency -->
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-core</artifactId>
             <version>${project.version}</version>
             <exclusions>
@@ -213,7 +213,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-format-hive</artifactId>
             <version>${project.version}</version>
             <exclusions>
@@ -229,7 +229,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-format-spark-3-common</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -290,7 +290,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-ams-api</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
@@ -305,7 +305,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-core</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
@@ -338,7 +338,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-format-hive</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
@@ -352,7 +352,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-format-spark-3-common</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>

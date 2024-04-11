@@ -21,7 +21,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.netease.amoro</groupId>
+    <groupId>org.apache.amoro</groupId>
     <artifactId>amoro-parent</artifactId>
     <version>0.7.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -205,19 +205,19 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.netease.amoro</groupId>
+                <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-ams-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>com.netease.amoro</groupId>
+                <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>com.netease.amoro</groupId>
+                <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-mixed-format-hive</artifactId>
                 <version>${project.version}</version>
             </dependency>
