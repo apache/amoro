@@ -20,26 +20,56 @@ package com.netease.arctic.server.manager;
 
 import com.netease.arctic.api.OptimizerProperties;
 import com.netease.arctic.api.resource.Resource;
+import com.netease.arctic.server.utils.FlinkClientUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
+import org.apache.flink.api.common.JobID;
+import org.apache.flink.client.program.rest.RestClusterClient;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.jobgraph.RestoreMode;
+import org.apache.flink.runtime.messages.Acknowledge;
+import org.apache.flink.runtime.rest.FileUpload;
+import org.apache.flink.runtime.rest.RestClient;
+import org.apache.flink.runtime.rest.handler.legacy.messages.ClusterOverviewWithVersion;
+import org.apache.flink.runtime.rest.messages.EmptyMessageParameters;
+import org.apache.flink.runtime.rest.messages.EmptyRequestBody;
+import org.apache.flink.runtime.rest.util.RestConstants;
+import org.apache.flink.runtime.webmonitor.handlers.JarListHeaders;
+import org.apache.flink.runtime.webmonitor.handlers.JarListInfo;
+import org.apache.flink.runtime.webmonitor.handlers.JarRunHeaders;
+import org.apache.flink.runtime.webmonitor.handlers.JarRunMessageParameters;
+import org.apache.flink.runtime.webmonitor.handlers.JarRunRequestBody;
+import org.apache.flink.runtime.webmonitor.handlers.JarRunResponseBody;
+import org.apache.flink.runtime.webmonitor.handlers.JarUploadHeaders;
+import org.apache.flink.runtime.webmonitor.handlers.JarUploadResponseBody;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Function;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.base.Supplier;
+import org.apache.iceberg.relocated.com.google.common.base.Suppliers;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -51,6 +81,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   public static final String FLINK_CONFIG_PATH = "/conf";
   public static final String FLINK_CONFIG_YAML = "/flink-conf.yaml";
   public static final String ENV_FLINK_CONF_DIR = "FLINK_CONF_DIR";
+  public static final String FLINK_CLIENT_TIMEOUT_SECOND = "flink-client-timeout-second";
 
   private static final String DEFAULT_JOB_URI = "/plugin/optimizer/flink/optimizer-job.jar";
   private static final String FLINK_JOB_MAIN_CLASS =
@@ -73,10 +104,12 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
   public static final String YARN_APPLICATION_ID_PROPERTY = "yarn-application-id";
   public static final String KUBERNETES_CLUSTER_ID_PROPERTY = "kubernetes-cluster-id";
+  public static final String SESSION_CLUSTER_JOB_ID = "session-cluster-job-id";
 
   private static final Pattern APPLICATION_ID_PATTERN =
       Pattern.compile("(.*)application_(\\d+)_(\\d+)");
   private static final int MAX_READ_APP_ID_TIME = 600000; // 10 min
+  private static final long FLINK_CLIENT_TIMEOUT_SECOND_DEFAULT = 30; // 30s
 
   private static final Function<String, String> yarnApplicationIdReader =
       readLine -> {
@@ -87,16 +120,28 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
         return null;
       };
 
+  private final Supplier<ExecutorService> clientExecutorServiceSupplier =
+      Suppliers.memoize(
+          () ->
+              Executors.newFixedThreadPool(
+                  5,
+                  new ThreadFactoryBuilder()
+                      .setNameFormat("flink-rest-cluster-client-io-%d")
+                      .setDaemon(true)
+                      .build()));
+
   private Target target;
   private String flinkHome;
   private String flinkConfDir;
   private String jobUri;
+  private long flinkClientTimeoutSecond;
 
   @Override
   public void init(String name, Map<String, String> containerProperties) {
     super.init(name, containerProperties);
     this.flinkHome = getFlinkHome();
     this.flinkConfDir = getFlinkConfDir();
+    this.flinkClientTimeoutSecond = getFlinkClientTimeoutSecond();
 
     String runTarget =
         Optional.ofNullable(containerProperties.get(FLINK_RUN_TARGET))
@@ -128,30 +173,46 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
   @Override
   protected Map<String, String> doScaleOut(Resource resource) {
-    String startUpArgs = this.buildOptimizerStartupArgsString(resource);
-    Runtime runtime = Runtime.getRuntime();
-    try {
-      String exportCmd = String.join(" && ", exportSystemProperties());
-      String startUpCmd = String.format("%s && %s", exportCmd, startUpArgs);
-      String[] cmd = {"/bin/sh", "-c", startUpCmd};
-      LOG.info("Starting flink optimizer using command : {}", startUpCmd);
-      Process exec = runtime.exec(cmd);
-      Map<String, String> startUpStatesMap = Maps.newHashMap();
-      switch (target) {
-        case YARN_PER_JOB:
-        case YARN_APPLICATION:
-          String applicationId = fetchCommandOutput(exec, yarnApplicationIdReader);
-          if (applicationId != null) {
-            startUpStatesMap.put(YARN_APPLICATION_ID_PROPERTY, applicationId);
-          }
-          break;
-        case KUBERNETES_APPLICATION:
-          startUpStatesMap.put(KUBERNETES_CLUSTER_ID_PROPERTY, kubernetesClusterId(resource));
-          break;
+    if (target.runByFlinkRestClient()) {
+      try {
+        Configuration configuration =
+            FlinkConf.buildFor(loadFlinkConfig(), getContainerProperties())
+                .withGroupProperties(resource.getProperties())
+                .build()
+                .toConfiguration();
+        JobID jobID = runFlinkOptimizerJob(resource, configuration);
+        Map<String, String> startUpStatesMap = Maps.newHashMap();
+        startUpStatesMap.put(SESSION_CLUSTER_JOB_ID, jobID.toString());
+        return startUpStatesMap;
+      } catch (Exception e) {
+        throw new RuntimeException("Failed to scale out flink optimizer in session cluster.", e);
       }
-      return startUpStatesMap;
-    } catch (IOException e) {
-      throw new UncheckedIOException("Failed to scale out flink optimizer.", e);
+    } else {
+      String startUpArgs = this.buildOptimizerStartupArgsString(resource);
+      Runtime runtime = Runtime.getRuntime();
+      try {
+        String exportCmd = String.join(" && ", exportSystemProperties());
+        String startUpCmd = String.format("%s && %s", exportCmd, startUpArgs);
+        String[] cmd = {"/bin/sh", "-c", startUpCmd};
+        LOG.info("Starting flink optimizer using command : {}", startUpCmd);
+        Process exec = runtime.exec(cmd);
+        Map<String, String> startUpStatesMap = Maps.newHashMap();
+        switch (target) {
+          case YARN_PER_JOB:
+          case YARN_APPLICATION:
+            String applicationId = fetchCommandOutput(exec, yarnApplicationIdReader);
+            if (applicationId != null) {
+              startUpStatesMap.put(YARN_APPLICATION_ID_PROPERTY, applicationId);
+            }
+            break;
+          case KUBERNETES_APPLICATION:
+            startUpStatesMap.put(KUBERNETES_CLUSTER_ID_PROPERTY, kubernetesClusterId(resource));
+            break;
+        }
+        return startUpStatesMap;
+      } catch (IOException e) {
+        throw new UncheckedIOException("Failed to scale out flink optimizer.", e);
+      }
     }
   }
 
@@ -307,27 +368,56 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
   @Override
   public void releaseOptimizer(Resource resource) {
-    String releaseCommand;
-    switch (target) {
-      case YARN_APPLICATION:
-      case YARN_PER_JOB:
-        releaseCommand = buildReleaseYarnCommand(resource);
-        break;
-      case KUBERNETES_APPLICATION:
-        releaseCommand = buildReleaseKubernetesCommand(resource);
-        break;
-      default:
-        throw new IllegalStateException("Unsupported running target: " + target.getValue());
-    }
+    if (target.runByFlinkRestClient()) {
+      Preconditions.checkArgument(
+          resource.getProperties().containsKey(SESSION_CLUSTER_JOB_ID),
+          "Cannot find {} from optimizer start up stats",
+          SESSION_CLUSTER_JOB_ID);
+      String jobId = resource.getProperties().get(SESSION_CLUSTER_JOB_ID);
+      Configuration configuration =
+          FlinkConf.buildFor(loadFlinkConfig(), getContainerProperties())
+              .withGroupProperties(resource.getProperties())
+              .build()
+              .toConfiguration();
 
-    try {
-      String exportCmd = String.join(" && ", exportSystemProperties());
-      String releaseCmd = exportCmd + " && " + releaseCommand;
-      String[] cmd = {"/bin/sh", "-c", releaseCmd};
-      LOG.info("Releasing flink optimizer using command: " + releaseCmd);
-      Runtime.getRuntime().exec(cmd);
-    } catch (IOException e) {
-      throw new UncheckedIOException("Failed to release flink optimizer.", e);
+      try (RestClusterClient<String> restClusterClient =
+          FlinkClientUtil.getRestClusterClient(configuration)) {
+        Acknowledge ignore =
+            restClusterClient
+                .cancel(JobID.fromHexString(jobId))
+                .get(flinkClientTimeoutSecond, TimeUnit.SECONDS);
+      } catch (TimeoutException timeoutException) {
+        throw new RuntimeException(
+            String.format(
+                "Timed out stopping the optimizer in Flink cluster, "
+                    + "please configure a larger timeout via '%s'",
+                FLINK_CLIENT_TIMEOUT_SECOND));
+      } catch (Exception e) {
+        throw new RuntimeException("Failed to release flink optimizer", e);
+      }
+    } else {
+      String releaseCommand;
+      switch (target) {
+        case YARN_APPLICATION:
+        case YARN_PER_JOB:
+          releaseCommand = buildReleaseYarnCommand(resource);
+          break;
+        case KUBERNETES_APPLICATION:
+          releaseCommand = buildReleaseKubernetesCommand(resource);
+          break;
+        default:
+          throw new IllegalStateException("Unsupported running target: " + target.getValue());
+      }
+
+      try {
+        String exportCmd = String.join(" && ", exportSystemProperties());
+        String releaseCmd = exportCmd + " && " + releaseCommand;
+        String[] cmd = {"/bin/sh", "-c", releaseCmd};
+        LOG.info("Releasing flink optimizer using command: " + releaseCmd);
+        Runtime.getRuntime().exec(cmd);
+      } catch (IOException e) {
+        throw new UncheckedIOException("Failed to release flink optimizer.", e);
+      }
     }
   }
 
@@ -371,6 +461,89 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
         this.flinkHome, options);
   }
 
+  /** Submit the OptimizerJob to the flink cluster through Flink RestClient. */
+  protected JobID runFlinkOptimizerJob(Resource resource, Configuration configuration)
+      throws Exception {
+    try (RestClusterClient<String> client = FlinkClientUtil.getRestClusterClient(configuration)) {
+      ClusterOverviewWithVersion overviewWithVersion =
+          client.getClusterOverview().get(flinkClientTimeoutSecond, TimeUnit.SECONDS);
+      LOG.debug("cluster overview: {}", overviewWithVersion);
+      File jarFile = new File(jobUri);
+      Preconditions.checkArgument(
+          jarFile.exists(), String.format("The jar file %s not exists", jarFile.getAbsolutePath()));
+
+      URL url = new URL(client.getWebInterfaceURL());
+      return runJar(
+          uploadJar(jarFile, url.getHost(), url.getPort(), configuration), configuration, resource);
+    }
+  }
+
+  @VisibleForTesting
+  protected String uploadJar(File jarFile, String host, int port, Configuration configuration)
+      throws Exception {
+    Preconditions.checkArgument(
+        jarFile.exists(), String.format("The jar file %s not exists", jarFile.getAbsolutePath()));
+    try (RestClient restClient =
+        FlinkClientUtil.getRestClient(configuration, clientExecutorServiceSupplier.get())) {
+      // First check whether the jar already exists in the cluster. If it exists, there is no need
+      // to upload it multiple times. If it does not exist, upload and return jarId.
+      JarListHeaders jarListHeaders = JarListHeaders.getInstance();
+      JarListInfo jarListInfo =
+          restClient
+              .sendRequest(
+                  host,
+                  port,
+                  jarListHeaders,
+                  EmptyMessageParameters.getInstance(),
+                  EmptyRequestBody.getInstance())
+              .get(flinkClientTimeoutSecond, TimeUnit.SECONDS);
+      Optional<JarListInfo.JarFileInfo> optimizerJarOptional =
+          jarListInfo.jarFileList.stream()
+              .filter(jarFileInfo -> jarFile.getName().equals(jarFileInfo.name))
+              .findFirst();
+      if (optimizerJarOptional.isPresent()) {
+        return optimizerJarOptional.get().id;
+      }
+      JarUploadHeaders jarUploadHeaders = JarUploadHeaders.getInstance();
+      JarUploadResponseBody jarUploadResponseBody =
+          restClient
+              .sendRequest(
+                  host,
+                  port,
+                  jarUploadHeaders,
+                  EmptyMessageParameters.getInstance(),
+                  EmptyRequestBody.getInstance(),
+                  Collections.singletonList(
+                      new FileUpload(jarFile.toPath(), RestConstants.CONTENT_TYPE_JAR)))
+              .get(flinkClientTimeoutSecond, TimeUnit.SECONDS);
+      return jarUploadResponseBody
+          .getFilename()
+          .substring(jarUploadResponseBody.getFilename().lastIndexOf("/") + 1);
+    }
+  }
+
+  @VisibleForTesting
+  protected JobID runJar(String jarId, Configuration configuration, Resource resource)
+      throws Exception {
+    JarRunHeaders headers = JarRunHeaders.getInstance();
+    JarRunMessageParameters parameters = headers.getUnresolvedMessageParameters();
+    parameters.jarIdPathParameter.resolve(jarId);
+    String args = super.buildOptimizerStartupArgsString(resource);
+    JobID jobID = JobID.generate();
+    JarRunRequestBody runRequestBody =
+        new JarRunRequestBody(
+            FLINK_JOB_MAIN_CLASS, args, null, null, jobID, true, null, RestoreMode.DEFAULT, null);
+    LOG.info("Submitting job: {} to session cluster, args: {}", jobID, args);
+    try (RestClusterClient<String> restClusterClient =
+        FlinkClientUtil.getRestClusterClient(configuration)) {
+      JarRunResponseBody jarRunResponseBody =
+          restClusterClient
+              .sendRequest(headers, parameters, runRequestBody)
+              .get(flinkClientTimeoutSecond, TimeUnit.SECONDS);
+      return jarRunResponseBody.getJobId();
+    }
+  }
+
   private String getFlinkHome() {
     String flinkHome = getContainerProperties().get(FLINK_HOME_PROPERTY);
     Preconditions.checkNotNull(
@@ -388,21 +561,30 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     return this.flinkHome + FLINK_CONFIG_PATH;
   }
 
+  private long getFlinkClientTimeoutSecond() {
+    return getContainerProperties().get(FLINK_CLIENT_TIMEOUT_SECOND) != null
+        ? Long.parseLong(getContainerProperties().get(FLINK_CLIENT_TIMEOUT_SECOND))
+        : FLINK_CLIENT_TIMEOUT_SECOND_DEFAULT;
+  }
+
   private String kubernetesClusterId(Resource resource) {
     return "amoro-optimizer-" + resource.getResourceId();
   }
 
   private enum Target {
-    YARN_PER_JOB("yarn-per-job", false),
-    YARN_APPLICATION("yarn-application", true),
-    KUBERNETES_APPLICATION("kubernetes-application", true);
+    YARN_PER_JOB("yarn-per-job", false, false),
+    YARN_APPLICATION("yarn-application", true, false),
+    KUBERNETES_APPLICATION("kubernetes-application", true, false),
+    SESSION("session", false, true);
 
     private final String value;
     private final boolean applicationMode;
+    private final boolean runByFlinkRestClient;
 
-    Target(String value, boolean applicationMode) {
+    Target(String value, boolean applicationMode, boolean runByFlinkRestClient) {
       this.value = value;
       this.applicationMode = applicationMode;
+      this.runByFlinkRestClient = runByFlinkRestClient;
     }
 
     public static Target valueToEnum(String value) {
@@ -414,6 +596,10 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
     public boolean isApplicationMode() {
       return applicationMode;
+    }
+
+    public boolean runByFlinkRestClient() {
+      return runByFlinkRestClient;
     }
 
     public String getValue() {
@@ -474,6 +660,13 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     public static Builder buildFor(
         Map<String, String> flinkConf, Map<String, String> containerProperties) {
       return new Builder(flinkConf, containerProperties);
+    }
+
+    public Configuration toConfiguration() {
+      HashMap<String, String> config = new HashMap<>();
+      config.putAll(flinkConf);
+      config.putAll(flinkOptions);
+      return Configuration.fromMap(config);
     }
 
     public static class Builder {
