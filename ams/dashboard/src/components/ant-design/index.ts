@@ -43,7 +43,7 @@ import {
   Row,
   Col,
   Dropdown
-} from 'ant-design-vue'
+} from 'ant-design-vue-v3'
 
 const compontens = [
   ConfigProvider,

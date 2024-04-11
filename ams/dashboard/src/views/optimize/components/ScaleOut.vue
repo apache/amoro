@@ -35,11 +35,10 @@ limitations under the License.
   </a-modal>
 </template>
 <script lang="ts" setup>
-import { nextTick, onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { IGroupItem } from '@/types/common.type'
 import { getOptimizerGroups, scaleoutResource } from '@/services/optimize.service'
-import { message } from 'ant-design-vue'
 
 interface FormState {
   resourceGroup: undefined | string
