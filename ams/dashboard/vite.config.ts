@@ -18,7 +18,7 @@
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { viteMockServe } from 'vite-plugin-mock'
+import { vitePluginFakeServer } from 'vite-plugin-fake-server'
 import path from 'node:path'
 import {createSvgIconsPlugin} from 'vite-plugin-svg-icons'
 import ViteComponents from 'unplugin-vue-components/vite'
@@ -55,9 +55,11 @@ export default defineConfig({
   },
   plugins: [
     vue(),
-    viteMockServe({
-      mockPath: 'mock',
-      enable: true,
+    vitePluginFakeServer({
+      logger: false,
+      include: "mock",
+      infixName: false,
+      enableProd: true
     }),
     createSvgIconsPlugin({
       iconDirs: [path.resolve(process.cwd(), 'src/assets/icons/svg')],

@@ -22,7 +22,6 @@ import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 import static java.util.Locale.ENGLISH;
 
-import com.google.common.collect.ImmutableList;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -40,6 +39,7 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
 import java.util.Collections;
 import java.util.List;

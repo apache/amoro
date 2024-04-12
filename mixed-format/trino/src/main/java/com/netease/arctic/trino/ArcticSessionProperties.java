@@ -21,11 +21,11 @@ package com.netease.arctic.trino;
 import static io.trino.spi.session.PropertyMetadata.booleanProperty;
 import static io.trino.spi.session.PropertyMetadata.doubleProperty;
 
-import com.google.common.collect.ImmutableList;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.iceberg.IcebergSessionProperties;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.session.PropertyMetadata;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
 import javax.inject.Inject;
 

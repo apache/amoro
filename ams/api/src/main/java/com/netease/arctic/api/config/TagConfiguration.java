@@ -212,7 +212,7 @@ public class TagConfiguration {
     return autoCreateTag == that.autoCreateTag
         && triggerOffsetMinutes == that.triggerOffsetMinutes
         && maxDelayMinutes == that.maxDelayMinutes
-        && com.google.common.base.Objects.equal(tagFormat, that.tagFormat)
+        && Objects.equal(tagFormat, that.tagFormat)
         && triggerPeriod == that.triggerPeriod
         && tagMaxAgeMs == that.tagMaxAgeMs;
   }

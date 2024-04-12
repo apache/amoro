@@ -105,19 +105,9 @@ This file is based on the checkstyle file of Apache Beam.
 
         -->
 
-        <!-- forbid the use of google.common.base.Preconditions -->
-        <module name="Regexp">
-            <property name="format" value="import com\.google\.common\.base\.Preconditions"/>
-            <property name="illegalPattern" value="true"/>
-            <property name="message"
-                      value="Don't use Guava's Preconditions directly, Please use the shaded guava instead."/>
-        </module>
-
-        <module name="Regexp">
-            <property name="format" value="import static com\.google\.common\.base\.Preconditions"/>
-            <property name="illegalPattern" value="true"/>
-            <property name="message"
-                      value="Don't use Guava's Preconditions directly, please use the shaded guave instead."/>
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="com.google.common"/>
+            <message key="import.illegal" value="{0}; Use iceberg-shaded-guava instead."/>
         </module>
 
         <module name="Regexp">

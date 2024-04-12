@@ -18,8 +18,6 @@
 
 package com.netease.arctic.server;
 
-import com.google.common.collect.Maps;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.Constants;
 import com.netease.arctic.api.ArcticTableMetastore;
 import com.netease.arctic.api.OptimizerProperties;
@@ -50,6 +48,8 @@ import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.SystemProperties;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.thrift.TMultiplexedProcessor;
@@ -275,7 +275,7 @@ public class ArcticServiceContainer {
             + " / ___ | / /  / // /_/ // _, _// /_/ / \n"
             + "/_/  |_|/_/  /_/ \\____//_/ |_| \\____/  \n"
             + "                                       \n"
-            + "      https://amoro.netease.com/       \n");
+            + "      https://amoro.apache.org/       \n");
 
     LOG.info("Http server start at {}.", port);
   }
@@ -425,9 +425,14 @@ public class ArcticServiceContainer {
               (String) systemConfig.get(ArcticManagementConf.SERVER_EXPOSE_HOST.key()));
       systemConfig.put(ArcticManagementConf.SERVER_EXPOSE_HOST.key(), inetAddress.getHostAddress());
 
+      if (!systemConfig.containsKey(ArcticManagementConf.DB_TYPE.key())) {
+        throw new IllegalArgumentException(
+            "configuration " + ArcticManagementConf.DB_TYPE.key() + " must be set");
+      }
+
       // mysql config
-      if (((String) systemConfig.get(ArcticManagementConf.DB_TYPE.key()))
-          .equalsIgnoreCase(ArcticManagementConf.DB_TYPE_MYSQL)) {
+      if (ArcticManagementConf.DB_TYPE_MYSQL.equalsIgnoreCase(
+          (String) systemConfig.get(ArcticManagementConf.DB_TYPE.key()))) {
         if (!systemConfig.containsKey(ArcticManagementConf.DB_PASSWORD.key())
             || !systemConfig.containsKey(ArcticManagementConf.DB_USER_NAME.key())) {
           throw new IllegalArgumentException(

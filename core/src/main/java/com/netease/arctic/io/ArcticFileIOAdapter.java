@@ -21,6 +21,7 @@ package com.netease.arctic.io;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
+import org.apache.iceberg.io.SupportsBulkOperations;
 import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
@@ -65,6 +66,17 @@ public class ArcticFileIOAdapter implements ArcticFileIO {
   public SupportsPrefixOperations asPrefixFileIO() {
     Preconditions.checkArgument(supportPrefixOperations());
     return (SupportsPrefixOperations) io;
+  }
+
+  @Override
+  public boolean supportBulkOperations() {
+    return io instanceof SupportsBulkOperations;
+  }
+
+  @Override
+  public SupportsBulkOperations asBulkFileIO() {
+    Preconditions.checkArgument(supportBulkOperations());
+    return (SupportsBulkOperations) io;
   }
 
   @Override

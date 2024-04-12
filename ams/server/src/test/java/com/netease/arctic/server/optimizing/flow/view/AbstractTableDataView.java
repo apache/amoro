@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.optimizing.flow.view;
 
-import com.google.common.collect.Lists;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
@@ -40,6 +39,7 @@ import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.ArrayUtil;
 

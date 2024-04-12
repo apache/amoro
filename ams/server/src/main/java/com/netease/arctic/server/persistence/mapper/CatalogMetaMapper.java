@@ -60,7 +60,7 @@ public interface CatalogMetaMapper {
           + " WHERE catalog_name = #{catalogName}")
   @Results({
     @Result(property = "catalogName", column = "catalog_name"),
-    @Result(property = "catalogType", column = "catalog_type"),
+    @Result(property = "catalogType", column = "catalog_metastore"),
     @Result(
         property = "storageConfigs",
         column = "storage_configs",

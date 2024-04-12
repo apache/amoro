@@ -10,7 +10,7 @@ menu:
 ---
 # Deployment
 
-You can choose to download the stable release package from [download page](../../../download/), or the source code form [Github](https://github.com/NetEase/amoro) and compile it according to the README.
+You can choose to download the stable release package from [download page](../../../download/), or the source code form [Github](https://github.com/apache/amoro) and compile it according to the README.
 
 ## System requirements
 
@@ -32,7 +32,7 @@ Unzip it to create the amoro-x.y.z directory in the same directory, and then go 
 You can build based on the master branch without compiling Trino. The compilation method and the directory of results are described below:
 
 ```shell
-git clone https://github.com/NetEase/amoro.git
+git clone https://github.com/apache/amoro.git
 cd amoro
 base_dir=$(pwd) 
 mvn clean package -DskipTests -pl '!mixed-format/trino'
@@ -171,12 +171,12 @@ AMS provides implementations of `LocalContainer` and `FlinkContainer` by default
 ```yaml
 containers:
   - name: localContainer
-    container-impl: com.netease.amoro.optimizer.LocalOptimizerContainer
+    container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
     properties:
       export.JAVA_HOME: "/opt/java"   # JDK environment
   
   - name: flinkContainer
-    container-impl: com.netease.amoro.optimizer.FlinkOptimizerContainer
+    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
     properties:
       flink-home: "/opt/flink/"                                     # The installation directory of Flink
       export.JVM_ARGS: "-Djava.security.krb5.conf=/opt/krb5.conf"   # Submitting Flink jobs with Java parameters, such as Kerberos parameters.

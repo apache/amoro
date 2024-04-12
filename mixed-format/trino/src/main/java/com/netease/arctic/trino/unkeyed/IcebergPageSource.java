@@ -18,11 +18,11 @@
 
 package com.netease.arctic.trino.unkeyed;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Throwables.throwIfInstanceOf;
 import static io.trino.plugin.base.util.Closables.closeAllSuppress;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
 import static java.util.Objects.requireNonNull;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.iceberg.relocated.com.google.common.base.Throwables.throwIfInstanceOf;
 
 import com.netease.arctic.io.reader.DeleteFilter;
 import com.netease.arctic.trino.delete.TrinoRow;

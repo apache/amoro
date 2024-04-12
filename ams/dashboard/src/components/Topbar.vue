@@ -95,7 +95,7 @@ export default defineComponent ({
     }
 
     const goDocs = () => {
-      window.open('https://amoro.netease.com/docs/latest/')
+      window.open('https://amoro.apache.org/docs/latest/')
     }
 
     onMounted(() => {
@@ -131,8 +131,8 @@ export default defineComponent ({
   .topbar-tooltip .ant-tooltip-inner {
     font-size: 12px;
   }
-  .logout-button {
-    border-color: transparent;
+  .logout-button.ant-btn {
+      border: none;
   }
   .logout-button:hover {
     border-color: unset;

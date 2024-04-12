@@ -18,12 +18,6 @@
 
 package com.netease.arctic.trino.unkeyed;
 
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Verify.verify;
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Maps.uniqueIndex;
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.trino.memory.context.AggregatedMemoryContext.newSimpleAggregatedMemoryContext;
 import static io.trino.orc.OrcReader.INITIAL_BATCH_SIZE;
@@ -77,11 +71,14 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.apache.iceberg.MetadataColumns.ROW_POSITION;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkState;
+import static org.apache.iceberg.relocated.com.google.common.base.Verify.verify;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap.toImmutableMap;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet.toImmutableSet;
+import static org.apache.iceberg.relocated.com.google.common.collect.Maps.uniqueIndex;
 import static org.joda.time.DateTimeZone.UTC;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.graph.Traverser;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.io.reader.DeleteFilter;
@@ -169,6 +166,9 @@ import org.apache.iceberg.mapping.MappedFields;
 import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.parquet.ParquetSchemaUtil;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.relocated.com.google.common.graph.Traverser;
 import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
 import org.apache.parquet.hadoop.metadata.FileMetaData;

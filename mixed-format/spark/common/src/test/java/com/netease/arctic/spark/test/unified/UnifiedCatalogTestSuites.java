@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.test.unified;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.UnifiedCatalog;
@@ -27,6 +26,7 @@ import com.netease.arctic.spark.SparkUnifiedSessionCatalog;
 import com.netease.arctic.spark.test.SparkTestBase;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.junit.jupiter.api.Assertions;

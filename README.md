@@ -17,21 +17,21 @@ r
  - limitations under the License.
 -->
 <p align="center">
-  <img src="https://amoro.netease.com/img/amoro-logo.svg" alt="Amoro logo" height="120px"/>
+  <img src="https://amoro.apache.org/img/amoro-logo.svg" alt="Amoro logo" height="120px"/>
 </p>
 
 <p align="center">
   <a href="https://www.apache.org/licenses/LICENSE-2.0.html">
     <img src="https://img.shields.io/badge/license-Apache%202-4EB1BA.svg" />
   </a>
-  <a href="https://github.com/NetEase/amoro/actions/workflows/core-hadoop3-ci.yml">
-    <img src="https://github.com/NetEase/amoro/actions/workflows/core-hadoop3-ci.yml/badge.svg" />
+  <a href="https://github.com/apache/amoro/actions/workflows/core-hadoop3-ci.yml">
+    <img src="https://github.com/apache/amoro/actions/workflows/core-hadoop3-ci.yml/badge.svg" />
   </a>
-  <a href="https://github.com/NetEase/amoro/actions/workflows/core-hadoop2-ci.yml">
-    <img src="https://github.com/NetEase/amoro/actions/workflows/core-hadoop2-ci.yml/badge.svg" />
+  <a href="https://github.com/apache/amoro/actions/workflows/core-hadoop2-ci.yml">
+    <img src="https://github.com/apache/amoro/actions/workflows/core-hadoop2-ci.yml/badge.svg" />
   </a>
-  <a href="https://github.com/NetEase/amoro/actions/workflows/trino-ci.yml">
-    <img src="https://github.com/NetEase/amoro/actions/workflows/trino-ci.yml/badge.svg" />
+  <a href="https://github.com/apache/amoro/actions/workflows/trino-ci.yml">
+    <img src="https://github.com/apache/amoro/actions/workflows/trino-ci.yml/badge.svg" />
   </a>
 </p>
 
@@ -44,7 +44,7 @@ and helps data platforms or products easily build infra-decoupled, stream-and-ba
 Here is the architecture diagram of Amoro:
 
 <p align="center">
-  <img src="https://amoro.netease.com//img/home-content.png" alt="Amoro architecture" height="360px"/>
+  <img src="https://amoro.apache.org/img/home-content.png" alt="Amoro architecture" height="360px"/>
 </p>
 
 * AMS: Amoro Management Service provides Lakehouse management features, like self-optimizing, data expiration, etc.
@@ -144,7 +144,7 @@ Amoro is built using Maven with Java 1.8 and Java 17(only for `mixed-format/trin
 * To only build `mixed-format/trino` and its dependent modules in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless -pl 'mixed-format/trino' -am`
 ## Quickstart
 
-Visit [https://amoro.netease.com/quick-demo/](https://amoro.netease.com/quick-demo/) to quickly
+Visit [https://amoro.apache.org/quick-demo/](https://amoro.apache.org/quick-demo/) to quickly
 explore what amoro can do.
 
 ## Join Community
@@ -157,12 +157,12 @@ Join the Amoro WeChat Group: Add " `kllnn999` " as a friend on WeChat and specif
 ## Contributors
 This project exists thanks to all the people who contribute.
 
-<a href="https://github.com/NetEase/amoro/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=NetEase/amoro" />
+<a href="https://github.com/apache/amoro/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=apache/amoro" />
 </a>
 
 Made with [contrib.rocks](https://contrib.rocks).
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=NetEase/amoro&type=Date)](https://star-history.com/#NetEase/amoro&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=apache/amoro&type=Date)](https://star-history.com/#apache/amoro&Date)
