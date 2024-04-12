@@ -30,6 +30,8 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
+import com.netease.arctic.properties.CatalogMetaProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticCatalogUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
@@ -47,6 +49,7 @@ import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+import java.util.List;
 
 public class AMSTableTestBase extends TableServiceTestBase {
   @ClassRule public static TestHMS TEST_HMS = new TestHMS();
@@ -79,15 +82,17 @@ public class AMSTableTestBase extends TableServiceTestBase {
   public void init() throws IOException, TException {
     catalogWarehouse = temp.newFolder().getPath();
     catalogMeta = catalogTestHelper.buildCatalogMeta(catalogWarehouse);
-    if (catalogTestHelper.isInternalCatalog()
-        || TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat())) {
-      if (TableFormat.MIXED_ICEBERG.equals(catalogTestHelper.tableFormat())
-          || TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat())) {
+    // mixed-hive format only exists in external catalog
+    if (catalogTestHelper.isInternalCatalog()) {
+      if (TableFormat.MIXED_ICEBERG.equals(catalogTestHelper.tableFormat())) {
         mixedTables = catalogTestHelper.buildMixedTables(catalogMeta);
         tableMeta = buildTableMeta();
       }
     } else {
       externalCatalog = new CommonUnifiedCatalog(() -> catalogMeta, Maps.newHashMap());
+      if (TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat())) {
+        tableMeta = buildTableMeta();
+      }
     }
 
     tableService().createCatalog(catalogMeta);
@@ -143,7 +148,10 @@ public class AMSTableTestBase extends TableServiceTestBase {
             .createDatabase(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME);
       }
     } else {
-      externalCatalog.createDatabase(TableTestHelper.TEST_DB_NAME);
+      List<String> databases = externalCatalog.listDatabases();
+      if (!(databases != null && databases.contains(TableTestHelper.TEST_DB_NAME))) {
+        externalCatalog.createDatabase(TableTestHelper.TEST_DB_NAME);
+      }
     }
   }
 
@@ -172,6 +180,9 @@ public class AMSTableTestBase extends TableServiceTestBase {
         case MIXED_ICEBERG:
           createMixedIcebergTable();
           break;
+        case MIXED_HIVE:
+          createMixedHiveTable();
+          break;
         default:
           throw new IllegalStateException("un-support format");
       }
@@ -179,6 +190,25 @@ public class AMSTableTestBase extends TableServiceTestBase {
     }
 
     serverTableIdentifier = tableService().listManagedTables().get(0);
+  }
+
+  private void createMixedHiveTable() {
+    // only create mixed hive table here !
+    catalogMeta.putToCatalogProperties(
+        CatalogMetaProperties.TABLE_FORMATS, TableFormat.MIXED_HIVE.name());
+    ArcticHiveCatalog catalog =
+        (ArcticHiveCatalog)
+            CatalogLoader.createCatalog(
+                catalogMeta.getCatalogName(),
+                catalogMeta.getCatalogType(),
+                catalogMeta.getCatalogProperties(),
+                ArcticCatalogUtil.buildMetaStore(catalogMeta));
+    catalog
+        .newTableBuilder(tableTestHelper.id(), tableTestHelper.tableSchema())
+        .withPartitionSpec(tableTestHelper.partitionSpec())
+        .withProperties(tableTestHelper.tableProperties())
+        .withPrimaryKeySpec(tableTestHelper.primaryKeySpec())
+        .create();
   }
 
   private void createMixedIcebergTable() {

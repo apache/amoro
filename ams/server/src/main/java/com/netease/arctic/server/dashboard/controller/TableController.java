@@ -199,13 +199,22 @@ public class TableController {
     String amsUri = AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME);
     catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, amsUri);
     TableMetaStore tableMetaStore = ArcticCatalogUtil.buildMetaStore(catalogMeta);
+    // check whether catalog support MIXED_HIVE format.
+    Set<TableFormat> tableFormats = ArcticCatalogUtil.tableFormats(catalogMeta);
+    Preconditions.checkState(
+        tableFormats.contains(TableFormat.MIXED_HIVE),
+        "Catalog %s does not support MIXED_HIVE format",
+        catalog);
+    // we should only keep MIXED_HIVE format，
+    // so `CatalogLoader.createCatalog` can get right CatalogImpl through calling catalogImpl.
+    Map<String, String> originCatalogProperties = catalogMeta.getCatalogProperties();
+    Map<String, String> catalogProperties = new HashMap<>(originCatalogProperties);
+    catalogProperties.put(CatalogMetaProperties.TABLE_FORMATS, TableFormat.MIXED_HIVE.name());
+
     ArcticHiveCatalog arcticHiveCatalog =
         (ArcticHiveCatalog)
             CatalogLoader.createCatalog(
-                catalog,
-                catalogMeta.getCatalogType(),
-                catalogMeta.getCatalogProperties(),
-                tableMetaStore);
+                catalog, catalogMeta.getCatalogType(), catalogProperties, tableMetaStore);
 
     tableUpgradeExecutor.execute(
         () -> {
