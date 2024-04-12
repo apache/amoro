@@ -70,13 +70,17 @@ public class TestTableService extends AMSTableTestBase {
 
   @Test
   public void testCreateAndDropTable() {
-    tableService().createDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
+    if (catalogTestHelper().isInternalCatalog()) {
+      tableService().createDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
+    }
 
     // test create table
     createTable();
-    Assert.assertEquals(
-        tableMeta(),
-        tableService().loadTableMetadata(tableMeta().getTableIdentifier()).buildTableMeta());
+    if (catalogTestHelper().isInternalCatalog()) {
+      Assert.assertEquals(
+          tableMeta(),
+          tableService().loadTableMetadata(tableMeta().getTableIdentifier()).buildTableMeta());
+    }
 
     // test list tables
     List<TableIDWithFormat> tableIdentifierList =
@@ -87,13 +91,14 @@ public class TestTableService extends AMSTableTestBase {
         tableIdentifierList.get(0).getIdentifier().buildTableIdentifier());
 
     // test list table metadata
-    List<TableMetadata> tableMetadataList = tableService().listTableMetas();
-    Assert.assertEquals(1, tableMetadataList.size());
-    Assert.assertEquals(tableMeta(), tableMetadataList.get(0).buildTableMeta());
-
-    tableMetadataList = tableService().listTableMetas(TEST_CATALOG_NAME, TEST_DB_NAME);
-    Assert.assertEquals(1, tableMetadataList.size());
-    Assert.assertEquals(tableMeta(), tableMetadataList.get(0).buildTableMeta());
+    if (catalogTestHelper().isInternalCatalog()) {
+      List<TableMetadata> tableMetadataList = tableService().listTableMetas();
+      Assert.assertEquals(1, tableMetadataList.size());
+      Assert.assertEquals(tableMeta(), tableMetadataList.get(0).buildTableMeta());
+      tableMetadataList = tableService().listTableMetas(TEST_CATALOG_NAME, TEST_DB_NAME);
+      Assert.assertEquals(1, tableMetadataList.size());
+      Assert.assertEquals(tableMeta(), tableMetadataList.get(0).buildTableMeta());
+    }
 
     // test table exist
     Assert.assertTrue(tableService().tableExist(tableMeta().getTableIdentifier()));
@@ -148,7 +153,7 @@ public class TestTableService extends AMSTableTestBase {
         ObjectNotExistsException.class,
         () -> tableService().dropTableMetadata(tableMeta().getTableIdentifier(), true));
 
-    tableService().dropDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
+    dropDatabase();
   }
 
   @Test

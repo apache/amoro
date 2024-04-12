@@ -181,4 +181,10 @@ public class HMSClientImpl implements HMSClient {
             .build();
     alterPartition.invoke(getClient(), dbName, tblName, newPart, environmentContext);
   }
+
+  @Override
+  public List<Table> getTableObjectsByName(String dbName, List<String> tableNames)
+      throws TException {
+    return getClient().getTableObjectsByName(dbName, tableNames);
+  }
 }
