@@ -21,14 +21,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.netease.amoro</groupId>
+    <groupId>org.apache.amoro</groupId>
     <artifactId>amoro-parent</artifactId>
     <version>0.7.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Amoro Project Parent</name>
     <description>Amoro is a Lakehouse management system built on open data formats.</description>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <licenses>
         <license>
@@ -53,7 +53,7 @@
 
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>https://github.com/NetEase/amoro/issues</url>
+        <url>https://github.com/apache/amoro/issues</url>
     </issueManagement>
 
     <properties>
@@ -83,6 +83,7 @@
         <maven-thrift-plugin.version>0.1.11</maven-thrift-plugin.version>
         <maven-build-helper-plugin.version>3.2.0</maven-build-helper-plugin.version>
         <maven-apache-rat-plugin.version>0.15</maven-apache-rat-plugin.version>
+        <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
         <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
 
         <iceberg.version>1.4.3</iceberg.version>
@@ -127,6 +128,7 @@
         <lucene.version>8.11.2</lucene.version>
         <bitmap.version>1.0.1</bitmap.version>
         <prometheus.version>0.16.0</prometheus.version>
+        <flink.version>1.18.1</flink.version>
     </properties>
 
     <dependencies>
@@ -204,19 +206,19 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.netease.amoro</groupId>
+                <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-ams-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>com.netease.amoro</groupId>
+                <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>com.netease.amoro</groupId>
+                <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-mixed-format-hive</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -767,6 +769,19 @@
                 <version>${lucene.version}</version>
             </dependency>
 
+            <!-- flink dependencies -->
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-clients</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-runtime-web</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
@@ -1042,7 +1057,6 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${maven-checkstyle-plugin.version}</version>
                     <configuration>
@@ -1061,6 +1075,11 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${maven-clean-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

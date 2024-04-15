@@ -18,8 +18,8 @@
 
 package com.netease.arctic.utils.map;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.junit.Assert;
 import org.junit.Before;

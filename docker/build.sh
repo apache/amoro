@@ -44,7 +44,7 @@ Usage: $0 [options] [image]
 Build for Amoro demo docker images.
 
 Images:
-    quickdemo               Build Amoro QuickStart Image, for run flink ingestion job in quick-demo http://amoro.netease.com/quick-demo/
+    quickdemo               Build Amoro QuickStart Image, for run flink ingestion job in quick-demo http://amoro.apache.org/quick-demo/
     namenode                Build a hadoop namenode container for quick start demo.
     datanode                Build a hadoop datanode container for quick start demo.
     optimizer-flink         Build official Amoro optimizer deployed with flink engine for production environments.

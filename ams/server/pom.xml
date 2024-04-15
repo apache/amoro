@@ -24,7 +24,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.netease.amoro</groupId>
+        <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-ams</artifactId>
         <version>0.7.0-SNAPSHOT</version>
     </parent>
@@ -32,17 +32,17 @@
     <artifactId>amoro-ams-server</artifactId>
     <packaging>jar</packaging>
     <name>Amoro Project AMS Server</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <dependencies>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-ams-api</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-format-hive</artifactId>
             <exclusions>
                 <exclusion>
@@ -53,7 +53,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-ams-dashboard</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -267,9 +267,20 @@
             <artifactId>hadoop-aws</artifactId>
         </dependency>
 
+        <!-- flink dependencies -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-clients</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-runtime-web</artifactId>
+        </dependency>
+
         <!-- runtime dependencies -->
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-format-spark-${terminal.spark.major.version}</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
@@ -283,7 +294,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>standalone-optimizer</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
@@ -291,7 +302,7 @@
 
         <!-- test dependencies -->
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-core</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
@@ -299,7 +310,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-ams-api</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
@@ -307,7 +318,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-format-hive</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>

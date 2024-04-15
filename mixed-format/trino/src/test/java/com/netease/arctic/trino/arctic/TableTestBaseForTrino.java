@@ -21,8 +21,6 @@ package com.netease.arctic.trino.arctic;
 import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.MockArcticMetastoreServer.TEST_DB_NAME;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.netease.arctic.MockArcticMetastoreServer;
 import com.netease.arctic.api.CatalogMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
@@ -56,6 +54,8 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
 import org.junit.rules.TemporaryFolder;
 

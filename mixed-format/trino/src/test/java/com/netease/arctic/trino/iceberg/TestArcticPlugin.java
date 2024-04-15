@@ -18,9 +18,9 @@
 
 package com.netease.arctic.trino.iceberg;
 
-import com.google.common.collect.ImmutableList;
 import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
 public class TestArcticPlugin implements Plugin {
 

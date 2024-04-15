@@ -20,13 +20,13 @@ package com.netease.arctic.flink.lookup.filter;
 
 import static org.apache.flink.table.types.logical.utils.LogicalTypeChecks.getPrecision;
 
-import com.google.common.collect.Iterables;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 
 import java.io.Serializable;
 import java.util.Arrays;

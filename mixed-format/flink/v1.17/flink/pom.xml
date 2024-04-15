@@ -21,7 +21,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.netease.amoro</groupId>
+        <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-mixed-format-flink</artifactId>
         <version>0.7.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
@@ -29,7 +29,7 @@
 
     <artifactId>amoro-mixed-format-flink-1.17</artifactId>
     <name>Amoro Project Mixed Format Flink 1.17</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <packaging>jar</packaging>
 
@@ -42,7 +42,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-format-flink-common</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
@@ -87,7 +87,7 @@
                         <configuration>
                             <artifactSet>
                                 <includes combine.children="append">
-                                    <include>com.netease.amoro:amoro-mixed-flink-common</include>
+                                    <include>org.apache.amoro:amoro-mixed-flink-common</include>
                                 </includes>
                             </artifactSet>
                         </configuration>

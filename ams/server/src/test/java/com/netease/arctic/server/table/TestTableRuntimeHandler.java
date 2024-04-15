@@ -66,12 +66,15 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
   }
 
   @Test
-  public void testInitialize() {
+  public void testInitialize() throws Exception {
     tableService = new DefaultTableService(new Configurations());
     TestHandler handler = new TestHandler();
     tableService.addHandlerChain(handler);
     tableService.initialize();
-    createDatabase();
+    if (!(catalogTestHelper().tableFormat().equals(TableFormat.MIXED_HIVE)
+        && TEST_HMS.getHiveClient().getDatabase(TableTestHelper.TEST_DB_NAME) != null)) {
+      createDatabase();
+    }
     createTable();
     ServerTableIdentifier createTableId = tableService().listManagedTables().get(0);
     Assert.assertEquals(1, handler.getAddedTables().size());

@@ -73,6 +73,9 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
 
   @Override
   public UnifiedCatalog buildUnifiedCatalog(CatalogMeta catalogMeta) {
+    catalogMeta
+        .getCatalogProperties()
+        .put(CatalogMetaProperties.TABLE_FORMATS, TableFormat.MIXED_HIVE.name());
     return new CommonUnifiedCatalog(() -> catalogMeta, Maps.newHashMap());
   }
 
@@ -90,7 +93,7 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
       throw new UnsupportedOperationException(
           "Cannot build mixed-tables for table format:" + tableFormat);
     }
-    return new MixedHiveTables(
+    return new MixedTables(
         catalogMeta.getCatalogProperties(), ArcticCatalogUtil.buildMetaStore(catalogMeta));
   }
 

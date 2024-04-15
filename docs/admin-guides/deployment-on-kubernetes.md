@@ -65,7 +65,7 @@ $ tar zxvf amoro-*.tgz
 Alternatively, you can find the latest charts directly from the Github source code.
 
 ```shell
-$ git clone https://github.com/NetEase/amoro.git
+$ git clone https://github.com/apache/amoro.git
 $ cd amoro/charts
 $ helm dependency build ./amoro
 ```
@@ -84,7 +84,7 @@ After successful installation, you can access WebUI through the following comman
 $ kubectl port-forward services/<deployment-name>-amoro-rest 1630:1630
 ```
 
-Open browser to go web: http://loclhost:1630
+Open browser to go web: http://localhost:1630
 
 ## Access logs
 
@@ -186,7 +186,7 @@ optimizer:
 
 ### Configure the RBAC
 
-By default, Helm Chart creates a service account, role, and role bind for Amaro deploy. 
+By default, Helm Chart creates a service account, role, and role bind for Amoro deploy. 
 You can also modify this configuration to use an existing account.
 
 ```yaml

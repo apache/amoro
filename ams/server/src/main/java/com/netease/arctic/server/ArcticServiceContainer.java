@@ -18,14 +18,11 @@
 
 package com.netease.arctic.server;
 
-import com.google.common.collect.Maps;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.Constants;
 import com.netease.arctic.api.ArcticTableMetastore;
 import com.netease.arctic.api.OptimizerProperties;
 import com.netease.arctic.api.OptimizingService;
 import com.netease.arctic.api.config.ConfigHelpers;
-import com.netease.arctic.api.config.ConfigOption;
 import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.server.dashboard.DashboardServer;
 import com.netease.arctic.server.dashboard.response.ErrorResponse;
@@ -50,6 +47,8 @@ import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.SystemProperties;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.thrift.TMultiplexedProcessor;
@@ -68,12 +67,10 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -275,7 +272,7 @@ public class ArcticServiceContainer {
             + " / ___ | / /  / // /_/ // _, _// /_/ / \n"
             + "/_/  |_|/_/  /_/ \\____//_/ |_| \\____/  \n"
             + "                                       \n"
-            + "      https://amoro.netease.com/       \n");
+            + "      https://amoro.apache.org/       \n");
 
     LOG.info("Http server start at {}.", port);
   }
@@ -404,8 +401,8 @@ public class ArcticServiceContainer {
       // If same configurations in files and environment variables, environment variables have
       // higher priority.
       expandedConfigurationMap.putAll(envConfig);
-      validateConfig(expandedConfigurationMap);
       serviceConfig = Configurations.fromObjectMap(expandedConfigurationMap);
+      ArcticManagementConfValidator.validateConfig(serviceConfig);
       SqlSessionFactoryProvider.getInstance().init(serviceConfig);
     }
 
@@ -413,79 +410,6 @@ public class ArcticServiceContainer {
       LOG.info("initializing system env configuration...");
       String prefix = ArcticManagementConf.SYSTEM_CONFIG.toUpperCase();
       return ConfigHelpers.convertConfigurationKeys(prefix, System.getenv());
-    }
-
-    private void validateConfig(Map<String, Object> systemConfig) {
-      if (!systemConfig.containsKey(ArcticManagementConf.SERVER_EXPOSE_HOST.key())) {
-        throw new IllegalArgumentException(
-            "configuration " + ArcticManagementConf.SERVER_EXPOSE_HOST.key() + " must be set");
-      }
-      InetAddress inetAddress =
-          AmsUtil.lookForBindHost(
-              (String) systemConfig.get(ArcticManagementConf.SERVER_EXPOSE_HOST.key()));
-      systemConfig.put(ArcticManagementConf.SERVER_EXPOSE_HOST.key(), inetAddress.getHostAddress());
-
-      // mysql config
-      if (((String) systemConfig.get(ArcticManagementConf.DB_TYPE.key()))
-          .equalsIgnoreCase(ArcticManagementConf.DB_TYPE_MYSQL)) {
-        if (!systemConfig.containsKey(ArcticManagementConf.DB_PASSWORD.key())
-            || !systemConfig.containsKey(ArcticManagementConf.DB_USER_NAME.key())) {
-          throw new IllegalArgumentException(
-              "username and password must be configured if the database type is mysql");
-        }
-      }
-
-      // HA config
-      if (systemConfig.containsKey(ArcticManagementConf.HA_ENABLE.key())
-          && ((Boolean) systemConfig.get(ArcticManagementConf.HA_ENABLE.key()))) {
-        if (!systemConfig.containsKey(ArcticManagementConf.HA_ZOOKEEPER_ADDRESS.key())) {
-          throw new IllegalArgumentException(
-              ArcticManagementConf.HA_ZOOKEEPER_ADDRESS.key()
-                  + " must be configured when you enable "
-                  + "the ams high availability");
-        }
-      }
-      // terminal config
-      String terminalBackend =
-          systemConfig
-              .getOrDefault(ArcticManagementConf.TERMINAL_BACKEND.key(), "")
-              .toString()
-              .toLowerCase();
-      if (!Arrays.asList("local", "kyuubi", "custom").contains(terminalBackend)) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Illegal terminal implement: %s, local, kyuubi, custom is available",
-                terminalBackend));
-      }
-
-      validateThreadCount(systemConfig, ArcticManagementConf.REFRESH_TABLES_THREAD_COUNT);
-      validateThreadCount(systemConfig, ArcticManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT);
-
-      if (enabled(systemConfig, ArcticManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
-        validateThreadCount(systemConfig, ArcticManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT);
-      }
-
-      if (enabled(systemConfig, ArcticManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
-        validateThreadCount(systemConfig, ArcticManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT);
-      }
-      if (enabled(systemConfig, ArcticManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
-        validateThreadCount(systemConfig, ArcticManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT);
-      }
-    }
-
-    private boolean enabled(Map<String, Object> systemConfig, ConfigOption<Boolean> config) {
-      return (boolean) systemConfig.getOrDefault(config.key(), config.defaultValue());
-    }
-
-    private void validateThreadCount(
-        Map<String, Object> systemConfig, ConfigOption<Integer> config) {
-      int threadCount = (int) systemConfig.getOrDefault(config.key(), config.defaultValue());
-      if (threadCount <= 0) {
-        throw new IllegalArgumentException(
-            String.format(
-                "%s(%s) must > 0, actual value = %d",
-                config.key(), config.description(), threadCount));
-      }
     }
 
     /** Override the value of {@link SystemProperties}. */

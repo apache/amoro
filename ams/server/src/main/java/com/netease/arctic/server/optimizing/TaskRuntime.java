@@ -18,8 +18,6 @@
 
 package com.netease.arctic.server.optimizing;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.netease.arctic.api.OptimizingTask;
 import com.netease.arctic.api.OptimizingTaskId;
 import com.netease.arctic.api.OptimizingTaskResult;
@@ -38,6 +36,8 @@ import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.resource.OptimizerThread;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 
 import java.util.Map;
 import java.util.Set;

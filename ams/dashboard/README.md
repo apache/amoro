@@ -71,8 +71,6 @@ proxy: {
 
 In the `ams/dashboard` directory, run `pnpm build` to prepare the dashboard for deployment.
 
-Since we don't currently have a front-end CI configured, we must execute the `pnpm build` command before committing the front-end code each time, and commit the static file changes in the `ams/dashboard/src/main/resources/static` directory along with it.
-
 ## Top Level Directory Structure
 
 ```

@@ -21,14 +21,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.netease.amoro</groupId>
+        <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-ams</artifactId>
         <version>0.7.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>dist</artifactId>
     <name>Amoro Project AMS Dist</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -37,29 +37,29 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-ams-server</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>standalone-optimizer</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>flink-optimizer</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>spark-optimizer</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>prometheus-reporter</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>

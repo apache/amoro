@@ -30,11 +30,11 @@ Additional Resources Docs
 ================================================================================================================
 
 {{ if eq .Chart.AppVersion "master-snapshot" }}
-        * Documentation: https://amoro.netease.com/docs/latest/
-        * Version build Info : https://github.com/NetEase/amoro
+        * Documentation: https://amoro.apache.org/docs/latest/
+        * Version build Info : https://github.com/apache/amoro
 {{ else }}
-        * Documentation: https://amoro.netease.com/docs/{{ .Chart.AppVersion }}/
-        * Version build Info : https://github.com/NetEase/amoro/releases/tag/v{{ .Chart.AppVersion }}
+        * Documentation: https://amoro.apache.org/docs/{{ .Chart.AppVersion }}/
+        * Version build Info : https://github.com/apache/amoro/releases/tag/v{{ .Chart.AppVersion }}
 {{ end }}
 
 ================================================================================================================
