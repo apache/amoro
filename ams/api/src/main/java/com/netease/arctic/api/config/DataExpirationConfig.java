@@ -125,13 +125,13 @@ public class DataExpirationConfig {
         CompatiblePropertyUtil.propertyAsString(
             properties, TableProperties.DATA_EXPIRATION_FIELD, null);
     Types.NestedField field = table.schema().findField(expirationField);
-    com.google.common.base.Preconditions.checkArgument(
+    Preconditions.checkArgument(
         StringUtils.isNoneBlank(expirationField) && null != field,
         String.format(
             "Field(%s) used to determine data expiration is illegal for table(%s)",
             expirationField, table.name()));
     Type.TypeID typeID = field.type().typeId();
-    com.google.common.base.Preconditions.checkArgument(
+    Preconditions.checkArgument(
         FIELD_TYPES.contains(typeID),
         String.format(
             "The type(%s) of filed(%s) is incompatible for table(%s)",
