@@ -51,9 +51,11 @@ public class IcebergCatalog implements FormatCatalog {
 
   @Override
   public List<String> listDatabases() {
-    return asNamespaceCatalog().listNamespaces().stream()
-        .map(ns -> ns.level(0))
-        .collect(Collectors.toList());
+    return metaStore.doAs(
+        () ->
+            asNamespaceCatalog().listNamespaces().stream()
+                .map(ns -> ns.level(0))
+                .collect(Collectors.toList()));
   }
 
   @Override
@@ -64,38 +66,51 @@ public class IcebergCatalog implements FormatCatalog {
   @Override
   public boolean exist(String database, String table) {
     TableIdentifier identifier = TableIdentifier.of(database, table);
-    return icebergCatalog.tableExists(identifier);
+    return metaStore.doAs(() -> icebergCatalog.tableExists(identifier));
   }
 
   @Override
   public void createDatabase(String database) {
-    asNamespaceCatalog().createNamespace(Namespace.of(database));
+    metaStore.doAs(
+        () -> {
+          asNamespaceCatalog().createNamespace(Namespace.of(database));
+          return null;
+        });
   }
 
   @Override
   public void dropDatabase(String database) {
-    asNamespaceCatalog().dropNamespace(Namespace.of(database));
+    metaStore.doAs(
+        () -> {
+          asNamespaceCatalog().dropNamespace(Namespace.of(database));
+          return null;
+        });
   }
 
   @Override
   public List<String> listTables(String database) {
-    return icebergCatalog.listTables(Namespace.of(database)).stream()
-        .map(TableIdentifier::name)
-        .collect(Collectors.toList());
+    return metaStore.doAs(
+        () ->
+            icebergCatalog.listTables(Namespace.of(database)).stream()
+                .map(TableIdentifier::name)
+                .collect(Collectors.toList()));
   }
 
   @Override
   public AmoroTable<?> loadTable(String database, String table) {
-    try {
-      Table icebergTable = icebergCatalog.loadTable(TableIdentifier.of(database, table));
-      return IcebergTable.newIcebergTable(
-          com.netease.arctic.table.TableIdentifier.of(icebergCatalog.name(), database, table),
-          icebergTable,
-          metaStore,
-          properties);
-    } catch (NoSuchTableException e) {
-      throw new com.netease.arctic.NoSuchTableException(e);
-    }
+    return metaStore.doAs(
+        () -> {
+          try {
+            Table icebergTable = icebergCatalog.loadTable(TableIdentifier.of(database, table));
+            return IcebergTable.newIcebergTable(
+                com.netease.arctic.table.TableIdentifier.of(icebergCatalog.name(), database, table),
+                icebergTable,
+                metaStore,
+                properties);
+          } catch (NoSuchTableException e) {
+            throw new com.netease.arctic.NoSuchTableException(e);
+          }
+        });
   }
 
   private SupportsNamespaces asNamespaceCatalog() {
