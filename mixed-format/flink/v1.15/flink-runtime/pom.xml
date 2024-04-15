@@ -21,7 +21,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.netease.amoro</groupId>
+        <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-mixed-format-flink</artifactId>
         <version>0.7.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
@@ -29,7 +29,7 @@
 
     <artifactId>amoro-mixed-format-flink-runtime-1.15</artifactId>
     <name>Amoro Project Mixed Format Flink 1.15 Runtime</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <properties>
         <flink.version>1.15.3</flink.version>
@@ -37,7 +37,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-format-flink-1.15</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
@@ -107,7 +107,7 @@
                             </excludes>
                         </filter>
                         <filter>
-                            <artifact>com.netease.amoro:amoro-mixed-format-hive</artifact>
+                            <artifact>org.apache.amoro:amoro-mixed-format-hive</artifact>
                             <excludes>
                                 <exclude>org/apache/hadoop/hive/**</exclude>
                             </excludes>
@@ -203,7 +203,7 @@
                     <artifactSet>
                         <includes>
                             <include>org.apache.iceberg:*</include>
-                            <include>com.netease.amoro:*</include>
+                            <include>org.apache.amoro:*</include>
                             <include>org.apache.parquet:*</include>
                             <include>org.apache.commons:*</include>
                             <include>org.apache.zookeeper:*</include>

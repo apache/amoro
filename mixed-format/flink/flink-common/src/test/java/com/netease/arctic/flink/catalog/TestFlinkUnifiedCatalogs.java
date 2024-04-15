@@ -155,7 +155,7 @@ class TestFlinkUnifiedCatalogs {
       try {
         flinkUnifiedCatalog.alterTable(flinkCatalogContext.objectPath, newTable, false);
       } catch (UnsupportedOperationException e) {
-        // https://github.com/NetEase/amoro/issues/2 altering Mixed format table is not supported.
+        // https://github.com/apache/amoro/issues/2 altering Mixed format table is not supported.
         // Altering Iceberg schema is also not supported yet.
         if (!tableFormat.in(
             TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE, TableFormat.ICEBERG)) {

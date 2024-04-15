@@ -67,6 +67,10 @@ public class MixedTables {
     this.tables = new HadoopTables(tableMetaStore.getConfiguration());
   }
 
+  public Table loadHadoopTableByLocation(String location) {
+    return tableMetaStore.doAs(() -> tables.load(location));
+  }
+
   public ArcticTable loadTableByMeta(TableMeta tableMeta) {
     if (tableMeta.getKeySpec() != null
         && tableMeta.getKeySpec().getFields() != null

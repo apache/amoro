@@ -22,6 +22,8 @@ import com.netease.arctic.api.config.ConfigOption;
 import com.netease.arctic.api.config.ConfigOptions;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 
 public class ArcticManagementConf {
 
@@ -381,6 +383,10 @@ public class ArcticManagementConf {
   public static final String DB_TYPE_DERBY = "derby";
   public static final String DB_TYPE_MYSQL = "mysql";
   public static final String DB_TYPE_POSTGRES = "postgres";
+
+  // terminal config
+  public static final List<String> TERMINAL_BACKEND_VALUES =
+      Arrays.asList("local", "kyuubi", "custom");
 
   // plugin config
   public static final String METRIC_REPORTERS = "metric-reports";
