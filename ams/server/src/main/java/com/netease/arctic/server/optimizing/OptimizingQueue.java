@@ -550,23 +550,23 @@ public class OptimizingQueue extends PersistentBase {
           LOG.warn("{} has already committed, give up", tableRuntime.getTableIdentifier());
           throw new IllegalStateException("repeat commit, and last error " + failedReason);
         }
-        hasCommitted = true;
-        buildCommit().commit();
-        status = Status.SUCCESS;
-        endTime = System.currentTimeMillis();
-        persistProcessCompleted(true);
-      } catch (Exception e) {
-        LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
-        status = Status.FAILED;
-        failedReason = ExceptionUtil.getErrorMessage(e, 4000);
-        endTime = System.currentTimeMillis();
-        persistProcessCompleted(false);
-      } finally {
-        clearProcess(this);
-        lock.unlock();
-        if (this.status == OptimizingProcess.Status.FAILED) {
-          cancelTasks();
+        try {
+          hasCommitted = true;
+          buildCommit().commit();
+          status = Status.SUCCESS;
+          endTime = System.currentTimeMillis();
+          persistProcessCompleted(true);
+        } catch (Exception e) {
+          LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
+          status = Status.FAILED;
+          failedReason = ExceptionUtil.getErrorMessage(e, 4000);
+          endTime = System.currentTimeMillis();
+          persistProcessCompleted(false);
+        } finally {
+          clearProcess(this);
         }
+      } finally {
+        lock.unlock();
       }
     }
 
