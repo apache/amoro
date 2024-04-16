@@ -18,12 +18,12 @@
 
 package com.netease.arctic.server.optimizing;
 
-import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
+import org.apache.amoro.hive.table.SupportHive;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.AppendFiles;

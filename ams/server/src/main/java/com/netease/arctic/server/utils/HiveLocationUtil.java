@@ -18,10 +18,10 @@
 
 package com.netease.arctic.server.utils;
 
-import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableFileUtil;
+import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 

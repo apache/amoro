@@ -26,9 +26,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.netease.arctic.MockArcticMetastoreServer;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
-import com.netease.arctic.hive.table.HiveLocationKind;
-import com.netease.arctic.hive.table.KeyedHiveTable;
+import org.apache.amoro.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
+import org.apache.amoro.hive.table.HiveLocationKind;
+import org.apache.amoro.hive.table.KeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;

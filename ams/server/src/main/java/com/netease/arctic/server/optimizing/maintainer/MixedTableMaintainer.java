@@ -24,7 +24,6 @@ import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.mi
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.api.config.DataExpirationConfig;
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
@@ -36,6 +35,7 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.tuple.Pair;

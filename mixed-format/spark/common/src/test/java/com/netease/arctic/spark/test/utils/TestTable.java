@@ -19,8 +19,8 @@
 package com.netease.arctic.spark.test.utils;
 
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.hive.utils.HiveSchemaUtil;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;

@@ -18,12 +18,12 @@
 
 package org.apache.amoro.flink.read;
 
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import org.apache.amoro.flink.read.hybrid.enumerator.ArcticEnumeratorOffset;
 import org.apache.amoro.flink.read.hybrid.enumerator.ContinuousEnumerationResult;
 import org.apache.amoro.flink.read.hybrid.enumerator.ContinuousSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.DataIteratorReaderFunction;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterator;
 import org.slf4j.Logger;

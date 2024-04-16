@@ -19,7 +19,6 @@
 package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
@@ -27,6 +26,8 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.ExpressionUtil;
+import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
@@ -226,7 +227,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       this.arcticTable = arcticTable;
       this.tableRuntime = tableRuntime;
       this.planTime = planTime;
-      if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
+      if (TableTypeUtil.isHive(arcticTable)) {
         this.hiveLocation = (((SupportHive) arcticTable).hiveLocation());
       } else {
         this.hiveLocation = null;
@@ -237,7 +238,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       if (TableFormat.ICEBERG == arcticTable.format()) {
         return new IcebergPartitionPlan(tableRuntime, arcticTable, partition, planTime);
       } else {
-        if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
+        if (TableTypeUtil.isHive(arcticTable)) {
           return new MixedHivePartitionPlan(
               tableRuntime, arcticTable, partition, hiveLocation, planTime);
         } else {

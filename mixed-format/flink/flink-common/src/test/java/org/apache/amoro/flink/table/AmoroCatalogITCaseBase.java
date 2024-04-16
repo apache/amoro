@@ -23,7 +23,7 @@ import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC
 import com.netease.arctic.TestAms;
 import com.netease.arctic.formats.AmoroCatalogTestBase;
 import com.netease.arctic.formats.AmoroCatalogTestHelper;
-import com.netease.arctic.hive.TestHMS;
+import org.apache.amoro.hive.TestHMS;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.StateBackend;

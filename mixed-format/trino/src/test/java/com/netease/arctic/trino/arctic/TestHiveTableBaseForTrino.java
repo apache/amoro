@@ -22,11 +22,11 @@ import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.hive.HMSMockServer;
-import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
-import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
-import com.netease.arctic.hive.table.KeyedHiveTable;
-import com.netease.arctic.hive.table.UnkeyedHiveTable;
+import org.apache.amoro.hive.HMSMockServer;
+import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
+import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
+import org.apache.amoro.hive.table.KeyedHiveTable;
+import org.apache.amoro.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
