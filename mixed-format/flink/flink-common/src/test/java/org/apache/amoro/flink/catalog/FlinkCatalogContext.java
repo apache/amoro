@@ -24,9 +24,9 @@ import static org.apache.amoro.flink.table.descriptors.ArcticValidator.TABLE_FOR
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.TestAms;
 import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.hive.TestHMS;
-import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.flink.catalog.factories.FlinkUnifiedCatalogFactory;
+import org.apache.amoro.hive.TestHMS;
+import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;

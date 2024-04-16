@@ -18,10 +18,10 @@
 
 package org.apache.amoro.flink.lookup;
 
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.amoro.flink.read.hybrid.reader.DataIteratorReaderFunction;
 import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.functions.FunctionContext;

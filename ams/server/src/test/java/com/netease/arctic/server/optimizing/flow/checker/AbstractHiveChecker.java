@@ -18,14 +18,14 @@
 
 package com.netease.arctic.server.optimizing.flow.checker;
 
-import com.netease.arctic.hive.HMSClientPool;
-import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
 import com.netease.arctic.server.optimizing.flow.view.MatchResult;
 import com.netease.arctic.server.optimizing.flow.view.TableDataView;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.hive.HMSClientPool;
+import org.apache.amoro.hive.table.SupportHive;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.iceberg.data.Record;

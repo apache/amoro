@@ -18,7 +18,6 @@
 
 package org.apache.amoro.flink.table;
 
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.SchemaUtil;
 import org.apache.amoro.flink.lookup.ArcticRowDataLookupFunction;
@@ -30,6 +29,7 @@ import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
 import org.apache.amoro.flink.read.source.FlinkArcticMORDataReader;
 import org.apache.amoro.flink.util.FilterUtil;
 import org.apache.amoro.flink.util.IcebergAndFlinkFilters;
+import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.DataTypes;

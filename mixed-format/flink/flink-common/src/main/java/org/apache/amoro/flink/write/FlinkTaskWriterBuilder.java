@@ -18,11 +18,6 @@
 
 package org.apache.amoro.flink.write;
 
-import com.netease.arctic.hive.io.writer.AdaptHiveOperateToTableRelation;
-import com.netease.arctic.hive.io.writer.AdaptHiveOutputFileFactory;
-import com.netease.arctic.hive.table.HiveLocationKind;
-import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
@@ -38,6 +33,11 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.utils.SchemaUtil;
+import org.apache.amoro.hive.io.writer.AdaptHiveOperateToTableRelation;
+import org.apache.amoro.hive.io.writer.AdaptHiveOutputFileFactory;
+import org.apache.amoro.hive.table.HiveLocationKind;
+import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.FileFormat;

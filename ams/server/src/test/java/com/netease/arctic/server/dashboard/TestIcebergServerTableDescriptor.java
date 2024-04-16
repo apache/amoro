@@ -20,7 +20,7 @@ package com.netease.arctic.server.dashboard;
 
 import com.netease.arctic.formats.AmoroCatalogTestHelper;
 import com.netease.arctic.formats.IcebergHadoopCatalogTestHelper;
-import com.netease.arctic.hive.formats.IcebergHiveCatalogTestHelper;
+import org.apache.amoro.hive.formats.IcebergHiveCatalogTestHelper;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.types.Types;
 import org.junit.runner.RunWith;

@@ -20,7 +20,6 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
@@ -32,6 +31,8 @@ import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
@@ -145,7 +146,7 @@ public class OptimizingEvaluator {
       return new CommonPartitionEvaluator(tableRuntime, partition, System.currentTimeMillis());
     } else {
       Map<String, String> partitionProperties = partitionProperties(partition);
-      if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
+      if (TableTypeUtil.isHive(arcticTable)) {
         String hiveLocation = (((SupportHive) arcticTable).hiveLocation());
         return new MixedHivePartitionPlan.MixedHivePartitionEvaluator(
             tableRuntime,
