@@ -30,15 +30,15 @@ public class SparkContextUtil {
   public static final String ICEBERG_EXTENSION =
       "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions";
   public static final String MIXED_FORMAT_EXTENSION =
-      "com.netease.arctic.spark.ArcticSparkExtensions";
+      "org.apache.amoro.spark.ArcticSparkExtensions";
   public static final String ICEBERG_CATALOG = "org.apache.iceberg.spark.SparkCatalog";
-  public static final String MIXED_FORMAT_CATALOG = "com.netease.arctic.spark.ArcticSparkCatalog";
+  public static final String MIXED_FORMAT_CATALOG = "org.apache.amoro.spark.ArcticSparkCatalog";
   public static final String PAIMON_CATALOG = "org.apache.paimon.spark.SparkCatalog";
   public static final String MIXED_FORMAT_SESSION_CATALOG =
-      "com.netease.arctic.spark.ArcticSparkSessionCatalog";
+      "org.apache.amoro.spark.ArcticSparkSessionCatalog";
   public static final String UNIFIED_SESSION_CATALOG =
-      "com.netease.arctic.spark.SparkUnifiedSessionCatalog";
-  public static final String UNIFIED_CATALOG = "com.netease.arctic.spark.SparkUnifiedCatalog";
+      "org.apache.amoro.spark.SparkUnifiedSessionCatalog";
+  public static final String UNIFIED_CATALOG = "org.apache.amoro.spark.SparkUnifiedCatalog";
 
   public static final String MIXED_FORMAT_PROPERTY_REFRESH_BEFORE_USAGE =
       "spark.sql.arctic.refresh-catalog-before-usage";
