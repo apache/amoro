@@ -132,7 +132,7 @@
 
                             </filters>
                             <relocations>
-                                <!-- relocation arctic spark packages -->
+                                <!-- relocation amoro spark packages -->
                                 <relocation>
                                     <pattern>org.apache.spark.sql.amoro</pattern>
                                     <shadedPattern>org.apache.amoro.spark.sql</shadedPattern>
