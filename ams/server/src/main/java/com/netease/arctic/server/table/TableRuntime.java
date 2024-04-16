@@ -137,7 +137,7 @@ public class TableRuntime extends StatedPersistentBase {
             : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
-    optimizingMetrics.stateChanged(optimizingStatus, this.currentStatusStartTime);
+    optimizingMetrics.statusChanged(optimizingStatus, this.currentStatusStartTime);
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -296,7 +296,7 @@ public class TableRuntime extends StatedPersistentBase {
   private void updateOptimizingStatus(OptimizingStatus status) {
     this.optimizingStatus = status;
     this.currentStatusStartTime = System.currentTimeMillis();
-    this.optimizingMetrics.stateChanged(status, currentStatusStartTime);
+    this.optimizingMetrics.statusChanged(status, currentStatusStartTime);
   }
 
   private boolean refreshSnapshots(AmoroTable<?> amoroTable) {

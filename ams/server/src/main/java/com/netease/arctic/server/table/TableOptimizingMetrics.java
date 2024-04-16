@@ -257,7 +257,7 @@ public class TableOptimizingMetrics {
    * @param optimizingStatus new optimizing status
    * @param stateSetTimestamp timestamp of status changed.
    */
-  public void stateChanged(OptimizingStatus optimizingStatus, long stateSetTimestamp) {
+  public void statusChanged(OptimizingStatus optimizingStatus, long stateSetTimestamp) {
     this.optimizingStatus = optimizingStatus;
     this.stateSetTimestamp = stateSetTimestamp;
   }
@@ -294,7 +294,7 @@ public class TableOptimizingMetrics {
     }
   }
 
-  private String optimizingStatusToMetricState(OptimizingStatus status) {
+  private String getOptimizingStatusDesc(OptimizingStatus status) {
     switch (status) {
       case IDLE:
         return STATUS_IDLE;
@@ -314,16 +314,16 @@ public class TableOptimizingMetrics {
   }
 
   class StatusDurationGauge implements Gauge<Long> {
-    final String targetState;
+    final String targetStatus;
 
-    StatusDurationGauge(String targetState) {
-      this.targetState = targetState;
+    StatusDurationGauge(String targetStatus) {
+      this.targetStatus = targetStatus;
     }
 
     @Override
     public Long getValue() {
-      String state = optimizingStatusToMetricState(optimizingStatus);
-      if (targetState.equals(state)) {
+      String state = getOptimizingStatusDesc(optimizingStatus);
+      if (targetStatus.equals(state)) {
         return stateDuration();
       }
       return 0L;
@@ -335,16 +335,16 @@ public class TableOptimizingMetrics {
   }
 
   class IsInStatusGauge implements Gauge<Long> {
-    final String targetState;
+    final String targetStatus;
 
-    IsInStatusGauge(String targetState) {
-      this.targetState = targetState;
+    IsInStatusGauge(String targetStatus) {
+      this.targetStatus = targetStatus;
     }
 
     @Override
     public Long getValue() {
-      String state = optimizingStatusToMetricState(optimizingStatus);
-      if (targetState.equals(state)) {
+      String state = getOptimizingStatusDesc(optimizingStatus);
+      if (targetStatus.equals(state)) {
         return 1L;
       }
       return 0L;
