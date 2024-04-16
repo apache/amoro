@@ -18,8 +18,7 @@
 
 package org.apache.amoro.spark.sql.catalyst.analysis
 
-import scala.collection.{mutable, Seq}
-
+import scala.collection.{Seq, mutable}
 import org.apache.amoro.spark.mixed.SparkSQLProperties
 import org.apache.amoro.spark.sql.ArcticExtensionUtils
 import org.apache.amoro.spark.sql.ArcticExtensionUtils.isArcticRelation
@@ -30,9 +29,9 @@ import org.apache.amoro.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_
 import org.apache.amoro.spark.table.ArcticSparkTable
 import org.apache.amoro.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.amoro.catalyst.ArcticSpark33Helper
+import org.apache.spark.sql.amoro.catalyst.{ArcticSpark33Helper, ExpressionHelper}
 import org.apache.spark.sql.catalyst.analysis.EliminateSubqueryAliases
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Expression, ExprId, IsNotNull, Literal}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, ExprId, Expression, IsNotNull, Literal}
 import org.apache.spark.sql.catalyst.expressions.Literal.TrueLiteral
 import org.apache.spark.sql.catalyst.plans.{Inner, RightOuter}
 import org.apache.spark.sql.catalyst.plans.logical._
