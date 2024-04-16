@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.netease.arctic.trino.arctic;
+package org.apache.amoro.trino.mixed;
 
 import static io.airlift.testing.Closeables.closeAllSuppress;
 import static io.trino.testing.TestingSession.testSessionBuilder;

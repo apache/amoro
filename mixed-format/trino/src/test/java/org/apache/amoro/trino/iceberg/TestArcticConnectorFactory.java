@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.netease.arctic.trino.iceberg;
+package org.apache.amoro.trino.iceberg;
 
 import static com.google.inject.Scopes.SINGLETON;
 

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.netease.arctic.trino.iceberg;
+package org.apache.amoro.trino.iceberg;
 
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.BasicUnkeyedTable;

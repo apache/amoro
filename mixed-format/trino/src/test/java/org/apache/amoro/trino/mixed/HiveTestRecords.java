@@ -16,20 +16,20 @@
  * limitations under the License.
  */
 
-package org.netease.arctic.trino.arctic;
+package org.apache.amoro.trino.mixed;
 
-import static org.netease.arctic.trino.arctic.TestHiveTableBaseForTrino.COLUMN_NAME_ARRAY;
-import static org.netease.arctic.trino.arctic.TestHiveTableBaseForTrino.COLUMN_NAME_D;
-import static org.netease.arctic.trino.arctic.TestHiveTableBaseForTrino.COLUMN_NAME_ID;
-import static org.netease.arctic.trino.arctic.TestHiveTableBaseForTrino.COLUMN_NAME_MAP;
-import static org.netease.arctic.trino.arctic.TestHiveTableBaseForTrino.COLUMN_NAME_NAME;
-import static org.netease.arctic.trino.arctic.TestHiveTableBaseForTrino.COLUMN_NAME_OP_TIME;
-import static org.netease.arctic.trino.arctic.TestHiveTableBaseForTrino.COLUMN_NAME_OP_TIME_WITH_ZONE;
-import static org.netease.arctic.trino.arctic.TestHiveTableBaseForTrino.COLUMN_NAME_STRUCT;
-import static org.netease.arctic.trino.arctic.TestHiveTableBaseForTrino.COLUMN_NAME_STRUCT_SUB1;
-import static org.netease.arctic.trino.arctic.TestHiveTableBaseForTrino.COLUMN_NAME_STRUCT_SUB2;
-import static org.netease.arctic.trino.arctic.TestHiveTableBaseForTrino.HIVE_TABLE_SCHEMA;
-import static org.netease.arctic.trino.arctic.TestHiveTableBaseForTrino.STRUCT_SUB_SCHEMA;
+import static org.apache.amoro.trino.mixed.TestHiveTableBaseForTrino.COLUMN_NAME_ARRAY;
+import static org.apache.amoro.trino.mixed.TestHiveTableBaseForTrino.COLUMN_NAME_D;
+import static org.apache.amoro.trino.mixed.TestHiveTableBaseForTrino.COLUMN_NAME_ID;
+import static org.apache.amoro.trino.mixed.TestHiveTableBaseForTrino.COLUMN_NAME_MAP;
+import static org.apache.amoro.trino.mixed.TestHiveTableBaseForTrino.COLUMN_NAME_NAME;
+import static org.apache.amoro.trino.mixed.TestHiveTableBaseForTrino.COLUMN_NAME_OP_TIME;
+import static org.apache.amoro.trino.mixed.TestHiveTableBaseForTrino.COLUMN_NAME_OP_TIME_WITH_ZONE;
+import static org.apache.amoro.trino.mixed.TestHiveTableBaseForTrino.COLUMN_NAME_STRUCT;
+import static org.apache.amoro.trino.mixed.TestHiveTableBaseForTrino.COLUMN_NAME_STRUCT_SUB1;
+import static org.apache.amoro.trino.mixed.TestHiveTableBaseForTrino.COLUMN_NAME_STRUCT_SUB2;
+import static org.apache.amoro.trino.mixed.TestHiveTableBaseForTrino.HIVE_TABLE_SCHEMA;
+import static org.apache.amoro.trino.mixed.TestHiveTableBaseForTrino.STRUCT_SUB_SCHEMA;
 
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;

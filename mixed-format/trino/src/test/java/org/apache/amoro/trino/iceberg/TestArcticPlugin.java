@@ -16,19 +16,16 @@
  * limitations under the License.
  */
 
-package org.netease.arctic.trino.iceberg;
+package org.apache.amoro.trino.iceberg;
 
-import io.airlift.log.Logger;
-import io.trino.testing.DistributedQueryRunner;
+import io.trino.spi.Plugin;
+import io.trino.spi.connector.ConnectorFactory;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
-public class TestOnServerArcticConnectorTest extends TestBaseArcticConnectorTest {
+public class TestArcticPlugin implements Plugin {
 
-  public static void main(String[] args) throws Exception {
-    DistributedQueryRunner queryRunner =
-        new TestOnServerArcticConnectorTest().createQueryRunnerForClient();
-    Thread.sleep(10);
-    Logger log = Logger.get(TestOnServerArcticConnectorTest.class);
-    log.info("======== SERVER STARTED ========");
-    log.info("\n====\n%s\n====", queryRunner.getCoordinator().getBaseUrl());
+  @Override
+  public Iterable<ConnectorFactory> getConnectorFactories() {
+    return ImmutableList.of(new TestArcticConnectorFactory());
   }
 }

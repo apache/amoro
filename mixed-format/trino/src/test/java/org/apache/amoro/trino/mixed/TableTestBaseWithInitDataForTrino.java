@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.netease.arctic.trino.arctic;
+package org.apache.amoro.trino.mixed;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
