@@ -83,33 +83,33 @@ under the License.
             files="org[/\\]apache[/\\]hadoop[/\\]util[/\\]VersionInfo\.java"
             checks="MethodName"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]iceberg[/\\]TestBaseArcticConnectorTest\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]iceberg[/\\]TestBaseArcticConnectorTest\.java"
             checks="FileLength"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]iceberg[/\\]BaseConnectorTest\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]iceberg[/\\]BaseConnectorTest\.java"
             checks="FileLength"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]keyed[/\\]KeyedConnectorSplit\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]keyed[/\\]KeyedConnectorSplit\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]keyed[/\\]KeyedTableHandle\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]keyed[/\\]KeyedTableHandle\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]delete[/\\]TrinoDeleteFile\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]delete[/\\]TrinoDeleteFile\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]unkeyed[/\\]IcebergSplit\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]unkeyed[/\\]IcebergSplit\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]unkeyed[/\\]AdaptHiveIcebergTableHandle\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]unkeyed[/\\]AdaptHiveIcebergTableHandle\.java"
             checks="Regexp"/>
     <!-- BaseConnectorTest and TestBaseArcticConnectorTest can be replace by shaded guava
           because the shaded guava version is too low -->
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]iceberg[/\\]BaseConnectorTest.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]iceberg[/\\]BaseConnectorTest.java"
             checks="IllegalImport"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]iceberg[/\\]TestBaseArcticConnectorTest.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]iceberg[/\\]TestBaseArcticConnectorTest.java"
             checks="IllegalImport"/>
 
 </suppressions>
