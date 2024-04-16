@@ -86,4 +86,6 @@ public interface HMSClient {
       EnvironmentContext environmentContext)
       throws TException, InstantiationException, IllegalAccessException, NoSuchMethodException,
           InvocationTargetException, ClassNotFoundException;
+
+  List<Table> getTableObjectsByName(String dbName, List<String> tableNames) throws TException;
 }

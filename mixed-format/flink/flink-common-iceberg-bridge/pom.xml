@@ -20,7 +20,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.netease.amoro</groupId>
+        <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-mixed-format-flink</artifactId>
         <version>0.7.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
@@ -28,7 +28,7 @@
 
     <artifactId>amoro-mixed-format-flink-common-iceberg-bridge</artifactId>
     <name>Amoro Project Mixed Format Flink Iceberg Bridge</name>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <properties>
         <kafka.version>3.2.3</kafka.version>
@@ -40,7 +40,7 @@
     <dependencies>
         <!--amoro-->
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-core</artifactId>
             <exclusions>
                 <exclusion>
@@ -51,7 +51,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-format-hive</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -282,7 +282,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-core</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
@@ -346,7 +346,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.amoro</groupId>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-ams-api</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>

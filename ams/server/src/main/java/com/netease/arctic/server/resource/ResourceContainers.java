@@ -18,9 +18,9 @@
 
 package com.netease.arctic.server.resource;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
 import com.netease.arctic.api.resource.ResourceContainer;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.List;
 import java.util.Map;

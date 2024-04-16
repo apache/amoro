@@ -113,12 +113,12 @@ amoroConf:
 #    kyuubiJdbcUrl: jdbc:hive2://127.0.0.1:10009/
 
   # The value (templated string) is used for conf.yaml file
-  # See https://github.com/NetEase/amoro/blob/master/dist/src/main/arctic-bin/conf/config.yaml for more details
+  # See https://github.com/apache/amoro/blob/master/dist/src/main/arctic-bin/conf/config.yaml for more details
   #
   amoroDefaults: ~
 
   # The value (templated string) is used for conf/log4j2.xml file
-  # See example at conf/log4j2.xml.template https://github.com/NetEase/amoro/blob/master/dist/src/main/arctic-bin/conf/log4j2.xml for more details
+  # See example at conf/log4j2.xml.template https://github.com/apache/amoro/blob/master/dist/src/main/arctic-bin/conf/log4j2.xml for more details
   log4j2: ~
 
 

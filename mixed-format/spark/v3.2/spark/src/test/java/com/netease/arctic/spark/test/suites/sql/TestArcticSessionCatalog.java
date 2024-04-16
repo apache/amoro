@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.test.suites.sql;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.spark.mixed.SparkSQLProperties;
 import com.netease.arctic.spark.test.MixedTableTestBase;
@@ -30,6 +29,7 @@ import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;

@@ -21,14 +21,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.netease.amoro</groupId>
+    <groupId>org.apache.amoro</groupId>
     <artifactId>amoro-parent</artifactId>
     <version>0.7.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Amoro Project Parent</name>
     <description>Amoro is a Lakehouse management system built on open data formats.</description>
-    <url>https://amoro.netease.com</url>
+    <url>https://amoro.apache.org</url>
 
     <licenses>
         <license>
@@ -53,7 +53,7 @@
 
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>https://github.com/NetEase/amoro/issues</url>
+        <url>https://github.com/apache/amoro/issues</url>
     </issueManagement>
 
     <properties>
@@ -128,6 +128,7 @@
         <lucene.version>8.11.2</lucene.version>
         <bitmap.version>1.0.1</bitmap.version>
         <prometheus.version>0.16.0</prometheus.version>
+        <flink.version>1.18.1</flink.version>
     </properties>
 
     <dependencies>
@@ -205,19 +206,19 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.netease.amoro</groupId>
+                <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-ams-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>com.netease.amoro</groupId>
+                <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>com.netease.amoro</groupId>
+                <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-mixed-format-hive</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -766,6 +767,19 @@
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
                 <version>${lucene.version}</version>
+            </dependency>
+
+            <!-- flink dependencies -->
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-clients</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-runtime-web</artifactId>
+                <version>${flink.version}</version>
             </dependency>
 
             <dependency>

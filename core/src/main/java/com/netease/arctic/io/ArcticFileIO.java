@@ -20,6 +20,7 @@ package com.netease.arctic.io;
 
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.io.SupportsBulkOperations;
 import org.apache.iceberg.io.SupportsPrefixOperations;
 
 import java.util.concurrent.Callable;
@@ -58,6 +59,20 @@ public interface ArcticFileIO extends FileIO {
       return (SupportsPrefixOperations) this;
     } else {
       throw new IllegalStateException("Doesn't support prefix operations");
+    }
+  }
+
+  /** Determine if the fileIO supports bulk operations. */
+  default boolean supportBulkOperations() {
+    return false;
+  }
+
+  /** Return this fileIO as a {@link SupportsBulkOperations} if it is an instance of that type. */
+  default SupportsBulkOperations asBulkFileIO() {
+    if (supportBulkOperations()) {
+      return (SupportsBulkOperations) this;
+    } else {
+      throw new IllegalStateException("Doesn't support bulk operations");
     }
   }
 

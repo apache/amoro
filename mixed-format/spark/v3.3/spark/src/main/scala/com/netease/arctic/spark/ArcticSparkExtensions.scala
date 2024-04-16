@@ -26,6 +26,7 @@ import com.netease.arctic.spark.sql.execution
 import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.catalyst.analysis.{AlignedRowLevelIcebergCommandCheck, AlignRowLevelCommandAssignments, CheckMergeIntoTableConditions, MergeIntoIcebergTableResolutionCheck, ProcedureArgumentCoercion, ResolveMergeIntoTableReferences, ResolveProcedures, RewriteDeleteFromIcebergTable, RewriteMergeIntoTable, RewriteUpdateTable}
 import org.apache.spark.sql.catalyst.optimizer._
+import org.apache.spark.sql.catalyst.parser.extensions.IcebergSparkSqlExtensionsParser
 import org.apache.spark.sql.execution.datasources.v2.{ExtendedDataSourceV2Strategy, ExtendedV2Writes, OptimizeMetadataOnlyDeleteFromIcebergTable, ReplaceRewrittenRowLevelCommand, RowLevelCommandScanRelationPushDown}
 import org.apache.spark.sql.execution.dynamicpruning.RowLevelCommandDynamicPruning
 
@@ -79,6 +80,12 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
 
     // arctic strategy rules
     extensions.injectPlannerStrategy { spark => execution.ExtendedArcticStrategy(spark) }
+
+    // iceberg sql parser extensions
+    extensions.injectParser { case (_, parser) => new IcebergSparkSqlExtensionsParser(parser) }
+
+    // iceberg procedure analyzer extensions
+    extensions.injectResolutionRule { spark => ResolveProcedures(spark) }
   }
 
 }

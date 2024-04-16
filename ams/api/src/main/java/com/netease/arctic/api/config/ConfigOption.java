@@ -18,7 +18,7 @@
 
 package com.netease.arctic.api.config;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A {@code ConfigOption} describes a configuration parameter. It encapsulates the configuration

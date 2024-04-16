@@ -18,8 +18,8 @@
 
 package com.netease.arctic.trino.keyed;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
+import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
 
 import com.netease.arctic.hive.io.reader.AdaptHiveArcticDeleteFilter;
 import com.netease.arctic.scan.KeyedTableScanTask;

@@ -49,10 +49,10 @@ limitations under the License.
             />
             <span v-else>{{metastoreType}}</span>
           </a-form-item>
-          <a-form-item :label="$t('tableFormat')" :name="['tableFormat']" :rules="[{ required: isEdit && isNewCatalog }]">
-            <a-radio-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormat" name="radioGroup" @change="changeTableFormat">
-              <a-radio v-for="item in formatOptions" :key="item" :value="item">{{tableFormatText[item]}}</a-radio>
-            </a-radio-group>
+          <a-form-item :label="$t('tableFormat')" :name="['tableFormatList']" :rules="[{ required: isEdit && isNewCatalog }]">
+            <a-checkbox-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormatList" @change="changeTableFormat">
+              <a-checkbox v-for="item in formatOptions" :key="item" :value="item">{{tableFormatText[item]}}</a-checkbox>
+            </a-checkbox-group>
           </a-form-item>
           <a-form-item :label="$t('optimizerGroup')" :name="['catalog', 'optimizerGroup']" :rules="[{ required: isEdit }]">
             <a-select
@@ -205,7 +205,7 @@ interface IStorageConfigItem {
 
 interface FormState {
   catalog: IMap<string | undefined>
-  tableFormat: string
+  tableFormatList: string[]
   storageConfig: IMap<string>
   authConfig: IMap<string>
   properties: IMap<string>
@@ -297,7 +297,7 @@ const formState:FormState = reactive({
     typeshow: typeShowMap['Internal Catalog'],
     optimizerGroup: undefined
   },
-  tableFormat: '',
+  tableFormatList: [],
   storageConfig: {},
   authConfig: {},
   properties: {},
@@ -382,7 +382,7 @@ async function getConfigInfo() {
       formState.catalog.name = ''
       formState.catalog.type = type || 'ams'
       formState.catalog.optimizerGroup = undefined
-      formState.tableFormat = tableFormatMap.MIXED_ICEBERG
+      formState.tableFormatList = [tableFormatMap.MIXED_ICEBERG]
       formState.authConfig = { ...newCatalogConfig.authConfig }
       formState.storageConfig = { ...newCatalogConfig.storageConfig }
       const keys = defaultPropertiesMap[formState.catalog.type] || []
@@ -400,7 +400,7 @@ async function getConfigInfo() {
       formState.catalog.name = name
       formState.catalog.type = type
       formState.catalog.optimizerGroup = optimizerGroup
-      formState.tableFormat = tableFormatList.join('')
+      formState.tableFormatList = [...tableFormatList]
       formState.authConfig = authConfig
       formState.storageConfig = storageConfig
       formState.properties = properties || {}
@@ -476,7 +476,9 @@ async function changeProperties() {
       properties[key] = ''
     }
   })
-  const formatKeys = defaultPropertiesMap[formState.tableFormat] || []
+  const formatKeys = formState.tableFormatList.reduce((accumulator, current) => {
+    return [...accumulator, ...(defaultPropertiesMap[current] || [])]
+  }, [])
   formatKeys.forEach(key => {
     if (key && !properties[key]) {
       properties[key] = ''
@@ -533,7 +535,7 @@ const authTypeOptions = computed(() => {
 })
 
 async function changeMetastore() {
-  formState.tableFormat = formatOptions.value[0]
+  formState.tableFormatList = [formatOptions.value[0]]
   if (!isNewCatalog.value) { return }
   const index = formState.storageConfigArray.findIndex(item => item.key === 'hive.site')
   if (isHiveMetastore.value) {
@@ -609,7 +611,7 @@ function handleSave() {
   formRef.value
     .validateFields()
     .then(async() => {
-      const { catalog, tableFormat, storageConfig, authConfig } = formState
+      const { catalog, tableFormatList, storageConfig, authConfig } = formState
       const properties = await propertiesRef.value.getProperties()
       const tableProperties = await tablePropertiesRef.value.getProperties()
       if (!properties) {
@@ -624,7 +626,7 @@ function handleSave() {
       await saveCatalogsSetting({
         isCreate: isNewCatalog.value,
         ...catalogParams,
-        tableFormatList: [tableFormat],
+        tableFormatList,
         storageConfig,
         authConfig,
         properties,
