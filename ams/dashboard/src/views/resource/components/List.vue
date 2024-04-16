@@ -97,7 +97,6 @@ const tableColumns = shallowReactive([
   { dataIndex: 'operationGroup', title: t('operation'), key: 'operationGroup', ellipsis: true, width: 230, scopedSlots: { customRender: 'operationGroup' } }
 ])
 const optimizerColumns = shallowReactive([
-  { dataIndex: 'index', title: t('order'), width: 80, ellipsis: true },
   { dataIndex: 'jobId', title: t('optimizerId'), width: '15%', ellipsis: true },
   { dataIndex: 'token', title: t('token'), width: '10%', ellipsis: true },
   { dataIndex: 'groupName', title: t('optimizerGroup'), ellipsis: true },
