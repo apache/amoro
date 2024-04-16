@@ -21,11 +21,11 @@ package com.netease.arctic.trino.keyed;
 import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
 import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
 
-import org.apache.amoro.hive.io.reader.AdaptHiveArcticDeleteFilter;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.trino.delete.TrinoRow;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
+import org.apache.amoro.hive.io.reader.AdaptHiveArcticDeleteFilter;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.FileIO;

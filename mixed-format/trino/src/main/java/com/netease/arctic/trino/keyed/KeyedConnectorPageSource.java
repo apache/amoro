@@ -26,7 +26,6 @@ import static org.apache.iceberg.relocated.com.google.common.base.Throwables.thr
 
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
-import org.apache.amoro.hive.io.reader.AdaptHiveArcticDeleteFilter;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.trino.delete.TrinoDeleteFile;
@@ -44,6 +43,7 @@ import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
+import org.apache.amoro.hive.io.reader.AdaptHiveArcticDeleteFilter;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.joda.time.DateTimeZone;

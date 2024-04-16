@@ -20,7 +20,6 @@ package com.netease.arctic.trino.keyed;
 
 import com.google.inject.Inject;
 import com.netease.arctic.data.PrimaryKeyedFile;
-import org.apache.amoro.hive.io.reader.AdaptHiveArcticDeleteFilter;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.trino.delete.TrinoRow;
@@ -37,6 +36,7 @@ import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.type.TypeManager;
+import org.apache.amoro.hive.io.reader.AdaptHiveArcticDeleteFilter;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SchemaParser;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
