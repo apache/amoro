@@ -79,7 +79,7 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>shade-arctic</id>
+                        <id>shade-amoro</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
@@ -87,7 +87,7 @@
                         <configuration>
                             <artifactSet>
                                 <includes combine.children="append">
-                                    <include>org.apache.amoro:amoro-mixed-flink-common</include>
+                                    <include>org.apache.amoro:amoro-mixed-format-flink-common</include>
                                 </includes>
                             </artifactSet>
                         </configuration>
