@@ -22,10 +22,10 @@ import static io.airlift.testing.Closeables.closeAllSuppress;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static java.util.Objects.requireNonNull;
 
-import org.apache.amoro.trino.ArcticPlugin;
 import io.airlift.log.Logger;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.DistributedQueryRunner;
+import org.apache.amoro.trino.ArcticPlugin;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 
 import java.io.File;
