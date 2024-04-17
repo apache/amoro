@@ -128,20 +128,19 @@ public class ArcticSparkTable
   public Map<String, String> properties() {
     ImmutableMap.Builder<String, String> propsBuilder = ImmutableMap.builder();
 
-    String baseFileFormat =
-        arcticTable
-            .properties()
-            .getOrDefault(
-                TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT);
-    String deltaFileFormat =
-        arcticTable
-            .properties()
-            .getOrDefault(
-                TableProperties.CHANGE_FILE_FORMAT, TableProperties.CHANGE_FILE_FORMAT_DEFAULT);
-    propsBuilder.put("base.write.format", baseFileFormat);
-    propsBuilder.put("delta.write.format", deltaFileFormat);
-    propsBuilder.put("provider", "arctic");
+    if (!arcticTable.properties().containsKey(TableProperties.BASE_FILE_FORMAT)) {
+      propsBuilder.put("base.write.format", TableProperties.BASE_FILE_FORMAT_DEFAULT);
+    }
 
+    if (!arcticTable.properties().containsKey(TableProperties.DELTA_FILE_FORMAT)) {
+      propsBuilder.put(
+          TableProperties.DELTA_FILE_FORMAT,
+          arcticTable
+              .properties()
+              .getOrDefault(
+                  TableProperties.CHANGE_FILE_FORMAT, TableProperties.CHANGE_FILE_FORMAT_DEFAULT));
+    }
+    propsBuilder.put("provider", "arctic");
     arcticTable.properties().entrySet().stream()
         .filter(entry -> !RESERVED_PROPERTIES.contains(entry.getKey()))
         .forEach(propsBuilder::put);
