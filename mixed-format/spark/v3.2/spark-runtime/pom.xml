@@ -132,15 +132,15 @@
 
                             </filters>
                             <relocations>
-                                <!-- relocation arctic spark packages -->
+                                <!-- relocation amoro spark packages -->
                                 <relocation>
-                                    <pattern>org.apache.spark.sql.arctic</pattern>
-                                    <shadedPattern>com.netease.arctic.spark.sql</shadedPattern>
+                                    <pattern>org.apache.spark.sql.amoro</pattern>
+                                    <shadedPattern>org.apache.amoro.spark.sql</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.catalyst
+                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst
                                     </shadedPattern>
                                     <includes>
                                         <include>
@@ -151,13 +151,13 @@
 
                                 <relocation>
                                     <pattern>org.apache.zookeeper</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.zookeeper
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.zookeeper
                                     </shadedPattern>
                                 </relocation>
 
                                 <relocation>
                                     <pattern>org.apache.curator</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.curator
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.curator
                                     </shadedPattern>
                                 </relocation>
 
@@ -165,17 +165,17 @@
                                 <!-- relocation required dependencies -->
                                 <relocation>
                                     <pattern>org.apache.orc</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.orc
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.orc
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.avro</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.avro
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.avro
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.thrift</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.thrift
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.thrift
                                     </shadedPattern>
                                     <excludes>
                                         <exclude>org.apache.thrift.TException</exclude>
@@ -184,77 +184,77 @@
                                 <relocation>
                                     <pattern>org.apache.parquet.avro</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.parquet.avro
+                                        org.apache.amoro.shade.org.apache.parquet.avro
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet.column</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.parquet.column
+                                        org.apache.amoro.shade.org.apache.parquet.column
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet.hadoop</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.parquet.hadoop
+                                        org.apache.amoro.shade.org.apache.parquet.hadoop
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet.common</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.parquet.common
+                                        org.apache.amoro.shade.org.apache.parquet.common
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet.format</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.parquet.format
+                                        org.apache.amoro.shade.org.apache.parquet.format
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>shaded.parquet</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.parquet</shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.parquet</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>shaded.parquet.it</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.parquet.it
+                                    <shadedPattern>org.apache.amoro.shade.parquet.it
                                     </shadedPattern>
                                 </relocation>
 
                                 <relocation>
                                     <pattern>org.apache.parquet.crypto</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.parquet.crypto
+                                        org.apache.amoro.shade.org.apache.parquet.crypto
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.parquet
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.parquet
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.commons.pool2</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.commons.pool2
+                                        org.apache.amoro.shade.org.apache.commons.pool2
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.github.ben-manes</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.com.github.ben-manes
+                                        org.apache.amoro.shade.com.github.ben-manes
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.commons.lang3</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.commons.lang3
+                                        org.apache.amoro.shade.org.apache.commons.lang3
                                     </shadedPattern>
                                 </relocation>
 
                                 <!-- relocation iceberg -->
                                 <relocation>
                                     <pattern>org.apache.iceberg</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.iceberg
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.iceberg
                                     </shadedPattern>
                                     <excludes>
                                         <exclude>org.apache.iceberg.mr.hive.*</exclude>
@@ -263,7 +263,7 @@
                                 <relocation>
                                     <pattern>org.apache.spark.sql.connector.iceberg</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.connector.iceberg
+                                        org.apache.amoro.shade.org.apache.spark.sql.connector.iceberg
                                     </shadedPattern>
                                     <excludes>
                                         <exclude>
@@ -285,7 +285,7 @@
                                 <relocation>
                                     <pattern>org.apache.spark.sql.execution.datasources.v2</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.execution.datasources.v2
+                                        org.apache.amoro.shade.org.apache.spark.sql.execution.datasources.v2
                                     </shadedPattern>
                                     <includes>
                                         <include>
@@ -338,7 +338,7 @@
                                 <relocation>
                                     <pattern>org.apache.spark.sql.execution.datasources</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.execution.datasources
+                                        org.apache.amoro.shade.org.apache.spark.sql.execution.datasources
                                     </shadedPattern>
                                     <includes>
                                         <include>
@@ -349,7 +349,7 @@
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.analysis</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.catalyst.analysis
+                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst.analysis
                                     </shadedPattern>
                                     <includes>
                                         <include>
@@ -372,7 +372,7 @@
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.expressions</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.catalyst.expressions
+                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst.expressions
                                     </shadedPattern>
                                     <includes>
                                         <include>
@@ -386,7 +386,7 @@
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.optimizer</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.catalyst.optimizer
+                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst.optimizer
                                     </shadedPattern>
                                     <includes>
                                         <include>
@@ -410,7 +410,7 @@
                                     <pattern>org.apache.spark.sql.catalyst.parser.extensions
                                     </pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.catalyst.parser.extensions
+                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst.parser.extensions
                                     </shadedPattern>
                                     <includes>
                                         <include>
@@ -424,7 +424,7 @@
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.plans.logical</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.catalyst.plans.logical
+                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst.plans.logical
                                     </shadedPattern>
                                     <includes>
                                         <include>
@@ -473,7 +473,7 @@
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.utils</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.catalyst.utils
+                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst.utils
                                     </shadedPattern>
                                     <includes>
                                         <include>
