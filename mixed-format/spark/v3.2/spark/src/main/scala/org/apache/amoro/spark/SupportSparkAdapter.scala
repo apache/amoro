@@ -18,8 +18,6 @@
 
 package org.apache.amoro.spark
 
-import org.apache.amoro.spark.{SparkAdapter, SparkAdapterLoader}
-
 /**
  * Use this trait to get SparkAdapter when scala object need to
  * adapt between different spark version
