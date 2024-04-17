@@ -444,11 +444,11 @@
                 <configuration>
                     <excludes>
                         <!-- auto generated antlr codes -->
-                        <exclude>**/com/netease/arctic/spark/sql/parser/**.class</exclude>
-                        <exclude>**/org/apache/spark/sql/arctic/parser/**.class</exclude>
+                        <exclude>**/org/apache/amoro/spark/sql/parser/**.class</exclude>
+                        <exclude>**/org/apache/spark/sql/amoro/parser/**.class</exclude>
                         <exclude>**/org/apache/iceberg/spark/data/**.class</exclude>
-                        <exclude>**/com/netease/arctic/spark/MultiDelegateSessionCatalog*</exclude>
-                        <exclude>**/com/netease/arctic/spark/reader/SparkParquetReaders*</exclude>
+                        <exclude>**/org/apache/amoro/spark/MultiDelegateSessionCatalog*</exclude>
+                        <exclude>**/org/apache/amoro/spark/reader/SparkParquetReaders*</exclude>
                     </excludes>
                 </configuration>
             </plugin>
