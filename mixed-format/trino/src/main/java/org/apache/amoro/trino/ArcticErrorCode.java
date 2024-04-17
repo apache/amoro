@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro;
+package org.apache.amoro.trino;
 
 import static io.trino.spi.ErrorType.EXTERNAL;
 
