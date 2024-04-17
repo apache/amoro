@@ -17,7 +17,7 @@
   */
 
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
-import { message } from 'ant-design-vue'
+import { message } from 'ant-design-vue-v3'
 import useStore from '@/store'
 import router from '@/router'
 
