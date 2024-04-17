@@ -19,11 +19,11 @@
 package com.netease.arctic.spark.table;
 
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.reader.SparkScanBuilder;
 import com.netease.arctic.spark.writer.ArcticSparkWriteBuilder;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import org.apache.amoro.hive.table.SupportHive;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;

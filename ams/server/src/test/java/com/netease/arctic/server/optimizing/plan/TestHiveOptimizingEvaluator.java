@@ -21,9 +21,9 @@ package com.netease.arctic.server.optimizing.plan;
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.hive.TestHMS;
-import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
-import com.netease.arctic.hive.catalog.HiveTableTestHelper;
+import org.apache.amoro.hive.TestHMS;
+import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
+import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.junit.ClassRule;
 import org.junit.runners.Parameterized;
 

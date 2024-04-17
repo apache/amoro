@@ -77,7 +77,7 @@ under the License.
             files="com[/\\]netease[/\\]arctic[/\\]server[/\\]table[/\\]TableConfiguration\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]flink[/\\]interceptor[/\\]ProxyFactory\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]flink[/\\]interceptor[/\\]ProxyFactory\.java"
             checks="TodoComment"/>
     <suppress
             files="org[/\\]apache[/\\]hadoop[/\\]util[/\\]VersionInfo\.java"

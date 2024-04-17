@@ -18,13 +18,13 @@
 
 package com.netease.arctic.server.optimizing.flow;
 
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericKeyedDataReader;
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
+import org.apache.amoro.hive.io.reader.AdaptHiveGenericKeyedDataReader;
+import org.apache.amoro.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;

@@ -19,13 +19,13 @@
 package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.server.AmsEnvironment;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
+import org.apache.amoro.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;

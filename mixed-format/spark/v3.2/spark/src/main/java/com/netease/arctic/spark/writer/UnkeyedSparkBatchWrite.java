@@ -18,8 +18,8 @@
 
 package com.netease.arctic.spark.writer;
 
-import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
+import static org.apache.amoro.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_MIN_RETRY_WAIT_MS;
@@ -32,11 +32,11 @@ import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFA
 import com.netease.arctic.api.BlockableOperation;
 import com.netease.arctic.api.OperationConflictException;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.blocker.Blocker;
 import com.netease.arctic.table.blocker.TableBlockerManager;
+import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
