@@ -20,11 +20,11 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;

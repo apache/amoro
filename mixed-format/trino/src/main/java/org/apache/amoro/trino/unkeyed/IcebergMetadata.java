@@ -102,7 +102,6 @@ import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSe
 import static org.apache.iceberg.relocated.com.google.common.collect.Maps.transformValues;
 import static org.apache.iceberg.types.TypeUtil.indexParents;
 
-import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
@@ -199,6 +198,7 @@ import io.trino.spi.statistics.ComputedStatistics;
 import io.trino.spi.statistics.TableStatistics;
 import io.trino.spi.statistics.TableStatisticsMetadata;
 import io.trino.spi.type.TypeManager;
+import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.datasketches.theta.CompactSketch;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;

@@ -19,9 +19,6 @@
 package com.netease.arctic.spark.test.utils;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericKeyedDataReader;
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
-import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.io.reader.GenericUnkeyedDataReader;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -31,6 +28,9 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.UnkeyedTable;
+import org.apache.amoro.hive.io.reader.AdaptHiveGenericKeyedDataReader;
+import org.apache.amoro.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
+import org.apache.amoro.hive.table.SupportHive;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.AppendFiles;

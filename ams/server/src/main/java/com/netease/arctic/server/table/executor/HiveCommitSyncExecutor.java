@@ -19,12 +19,12 @@
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.api.ServerTableIdentifier;
-import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
-import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
+import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
