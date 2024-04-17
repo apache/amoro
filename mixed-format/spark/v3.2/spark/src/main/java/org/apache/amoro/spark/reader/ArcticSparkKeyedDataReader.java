@@ -18,9 +18,9 @@
 
 package org.apache.amoro.spark.reader;
 
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import org.apache.amoro.spark.SparkInternalRowWrapper;
 import org.apache.amoro.spark.util.ArcticSparkUtils;
 import org.apache.iceberg.Schema;

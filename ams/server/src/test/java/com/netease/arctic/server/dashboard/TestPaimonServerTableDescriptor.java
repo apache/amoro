@@ -20,7 +20,7 @@ package com.netease.arctic.server.dashboard;
 
 import com.netease.arctic.formats.AmoroCatalogTestHelper;
 import com.netease.arctic.formats.PaimonHadoopCatalogTestHelper;
-import com.netease.arctic.hive.formats.PaimonHiveCatalogTestHelper;
+import org.apache.amoro.hive.formats.PaimonHiveCatalogTestHelper;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.schema.SchemaChange;

@@ -19,12 +19,12 @@
 package org.apache.amoro.spark.writer;
 
 import com.netease.arctic.TableFormat;
-import com.netease.arctic.hive.io.HiveDataTestHelpers;
-import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.properties.HiveTableProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
+import org.apache.amoro.hive.io.HiveDataTestHelpers;
+import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.spark.io.TaskWriters;
 import org.apache.amoro.spark.reader.SparkParquetReaders;
 import org.apache.amoro.spark.test.MixedTableTestBase;

@@ -20,8 +20,8 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.AmoroCatalog;
 import com.netease.arctic.formats.AmoroCatalogTestHelper;
-import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.server.table.TableServiceTestBase;
+import org.apache.amoro.hive.TestHMS;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;

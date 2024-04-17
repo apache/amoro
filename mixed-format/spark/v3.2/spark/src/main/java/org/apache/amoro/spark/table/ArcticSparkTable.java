@@ -19,9 +19,9 @@
 package org.apache.amoro.spark.table;
 
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.spark.reader.SparkScanBuilder;
 import org.apache.amoro.spark.writer.ArcticSparkWriteBuilder;
 import org.apache.iceberg.Schema;

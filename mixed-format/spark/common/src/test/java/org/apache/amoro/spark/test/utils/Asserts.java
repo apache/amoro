@@ -99,8 +99,7 @@ public class Asserts {
 
   public static void assertHiveColumns(
       Schema expectSchema, PartitionSpec spec, List<FieldSchema> hiveColumns) {
-    Schema schema =
-        com.netease.arctic.hive.utils.HiveSchemaUtil.hiveTableSchema(expectSchema, spec);
+    Schema schema = org.apache.amoro.hive.utils.HiveSchemaUtil.hiveTableSchema(expectSchema, spec);
     Assert.assertEquals(schema.columns().size(), hiveColumns.size());
 
     Streams.zip(hiveColumns.stream(), schema.columns().stream(), Pair::of)

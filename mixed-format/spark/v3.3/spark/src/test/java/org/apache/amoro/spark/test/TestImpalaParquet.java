@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.test;
 
-import com.netease.arctic.hive.HMSMockServer;
+import org.apache.amoro.hive.HMSMockServer;
 import org.apache.amoro.spark.reader.SparkParquetReaders;
 import org.apache.amoro.spark.test.utils.ResourceInputFile;
 import org.apache.iceberg.Schema;

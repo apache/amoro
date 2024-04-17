@@ -47,8 +47,7 @@ import java.util.stream.Collectors;
 public class CatalogLoader {
 
   public static final String INTERNAL_CATALOG_IMPL = InternalMixedIcebergCatalog.class.getName();
-  public static final String HIVE_CATALOG_IMPL =
-      "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
+  public static final String HIVE_CATALOG_IMPL = "org.apache.amoro.hive.catalog.ArcticHiveCatalog";
   public static final String MIXED_ICEBERG_CATALOG_IMP = BasicMixedIcebergCatalog.class.getName();
 
   /**

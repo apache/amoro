@@ -18,8 +18,6 @@
 
 package org.apache.amoro.spark.io;
 
-import com.netease.arctic.hive.io.writer.AdaptHiveOutputFileFactory;
-import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.writer.ChangeTaskWriter;
 import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.io.writer.OutputFileFactory;
@@ -30,6 +28,8 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.SchemaUtil;
+import org.apache.amoro.hive.io.writer.AdaptHiveOutputFileFactory;
+import org.apache.amoro.hive.table.SupportHive;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;

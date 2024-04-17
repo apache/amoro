@@ -18,17 +18,12 @@
 
 package com.netease.arctic.server.optimizing;
 
-import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
-import static com.netease.arctic.hive.op.UpdateHiveFiles.SYNC_DATA_TO_HIVE;
 import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+import static org.apache.amoro.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
+import static org.apache.amoro.hive.op.UpdateHiveFiles.SYNC_DATA_TO_HIVE;
 
 import com.netease.arctic.api.CommitMetaProducer;
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.hive.HMSClientPool;
-import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.utils.HivePartitionUtil;
-import com.netease.arctic.hive.utils.HiveTableUtil;
-import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.op.SnapshotSummary;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
@@ -41,6 +36,11 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ContentFiles;
 import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.amoro.hive.HMSClientPool;
+import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.hive.utils.HivePartitionUtil;
+import org.apache.amoro.hive.utils.HiveTableUtil;
+import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;

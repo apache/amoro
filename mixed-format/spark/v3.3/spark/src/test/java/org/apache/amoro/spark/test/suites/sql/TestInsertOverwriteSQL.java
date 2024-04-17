@@ -20,10 +20,10 @@ package org.apache.amoro.spark.test.suites.sql;
 
 import com.netease.arctic.TableFormat;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
+import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.spark.mixed.SparkSQLProperties;
 import org.apache.amoro.spark.test.MixedTableTestBase;
 import org.apache.amoro.spark.test.extensions.EnableCatalogSelect;
