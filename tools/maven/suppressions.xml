@@ -44,37 +44,37 @@ under the License.
             files="com[/\\]netease[/\\]arctic[/\\]utils[/\\]TablePropertyUtil\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]api[/\\]config[/\\]OptimizingConfig\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]OptimizingConfig\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]api[/\\]config[/\\]DataExpirationConfig\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]DataExpirationConfig\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]api[/\\]config[/\\]TagConfiguration\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]TagConfiguration\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]api[/\\]config[/\\]TableConfiguration\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]TableConfiguration\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]RestCatalogService\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]RestCatalogService\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]persistence[/\\]converter[/\\]JsonObjectConverter\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]persistence[/\\]converter[/\\]JsonObjectConverter\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]optimizing[/\\]OptimizingConfig\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]optimizing[/\\]OptimizingConfig\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]optimizing[/\\]plan[/\\]OptimizingEvaluator\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]optimizing[/\\]plan[/\\]OptimizingEvaluator\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]optimizing[/\\]MetricsSummary\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]optimizing[/\\]MetricsSummary\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]table[/\\]TagConfiguration\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]table[/\\]TagConfiguration\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]table[/\\]TableConfiguration\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]table[/\\]TableConfiguration\.java"
             checks="Regexp"/>
     <suppress
             files="org[/\\]apache[/\\]amoro[/\\]flink[/\\]interceptor[/\\]ProxyFactory\.java"

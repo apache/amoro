@@ -16,5 +16,5 @@
 # limitations under the License.
 #
 
-com.netease.arctic.server.manager.TestAbstractPluginManager$TestPluginImplA
-com.netease.arctic.server.manager.TestAbstractPluginManager$TestPluginImplB
+org.apache.amoro.server.manager.TestAbstractPluginManager$TestPluginImplA
+org.apache.amoro.server.manager.TestAbstractPluginManager$TestPluginImplB
