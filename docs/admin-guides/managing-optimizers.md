@@ -259,7 +259,7 @@ You can submit optimizer in your own Flink task development platform or local Fl
  -Dtaskmanager.memory.managed.size=32mb \
  -Dtaskmanager.memory.network.max=32mb \
  -Dtaskmanager.memory.network.min=32mb \
- -c org.apache.amoro.flink.optimizer.FlinkOptimizer \
+ -c org.apache.amoro.optimizer.flink.FlinkOptimizer \
  ${AMORO_HOME}/plugin/optimizer/flink/optimizer-job.jar \
  -a 127.0.0.1:1261 \
  -g flinkGroup \
