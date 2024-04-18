@@ -46,7 +46,7 @@ import org.apache.amoro.hive.io.reader.AdaptHiveArcticDeleteFilter;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.joda.time.DateTimeZone;
-import org.apache.amoro.ArcticErrorCode;
+import org.apache.amoro.trino.ArcticErrorCode;
 
 import java.io.IOException;
 import java.util.HashMap;

@@ -12,7 +12,8 @@
   "dependencies": {
     "@ant-design/icons-vue": "6.1.0",
     "@antfu/eslint-config": "^2.4.6",
-    "ant-design-vue": "3.2.13",
+    "ant-design-vue": "^4.1.2",
+    "ant-design-vue-v3": "npm:ant-design-vue@3.2.20",
     "axios": "^1.6.2",
     "dayjs": "^1.11.10",
     "echarts": "^5.4.3",
