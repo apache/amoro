@@ -289,7 +289,7 @@ Or you can submit optimizer in your own Spark task development platform or local
  --conf "spark.driver.memory=g" \
  --conf "spark.executor.cores=1" \
  --conf "spark.executor.memory=2g" \
- --class org.apache.amoro.spark.optimizer.SparkOptimizer \
+ --class org.apache.amoro.optimizer.spark.SparkOptimizer \
  ${AMORO_HOME}/plugin/optimizer/spark/optimizer-job.jar \
  -a 127.0.0.1:1261 \
  -g sparkGroup \
