@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark;
 
-import com.netease.arctic.TableFormat;
+import org.apache.amoro.TableFormat;
 import org.apache.spark.sql.connector.catalog.Table;
 
 /** SPI interface for spark unified catalog to adapt different table formats */

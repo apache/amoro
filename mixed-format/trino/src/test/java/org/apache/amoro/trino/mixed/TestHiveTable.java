@@ -18,20 +18,20 @@
 
 package org.apache.amoro.trino.mixed;
 
-import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
+import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.table.TableProperties.BASE_FILE_FORMAT;
+import static org.apache.amoro.table.TableProperties.CHANGE_FILE_FORMAT;
+import static org.apache.amoro.table.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.netease.arctic.MockArcticMetastoreServer;
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseLocationKind;
-import com.netease.arctic.table.ChangeLocationKind;
-import com.netease.arctic.table.LocationKind;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
+import org.apache.amoro.MockArcticMetastoreServer;
+import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.BaseLocationKind;
+import org.apache.amoro.table.ChangeLocationKind;
+import org.apache.amoro.table.LocationKind;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableProperties;
 import io.trino.sql.query.QueryAssertions;
 import io.trino.testing.QueryRunner;
 import org.apache.amoro.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;

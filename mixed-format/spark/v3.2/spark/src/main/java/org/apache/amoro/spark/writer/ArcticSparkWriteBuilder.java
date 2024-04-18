@@ -18,8 +18,8 @@
 
 package org.apache.amoro.spark.writer;
 
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;

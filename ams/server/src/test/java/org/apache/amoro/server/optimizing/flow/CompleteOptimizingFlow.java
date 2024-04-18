@@ -18,25 +18,21 @@
 
 package org.apache.amoro.server.optimizing.flow;
 
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO;
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO;
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT;
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE;
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO;
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO;
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT;
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.optimizing.IcebergRewriteExecutor;
-import com.netease.arctic.optimizing.OptimizingExecutor;
-import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.optimizing.RewriteFilesOutput;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.ArcticDataFiles;
-import com.netease.arctic.utils.TablePropertyUtil;
-import com.netease.arctic.utils.map.StructLikeCollections;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.OptimizerProperties;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.config.OptimizingConfig;
 import org.apache.amoro.api.config.TableConfiguration;
 import org.apache.amoro.hive.optimizing.MixFormatRewriteExecutor;
+import org.apache.amoro.optimizing.IcebergRewriteExecutor;
+import org.apache.amoro.optimizing.OptimizingExecutor;
+import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.server.ArcticServiceConstants;
 import org.apache.amoro.server.optimizing.KeyedTableCommit;
 import org.apache.amoro.server.optimizing.TaskRuntime;
@@ -45,6 +41,10 @@ import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
 import org.apache.amoro.server.optimizing.plan.TaskDescriptor;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.utils.ArcticDataFiles;
+import org.apache.amoro.utils.TablePropertyUtil;
+import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;

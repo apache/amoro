@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.dashboard;
 
-import com.netease.arctic.formats.AmoroCatalogTestHelper;
-import com.netease.arctic.formats.PaimonHadoopCatalogTestHelper;
+import org.apache.amoro.formats.AmoroCatalogTestHelper;
+import org.apache.amoro.formats.PaimonHadoopCatalogTestHelper;
 import org.apache.amoro.hive.formats.PaimonHiveCatalogTestHelper;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;

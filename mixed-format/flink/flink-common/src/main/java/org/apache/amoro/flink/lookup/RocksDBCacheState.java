@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.lookup;
 
-import com.netease.arctic.ArcticIOException;
-import com.netease.arctic.utils.map.RocksDBBackend;
+import org.apache.amoro.ArcticIOException;
+import org.apache.amoro.utils.map.RocksDBBackend;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.metrics.Gauge;
 import org.apache.flink.metrics.MetricGroup;

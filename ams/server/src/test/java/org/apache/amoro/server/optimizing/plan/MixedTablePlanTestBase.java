@@ -18,25 +18,25 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.ArcticDataFiles;
+import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.config.OptimizingConfig;
+import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.catalog.TableTestBase;
+import org.apache.amoro.data.DataTreeNode;
+import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.optimizing.MixFormatRewriteExecutorFactory;
+import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.server.ArcticServiceConstants;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
 import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.utils.ArcticDataFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;

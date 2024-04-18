@@ -18,13 +18,12 @@
 
 package org.apache.amoro.server.catalog;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.formats.iceberg.IcebergTable;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.utils.ArcticCatalogUtil;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.formats.iceberg.IcebergTable;
+import org.apache.amoro.io.ArcticFileIO;
 import org.apache.amoro.server.ArcticManagementConf;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
@@ -34,6 +33,7 @@ import org.apache.amoro.server.table.internal.InternalIcebergHandler;
 import org.apache.amoro.server.table.internal.InternalTableCreator;
 import org.apache.amoro.server.table.internal.InternalTableHandler;
 import org.apache.amoro.server.utils.InternalTableUtil;
+import org.apache.amoro.utils.ArcticCatalogUtil;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.TableOperations;
@@ -94,8 +94,8 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
                     tableMetadata.getTableIdentifier().getDatabase(),
                     tableMetadata.getTableIdentifier().getTableName())
                 .toString());
-    com.netease.arctic.table.TableIdentifier tableIdentifier =
-        com.netease.arctic.table.TableIdentifier.of(name(), database, tableName);
+    org.apache.amoro.table.TableIdentifier tableIdentifier =
+        org.apache.amoro.table.TableIdentifier.of(name(), database, tableName);
 
     return IcebergTable.newIcebergTable(
         tableIdentifier,

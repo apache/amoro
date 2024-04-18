@@ -102,7 +102,7 @@ import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSe
 import static org.apache.iceberg.relocated.com.google.common.collect.Maps.transformValues;
 import static org.apache.iceberg.types.TypeUtil.indexParents;
 
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.table.ArcticTable;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;

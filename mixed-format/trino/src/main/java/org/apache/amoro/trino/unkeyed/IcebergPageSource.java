@@ -24,7 +24,7 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
 import static org.apache.iceberg.relocated.com.google.common.base.Throwables.throwIfInstanceOf;
 
-import com.netease.arctic.io.reader.DeleteFilter;
+import org.apache.amoro.io.reader.DeleteFilter;
 import org.apache.amoro.trino.delete.TrinoRow;
 import io.trino.plugin.hive.ReaderProjectionsAdapter;
 import io.trino.plugin.iceberg.IcebergColumnHandle;

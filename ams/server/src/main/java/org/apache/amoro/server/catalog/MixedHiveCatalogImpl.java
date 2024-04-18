@@ -18,11 +18,10 @@
 
 package org.apache.amoro.server.catalog;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.formats.mixed.MixedTable;
-import com.netease.arctic.utils.ArcticCatalogUtil;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.formats.mixed.MixedTable;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClient;
 import org.apache.amoro.hive.catalog.MixedHiveTables;
@@ -30,6 +29,7 @@ import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.internal.InternalTableCreator;
 import org.apache.amoro.server.table.internal.InternalTableHandler;
+import org.apache.amoro.utils.ArcticCatalogUtil;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.thrift.TException;

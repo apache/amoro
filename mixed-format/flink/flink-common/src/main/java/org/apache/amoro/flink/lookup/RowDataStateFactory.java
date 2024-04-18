@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.lookup;
 
-import com.netease.arctic.utils.map.RocksDBBackend;
+import org.apache.amoro.utils.map.RocksDBBackend;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.util.Preconditions;
 import org.rocksdb.BlockBasedTableConfig;

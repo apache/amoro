@@ -18,16 +18,15 @@
 
 package org.apache.amoro.server.optimizing.flow;
 
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES;
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL;
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES;
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
+import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
@@ -37,6 +36,7 @@ import org.apache.amoro.server.optimizing.flow.checker.FullOptimizingWrite2HiveC
 import org.apache.amoro.server.optimizing.flow.checker.MinorOptimizingCheck;
 import org.apache.amoro.server.optimizing.flow.checker.OptimizingCountChecker;
 import org.apache.amoro.server.optimizing.flow.view.UnKeyedTableDataView;
+import org.apache.amoro.table.ArcticTable;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.read.source;
 
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.scan.KeyedTableScanTask;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.io.CloseableIterator;

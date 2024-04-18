@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.dashboard;
 
-import com.netease.arctic.formats.AmoroCatalogTestHelper;
-import com.netease.arctic.formats.IcebergHadoopCatalogTestHelper;
+import org.apache.amoro.formats.AmoroCatalogTestHelper;
+import org.apache.amoro.formats.IcebergHadoopCatalogTestHelper;
 import org.apache.amoro.hive.formats.IcebergHiveCatalogTestHelper;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.types.Types;

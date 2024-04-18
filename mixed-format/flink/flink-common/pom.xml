@@ -407,7 +407,7 @@
                     <properties>
                         <property>
                             <name>listener</name>
-                            <value>com.netease.arctic.listener.ArcticRunListener</value>
+                            <value>org.apache.amoro.listener.ArcticRunListener</value>
                         </property>
                     </properties>
                 </configuration>

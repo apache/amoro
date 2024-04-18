@@ -18,23 +18,23 @@
 
 package org.apache.amoro.server.table;
 
-import com.netease.arctic.CommonUnifiedCatalog;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.UnifiedCatalog;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.api.TableMeta;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.MixedTables;
-import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.ArcticCatalogUtil;
-import com.netease.arctic.utils.ConvertStructUtil;
+import org.apache.amoro.CommonUnifiedCatalog;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.UnifiedCatalog;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.api.TableMeta;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.catalog.CatalogLoader;
+import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.catalog.MixedTables;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
+import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.ConvertStructUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.catalog.Catalog;

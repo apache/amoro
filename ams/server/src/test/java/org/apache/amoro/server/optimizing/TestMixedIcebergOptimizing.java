@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server.optimizing;
 
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;

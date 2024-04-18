@@ -18,12 +18,12 @@
 
 package org.apache.amoro.server.optimizing;
 
-import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
 import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.io.ArcticHadoopFileIO;
+import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.TableProperties;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.AppendFiles;

@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server.terminal;
 
-import com.netease.arctic.table.TableMetaStore;
 import org.apache.amoro.api.config.ConfigOption;
 import org.apache.amoro.api.config.ConfigOptions;
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.table.TableMetaStore;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.List;

@@ -18,9 +18,9 @@
 
 package org.apache.amoro.hive.table;
 
-import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.table.ArcticTable;
 import org.apache.amoro.hive.HMSClientPool;
+import org.apache.amoro.io.ArcticHadoopFileIO;
+import org.apache.amoro.table.ArcticTable;
 
 /** Mix-in interface to mark task use hive as base store */
 public interface SupportHive extends ArcticTable {

@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.write;
 
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.WriteOperationKind;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.WriteOperationKind;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;

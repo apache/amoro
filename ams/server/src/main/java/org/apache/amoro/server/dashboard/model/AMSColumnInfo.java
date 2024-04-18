@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.dashboard.model;
 
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 

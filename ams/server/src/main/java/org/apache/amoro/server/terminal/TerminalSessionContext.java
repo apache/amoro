@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.terminal;
 
-import com.netease.arctic.table.TableMetaStore;
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.table.TableMetaStore;
 import org.apache.commons.io.Charsets;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;

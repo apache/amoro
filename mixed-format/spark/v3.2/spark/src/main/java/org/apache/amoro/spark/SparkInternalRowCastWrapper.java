@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark;
 
-import com.netease.arctic.data.ChangeAction;
+import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.spark.sql.utils.ProjectingInternalRow;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;

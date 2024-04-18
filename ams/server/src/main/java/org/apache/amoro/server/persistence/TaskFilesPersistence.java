@@ -18,12 +18,12 @@
 
 package org.apache.amoro.server.persistence;
 
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.optimizing.RewriteFilesOutput;
-import com.netease.arctic.utils.SerializationUtil;
+import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.utils.CompressUtil;
+import org.apache.amoro.utils.SerializationUtil;
 
 import java.util.Collection;
 import java.util.Collections;

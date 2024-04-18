@@ -18,7 +18,7 @@
 
 package org.apache.amoro.hive.utils;
 
-import com.netease.arctic.catalog.ArcticCatalog;
+import org.apache.amoro.catalog.ArcticCatalog;
 import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

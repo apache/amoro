@@ -18,7 +18,7 @@
 
 package org.apache.amoro.hive.op;
 
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.UpdateSchema;

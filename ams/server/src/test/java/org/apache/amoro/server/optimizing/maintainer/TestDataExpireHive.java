@@ -18,13 +18,13 @@
 
 package org.apache.amoro.server.optimizing.maintainer;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.io.MixedDataTestHelpers;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
+import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.iceberg.data.Record;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;

@@ -18,19 +18,19 @@
 
 package org.apache.amoro.server.optimizing.scan;
 
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.scan.ChangeTableIncrementalScan;
-import com.netease.arctic.table.ChangeTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
+import org.apache.amoro.data.DataFileType;
+import org.apache.amoro.data.DataTreeNode;
+import org.apache.amoro.data.DefaultKeyedFile;
+import org.apache.amoro.data.FileNameRules;
+import org.apache.amoro.scan.ChangeTableIncrementalScan;
 import org.apache.amoro.server.ArcticServiceConstants;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
+import org.apache.amoro.table.ChangeTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;

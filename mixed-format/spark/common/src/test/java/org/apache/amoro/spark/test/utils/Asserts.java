@@ -21,7 +21,7 @@ package org.apache.amoro.spark.test.utils;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;

@@ -21,9 +21,9 @@ package org.apache.amoro.flink.catalog;
 import static org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions.METASTORE_URL;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.TABLE_FORMAT;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TestAms;
-import com.netease.arctic.api.CatalogMeta;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TestAms;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.flink.catalog.factories.FlinkUnifiedCatalogFactory;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;

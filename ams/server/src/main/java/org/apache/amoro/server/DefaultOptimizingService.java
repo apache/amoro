@@ -18,21 +18,20 @@
 
 package org.apache.amoro.server;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.api.OptimizerRegisterInfo;
-import com.netease.arctic.api.OptimizingService;
-import com.netease.arctic.api.OptimizingTask;
-import com.netease.arctic.api.OptimizingTaskId;
-import com.netease.arctic.api.OptimizingTaskResult;
-import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.table.TableProperties;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.OptimizerProperties;
+import org.apache.amoro.api.OptimizerRegisterInfo;
+import org.apache.amoro.api.OptimizingService;
+import org.apache.amoro.api.OptimizingTask;
+import org.apache.amoro.api.OptimizingTaskId;
+import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.api.config.TableConfiguration;
 import org.apache.amoro.api.resource.Resource;
 import org.apache.amoro.api.resource.ResourceGroup;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.exception.ForbiddenException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
 import org.apache.amoro.server.exception.PluginRetryAuthException;
@@ -52,6 +51,7 @@ import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableRuntimeMeta;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.table.TableProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;

@@ -18,26 +18,22 @@
 
 package org.apache.amoro.server.dashboard.controller;
 
-import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
-import com.netease.arctic.Constants;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.properties.HiveTableProperties;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.ArcticCatalogUtil;
 import io.javalin.http.Context;
+import org.apache.amoro.Constants;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.catalog.CatalogLoader;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
 import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.hive.utils.UpgradeHiveTableUtil;
+import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.dashboard.ServerTableDescriptor;
 import org.apache.amoro.server.dashboard.ServerTableProperties;
@@ -63,6 +59,10 @@ import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.utils.ArcticCatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;

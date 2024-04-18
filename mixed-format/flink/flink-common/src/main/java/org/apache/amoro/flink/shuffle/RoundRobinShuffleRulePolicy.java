@@ -21,8 +21,8 @@ package org.apache.amoro.flink.shuffle;
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.table.DistributionHashMode;
+import org.apache.amoro.data.DataTreeNode;
+import org.apache.amoro.table.DistributionHashMode;
 import org.apache.flink.api.common.functions.Partitioner;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.table.data.RowData;

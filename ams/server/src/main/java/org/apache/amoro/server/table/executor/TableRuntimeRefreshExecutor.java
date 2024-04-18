@@ -18,13 +18,13 @@
 
 package org.apache.amoro.server.table.executor;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.api.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.table.ArcticTable;
 
 /** Service for expiring tables periodically. */
 public class TableRuntimeRefreshExecutor extends BaseTableExecutor {

@@ -18,22 +18,22 @@
 
 package org.apache.amoro.server.optimizing.commit;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.optimizing.RewriteFilesOutput;
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.CombinedScanTask;
-import com.netease.arctic.scan.KeyedTableScanTask;
-import com.netease.arctic.utils.ContentFiles;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
+import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.data.DataFileType;
+import org.apache.amoro.data.DefaultKeyedFile;
+import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.optimizing.RewriteFilesOutput;
+import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.CombinedScanTask;
+import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.server.exception.OptimizingCommitException;
 import org.apache.amoro.server.optimizing.KeyedTableCommit;
 import org.apache.amoro.server.optimizing.TaskRuntime;
+import org.apache.amoro.utils.ContentFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;

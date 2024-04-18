@@ -26,22 +26,22 @@ under the License.
     <!-- Using ([/\\]) as the file path separator instead of (/)
     enables it to be compatible with both Linux and Windows systems. -->
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]utils[/\\]StatisticsFileUtil\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]utils[/\\]StatisticsFileUtil\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]log[/\\]LogDataJsonSerialization\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]LogDataJsonSerialization\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]log[/\\]LogDataToJsonConverters\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]LogDataToJsonConverters\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]log[/\\]LogDataJsonDeserialization\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]LogDataJsonDeserialization\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]log[/\\]JsonToLogDataConverters\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]JsonToLogDataConverters\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]utils[/\\]TablePropertyUtil\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]utils[/\\]TablePropertyUtil\.java"
             checks="Regexp"/>
     <suppress
             files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]OptimizingConfig\.java"

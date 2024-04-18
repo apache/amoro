@@ -18,13 +18,12 @@
 
 package org.apache.amoro.server;
 
-import com.netease.arctic.Constants;
-import com.netease.arctic.api.ArcticTableMetastore;
-import com.netease.arctic.api.OptimizingService;
-import com.netease.arctic.utils.JacksonUtil;
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
+import org.apache.amoro.Constants;
+import org.apache.amoro.api.ArcticTableMetastore;
 import org.apache.amoro.api.OptimizerProperties;
+import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.api.config.ConfigHelpers;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.server.dashboard.DashboardServer;
@@ -44,6 +43,7 @@ import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.executor.AsyncTableExecutors;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.server.utils.ThriftServiceProxy;
+import org.apache.amoro.utils.JacksonUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.SystemProperties;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;

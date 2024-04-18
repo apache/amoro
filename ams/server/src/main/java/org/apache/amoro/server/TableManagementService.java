@@ -18,17 +18,17 @@
 
 package org.apache.amoro.server;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.ArcticTableMetastore;
-import com.netease.arctic.api.BlockableOperation;
-import com.netease.arctic.api.Blocker;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.api.NoSuchObjectException;
-import com.netease.arctic.api.OperationConflictException;
-import com.netease.arctic.api.TableCommitMeta;
-import com.netease.arctic.api.TableIdentifier;
-import com.netease.arctic.api.TableMeta;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.ArcticTableMetastore;
+import org.apache.amoro.api.BlockableOperation;
+import org.apache.amoro.api.Blocker;
+import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.api.NoSuchObjectException;
+import org.apache.amoro.api.OperationConflictException;
 import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.api.TableCommitMeta;
+import org.apache.amoro.api.TableIdentifier;
+import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.utils.InternalTableUtil;

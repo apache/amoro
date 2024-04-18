@@ -138,7 +138,7 @@
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.parquet</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.parquet</shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.parquet</shadedPattern>
                                 </relocation>
                             </relocations>
                             <finalName>${project.artifactId}-${project.version}-jar-with-dependencies</finalName>

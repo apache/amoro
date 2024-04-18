@@ -18,13 +18,13 @@
 
 package org.apache.amoro.server.terminal.kyuubi;
 
-import com.netease.arctic.table.TableMetaStore;
 import org.apache.amoro.api.config.ConfigOption;
 import org.apache.amoro.api.config.ConfigOptions;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.server.terminal.SparkContextUtil;
 import org.apache.amoro.server.terminal.TerminalSession;
 import org.apache.amoro.server.terminal.TerminalSessionFactory;
+import org.apache.amoro.table.TableMetaStore;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver;

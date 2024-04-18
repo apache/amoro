@@ -18,9 +18,9 @@
 
 package org.apache.amoro.flink.table;
 
-import com.netease.arctic.table.ArcticTable;
 import org.apache.amoro.flink.util.ArcticUtils;
 import org.apache.amoro.flink.write.FlinkSink;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.table.catalog.CatalogTable;

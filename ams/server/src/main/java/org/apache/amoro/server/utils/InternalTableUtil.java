@@ -24,13 +24,13 @@ import static org.apache.amoro.server.table.internal.InternalTableConstants.MIXE
 import static org.apache.amoro.server.table.internal.InternalTableConstants.S3_FILE_IO_IMPL;
 import static org.apache.amoro.server.table.internal.InternalTableConstants.S3_PROTOCOL_PREFIX;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.ArcticFileIOs;
-import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.ArcticCatalogUtil;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.ArcticFileIOs;
+import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.utils.ArcticCatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;

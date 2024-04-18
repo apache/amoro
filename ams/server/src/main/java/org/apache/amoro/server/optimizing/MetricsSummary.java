@@ -21,7 +21,7 @@ package org.apache.amoro.server.optimizing;
 import static org.apache.amoro.server.dashboard.utils.AmsUtil.byteToXB;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.netease.arctic.optimizing.RewriteFilesInput;
+import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.server.dashboard.model.FilesStatistics;
 import org.apache.amoro.server.dashboard.utils.FilesStatisticsBuilder;
 import org.apache.iceberg.ContentFile;

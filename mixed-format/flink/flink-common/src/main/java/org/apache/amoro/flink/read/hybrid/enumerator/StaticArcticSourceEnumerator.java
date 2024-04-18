@@ -20,11 +20,11 @@ package org.apache.amoro.flink.read.hybrid.enumerator;
 
 import static org.apache.amoro.flink.util.ArcticUtils.loadArcticTable;
 
-import com.netease.arctic.table.KeyedTable;
 import org.apache.amoro.flink.read.hybrid.assigner.SplitAssigner;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.source.ArcticScanContext;
 import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.table.KeyedTable;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.iceberg.flink.source.ScanContext;
 import org.slf4j.Logger;

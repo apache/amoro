@@ -18,17 +18,17 @@
 
 package org.apache.amoro.server.table;
 
-import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
+import static org.apache.amoro.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.api.TableMeta;
-import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.properties.MetaTableProperties;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableMetaStore;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.api.TableMeta;
+import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.properties.MetaTableProperties;
 import org.apache.amoro.server.dashboard.utils.PropertiesUtil;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableMetaStore;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
@@ -111,7 +111,7 @@ public class TableMetadata implements Serializable {
     meta.setProperties(newProperties);
 
     if (StringUtils.isNotBlank(primaryKey)) {
-      com.netease.arctic.api.PrimaryKeySpec keySpec = new com.netease.arctic.api.PrimaryKeySpec();
+      org.apache.amoro.api.PrimaryKeySpec keySpec = new org.apache.amoro.api.PrimaryKeySpec();
       List<String> fields =
           Arrays.stream(primaryKey.split(PRIMARY_KEY_COLUMN_JOIN_DELIMITER))
               .collect(Collectors.toList());

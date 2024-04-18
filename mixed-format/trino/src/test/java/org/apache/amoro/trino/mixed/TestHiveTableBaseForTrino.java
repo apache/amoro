@@ -18,13 +18,13 @@
 
 package org.apache.amoro.trino.mixed;
 
-import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.catalog.CatalogLoader;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableProperties;
 import io.trino.testng.services.ManageTestResources;
 import org.apache.amoro.hive.HMSMockServer;
 import org.apache.amoro.hive.catalog.ArcticHiveCatalog;

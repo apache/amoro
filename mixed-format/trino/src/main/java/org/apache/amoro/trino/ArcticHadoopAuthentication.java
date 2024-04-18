@@ -19,7 +19,7 @@
 package org.apache.amoro.trino;
 
 import com.google.inject.Inject;
-import com.netease.arctic.table.TableMetaStore;
+import org.apache.amoro.table.TableMetaStore;
 import io.trino.hdfs.authentication.HadoopAuthentication;
 import org.apache.hadoop.security.UserGroupInformation;
 

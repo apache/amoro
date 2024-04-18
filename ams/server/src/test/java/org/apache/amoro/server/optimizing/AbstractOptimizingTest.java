@@ -18,14 +18,14 @@
 
 package org.apache.amoro.server.optimizing;
 
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.table.WriteOperationKind;
+import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
+import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.server.AmsEnvironment;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.table.WriteOperationKind;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;

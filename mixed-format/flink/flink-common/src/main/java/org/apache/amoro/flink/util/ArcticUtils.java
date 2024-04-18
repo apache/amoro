@@ -18,21 +18,16 @@
 
 package org.apache.amoro.flink.util;
 
-import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_DATA_VERSION;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_DATA_VERSION_DEFAULT;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
+import static org.apache.amoro.table.TableProperties.ENABLE_LOG_STORE;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_ADDRESS;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_DATA_VERSION;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_DATA_VERSION_DEFAULT;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_TYPE;
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
-import com.netease.arctic.utils.IdGenerator;
 import org.apache.amoro.flink.metric.MetricsGenerator;
 import org.apache.amoro.flink.shuffle.LogRecordV1;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
@@ -42,6 +37,11 @@ import org.apache.amoro.flink.write.ArcticLogWriter;
 import org.apache.amoro.flink.write.AutomaticLogWriter;
 import org.apache.amoro.flink.write.hidden.HiddenLogWriter;
 import org.apache.amoro.flink.write.hidden.kafka.HiddenKafkaFactory;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.utils.CompatiblePropertyUtil;
+import org.apache.amoro.utils.IdGenerator;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.data.GenericRowData;

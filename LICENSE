@@ -205,8 +205,8 @@
 
 This product includes code from Apache Iceberg.
 
-* org.apache.iceberg.data.DeleteFilter copied and modified to com.netease.arctic.io.reader.DeleteFilter
-* org.apache.iceberg.deletes.Deletes copied and modified to com.netease.arctic.io.reader.Deletes
+* org.apache.iceberg.data.DeleteFilter copied and modified to org.apache.amoro.io.reader.DeleteFilter
+* org.apache.iceberg.deletes.Deletes copied and modified to org.apache.amoro.io.reader.Deletes
 * org.apache.iceberg.data.parquet.BaseParquetReaders copied and modified to org.apache.iceberg.data.parquet.AdaptHiveBaseParquetReaders
 * org.apache.iceberg.data.parquet.BaseParquetWriter copied and modified to org.apache.iceberg.data.parquet.AdaptHiveBaseParquetWriter
 * org.apache.iceberg.data.parquet.GenericParquetReaders copied and modified to org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders

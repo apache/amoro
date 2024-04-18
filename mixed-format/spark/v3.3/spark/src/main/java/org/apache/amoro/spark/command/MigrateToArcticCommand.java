@@ -18,12 +18,12 @@
 
 package org.apache.amoro.spark.command;
 
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.amoro.spark.ArcticSparkCatalog;
 import org.apache.amoro.spark.ArcticSparkSessionCatalog;
 import org.apache.amoro.spark.table.ArcticIcebergSparkTable;
 import org.apache.amoro.spark.table.ArcticSparkTable;
 import org.apache.amoro.spark.util.ArcticSparkUtils;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;

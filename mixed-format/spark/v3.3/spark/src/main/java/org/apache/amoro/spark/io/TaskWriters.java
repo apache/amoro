@@ -18,18 +18,18 @@
 
 package org.apache.amoro.spark.io;
 
-import com.netease.arctic.io.writer.ChangeTaskWriter;
-import com.netease.arctic.io.writer.CommonOutputFileFactory;
-import com.netease.arctic.io.writer.OutputFileFactory;
-import com.netease.arctic.properties.HiveTableProperties;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.SchemaUtil;
 import org.apache.amoro.hive.io.writer.AdaptHiveOutputFileFactory;
 import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.io.writer.ChangeTaskWriter;
+import org.apache.amoro.io.writer.CommonOutputFileFactory;
+import org.apache.amoro.io.writer.OutputFileFactory;
+import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.utils.SchemaUtil;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;

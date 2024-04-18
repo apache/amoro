@@ -18,15 +18,15 @@
 
 package org.apache.amoro.hive.catalog;
 
-import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
+import static org.apache.amoro.table.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.hive.io.HiveDataTestHelpers;
+import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;

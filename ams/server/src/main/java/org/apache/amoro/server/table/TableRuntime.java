@@ -18,11 +18,9 @@
 
 package org.apache.amoro.server.table;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.BlockableOperation;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.blocker.RenewableBlocker;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.StateField;
 import org.apache.amoro.api.config.OptimizingConfig;
@@ -42,6 +40,8 @@ import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.blocker.RenewableBlocker;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;

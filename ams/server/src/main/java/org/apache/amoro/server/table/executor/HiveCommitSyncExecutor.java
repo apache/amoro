@@ -18,13 +18,13 @@
 
 package org.apache.amoro.server.table.executor;
 
-import com.netease.arctic.table.ArcticTable;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
 import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.table.ArcticTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

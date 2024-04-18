@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.optimizing.scan;
 
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.table.UnkeyedTable;
+import org.apache.amoro.data.DefaultKeyedFile;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;

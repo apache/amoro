@@ -18,16 +18,15 @@
 
 package org.apache.amoro.server.table;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.NoSuchTableException;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableIDWithFormat;
-import com.netease.arctic.api.BlockableOperation;
-import com.netease.arctic.api.Blocker;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.api.TableIdentifier;
-import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.NoSuchTableException;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableIDWithFormat;
+import org.apache.amoro.api.BlockableOperation;
+import org.apache.amoro.api.Blocker;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.api.config.TableConfiguration;
 import org.apache.amoro.server.ArcticManagementConf;
@@ -44,6 +43,7 @@ import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.blocker.TableBlocker;
+import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;

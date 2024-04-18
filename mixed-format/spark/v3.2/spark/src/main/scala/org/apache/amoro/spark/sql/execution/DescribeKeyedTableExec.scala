@@ -22,8 +22,8 @@ import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 import scala.collection.mutable.ArrayBuffer
 
-import com.netease.arctic.table.KeyedTable
 import org.apache.amoro.spark.table.ArcticSparkTable
+import org.apache.amoro.table.KeyedTable
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}

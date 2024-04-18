@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server.table.blocker;
 
-import com.netease.arctic.api.BlockableOperation;
-import com.netease.arctic.api.Blocker;
-import com.netease.arctic.table.blocker.RenewableBlocker;
+import org.apache.amoro.api.BlockableOperation;
+import org.apache.amoro.api.Blocker;
 import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.table.blocker.RenewableBlocker;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 

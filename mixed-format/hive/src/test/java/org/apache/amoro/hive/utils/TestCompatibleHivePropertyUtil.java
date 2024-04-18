@@ -18,7 +18,7 @@
 
 package org.apache.amoro.hive.utils;
 
-import com.netease.arctic.properties.HiveTableProperties;
+import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Test;

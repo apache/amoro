@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.dashboard;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.TableFormat;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;
 import org.apache.amoro.server.dashboard.model.DDLInfo;
 import org.apache.amoro.server.dashboard.model.OperationType;

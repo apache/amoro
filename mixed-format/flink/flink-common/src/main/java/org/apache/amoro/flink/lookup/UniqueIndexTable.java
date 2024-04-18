@@ -20,7 +20,7 @@ package org.apache.amoro.flink.lookup;
 
 import static org.apache.amoro.flink.lookup.LookupMetrics.UNIQUE_CACHE_SIZE;
 
-import com.netease.arctic.utils.SchemaUtil;
+import org.apache.amoro.utils.SchemaUtil;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.iceberg.Schema;

@@ -24,23 +24,24 @@ import static org.apache.amoro.flink.FlinkSchemaUtil.toSchema;
 import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
-import com.netease.arctic.NoSuchDatabaseException;
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.CombinedScanTask;
-import com.netease.arctic.scan.KeyedTableScanTask;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableBuilder;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
+import org.apache.amoro.NoSuchDatabaseException;
+import org.apache.amoro.catalog.ArcticCatalog;
 import org.apache.amoro.flink.InternalCatalogBuilder;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.amoro.flink.table.DynamicTableFactory;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
 import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.CombinedScanTask;
+import org.apache.amoro.scan.KeyedTableScanTask;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableBuilder;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.flink.table.api.TableColumn;
 import org.apache.flink.table.api.TableColumn.ComputedColumn;
 import org.apache.flink.table.api.TableSchema;
@@ -114,7 +115,7 @@ public class MixedCatalog extends AbstractCatalog {
 
   private final InternalCatalogBuilder catalogBuilder;
 
-  private com.netease.arctic.catalog.ArcticCatalog internalCatalog;
+  private ArcticCatalog internalCatalog;
 
   public MixedCatalog(String name, String defaultDatabase, InternalCatalogBuilder catalogBuilder) {
     super(name, defaultDatabase);

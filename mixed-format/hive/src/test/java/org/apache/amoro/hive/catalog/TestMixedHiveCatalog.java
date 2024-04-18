@@ -18,15 +18,15 @@
 
 package org.apache.amoro.hive.catalog;
 
-import static com.netease.arctic.properties.HiveTableProperties.ARCTIC_TABLE_FLAG;
-import static com.netease.arctic.properties.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
+import static org.apache.amoro.properties.HiveTableProperties.ARCTIC_TABLE_FLAG;
+import static org.apache.amoro.properties.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.catalog.TestMixedCatalog;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.catalog.TestMixedCatalog;
 import org.apache.amoro.hive.TestHMS;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Table;
 import org.apache.thrift.TException;

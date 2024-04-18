@@ -18,13 +18,13 @@
 
 package org.apache.amoro.server.optimizing.flow.checker;
 
-import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.flow.view.TableDataView;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
 import org.apache.amoro.server.optimizing.plan.TaskDescriptor;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.commons.collections.CollectionUtils;
 
 import javax.annotation.Nullable;

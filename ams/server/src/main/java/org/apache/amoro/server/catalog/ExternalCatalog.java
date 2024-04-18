@@ -18,17 +18,17 @@
 
 package org.apache.amoro.server.catalog;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.CommonUnifiedCatalog;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableIDWithFormat;
-import com.netease.arctic.UnifiedCatalog;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.ArcticCatalogUtil;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.CommonUnifiedCatalog;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableIDWithFormat;
+import org.apache.amoro.UnifiedCatalog;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.utils.ArcticCatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.ArrayList;

@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.dashboard.utils;
 
-import com.netease.arctic.Constants;
-import com.netease.arctic.api.TableIdentifier;
+import org.apache.amoro.Constants;
+import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.server.ArcticManagementConf;
 
@@ -47,7 +47,7 @@ public class AmsUtil {
   private static final String THRIFT_ADDRESS_FORMAT = "thrift://%s:%s";
 
   public static TableIdentifier toTableIdentifier(
-      com.netease.arctic.table.TableIdentifier tableIdentifier) {
+      org.apache.amoro.table.TableIdentifier tableIdentifier) {
     if (tableIdentifier == null) {
       return null;
     }

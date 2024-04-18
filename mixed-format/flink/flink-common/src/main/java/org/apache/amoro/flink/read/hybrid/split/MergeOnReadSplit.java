@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.read.hybrid.split;
 
-import com.netease.arctic.scan.KeyedTableScanTask;
-import com.netease.arctic.utils.FileScanTaskUtil;
+import org.apache.amoro.scan.KeyedTableScanTask;
+import org.apache.amoro.utils.FileScanTaskUtil;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 

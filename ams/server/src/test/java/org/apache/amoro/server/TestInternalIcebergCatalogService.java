@@ -18,13 +18,13 @@
 
 package org.apache.amoro.server;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.io.IcebergDataTestHelpers;
-import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.io.reader.GenericUnkeyedDataReader;
-import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.io.IcebergDataTestHelpers;
+import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.io.reader.GenericUnkeyedDataReader;
+import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;

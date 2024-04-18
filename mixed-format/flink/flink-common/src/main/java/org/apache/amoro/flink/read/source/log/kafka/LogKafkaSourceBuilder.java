@@ -18,8 +18,6 @@
 
 package org.apache.amoro.flink.read.source.log.kafka;
 
-import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_GROUP_OFFSETS;
@@ -30,12 +28,14 @@ import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STAR
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
 import static org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
 import static org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_ADDRESS;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
+import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.KafkaSourceBuilder;

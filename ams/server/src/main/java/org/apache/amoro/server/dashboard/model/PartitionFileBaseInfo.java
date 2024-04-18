@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.dashboard.model;
 
-import com.netease.arctic.data.DataFileType;
+import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 
 public class PartitionFileBaseInfo {

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.resource;
 
-import com.netease.arctic.api.OptimizerRegisterInfo;
+import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.api.resource.Resource;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 

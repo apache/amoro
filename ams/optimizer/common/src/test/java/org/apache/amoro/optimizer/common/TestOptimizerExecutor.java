@@ -18,16 +18,16 @@
 
 package org.apache.amoro.optimizer.common;
 
-import com.netease.arctic.api.OptimizerRegisterInfo;
-import com.netease.arctic.api.OptimizingTask;
-import com.netease.arctic.api.OptimizingTaskId;
-import com.netease.arctic.api.OptimizingTaskResult;
-import com.netease.arctic.optimizing.BaseOptimizingInput;
-import com.netease.arctic.optimizing.OptimizingExecutor;
-import com.netease.arctic.optimizing.OptimizingExecutorFactory;
-import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.optimizing.TableOptimizing;
-import com.netease.arctic.utils.SerializationUtil;
+import org.apache.amoro.api.OptimizerRegisterInfo;
+import org.apache.amoro.api.OptimizingTask;
+import org.apache.amoro.api.OptimizingTaskId;
+import org.apache.amoro.api.OptimizingTaskResult;
+import org.apache.amoro.optimizing.BaseOptimizingInput;
+import org.apache.amoro.optimizing.OptimizingExecutor;
+import org.apache.amoro.optimizing.OptimizingExecutorFactory;
+import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.TableOptimizing;
+import org.apache.amoro.utils.SerializationUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.junit.After;

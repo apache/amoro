@@ -18,10 +18,6 @@
 
 package org.apache.amoro.flink.write;
 
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE;
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE_DEFAULT;
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE;
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
 import static org.apache.amoro.flink.FlinkSchemaUtil.getPhysicalSchema;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.ARCTIC_EMIT_FILE;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.ARCTIC_EMIT_MODE;
@@ -31,11 +27,12 @@ import static org.apache.amoro.flink.table.descriptors.ArcticValidator.ARCTIC_WR
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.ARCTIC_WRITE_MAX_OPEN_FILE_SIZE_DEFAULT;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SUBMIT_EMPTY_SNAPSHOTS;
+import static org.apache.amoro.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE;
+import static org.apache.amoro.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE_DEFAULT;
+import static org.apache.amoro.table.TableProperties.WRITE_DISTRIBUTION_MODE;
+import static org.apache.amoro.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
 import static org.apache.flink.table.factories.FactoryUtil.SINK_PARALLELISM;
 
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.DistributionHashMode;
-import com.netease.arctic.table.TableProperties;
 import org.apache.amoro.flink.metric.MetricsGenerator;
 import org.apache.amoro.flink.shuffle.RoundRobinShuffleRulePolicy;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
@@ -47,6 +44,9 @@ import org.apache.amoro.flink.util.ArcticUtils;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.amoro.flink.util.IcebergClassUtil;
 import org.apache.amoro.flink.util.ProxyUtil;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.DistributionHashMode;
+import org.apache.amoro.table.TableProperties;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
 import org.apache.flink.configuration.Configuration;

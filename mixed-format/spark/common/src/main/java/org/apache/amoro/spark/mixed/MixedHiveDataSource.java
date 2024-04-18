@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.mixed;
 
-import com.netease.arctic.TableFormat;
+import org.apache.amoro.TableFormat;
 
 /** Mixed Hive DataSource register */
 public class MixedHiveDataSource extends MixedSourceBase {

@@ -30,10 +30,10 @@ import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableLi
 import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap.toImmutableMap;
 import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet.toImmutableSet;
 
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.trino.ArcticSessionProperties;
 import org.apache.amoro.trino.util.ObjectSerializerUtil;
 import io.trino.plugin.hive.HiveApplyProjectionUtil;

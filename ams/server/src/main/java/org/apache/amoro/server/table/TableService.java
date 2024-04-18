@@ -18,11 +18,11 @@
 
 package org.apache.amoro.server.table;
 
-import com.netease.arctic.TableIDWithFormat;
-import com.netease.arctic.api.BlockableOperation;
-import com.netease.arctic.api.Blocker;
-import com.netease.arctic.api.TableIdentifier;
+import org.apache.amoro.TableIDWithFormat;
+import org.apache.amoro.api.BlockableOperation;
+import org.apache.amoro.api.Blocker;
 import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.server.catalog.CatalogService;
 
 import java.util.List;

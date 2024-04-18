@@ -18,22 +18,22 @@
 
 package org.apache.amoro.flink.write;
 
-import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
+import static org.apache.amoro.table.TableProperties.FILE_FORMAT_ORC;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseLocationKind;
-import com.netease.arctic.table.ChangeLocationKind;
-import com.netease.arctic.table.LocationKind;
-import com.netease.arctic.table.WriteOperationKind;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.flink.read.AdaptHiveFlinkParquetReaders;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.hive.table.HiveLocationKind;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.BaseLocationKind;
+import org.apache.amoro.table.ChangeLocationKind;
+import org.apache.amoro.table.LocationKind;
+import org.apache.amoro.table.WriteOperationKind;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;

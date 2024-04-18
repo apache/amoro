@@ -18,21 +18,21 @@
 
 package org.apache.amoro.server;
 
-import com.netease.arctic.SingletonResourceUtil;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.catalog.CatalogTestHelpers;
-import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.SingletonResourceUtil;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.api.resource.ResourceGroup;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.catalog.CatalogLoader;
+import org.apache.amoro.catalog.CatalogTestHelpers;
 import org.apache.amoro.hive.HMSMockServer;
 import org.apache.amoro.optimizer.standalone.StandaloneOptimizer;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.DefaultTableService;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.commons.io.FileUtils;
 import org.apache.curator.shaded.com.google.common.io.MoreFiles;
 import org.apache.curator.shaded.com.google.common.io.RecursiveDeleteOption;

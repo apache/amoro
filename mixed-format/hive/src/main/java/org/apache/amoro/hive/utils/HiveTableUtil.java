@@ -18,10 +18,10 @@
 
 package org.apache.amoro.hive.utils;
 
-import com.netease.arctic.properties.HiveTableProperties;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.utils.IdGenerator;
 import org.apache.amoro.hive.HMSClientPool;
+import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.utils.IdGenerator;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;

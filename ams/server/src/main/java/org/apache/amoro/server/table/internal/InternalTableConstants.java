@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.table.internal;
 
-import com.netease.arctic.mixed.InternalMixedIcebergCatalog;
+import org.apache.amoro.mixed.InternalMixedIcebergCatalog;
 
 /** Constants defines for internal table */
 public class InternalTableConstants {

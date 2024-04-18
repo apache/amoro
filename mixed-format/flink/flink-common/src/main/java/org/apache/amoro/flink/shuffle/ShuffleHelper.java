@@ -20,9 +20,9 @@ package org.apache.amoro.flink.shuffle;
 
 import static org.apache.iceberg.IcebergSchemaUtil.projectPartition;
 
-import com.netease.arctic.data.PrimaryKeyData;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
+import org.apache.amoro.data.PrimaryKeyData;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.util.CollectionUtil;

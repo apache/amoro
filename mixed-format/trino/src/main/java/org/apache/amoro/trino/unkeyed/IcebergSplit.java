@@ -25,7 +25,7 @@ import static org.apache.iceberg.relocated.com.google.common.base.MoreObjects.to
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.netease.arctic.data.DataFileType;
+import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.trino.delete.TrinoDeleteFile;
 import io.trino.plugin.iceberg.IcebergFileFormat;
 import io.trino.spi.HostAddress;

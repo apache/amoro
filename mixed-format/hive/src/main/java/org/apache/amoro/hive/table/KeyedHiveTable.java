@@ -18,21 +18,22 @@
 
 package org.apache.amoro.hive.table;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.TableMeta;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.properties.HiveTableProperties;
-import com.netease.arctic.scan.ChangeTableIncrementalScan;
-import com.netease.arctic.table.BaseTable;
-import com.netease.arctic.table.BasicKeyedTable;
-import com.netease.arctic.table.BasicUnkeyedTable;
-import com.netease.arctic.table.ChangeTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.op.BaseSchemaUpdate;
 import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.ArcticHadoopFileIO;
+import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.scan.ChangeTableIncrementalScan;
+import org.apache.amoro.table.BaseTable;
+import org.apache.amoro.table.BasicKeyedTable;
+import org.apache.amoro.table.BasicUnkeyedTable;
+import org.apache.amoro.table.ChangeTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.MixedChangeTableScan;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateSchema;
@@ -40,7 +41,7 @@ import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Map;
 
-/** Implementation of {@link com.netease.arctic.table.KeyedTable} with Hive table as base store. */
+/** Implementation of {@link KeyedTable} with Hive table as base store. */
 public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
 
   private final HMSClientPool hiveClient;

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.hive.table;
 
-import com.netease.arctic.table.LocationKind;
+import org.apache.amoro.table.LocationKind;
 
 public class HiveLocationKind implements LocationKind {
 

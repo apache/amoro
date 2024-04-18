@@ -18,9 +18,9 @@
 
 package org.apache.amoro.flink.interceptor;
 
-import com.netease.arctic.io.ArcticFileIO;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
+import org.apache.amoro.io.ArcticFileIO;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.exception;
 
-import com.netease.arctic.api.OptimizingTaskId;
+import org.apache.amoro.api.OptimizingTaskId;
 
 public class TaskNotFoundException extends ArcticRuntimeException {
   private final OptimizingTaskId taskId;

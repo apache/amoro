@@ -18,7 +18,7 @@
 
 package org.apache.amoro.optimizer.common;
 
-import com.netease.arctic.TestAms;
+import org.apache.amoro.TestAms;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;

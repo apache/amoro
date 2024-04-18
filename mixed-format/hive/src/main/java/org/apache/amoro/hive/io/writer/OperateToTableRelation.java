@@ -18,9 +18,9 @@
 
 package org.apache.amoro.hive.io.writer;
 
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.LocationKind;
-import com.netease.arctic.table.WriteOperationKind;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.LocationKind;
+import org.apache.amoro.table.WriteOperationKind;
 
 /** Resolve the relation between {@link WriteOperationKind} and {@link LocationKind} */
 public interface OperateToTableRelation {

@@ -18,11 +18,11 @@
 
 package org.apache.amoro.server.catalog;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableIDWithFormat;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.api.TableIdentifier;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableIDWithFormat;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.IllegalMetadataException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
@@ -99,7 +99,7 @@ public abstract class InternalCatalog extends ServerCatalog {
         .map(
             sid ->
                 TableIDWithFormat.of(
-                    com.netease.arctic.table.TableIdentifier.of(sid.getIdentifier()),
+                    org.apache.amoro.table.TableIdentifier.of(sid.getIdentifier()),
                     sid.getFormat()))
         .collect(Collectors.toList());
   }
@@ -113,7 +113,7 @@ public abstract class InternalCatalog extends ServerCatalog {
         .map(
             sid ->
                 TableIDWithFormat.of(
-                    com.netease.arctic.table.TableIdentifier.of(sid.getIdentifier()),
+                    org.apache.amoro.table.TableIdentifier.of(sid.getIdentifier()),
                     sid.getFormat()))
         .collect(Collectors.toList());
   }
@@ -206,8 +206,7 @@ public abstract class InternalCatalog extends ServerCatalog {
         .orElseThrow(
             () ->
                 new ObjectNotExistsException(
-                    com.netease.arctic.table.TableIdentifier.of(name(), database, table)
-                        .toString()));
+                    org.apache.amoro.table.TableIdentifier.of(name(), database, table).toString()));
   }
 
   private String getDatabaseDesc(String database) {

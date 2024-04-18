@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.source.log;
 
-import static com.netease.arctic.log.LogData.MAGIC_NUMBER;
+import static org.apache.amoro.log.LogData.MAGIC_NUMBER;
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 

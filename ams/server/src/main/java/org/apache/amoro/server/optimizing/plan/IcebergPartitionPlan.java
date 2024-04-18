@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
-import com.netease.arctic.optimizing.IcebergRewriteExecutorFactory;
-import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.optimizing.IcebergRewriteExecutorFactory;
+import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.util.Pair;
 

@@ -18,10 +18,10 @@
 
 package org.apache.amoro.flink.shuffle;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.data.DataTreeNode;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
+import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.flink.api.common.functions.Partitioner;
 import org.apache.flink.api.java.functions.KeySelector;

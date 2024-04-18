@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark;
 
-import com.netease.arctic.TableFormat;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.spark.test.unified.UnifiedCatalogTestSuites;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;

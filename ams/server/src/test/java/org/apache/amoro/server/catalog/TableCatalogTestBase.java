@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.catalog;
 
-import com.netease.arctic.AmoroCatalog;
-import com.netease.arctic.formats.AmoroCatalogTestHelper;
+import org.apache.amoro.AmoroCatalog;
+import org.apache.amoro.formats.AmoroCatalogTestHelper;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.server.table.TableServiceTestBase;
 import org.junit.After;

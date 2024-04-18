@@ -18,13 +18,13 @@
 
 package org.apache.amoro.server.optimizing.flow.view;
 
-import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
+import static org.apache.amoro.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.writer.RecordWithAction;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.io.writer.RecordWithAction;
 import org.apache.amoro.server.optimizing.flow.RandomRecordGenerator;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;

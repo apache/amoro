@@ -18,16 +18,16 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.properties.HiveTableProperties;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;

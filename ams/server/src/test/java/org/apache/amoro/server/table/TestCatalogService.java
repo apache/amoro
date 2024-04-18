@@ -18,13 +18,13 @@
 
 package org.apache.amoro.server.table;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TestedCatalogs;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.properties.CatalogMetaProperties;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TestedCatalogs;
+import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.IllegalMetadataException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;

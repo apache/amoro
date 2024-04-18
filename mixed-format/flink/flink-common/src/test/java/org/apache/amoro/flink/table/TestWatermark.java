@@ -18,18 +18,18 @@
 
 package org.apache.amoro.flink.table;
 
-import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.amoro.flink.util.ArcticUtils;
 import org.apache.amoro.flink.util.DataUtil;
 import org.apache.amoro.flink.util.TestUtil;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.runtime.testutils.CommonTestUtils;

@@ -20,9 +20,9 @@ package org.apache.amoro.flink.write.hidden;
 
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
-import com.netease.arctic.log.LogData;
-import com.netease.arctic.log.LogDataJsonSerialization;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
+import org.apache.amoro.log.LogData;
+import org.apache.amoro.log.LogDataJsonSerialization;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.runtime.taskexecutor.GlobalAggregateManager;
 import org.apache.flink.table.data.RowData;

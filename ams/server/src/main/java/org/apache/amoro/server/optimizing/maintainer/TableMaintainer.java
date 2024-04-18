@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server.optimizing.maintainer;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.iceberg.Table;
 
 /**

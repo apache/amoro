@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.dashboard.component.reverser;
 
-import com.netease.arctic.table.TableIdentifier;
 import org.apache.amoro.server.dashboard.model.DDLInfo;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 

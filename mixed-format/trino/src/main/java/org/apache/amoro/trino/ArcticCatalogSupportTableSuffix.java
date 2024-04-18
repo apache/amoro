@@ -18,20 +18,20 @@
 
 package org.apache.amoro.trino;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.op.UpdatePartitionProperties;
-import com.netease.arctic.scan.ChangeTableIncrementalScan;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BasicUnkeyedTable;
-import com.netease.arctic.table.ChangeTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.MetadataColumns;
-import com.netease.arctic.table.TableBuilder;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.table.blocker.TableBlockerManager;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.op.UpdatePartitionProperties;
+import org.apache.amoro.scan.ChangeTableIncrementalScan;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.BasicUnkeyedTable;
+import org.apache.amoro.table.ChangeTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MetadataColumns;
+import org.apache.amoro.table.TableBuilder;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.table.blocker.TableBlockerManager;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ExpireSnapshots;
