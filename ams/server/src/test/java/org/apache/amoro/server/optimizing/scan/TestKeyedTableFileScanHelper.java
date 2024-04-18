@@ -18,19 +18,19 @@
 
 package org.apache.amoro.server.optimizing.scan;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.ExpressionUtil;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
+import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.utils.ExpressionUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;

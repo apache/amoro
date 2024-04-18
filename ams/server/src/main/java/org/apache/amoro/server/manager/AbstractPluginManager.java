@@ -18,11 +18,11 @@
 
 package org.apache.amoro.server.manager;
 
-import com.netease.arctic.utils.JacksonUtil;
 import org.apache.amoro.api.ActivePlugin;
 import org.apache.amoro.server.Environments;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.LoadingPluginException;
+import org.apache.amoro.utils.JacksonUtil;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;

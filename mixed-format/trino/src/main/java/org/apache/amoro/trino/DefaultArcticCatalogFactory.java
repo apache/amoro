@@ -18,11 +18,11 @@
 
 package org.apache.amoro.trino;
 
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.ArcticCatalogUtil;
+import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.catalog.CatalogLoader;
+import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.utils.ArcticCatalogUtil;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 
 import javax.inject.Inject;

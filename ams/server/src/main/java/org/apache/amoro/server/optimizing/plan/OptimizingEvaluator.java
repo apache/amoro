@@ -19,10 +19,7 @@
 package org.apache.amoro.server.optimizing.plan;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.server.optimizing.scan.IcebergTableFileScanHelper;
@@ -33,6 +30,9 @@ import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableSnapshot;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;

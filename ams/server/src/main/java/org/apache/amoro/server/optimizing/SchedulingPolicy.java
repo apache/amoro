@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.optimizing;
 
-import com.netease.arctic.api.BlockableOperation;
+import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.resource.ResourceGroup;
 import org.apache.amoro.server.table.TableRuntime;

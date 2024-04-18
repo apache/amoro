@@ -18,13 +18,13 @@
 
 package org.apache.amoro.server.optimizing.flow.view;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.writer.GenericBaseTaskWriter;
-import com.netease.arctic.io.writer.GenericChangeTaskWriter;
-import com.netease.arctic.io.writer.GenericTaskWriters;
-import com.netease.arctic.io.writer.RecordWithAction;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.io.writer.GenericBaseTaskWriter;
+import org.apache.amoro.io.writer.GenericChangeTaskWriter;
+import org.apache.amoro.io.writer.GenericTaskWriters;
+import org.apache.amoro.io.writer.RecordWithAction;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;

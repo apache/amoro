@@ -18,8 +18,8 @@
 
 package org.apache.amoro.optimizer.common;
 
-import com.netease.arctic.api.OptimizerRegisterInfo;
 import org.apache.amoro.api.OptimizerProperties;
+import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Assert;

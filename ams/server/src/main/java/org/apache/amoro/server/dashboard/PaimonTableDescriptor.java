@@ -18,14 +18,13 @@
 
 package org.apache.amoro.server.dashboard;
 
-import static com.netease.arctic.data.DataFileType.INSERT_FILE;
+import static org.apache.amoro.data.DataFileType.INSERT_FILE;
 import static org.apache.paimon.operation.FileStoreScan.Plan.groupByPartFiles;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.CommitMetaProducer;
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CommitMetaProducer;
+import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.server.dashboard.component.reverser.DDLReverser;
 import org.apache.amoro.server.dashboard.component.reverser.PaimonTableMetaExtract;
 import org.apache.amoro.server.dashboard.model.AMSColumnInfo;
@@ -43,6 +42,7 @@ import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.FilesStatisticsBuilder;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingType;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Streams;

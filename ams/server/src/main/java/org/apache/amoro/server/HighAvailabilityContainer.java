@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server;
 
-import com.netease.arctic.client.AmsServerInfo;
-import com.netease.arctic.properties.AmsHAProperties;
-import com.netease.arctic.utils.JacksonUtil;
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.client.AmsServerInfo;
+import org.apache.amoro.properties.AmsHAProperties;
+import org.apache.amoro.utils.JacksonUtil;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;

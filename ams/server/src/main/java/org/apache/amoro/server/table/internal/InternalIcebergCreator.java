@@ -18,13 +18,13 @@
 
 package org.apache.amoro.server.table.internal;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.api.TableMeta;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.properties.MetaTableProperties;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.api.TableMeta;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.properties.MetaTableProperties;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.utils.InternalTableUtil;
 import org.apache.commons.lang3.StringUtils;

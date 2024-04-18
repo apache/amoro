@@ -18,9 +18,9 @@
 
 package org.apache.amoro.spark.reader;
 
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.amoro.spark.table.SupportsExtendIdentColumns;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.exceptions.ValidationException;

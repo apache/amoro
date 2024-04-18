@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.hybrid.split;
 
-import com.netease.arctic.log.Bytes;
+import org.apache.amoro.log.Bytes;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.InstantiationUtil;

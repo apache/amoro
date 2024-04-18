@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.dashboard;
 
-import com.netease.arctic.table.TableProperties;
+import org.apache.amoro.table.TableProperties;
 
 import java.util.HashSet;
 import java.util.Set;

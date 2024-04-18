@@ -18,7 +18,7 @@
 
 package org.apache.amoro.optimizer.common;
 
-import com.netease.arctic.api.OptimizingTaskResult;
+import org.apache.amoro.api.OptimizingTaskResult;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;

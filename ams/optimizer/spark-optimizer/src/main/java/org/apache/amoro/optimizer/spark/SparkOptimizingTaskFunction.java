@@ -18,8 +18,8 @@
 
 package org.apache.amoro.optimizer.spark;
 
-import com.netease.arctic.api.OptimizingTask;
-import com.netease.arctic.api.OptimizingTaskResult;
+import org.apache.amoro.api.OptimizingTask;
+import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.optimizer.common.OptimizerConfig;
 import org.apache.amoro.optimizer.common.OptimizerExecutor;
 import org.apache.spark.api.java.function.Function;

@@ -18,14 +18,14 @@
 
 package org.apache.amoro.server.optimizing.maintainer;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.io.writer.SortedPosDeleteWriter;
-import com.netease.arctic.table.UnkeyedTable;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
+import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
+import org.apache.amoro.io.writer.SortedPosDeleteWriter;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;

@@ -18,9 +18,9 @@
 
 package org.apache.amoro.spark.table;
 
-import com.netease.arctic.table.BasicUnkeyedTable;
-import com.netease.arctic.table.MetadataColumns;
 import org.apache.amoro.spark.reader.SparkScanBuilder;
+import org.apache.amoro.table.BasicUnkeyedTable;
+import org.apache.amoro.table.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.spark.SparkSchemaUtil;

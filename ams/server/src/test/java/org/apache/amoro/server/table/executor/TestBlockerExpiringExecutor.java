@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.table.executor;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.BlockableOperation;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;

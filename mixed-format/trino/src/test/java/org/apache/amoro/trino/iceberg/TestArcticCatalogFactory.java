@@ -18,8 +18,8 @@
 
 package org.apache.amoro.trino.iceberg;
 
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.table.TableMetaStore;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.table.TableMetaStore;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import org.apache.amoro.trino.ArcticCatalogFactory;
 import org.apache.amoro.trino.ArcticCatalogSupportTableSuffix;

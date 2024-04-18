@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.table.internal;
 
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.io.ArcticFileIO;
+import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.io.ArcticFileIO;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.utils.InternalTableUtil;
 import org.apache.iceberg.TableOperations;

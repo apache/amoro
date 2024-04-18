@@ -18,8 +18,8 @@
 
 package org.apache.amoro.hive.formats;
 
-import com.netease.arctic.formats.AmoroCatalogTestHelper;
-import com.netease.arctic.formats.TestPaimonAmoroCatalog;
+import org.apache.amoro.formats.AmoroCatalogTestHelper;
+import org.apache.amoro.formats.TestPaimonAmoroCatalog;
 import org.apache.amoro.hive.TestHMS;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;

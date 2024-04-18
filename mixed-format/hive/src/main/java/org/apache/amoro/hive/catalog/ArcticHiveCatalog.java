@@ -18,43 +18,43 @@
 
 package org.apache.amoro.hive.catalog;
 
-import static com.netease.arctic.properties.HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS;
-import static com.netease.arctic.properties.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
-import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
+import static org.apache.amoro.properties.HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS;
+import static org.apache.amoro.properties.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
+import static org.apache.amoro.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_TYPE;
 
-import com.netease.arctic.AmsClient;
-import com.netease.arctic.NoSuchDatabaseException;
-import com.netease.arctic.PooledAmsClient;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.TableMeta;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.ArcticFileIOs;
-import com.netease.arctic.op.ArcticHadoopTableOperations;
-import com.netease.arctic.op.CreateTableTransaction;
-import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.properties.HiveTableProperties;
-import com.netease.arctic.properties.MetaTableProperties;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableBuilder;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.blocker.BasicTableBlockerManager;
-import com.netease.arctic.table.blocker.TableBlockerManager;
-import com.netease.arctic.utils.ArcticCatalogUtil;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
-import com.netease.arctic.utils.ConvertStructUtil;
+import org.apache.amoro.AmsClient;
+import org.apache.amoro.NoSuchDatabaseException;
+import org.apache.amoro.PooledAmsClient;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.TableMeta;
+import org.apache.amoro.catalog.ArcticCatalog;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClient;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.utils.CompatibleHivePropertyUtil;
 import org.apache.amoro.hive.utils.HiveSchemaUtil;
 import org.apache.amoro.hive.utils.HiveTableUtil;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.ArcticFileIOs;
+import org.apache.amoro.op.ArcticHadoopTableOperations;
+import org.apache.amoro.op.CreateTableTransaction;
+import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.properties.MetaTableProperties;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableBuilder;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.table.blocker.BasicTableBlockerManager;
+import org.apache.amoro.table.blocker.TableBlockerManager;
+import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.CompatiblePropertyUtil;
+import org.apache.amoro.utils.ConvertStructUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
@@ -86,10 +86,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/**
- * Implementation of {@link com.netease.arctic.catalog.ArcticCatalog} to support Hive table as base
- * store.
- */
+/** Implementation of {@link ArcticCatalog} to support Hive table as base store. */
 public class ArcticHiveCatalog implements ArcticCatalog {
 
   private static final Logger LOG = LoggerFactory.getLogger(ArcticHiveCatalog.class);
@@ -231,7 +228,7 @@ public class ArcticHiveCatalog implements ArcticCatalog {
       String primaryKey = hiveParameters.get(ARCTIC_TABLE_PRIMARY_KEYS);
       // primary key info come from hive properties
       if (StringUtils.isNotBlank(primaryKey)) {
-        com.netease.arctic.api.PrimaryKeySpec keySpec = new com.netease.arctic.api.PrimaryKeySpec();
+        org.apache.amoro.api.PrimaryKeySpec keySpec = new org.apache.amoro.api.PrimaryKeySpec();
         List<String> fields =
             Arrays.stream(primaryKey.split(PRIMARY_KEY_COLUMN_JOIN_DELIMITER))
                 .collect(Collectors.toList());

@@ -18,13 +18,13 @@
 
 package org.apache.amoro.server.optimizing;
 
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableBuilder;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
 import org.apache.amoro.server.AmsEnvironment;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableBuilder;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;

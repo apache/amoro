@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.catalog;
 
-import com.netease.arctic.api.CatalogMeta;
+import org.apache.amoro.api.CatalogMeta;
 
 import java.util.List;
 

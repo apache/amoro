@@ -18,17 +18,17 @@
 
 package org.apache.amoro.flink.catalog.factories;
 
-import static com.netease.arctic.Constants.THRIFT_TABLE_SERVICE_NAME;
-import static com.netease.arctic.properties.CatalogMetaProperties.TABLE_FORMATS;
+import static org.apache.amoro.Constants.THRIFT_TABLE_SERVICE_NAME;
 import static org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions.DEFAULT_DATABASE;
+import static org.apache.amoro.properties.CatalogMetaProperties.TABLE_FORMATS;
 import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.UnifiedCatalog;
-import com.netease.arctic.UnifiedCatalogLoader;
-import com.netease.arctic.client.ArcticThriftUrl;
-import com.netease.arctic.utils.ArcticCatalogUtil;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.UnifiedCatalog;
+import org.apache.amoro.UnifiedCatalogLoader;
+import org.apache.amoro.client.ArcticThriftUrl;
 import org.apache.amoro.flink.catalog.FlinkUnifiedCatalog;
+import org.apache.amoro.utils.ArcticCatalogUtil;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.factories.CatalogFactory;

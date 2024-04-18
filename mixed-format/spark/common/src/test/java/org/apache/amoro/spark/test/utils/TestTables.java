@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.test.utils;
 
-import com.netease.arctic.TableFormat;
+import org.apache.amoro.TableFormat;
 import org.apache.iceberg.types.Types;
 
 public class TestTables {

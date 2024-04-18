@@ -18,8 +18,7 @@
 
 package org.apache.amoro.api;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.TableIdentifier;
+import org.apache.amoro.TableFormat;
 
 import java.util.Objects;
 

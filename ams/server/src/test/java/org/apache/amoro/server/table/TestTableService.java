@@ -18,25 +18,25 @@
 
 package org.apache.amoro.server.table;
 
-import static com.netease.arctic.TableTestHelper.TEST_DB_NAME;
-import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
+import static org.apache.amoro.TableTestHelper.TEST_DB_NAME;
+import static org.apache.amoro.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableIDWithFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.TestedCatalogs;
-import com.netease.arctic.api.BlockableOperation;
-import com.netease.arctic.api.Blocker;
-import com.netease.arctic.api.TableIdentifier;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.table.blocker.RenewableBlocker;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableIDWithFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.TestedCatalogs;
+import org.apache.amoro.api.BlockableOperation;
+import org.apache.amoro.api.Blocker;
+import org.apache.amoro.api.TableIdentifier;
+import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.server.ArcticManagementConf;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.BlockerConflictException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
+import org.apache.amoro.table.blocker.RenewableBlocker;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;

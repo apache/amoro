@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.dashboard.model;
 
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.List;

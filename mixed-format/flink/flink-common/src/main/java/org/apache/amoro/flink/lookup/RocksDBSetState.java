@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.lookup;
 
-import com.netease.arctic.log.Bytes;
-import com.netease.arctic.utils.map.RocksDBBackend;
+import org.apache.amoro.log.Bytes;
+import org.apache.amoro.utils.map.RocksDBBackend;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;

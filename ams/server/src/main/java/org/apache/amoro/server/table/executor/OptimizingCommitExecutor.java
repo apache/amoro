@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.table.executor;
 
-import com.netease.arctic.AmoroTable;
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;

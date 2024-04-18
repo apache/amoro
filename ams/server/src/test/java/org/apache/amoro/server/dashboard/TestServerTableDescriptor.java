@@ -18,11 +18,11 @@
 
 package org.apache.amoro.server.dashboard;
 
-import com.netease.arctic.formats.AmoroCatalogTestHelper;
-import com.netease.arctic.table.TableIdentifier;
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.formats.AmoroCatalogTestHelper;
 import org.apache.amoro.server.catalog.TableCatalogTestBase;
 import org.apache.amoro.server.dashboard.model.DDLInfo;
+import org.apache.amoro.table.TableIdentifier;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

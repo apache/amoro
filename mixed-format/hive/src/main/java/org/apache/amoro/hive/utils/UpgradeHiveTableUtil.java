@@ -18,23 +18,23 @@
 
 package org.apache.amoro.hive.utils;
 
-import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
-import static com.netease.arctic.table.TableProperties.FILE_FORMAT_PARQUET;
+import static org.apache.amoro.table.TableProperties.BASE_FILE_FORMAT;
+import static org.apache.amoro.table.TableProperties.CHANGE_FILE_FORMAT;
+import static org.apache.amoro.table.TableProperties.DEFAULT_FILE_FORMAT;
+import static org.apache.amoro.table.TableProperties.FILE_FORMAT_ORC;
+import static org.apache.amoro.table.TableProperties.FILE_FORMAT_PARQUET;
 
-import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.op.UpdatePartitionProperties;
-import com.netease.arctic.properties.HiveTableProperties;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.table.UnkeyedHiveTable;
+import org.apache.amoro.io.ArcticHadoopFileIO;
+import org.apache.amoro.op.UpdatePartitionProperties;
+import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;

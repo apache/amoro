@@ -18,14 +18,14 @@
 
 package org.apache.amoro.server.optimizing;
 
-import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.ArcticCatalogUtil;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.AmsEnvironment;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
+import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.utils.ArcticCatalogUtil;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
@@ -450,6 +450,6 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
   public BaseOptimizingChecker newOptimizingChecker(String catalog) {
     return new BaseOptimizingChecker(
-        com.netease.arctic.table.TableIdentifier.of(catalog, DATABASE, TABLE));
+        org.apache.amoro.table.TableIdentifier.of(catalog, DATABASE, TABLE));
   }
 }

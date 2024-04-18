@@ -18,7 +18,6 @@
 
 package org.apache.amoro.flink.table;
 
-import com.netease.arctic.table.ArcticTable;
 import org.apache.amoro.flink.interceptor.ProxyFactory;
 import org.apache.amoro.flink.read.ArcticSource;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
@@ -28,6 +27,7 @@ import org.apache.amoro.flink.util.ArcticUtils;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.amoro.flink.util.IcebergClassUtil;
 import org.apache.amoro.flink.util.ProxyUtil;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.io.InputFormat;
 import org.apache.flink.api.dag.Transformation;

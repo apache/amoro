@@ -18,13 +18,13 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
-import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.amoro.api.config.OptimizingConfig;
+import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.utils.ArcticTableUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;

@@ -18,14 +18,14 @@
 
 package org.apache.amoro.server.table;
 
-import static com.netease.arctic.TableTestHelper.TEST_DB_NAME;
-import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
+import static org.apache.amoro.TableTestHelper.TEST_DB_NAME;
+import static org.apache.amoro.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.TestedCatalogs;
-import com.netease.arctic.catalog.CatalogTestHelper;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.TestedCatalogs;
+import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.IllegalMetadataException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;

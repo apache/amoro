@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.exception;
 
-import com.netease.arctic.api.OptimizingTaskId;
+import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 
 public class IllegalTaskStateException extends ArcticRuntimeException {

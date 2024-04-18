@@ -18,9 +18,9 @@
 
 package org.apache.amoro.server.dashboard.model;
 
-import com.netease.arctic.table.TableProperties;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 /** Current optimize state of an ArcticTable. */

@@ -20,15 +20,15 @@ package org.apache.amoro.flink.write;
 
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SUBMIT_EMPTY_SNAPSHOTS;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.flink.util.TestGlobalAggregateManager;
 import org.apache.amoro.flink.util.TestOneInputStreamOperatorIntern;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;

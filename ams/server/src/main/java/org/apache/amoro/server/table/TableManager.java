@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.table;
 
-import com.netease.arctic.AmoroTable;
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.api.ServerTableIdentifier;
 
 public interface TableManager extends TableRuntimeHandler {

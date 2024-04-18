@@ -18,8 +18,7 @@
 
 package org.apache.amoro.spark.test.suites.sql;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.spark.mixed.SparkSQLProperties;
 import org.apache.amoro.spark.test.MixedTableTestBase;
 import org.apache.amoro.spark.test.TestIdentifier;
@@ -27,6 +26,7 @@ import org.apache.amoro.spark.test.extensions.EnableCatalogSelect;
 import org.apache.amoro.spark.test.utils.Asserts;
 import org.apache.amoro.spark.test.utils.TestTable;
 import org.apache.amoro.spark.test.utils.TestTables;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;

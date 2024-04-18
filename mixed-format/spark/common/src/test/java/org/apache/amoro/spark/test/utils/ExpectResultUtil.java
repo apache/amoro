@@ -18,11 +18,11 @@
 
 package org.apache.amoro.spark.test.utils;
 
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.PrimaryKeyData;
-import com.netease.arctic.io.writer.TaskWriterKey;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.data.DataFileType;
+import org.apache.amoro.data.DataTreeNode;
+import org.apache.amoro.data.PrimaryKeyData;
+import org.apache.amoro.io.writer.TaskWriterKey;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.data.Record;

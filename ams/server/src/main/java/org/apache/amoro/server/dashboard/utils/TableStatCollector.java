@@ -18,14 +18,14 @@
 
 package org.apache.amoro.server.dashboard.utils;
 
-import com.netease.arctic.Constants;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.UnkeyedTable;
+import org.apache.amoro.Constants;
 import org.apache.amoro.server.dashboard.model.FilesStatistics;
 import org.apache.amoro.server.dashboard.model.SnapshotInfo;
 import org.apache.amoro.server.dashboard.model.TableStatistics;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;

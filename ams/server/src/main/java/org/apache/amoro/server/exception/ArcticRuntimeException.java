@@ -18,14 +18,14 @@
 
 package org.apache.amoro.server.exception;
 
-import com.netease.arctic.ErrorCodes;
-import com.netease.arctic.api.ArcticException;
-import com.netease.arctic.api.InvalidObjectException;
-import com.netease.arctic.api.MetaException;
-import com.netease.arctic.api.NoSuchObjectException;
-import com.netease.arctic.api.OperationConflictException;
-import com.netease.arctic.api.TableIdentifier;
+import org.apache.amoro.ErrorCodes;
+import org.apache.amoro.api.ArcticException;
+import org.apache.amoro.api.InvalidObjectException;
+import org.apache.amoro.api.MetaException;
+import org.apache.amoro.api.NoSuchObjectException;
+import org.apache.amoro.api.OperationConflictException;
 import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.api.TableIdentifier;
 import org.apache.thrift.TException;
 
 import java.util.HashMap;
@@ -121,7 +121,7 @@ public class ArcticRuntimeException extends RuntimeException {
     if (throwable.getClass().equals(ObjectNotExistsException.class)) {
       return new NoSuchObjectException(throwable.getMessage());
     } else if (throwable.getClass().equals(AlreadyExistsException.class)) {
-      return new com.netease.arctic.api.AlreadyExistsException(throwable.getMessage());
+      return new org.apache.amoro.api.AlreadyExistsException(throwable.getMessage());
     } else if (throwable.getClass().equals(IllegalMetadataException.class)
         || throwable.getClass().equals(PersistenceException.class)) {
       return new MetaException(throwable.getMessage());

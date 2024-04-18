@@ -18,16 +18,16 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.ExpressionUtil;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.server.ArcticServiceConstants;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.ExpressionUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;

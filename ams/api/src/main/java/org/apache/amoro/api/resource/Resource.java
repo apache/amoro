@@ -18,7 +18,7 @@
 
 package org.apache.amoro.api.resource;
 
-import com.netease.arctic.api.OptimizerRegisterInfo;
+import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.math.BigInteger;

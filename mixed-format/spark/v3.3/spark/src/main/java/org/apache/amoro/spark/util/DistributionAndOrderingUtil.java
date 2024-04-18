@@ -20,12 +20,12 @@ package org.apache.amoro.spark.util;
 
 import static org.apache.iceberg.spark.Spark3Util.toTransforms;
 
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.DistributionHashMode;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableProperties;
 import org.apache.amoro.spark.SparkAdapterLoader;
 import org.apache.amoro.spark.sql.connector.expressions.FileIndexBucket;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.DistributionHashMode;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;

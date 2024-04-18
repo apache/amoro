@@ -18,13 +18,13 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.properties.HiveTableProperties;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.data.DataFileType;
+import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.utils.HiveTableUtil;
+import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;

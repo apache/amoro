@@ -18,15 +18,15 @@
 
 package org.apache.amoro.server.utils;
 
-import com.netease.arctic.IcebergFileEntry;
-import com.netease.arctic.scan.TableEntriesScan;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.TableFileUtil;
+import org.apache.amoro.IcebergFileEntry;
+import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.server.ArcticServiceConstants;
 import org.apache.amoro.server.table.BasicTableSnapshot;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableSnapshot;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;

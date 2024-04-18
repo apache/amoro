@@ -18,15 +18,15 @@
 
 package org.apache.amoro.server.catalog;
 
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.formats.AmoroCatalogTestHelper;
-import com.netease.arctic.formats.IcebergHadoopCatalogTestHelper;
-import com.netease.arctic.formats.MixedIcebergHadoopCatalogTestHelper;
-import com.netease.arctic.formats.PaimonHadoopCatalogTestHelper;
-import com.netease.arctic.properties.CatalogMetaProperties;
+import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.formats.AmoroCatalogTestHelper;
+import org.apache.amoro.formats.IcebergHadoopCatalogTestHelper;
+import org.apache.amoro.formats.MixedIcebergHadoopCatalogTestHelper;
+import org.apache.amoro.formats.PaimonHadoopCatalogTestHelper;
 import org.apache.amoro.hive.formats.IcebergHiveCatalogTestHelper;
 import org.apache.amoro.hive.formats.MixedIcebergHiveCatalogTestHelper;
 import org.apache.amoro.hive.formats.PaimonHiveCatalogTestHelper;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;

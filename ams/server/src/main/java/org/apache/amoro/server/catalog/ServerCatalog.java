@@ -18,9 +18,9 @@
 
 package org.apache.amoro.server.catalog;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.TableIDWithFormat;
-import com.netease.arctic.api.CatalogMeta;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableIDWithFormat;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.server.exception.IllegalMetadataException;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;

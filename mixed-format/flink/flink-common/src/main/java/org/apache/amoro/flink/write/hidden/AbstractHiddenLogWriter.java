@@ -20,13 +20,13 @@ package org.apache.amoro.flink.write.hidden;
 
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.log.FormatVersion;
-import com.netease.arctic.log.LogData;
-import com.netease.arctic.log.LogDataJsonSerialization;
+import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.flink.shuffle.LogRecordV1;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
 import org.apache.amoro.flink.write.ArcticLogWriter;
+import org.apache.amoro.log.FormatVersion;
+import org.apache.amoro.log.LogData;
+import org.apache.amoro.log.LogDataJsonSerialization;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.typeutils.base.IntSerializer;

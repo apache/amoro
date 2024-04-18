@@ -18,14 +18,14 @@
 
 package org.apache.amoro.hive.catalog;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TestAms;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.catalog.CatalogTestHelpers;
-import com.netease.arctic.properties.CatalogMetaProperties;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TestAms;
+import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.catalog.CatalogLoader;
+import org.apache.amoro.catalog.CatalogTestHelpers;
 import org.apache.amoro.hive.TestHMS;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.ClassRule;

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.writer;
 
-import com.netease.arctic.data.ChangeAction;
+import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.spark.SparkInternalRowCastWrapper;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;

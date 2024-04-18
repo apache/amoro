@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.mixed;
 
-import com.netease.arctic.TableFormat;
+import org.apache.amoro.TableFormat;
 
 /** Mixed Iceberg DataSource register */
 public class MixedIcebergDataSource extends MixedSourceBase {

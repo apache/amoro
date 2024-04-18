@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.sql.execution
 
-import com.netease.arctic.op.OverwriteBaseFiles
+import org.apache.amoro.op.OverwriteBaseFiles
 import org.apache.amoro.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
 import org.apache.iceberg.expressions.Expressions
 import org.apache.spark.sql.catalyst.InternalRow

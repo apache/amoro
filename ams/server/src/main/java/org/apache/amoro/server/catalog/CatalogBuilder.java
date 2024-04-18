@@ -18,18 +18,18 @@
 
 package org.apache.amoro.server.catalog;
 
-import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
-import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
-import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
-import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
-import static com.netease.arctic.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
+import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
+import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
+import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
+import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.utils.ArcticCatalogUtil;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.utils.ArcticCatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;

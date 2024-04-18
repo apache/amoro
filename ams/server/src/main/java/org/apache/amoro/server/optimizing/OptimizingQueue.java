@@ -18,17 +18,12 @@
 
 package org.apache.amoro.server.optimizing;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.api.OptimizingTaskId;
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.ArcticDataFiles;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
-import com.netease.arctic.utils.ExceptionUtil;
-import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.api.OptimizerProperties;
+import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.resource.ResourceGroup;
+import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.server.ArcticServiceConstants;
 import org.apache.amoro.server.exception.OptimizingClosedException;
 import org.apache.amoro.server.manager.MetricManager;
@@ -42,6 +37,11 @@ import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableRuntimeMeta;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.utils.ArcticDataFiles;
+import org.apache.amoro.utils.CompatiblePropertyUtil;
+import org.apache.amoro.utils.ExceptionUtil;
+import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;

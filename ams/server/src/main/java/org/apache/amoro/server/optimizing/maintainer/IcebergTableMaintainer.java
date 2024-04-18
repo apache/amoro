@@ -20,16 +20,16 @@ package org.apache.amoro.server.optimizing.maintainer;
 
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
-import com.netease.arctic.api.CommitMetaProducer;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.PathInfo;
-import com.netease.arctic.io.SupportsFileSystemOperations;
-import com.netease.arctic.utils.TableFileUtil;
+import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.api.config.DataExpirationConfig;
 import org.apache.amoro.api.config.TableConfiguration;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.PathInfo;
+import org.apache.amoro.io.SupportsFileSystemOperations;
 import org.apache.amoro.server.ArcticServiceConstants;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.utils.TableFileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.ContentScanTask;
@@ -763,7 +763,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     DeleteFiles delete = table.newDelete();
     dataFiles.forEach(delete::deleteFile);
     delete.set(
-        com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER,
+        org.apache.amoro.op.SnapshotSummary.SNAPSHOT_PRODUCER,
         CommitMetaProducer.DATA_EXPIRATION.name());
     delete.commit();
     // expire delete files
@@ -771,7 +771,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
       RewriteFiles rewriteFiles = table.newRewrite().validateFromSnapshot(snapshotId);
       deleteFiles.forEach(rewriteFiles::deleteFile);
       rewriteFiles.set(
-          com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER,
+          org.apache.amoro.op.SnapshotSummary.SNAPSHOT_PRODUCER,
           CommitMetaProducer.DATA_EXPIRATION.name());
       rewriteFiles.commit();
     }

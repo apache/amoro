@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.persistence.mapper;
 
-import com.netease.arctic.api.CatalogMeta;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.server.persistence.converter.Map2StringConverter;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;

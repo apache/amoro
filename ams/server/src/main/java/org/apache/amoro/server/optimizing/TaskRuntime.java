@@ -18,13 +18,12 @@
 
 package org.apache.amoro.server.optimizing;
 
-import com.netease.arctic.api.OptimizingTask;
-import com.netease.arctic.api.OptimizingTaskId;
-import com.netease.arctic.api.OptimizingTaskResult;
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.optimizing.RewriteFilesOutput;
-import com.netease.arctic.utils.SerializationUtil;
+import org.apache.amoro.api.OptimizingTask;
+import org.apache.amoro.api.OptimizingTaskId;
+import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.api.StateField;
+import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.server.ArcticServiceConstants;
 import org.apache.amoro.server.dashboard.utils.OptimizingUtil;
 import org.apache.amoro.server.exception.IllegalTaskStateException;
@@ -35,6 +34,7 @@ import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.resource.OptimizerThread;
+import org.apache.amoro.utils.SerializationUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;

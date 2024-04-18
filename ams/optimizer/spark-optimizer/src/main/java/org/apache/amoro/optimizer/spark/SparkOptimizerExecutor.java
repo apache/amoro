@@ -18,14 +18,14 @@
 
 package org.apache.amoro.optimizer.spark;
 
-import com.netease.arctic.api.OptimizingTask;
-import com.netease.arctic.api.OptimizingTaskResult;
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.optimizing.TableOptimizing;
-import com.netease.arctic.utils.ExceptionUtil;
-import com.netease.arctic.utils.SerializationUtil;
+import org.apache.amoro.api.OptimizingTask;
+import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.optimizer.common.OptimizerConfig;
 import org.apache.amoro.optimizer.common.OptimizerExecutor;
+import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.optimizing.TableOptimizing;
+import org.apache.amoro.utils.ExceptionUtil;
+import org.apache.amoro.utils.SerializationUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.slf4j.Logger;

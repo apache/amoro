@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.table.executor;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.TableFormat;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
 import org.apache.amoro.server.table.TableManager;

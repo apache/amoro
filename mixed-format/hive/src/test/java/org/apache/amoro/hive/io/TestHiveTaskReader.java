@@ -18,14 +18,14 @@
 
 package org.apache.amoro.hive.io;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.io.TestTaskReader;
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
+import org.apache.amoro.io.TestTaskReader;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;

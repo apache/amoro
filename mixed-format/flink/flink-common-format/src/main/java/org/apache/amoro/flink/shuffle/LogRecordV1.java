@@ -22,11 +22,11 @@ import static org.apache.amoro.flink.shuffle.RowKindUtil.convertToFlinkRowKind;
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.log.FormatVersion;
-import com.netease.arctic.log.LogData;
-import com.netease.arctic.log.data.LogArrayData;
-import com.netease.arctic.log.data.LogMapData;
+import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.log.FormatVersion;
+import org.apache.amoro.log.LogData;
+import org.apache.amoro.log.data.LogArrayData;
+import org.apache.amoro.log.data.LogMapData;
 import org.apache.flink.table.data.ArrayData;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.GenericArrayData;

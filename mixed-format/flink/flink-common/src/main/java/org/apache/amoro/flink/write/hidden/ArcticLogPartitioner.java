@@ -21,8 +21,8 @@ package org.apache.amoro.flink.write.hidden;
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
-import com.netease.arctic.log.LogData;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
+import org.apache.amoro.log.LogData;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.table.data.RowData;
 import org.apache.kafka.common.utils.Utils;

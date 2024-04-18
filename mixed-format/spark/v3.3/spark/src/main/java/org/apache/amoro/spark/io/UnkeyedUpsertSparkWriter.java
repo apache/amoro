@@ -21,12 +21,12 @@ package org.apache.amoro.spark.io;
 import static org.apache.spark.sql.types.DataTypes.IntegerType;
 import static org.apache.spark.sql.types.DataTypes.StringType;
 
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.writer.OutputFileFactory;
-import com.netease.arctic.io.writer.SortedPosDeleteWriter;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.io.writer.OutputFileFactory;
+import org.apache.amoro.io.writer.SortedPosDeleteWriter;
 import org.apache.amoro.spark.SparkInternalRowCastWrapper;
 import org.apache.amoro.spark.SparkInternalRowWrapper;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;

@@ -18,24 +18,24 @@
 
 package org.apache.amoro.hive.io;
 
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.properties.HiveTableProperties;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseLocationKind;
-import com.netease.arctic.table.ChangeLocationKind;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.LocationKind;
-import com.netease.arctic.table.MetadataColumns;
-import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.TableFileUtil;
-import com.netease.arctic.utils.map.StructLikeCollections;
+import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.hive.io.reader.AdaptHiveGenericKeyedDataReader;
 import org.apache.amoro.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import org.apache.amoro.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import org.apache.amoro.hive.table.HiveLocationKind;
 import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.BaseLocationKind;
+import org.apache.amoro.table.ChangeLocationKind;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.LocationKind;
+import org.apache.amoro.table.MetadataColumns;
+import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.TableFileUtil;
+import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;

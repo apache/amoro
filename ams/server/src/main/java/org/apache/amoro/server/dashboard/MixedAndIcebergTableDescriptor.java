@@ -18,18 +18,11 @@
 
 package org.apache.amoro.server.dashboard;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.CommitMetaProducer;
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.ArcticDataFiles;
-import com.netease.arctic.utils.ArcticTableUtil;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CommitMetaProducer;
+import org.apache.amoro.data.DataFileType;
+import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.server.dashboard.component.reverser.DDLReverser;
 import org.apache.amoro.server.dashboard.component.reverser.IcebergTableMetaExtract;
 import org.apache.amoro.server.dashboard.model.AMSColumnInfo;
@@ -52,6 +45,13 @@ import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.utils.ArcticDataFiles;
+import org.apache.amoro.utils.ArcticTableUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.HasTableOperations;
@@ -237,7 +237,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
               snapshot -> {
                 Map<String, String> summary = snapshot.summary();
                 if (summary.containsKey(
-                    com.netease.arctic.op.SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE)) {
+                    org.apache.amoro.op.SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE)) {
                   return;
                 }
                 AmoroSnapshotsOfTable amoroSnapshotsOfTable = new AmoroSnapshotsOfTable();
@@ -259,8 +259,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                 amoroSnapshotsOfTable.setProducer(
                     PropertyUtil.propertyAsString(
                         summary,
-                        com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER,
-                        com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT));
+                        org.apache.amoro.op.SnapshotSummary.SNAPSHOT_PRODUCER,
+                        org.apache.amoro.op.SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT));
 
                 // normalize summary
                 Map<String, String> normalizeSummary = Maps.newHashMap(summary);

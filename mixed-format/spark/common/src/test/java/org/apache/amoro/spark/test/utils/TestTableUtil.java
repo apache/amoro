@@ -18,19 +18,19 @@
 
 package org.apache.amoro.spark.test.utils;
 
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.io.reader.GenericUnkeyedDataReader;
-import com.netease.arctic.io.writer.GenericTaskWriters;
-import com.netease.arctic.scan.CombinedScanTask;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.MetadataColumns;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.UnkeyedTable;
+import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.hive.io.reader.AdaptHiveGenericKeyedDataReader;
 import org.apache.amoro.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.io.reader.GenericUnkeyedDataReader;
+import org.apache.amoro.io.writer.GenericTaskWriters;
+import org.apache.amoro.scan.CombinedScanTask;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MetadataColumns;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.AppendFiles;

@@ -20,17 +20,13 @@ package org.apache.amoro.server.catalog;
 
 import static org.apache.amoro.server.table.internal.InternalTableConstants.CHANGE_STORE_TABLE_NAME_SUFFIX;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.formats.mixed.MixedTable;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.mixed.InternalMixedIcebergCatalog;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BasicKeyedTable;
-import com.netease.arctic.table.BasicUnkeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.formats.mixed.MixedTable;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.mixed.InternalMixedIcebergCatalog;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.internal.InternalMixedIcebergCreator;
@@ -38,6 +34,10 @@ import org.apache.amoro.server.table.internal.InternalMixedIcebergHandler;
 import org.apache.amoro.server.table.internal.InternalTableCreator;
 import org.apache.amoro.server.table.internal.InternalTableHandler;
 import org.apache.amoro.server.utils.InternalTableUtil;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.BasicKeyedTable;
+import org.apache.amoro.table.BasicUnkeyedTable;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -116,8 +116,8 @@ public class InternalMixedCatalogImpl extends InternalIcebergCatalogImpl {
         database,
         tableName);
 
-    com.netease.arctic.table.TableIdentifier tableIdentifier =
-        com.netease.arctic.table.TableIdentifier.of(name(), database, tableName);
+    org.apache.amoro.table.TableIdentifier tableIdentifier =
+        org.apache.amoro.table.TableIdentifier.of(name(), database, tableName);
     ArcticFileIO fileIO = InternalTableUtil.newIcebergFileIo(getMetadata());
     ArcticTable mixedIcebergTable;
 

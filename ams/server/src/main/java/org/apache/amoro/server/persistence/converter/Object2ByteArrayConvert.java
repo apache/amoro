@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server.persistence.converter;
 
-import com.netease.arctic.utils.SerializationUtil;
 import org.apache.amoro.server.ArcticManagementConf;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.utils.CompressUtil;
+import org.apache.amoro.utils.SerializationUtil;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
 

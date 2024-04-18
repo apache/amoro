@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.exception;
 
-import com.netease.arctic.api.TableIdentifier;
 import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.api.TableIdentifier;
 
 public class ObjectNotExistsException extends ArcticRuntimeException {
   public ObjectNotExistsException(String object) {

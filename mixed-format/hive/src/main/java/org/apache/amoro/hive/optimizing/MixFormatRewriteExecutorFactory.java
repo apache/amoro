@@ -18,10 +18,10 @@
 
 package org.apache.amoro.hive.optimizing;
 
-import com.netease.arctic.optimizing.OptimizingExecutor;
-import com.netease.arctic.optimizing.OptimizingExecutorFactory;
-import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.optimizing.RewriteFilesInput;
+import org.apache.amoro.optimizing.OptimizingExecutor;
+import org.apache.amoro.optimizing.OptimizingExecutorFactory;
+import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;

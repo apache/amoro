@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.persistence.mapper;
 
-import com.netease.arctic.optimizing.RewriteFilesInput;
 import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.server.optimizing.MetricsSummary;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingProcessMeta;

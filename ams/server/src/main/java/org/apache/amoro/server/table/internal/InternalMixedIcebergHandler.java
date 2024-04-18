@@ -18,16 +18,16 @@
 
 package org.apache.amoro.server.table.internal;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.api.TableMeta;
-import com.netease.arctic.op.ArcticHadoopTableOperations;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.ArcticCatalogUtil;
-import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.api.TableMeta;
+import org.apache.amoro.op.ArcticHadoopTableOperations;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.utils.InternalTableUtil;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.TableIdentifier;

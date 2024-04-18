@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.dashboard.utils;
 
-import com.netease.arctic.properties.CatalogMetaProperties;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;

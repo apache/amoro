@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.exception;
 
-import com.netease.arctic.api.TableIdentifier;
+import org.apache.amoro.api.TableIdentifier;
 
 public class AlreadyExistsException extends ArcticRuntimeException {
   public AlreadyExistsException(String object) {

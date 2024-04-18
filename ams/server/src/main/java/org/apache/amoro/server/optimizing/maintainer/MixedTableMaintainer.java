@@ -18,24 +18,24 @@
 
 package org.apache.amoro.server.optimizing.maintainer;
 
-import static com.netease.arctic.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
+import static org.apache.amoro.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
-import com.netease.arctic.IcebergFileEntry;
-import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.scan.TableEntriesScan;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseTable;
-import com.netease.arctic.table.ChangeTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.amoro.IcebergFileEntry;
 import org.apache.amoro.api.config.DataExpirationConfig;
+import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.hive.utils.TableTypeUtil;
+import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.HiveLocationUtil;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.BaseTable;
+import org.apache.amoro.table.ChangeTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.tuple.Pair;

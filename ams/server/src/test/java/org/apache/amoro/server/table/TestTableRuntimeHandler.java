@@ -18,22 +18,22 @@
 
 package org.apache.amoro.server.table;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableProperties;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.api.config.TableConfiguration;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
+import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.Pair;
 import org.junit.Assert;

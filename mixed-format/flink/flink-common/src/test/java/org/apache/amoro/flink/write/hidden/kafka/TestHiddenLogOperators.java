@@ -25,14 +25,14 @@ import static org.apache.amoro.flink.table.descriptors.ArcticValidator.ARCTIC_LO
 import static org.apache.amoro.flink.write.hidden.kafka.TestBaseLog.USER_SCHEMA;
 import static org.apache.amoro.flink.write.hidden.kafka.TestBaseLog.createLogDataDeserialization;
 
-import com.netease.arctic.log.LogDataJsonDeserialization;
-import com.netease.arctic.utils.IdGenerator;
 import org.apache.amoro.flink.read.source.log.kafka.LogKafkaSource;
 import org.apache.amoro.flink.shuffle.LogRecordV1;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
 import org.apache.amoro.flink.util.TestGlobalAggregateManager;
 import org.apache.amoro.flink.util.TestOneInputStreamOperatorIntern;
 import org.apache.amoro.flink.write.hidden.HiddenLogWriter;
+import org.apache.amoro.log.LogDataJsonDeserialization;
+import org.apache.amoro.utils.IdGenerator;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;

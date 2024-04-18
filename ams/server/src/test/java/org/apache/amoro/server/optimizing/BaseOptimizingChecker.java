@@ -18,9 +18,9 @@
 
 package org.apache.amoro.server.optimizing;
 
-import com.netease.arctic.table.TableIdentifier;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;

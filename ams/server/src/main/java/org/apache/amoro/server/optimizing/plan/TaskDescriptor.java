@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
-import com.netease.arctic.optimizing.RewriteFilesInput;
+import org.apache.amoro.optimizing.RewriteFilesInput;
 
 import java.util.Map;
 

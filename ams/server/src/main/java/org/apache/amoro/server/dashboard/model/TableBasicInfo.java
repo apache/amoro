@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.dashboard.model;
 
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.table.TableIdentifier;
 
 public class TableBasicInfo {
   TableIdentifier tableIdentifier;

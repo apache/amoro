@@ -18,12 +18,12 @@
 
 package org.apache.amoro.server.optimizing.maintainer;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.table.TableProperties;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.config.TagConfiguration;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
+import org.apache.amoro.catalog.TableTestBase;
+import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotRef;

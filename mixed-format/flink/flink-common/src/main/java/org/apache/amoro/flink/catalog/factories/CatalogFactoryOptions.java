@@ -18,12 +18,12 @@
 
 package org.apache.amoro.flink.catalog.factories;
 
-import static com.netease.arctic.properties.CatalogMetaProperties.TABLE_FORMATS;
 import static org.apache.amoro.flink.catalog.MixedCatalog.DEFAULT_DB;
+import static org.apache.amoro.properties.CatalogMetaProperties.TABLE_FORMATS;
 
-import com.netease.arctic.properties.CatalogMetaProperties;
 import org.apache.amoro.flink.catalog.FlinkUnifiedCatalog;
 import org.apache.amoro.flink.catalog.MixedCatalog;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;

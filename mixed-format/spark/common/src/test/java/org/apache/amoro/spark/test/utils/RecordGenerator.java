@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.test.utils;
 
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;

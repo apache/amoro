@@ -18,9 +18,9 @@
 
 package org.apache.amoro.server.dashboard;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.api.TableIdentifier;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;

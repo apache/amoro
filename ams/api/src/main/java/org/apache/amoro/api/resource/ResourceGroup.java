@@ -18,7 +18,7 @@
 
 package org.apache.amoro.api.resource;
 
-import com.netease.arctic.Constants;
+import org.apache.amoro.Constants;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.HashMap;

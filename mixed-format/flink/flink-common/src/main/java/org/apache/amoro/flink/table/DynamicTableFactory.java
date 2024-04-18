@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.table;
 
-import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
-import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE_DEFAULT;
+import static org.apache.amoro.table.TableProperties.ENABLE_LOG_STORE;
+import static org.apache.amoro.table.TableProperties.ENABLE_LOG_STORE_DEFAULT;
 import static org.apache.flink.api.common.RuntimeExecutionMode.BATCH;
 import static org.apache.flink.configuration.ExecutionOptions.RUNTIME_MODE;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.PROPS_BOOTSTRAP_SERVERS;
@@ -30,15 +30,15 @@ import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOp
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.SINK_PARTITIONER;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.TOPIC;
 
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.amoro.flink.InternalCatalogBuilder;
 import org.apache.amoro.flink.catalog.MixedCatalog;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
 import org.apache.amoro.flink.util.ArcticUtils;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;

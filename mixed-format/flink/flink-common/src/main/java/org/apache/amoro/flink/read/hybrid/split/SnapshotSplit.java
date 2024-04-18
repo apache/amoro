@@ -18,10 +18,10 @@
 
 package org.apache.amoro.flink.read.hybrid.split;
 
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.utils.FileScanTaskUtil;
+import org.apache.amoro.data.DataTreeNode;
+import org.apache.amoro.data.PrimaryKeyedFile;
+import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.utils.FileScanTaskUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 

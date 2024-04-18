@@ -22,18 +22,18 @@ import static org.apache.amoro.spark.mixed.SparkSQLProperties.USE_TIMESTAMP_WITH
 import static org.apache.amoro.spark.mixed.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
 import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
 
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BasicUnkeyedTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableBuilder;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.amoro.hive.utils.CatalogUtil;
 import org.apache.amoro.spark.mixed.MixedSparkCatalogBase;
 import org.apache.amoro.spark.mixed.MixedTableStoreType;
 import org.apache.amoro.spark.table.ArcticSparkChangeTable;
 import org.apache.amoro.spark.table.ArcticSparkTable;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.BasicUnkeyedTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableBuilder;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Transaction;
