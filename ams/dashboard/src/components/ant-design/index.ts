@@ -30,8 +30,6 @@ import {
   InputNumber,
   Pagination,
   Spin,
-  Divider,
-  Tabs,
   List,
   Breadcrumb,
   Checkbox,
@@ -48,8 +46,6 @@ import {
 const compontens = [
   ConfigProvider,
   Spin,
-  Divider,
-  Tabs,
   InputNumber,
   Select,
   Menu,

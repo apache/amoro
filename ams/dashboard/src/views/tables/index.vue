@@ -36,10 +36,6 @@ limitations under the License.
             <p>{{$t('tableFormat')}}: <span class="text-color">{{baseInfo.tableFormat}}</span></p>
           </div>
         </div>
-        <!-- <div class="table-edit">
-          <edit-outlined @click="editTable" class="g-mr-8" />
-          <delete-outlined @click="delTable" />
-        </div> -->
       </div>
       <div class="content">
         <a-tabs v-model:activeKey="activeKey" destroyInactiveTabPane @change="onChangeTab">
@@ -61,8 +57,10 @@ limitations under the License.
 </template>
 
 <script lang="ts">
+// TODO: replace to antv-4. After all replacements are completed, switch to automatic import.
+import { Tabs, TabPane, Divider } from 'ant-design-vue'
+
 import { defineComponent, reactive, toRefs, watch, shallowReactive, computed, onMounted, ref, nextTick } from 'vue'
-// import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import UDetails from './components/Details.vue'
 import UFiles from './components/Files.vue'
 import UOperations from './components/Operations.vue'
@@ -70,18 +68,20 @@ import USnapshots from './components/Snapshots.vue'
 import UOptimizing from './components/Optimizing.vue'
 import { useRoute, useRouter } from 'vue-router'
 import useStore from '@/store/index'
-import { IBaseDetailInfo, IMap } from '@/types/common.type'
+import { IBaseDetailInfo } from '@/types/common.type'
 
 export default defineComponent({
   name: 'Tables',
   components: {
-    // EditOutlined,
-    // DeleteOutlined,
     UDetails,
     UFiles,
     UOperations,
     USnapshots,
-    UOptimizing
+    UOptimizing,
+
+    ATabs: Tabs,
+    ATabPane: TabPane,
+    ADivider: Divider
   },
   setup() {
     const router = useRouter()
@@ -91,8 +91,6 @@ export default defineComponent({
     const detailRef = ref()
 
     const tabConfigs = shallowReactive([
-      // { key: 'Details' },
-      // { key: 'Files' },
       { key: 'Snapshots', label: 'Snapshots' },
       { key: 'Optimizing', label: 'Optimizing' },
       { key: 'Operations', label: 'Operations' }
@@ -122,17 +120,17 @@ export default defineComponent({
       state.detailLoaded = true
       state.baseInfo = { ...baseInfo }
     }
-    const onChangeTab = (key: string) => {
+
+    const onChangeTab = (key: string | number) => {
       const query = { ...route.query }
-      query.tab = key
+      query.tab = key.toString()
       router.replace({ query: { ...query } })
     }
 
-    const editTable = () => {}
-    const delTable = () => {}
     const hideTablesMenu = () => {
       store.updateTablesMenu(false)
     }
+
     const goBack = () => {
       state.isSecondaryNav = false
       router.back()
@@ -172,8 +170,6 @@ export default defineComponent({
       tabConfigs,
       store,
       isIceberg,
-      editTable,
-      delTable,
       setBaseDetailInfo,
       hideTablesMenu,
       goBack,
@@ -212,10 +208,6 @@ export default defineComponent({
     padding: 12px 24px 0 24px;
     .text-color {
       color: #7CB305;
-    }
-    .ant-divider-vertical {
-      height: 1.2em;
-      margin: 0 12px;
     }
   }
   .table-edit {

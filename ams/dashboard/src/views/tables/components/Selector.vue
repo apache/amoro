@@ -84,6 +84,9 @@ limitations under the License.
 </template>
 
 <script lang="ts" setup>
+// TODO: replace to antv-4. After all replacements are completed, switch to automatic import.
+import { Tabs as ATabs, TabPane as ATabPane } from 'ant-design-vue'
+
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { CheckOutlined, DownOutlined } from '@ant-design/icons-vue'
