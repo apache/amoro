@@ -129,7 +129,7 @@ public class ArcticSparkTable
     ImmutableMap.Builder<String, String> propsBuilder = ImmutableMap.builder();
 
     if (!arcticTable.properties().containsKey(TableProperties.BASE_FILE_FORMAT)) {
-      propsBuilder.put("base.write.format", TableProperties.BASE_FILE_FORMAT_DEFAULT);
+      propsBuilder.put(TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT);
     }
 
     if (!arcticTable.properties().containsKey(TableProperties.DELTA_FILE_FORMAT)) {
