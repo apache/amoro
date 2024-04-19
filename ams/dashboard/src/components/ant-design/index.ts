@@ -18,7 +18,6 @@
 
 import { App } from 'vue'
 import {
-  Select,
   Menu,
   Button,
   Table,
@@ -45,7 +44,6 @@ import {
 const compontens = [
   Spin,
   InputNumber,
-  Select,
   Menu,
   Button,
   Tooltip,
