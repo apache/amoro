@@ -85,6 +85,8 @@ import { useRouter } from 'vue-router'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import useStore from '@/store'
 
+import { Button as AButton } from 'ant-design-vue'
+
 interface FormState {
   username: string;
   password: string;

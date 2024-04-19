@@ -72,7 +72,7 @@ limitations under the License.
 
 <script lang="ts">
 // TODO: replace to antv-4. After all replacements are completed, switch to automatic import.
-import { Tabs, TabPane } from 'ant-design-vue'
+import { Tabs, TabPane, Button as AButton } from 'ant-design-vue'
 
 import { ILableAndValue, IIOptimizeGroupItem } from '@/types/common.type'
 import {
@@ -99,7 +99,8 @@ export default defineComponent({
     TableList,
 
     ATabs: Tabs,
-    ATabPane: TabPane
+    ATabPane: TabPane,
+    AButton
   },
   setup() {
     const { t } = useI18n()

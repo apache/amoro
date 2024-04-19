@@ -18,8 +18,6 @@
 
 import { App } from 'vue'
 import {
-  Menu,
-  Button,
   Table,
   Tooltip,
   Input,
@@ -42,8 +40,6 @@ import {
 
 const compontens = [
   InputNumber,
-  Menu,
-  Button,
   Tooltip,
   Table,
   Input,

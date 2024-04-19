@@ -138,6 +138,8 @@ import { useRoute } from 'vue-router'
 import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
 
+import { Button as AButton } from 'ant-design-vue'
+
 const hasBreadcrumb = ref<boolean>(false)
 
 // const statusMap = { RUNNING: 'RUNNING', CLOSED: 'CLOSED', SUCCESS: 'SUCCESS', FAILED: 'FAILED' }

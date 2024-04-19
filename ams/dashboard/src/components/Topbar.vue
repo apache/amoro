@@ -45,6 +45,8 @@ import useStore from '@/store'
 import { getVersionInfo } from '@/services/global.service'
 import loginService from '@/services/login.service'
 
+import { Button as AButton } from 'ant-design-vue'
+
 interface IVersion {
   version: string
   commitTime: string
