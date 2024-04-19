@@ -72,7 +72,7 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
 
   @Before
   public void initTableFile() {
-    mixedTable = getArcticTable();
+    mixedTable = getMixedTable();
     spec = mixedTable.spec();
     partitionData = GenericRecord.create(spec.schema());
     partitionData.set(0, 1);
@@ -95,7 +95,7 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
             maps.put(deleteFile.path().toString(), deleteFile);
           }
         }
-        for (MixedFileScanTask task : keyedTableScanTask.arcticEquityDeletes()) {
+        for (MixedFileScanTask task : keyedTableScanTask.mixedEquityDeletes()) {
           maps.put(task.file().path().toString(), task.file());
         }
       }
@@ -134,7 +134,7 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
     Mockito.when(taskRuntime.getOutput()).thenReturn(output);
     KeyedTableCommit commit =
         new KeyedTableCommit(
-            getArcticTable(),
+            getMixedTable(),
             Collections.singletonList(taskRuntime),
             Optional.ofNullable(mixedTable.asKeyedTable().baseTable().currentSnapshot())
                 .map(Snapshot::snapshotId)

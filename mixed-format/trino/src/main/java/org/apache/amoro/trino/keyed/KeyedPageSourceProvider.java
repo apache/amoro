@@ -75,7 +75,7 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         columns.stream().map(IcebergColumnHandle.class::cast).collect(Collectors.toList());
     KeyedTableScanTask keyedTableScanTask = keyedConnectorSplit.getKeyedTableScanTask();
     List<PrimaryKeyedFile> equDeleteFiles =
-        keyedTableScanTask.arcticEquityDeletes().stream()
+        keyedTableScanTask.mixedEquityDeletes().stream()
             .map(MixedFileScanTask::file)
             .collect(Collectors.toList());
     Schema tableSchema =

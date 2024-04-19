@@ -94,25 +94,25 @@ public class TestSyncHiveMeta extends TableTestBase {
     Table hiveTable =
         TEST_HMS
             .getHiveClient()
-            .getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
+            .getTable(getMixedTable().id().getDatabase(), getMixedTable().id().getTableName());
     hiveTable.getSd().getCols().add(new FieldSchema("add_column", "bigint", "add column"));
     TEST_HMS
         .getHiveClient()
         .alter_table(
-            getArcticTable().id().getDatabase(), getArcticTable().id().getTableName(), hiveTable);
+            getMixedTable().id().getDatabase(), getMixedTable().id().getTableName(), hiveTable);
     hiveTable =
         TEST_HMS
             .getHiveClient()
-            .getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
-    getArcticTable().refresh();
+            .getTable(getMixedTable().id().getDatabase(), getMixedTable().id().getTableName());
+    getMixedTable().refresh();
     Assert.assertEquals(
         hiveTable.getSd().getCols(),
-        HiveSchemaUtil.hiveTableFields(getArcticTable().schema(), getArcticTable().spec()));
+        HiveSchemaUtil.hiveTableFields(getMixedTable().schema(), getMixedTable().spec()));
   }
 
   @Test
   public void testSyncHiveDataChange() throws TException, IOException, InterruptedException {
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE, "true")
         .commit();
@@ -121,8 +121,8 @@ public class TestSyncHiveMeta extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
 
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
@@ -137,31 +137,31 @@ public class TestSyncHiveMeta extends TableTestBase {
           TEST_HMS
               .getHiveClient()
               .getPartition(
-                  getArcticTable().id().getDatabase(),
-                  getArcticTable().id().getTableName(),
+                  getMixedTable().id().getDatabase(),
+                  getMixedTable().id().getTableName(),
                   Lists.newArrayList("2022-01-01"));
       TimeUnit.SECONDS.sleep(1);
       partition.getParameters().clear();
       TEST_HMS
           .getHiveClient()
           .alter_partition(
-              getArcticTable().id().getDatabase(),
-              getArcticTable().id().getTableName(),
+              getMixedTable().id().getDatabase(),
+              getMixedTable().id().getTableName(),
               partition,
               null);
     } else {
       Table hiveTable =
           TEST_HMS
               .getHiveClient()
-              .getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
+              .getTable(getMixedTable().id().getDatabase(), getMixedTable().id().getTableName());
       hiveTable.putToParameters("transient_lastDdlTime", "0");
       TEST_HMS
           .getHiveClient()
           .alter_table(
-              getArcticTable().id().getDatabase(), getArcticTable().id().getTableName(), hiveTable);
+              getMixedTable().id().getDatabase(), getMixedTable().id().getTableName(), hiveTable);
     }
 
-    getArcticTable().refresh();
+    getMixedTable().refresh();
     Assert.assertEquals(
         Sets.newHashSet(dataFilePath + ".bak"),
         listTableFiles(baseStore).stream().map(DataFile::path).collect(Collectors.toSet()));
@@ -170,7 +170,7 @@ public class TestSyncHiveMeta extends TableTestBase {
   @Test
   public void testSyncHivePartitionChange() throws TException {
     Assume.assumeTrue(isPartitionedTable());
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE, "true")
         .commit();
@@ -178,8 +178,8 @@ public class TestSyncHiveMeta extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
@@ -188,13 +188,13 @@ public class TestSyncHiveMeta extends TableTestBase {
     Table hiveTable =
         TEST_HMS
             .getHiveClient()
-            .getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
+            .getTable(getMixedTable().id().getDatabase(), getMixedTable().id().getTableName());
 
     // test add new hive partition
     insertRecords.clear();
     insertRecords.add(tableTestHelper().generateTestRecord(3, "lily", 0, "2022-01-03T12:00:00"));
     List<DataFile> newFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable())
+        HiveDataTestHelpers.writerOf(getMixedTable())
             .transactionId(1L)
             .consistentWriteEnabled(false)
             .writeHive(insertRecords);
@@ -206,9 +206,9 @@ public class TestSyncHiveMeta extends TableTestBase {
             TableFileUtil.getFileDir(newFiles.get(0).path().toString()),
             newFiles,
             (int) (System.currentTimeMillis() / 1000));
-    newPartition.getParameters().remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
+    newPartition.getParameters().remove(HiveTableProperties.MIXED_TABLE_FLAG);
     TEST_HMS.getHiveClient().add_partition(newPartition);
-    getArcticTable().refresh();
+    getMixedTable().refresh();
 
     List<DataFile> listTableFiles = listTableFiles(baseStore);
     Assert.assertEquals(

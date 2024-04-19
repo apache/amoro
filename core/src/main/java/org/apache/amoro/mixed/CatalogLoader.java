@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/** Catalogs, create catalog from arctic metastore thrift url. */
+/** Catalogs, create mixed-format catalog from metastore thrift url. */
 public class CatalogLoader {
 
   public static final String INTERNAL_CATALOG_IMPL = InternalMixedIcebergCatalog.class.getName();
@@ -51,9 +51,9 @@ public class CatalogLoader {
   /**
    * Entrypoint for loading Catalog.
    *
-   * @param catalogUrl arctic catalog url, thrift://arctic-ams-host:port/catalog_name
+   * @param catalogUrl mixed-format catalog url, thrift://ams-host:port/catalog_name
    * @param properties client side catalog configs
-   * @return arctic catalog object
+   * @return mixed-format catalog object
    */
   public static MixedFormatCatalog load(String catalogUrl, Map<String, String> properties) {
     AmsThriftUrl url = AmsThriftUrl.parse(catalogUrl, Constants.THRIFT_TABLE_SERVICE_NAME);
@@ -67,8 +67,8 @@ public class CatalogLoader {
   /**
    * Entrypoint for loading catalog.
    *
-   * @param catalogUrl arctic catalog url, thrift://arctic-ams-host:port/catalog_name
-   * @return arctic catalog object
+   * @param catalogUrl mixed-format catalog url, thrift://ams-host:port/catalog_name
+   * @return mixed-format catalog object
    */
   public static MixedFormatCatalog load(String catalogUrl) {
     return load(catalogUrl, Maps.newHashMap());
@@ -123,7 +123,7 @@ public class CatalogLoader {
   }
 
   /**
-   * Load catalog meta from arctic metastore.
+   * Load catalog meta from metastore.
    *
    * @param catalogUrl - catalog url
    * @return catalog meta
@@ -142,9 +142,9 @@ public class CatalogLoader {
   }
 
   /**
-   * Show catalog list in arctic metastore.
+   * Show catalog list in metastore.
    *
-   * @param metastoreUrl url of arctic metastore
+   * @param metastoreUrl url of ams
    * @return catalog name list
    */
   public static List<String> catalogs(String metastoreUrl) {
@@ -159,10 +159,10 @@ public class CatalogLoader {
   /**
    * Entrypoint for loading catalog
    *
-   * @param metaStoreUrl arctic metastore url
-   * @param catalogName arctic catalog name
+   * @param metaStoreUrl mixed-format metastore url
+   * @param catalogName mixed-format catalog name
    * @param properties client side catalog configs
-   * @return arctic catalog object
+   * @return mixed-format catalog object
    */
   private static MixedFormatCatalog loadCatalog(
       String metaStoreUrl, String catalogName, Map<String, String> properties) {

@@ -59,7 +59,7 @@ public class TableFileUtil {
   /**
    * Try to recursiveDelete the empty directory
    *
-   * @param io arcticTableFileIo
+   * @param io mixed-format file io
    * @param directoryPath directory location
    * @param exclude the directory will not be deleted
    */
@@ -87,7 +87,7 @@ public class TableFileUtil {
   /**
    * Helper to delete files. Bulk deletion is used if possible.
    *
-   * @param io arctic file io
+   * @param io mixed-format file io
    * @param files files to delete
    * @param workPool executor pool. Only applicable for non-bulk FileIO
    * @return deleted file count
@@ -139,7 +139,7 @@ public class TableFileUtil {
   /**
    * Helper to delete files sequentially
    *
-   * @param io arctic file io
+   * @param io mixed-format file io
    * @param files to deleted files
    * @return deleted file count
    */
@@ -150,7 +150,7 @@ public class TableFileUtil {
   /**
    * Helper to delete files in parallel
    *
-   * @param io arctic file io
+   * @param io mixed-format file io
    * @param files to deleted files
    * @param workPool executor pool
    * @return deleted file count

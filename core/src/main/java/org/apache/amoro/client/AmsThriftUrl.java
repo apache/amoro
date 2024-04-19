@@ -66,8 +66,8 @@ public class AmsThriftUrl {
 
   /**
    * parse thrift url, now support thrift://host:port/{catalogName} and
-   * zookeeper://host:port/{cluster}/{catalogName} . parse to ArcticThriftUrl that contains
-   * properties schema, host, port, catalogName, socketTimeout, url.
+   * zookeeper://host:port/{cluster}/{catalogName} . parse to AmsThriftUrl that contains properties
+   * schema, host, port, catalogName, socketTimeout, url.
    *
    * @param url - thrift url
    * @return -

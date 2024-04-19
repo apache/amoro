@@ -61,9 +61,9 @@ public class TestStatisticsFileUtil extends TableTestBase {
   @Test
   public void testWriteAndReadPuffin() {
     UnkeyedTable table =
-        getArcticTable().isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
+        getMixedTable().isKeyedTable()
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
     table
         .newAppend()
         .set(MixedTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true")
@@ -127,7 +127,7 @@ public class TestStatisticsFileUtil extends TableTestBase {
   }
 
   private StructLikeMap<Long> buildPartitionOptimizedSequence() {
-    PartitionSpec spec = getArcticTable().spec();
+    PartitionSpec spec = getMixedTable().spec();
     StructLikeMap<Long> result = StructLikeMap.create(spec.partitionType());
     if (spec.isUnpartitioned()) {
       result.put(TablePropertyUtil.EMPTY_STRUCT, 1L);
@@ -141,7 +141,7 @@ public class TestStatisticsFileUtil extends TableTestBase {
   }
 
   private StructLikeMap<Long> buildPartitionOptimizedTime() {
-    PartitionSpec spec = getArcticTable().spec();
+    PartitionSpec spec = getMixedTable().spec();
     StructLikeMap<Long> result = StructLikeMap.create(spec.partitionType());
     if (spec.isUnpartitioned()) {
       result.put(TablePropertyUtil.EMPTY_STRUCT, 1000L);

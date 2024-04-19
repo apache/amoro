@@ -94,7 +94,7 @@ public class NodeFileScanTask implements KeyedTableScanTask {
   }
 
   @Override
-  public List<MixedFileScanTask> arcticEquityDeletes() {
+  public List<MixedFileScanTask> mixedEquityDeletes() {
     return deleteFiles;
   }
 

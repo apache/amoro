@@ -41,17 +41,17 @@ class BasicTableTrashManager implements TableTrashManager {
   private static final Logger LOG = LoggerFactory.getLogger(BasicTableTrashManager.class);
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
   private final TableIdentifier tableIdentifier;
-  private final MixedHadoopFileIO arcticFileIO;
+  private final MixedHadoopFileIO mixedFileIO;
   private final String tableRootLocation;
   private final String trashLocation;
 
   BasicTableTrashManager(
       TableIdentifier tableIdentifier,
-      MixedHadoopFileIO arcticFileIO,
+      MixedHadoopFileIO mixedFileIO,
       String tableRootLocation,
       String trashLocation) {
     this.tableIdentifier = tableIdentifier;
-    this.arcticFileIO = arcticFileIO;
+    this.mixedFileIO = mixedFileIO;
     this.tableRootLocation = tableRootLocation;
     this.trashLocation = trashLocation;
   }
@@ -102,8 +102,8 @@ class BasicTableTrashManager implements TableTrashManager {
   public void moveFileToTrash(String path) {
     try {
       Preconditions.checkArgument(
-          !arcticFileIO.supportFileSystemOperations()
-              || !arcticFileIO.asFileSystemIO().isDirectory(path),
+          !mixedFileIO.supportFileSystemOperations()
+              || !mixedFileIO.asFileSystemIO().isDirectory(path),
           "should not move a directory to trash " + path);
       String targetFileLocation =
           generateFileLocationInTrash(
@@ -111,13 +111,13 @@ class BasicTableTrashManager implements TableTrashManager {
               this.trashLocation,
               System.currentTimeMillis());
       String targetFileDir = TableFileUtil.getFileDir(targetFileLocation);
-      if (!arcticFileIO.exists(targetFileDir)) {
-        arcticFileIO.makeDirectories(targetFileDir);
+      if (!mixedFileIO.exists(targetFileDir)) {
+        mixedFileIO.makeDirectories(targetFileDir);
       }
-      if (arcticFileIO.exists(targetFileLocation)) {
-        arcticFileIO.deleteFile(targetFileLocation);
+      if (mixedFileIO.exists(targetFileLocation)) {
+        mixedFileIO.deleteFile(targetFileLocation);
       }
-      arcticFileIO.rename(path, targetFileLocation);
+      mixedFileIO.rename(path, targetFileLocation);
     } catch (Exception e) {
       LOG.error("{} failed to move file to trash, {}", tableIdentifier, path, e);
       throw e;
@@ -136,7 +136,7 @@ class BasicTableTrashManager implements TableTrashManager {
       return false;
     }
     try {
-      arcticFileIO.rename(fileFromTrash.get(), path);
+      mixedFileIO.rename(fileFromTrash.get(), path);
       return true;
     } catch (Exception e) {
       LOG.info("{} failed to restore file, {}", tableIdentifier, path, e);
@@ -147,10 +147,10 @@ class BasicTableTrashManager implements TableTrashManager {
   @Override
   public void cleanFiles(LocalDate expirationDate) {
     LOG.info("{} start clean files with expiration date {}", tableIdentifier, expirationDate);
-    if (!arcticFileIO.exists(this.trashLocation)) {
+    if (!mixedFileIO.exists(this.trashLocation)) {
       return;
     }
-    Iterable<PathInfo> datePaths = arcticFileIO.listDirectory(this.trashLocation);
+    Iterable<PathInfo> datePaths = mixedFileIO.listDirectory(this.trashLocation);
 
     for (FileInfo datePath : datePaths) {
       String dateName = TableFileUtil.getFileName(datePath.location());
@@ -162,7 +162,7 @@ class BasicTableTrashManager implements TableTrashManager {
         continue;
       }
       if (localDate.isBefore(expirationDate)) {
-        arcticFileIO.deletePrefix(datePath.location());
+        mixedFileIO.deletePrefix(datePath.location());
         LOG.info(
             "{} delete files in trash for date {} success, {}",
             tableIdentifier,
@@ -179,18 +179,18 @@ class BasicTableTrashManager implements TableTrashManager {
   }
 
   private Optional<String> findFileFromTrash(String path) {
-    if (!arcticFileIO.exists(this.trashLocation)) {
+    if (!mixedFileIO.exists(this.trashLocation)) {
       return Optional.empty();
     }
     String targetRelationLocationInTable = getRelativeFileLocation(this.tableRootLocation, path);
 
-    Iterable<PathInfo> paths = arcticFileIO.listDirectory(this.trashLocation);
+    Iterable<PathInfo> paths = mixedFileIO.listDirectory(this.trashLocation);
 
     List<String> targetLocationsInTrash = Lists.newArrayList();
     for (PathInfo p : paths) {
       String fullLocation = p.location() + "/" + targetRelationLocationInTable;
-      if (arcticFileIO.exists(fullLocation)) {
-        if (!arcticFileIO.isDirectory(fullLocation)) {
+      if (mixedFileIO.exists(fullLocation)) {
+        if (!mixedFileIO.isDirectory(fullLocation)) {
           targetLocationsInTrash.add(fullLocation);
         }
       }

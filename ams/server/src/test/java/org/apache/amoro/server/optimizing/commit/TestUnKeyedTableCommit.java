@@ -79,7 +79,7 @@ public class TestUnKeyedTableCommit extends TableTestBase {
 
   @Before
   public void initTableFile() {
-    mixedTable = getArcticTable();
+    mixedTable = getMixedTable();
     spec = mixedTable.spec();
     partitionData = GenericRecord.create(spec.schema());
     partitionData.set(0, 1);
@@ -288,7 +288,7 @@ public class TestUnKeyedTableCommit extends TableTestBase {
             Optional.ofNullable(mixedTable.asUnkeyedTable().currentSnapshot())
                 .map(Snapshot::snapshotId)
                 .orElse(null),
-            getArcticTable(),
+            getMixedTable(),
             Collections.singletonList(taskRuntime));
     commit.commit();
   }

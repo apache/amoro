@@ -114,7 +114,7 @@ public class OptimizingEvaluator {
         tableFileScanHelper.scan()) {
       for (TableFileScanHelper.FileScanResult fileScanResult : results) {
         PartitionSpec partitionSpec =
-            MixedTableUtil.getArcticTablePartitionSpecById(
+            MixedTableUtil.getMixedTablePartitionSpecById(
                 mixedTable, fileScanResult.file().specId());
         StructLike partition = fileScanResult.file().partition();
         String partitionPath = partitionSpec.partitionToPath(partition);

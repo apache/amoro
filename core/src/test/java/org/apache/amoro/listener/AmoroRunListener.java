@@ -29,8 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.PriorityQueue;
 
-public class ArcticRunListener extends RunListener {
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticRunListener.class);
+public class AmoroRunListener extends RunListener {
+  private static final Logger LOG = LoggerFactory.getLogger(AmoroRunListener.class);
   private long startTime;
   private long singleTestStartTime;
 
@@ -102,7 +102,7 @@ public class ArcticRunListener extends RunListener {
     }
 
     @Override
-    public int compareTo(ArcticRunListener.TestCase that) {
+    public int compareTo(AmoroRunListener.TestCase that) {
       Assert.assertNotNull(that);
       return that.cost.compareTo(cost);
     }

@@ -19,8 +19,8 @@
 package org.apache.amoro.mixed;
 
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.io.ArcticFileIOs;
 import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.MixedFileIOs;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.BasicKeyedTable;
@@ -102,23 +102,20 @@ public class MixedTables {
    * @return mixed format table instance.
    */
   public MixedTable loadTable(Table base, org.apache.amoro.table.TableIdentifier tableIdentifier) {
-    MixedFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
+    MixedFileIO io = MixedFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
     PrimaryKeySpec keySpec =
         TablePropertyUtil.parsePrimaryKeySpec(base.schema(), base.properties());
     if (!keySpec.primaryKeyExisted()) {
       return new BasicUnkeyedTable(
-          tableIdentifier, useArcticTableOperation(base, io), io, catalogProperties);
+          tableIdentifier, useMixedTableOperation(base, io), io, catalogProperties);
     }
     Table changeIcebergTable = loadChangeStore(base);
     BaseTable baseStore =
         new BasicKeyedTable.BaseInternalTable(
-            tableIdentifier, useArcticTableOperation(base, io), io, catalogProperties);
+            tableIdentifier, useMixedTableOperation(base, io), io, catalogProperties);
     ChangeTable changeStore =
         new BasicKeyedTable.ChangeInternalTable(
-            tableIdentifier,
-            useArcticTableOperation(changeIcebergTable, io),
-            io,
-            catalogProperties);
+            tableIdentifier, useMixedTableOperation(changeIcebergTable, io), io, catalogProperties);
     return new BasicKeyedTable(keySpec, baseStore, changeStore);
   }
 
@@ -143,10 +140,10 @@ public class MixedTables {
     TableIdentifier changeIdentifier = generateChangeStoreIdentifier(baseIdentifier);
 
     Table base = createBaseStore(baseIdentifier, schema, partitionSpec, keySpec, properties);
-    MixedFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
+    MixedFileIO io = MixedFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
     if (!keySpec.primaryKeyExisted()) {
       return new BasicUnkeyedTable(
-          identifier, useArcticTableOperation(base, io), io, catalogProperties);
+          identifier, useMixedTableOperation(base, io), io, catalogProperties);
     }
 
     Table change =
@@ -154,10 +151,10 @@ public class MixedTables {
             baseIdentifier, changeIdentifier, schema, partitionSpec, keySpec, properties);
     BaseTable baseStore =
         new BasicKeyedTable.BaseInternalTable(
-            identifier, useArcticTableOperation(base, io), io, catalogProperties);
+            identifier, useMixedTableOperation(base, io), io, catalogProperties);
     ChangeTable changeStore =
         new BasicKeyedTable.ChangeInternalTable(
-            identifier, useArcticTableOperation(change, io), io, catalogProperties);
+            identifier, useMixedTableOperation(change, io), io, catalogProperties);
     return new BasicKeyedTable(keySpec, baseStore, changeStore);
   }
 
@@ -272,8 +269,8 @@ public class MixedTables {
     return tableMetaStore.doAs(() -> icebergCatalog.tableExists(identifier));
   }
 
-  private Table useArcticTableOperation(Table table, MixedFileIO io) {
-    return MixedCatalogUtil.useArcticTableOperations(
+  private Table useMixedTableOperation(Table table, MixedFileIO io) {
+    return MixedCatalogUtil.useMixedTableOperations(
         table, table.location(), io, tableMetaStore.getConfiguration());
   }
 }

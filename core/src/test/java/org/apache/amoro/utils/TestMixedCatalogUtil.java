@@ -28,7 +28,7 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TestArcticCatalogUtil {
+public class TestMixedCatalogUtil {
   /**
    * when log-store flag is on , fill up with default related props and other user-defined prop
    * should be keep

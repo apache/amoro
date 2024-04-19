@@ -208,7 +208,7 @@ public class TestTableUtil {
                                   baseDeleteFiles.addAll(fileTask.deletes());
                                 });
                         t.insertTasks().forEach(fileTask -> insertFiles.add(fileTask.file()));
-                        t.arcticEquityDeletes()
+                        t.mixedEquityDeletes()
                             .forEach(fileTask -> deleteFiles.add(fileTask.file()));
                       }));
       return new TableFiles(baseDataFiles, baseDeleteFiles, insertFiles, deleteFiles);

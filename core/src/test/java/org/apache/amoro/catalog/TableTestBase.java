@@ -95,7 +95,7 @@ public abstract class TableTestBase extends CatalogTestBase {
     }
   }
 
-  protected MixedTable getArcticTable() {
+  protected MixedTable getMixedTable() {
     return mixedTable;
   }
 

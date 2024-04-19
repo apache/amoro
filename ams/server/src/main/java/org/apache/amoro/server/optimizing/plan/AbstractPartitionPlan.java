@@ -288,7 +288,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
               rewriteDeleteFiles.toArray(new ContentFile[0]),
               tableObject);
       PartitionSpec spec =
-          MixedTableUtil.getArcticTablePartitionSpecById(tableObject, partition.first());
+          MixedTableUtil.getMixedTablePartitionSpecById(tableObject, partition.first());
       String partitionPath = spec.partitionToPath(partition.second());
       return new TaskDescriptor(
           tableRuntime.getTableIdentifier().getId(),

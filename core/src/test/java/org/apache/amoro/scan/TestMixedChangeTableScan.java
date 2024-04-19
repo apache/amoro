@@ -35,7 +35,7 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
   @Test
   public void testIncrementalScan() throws IOException {
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newScan();
+        getMixedTable().asKeyedTable().changeTable().newScan();
     try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
       assertFilesSequence(tasks, 3, 1, 2);
     }
@@ -43,13 +43,12 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
 
   @Test
   public void testIncrementalScanFromPartitionSequence() throws IOException {
-    StructLikeMap<Long> fromSequence =
-        StructLikeMap.create(getArcticTable().spec().partitionType());
+    StructLikeMap<Long> fromSequence = StructLikeMap.create(getMixedTable().spec().partitionType());
     StructLike partitionData =
-        MixedDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
+        MixedDataFiles.data(getMixedTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence);
+        getMixedTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence);
     try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
       assertFilesSequence(tasks, 1, 2, 2);
     }
@@ -58,7 +57,7 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
   @Test
   public void testIncrementalScanFromSequence() throws IOException {
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(1L);
+        getMixedTable().asKeyedTable().changeTable().newScan().fromSequence(1L);
     try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
       assertFilesSequence(tasks, 1, 2, 2);
     }
@@ -67,7 +66,7 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
   @Test
   public void testIncrementalScanTo() throws IOException {
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newScan().toSequence(1);
+        getMixedTable().asKeyedTable().changeTable().newScan().toSequence(1);
     try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
       assertFilesSequence(tasks, 2, 1, 1);
     }
@@ -75,13 +74,12 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
 
   @Test
   public void testIncrementalScanFromTo() throws IOException {
-    StructLikeMap<Long> fromSequence =
-        StructLikeMap.create(getArcticTable().spec().partitionType());
+    StructLikeMap<Long> fromSequence = StructLikeMap.create(getMixedTable().spec().partitionType());
     StructLike partitionData =
-        MixedDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
+        MixedDataFiles.data(getMixedTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable()
+        getMixedTable()
             .asKeyedTable()
             .changeTable()
             .newScan()

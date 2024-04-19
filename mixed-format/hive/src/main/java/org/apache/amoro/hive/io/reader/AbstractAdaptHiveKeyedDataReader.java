@@ -109,7 +109,7 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
   }
 
   @Override
-  protected MixedDeleteFilter<T> createArcticDeleteFilter(
+  protected MixedDeleteFilter<T> createMixedDeleteFilter(
       KeyedTableScanTask keyedTableScanTask,
       Schema tableSchema,
       Schema projectedSchema,
@@ -200,7 +200,7 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
     }
 
     @Override
-    protected MixedFileIO getArcticFileIo() {
+    protected MixedFileIO getMixedFileIo() {
       return fileIO;
     }
   }

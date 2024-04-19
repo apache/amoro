@@ -28,7 +28,7 @@ import java.util.List;
 /** Addition metadata columns for {@link MixedTable} */
 public class MetadataColumns {
 
-  // IDs Integer.MAX_VALUE - (1001-9999) are used for arctic metadata columns
+  // IDs Integer.MAX_VALUE - (1001-9999) are used for mixed-format metadata columns
   public static final String TRANSACTION_ID_FILED_NAME = "_transaction_id";
   public static final int TRANSACTION_ID_FILED_ID = Integer.MAX_VALUE - 1001;
   public static final NestedField TRANSACTION_ID_FILED =

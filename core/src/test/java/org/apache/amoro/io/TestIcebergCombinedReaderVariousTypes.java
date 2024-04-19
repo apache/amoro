@@ -110,7 +110,7 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
 
   @Test
   public void valid() throws IOException {
-    UnkeyedTable table = getArcticTable().asUnkeyedTable();
+    UnkeyedTable table = getMixedTable().asUnkeyedTable();
     Record record = RandomGenericData.generate(table.schema(), 1, 1).get(0);
 
     List<RecordWithAction> list = new ArrayList<>();
@@ -154,7 +154,7 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
 
   @Test
   public void readDataEnableFilterEqDelete() throws IOException {
-    UnkeyedTable table = getArcticTable().asUnkeyedTable();
+    UnkeyedTable table = getMixedTable().asUnkeyedTable();
     List<Record> records = RandomGenericData.generate(table.schema(), 50, 1);
     List<Record> deleteRecords = RandomGenericData.generate(table.schema(), 200, 1);
 

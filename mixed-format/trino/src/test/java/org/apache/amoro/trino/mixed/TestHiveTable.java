@@ -18,13 +18,13 @@
 
 package org.apache.amoro.trino.mixed;
 
-import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.MockAmoroManagementServer.TEST_CATALOG_NAME;
 import static org.apache.amoro.table.TableProperties.BASE_FILE_FORMAT;
 import static org.apache.amoro.table.TableProperties.CHANGE_FILE_FORMAT;
 import static org.apache.amoro.table.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.apache.amoro.MockArcticMetastoreServer;
+import org.apache.amoro.MockAmoroManagementServer;
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.BaseLocationKind;
@@ -143,7 +143,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
 
   @Override
   protected QueryRunner createQueryRunner() throws Exception {
-    AMS = MockArcticMetastoreServer.getInstance();
+    AMS = MockAmoroManagementServer.getInstance();
     startMetastore();
     setupTables();
     initData();

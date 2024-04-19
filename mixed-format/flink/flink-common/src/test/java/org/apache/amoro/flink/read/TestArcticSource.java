@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.read;
 
-import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static org.apache.amoro.MockArcticMetastoreServer.TEST_DB_NAME;
+import static org.apache.amoro.MockAmoroManagementServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.MockAmoroManagementServer.TEST_DB_NAME;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static org.apache.flink.util.Preconditions.checkArgument;

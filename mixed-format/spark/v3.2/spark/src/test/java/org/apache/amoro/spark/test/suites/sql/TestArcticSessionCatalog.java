@@ -152,8 +152,8 @@ public class TestArcticSessionCatalog extends MixedTableTestBase {
     createViewSource(SCHEMA, source);
     Table hiveTable = loadHiveTable();
     Map<String, String> properties = Maps.newHashMap(hiveTable.getParameters());
-    properties.remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
-    properties.put(HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY, "true");
+    properties.remove(HiveTableProperties.MIXED_TABLE_FLAG);
+    properties.put(HiveTableProperties.AMORO_TABLE_FLAG_LEGACY, "true");
     hiveTable.setParameters(properties);
     try {
       CONTEXT

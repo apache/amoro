@@ -324,7 +324,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         commitId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
-                        MixedTableUtil.getArcticTablePartitionSpecById(mixedTable, f.specId())
+                        MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
                             .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),
@@ -338,7 +338,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         commitId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
-                        MixedTableUtil.getArcticTablePartitionSpecById(mixedTable, f.specId())
+                        MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
                             .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),
@@ -352,7 +352,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         commitId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
-                        MixedTableUtil.getArcticTablePartitionSpecById(mixedTable, f.specId())
+                        MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
                             .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),
@@ -366,7 +366,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         commitId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
-                        MixedTableUtil.getArcticTablePartitionSpecById(mixedTable, f.specId())
+                        MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
                             .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),

@@ -63,8 +63,8 @@ public class TestUnkeyedExpressionUtil extends TableTestBase {
           Types.NestedField.optional(4, "op_time", Types.TimestampType.withoutZone()));
 
   @Override
-  protected MixedTable getArcticTable() {
-    return super.getArcticTable();
+  protected MixedTable getMixedTable() {
+    return super.getMixedTable();
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
@@ -96,8 +96,8 @@ public class TestUnkeyedExpressionUtil extends TableTestBase {
 
   @Test
   public void testUnkeyedConvertPartitionStructLikeToDataFilter() throws IOException {
-    Assume.assumeTrue(getArcticTable().isUnkeyedTable());
-    UnkeyedTable table = getArcticTable().asUnkeyedTable();
+    Assume.assumeTrue(getMixedTable().isUnkeyedTable());
+    UnkeyedTable table = getMixedTable().asUnkeyedTable();
     ArrayList<Record> records =
         Lists.newArrayList(
             // hash("111") = -210118348, hash("222") = -699778209
@@ -115,7 +115,7 @@ public class TestUnkeyedExpressionUtil extends TableTestBase {
     for (DataFile dataFile : dataFiles) {
       Expression partitionFilter =
           ExpressionUtil.convertPartitionDataToDataFilter(
-              getArcticTable(), dataFile.specId(), Sets.newHashSet(dataFile.partition()));
+              getMixedTable(), dataFile.specId(), Sets.newHashSet(dataFile.partition()));
       assertPlanHalfWithPartitionFilter(partitionFilter);
     }
   }
@@ -124,7 +124,7 @@ public class TestUnkeyedExpressionUtil extends TableTestBase {
     // plan all
     Set<DataFile> baseDataFiles = Sets.newHashSet();
     try (CloseableIterable<FileScanTask> fileScanTasks =
-        getArcticTable().asUnkeyedTable().newScan().planFiles()) {
+        getMixedTable().asUnkeyedTable().newScan().planFiles()) {
       for (FileScanTask fileScanTask : fileScanTasks) {
         baseDataFiles.add(fileScanTask.file());
       }
@@ -140,7 +140,7 @@ public class TestUnkeyedExpressionUtil extends TableTestBase {
 
     // plan with partition filter
     try (CloseableIterable<FileScanTask> fileScanTasks =
-        getArcticTable().asUnkeyedTable().newScan().filter(partitionFilter).planFiles()) {
+        getMixedTable().asUnkeyedTable().newScan().filter(partitionFilter).planFiles()) {
       for (FileScanTask fileScanTask : fileScanTasks) {
         baseDataFiles.add(fileScanTask.file());
       }

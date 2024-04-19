@@ -135,7 +135,7 @@ public abstract class MixedDeleteFilter<T> {
       PrimaryKeySpec primaryKeySpec,
       Set<DataTreeNode> sourceNodes) {
     this.eqDeletes =
-        keyedTableScanTask.arcticEquityDeletes().stream()
+        keyedTableScanTask.mixedEquityDeletes().stream()
             .map(MixedFileScanTask::file)
             .collect(Collectors.toSet());
 
@@ -201,7 +201,7 @@ public abstract class MixedDeleteFilter<T> {
     return filePathAccessor.get(asStructLike(record)).toString();
   }
 
-  protected MixedFileIO getArcticFileIo() {
+  protected MixedFileIO getMixedFileIo() {
     return null;
   }
 
@@ -268,9 +268,7 @@ public abstract class MixedDeleteFilter<T> {
     // init map
     try (CloseableIterable<StructLike> deletes = structLikeIterable) {
       Iterator<StructLike> it =
-          getArcticFileIo() == null
-              ? deletes.iterator()
-              : getArcticFileIo().doAs(deletes::iterator);
+          getMixedFileIo() == null ? deletes.iterator() : getMixedFileIo().doAs(deletes::iterator);
       while (it.hasNext()) {
         StructLike structLike = it.next();
         StructLike deletePK = deletePKProjectRow.copyFor(structLike);

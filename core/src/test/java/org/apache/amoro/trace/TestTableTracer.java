@@ -87,7 +87,7 @@ public class TestTableTracer extends TableTestBase {
 
   private UnkeyedTable getOperationTable() {
     if (operationTable == null) {
-      MixedTable mixedTable = getArcticTable();
+      MixedTable mixedTable = getMixedTable();
       if (isKeyedTable()) {
         if (onBaseTable) {
           operationTable = mixedTable.asKeyedTable().baseTable();
@@ -221,12 +221,12 @@ public class TestTableTracer extends TableTestBase {
     Assert.assertEquals(3, rewriteTableCommitMetas.size());
     Assert.assertEquals(1, rewriteTableCommitMetas.get(2).getChanges().size());
 
-    getArcticTable().updateSchema().commit();
+    getMixedTable().updateSchema().commit();
     List<TableCommitMeta> updateSchemaCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
     Assert.assertEquals(3, updateSchemaCommitMetas.size());
 
-    getArcticTable().updateProperties().commit();
+    getMixedTable().updateProperties().commit();
     List<TableCommitMeta> updatePropertiesCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
     Assert.assertEquals(4, updatePropertiesCommitMetas.size());
@@ -548,28 +548,28 @@ public class TestTableTracer extends TableTestBase {
   @Test
   public void testTraceRemovePosDeleteInternal() throws Exception {
     Assume.assumeTrue(isKeyedTable() && onBaseTable);
-    getArcticTable().asKeyedTable().baseTable().newAppend().appendFile(getDataFile(1)).commit();
+    getMixedTable().asKeyedTable().baseTable().newAppend().appendFile(getDataFile(1)).commit();
 
     SortedPosDeleteWriter<Record> writer =
-        GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+        GenericTaskWriters.builderFor(getMixedTable().asKeyedTable())
             .withTransactionId(1L)
             .buildBasePosDeleteWriter(2, 1, getDataFile(1).partition());
     writer.delete(getDataFile(1).path(), 1);
     writer.delete(getDataFile(1).path(), 3);
     writer.delete(getDataFile(1).path(), 5);
     List<DeleteFile> result = writer.complete();
-    RowDelta rowDelta = getArcticTable().asKeyedTable().baseTable().newRowDelta();
+    RowDelta rowDelta = getMixedTable().asKeyedTable().baseTable().newRowDelta();
     result.forEach(rowDelta::addDeletes);
     rowDelta.commit();
 
-    getArcticTable().asKeyedTable().baseTable().newAppend().appendFile(getDataFile(3)).commit();
-    OverwriteFiles overwriteFiles = getArcticTable().asKeyedTable().baseTable().newOverwrite();
+    getMixedTable().asKeyedTable().baseTable().newAppend().appendFile(getDataFile(3)).commit();
+    OverwriteFiles overwriteFiles = getMixedTable().asKeyedTable().baseTable().newOverwrite();
     overwriteFiles.deleteFile(getDataFile(1));
     overwriteFiles.addFile(getDataFile(2));
     overwriteFiles.commit();
 
     List<TableCommitMeta> tableCommitMetas =
-        getAmsHandler().getTableCommitMetas().get(getArcticTable().id().buildTableIdentifier());
+        getAmsHandler().getTableCommitMetas().get(getMixedTable().id().buildTableIdentifier());
     Assert.assertEquals(4, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(tableCommitMetas.size() - 1);
     Assert.assertEquals(1, commitMeta.getChanges().size());
@@ -580,22 +580,22 @@ public class TestTableTracer extends TableTestBase {
   @Test
   public void testTraceRemovePosDeleteInternalInTransaction() throws Exception {
     Assume.assumeTrue(isKeyedTable() && onBaseTable);
-    getArcticTable().asKeyedTable().baseTable().newAppend().appendFile(getDataFile(1)).commit();
+    getMixedTable().asKeyedTable().baseTable().newAppend().appendFile(getDataFile(1)).commit();
 
     SortedPosDeleteWriter<Record> writer =
-        GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+        GenericTaskWriters.builderFor(getMixedTable().asKeyedTable())
             .withTransactionId(1L)
             .buildBasePosDeleteWriter(2, 1, getDataFile(1).partition());
     writer.delete(getDataFile(1).path(), 1);
     writer.delete(getDataFile(1).path(), 3);
     writer.delete(getDataFile(1).path(), 5);
     List<DeleteFile> result = writer.complete();
-    RowDelta rowDelta = getArcticTable().asKeyedTable().baseTable().newRowDelta();
+    RowDelta rowDelta = getMixedTable().asKeyedTable().baseTable().newRowDelta();
     result.forEach(rowDelta::addDeletes);
     rowDelta.commit();
 
-    getArcticTable().asKeyedTable().baseTable().newAppend().appendFile(getDataFile(3)).commit();
-    Transaction transaction = getArcticTable().asKeyedTable().baseTable().newTransaction();
+    getMixedTable().asKeyedTable().baseTable().newAppend().appendFile(getDataFile(3)).commit();
+    Transaction transaction = getMixedTable().asKeyedTable().baseTable().newTransaction();
     OverwriteFiles overwriteFiles = transaction.newOverwrite();
     overwriteFiles.deleteFile(getDataFile(1));
     overwriteFiles.addFile(getDataFile(2));
@@ -606,7 +606,7 @@ public class TestTableTracer extends TableTestBase {
     transaction.commitTransaction();
 
     List<TableCommitMeta> tableCommitMetas =
-        getAmsHandler().getTableCommitMetas().get(getArcticTable().id().buildTableIdentifier());
+        getAmsHandler().getTableCommitMetas().get(getMixedTable().id().buildTableIdentifier());
     Assert.assertEquals(4, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(tableCommitMetas.size() - 1);
     Assert.assertEquals(2, commitMeta.getChanges().size());
@@ -644,7 +644,7 @@ public class TestTableTracer extends TableTestBase {
       org.apache.iceberg.DataFile[] deleteFiles) {
 
     Assert.assertEquals(
-        getArcticTable().id().buildTableIdentifier(), commitMeta.getTableIdentifier());
+        getMixedTable().id().buildTableIdentifier(), commitMeta.getTableIdentifier());
     Assert.assertEquals(operation, commitMeta.getAction());
     Assert.assertEquals(1, commitMeta.getChanges().size());
 
@@ -678,14 +678,14 @@ public class TestTableTracer extends TableTestBase {
       Assert.assertEquals(0, validateFile.getIndex());
       Assert.assertEquals(0, validateFile.getMask());
       if (isPartitionedTable()) {
-        Assert.assertEquals(getArcticTable().spec().specId(), validateFile.getSpecId());
+        Assert.assertEquals(getMixedTable().spec().specId(), validateFile.getSpecId());
         Assert.assertEquals(1, validateFile.getPartitionSize());
         Assert.assertEquals(
-            getArcticTable().spec().fields().get(0).name(),
+            getMixedTable().spec().fields().get(0).name(),
             validateFile.getPartition().get(0).getName());
         Assert.assertEquals(
-            getArcticTable().spec().partitionToPath(icebergFile.partition()),
-            getArcticTable().spec().fields().get(0).name()
+            getMixedTable().spec().partitionToPath(icebergFile.partition()),
+            getMixedTable().spec().fields().get(0).name()
                 + "="
                 + validateFile.getPartition().get(0).getValue());
       }

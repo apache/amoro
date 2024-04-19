@@ -80,7 +80,7 @@ public class TestUnKeyedContinuousOptimizing extends TableTestBase {
 
   @Test
   public void run() throws Exception {
-    MixedTable table = getArcticTable();
+    MixedTable table = getMixedTable();
 
     int partitionCount = 2;
 

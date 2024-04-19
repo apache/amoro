@@ -75,17 +75,17 @@ public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
     return new MixedIcebergPartitionPlan(
-        getTableRuntime(), getArcticTable(), getPartition(), System.currentTimeMillis());
+        getTableRuntime(), getMixedTable(), getPartition(), System.currentTimeMillis());
   }
 
   @Override
   protected TableFileScanHelper getTableFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable(), true);
-    return new UnkeyedTableFileScanHelper(getArcticTable(), baseSnapshotId);
+    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getMixedTable(), true);
+    return new UnkeyedTableFileScanHelper(getMixedTable(), baseSnapshotId);
   }
 
   @Override
-  protected UnkeyedTable getArcticTable() {
-    return super.getArcticTable().asUnkeyedTable();
+  protected UnkeyedTable getMixedTable() {
+    return super.getMixedTable().asUnkeyedTable();
   }
 }

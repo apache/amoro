@@ -41,7 +41,7 @@ public class MixedTableUtil {
   public static final String BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST = "optimized-sequence.exist";
   public static final String BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST = "base-optimized-time.exist";
 
-  /** Return the base store of the arctic table. */
+  /** Return the base store of the mixed-format table. */
   public static UnkeyedTable baseStore(MixedTable mixedTable) {
     if (mixedTable.isKeyedTable()) {
       return mixedTable.asKeyedTable().baseTable();
@@ -50,7 +50,7 @@ public class MixedTableUtil {
     }
   }
 
-  /** Return the table root location of the arctic table. */
+  /** Return the table root location of the mixed-format table. */
   public static String tableRootLocation(MixedTable mixedTable) {
     String tableRootLocation;
     if (TableFormat.ICEBERG != mixedTable.format() && mixedTable.isUnkeyedTable()) {
@@ -175,10 +175,10 @@ public class MixedTableUtil {
   }
 
   /**
-   * Return the {@link PartitionSpec} of the arctic table by {@link PartitionSpec#specId()}, Mix
-   * format table will return directly after checking}.
+   * Return the {@link PartitionSpec} of the mixed-format table by {@link PartitionSpec#specId()},
+   * Mix format table will return directly after checking}.
    */
-  public static PartitionSpec getArcticTablePartitionSpecById(MixedTable mixedTable, int specId) {
+  public static PartitionSpec getMixedTablePartitionSpecById(MixedTable mixedTable, int specId) {
     if (mixedTable.format() == TableFormat.ICEBERG) {
       return mixedTable.asUnkeyedTable().specs().get(specId);
     } else {

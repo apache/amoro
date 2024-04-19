@@ -77,7 +77,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   public void mock() {
     tableRuntime = Mockito.mock(TableRuntime.class);
     ServerTableIdentifier id =
-        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(getArcticTable().id()), getTestFormat());
+        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(getMixedTable().id()), getTestFormat());
     id.setId(0L);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(id);
     Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> getConfig());
@@ -87,16 +87,16 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   private long getCurrentSnapshotId() {
-    if (getArcticTable().isKeyedTable()) {
-      return IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable(), false);
+    if (getMixedTable().isKeyedTable()) {
+      return IcebergTableUtil.getSnapshotId(getMixedTable().asKeyedTable().baseTable(), false);
     } else {
-      return IcebergTableUtil.getSnapshotId(getArcticTable().asUnkeyedTable(), false);
+      return IcebergTableUtil.getSnapshotId(getMixedTable().asUnkeyedTable(), false);
     }
   }
 
   private long getCurrentChangeSnapshotId() {
-    if (getArcticTable().isKeyedTable()) {
-      return IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().changeTable(), false);
+    if (getMixedTable().isKeyedTable()) {
+      return IcebergTableUtil.getSnapshotId(getMixedTable().asKeyedTable().changeTable(), false);
     } else {
       return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
     }
@@ -111,8 +111,8 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     long transactionId = beginTransaction();
     fragmentFiles.addAll(
         OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
 
     // write fragment file
     newRecords =
@@ -120,8 +120,8 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     transactionId = beginTransaction();
     fragmentFiles.addAll(
         OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
 
     List<TaskDescriptor> taskDescriptors = planWithCurrentFiles();
     Assert.assertEquals(1, taskDescriptors.size());
@@ -140,8 +140,8 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
         OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
     long transactionId = beginTransaction();
     OptimizingTestHelpers.appendBase(
-        getArcticTable(),
-        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+        getMixedTable(),
+        tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false));
 
     List<TaskDescriptor> taskDescriptors = planWithCurrentFiles();
 
@@ -161,8 +161,8 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     transactionId = beginTransaction();
     dataFiles.addAll(
         OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
 
     // write data files
     newRecords =
@@ -170,8 +170,8 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     transactionId = beginTransaction();
     dataFiles.addAll(
         OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
 
     setFragmentRatio(dataFiles);
     assertSegmentFiles(dataFiles);
@@ -186,10 +186,10 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
           MixedDataTestHelpers.writeBaseStorePosDelete(
-              getArcticTable(), transactionId, dataFile, Collections.singletonList(0L)));
+              getMixedTable(), transactionId, dataFile, Collections.singletonList(0L)));
     }
     List<DeleteFile> deleteFiles =
-        OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
+        OptimizingTestHelpers.appendBasePosDelete(getMixedTable(), posDeleteFiles);
 
     taskDescriptors = planWithCurrentFiles();
 
@@ -225,8 +225,8 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     transactionId = beginTransaction();
     rePosSegmentFiles.addAll(
         OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
 
     // 2.write 2 pos-delete (radio < 0.1) for the complete segment file A
     rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, rePosSegmentFiles, 0));
@@ -238,8 +238,8 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     transactionId = beginTransaction();
     rewrittenSegmentFiles.addAll(
         OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
 
     // 4.write 1 pos-delete (radio > 0.1) for the complete segment file B
     rewrittenDeleteFiles.addAll(
@@ -251,8 +251,8 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     transactionId = beginTransaction();
     fragmentFiles.addAll(
         OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
 
     // 6.write 1 fragment file D
     newRecords =
@@ -260,8 +260,8 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     transactionId = beginTransaction();
     fragmentFiles.addAll(
         OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
 
     // 7. write 2 pos-delete for fragment file C/D
     rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, fragmentFiles, 0));
@@ -322,9 +322,9 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
           MixedDataTestHelpers.writeBaseStorePosDelete(
-              getArcticTable(), transactionId, dataFile, pos));
+              getMixedTable(), transactionId, dataFile, pos));
     }
-    return OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
+    return OptimizingTestHelpers.appendBasePosDelete(getMixedTable(), posDeleteFiles);
   }
 
   protected List<TaskDescriptor> planWithCurrentFiles() {
@@ -358,7 +358,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
             .orElseThrow(() -> new IllegalStateException("dataFiles can't not be empty"));
     long targetFileSizeBytes =
         isCompleteSegment ? maxFileSizeBytes + 1 : (maxFileSizeBytes * 2 + 1);
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_TARGET_SIZE, targetFileSizeBytes + "")
         .commit();
@@ -372,33 +372,33 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
             .orElseThrow(() -> new IllegalStateException("dataFiles can't not be empty"));
     long targetFileSizeBytes =
         PropertyUtil.propertyAsLong(
-            getArcticTable().properties(),
+            getMixedTable().properties(),
             TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
             TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
     long ratio = targetFileSizeBytes / minFileSizeBytes + 1;
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO, ratio + "")
         .commit();
   }
 
   protected void closeFullOptimizingInterval() {
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1")
         .commit();
   }
 
   private StructLikeMap<Map<String, String>> partitionProperty() {
-    if (getArcticTable().isKeyedTable()) {
-      return getArcticTable().asKeyedTable().baseTable().partitionProperty();
+    if (getMixedTable().isKeyedTable()) {
+      return getMixedTable().asKeyedTable().baseTable().partitionProperty();
     } else {
-      return getArcticTable().asUnkeyedTable().partitionProperty();
+      return getMixedTable().asUnkeyedTable().partitionProperty();
     }
   }
 
   protected void closeMinorOptimizingInterval() {
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL, "-1")
         .commit();
@@ -411,15 +411,15 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   protected void updateTableProperty(String key, String value) {
-    getArcticTable().updateProperties().set(key, value).commit();
+    getMixedTable().updateProperties().set(key, value).commit();
   }
 
   protected void updatePartitionProperty(StructLike partition, String key, String value) {
     UnkeyedTable table;
-    if (getArcticTable().isKeyedTable()) {
-      table = getArcticTable().asKeyedTable().baseTable();
+    if (getMixedTable().isKeyedTable()) {
+      table = getMixedTable().asKeyedTable().baseTable();
     } else {
-      table = getArcticTable().asUnkeyedTable();
+      table = getMixedTable().asUnkeyedTable();
     }
     Transaction transaction = table.newTransaction();
     table.updatePartitionProperties(transaction).set(partition, key, value).commit();
@@ -427,7 +427,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   protected void openFullOptimizing() {
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "3600")
         .commit();
@@ -450,12 +450,12 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   private long getMaxFragmentFileSizeBytes() {
     long targetFileSizeBytes =
         PropertyUtil.propertyAsLong(
-            getArcticTable().properties(),
+            getMixedTable().properties(),
             TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
             TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
     long ratio =
         PropertyUtil.propertyAsLong(
-            getArcticTable().properties(),
+            getMixedTable().properties(),
             TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
             TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT);
     return targetFileSizeBytes / ratio;
@@ -545,9 +545,9 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   protected Pair<Integer, StructLike> getPartition() {
     return isPartitionedTable()
         ? Pair.of(
-            getArcticTable().spec().specId(),
-            MixedDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01"))
-        : Pair.of(getArcticTable().spec().specId(), new PartitionData(Types.StructType.of()));
+            getMixedTable().spec().specId(),
+            MixedDataFiles.data(getMixedTable().spec(), "op_time_day=2022-01-01"))
+        : Pair.of(getMixedTable().spec().specId(), new PartitionData(Types.StructType.of()));
   }
 
   protected String getPartitionPath() {
@@ -556,7 +556,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   protected long beginTransaction() {
     if (isKeyedTable()) {
-      return getArcticTable().asKeyedTable().beginTransaction("");
+      return getMixedTable().asKeyedTable().beginTransaction("");
     } else {
       return 0;
     }
@@ -567,18 +567,18 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   private OptimizingConfig getConfig() {
-    return OptimizingConfig.parse(getArcticTable().properties());
+    return OptimizingConfig.parse(getMixedTable().properties());
   }
 
   protected void updateChangeHashBucket(int bucket) {
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET, bucket + "")
         .commit();
   }
 
   protected void updateBaseHashBucket(int bucket) {
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(TableProperties.BASE_FILE_INDEX_HASH_BUCKET, bucket + "")
         .commit();

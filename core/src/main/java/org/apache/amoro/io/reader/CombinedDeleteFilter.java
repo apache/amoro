@@ -174,7 +174,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
   protected abstract InputFile getInputFile(ContentFile<?> contentFile);
 
-  protected abstract MixedFileIO getArcticFileIo();
+  protected abstract MixedFileIO getMixedFileIo();
 
   public Set<Integer> deleteIds() {
     return deleteIds;
@@ -268,9 +268,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     // init map
     try (CloseableIterable<RecordWithLsn> deletes = deleteRecords) {
       Iterator<RecordWithLsn> it =
-          getArcticFileIo() == null
-              ? deletes.iterator()
-              : getArcticFileIo().doAs(deletes::iterator);
+          getMixedFileIo() == null ? deletes.iterator() : getMixedFileIo().doAs(deletes::iterator);
       while (it.hasNext()) {
         RecordWithLsn recordWithLsn = it.next();
         StructLike deletePK = internalRecordWrapper.copyFor(recordWithLsn.getRecord());

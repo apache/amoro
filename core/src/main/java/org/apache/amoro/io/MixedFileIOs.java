@@ -28,7 +28,7 @@ import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Map;
 
-public class ArcticFileIOs {
+public class MixedFileIOs {
 
   public static final boolean CLOSE_TRASH = true;
 

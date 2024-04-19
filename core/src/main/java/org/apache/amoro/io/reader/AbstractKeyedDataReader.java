@@ -49,7 +49,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Abstract implementation of arctic data reader consuming {@link KeyedTableScanTask}, return
+ * Abstract implementation of mixed-format data reader consuming {@link KeyedTableScanTask}, return
  * records after filtering with {@link MixedDeleteFilter}.
  *
  * @param <T> to indicate the record data type.
@@ -135,7 +135,7 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
 
   public CloseableIterator<T> readData(KeyedTableScanTask keyedTableScanTask) {
     MixedDeleteFilter<T> mixedDeleteFilter =
-        createArcticDeleteFilter(
+        createMixedDeleteFilter(
             keyedTableScanTask,
             tableSchema,
             projectedSchema,
@@ -176,12 +176,12 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
   // deleted records.
   public CloseableIterator<T> readDeletedData(KeyedTableScanTask keyedTableScanTask) {
     boolean hasDeleteFile =
-        keyedTableScanTask.arcticEquityDeletes().size() > 0
+        keyedTableScanTask.mixedEquityDeletes().size() > 0
             || keyedTableScanTask.dataTasks().stream()
-                .anyMatch(arcticFileScanTask -> arcticFileScanTask.deletes().size() > 0);
+                .anyMatch(mixedFileScanTask -> mixedFileScanTask.deletes().size() > 0);
     if (hasDeleteFile) {
       MixedDeleteFilter<T> mixedDeleteFilter =
-          createArcticDeleteFilter(
+          createMixedDeleteFilter(
               keyedTableScanTask,
               tableSchema,
               projectedSchema,
@@ -221,7 +221,7 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
     }
   }
 
-  protected MixedDeleteFilter<T> createArcticDeleteFilter(
+  protected MixedDeleteFilter<T> createMixedDeleteFilter(
       KeyedTableScanTask keyedTableScanTask,
       Schema tableSchema,
       Schema projectedSchema,
@@ -332,7 +332,7 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
     }
 
     @Override
-    protected MixedFileIO getArcticFileIo() {
+    protected MixedFileIO getMixedFileIo() {
       return fileIO;
     }
   }

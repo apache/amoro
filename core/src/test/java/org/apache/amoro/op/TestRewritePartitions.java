@@ -38,7 +38,7 @@ public class TestRewritePartitions extends TableDataTestBase {
   /** overwrite partition by data file. */
   @Test
   public void testDynamicOverwritePartition() {
-    long txId = getArcticTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
+    long txId = getMixedTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
     List<Record> newRecords =
         Lists.newArrayList(
             MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
@@ -46,15 +46,15 @@ public class TestRewritePartitions extends TableDataTestBase {
             MixedDataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00"));
     List<DataFile> newFiles =
         MixedDataTestHelpers.writeBaseStore(
-            getArcticTable().asKeyedTable(), txId, newRecords, false);
-    RewritePartitions rewritePartitions = getArcticTable().asKeyedTable().newRewritePartitions();
+            getMixedTable().asKeyedTable(), txId, newRecords, false);
+    RewritePartitions rewritePartitions = getMixedTable().asKeyedTable().newRewritePartitions();
     newFiles.forEach(rewritePartitions::addDataFile);
     rewritePartitions.updateOptimizedSequenceDynamically(txId);
     rewritePartitions.commit();
     // rewrite 1 partition by data file
 
     StructLikeMap<Long> partitionOptimizedSequence =
-        MixedTableUtil.readOptimizedSequence(getArcticTable().asKeyedTable());
+        MixedTableUtil.readOptimizedSequence(getMixedTable().asKeyedTable());
     // expect result: 1 partition with new txId, 2,3 partition use old txId
     Assert.assertEquals(
         txId,
@@ -73,7 +73,7 @@ public class TestRewritePartitions extends TableDataTestBase {
 
     List<Record> rows =
         MixedDataTestHelpers.readKeyedTable(
-            getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
+            getMixedTable().asKeyedTable(), Expressions.alwaysTrue());
     // partition1 -> base[7,8,9]
     // partition2 -> base[2]
     // partition3 -> base[3]

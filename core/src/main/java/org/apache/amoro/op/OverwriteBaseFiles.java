@@ -323,7 +323,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
                   .forEach(
                       t -> {
                         t.dataTasks().forEach(ft -> deleteFiles.add(ft.file()));
-                        t.arcticEquityDeletes().forEach(ft -> deleteFiles.add(ft.file()));
+                        t.mixedEquityDeletes().forEach(ft -> deleteFiles.add(ft.file()));
                       }));
       this.deleteExpressionApplied = true;
     } catch (IOException e) {

@@ -29,8 +29,8 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.AlreadyExistsException;
 import org.apache.amoro.api.NoSuchObjectException;
 import org.apache.amoro.api.TableMeta;
-import org.apache.amoro.io.ArcticFileIOs;
 import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.MixedFileIOs;
 import org.apache.amoro.mixed.InternalMixedIcebergCatalog;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.op.CreateTableTransaction;
@@ -158,7 +158,7 @@ public class BasicMixedCatalog implements MixedFormatCatalog {
   @Override
   public MixedTable loadTable(TableIdentifier identifier) {
     validate(identifier);
-    TableMeta meta = getArcticTableMeta(identifier);
+    TableMeta meta = getMixedTableMeta(identifier);
     if (meta.getLocations() == null) {
       throw new IllegalStateException("load table failed, lack locations info");
     }
@@ -167,7 +167,7 @@ public class BasicMixedCatalog implements MixedFormatCatalog {
 
   @Override
   public void renameTable(TableIdentifier from, String newTableName) {
-    throw new UnsupportedOperationException("unsupported rename arctic table for now.");
+    throw new UnsupportedOperationException("unsupported rename mixed table for now.");
   }
 
   @Override
@@ -175,7 +175,7 @@ public class BasicMixedCatalog implements MixedFormatCatalog {
     validate(identifier);
     TableMeta meta;
     try {
-      meta = getArcticTableMeta(identifier);
+      meta = getMixedTableMeta(identifier);
     } catch (NoSuchTableException e) {
       return false;
     }
@@ -197,7 +197,7 @@ public class BasicMixedCatalog implements MixedFormatCatalog {
   @Override
   public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema) {
     validate(identifier);
-    return new ArcticTableBuilder(identifier, schema);
+    return new MixedTableBuilder(identifier, schema);
   }
 
   @Override
@@ -211,7 +211,7 @@ public class BasicMixedCatalog implements MixedFormatCatalog {
     return catalogProperties;
   }
 
-  protected TableMeta getArcticTableMeta(TableIdentifier identifier) {
+  protected TableMeta getMixedTableMeta(TableIdentifier identifier) {
     TableMeta tableMeta;
     try {
       tableMeta = getClient().getTable(MixedCatalogUtil.amsTaleId(identifier));
@@ -231,7 +231,7 @@ public class BasicMixedCatalog implements MixedFormatCatalog {
     }
   }
 
-  protected class ArcticTableBuilder implements TableBuilder {
+  protected class MixedTableBuilder implements TableBuilder {
     protected TableIdentifier identifier;
     protected Schema schema;
     protected PartitionSpec partitionSpec;
@@ -240,7 +240,7 @@ public class BasicMixedCatalog implements MixedFormatCatalog {
     protected PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.noPrimaryKey();
     protected String location;
 
-    public ArcticTableBuilder(TableIdentifier identifier, Schema schema) {
+    public MixedTableBuilder(TableIdentifier identifier, Schema schema) {
       Preconditions.checkArgument(
           identifier.getCatalog().equals(name()),
           "Illegal table id:%s for catalog:%s",
@@ -294,7 +294,7 @@ public class BasicMixedCatalog implements MixedFormatCatalog {
 
     @Override
     public Transaction createTransaction() {
-      MixedFileIO mixedFileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
+      MixedFileIO mixedFileIO = MixedFileIOs.buildHadoopFileIO(tableMetaStore);
       ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
       TableMeta meta = builder.build();
       String location = getTableLocationForCreate();

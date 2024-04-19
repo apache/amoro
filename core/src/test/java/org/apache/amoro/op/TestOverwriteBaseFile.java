@@ -38,7 +38,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
   /** overwrite all partition, add new data files */
   @Test
   public void testOverwriteAllPartition() {
-    long txId = getArcticTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
+    long txId = getMixedTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
     List<Record> newRecords =
         Lists.newArrayList(
             MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
@@ -47,8 +47,8 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
     long before = System.currentTimeMillis();
     List<DataFile> newFiles =
         MixedDataTestHelpers.writeBaseStore(
-            getArcticTable().asKeyedTable(), txId, newRecords, false);
-    OverwriteBaseFiles overwrite = getArcticTable().asKeyedTable().newOverwriteBaseFiles();
+            getMixedTable().asKeyedTable(), txId, newRecords, false);
+    OverwriteBaseFiles overwrite = getMixedTable().asKeyedTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite
         .overwriteByRowFilter(Expressions.alwaysTrue())
@@ -58,7 +58,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
     // overwrite all partition and add new data file
 
     StructLikeMap<Long> partitionOptimizedSequence =
-        MixedTableUtil.readOptimizedSequence(getArcticTable().asKeyedTable());
+        MixedTableUtil.readOptimizedSequence(getMixedTable().asKeyedTable());
     // expect result: all partition with new txId
     Assert.assertEquals(
         txId,
@@ -82,7 +82,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
             .longValue());
 
     StructLikeMap<Long> partitionOptimizedTime =
-        MixedTableUtil.readBaseOptimizedTime(getArcticTable().asKeyedTable());
+        MixedTableUtil.readBaseOptimizedTime(getMixedTable().asKeyedTable());
     // expect result: all partition with new optimized time
     assertRange(
         before,
@@ -103,7 +103,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
 
     List<Record> rows =
         MixedDataTestHelpers.readKeyedTable(
-            getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
+            getMixedTable().asKeyedTable(), Expressions.alwaysTrue());
     // partition1 -> base[7,8,9]
     Assert.assertEquals(3, rows.size());
 
@@ -121,7 +121,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
 
   @Test
   public void testOverwritePartitionByExpression() {
-    long txId = getArcticTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
+    long txId = getMixedTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
     List<Record> newRecords =
         Lists.newArrayList(
             MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
@@ -129,9 +129,9 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
             MixedDataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00"));
     List<DataFile> newFiles =
         MixedDataTestHelpers.writeBaseStore(
-            getArcticTable().asKeyedTable(), txId, newRecords, false);
+            getMixedTable().asKeyedTable(), txId, newRecords, false);
     long before = System.currentTimeMillis();
-    OverwriteBaseFiles overwrite = getArcticTable().asKeyedTable().newOverwriteBaseFiles();
+    OverwriteBaseFiles overwrite = getMixedTable().asKeyedTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.updateOptimizedSequenceDynamically(txId);
     overwrite.overwriteByRowFilter(
@@ -145,7 +145,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
     long after = System.currentTimeMillis();
 
     StructLikeMap<Long> partitionOptimizedSequence =
-        MixedTableUtil.readOptimizedSequence(getArcticTable().asKeyedTable());
+        MixedTableUtil.readOptimizedSequence(getMixedTable().asKeyedTable());
     // expect result: 1,2,4 partition with new txId, 3 partition is null
     Assert.assertEquals(
         txId,
@@ -167,7 +167,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
             .longValue());
 
     StructLikeMap<Long> partitionOptimizedTime =
-        MixedTableUtil.readBaseOptimizedTime(getArcticTable().asKeyedTable());
+        MixedTableUtil.readBaseOptimizedTime(getMixedTable().asKeyedTable());
     // expect result: 1,2,4 partition with new optimized time, 3 partition is null
     assertRange(
         before,
@@ -186,7 +186,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
 
     List<Record> rows =
         MixedDataTestHelpers.readKeyedTable(
-            getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
+            getMixedTable().asKeyedTable(), Expressions.alwaysTrue());
     // partition1 -> base[7,8,9]
     // partition3 -> base[3]
     Assert.assertEquals(4, rows.size());

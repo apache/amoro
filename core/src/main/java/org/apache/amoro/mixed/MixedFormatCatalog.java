@@ -85,7 +85,7 @@ public interface MixedFormatCatalog {
   List<TableIdentifier> listTables(String database);
 
   /**
-   * Get an arctic table by table identifier.
+   * Get an mixed-format table by table identifier.
    *
    * @param tableIdentifier a table identifier
    * @return instance of {@link UnkeyedTable} or {@link KeyedTable} implementation referred by

@@ -67,8 +67,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public class MockArcticMetastoreServer implements Runnable {
-  private static final Logger LOG = LoggerFactory.getLogger(MockArcticMetastoreServer.class);
+public class MockAmoroManagementServer implements Runnable {
+  private static final Logger LOG = LoggerFactory.getLogger(MockAmoroManagementServer.class);
   public static final String TEST_CATALOG_NAME = "test_catalog";
   public static final String TEST_DB_NAME = "test_db";
 
@@ -81,9 +81,9 @@ public class MockArcticMetastoreServer implements Runnable {
 
   private TServer server;
 
-  private static final MockArcticMetastoreServer INSTANCE = new MockArcticMetastoreServer();
+  private static final MockAmoroManagementServer INSTANCE = new MockAmoroManagementServer();
 
-  public static MockArcticMetastoreServer getInstance() {
+  public static MockAmoroManagementServer getInstance() {
     if (!INSTANCE.isStarted()) {
       INSTANCE.start();
     }
@@ -107,7 +107,7 @@ public class MockArcticMetastoreServer implements Runnable {
     return "thrift://127.0.0.1:" + port + "/" + catalogName;
   }
 
-  public MockArcticMetastoreServer() {
+  public MockAmoroManagementServer() {
     this.port = randomPort();
   }
 
@@ -194,7 +194,7 @@ public class MockArcticMetastoreServer implements Runnable {
       server = new TThreadPoolServer(args);
       server.serve();
 
-      LOG.info("arctic in-memory metastore start");
+      LOG.info("In-memory AMS started.");
     } catch (TTransportException e) {
       if (e.getCause() instanceof BindException) {
         if (--retry < 0) {

@@ -242,7 +242,7 @@ public class HiveMetaSynchronizer {
               filesToAdd.addAll(hiveDataFiles);
               // make sure new partition is not created by arctic
             } else if (!CompatibleHivePropertyUtil.propertyAsBoolean(
-                hivePartition.getParameters(), HiveTableProperties.ARCTIC_TABLE_FLAG, false)) {
+                hivePartition.getParameters(), HiveTableProperties.MIXED_TABLE_FLAG, false)) {
               filesToAdd.addAll(hiveDataFiles);
             }
           }
@@ -444,7 +444,7 @@ public class HiveMetaSynchronizer {
           Partition hivePartition = hivePartitionMap.get(partition);
           boolean isArctic =
               CompatibleHivePropertyUtil.propertyAsBoolean(
-                  hivePartition.getParameters(), HiveTableProperties.ARCTIC_TABLE_FLAG, false);
+                  hivePartition.getParameters(), HiveTableProperties.MIXED_TABLE_FLAG, false);
           if (isArctic) {
             HivePartitionUtil.dropPartition(
                 ((SupportHive) mixedTable).getHMSClient(), mixedTable, hivePartition);

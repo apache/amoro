@@ -24,8 +24,8 @@ import org.apache.amoro.hive.table.KeyedHiveTable;
 import org.apache.amoro.hive.table.UnkeyedHiveTable;
 import org.apache.amoro.hive.utils.HiveSchemaUtil;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.io.ArcticFileIOs;
 import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.MixedFileIOs;
 import org.apache.amoro.io.MixedHadoopFileIO;
 import org.apache.amoro.io.TableTrashManagers;
 import org.apache.amoro.properties.HiveTableProperties;
@@ -105,7 +105,7 @@ public class MixedHiveTables {
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
     MixedHadoopFileIO fileIO =
-        ArcticFileIOs.buildRecoverableHadoopFileIO(
+        MixedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -116,7 +116,7 @@ public class MixedHiveTables {
     UnkeyedHiveTable baseTable =
         new KeyedHiveTable.HiveBaseInternalTable(
             tableIdentifier,
-            MixedCatalogUtil.useArcticTableOperations(
+            MixedCatalogUtil.useMixedTableOperations(
                 baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             tableLocation,
@@ -128,7 +128,7 @@ public class MixedHiveTables {
     ChangeTable changeTable =
         new KeyedHiveTable.HiveChangeInternalTable(
             tableIdentifier,
-            MixedCatalogUtil.useArcticTableOperations(
+            MixedCatalogUtil.useMixedTableOperations(
                 changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -156,7 +156,7 @@ public class MixedHiveTables {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     MixedHadoopFileIO fileIO =
-        ArcticFileIOs.buildRecoverableHadoopFileIO(
+        MixedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -166,7 +166,7 @@ public class MixedHiveTables {
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
     return new UnkeyedHiveTable(
         tableIdentifier,
-        MixedCatalogUtil.useArcticTableOperations(
+        MixedCatalogUtil.useMixedTableOperations(
             table, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO,
         tableLocation,
@@ -193,7 +193,7 @@ public class MixedHiveTables {
     }
 
     MixedHadoopFileIO fileIO =
-        ArcticFileIOs.buildRecoverableHadoopFileIO(
+        MixedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -219,7 +219,7 @@ public class MixedHiveTables {
     UnkeyedHiveTable baseTable =
         new KeyedHiveTable.HiveBaseInternalTable(
             tableIdentifier,
-            MixedCatalogUtil.useArcticTableOperations(
+            MixedCatalogUtil.useMixedTableOperations(
                 baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             tableLocation,
@@ -247,7 +247,7 @@ public class MixedHiveTables {
     ChangeTable changeTable =
         new KeyedHiveTable.HiveChangeInternalTable(
             tableIdentifier,
-            MixedCatalogUtil.useArcticTableOperations(
+            MixedCatalogUtil.useMixedTableOperations(
                 changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -358,7 +358,7 @@ public class MixedHiveTables {
     }
 
     MixedHadoopFileIO fileIO =
-        ArcticFileIOs.buildRecoverableHadoopFileIO(
+        MixedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -366,7 +366,7 @@ public class MixedHiveTables {
             catalogProperties);
     return new UnkeyedHiveTable(
         tableIdentifier,
-        MixedCatalogUtil.useArcticTableOperations(
+        MixedCatalogUtil.useMixedTableOperations(
             table, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO,
         tableLocation,
@@ -376,7 +376,7 @@ public class MixedHiveTables {
 
   public void dropInternalTableByMeta(TableMeta tableMeta, boolean purge) {
     try {
-      MixedFileIO fileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
+      MixedFileIO fileIO = MixedFileIOs.buildHadoopFileIO(tableMetaStore);
       Map<String, String> tableProperties = Maps.newHashMap();
       try {
         MixedTable mixedTable = loadTableByMeta(tableMeta);
@@ -468,7 +468,7 @@ public class MixedHiveTables {
                       tableMeta.getTableIdentifier().getDatabase(),
                       tableMeta.getTableIdentifier().getTableName());
               Map<String, String> hiveParameters = hiveTable.getParameters();
-              hiveParameters.remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
+              hiveParameters.remove(HiveTableProperties.MIXED_TABLE_FLAG);
               client.alterTable(
                   tableMeta.getTableIdentifier().getDatabase(),
                   tableMeta.tableIdentifier.getTableName(),
@@ -497,10 +497,10 @@ public class MixedHiveTables {
 
   private Map<String, String> constructProperties(PrimaryKeySpec primaryKeySpec, TableMeta meta) {
     Map<String, String> parameters = new HashMap<>();
-    parameters.put(HiveTableProperties.ARCTIC_TABLE_FLAG, "true");
-    parameters.put(HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS, primaryKeySpec.description());
+    parameters.put(HiveTableProperties.MIXED_TABLE_FLAG, "true");
+    parameters.put(HiveTableProperties.MIXED_TABLE_PRIMARY_KEYS, primaryKeySpec.description());
     parameters.put(
-        HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION,
+        HiveTableProperties.MIXED_TABLE_ROOT_LOCATION,
         meta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE));
     return parameters;
   }

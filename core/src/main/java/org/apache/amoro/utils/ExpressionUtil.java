@@ -60,7 +60,7 @@ public class ExpressionUtil {
    */
   public static Expression convertPartitionDataToDataFilter(
       MixedTable table, int specId, StructLike partition) {
-    PartitionSpec spec = MixedTableUtil.getArcticTablePartitionSpecById(table, specId);
+    PartitionSpec spec = MixedTableUtil.getMixedTablePartitionSpecById(table, specId);
     Schema schema = table.schema();
     Expression filter = Expressions.alwaysTrue();
     for (int i = 0; i < spec.fields().size(); i++) {

@@ -33,7 +33,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 public class TestRecoverableMixedFileIO extends TableTestBase {
-  private RecoverableHadoopFileIO recoverableArcticFileIO;
+  private RecoverableHadoopFileIO recoverableHadoopFileIO;
   private MixedFileIO mixedFileIO;
   TableTrashManager trashManager;
   private String file1;
@@ -48,35 +48,35 @@ public class TestRecoverableMixedFileIO extends TableTestBase {
 
   @Before
   public void before() {
-    MixedTable mixedTable = getArcticTable();
+    MixedTable mixedTable = getMixedTable();
     trashManager =
         TableTrashManagers.build(
             mixedTable.id(),
             mixedTable.location(),
             mixedTable.properties(),
             (MixedHadoopFileIO) mixedTable.io());
-    recoverableArcticFileIO =
+    recoverableHadoopFileIO =
         new RecoverableHadoopFileIO(
             getTableMetaStore(), trashManager, TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT);
     mixedFileIO = mixedTable.io();
 
-    file1 = getArcticTable().location() + "/base/test/test1/test1.parquet";
-    file2 = getArcticTable().location() + "/base/test/test2/test2.parquet";
-    file3 = getArcticTable().location() + "/base/test/test2.parquet";
+    file1 = getMixedTable().location() + "/base/test/test1/test1.parquet";
+    file2 = getMixedTable().location() + "/base/test/test2/test2.parquet";
+    file3 = getMixedTable().location() + "/base/test/test2.parquet";
   }
 
   @Test
   public void exists() throws IOException {
     createFile(file1);
-    Assert.assertTrue(recoverableArcticFileIO.exists(file1));
-    Assert.assertFalse(recoverableArcticFileIO.exists(file2));
+    Assert.assertTrue(recoverableHadoopFileIO.exists(file1));
+    Assert.assertFalse(recoverableHadoopFileIO.exists(file2));
   }
 
   @Test
   public void rename() throws IOException {
-    String newLocation = getArcticTable().location() + "/base/test/test4.parquet";
+    String newLocation = getMixedTable().location() + "/base/test/test4.parquet";
     createFile(file1);
-    recoverableArcticFileIO.rename(file1, newLocation);
+    recoverableHadoopFileIO.rename(file1, newLocation);
     Assert.assertFalse(mixedFileIO.exists(file1));
     Assert.assertTrue(mixedFileIO.exists(newLocation));
   }
@@ -86,8 +86,8 @@ public class TestRecoverableMixedFileIO extends TableTestBase {
     createFile(file1);
     createFile(file2);
     createFile(file3);
-    String dir = getArcticTable().location() + "/base/test";
-    recoverableArcticFileIO.deletePrefix(dir);
+    String dir = getMixedTable().location() + "/base/test";
+    recoverableHadoopFileIO.deletePrefix(dir);
     Assert.assertFalse(mixedFileIO.exists(dir));
   }
 
@@ -97,29 +97,29 @@ public class TestRecoverableMixedFileIO extends TableTestBase {
     createFile(file2);
     createFile(file3);
     Iterable<PathInfo> items =
-        recoverableArcticFileIO.listDirectory(getArcticTable().location() + "/base/test");
+        recoverableHadoopFileIO.listDirectory(getMixedTable().location() + "/base/test");
     Assert.assertEquals(3L, Streams.stream(items).count());
   }
 
   @Test
   public void isDirectory() throws IOException {
     createFile(file1);
-    Assert.assertFalse(recoverableArcticFileIO.isDirectory(file1));
-    Assert.assertTrue(recoverableArcticFileIO.isDirectory(getArcticTable().location()));
+    Assert.assertFalse(recoverableHadoopFileIO.isDirectory(file1));
+    Assert.assertTrue(recoverableHadoopFileIO.isDirectory(getMixedTable().location()));
   }
 
   @Test
   public void isEmptyDirectory() {
-    String dir = getArcticTable().location() + "/location";
+    String dir = getMixedTable().location() + "/location";
     mixedFileIO.asFileSystemIO().makeDirectories(dir);
-    Assert.assertTrue(recoverableArcticFileIO.isEmptyDirectory(dir));
-    Assert.assertFalse(recoverableArcticFileIO.isEmptyDirectory(getArcticTable().location()));
+    Assert.assertTrue(recoverableHadoopFileIO.isEmptyDirectory(dir));
+    Assert.assertFalse(recoverableHadoopFileIO.isEmptyDirectory(getMixedTable().location()));
   }
 
   @Test
   public void deleteFile() throws IOException {
     createFile(file1);
-    recoverableArcticFileIO.deleteFile(file1);
+    recoverableHadoopFileIO.deleteFile(file1);
     Assert.assertFalse(mixedFileIO.exists(file1));
     Assert.assertTrue(trashManager.fileExistInTrash(file1));
   }
@@ -127,7 +127,7 @@ public class TestRecoverableMixedFileIO extends TableTestBase {
   @Test
   public void deleteInputFile() throws IOException {
     createFile(file1);
-    recoverableArcticFileIO.deleteFile(recoverableArcticFileIO.newInputFile(file1));
+    recoverableHadoopFileIO.deleteFile(recoverableHadoopFileIO.newInputFile(file1));
     Assert.assertFalse(mixedFileIO.exists(file1));
     Assert.assertTrue(trashManager.fileExistInTrash(file1));
   }
@@ -135,34 +135,33 @@ public class TestRecoverableMixedFileIO extends TableTestBase {
   @Test
   public void deleteOutputFile() throws IOException {
     createFile(file1);
-    recoverableArcticFileIO.deleteFile(recoverableArcticFileIO.newOutputFile(file1));
+    recoverableHadoopFileIO.deleteFile(recoverableHadoopFileIO.newOutputFile(file1));
     Assert.assertFalse(mixedFileIO.exists(file1));
     Assert.assertTrue(trashManager.fileExistInTrash(file1));
   }
 
   @Test
   public void trashFilePattern() {
-    Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(file1));
-    Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(file2));
-    Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(file3));
+    Assert.assertTrue(recoverableHadoopFileIO.matchTrashFilePattern(file1));
+    Assert.assertTrue(recoverableHadoopFileIO.matchTrashFilePattern(file2));
+    Assert.assertTrue(recoverableHadoopFileIO.matchTrashFilePattern(file3));
     Assert.assertTrue(
-        recoverableArcticFileIO.matchTrashFilePattern(
-            getArcticTable().location() + "/metadata/version-hint.text"));
+        recoverableHadoopFileIO.matchTrashFilePattern(
+            getMixedTable().location() + "/metadata/version-hint.text"));
     Assert.assertTrue(
-        recoverableArcticFileIO.matchTrashFilePattern(
-            getArcticTable().location() + "/metadata/v2.metadata.json"));
+        recoverableHadoopFileIO.matchTrashFilePattern(
+            getMixedTable().location() + "/metadata/v2.metadata.json"));
     Assert.assertTrue(
-        recoverableArcticFileIO.matchTrashFilePattern(
-            getArcticTable().location()
+        recoverableHadoopFileIO.matchTrashFilePattern(
+            getMixedTable().location()
                 + "/metadata/snap-1515213806302741636-1-85fc817e-941d-4e9a-ab41-2dbf7687bfcd.avro"));
     Assert.assertTrue(
-        recoverableArcticFileIO.matchTrashFilePattern(
-            getArcticTable().location()
-                + "/metadata/3ce7600d-4853-45d0-8533-84c12a611916-m0.avro"));
+        recoverableHadoopFileIO.matchTrashFilePattern(
+            getMixedTable().location() + "/metadata/3ce7600d-4853-45d0-8533-84c12a611916-m0.avro"));
 
     Assert.assertFalse(
-        recoverableArcticFileIO.matchTrashFilePattern(
-            getArcticTable().location() + "/metadata/3ce7600d-4853-45d0-8533-84c12a611916.avro"));
+        recoverableHadoopFileIO.matchTrashFilePattern(
+            getMixedTable().location() + "/metadata/3ce7600d-4853-45d0-8533-84c12a611916.avro"));
   }
 
   private void createFile(String path) throws IOException {

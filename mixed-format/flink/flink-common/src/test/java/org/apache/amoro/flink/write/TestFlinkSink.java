@@ -68,7 +68,7 @@ public class TestFlinkSink extends FlinkTestBase {
   public void testKeyedSink() throws Exception {
     Assume.assumeTrue(isKeyedTable());
     final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
+    KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
 
     env.enableCheckpointing(2000, CheckpointingMode.EXACTLY_ONCE);
     env.getCheckpointConfig()
@@ -142,7 +142,7 @@ public class TestFlinkSink extends FlinkTestBase {
   public void testUnkeyedSink() throws Exception {
     Assume.assumeFalse(isKeyedTable());
     final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-    UnkeyedTable testTable = getArcticTable().asUnkeyedTable();
+    UnkeyedTable testTable = getMixedTable().asUnkeyedTable();
 
     env.enableCheckpointing(2000, CheckpointingMode.EXACTLY_ONCE);
     env.getCheckpointConfig()
@@ -185,7 +185,7 @@ public class TestFlinkSink extends FlinkTestBase {
   public void testUnkeyedOverwrite() throws Exception {
     Assume.assumeFalse(isKeyedTable());
     final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-    UnkeyedTable testTable = getArcticTable().asUnkeyedTable();
+    UnkeyedTable testTable = getMixedTable().asUnkeyedTable();
 
     env.enableCheckpointing(2000, CheckpointingMode.EXACTLY_ONCE);
     env.getCheckpointConfig()

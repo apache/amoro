@@ -437,7 +437,7 @@ public class MixedCatalog extends AbstractCatalog {
                       keyedTableScanTask ->
                           Stream.of(
                                   keyedTableScanTask.dataTasks(),
-                                  keyedTableScanTask.arcticEquityDeletes())
+                                  keyedTableScanTask.mixedEquityDeletes())
                               .flatMap(List::stream))
               .forEach(
                   arcticFileScanTask -> {

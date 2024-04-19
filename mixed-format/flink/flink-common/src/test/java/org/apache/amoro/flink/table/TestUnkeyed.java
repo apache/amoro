@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.table;
 
-import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.MockAmoroManagementServer.TEST_CATALOG_NAME;
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static org.apache.amoro.table.TableProperties.ENABLE_LOG_STORE;
 import static org.apache.amoro.table.TableProperties.LOG_STORE_ADDRESS;

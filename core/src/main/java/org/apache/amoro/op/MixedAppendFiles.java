@@ -28,8 +28,8 @@ import org.apache.iceberg.Transaction;
 import java.util.function.Supplier;
 
 /**
- * Implementation of {@link AppendFiles} for arctic table, adding tracing and watermark generating
- * logics.
+ * Implementation of {@link AppendFiles} for mixed-format table, adding tracing and watermark
+ * generating logics.
  */
 public class MixedAppendFiles extends MixedUpdate<AppendFiles> implements AppendFiles {
 

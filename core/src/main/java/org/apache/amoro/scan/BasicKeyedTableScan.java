@@ -175,7 +175,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
 
             if (splitTaskByDeleteRatio != null) {
               long deleteWeight =
-                  task.arcticEquityDeletes().stream()
+                  task.mixedEquityDeletes().stream()
                       .mapToLong(s -> s.file().fileSizeInBytes())
                       .map(s -> s + openFileCost)
                       .sum();
@@ -209,7 +209,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
     CloseableIterable<NodeFileScanTask> tasksIterable =
         splitNode(
             CloseableIterable.withNoopClose(task.dataTasks()),
-            task.arcticEquityDeletes(),
+            task.mixedEquityDeletes(),
             targetSize,
             lookBack,
             openFileCost);
@@ -283,7 +283,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
                 if (!treeNode1.equals(treeNode)
                     && (treeNode1.isSonOf(treeNode) || treeNode.isSonOf(treeNode1))) {
                   List<MixedFileScanTask> deletes =
-                      nodeFileScanTask1.arcticEquityDeletes().stream()
+                      nodeFileScanTask1.mixedEquityDeletes().stream()
                           .filter(file -> file.file().node().equals(treeNode1))
                           .collect(Collectors.toList());
 

@@ -77,54 +77,52 @@ public class TestSnapshotExpireHive extends TestSnapshotExpire {
 
   @Test
   public void testExpireTableFiles() {
-    List<DataFile> hiveFiles = writeAndReplaceHivePartitions(getArcticTable());
-    List<DataFile> s2Files = writeAndCommitBaseStore(getArcticTable());
+    List<DataFile> hiveFiles = writeAndReplaceHivePartitions(getMixedTable());
+    List<DataFile> s2Files = writeAndCommitBaseStore(getMixedTable());
 
     DeleteFiles deleteHiveFiles =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable().newDelete()
-            : getArcticTable().asUnkeyedTable().newDelete();
+            ? getMixedTable().asKeyedTable().baseTable().newDelete()
+            : getMixedTable().asUnkeyedTable().newDelete();
 
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0")
         .commit();
-    getArcticTable().updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
+    getMixedTable().updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
 
     for (DataFile hiveFile : hiveFiles) {
-      Assert.assertTrue(getArcticTable().io().exists(hiveFile.path().toString()));
+      Assert.assertTrue(getMixedTable().io().exists(hiveFile.path().toString()));
       deleteHiveFiles.deleteFile(hiveFile);
     }
     deleteHiveFiles.commit();
 
     DeleteFiles deleteIcebergFiles =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable().newDelete()
-            : getArcticTable().asUnkeyedTable().newDelete();
+            ? getMixedTable().asKeyedTable().baseTable().newDelete()
+            : getMixedTable().asUnkeyedTable().newDelete();
     for (DataFile s2File : s2Files) {
-      Assert.assertTrue(getArcticTable().io().exists(s2File.path().toString()));
+      Assert.assertTrue(getMixedTable().io().exists(s2File.path().toString()));
       deleteIcebergFiles.deleteFile(s2File);
     }
     deleteIcebergFiles.commit();
 
-    List<DataFile> s3Files = writeAndCommitBaseStore(getArcticTable());
-    s3Files.forEach(
-        file -> Assert.assertTrue(getArcticTable().io().exists(file.path().toString())));
+    List<DataFile> s3Files = writeAndCommitBaseStore(getMixedTable());
+    s3Files.forEach(file -> Assert.assertTrue(getMixedTable().io().exists(file.path().toString())));
 
     UnkeyedTable unkeyedTable =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
-    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getArcticTable());
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
+    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable());
     mixedTableMaintainer.getBaseMaintainer().expireSnapshots(System.currentTimeMillis());
     Assert.assertEquals(1, Iterables.size(unkeyedTable.snapshots()));
 
     hiveFiles.forEach(
-        file -> Assert.assertTrue(getArcticTable().io().exists(file.path().toString())));
+        file -> Assert.assertTrue(getMixedTable().io().exists(file.path().toString())));
     s2Files.forEach(
-        file -> Assert.assertFalse(getArcticTable().io().exists(file.path().toString())));
-    s3Files.forEach(
-        file -> Assert.assertTrue(getArcticTable().io().exists(file.path().toString())));
+        file -> Assert.assertFalse(getMixedTable().io().exists(file.path().toString())));
+    s3Files.forEach(file -> Assert.assertTrue(getMixedTable().io().exists(file.path().toString())));
   }
 
   public List<DataFile> writeAndReplaceHivePartitions(MixedTable table) {

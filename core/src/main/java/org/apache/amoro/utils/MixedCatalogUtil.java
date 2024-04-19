@@ -205,8 +205,8 @@ public class MixedCatalogUtil {
     return builder.build();
   }
 
-  /** Wrap table operation with arctic authorization logic for {@link Table}. */
-  public static Table useArcticTableOperations(
+  /** Wrap table operation with authorization logic for {@link Table}. */
+  public static Table useMixedTableOperations(
       Table table, String tableLocation, MixedFileIO mixedFileIO, Configuration configuration) {
     if (table instanceof org.apache.iceberg.BaseTable) {
       org.apache.iceberg.BaseTable baseTable = (org.apache.iceberg.BaseTable) table;

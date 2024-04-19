@@ -28,7 +28,7 @@ import org.apache.iceberg.UpdateSchema;
 import java.io.Serializable;
 import java.util.Map;
 
-/** Represents an arctic table. */
+/** Represents an mixed-format table. */
 public interface MixedTable extends Serializable {
 
   /** Returns the {@link TableIdentifier} of this table */

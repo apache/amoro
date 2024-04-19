@@ -63,7 +63,7 @@ public class TestTableWatermark extends TableTestBase {
 
   private UnkeyedTable getOperationTable() {
     if (operationTable == null) {
-      MixedTable mixedTable = getArcticTable();
+      MixedTable mixedTable = getMixedTable();
       if (isKeyedTable()) {
         if (onBaseTable) {
           operationTable = mixedTable.asKeyedTable().baseTable();
@@ -163,7 +163,7 @@ public class TestTableWatermark extends TableTestBase {
 
   private void testTableWatermark(Function<DataFile, Void> tableOperation) {
     long start = System.currentTimeMillis();
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(TableProperties.TABLE_EVENT_TIME_FIELD, "op_time")
         .set(TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS, "10")
@@ -185,7 +185,7 @@ public class TestTableWatermark extends TableTestBase {
             upperBounds);
 
     DataFile file1 =
-        DataFiles.builder(getArcticTable().spec())
+        DataFiles.builder(getMixedTable().spec())
             .withPath("/path/to/file1.parquet")
             .withFileSizeInBytes(0)
             .withPartitionPath("op_time_day=2022-01-01")
@@ -193,6 +193,6 @@ public class TestTableWatermark extends TableTestBase {
             .build();
     tableOperation.apply(file1);
     Assert.assertEquals(
-        start - 20000, TablePropertyUtil.getTableWatermark(getArcticTable().properties()));
+        start - 20000, TablePropertyUtil.getTableWatermark(getMixedTable().properties()));
   }
 }

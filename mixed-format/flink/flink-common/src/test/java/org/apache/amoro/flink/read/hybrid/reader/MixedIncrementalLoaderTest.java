@@ -70,7 +70,7 @@ public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTa
 
   @Before
   public void before() throws IOException {
-    MixedTable mixedTable = getArcticTable();
+    MixedTable mixedTable = getMixedTable();
     TableSchema flinkPartialSchema =
         TableSchema.builder()
             .field("id", DataTypes.INT())
@@ -111,7 +111,7 @@ public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTa
 
   @Test
   public void testMOR() {
-    KeyedTable keyedTable = getArcticTable().asKeyedTable();
+    KeyedTable keyedTable = getMixedTable().asKeyedTable();
     List<Expression> expressions =
         Lists.newArrayList(Expressions.greaterThan("op_time", "2022-06-20T10:10:11.0"));
     ContinuousSplitPlanner morPlanner =

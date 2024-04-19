@@ -45,7 +45,7 @@ public interface KeyedTableScanTask extends Serializable {
   List<MixedFileScanTask> insertTasks();
 
   /** Returns a list of {@link MixedFileScanTask} for equality delete files */
-  List<MixedFileScanTask> arcticEquityDeletes();
+  List<MixedFileScanTask> mixedEquityDeletes();
 
   /** Returns a list of {@link MixedFileScanTask} for insert files and base files */
   List<MixedFileScanTask> dataTasks();

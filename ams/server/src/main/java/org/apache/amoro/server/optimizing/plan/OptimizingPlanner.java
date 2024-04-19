@@ -95,7 +95,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
                 partitionPlan -> {
                   Pair<Integer, StructLike> partition = partitionPlan.getPartition();
                   PartitionSpec spec =
-                      MixedTableUtil.getArcticTablePartitionSpecById(mixedTable, partition.first());
+                      MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, partition.first());
                   return spec.partitionToPath(partition.second());
                 },
                 AbstractPartitionPlan::getFromSequence));
@@ -109,7 +109,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
                 partitionPlan -> {
                   Pair<Integer, StructLike> partition = partitionPlan.getPartition();
                   PartitionSpec spec =
-                      MixedTableUtil.getArcticTablePartitionSpecById(mixedTable, partition.first());
+                      MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, partition.first());
                   return spec.partitionToPath(partition.second());
                 },
                 AbstractPartitionPlan::getToSequence));

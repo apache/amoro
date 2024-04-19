@@ -18,7 +18,7 @@
 
 package org.apache.amoro.catalog;
 
-import org.apache.amoro.MockArcticMetastoreServer;
+import org.apache.amoro.MockAmoroManagementServer;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TestAms;
 import org.apache.amoro.UnifiedCatalog;
@@ -49,7 +49,7 @@ public abstract class CatalogTestBase {
     this.testHelper = testHelper;
   }
 
-  public static MockArcticMetastoreServer.AmsHandler getAmsHandler() {
+  public static MockAmoroManagementServer.AmsHandler getAmsHandler() {
     return TEST_AMS.getAmsHandler();
   }
 

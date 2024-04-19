@@ -19,21 +19,21 @@
 package org.apache.amoro;
 
 /** Exception thrown for table IO-related failures. */
-public class ArcticIOException extends RuntimeException {
+public class AmoroIOException extends RuntimeException {
 
   private Throwable ioException;
 
-  public ArcticIOException(String msg, Throwable t) {
+  public AmoroIOException(String msg, Throwable t) {
     super(msg, t);
     this.ioException = t;
   }
 
-  public ArcticIOException(Throwable t) {
+  public AmoroIOException(Throwable t) {
     super(t.getMessage(), t);
     this.ioException = t;
   }
 
-  public ArcticIOException(String message) {
+  public AmoroIOException(String message) {
     super(message);
   }
 

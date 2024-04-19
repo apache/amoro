@@ -93,7 +93,7 @@ public class TestTaskReader extends TableDataTestBase {
         Sets.newHashSet(
             tableTestHelper()
                 .readKeyedTable(
-                    getArcticTable().asKeyedTable(),
+                    getMixedTable().asKeyedTable(),
                     Expressions.alwaysTrue(),
                     null,
                     useDiskMap,
@@ -114,7 +114,7 @@ public class TestTaskReader extends TableDataTestBase {
     Set<Record> records =
         Sets.newHashSet(
             tableTestHelper()
-                .readKeyedTable(getArcticTable().asKeyedTable(), filter, null, useDiskMap, false));
+                .readKeyedTable(getMixedTable().asKeyedTable(), filter, null, useDiskMap, false));
 
     List<KeyedTableScanTask> readTasks = planReadTask(filter);
     Assert.assertEquals(2, readTasks.size());
@@ -132,7 +132,7 @@ public class TestTaskReader extends TableDataTestBase {
     records =
         Sets.newHashSet(
             tableTestHelper()
-                .readKeyedTable(getArcticTable().asKeyedTable(), filter, null, useDiskMap, false));
+                .readKeyedTable(getMixedTable().asKeyedTable(), filter, null, useDiskMap, false));
     // expect: (id=1),(id=3),(id=6), change store can only be filtered by partition expression now.
     expectRecords.clear();
     expectRecords.add(allRecords.get(0));
@@ -150,7 +150,7 @@ public class TestTaskReader extends TableDataTestBase {
     Set<Record> records =
         Sets.newHashSet(
             tableTestHelper()
-                .readKeyedTable(getArcticTable().asKeyedTable(), filter, null, useDiskMap, false));
+                .readKeyedTable(getMixedTable().asKeyedTable(), filter, null, useDiskMap, false));
     // expect: (id=1),(id=6), change store can only be filtered by partition expression now.
     Set<Record> expectRecords = Sets.newHashSet();
     expectRecords.add(allRecords.get(0));
@@ -167,7 +167,7 @@ public class TestTaskReader extends TableDataTestBase {
     Set<Record> records =
         Sets.newHashSet(
             tableTestHelper()
-                .readKeyedTable(getArcticTable().asKeyedTable(), filter, null, useDiskMap, false));
+                .readKeyedTable(getMixedTable().asKeyedTable(), filter, null, useDiskMap, false));
     // expect: empty, change store can only be filtered by partition expression now.
     Set<Record> expectRecords = Sets.newHashSet();
     Assert.assertEquals(expectRecords, records);
@@ -179,7 +179,7 @@ public class TestTaskReader extends TableDataTestBase {
         Sets.newHashSet(
             tableTestHelper()
                 .readChangeStore(
-                    getArcticTable().asKeyedTable(), Expressions.alwaysTrue(), null, useDiskMap));
+                    getMixedTable().asKeyedTable(), Expressions.alwaysTrue(), null, useDiskMap));
     // expect: +(id=5),+(id=6),-(id=5)
     Set<Record> expectRecords = Sets.newHashSet();
     expectRecords.add(
@@ -196,8 +196,8 @@ public class TestTaskReader extends TableDataTestBase {
     Assume.assumeFalse(useDiskMap);
     BaseIcebergPosDeleteReader baseIcebergPosDeleteReader =
         new BaseIcebergPosDeleteReader(
-            getArcticTable().asKeyedTable().io(),
-            getArcticTable().asKeyedTable().baseTable().encryption(),
+            getMixedTable().asKeyedTable().io(),
+            getMixedTable().asKeyedTable().baseTable().encryption(),
             Collections.singletonList(deleteFileOfPositionDelete));
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     baseIcebergPosDeleteReader.readDeletes().forEach(record -> builder.add(record.copy()));
@@ -217,7 +217,7 @@ public class TestTaskReader extends TableDataTestBase {
         Sets.newHashSet(
             tableTestHelper()
                 .readKeyedTable(
-                    getArcticTable().asKeyedTable(),
+                    getMixedTable().asKeyedTable(),
                     Expressions.alwaysTrue(),
                     null,
                     useDiskMap,
@@ -236,7 +236,7 @@ public class TestTaskReader extends TableDataTestBase {
   protected List<KeyedTableScanTask> planReadTask(Expression filter) {
     List<KeyedTableScanTask> scanTasks = Lists.newArrayList();
     try (CloseableIterable<CombinedScanTask> combinedScanTasks =
-        getArcticTable().asKeyedTable().newScan().filter(filter).planTasks()) {
+        getMixedTable().asKeyedTable().newScan().filter(filter).planTasks()) {
       combinedScanTasks.forEach(combinedScanTask -> scanTasks.addAll(combinedScanTask.tasks()));
     } catch (IOException e) {
       throw new UncheckedIOException(e);

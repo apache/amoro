@@ -29,12 +29,12 @@ import java.util.stream.Collectors;
 public class FileScanTaskUtil {
 
   /**
-   * Converts a collection of ArcticFileScanTask objects to a string representation. The string
+   * Converts a collection of MixedFileScanTask objects to a string representation. The string
    * representation includes details about each file, such as its path, type, mask, index,
    * transaction ID, file size in bytes, and record count.
    *
-   * @param tasks the collection of ArcticFileScanTask objects to convert to a string
-   * @return a string representation of the ArcticFileScanTask objects
+   * @param tasks the collection of MixedFileScanTask objects to convert to a string
+   * @return a string representation of the MixedFileScanTask objects
    */
   public static String toString(Collection<MixedFileScanTask> tasks) {
     if (tasks == null) {

@@ -77,7 +77,7 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
 
   @Test
   public void run() throws Exception {
-    MixedTable table = getArcticTable();
+    MixedTable table = getMixedTable();
 
     int partitionCount = 2;
     int primaryUpperBound = 30000;

@@ -26,8 +26,8 @@ import static org.apache.amoro.server.table.internal.InternalTableConstants.S3_P
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.io.ArcticFileIOs;
 import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.MixedFileIOs;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.MixedCatalogUtil;
@@ -91,7 +91,7 @@ public class InternalTableUtil {
     }
     String ioImpl = catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, defaultImpl);
     FileIO fileIO = org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
-    return ArcticFileIOs.buildAdaptIcebergFileIO(store, fileIO);
+    return MixedFileIOs.buildAdaptIcebergFileIO(store, fileIO);
   }
 
   /**

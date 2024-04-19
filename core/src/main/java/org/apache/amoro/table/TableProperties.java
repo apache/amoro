@@ -24,7 +24,7 @@ import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
 import java.util.HashSet;
 import java.util.Set;
 
-/** Reserved Arctic table properties list. */
+/** Reserved mixed-format table properties list. */
 public class TableProperties {
 
   private TableProperties() {}

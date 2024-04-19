@@ -49,7 +49,7 @@ public class TestKeyedTableScan extends TableDataTestBase {
   private void assertFileCount(int baseFileCnt, int insertFileCnt, int equDeleteFileCnt)
       throws IOException {
     CloseableIterable<CombinedScanTask> combinedScanTasks =
-        getArcticTable().asKeyedTable().newScan().planTasks();
+        getMixedTable().asKeyedTable().newScan().planTasks();
     final List<MixedFileScanTask> allBaseTasks = new ArrayList<>();
     final List<MixedFileScanTask> allInsertTasks = new ArrayList<>();
     final List<MixedFileScanTask> allEquDeleteTasks = new ArrayList<>();
@@ -62,7 +62,7 @@ public class TestKeyedTableScan extends TableDataTestBase {
                 task -> {
                   allBaseTasks.addAll(task.baseTasks());
                   allInsertTasks.addAll(task.insertTasks());
-                  allEquDeleteTasks.addAll(task.arcticEquityDeletes());
+                  allEquDeleteTasks.addAll(task.mixedEquityDeletes());
                 });
       }
     }
@@ -78,14 +78,14 @@ public class TestKeyedTableScan extends TableDataTestBase {
     ImmutableList<Record> records = builder.build();
 
     GenericChangeTaskWriter writer =
-        GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+        GenericTaskWriters.builderFor(getMixedTable().asKeyedTable())
             .withTransactionId(5L)
             .buildChangeWriter();
     for (Record record : records) {
       writer.write(record);
     }
     WriteResult result = writer.complete();
-    AppendFiles baseAppend = getArcticTable().asKeyedTable().baseTable().newAppend();
+    AppendFiles baseAppend = getMixedTable().asKeyedTable().baseTable().newAppend();
     Arrays.stream(result.dataFiles()).forEach(baseAppend::appendFile);
     baseAppend.commit();
   }

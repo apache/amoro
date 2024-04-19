@@ -18,8 +18,8 @@
 
 package org.apache.amoro.hive.catalog;
 
-import static org.apache.amoro.properties.HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS;
-import static org.apache.amoro.properties.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
+import static org.apache.amoro.properties.HiveTableProperties.MIXED_TABLE_PRIMARY_KEYS;
+import static org.apache.amoro.properties.HiveTableProperties.MIXED_TABLE_ROOT_LOCATION;
 import static org.apache.amoro.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
 import static org.apache.amoro.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
 import static org.apache.amoro.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
@@ -36,8 +36,8 @@ import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.utils.CompatibleHivePropertyUtil;
 import org.apache.amoro.hive.utils.HiveSchemaUtil;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.io.ArcticFileIOs;
 import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.MixedFileIOs;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.op.CreateTableTransaction;
 import org.apache.amoro.op.MixedHadoopTableOperations;
@@ -185,7 +185,7 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
 
     Map<String, String> hiveParameters = hiveTable.getParameters();
 
-    String arcticRootLocation = hiveParameters.get(ARCTIC_TABLE_ROOT_LOCATION);
+    String arcticRootLocation = hiveParameters.get(MIXED_TABLE_ROOT_LOCATION);
     if (arcticRootLocation == null) {
       // if hive location ends with /hive, then it's a mixed-hive table. we need to remove /hive to
       // get root location.
@@ -225,7 +225,7 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
 
     // set table's primary key when needed
     if (hiveParameters != null) {
-      String primaryKey = hiveParameters.get(ARCTIC_TABLE_PRIMARY_KEYS);
+      String primaryKey = hiveParameters.get(MIXED_TABLE_PRIMARY_KEYS);
       // primary key info come from hive properties
       if (StringUtils.isNotBlank(primaryKey)) {
         org.apache.amoro.api.PrimaryKeySpec keySpec = new org.apache.amoro.api.PrimaryKeySpec();
@@ -308,7 +308,7 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
                               table.getParameters() != null
                                   && CompatibleHivePropertyUtil.propertyAsBoolean(
                                       table.getParameters(),
-                                      HiveTableProperties.ARCTIC_TABLE_FLAG,
+                                      HiveTableProperties.MIXED_TABLE_FLAG,
                                       false))
                       .map(table -> TableIdentifier.of(name(), database, table.getTableName()))
                       .collect(Collectors.toList());
@@ -389,7 +389,7 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
 
     @Override
     public Transaction createTransaction() {
-      MixedFileIO mixedFileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
+      MixedFileIO mixedFileIO = MixedFileIOs.buildHadoopFileIO(tableMetaStore);
       ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
       TableMeta meta = builder.build();
       String location = getTableLocationForCreate();
@@ -576,7 +576,7 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
         if (hiveTable != null) {
           // do some check for whether the table has been upgraded!!!
           if (CompatibleHivePropertyUtil.propertyAsBoolean(
-              hiveTable.getParameters(), HiveTableProperties.ARCTIC_TABLE_FLAG, false)) {
+              hiveTable.getParameters(), HiveTableProperties.MIXED_TABLE_FLAG, false)) {
             throw new IllegalArgumentException(
                 String.format("Table %s has already been upgraded !", identifier));
           }

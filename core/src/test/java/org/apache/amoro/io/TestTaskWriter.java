@@ -110,7 +110,7 @@ public class TestTaskWriter extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(6, "mack", 0, "2022-01-01T12:00:00"));
 
     List<DataFile> files =
-        tableTestHelper().writeBaseStore(getArcticTable(), 1L, insertRecords, false);
+        tableTestHelper().writeBaseStore(getMixedTable(), 1L, insertRecords, false);
     if (isKeyedTable()) {
       if (isPartitionedTable()) {
         Assert.assertEquals(5, files.size());
@@ -125,13 +125,13 @@ public class TestTaskWriter extends TableTestBase {
       }
     }
 
-    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
     AppendFiles appendFiles = baseStore.newAppend();
     files.forEach(appendFiles::appendFile);
     appendFiles.commit();
 
     List<Record> readRecords =
-        tableTestHelper().readBaseStore(getArcticTable(), Expressions.alwaysTrue(), null, false);
+        tableTestHelper().readBaseStore(getMixedTable(), Expressions.alwaysTrue(), null, false);
     Assert.assertEquals(Sets.newHashSet(insertRecords), Sets.newHashSet(readRecords));
   }
 
@@ -146,12 +146,12 @@ public class TestTaskWriter extends TableTestBase {
         DataFileTestHelpers.getFile(
             "/data",
             1,
-            getArcticTable().spec(),
+            getMixedTable().spec(),
             isPartitionedTable() ? "op_time_day=2020-01-01" : null,
             null,
             false,
             FileFormat.valueOf(fileFormat.toUpperCase(Locale.ENGLISH)));
-    GenericTaskWriters.Builder builder = GenericTaskWriters.builderFor(getArcticTable());
+    GenericTaskWriters.Builder builder = GenericTaskWriters.builderFor(getMixedTable());
     if (isKeyedTable()) {
       builder.withTransactionId(1L);
     }
@@ -163,7 +163,7 @@ public class TestTaskWriter extends TableTestBase {
     writer.delete(dataFile.path(), 5);
     List<DeleteFile> result = writer.complete();
     Assert.assertEquals(1, result.size());
-    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
     RowDelta rowDelta = baseStore.newRowDelta();
     result.forEach(rowDelta::addDeletes);
     rowDelta.commit();
@@ -214,7 +214,7 @@ public class TestTaskWriter extends TableTestBase {
     List<DataFile> insertFiles =
         tableTestHelper()
             .writeChangeStore(
-                getArcticTable().asKeyedTable(), 1L, ChangeAction.INSERT, insertRecords, false);
+                getMixedTable().asKeyedTable(), 1L, ChangeAction.INSERT, insertRecords, false);
     Assert.assertEquals(4, insertFiles.size());
 
     List<Record> deleteRecords = Lists.newArrayList();
@@ -224,18 +224,17 @@ public class TestTaskWriter extends TableTestBase {
     List<DataFile> deleteFiles =
         tableTestHelper()
             .writeChangeStore(
-                getArcticTable().asKeyedTable(), 2L, ChangeAction.DELETE, deleteRecords, false);
+                getMixedTable().asKeyedTable(), 2L, ChangeAction.DELETE, deleteRecords, false);
     Assert.assertEquals(2, deleteFiles.size());
 
-    AppendFiles appendFiles = getArcticTable().asKeyedTable().changeTable().newAppend();
+    AppendFiles appendFiles = getMixedTable().asKeyedTable().changeTable().newAppend();
     insertFiles.forEach(appendFiles::appendFile);
     deleteFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
 
     List<Record> readChangeRecords =
         tableTestHelper()
-            .readChangeStore(
-                getArcticTable().asKeyedTable(), Expressions.alwaysTrue(), null, false);
+            .readChangeStore(getMixedTable().asKeyedTable(), Expressions.alwaysTrue(), null, false);
     List<Record> expectRecord = Lists.newArrayList();
     for (int i = 0; i < insertRecords.size(); i++) {
       expectRecord.add(
@@ -270,7 +269,7 @@ public class TestTaskWriter extends TableTestBase {
         IllegalStateException.class,
         () ->
             tableTestHelper()
-                .writeBaseStore(getArcticTable().asKeyedTable(), 1L, insertRecords, true));
+                .writeBaseStore(getMixedTable().asKeyedTable(), 1L, insertRecords, true));
 
     Assume.assumeTrue(isKeyedTable());
     Assert.assertThrows(
@@ -278,6 +277,6 @@ public class TestTaskWriter extends TableTestBase {
         () ->
             tableTestHelper()
                 .writeChangeStore(
-                    getArcticTable().asKeyedTable(), 1L, ChangeAction.INSERT, insertRecords, true));
+                    getMixedTable().asKeyedTable(), 1L, ChangeAction.INSERT, insertRecords, true));
   }
 }

@@ -32,25 +32,25 @@ public class TestCompatibleHivePropertyUtil {
     Map<String, String> properties = Maps.newHashMap();
     Assert.assertFalse(
         CompatibleHivePropertyUtil.propertyAsBoolean(
-            properties, HiveTableProperties.ARCTIC_TABLE_FLAG, false));
+            properties, HiveTableProperties.MIXED_TABLE_FLAG, false));
 
-    properties.put(HiveTableProperties.ARCTIC_TABLE_FLAG, "true");
+    properties.put(HiveTableProperties.MIXED_TABLE_FLAG, "true");
     Assert.assertTrue(
         CompatibleHivePropertyUtil.propertyAsBoolean(
-            properties, HiveTableProperties.ARCTIC_TABLE_FLAG, false));
+            properties, HiveTableProperties.MIXED_TABLE_FLAG, false));
 
-    properties.put(HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY, "false");
+    properties.put(HiveTableProperties.AMORO_TABLE_FLAG_LEGACY, "false");
     Assert.assertTrue(
         CompatibleHivePropertyUtil.propertyAsBoolean(
-            properties, HiveTableProperties.ARCTIC_TABLE_FLAG, false));
+            properties, HiveTableProperties.MIXED_TABLE_FLAG, false));
   }
 
   @Test
   public void testGetLegacyProperty() {
     Map<String, String> properties = Maps.newHashMap();
-    properties.put(HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY, "true");
+    properties.put(HiveTableProperties.AMORO_TABLE_FLAG_LEGACY, "true");
     Assert.assertTrue(
         CompatibleHivePropertyUtil.propertyAsBoolean(
-            properties, HiveTableProperties.ARCTIC_TABLE_FLAG, false));
+            properties, HiveTableProperties.MIXED_TABLE_FLAG, false));
   }
 }

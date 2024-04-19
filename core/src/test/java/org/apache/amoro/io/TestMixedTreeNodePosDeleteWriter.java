@@ -42,9 +42,9 @@ import java.io.IOException;
 import java.util.List;
 
 @RunWith(Parameterized.class)
-public class TestArcticTreeNodePosDeleteWriter extends TableTestBase {
+public class TestMixedTreeNodePosDeleteWriter extends TableTestBase {
 
-  public TestArcticTreeNodePosDeleteWriter(
+  public TestMixedTreeNodePosDeleteWriter(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
@@ -59,7 +59,7 @@ public class TestArcticTreeNodePosDeleteWriter extends TableTestBase {
 
   @Test
   public void test() throws IOException {
-    UnkeyedTable table = getArcticTable().asKeyedTable().baseTable();
+    UnkeyedTable table = getMixedTable().asKeyedTable().baseTable();
     GenericAppenderFactory appenderFactory =
         new GenericAppenderFactory(table.schema(), table.spec());
 

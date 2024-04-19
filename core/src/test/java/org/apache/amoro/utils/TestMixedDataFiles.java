@@ -31,7 +31,7 @@ import org.junit.Test;
 
 import java.time.LocalDateTime;
 
-public class TestArcticDataFiles {
+public class TestMixedDataFiles {
 
   private static final Schema SCHEMA =
       new Schema(Types.NestedField.required(1, "dt", Types.TimestampType.withoutZone()));

@@ -19,8 +19,8 @@
 package org.apache.amoro.catalog;
 
 import org.apache.amoro.api.TableMeta;
-import org.apache.amoro.io.ArcticFileIOs;
 import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.MixedFileIOs;
 import org.apache.amoro.io.TableTrashManagers;
 import org.apache.amoro.properties.MetaTableProperties;
 import org.apache.amoro.table.BaseTable;
@@ -88,7 +88,7 @@ public class MixedTables {
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
     MixedFileIO fileIO =
-        ArcticFileIOs.buildRecoverableHadoopFileIO(
+        MixedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -98,7 +98,7 @@ public class MixedTables {
     BaseTable baseTable =
         new BasicKeyedTable.BaseInternalTable(
             tableIdentifier,
-            MixedCatalogUtil.useArcticTableOperations(
+            MixedCatalogUtil.useMixedTableOperations(
                 baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -107,7 +107,7 @@ public class MixedTables {
     ChangeTable changeTable =
         new BasicKeyedTable.ChangeInternalTable(
             tableIdentifier,
-            MixedCatalogUtil.useArcticTableOperations(
+            MixedCatalogUtil.useMixedTableOperations(
                 changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -140,7 +140,7 @@ public class MixedTables {
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
 
     MixedFileIO fileIO =
-        ArcticFileIOs.buildRecoverableHadoopFileIO(
+        MixedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -148,7 +148,7 @@ public class MixedTables {
             catalogProperties);
     return new BasicUnkeyedTable(
         tableIdentifier,
-        MixedCatalogUtil.useArcticTableOperations(
+        MixedCatalogUtil.useMixedTableOperations(
             table, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO,
         catalogProperties);
@@ -178,7 +178,7 @@ public class MixedTables {
 
     fillTableProperties(tableMeta);
     MixedFileIO fileIO =
-        ArcticFileIOs.buildRecoverableHadoopFileIO(
+        MixedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -197,7 +197,7 @@ public class MixedTables {
     BaseTable baseTable =
         new BasicKeyedTable.BaseInternalTable(
             tableIdentifier,
-            MixedCatalogUtil.useArcticTableOperations(
+            MixedCatalogUtil.useMixedTableOperations(
                 baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -215,7 +215,7 @@ public class MixedTables {
     ChangeTable changeTable =
         new BasicKeyedTable.ChangeInternalTable(
             tableIdentifier,
-            MixedCatalogUtil.useArcticTableOperations(
+            MixedCatalogUtil.useMixedTableOperations(
                 changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -253,7 +253,7 @@ public class MixedTables {
               }
             });
     MixedFileIO fileIO =
-        ArcticFileIOs.buildRecoverableHadoopFileIO(
+        MixedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -261,7 +261,7 @@ public class MixedTables {
             catalogProperties);
     return new BasicUnkeyedTable(
         tableIdentifier,
-        MixedCatalogUtil.useArcticTableOperations(
+        MixedCatalogUtil.useMixedTableOperations(
             table, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO,
         catalogProperties);
@@ -269,7 +269,7 @@ public class MixedTables {
 
   public void dropTableByMeta(TableMeta tableMeta, boolean purge) {
     try {
-      MixedFileIO fileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
+      MixedFileIO fileIO = MixedFileIOs.buildHadoopFileIO(tableMetaStore);
       Map<String, String> tableProperties = Maps.newHashMap();
       try {
         MixedTable mixedTable = loadTableByMeta(tableMeta);

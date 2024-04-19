@@ -314,7 +314,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     }
 
     @Override
-    protected MixedFileIO getArcticFileIo() {
+    protected MixedFileIO getMixedFileIo() {
       return fileIO;
     }
   }

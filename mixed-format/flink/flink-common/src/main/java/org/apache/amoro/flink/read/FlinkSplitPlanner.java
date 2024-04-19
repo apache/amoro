@@ -244,7 +244,7 @@ public class FlinkSplitPlanner {
                     allBaseTasks.addAll(keyedTableScanTask.baseTasks());
 
                     taskMap(keyedTableScanTask.insertTasks(), true, transactionTasks);
-                    taskMap(keyedTableScanTask.arcticEquityDeletes(), false, transactionTasks);
+                    taskMap(keyedTableScanTask.mixedEquityDeletes(), false, transactionTasks);
                   });
         }
         List<MixedFileScanTask> baseTasks =

@@ -95,24 +95,24 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    HiveDataTestHelpers.assertWriteConsistentFilesName(getArcticTable(), dataFiles);
-    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    HiveDataTestHelpers.assertWriteConsistentFilesName(getMixedTable(), dataFiles);
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getArcticTable());
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getMixedTable());
 
     dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
-        TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
+        TEST_HMS.getHiveClient(), getMixedTable(), dataFiles);
 
     // ================== test overwrite all table
     insertRecords.clear();
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
     dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
     overwriteFiles = baseStore.newOverwrite();
     overwriteFiles.overwriteByRowFilter(Expressions.alwaysTrue());
     dataFiles.forEach(overwriteFiles::addFile);
@@ -120,7 +120,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
 
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
-        TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
+        TEST_HMS.getHiveClient(), getMixedTable(), dataFiles);
   }
 
   @Test
@@ -129,30 +129,30 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    HiveDataTestHelpers.assertWriteConsistentFilesName(getArcticTable(), dataFiles);
-    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    HiveDataTestHelpers.assertWriteConsistentFilesName(getMixedTable(), dataFiles);
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
     Transaction transaction = baseStore.newTransaction();
     OverwriteFiles overwriteFiles = transaction.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getArcticTable());
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getMixedTable());
 
     String key = "test-overwrite-transaction";
     UpdateProperties updateProperties = transaction.updateProperties();
     updateProperties.set(key, "true");
     updateProperties.commit();
 
-    Assert.assertFalse(getArcticTable().properties().containsKey(key));
+    Assert.assertFalse(getMixedTable().properties().containsKey(key));
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
-        TEST_HMS.getHiveClient(), getArcticTable(), Lists.newArrayList());
+        TEST_HMS.getHiveClient(), getMixedTable(), Lists.newArrayList());
 
     transaction.commitTransaction();
-    Assert.assertTrue(getArcticTable().properties().containsKey(key));
+    Assert.assertTrue(getMixedTable().properties().containsKey(key));
 
     dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
-        TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
+        TEST_HMS.getHiveClient(), getMixedTable(), dataFiles);
   }
 
   @Test
@@ -161,29 +161,29 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getArcticTable());
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getMixedTable());
     dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
-        TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
+        TEST_HMS.getHiveClient(), getMixedTable(), dataFiles);
 
     // ================== test overwrite all table
     insertRecords.clear();
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
     dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
     overwriteFiles = baseStore.newOverwrite();
     overwriteFiles.overwriteByRowFilter(Expressions.alwaysTrue());
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
     dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
-        TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
+        TEST_HMS.getHiveClient(), getMixedTable(), dataFiles);
   }
 
   /** add file to exist partition, overwrite success without create partition */
@@ -194,24 +194,24 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-01T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable())
+        HiveDataTestHelpers.writerOf(getMixedTable())
             .transactionId(1L)
             .customHiveLocation(hiveLocation)
             .writeHive(insertRecords);
-    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getArcticTable());
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getMixedTable());
     dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
-        TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
+        TEST_HMS.getHiveClient(), getMixedTable(), dataFiles);
 
     insertRecords.clear();
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-01T12:00:00"));
     List<DataFile> newFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable())
+        HiveDataTestHelpers.writerOf(getMixedTable())
             .transactionId(2L)
             .customHiveLocation(hiveLocation)
             .writeHive(insertRecords);
@@ -222,7 +222,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     List<DataFile> expectFiles = Lists.newArrayList(dataFiles);
     expectFiles.addAll(newFiles);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
-        TEST_HMS.getHiveClient(), getArcticTable(), expectFiles);
+        TEST_HMS.getHiveClient(), getMixedTable(), expectFiles);
   }
 
   @Test
@@ -231,8 +231,8 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
 
@@ -240,24 +240,24 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     Table hiveTable =
         TEST_HMS
             .getHiveClient()
-            .getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
+            .getTable(getMixedTable().id().getDatabase(), getMixedTable().id().getTableName());
     hiveTable.setTableName("new_table");
     TEST_HMS
         .getHiveClient()
         .alter_table(
-            getArcticTable().id().getDatabase(), getArcticTable().id().getTableName(), hiveTable);
+            getMixedTable().id().getDatabase(), getMixedTable().id().getTableName(), hiveTable);
 
     // commit should success even though hive table is not existed.
     overwriteFiles.commit();
 
-    hiveTable.setTableName(getArcticTable().id().getTableName());
+    hiveTable.setTableName(getMixedTable().id().getTableName());
     TEST_HMS
         .getHiveClient()
-        .alter_table(getArcticTable().id().getDatabase(), "new_table", hiveTable);
-    String tableRootLocation = MixedTableUtil.tableRootLocation(getArcticTable());
+        .alter_table(getMixedTable().id().getDatabase(), "new_table", hiveTable);
+    String tableRootLocation = MixedTableUtil.tableRootLocation(getMixedTable());
     String newTableLocation =
-        tableRootLocation.replace(getArcticTable().id().getTableName(), "new_table");
-    getArcticTable().io().asFileSystemIO().deletePrefix(newTableLocation);
+        tableRootLocation.replace(getMixedTable().id().getTableName(), "new_table");
+    getMixedTable().io().asFileSystemIO().deletePrefix(newTableLocation);
   }
 
   @Test
@@ -266,31 +266,31 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     List<Record> insertRecords = Lists.newArrayList();
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
-    HiveDataTestHelpers.writerOf(getArcticTable())
+    HiveDataTestHelpers.writerOf(getMixedTable())
         .transactionId(1L)
         .customHiveLocation(hiveLocation)
         .writeHive(insertRecords);
     // rewrite data files
     List<DataFile> rewriteDataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable())
+        HiveDataTestHelpers.writerOf(getMixedTable())
             .transactionId(2L)
             .customHiveLocation(hiveLocation)
             .writeHive(insertRecords);
-    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     rewriteDataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
     overwriteFiles.commit();
     rewriteDataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
-        TEST_HMS.getHiveClient(), getArcticTable(), rewriteDataFiles);
+        TEST_HMS.getHiveClient(), getMixedTable(), rewriteDataFiles);
   }
 
   @Test
   public void testOverwritePartFiles() throws TException {
     // TODO should add cases for tables without partition spec
     Assume.assumeTrue(isPartitionedTable());
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(TableProperties.WRITE_TARGET_FILE_SIZE_BYTES, "1")
         .commit();
@@ -298,23 +298,23 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-01T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
     Assert.assertEquals(2, dataFiles.size());
     DataFile deleteFile = dataFiles.get(0);
-    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
     dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
-        TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
+        TEST_HMS.getHiveClient(), getMixedTable(), dataFiles);
 
     // ================== test overwrite part files
     insertRecords.clear();
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-01T12:00:00"));
     dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
     overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.deleteFile(deleteFile);
@@ -325,19 +325,19 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
   public void testOverwriteWithFilesUnderDifferentDir() {
     // TODO should add cases for tables without partition spec
     Assume.assumeTrue(isPartitionedTable());
-    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
 
     List<Record> insertRecords = Lists.newArrayList();
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
     dataFiles.forEach(overwriteFiles::addFile);
 
     // write data files under another dir
     dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
     dataFiles.forEach(overwriteFiles::addFile);
 
     Assert.assertThrows(CannotAlterHiveLocationException.class, overwriteFiles::commit);
@@ -351,21 +351,21 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
     dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
-        TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
+        TEST_HMS.getHiveClient(), getMixedTable(), dataFiles);
 
     // ================== test add files only
     insertRecords.clear();
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
     dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
     overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
 
@@ -380,14 +380,14 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
     dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
-        TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
+        TEST_HMS.getHiveClient(), getMixedTable(), dataFiles);
 
     overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::deleteFile);

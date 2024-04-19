@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.lookup;
 
-import org.apache.amoro.ArcticIOException;
+import org.apache.amoro.AmoroIOException;
 import org.apache.amoro.utils.map.RocksDBBackend;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.metrics.Gauge;
@@ -236,7 +236,7 @@ public abstract class RocksDBCacheState<V> {
           MutableColumnFamilyOptions.builder().setDisableAutoCompactions(false).build();
       rocksDB.setOptions(columnFamilyHandle, mutableColumnFamilyOptions);
     } catch (RocksDBException e) {
-      throw new ArcticIOException(e);
+      throw new AmoroIOException(e);
     }
 
     LOG.info("set db options[disable_auto_compactions={}]", false);

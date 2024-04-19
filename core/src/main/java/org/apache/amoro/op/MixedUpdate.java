@@ -37,8 +37,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Abstract implementation of {@link PendingUpdate}, adding arctic logics like tracing and watermark
- * generating for iceberg operations.
+ * Abstract implementation of {@link PendingUpdate}, adding mixed-format logics like tracing and
+ * watermark generating for iceberg operations.
  *
  * @param <T> Java class of changes from this update; returned by {@link #apply} for validation.
  */

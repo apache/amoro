@@ -18,8 +18,8 @@
 
 package org.apache.amoro.hive.catalog;
 
-import static org.apache.amoro.properties.HiveTableProperties.ARCTIC_TABLE_FLAG;
-import static org.apache.amoro.properties.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
+import static org.apache.amoro.properties.HiveTableProperties.MIXED_TABLE_FLAG;
+import static org.apache.amoro.properties.HiveTableProperties.MIXED_TABLE_ROOT_LOCATION;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
@@ -65,9 +65,9 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
     Map<String, String> tableParameter =
         TEST_HMS.getHiveClient().getTable(dbName, tbl).getParameters();
 
-    Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_ROOT_LOCATION));
-    Assert.assertTrue(tableParameter.get(ARCTIC_TABLE_ROOT_LOCATION).endsWith(tbl));
-    Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_FLAG));
+    Assert.assertTrue(tableParameter.containsKey(MIXED_TABLE_ROOT_LOCATION));
+    Assert.assertTrue(tableParameter.get(MIXED_TABLE_ROOT_LOCATION).endsWith(tbl));
+    Assert.assertTrue(tableParameter.containsKey(MIXED_TABLE_FLAG));
   }
 
   @Override
