@@ -16,6 +16,6 @@
 # limitations under the License.
 #
 
-com.netease.arctic.spark.mixed.ArcticDataSource
-com.netease.arctic.spark.mixed.MixedHiveDataSource
-com.netease.arctic.spark.mixed.MixedIcebergDataSource
+org.apache.amoro.spark.mixed.ArcticDataSource
+org.apache.amoro.spark.mixed.MixedHiveDataSource
+org.apache.amoro.spark.mixed.MixedIcebergDataSource

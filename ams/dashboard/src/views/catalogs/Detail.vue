@@ -184,7 +184,7 @@ limitations under the License.
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { getCatalogsTypes, getCatalogsSetting, saveCatalogsSetting, checkCatalogStatus, delCatalog } from '@/services/setting.services'
 import { ILableAndValue, ICatalogItem, IMap, IIOptimizeGroupItem } from '@/types/common.type'
-import { Modal, message, UploadChangeParam } from 'ant-design-vue'
+import { Modal, message, UploadChangeParam } from 'ant-design-vue-v3'
 import { useI18n } from 'vue-i18n'
 import Properties from './Properties.vue'
 import { usePlaceholder } from '@/hooks/usePlaceholder'

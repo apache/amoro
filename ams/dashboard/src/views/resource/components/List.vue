@@ -66,7 +66,7 @@ import { getOptimizerResourceList, getResourceGroupsListAPI, groupDeleteCheckAPI
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
 import { mbToSize } from '@/utils'
-import { Modal, message } from 'ant-design-vue'
+import { Modal, message } from 'ant-design-vue-v3'
 import { useRouter } from 'vue-router'
 import ScaleOut from '@/views/resource/components/ScaleOut.vue'
 

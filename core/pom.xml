@@ -256,12 +256,12 @@
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.zookeeper</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.zookeeper
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.zookeeper
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.curator</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.curator
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.curator
                                     </shadedPattern>
                                 </relocation>
                             </relocations>

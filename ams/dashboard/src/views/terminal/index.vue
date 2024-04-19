@@ -119,7 +119,7 @@ import SqlLog from './components/sql-log.vue'
 import { ICatalogItem, IDebugResult, ILableAndValue, IMap, debugResultBgcMap } from '@/types/common.type'
 import { executeSql, getExampleSqlCode, getJobDebugResult, getLogsResult, getShortcutsList, stopSql, getLastDebugInfo } from '@/services/terminal.service'
 import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@ant-design/icons-vue'
-import { message } from 'ant-design-vue'
+import { message } from 'ant-design-vue-v3'
 import { getCatalogList } from '@/services/table.service'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 

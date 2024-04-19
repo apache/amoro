@@ -49,7 +49,6 @@ import { onMounted, reactive, ref } from 'vue'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { IIOptimizeGroupItem } from '@/types/common.type'
 import { scaleoutResource } from '@/services/optimize.service'
-// import { message } from 'ant-design-vue'
 
 interface FormState {
   resourceGroup: undefined | string;

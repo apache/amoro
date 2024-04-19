@@ -53,7 +53,7 @@ if [ ! -z "$JVM_EXTRA_CONFIG" ];then
     JAVA_OPTS="${JAVA_OPTS} ${JVM_EXTRA_CONFIG}"
 fi
 
-RUN_SERVER="com.netease.arctic.server.ArcticServiceContainer"
+RUN_SERVER="org.apache.amoro.server.ArcticServiceContainer"
 
 
 LIB_PATH=$AMORO_HOME/lib

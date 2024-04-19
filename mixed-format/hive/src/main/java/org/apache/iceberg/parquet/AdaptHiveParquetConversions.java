@@ -20,7 +20,7 @@ package org.apache.iceberg.parquet;
 
 import static java.time.Instant.EPOCH;
 
-import com.netease.arctic.hive.utils.TimeUtil;
+import org.apache.amoro.hive.utils.TimeUtil;
 import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;

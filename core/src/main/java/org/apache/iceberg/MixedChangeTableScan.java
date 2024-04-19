@@ -18,17 +18,18 @@
 
 package org.apache.iceberg;
 
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.scan.BasicArcticFileScanTask;
-import com.netease.arctic.scan.ChangeTableIncrementalScan;
-import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.amoro.data.DefaultKeyedFile;
+import org.apache.amoro.scan.BasicArcticFileScanTask;
+import org.apache.amoro.scan.ChangeTableIncrementalScan;
+import org.apache.amoro.table.ChangeTable;
+import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
 
 /**
- * Table scan for {@link com.netease.arctic.table.ChangeTable}, support filter files with data
- * sequence number and return {@link BasicArcticFileScanTask}.
+ * Table scan for {@link ChangeTable}, support filter files with data sequence number and return
+ * {@link BasicArcticFileScanTask}.
  */
 public class MixedChangeTableScan extends DataTableScan implements ChangeTableIncrementalScan {
   private StructLikeMap<Long> fromPartitionSequence;

@@ -26,90 +26,90 @@ under the License.
     <!-- Using ([/\\]) as the file path separator instead of (/)
     enables it to be compatible with both Linux and Windows systems. -->
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]utils[/\\]StatisticsFileUtil\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]utils[/\\]StatisticsFileUtil\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]log[/\\]LogDataJsonSerialization\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]LogDataJsonSerialization\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]log[/\\]LogDataToJsonConverters\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]LogDataToJsonConverters\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]log[/\\]LogDataJsonDeserialization\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]LogDataJsonDeserialization\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]log[/\\]JsonToLogDataConverters\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]JsonToLogDataConverters\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]utils[/\\]TablePropertyUtil\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]utils[/\\]TablePropertyUtil\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]api[/\\]config[/\\]OptimizingConfig\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]OptimizingConfig\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]api[/\\]config[/\\]DataExpirationConfig\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]DataExpirationConfig\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]api[/\\]config[/\\]TagConfiguration\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]TagConfiguration\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]api[/\\]config[/\\]TableConfiguration\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]TableConfiguration\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]RestCatalogService\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]RestCatalogService\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]persistence[/\\]converter[/\\]JsonObjectConverter\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]persistence[/\\]converter[/\\]JsonObjectConverter\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]optimizing[/\\]OptimizingConfig\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]optimizing[/\\]OptimizingConfig\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]optimizing[/\\]plan[/\\]OptimizingEvaluator\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]optimizing[/\\]plan[/\\]OptimizingEvaluator\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]optimizing[/\\]MetricsSummary\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]optimizing[/\\]MetricsSummary\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]table[/\\]TagConfiguration\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]table[/\\]TagConfiguration\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]server[/\\]table[/\\]TableConfiguration\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]table[/\\]TableConfiguration\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]flink[/\\]interceptor[/\\]ProxyFactory\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]flink[/\\]interceptor[/\\]ProxyFactory\.java"
             checks="TodoComment"/>
     <suppress
             files="org[/\\]apache[/\\]hadoop[/\\]util[/\\]VersionInfo\.java"
             checks="MethodName"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]iceberg[/\\]TestBaseArcticConnectorTest\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]iceberg[/\\]TestBaseArcticConnectorTest\.java"
             checks="FileLength"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]iceberg[/\\]BaseConnectorTest\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]iceberg[/\\]BaseConnectorTest\.java"
             checks="FileLength"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]keyed[/\\]KeyedConnectorSplit\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]keyed[/\\]KeyedConnectorSplit\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]keyed[/\\]KeyedTableHandle\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]keyed[/\\]KeyedTableHandle\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]delete[/\\]TrinoDeleteFile\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]delete[/\\]TrinoDeleteFile\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]unkeyed[/\\]IcebergSplit\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]unkeyed[/\\]IcebergSplit\.java"
             checks="Regexp"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]unkeyed[/\\]AdaptHiveIcebergTableHandle\.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]unkeyed[/\\]AdaptHiveIcebergTableHandle\.java"
             checks="Regexp"/>
     <!-- BaseConnectorTest and TestBaseArcticConnectorTest can be replace by shaded guava
           because the shaded guava version is too low -->
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]iceberg[/\\]BaseConnectorTest.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]iceberg[/\\]BaseConnectorTest.java"
             checks="IllegalImport"/>
     <suppress
-            files="com[/\\]netease[/\\]arctic[/\\]trino[/\\]iceberg[/\\]TestBaseArcticConnectorTest.java"
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]iceberg[/\\]TestBaseArcticConnectorTest.java"
             checks="IllegalImport"/>
 
 </suppressions>
