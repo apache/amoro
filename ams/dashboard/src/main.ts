@@ -24,10 +24,10 @@ import router from './router'
 import useStore from './store'
 import VueI18n from './language/i18n'
 
+// TODO： import the global style for v3. Will be removed after migrate to the ant-design-vue-v4
+import 'ant-design-vue-v3/dist/antd.css';
+
 import RegisterComponents from './components/register'
-import 'ant-design-vue/es/message/style/css'
-import 'ant-design-vue/es/modal/style/index.css'
-import 'ant-design-vue/es/notification/style/index.css'
 
 import './styles/index.less'
 import './utils/editor'
@@ -38,7 +38,6 @@ import { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
 import { getQueryString } from './utils'
 
 import 'virtual:svg-icons-register'
-
 
 const app = createApp(App).use(createPinia())
 app.component('svg-icon', SvgIcon)

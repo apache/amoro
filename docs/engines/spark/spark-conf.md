@@ -18,7 +18,7 @@ Starting from version 3.x, Spark supports configuring an independent Catalog.
 If you want to use a Mixed-Format table in a standalone Catalog, you can configure it as follows:
 
 ```properties
-spark.sql.catalog.arctic_catalog=com.netease.arctic.spark.ArcticSparkCatalog
+spark.sql.catalog.arctic_catalog=org.apache.amoro.spark.ArcticSparkCatalog
 spark.sql.catalog.arctic_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HIVE}
 ```
 
@@ -36,7 +36,7 @@ In this way, you don't need to use the `use {catalog}` command to switch the def
 
 ```properties
 spark.sql.defaultCatalog=arctic_catalog
-spark.sql.catalog.arctic_catalog=com.netease.arctic.spark.ArcticSparkCatalog
+spark.sql.catalog.arctic_catalog=org.apache.amoro.spark.ArcticSparkCatalog
 spark.sql.catalog.arctic_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HIVE}
 ```
 
@@ -50,7 +50,7 @@ you can use the AmoroSparkSessionCatalog as the implementation of the Spark defa
 The configuration method is as follows.
 
 ```properties
-spark.sql.catalog.spark_catalog=com.netease.arctic.spark.ArcticSparkSessionCatalog
+spark.sql.catalog.spark_catalog=org.apache.amoro.spark.ArcticSparkSessionCatalog
 spark.sql.catalog.spark_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HIVE}
 ```
 
@@ -76,7 +76,7 @@ If AMS is configured with high availability, you can configure the `spark.sql.ca
 the following way to achieve higher availability.
 
 ```properties
-spark.sql.catalog.arctic_catalog=com.netease.arctic.spark.ArcticSparkCatalog
+spark.sql.catalog.arctic_catalog=org.apache.amoro.spark.ArcticSparkCatalog
 spark.sql.catalog.arctic_catalog.url=zookeeper://{zookeeper-endpoint-list}/{cluster-name}/{catalog-name}
 ```
 
