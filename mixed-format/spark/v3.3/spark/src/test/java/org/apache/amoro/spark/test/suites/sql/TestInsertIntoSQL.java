@@ -18,12 +18,8 @@
 
 package org.apache.amoro.spark.test.suites.sql;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.MetadataColumns;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableProperties;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.spark.mixed.SparkSQLProperties;
 import org.apache.amoro.spark.test.MixedTableTestBase;
 import org.apache.amoro.spark.test.extensions.EnableCatalogSelect;
@@ -31,6 +27,10 @@ import org.apache.amoro.spark.test.utils.DataComparator;
 import org.apache.amoro.spark.test.utils.ExpectResultUtil;
 import org.apache.amoro.spark.test.utils.RecordGenerator;
 import org.apache.amoro.spark.test.utils.TestTableUtil;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MetadataColumns;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;

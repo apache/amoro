@@ -18,13 +18,8 @@
 
 package org.apache.amoro.hive.op;
 
-import static com.netease.arctic.op.OverwriteBaseFiles.PROPERTIES_TRANSACTION_ID;
+import static org.apache.amoro.op.OverwriteBaseFiles.PROPERTIES_TRANSACTION_ID;
 
-import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.op.UpdatePartitionProperties;
-import com.netease.arctic.properties.HiveTableProperties;
-import com.netease.arctic.utils.TableFileUtil;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.exceptions.CannotAlterHiveLocationException;
 import org.apache.amoro.hive.table.UnkeyedHiveTable;
@@ -32,6 +27,11 @@ import org.apache.amoro.hive.utils.HiveCommitUtil;
 import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
 import org.apache.amoro.hive.utils.HivePartitionUtil;
 import org.apache.amoro.hive.utils.HiveTableUtil;
+import org.apache.amoro.io.ArcticHadoopFileIO;
+import org.apache.amoro.op.UpdatePartitionProperties;
+import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.utils.TableFileUtil;
+import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.PartitionDropOptions;

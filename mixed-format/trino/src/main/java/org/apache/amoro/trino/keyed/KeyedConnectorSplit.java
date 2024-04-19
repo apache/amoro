@@ -20,8 +20,8 @@ package org.apache.amoro.trino.keyed;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.netease.arctic.scan.KeyedTableScanTask;
-import com.netease.arctic.scan.NodeFileScanTask;
+import org.apache.amoro.scan.KeyedTableScanTask;
+import org.apache.amoro.scan.NodeFileScanTask;
 import org.apache.amoro.trino.util.ObjectSerializerUtil;
 import io.trino.spi.HostAddress;
 import io.trino.spi.connector.ConnectorSplit;

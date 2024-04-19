@@ -18,16 +18,16 @@
 
 package org.apache.amoro.hive.utils;
 
-import com.netease.arctic.op.OverwriteBaseFiles;
-import com.netease.arctic.properties.HiveTableProperties;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.op.OverwriteHiveFiles;
 import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.op.OverwriteBaseFiles;
+import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hive.metastore.Warehouse;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;

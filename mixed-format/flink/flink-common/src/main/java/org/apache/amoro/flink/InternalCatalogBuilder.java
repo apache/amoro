@@ -18,10 +18,10 @@
 
 package org.apache.amoro.flink;
 
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.properties.CatalogMetaProperties;
-import com.netease.arctic.utils.ConfigurationFileUtil;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.catalog.CatalogLoader;
+import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.utils.ConfigurationFileUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.util.Preconditions;

@@ -18,13 +18,10 @@
 
 package org.apache.amoro.flink.read.hybrid.reader;
 
-import static com.netease.arctic.utils.SchemaUtil.changeWriteSchema;
-import static com.netease.arctic.utils.SchemaUtil.fillUpIdentifierFields;
 import static org.apache.amoro.flink.shuffle.RowKindUtil.convertToFlinkRowKind;
+import static org.apache.amoro.utils.SchemaUtil.changeWriteSchema;
+import static org.apache.amoro.utils.SchemaUtil.fillUpIdentifierFields;
 
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.utils.NodeFilter;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.source.ChangeLogDataIterator;
 import org.apache.amoro.flink.read.source.DataIterator;
@@ -33,6 +30,9 @@ import org.apache.amoro.flink.read.source.FlinkArcticDataReader;
 import org.apache.amoro.flink.read.source.FlinkArcticMORDataReader;
 import org.apache.amoro.flink.read.source.MergeOnReadDataIterator;
 import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.utils.NodeFilter;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.Schema;

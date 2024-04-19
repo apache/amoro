@@ -22,7 +22,7 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
 import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet.toImmutableSet;
 
-import com.netease.arctic.io.reader.DeleteFilter;
+import org.apache.amoro.io.reader.DeleteFilter;
 import org.apache.amoro.trino.delete.TrinoRow;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
 import org.apache.iceberg.FileScanTask;

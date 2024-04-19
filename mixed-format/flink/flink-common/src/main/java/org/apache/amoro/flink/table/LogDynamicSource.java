@@ -20,11 +20,11 @@ package org.apache.amoro.flink.table;
 
 import static org.apache.flink.table.connector.ChangelogMode.insertOnly;
 
-import com.netease.arctic.table.ArcticTable;
 import org.apache.amoro.flink.read.source.log.kafka.LogKafkaSource;
 import org.apache.amoro.flink.read.source.log.kafka.LogKafkaSourceBuilder;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.configuration.ReadableConfig;

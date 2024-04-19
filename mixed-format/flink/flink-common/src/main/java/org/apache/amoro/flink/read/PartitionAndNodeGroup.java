@@ -18,9 +18,9 @@
 
 package org.apache.amoro.flink.read;
 
-import com.netease.arctic.scan.ArcticFileScanTask;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
+import org.apache.amoro.scan.ArcticFileScanTask;
 
 import java.util.ArrayList;
 import java.util.Collection;

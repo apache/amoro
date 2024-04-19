@@ -18,16 +18,16 @@
 
 package org.apache.amoro.flink.read;
 
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.ChangeTableIncrementalScan;
-import com.netease.arctic.scan.CombinedScanTask;
-import com.netease.arctic.scan.KeyedTableScan;
-import com.netease.arctic.table.KeyedTable;
+import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.flink.read.hybrid.split.MergeOnReadSplit;
 import org.apache.amoro.flink.read.hybrid.split.SnapshotSplit;
+import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.ChangeTableIncrementalScan;
+import org.apache.amoro.scan.CombinedScanTask;
+import org.apache.amoro.scan.KeyedTableScan;
+import org.apache.amoro.table.KeyedTable;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;

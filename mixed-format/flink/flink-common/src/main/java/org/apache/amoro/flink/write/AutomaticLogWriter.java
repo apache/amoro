@@ -18,12 +18,12 @@
 
 package org.apache.amoro.flink.write;
 
-import com.netease.arctic.log.LogData;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
 import org.apache.amoro.flink.write.hidden.HiddenLogWriter;
 import org.apache.amoro.flink.write.hidden.LogMsgFactory;
+import org.apache.amoro.log.LogData;
 import org.apache.flink.runtime.state.StateInitializationContext;
 import org.apache.flink.runtime.state.StateSnapshotContext;
 import org.apache.flink.streaming.api.graph.StreamConfig;

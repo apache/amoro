@@ -18,12 +18,12 @@
 
 package org.apache.amoro.flink.write;
 
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.flink.shuffle.ShuffleKey;
 import org.apache.amoro.flink.shuffle.ShuffleRulePolicy;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.runtime.state.StateInitializationContext;

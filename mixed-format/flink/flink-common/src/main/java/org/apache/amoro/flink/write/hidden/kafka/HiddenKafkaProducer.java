@@ -20,10 +20,10 @@ package org.apache.amoro.flink.write.hidden.kafka;
 
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 
-import com.netease.arctic.log.LogData;
-import com.netease.arctic.log.LogDataJsonSerialization;
 import org.apache.amoro.flink.write.hidden.ArcticLogPartitioner;
 import org.apache.amoro.flink.write.hidden.LogMsgFactory;
+import org.apache.amoro.log.LogData;
+import org.apache.amoro.log.LogDataJsonSerialization;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaErrorCode;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaException;
 import org.apache.flink.streaming.connectors.kafka.internals.FlinkKafkaInternalProducer;

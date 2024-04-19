@@ -18,7 +18,7 @@
 
 package org.apache.amoro.trino;
 
-import com.netease.arctic.Constants;
+import org.apache.amoro.Constants;
 
 /** To resolve sub table name, such as "tableName#base", "tableName#change" */
 public class TableNameResolve {

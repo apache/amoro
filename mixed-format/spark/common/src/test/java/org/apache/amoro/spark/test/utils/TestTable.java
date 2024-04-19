@@ -18,9 +18,9 @@
 
 package org.apache.amoro.spark.test.utils;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.hive.utils.HiveSchemaUtil;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;

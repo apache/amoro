@@ -20,7 +20,7 @@ package org.apache.amoro.trino.keyed;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.trino.util.ObjectSerializerUtil;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
 import io.trino.plugin.iceberg.IcebergTableHandle;

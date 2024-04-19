@@ -18,14 +18,14 @@
 
 package org.apache.amoro.spark;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.Constants;
-import com.netease.arctic.FormatCatalogFactory;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableIDWithFormat;
-import com.netease.arctic.UnifiedCatalog;
-import com.netease.arctic.UnifiedCatalogLoader;
-import com.netease.arctic.client.ArcticThriftUrl;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.Constants;
+import org.apache.amoro.FormatCatalogFactory;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableIDWithFormat;
+import org.apache.amoro.UnifiedCatalog;
+import org.apache.amoro.UnifiedCatalogLoader;
+import org.apache.amoro.client.ArcticThriftUrl;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -183,7 +183,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
       String database = namespaceToDatabase(originIdent.namespace());
       AmoroTable<?> table = unifiedCatalog.loadTable(database, originIdent.name());
       return tableCatalog(table.format()).loadTable(ident);
-    } catch (com.netease.arctic.NoSuchTableException e) {
+    } catch (org.apache.amoro.NoSuchTableException e) {
       throw new NoSuchTableException(ident);
     }
   }
@@ -208,7 +208,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
       AmoroTable<?> table =
           unifiedCatalog.loadTable(namespaceToDatabase(ident.namespace()), ident.name());
       tableCatalog(table.format()).invalidateTable(ident);
-    } catch (com.netease.arctic.NoSuchTableException e) {
+    } catch (org.apache.amoro.NoSuchTableException e) {
       // pass
     }
   }
@@ -237,7 +237,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
       AmoroTable<?> table =
           unifiedCatalog.loadTable(namespaceToDatabase(ident.namespace()), ident.name());
       return tableCatalog(table.format()).alterTable(ident, changes);
-    } catch (com.netease.arctic.NoSuchTableException e) {
+    } catch (org.apache.amoro.NoSuchTableException e) {
       throw new NoSuchTableException(ident);
     }
   }

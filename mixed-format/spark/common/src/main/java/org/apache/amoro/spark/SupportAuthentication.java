@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark;
 
-import com.netease.arctic.table.TableMetaStore;
+import org.apache.amoro.table.TableMetaStore;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 
 /** Mixed-in interface to indicate that a spark catalog support Amoro authentication context. */

@@ -18,13 +18,13 @@
 
 package org.apache.amoro.spark.sql.catalyst.analysis
 
-import com.netease.arctic.table.KeyedTable
 import org.apache.amoro.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
 import org.apache.amoro.spark.mixed.MixedSessionCatalogBase
 import org.apache.amoro.spark.sql.ArcticExtensionUtils.buildCatalogAndIdentifier
 import org.apache.amoro.spark.sql.catalyst.plans.{AlterArcticTableDropPartition, TruncateArcticTable}
 import org.apache.amoro.spark.table.ArcticSparkTable
 import org.apache.amoro.spark.writer.WriteMode
+import org.apache.amoro.table.KeyedTable
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{ResolvedDBObjectName, ResolvedTable}

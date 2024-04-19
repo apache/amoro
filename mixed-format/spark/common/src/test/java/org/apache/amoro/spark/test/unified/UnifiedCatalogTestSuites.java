@@ -18,10 +18,10 @@
 
 package org.apache.amoro.spark.test.unified;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.UnifiedCatalog;
-import com.netease.arctic.UnifiedCatalogLoader;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.UnifiedCatalog;
+import org.apache.amoro.UnifiedCatalogLoader;
 import org.apache.amoro.spark.SparkUnifiedSessionCatalog;
 import org.apache.amoro.spark.test.SparkTestBase;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;

@@ -22,12 +22,12 @@ import static org.apache.amoro.flink.table.descriptors.ArcticValidator.LOOKUP_RE
 import static org.apache.amoro.flink.util.ArcticUtils.loadArcticTable;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
-import com.netease.arctic.table.ArcticTable;
 import org.apache.amoro.flink.read.MixedIncrementalLoader;
 import org.apache.amoro.flink.read.hybrid.enumerator.MergeOnReadIncrementalPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.DataIteratorReaderFunction;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;

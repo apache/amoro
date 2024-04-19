@@ -18,11 +18,11 @@
 
 package org.apache.amoro.spark.test.suites.catalog;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.spark.table.ArcticSparkTable;
 import org.apache.amoro.spark.test.MixedTableTestBase;
 import org.apache.amoro.spark.test.SparkTestContext;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;

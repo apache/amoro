@@ -25,11 +25,6 @@ import static org.apache.amoro.flink.shuffle.RowKindUtil.transformFromFlinkRowKi
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
 import static org.junit.Assert.assertEquals;
 
-import com.netease.arctic.log.FormatVersion;
-import com.netease.arctic.log.LogData;
-import com.netease.arctic.log.LogDataJsonDeserialization;
-import com.netease.arctic.log.LogDataJsonSerialization;
-import com.netease.arctic.utils.IdGenerator;
 import org.apache.amoro.flink.kafka.testutils.KafkaContainerTest;
 import org.apache.amoro.flink.read.source.log.kafka.LogKafkaPartitionSplit;
 import org.apache.amoro.flink.read.source.log.kafka.LogKafkaPartitionSplitState;
@@ -39,6 +34,11 @@ import org.apache.amoro.flink.shuffle.LogRecordV1;
 import org.apache.amoro.flink.util.TestUtil;
 import org.apache.amoro.flink.write.hidden.kafka.TestBaseLog;
 import org.apache.amoro.flink.write.hidden.kafka.TestHiddenLogOperators;
+import org.apache.amoro.log.FormatVersion;
+import org.apache.amoro.log.LogData;
+import org.apache.amoro.log.LogDataJsonDeserialization;
+import org.apache.amoro.log.LogDataJsonSerialization;
+import org.apache.amoro.utils.IdGenerator;
 import org.apache.flink.api.common.eventtime.Watermark;
 import org.apache.flink.api.connector.source.ReaderOutput;
 import org.apache.flink.api.connector.source.SourceOutput;

@@ -18,12 +18,12 @@
 
 package org.apache.amoro.spark.test;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableBuilder;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.catalog.CatalogLoader;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableBuilder;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;

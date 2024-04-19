@@ -18,23 +18,19 @@
 
 package org.apache.amoro.flink.write;
 
-import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import static org.apache.amoro.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
+import static org.apache.amoro.table.TableProperties.ENABLE_LOG_STORE;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_ADDRESS;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.log.LogDataJsonDeserialization;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.utils.IdGenerator;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.amoro.flink.kafka.testutils.KafkaConfigGenerate;
 import org.apache.amoro.flink.kafka.testutils.KafkaContainerTest;
@@ -47,6 +43,10 @@ import org.apache.amoro.flink.util.DataUtil;
 import org.apache.amoro.flink.util.TestGlobalAggregateManager;
 import org.apache.amoro.flink.util.TestOneInputStreamOperatorIntern;
 import org.apache.amoro.flink.write.hidden.kafka.HiddenKafkaFactory;
+import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.log.LogDataJsonDeserialization;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.utils.IdGenerator;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;

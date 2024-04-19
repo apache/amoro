@@ -18,14 +18,14 @@
 
 package org.apache.amoro.hive.op;
 
-import com.netease.arctic.properties.HiveTableProperties;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.TableFileUtil;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.amoro.hive.utils.HivePartitionUtil;
+import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.TableFileUtil;
+import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;

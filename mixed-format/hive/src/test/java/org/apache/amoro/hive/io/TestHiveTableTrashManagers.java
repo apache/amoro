@@ -18,13 +18,13 @@
 
 package org.apache.amoro.hive.io;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.io.TableTrashManagers;
-import com.netease.arctic.io.TestTableTrashManagers;
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
+import org.apache.amoro.io.TableTrashManagers;
+import org.apache.amoro.io.TestTableTrashManagers;
+import org.apache.amoro.table.TableIdentifier;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

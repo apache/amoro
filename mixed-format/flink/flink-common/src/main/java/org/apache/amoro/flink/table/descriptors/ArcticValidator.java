@@ -20,7 +20,7 @@ package org.apache.amoro.flink.table.descriptors;
 
 import static org.apache.flink.configuration.description.TextElement.text;
 
-import com.netease.arctic.TableFormat;
+import org.apache.amoro.TableFormat;
 import org.apache.commons.lang.StringUtils;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;

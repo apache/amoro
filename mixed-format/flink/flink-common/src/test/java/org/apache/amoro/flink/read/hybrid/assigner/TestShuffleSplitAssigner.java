@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.hybrid.assigner;
 
-import com.netease.arctic.data.DataTreeNode;
+import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
 import org.apache.amoro.flink.read.hybrid.reader.TestRowDataReaderFunction;

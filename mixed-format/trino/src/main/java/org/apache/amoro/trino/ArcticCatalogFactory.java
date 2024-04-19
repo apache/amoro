@@ -18,8 +18,8 @@
 
 package org.apache.amoro.trino;
 
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.table.TableMetaStore;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.table.TableMetaStore;
 
 /** A interface of factory to generate ArcticCatalog */
 public interface ArcticCatalogFactory {

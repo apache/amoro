@@ -18,7 +18,7 @@
 
 package org.apache.amoro.hive;
 
-import com.netease.arctic.table.TableMetaStore;
+import org.apache.amoro.table.TableMetaStore;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;

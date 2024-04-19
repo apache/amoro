@@ -707,6 +707,10 @@
                         <groupId>org.apache.zookeeper</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>co.cask.tephra</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 

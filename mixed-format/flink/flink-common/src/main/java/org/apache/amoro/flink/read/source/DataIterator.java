@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.source;
 
-import com.netease.arctic.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.ArcticFileScanTask;
 import org.apache.flink.annotation.Internal;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;

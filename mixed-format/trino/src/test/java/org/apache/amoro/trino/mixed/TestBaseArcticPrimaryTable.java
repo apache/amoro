@@ -18,12 +18,12 @@
 
 package org.apache.amoro.trino.mixed;
 
-import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TestedCatalogs;
-import com.netease.arctic.catalog.CatalogTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TestedCatalogs;
+import org.apache.amoro.catalog.CatalogTestHelper;
 import io.trino.testing.QueryRunner;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.testng.annotations.AfterClass;

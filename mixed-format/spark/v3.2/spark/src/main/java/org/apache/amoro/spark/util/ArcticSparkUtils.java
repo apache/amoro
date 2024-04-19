@@ -18,14 +18,14 @@
 
 package org.apache.amoro.spark.util;
 
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE;
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
+import static org.apache.amoro.table.TableProperties.WRITE_DISTRIBUTION_MODE;
+import static org.apache.amoro.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
 import static org.apache.iceberg.spark.Spark3Util.toTransforms;
 
-import com.netease.arctic.table.DistributionHashMode;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableProperties;
 import org.apache.amoro.spark.table.ArcticSparkTable;
+import org.apache.amoro.table.DistributionHashMode;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableProperties;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.util.Utf8;
 import org.apache.iceberg.DistributionMode;

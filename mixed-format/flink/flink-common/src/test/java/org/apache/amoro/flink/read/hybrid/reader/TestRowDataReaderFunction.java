@@ -18,18 +18,18 @@
 
 package org.apache.amoro.flink.read.hybrid.reader;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.ChangeTableIncrementalScan;
-import com.netease.arctic.table.KeyedTable;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
+import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.enumerator.TestContinuousSplitPlannerImpl;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.flink.read.source.DataIterator;
+import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.ChangeTableIncrementalScan;
+import org.apache.amoro.table.KeyedTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.shaded.guava30.com.google.common.collect.Maps;
 import org.apache.flink.table.data.GenericRowData;

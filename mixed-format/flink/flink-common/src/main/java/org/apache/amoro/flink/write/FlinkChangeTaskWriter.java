@@ -18,13 +18,13 @@
 
 package org.apache.amoro.flink.write;
 
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.data.PrimaryKeyData;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.writer.ChangeTaskWriter;
-import com.netease.arctic.io.writer.OutputFileFactory;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.data.PrimaryKeyData;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.writer.ChangeTaskWriter;
+import org.apache.amoro.io.writer.OutputFileFactory;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.utils.JoinedRowData;

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.test.extensions;
 
-import com.netease.arctic.TableFormat;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.spark.test.SparkTestBase;
 import org.apache.amoro.spark.test.SparkTestContext;
 import org.apache.commons.lang.StringUtils;

@@ -29,7 +29,7 @@
         <Root level="WARN">
             <AppenderRef ref="stdout"/>
         </Root>
-        <Logger name="com.netease.arctic" level="INFO" additivity="false">
+        <Logger name="org.apache.amoro" level="INFO" additivity="false">
             <AppenderRef ref="stdout"/>
         </Logger>
     </Loggers>

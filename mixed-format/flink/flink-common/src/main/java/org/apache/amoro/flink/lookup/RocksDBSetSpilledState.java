@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.lookup;
 
-import com.netease.arctic.utils.map.RocksDBBackend;
+import org.apache.amoro.utils.map.RocksDBBackend;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.shaded.guava30.com.google.common.cache.Cache;

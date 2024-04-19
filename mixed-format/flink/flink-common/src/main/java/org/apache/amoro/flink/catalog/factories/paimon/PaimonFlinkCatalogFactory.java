@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.catalog.factories.paimon;
 
-import com.netease.arctic.properties.CatalogMetaProperties;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.paimon.catalog.FileSystemCatalogFactory;
 import org.apache.paimon.flink.FlinkCatalog;
 import org.apache.paimon.flink.FlinkCatalogFactory;

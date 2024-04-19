@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.table;
 
-import com.netease.arctic.TableFormat;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
 import org.apache.flink.configuration.ConfigOption;

@@ -119,9 +119,6 @@
                                         <exclude>org/codehaus/mojo/animal_sniffer/**</exclude>
                                         <exclude>org/apache/iceberg/spark/extensions/**</exclude>
                                         <exclude>
-                                            org/apache/spark/sql/catalyst/analysis/ResolveProcedures**
-                                        </exclude>
-                                        <exclude>
                                             org/apache/hadoop/hive/ql/optimizer/ppr/PartitionExpressionForMetastore**
                                         </exclude>
                                         <exclude>

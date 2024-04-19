@@ -18,11 +18,11 @@
 
 package org.apache.amoro.trino.iceberg;
 
-import com.netease.arctic.catalog.BasicArcticCatalog;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableBuilder;
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.catalog.BasicArcticCatalog;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableBuilder;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.PartitionSpec;

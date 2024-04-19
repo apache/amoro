@@ -18,20 +18,18 @@
 
 package org.apache.amoro.flink.table;
 
-import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
+import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
+import static org.apache.amoro.table.TableProperties.ENABLE_LOG_STORE;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_ADDRESS;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
+import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.amoro.flink.kafka.testutils.KafkaContainerTest;
 import org.apache.amoro.flink.util.DataUtil;
@@ -39,6 +37,8 @@ import org.apache.amoro.flink.util.TestUtil;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;

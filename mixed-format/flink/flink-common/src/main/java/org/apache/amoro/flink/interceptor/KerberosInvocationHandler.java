@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.interceptor;
 
-import com.netease.arctic.io.ArcticFileIO;
 import org.apache.amoro.flink.util.ReflectionUtil;
+import org.apache.amoro.io.ArcticFileIO;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;

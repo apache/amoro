@@ -20,8 +20,8 @@ package org.apache.amoro.flink.util;
 
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.TOPIC;
 
-import com.netease.arctic.table.TableProperties;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
+import org.apache.amoro.table.TableProperties;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;

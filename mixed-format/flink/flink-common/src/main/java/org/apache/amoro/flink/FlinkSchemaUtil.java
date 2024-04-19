@@ -26,10 +26,10 @@ import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_
 import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_STRATEGY_EXPR;
 import static org.apache.flink.table.descriptors.Schema.SCHEMA_PROCTIME;
 
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.amoro.flink.table.ArcticDynamicSource;
 import org.apache.amoro.flink.table.FlinkSource;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;

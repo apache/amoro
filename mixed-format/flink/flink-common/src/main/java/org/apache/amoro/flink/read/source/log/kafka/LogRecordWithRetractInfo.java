@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.source.log.kafka;
 
-import com.netease.arctic.log.LogData;
+import org.apache.amoro.log.LogData;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 public class LogRecordWithRetractInfo<T> extends ConsumerRecord<byte[], byte[]> {

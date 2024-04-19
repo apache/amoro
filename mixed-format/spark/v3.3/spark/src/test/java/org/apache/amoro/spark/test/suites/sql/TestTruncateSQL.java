@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.test.suites.sql;
 
-import com.netease.arctic.TableFormat;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.spark.test.MixedTableTestBase;
 import org.apache.amoro.spark.test.extensions.EnableCatalogSelect;
 import org.apache.amoro.spark.test.utils.TableFiles;

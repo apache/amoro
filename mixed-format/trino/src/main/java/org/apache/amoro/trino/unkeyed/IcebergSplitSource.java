@@ -44,10 +44,10 @@ import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSe
 import static org.apache.iceberg.relocated.com.google.common.collect.Sets.intersection;
 import static org.apache.iceberg.types.Conversions.fromByteBuffer;
 
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.ChangeTableIncrementalScan;
+import org.apache.amoro.data.DataFileType;
+import org.apache.amoro.data.PrimaryKeyedFile;
+import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.ChangeTableIncrementalScan;
 import org.apache.amoro.trino.delete.TrinoDeleteFile;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;

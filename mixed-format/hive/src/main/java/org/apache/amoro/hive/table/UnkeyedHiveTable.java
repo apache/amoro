@@ -18,14 +18,9 @@
 
 package org.apache.amoro.hive.table;
 
-import static com.netease.arctic.properties.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
+import static org.apache.amoro.properties.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.properties.HiveTableProperties;
-import com.netease.arctic.table.BaseTable;
-import com.netease.arctic.table.BasicUnkeyedTable;
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.op.HiveOperationTransaction;
 import org.apache.amoro.hive.op.HiveSchemaUpdate;
@@ -34,6 +29,12 @@ import org.apache.amoro.hive.op.ReplaceHivePartitions;
 import org.apache.amoro.hive.op.RewriteHiveFiles;
 import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
 import org.apache.amoro.hive.utils.HiveTableUtil;
+import org.apache.amoro.io.ArcticHadoopFileIO;
+import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.table.BaseTable;
+import org.apache.amoro.table.BasicUnkeyedTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -43,9 +44,7 @@ import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Map;
 
-/**
- * Implementation of {@link com.netease.arctic.table.UnkeyedTable} with Hive table as base store.
- */
+/** Implementation of {@link UnkeyedTable} with Hive table as base store. */
 public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, SupportHive {
 
   private final HMSClientPool hiveClient;

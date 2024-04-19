@@ -23,11 +23,6 @@ import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.readReco
 import static org.apache.amoro.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
 import static org.junit.Assert.assertEquals;
 
-import com.netease.arctic.log.FormatVersion;
-import com.netease.arctic.log.LogData;
-import com.netease.arctic.log.LogDataJsonDeserialization;
-import com.netease.arctic.log.LogDataJsonSerialization;
-import com.netease.arctic.utils.IdGenerator;
 import org.apache.amoro.flink.kafka.testutils.KafkaConfigGenerate;
 import org.apache.amoro.flink.kafka.testutils.KafkaContainerTest;
 import org.apache.amoro.flink.read.source.log.LogSourceHelper;
@@ -36,6 +31,11 @@ import org.apache.amoro.flink.read.source.log.kafka.LogRecordWithRetractInfo;
 import org.apache.amoro.flink.shuffle.LogRecordV1;
 import org.apache.amoro.flink.write.hidden.kafka.TestBaseLog;
 import org.apache.amoro.flink.write.hidden.kafka.TestHiddenLogOperators;
+import org.apache.amoro.log.FormatVersion;
+import org.apache.amoro.log.LogData;
+import org.apache.amoro.log.LogDataJsonDeserialization;
+import org.apache.amoro.log.LogDataJsonSerialization;
+import org.apache.amoro.utils.IdGenerator;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitsAddition;

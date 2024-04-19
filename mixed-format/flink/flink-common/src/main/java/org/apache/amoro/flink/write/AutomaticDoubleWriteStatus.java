@@ -18,10 +18,10 @@
 
 package org.apache.amoro.flink.write;
 
-import com.netease.arctic.table.ArcticTable;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
 import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.table.ArcticTable;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.iceberg.UpdateProperties;
 import org.slf4j.Logger;

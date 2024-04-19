@@ -18,7 +18,7 @@
 
 package org.apache.amoro.trino;
 
-import com.netease.arctic.table.TableMetaStore;
+import org.apache.amoro.table.TableMetaStore;
 import io.trino.hdfs.authentication.GenericExceptionAction;
 import io.trino.hdfs.authentication.HdfsAuthentication;
 import io.trino.spi.classloader.ThreadContextClassLoader;

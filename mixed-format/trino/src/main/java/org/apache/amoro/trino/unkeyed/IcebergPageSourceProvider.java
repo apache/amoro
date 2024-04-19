@@ -79,10 +79,10 @@ import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSe
 import static org.apache.iceberg.relocated.com.google.common.collect.Maps.uniqueIndex;
 import static org.joda.time.DateTimeZone.UTC;
 
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.io.reader.DeleteFilter;
-import com.netease.arctic.table.MetadataColumns;
+import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.data.DataFileType;
+import org.apache.amoro.io.reader.DeleteFilter;
+import org.apache.amoro.table.MetadataColumns;
 import org.apache.amoro.trino.delete.DummyFileScanTask;
 import org.apache.amoro.trino.delete.TrinoRow;
 import io.airlift.json.JsonCodec;

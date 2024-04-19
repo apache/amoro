@@ -87,11 +87,9 @@
                                     <include>org.apache.iceberg:iceberg-arrow</include>
                                     <include>org.apache.iceberg:iceberg-hive-metastore</include>
                                     <include>org.apache.iceberg:iceberg-spark</include>
-                                    <include>org.apache.iceberg:iceberg-spark-extensions-3.3_2.12
-                                    </include>
+                                    <include>org.apache.iceberg:iceberg-spark-extensions-3.3_2.12</include>
                                     <include>org.apache.iceberg:iceberg-bundled-guava</include>
                                     <include>org.apache.orc:*</include>
-
                                     <include>org.apache.thrift:libthrift</include>
                                     <include>org.apache.avro:avro</include>
                                     <include>org.apache.parquet:parquet-avro</include>
@@ -118,9 +116,6 @@
                                         <exclude>hbase-webapps/**</exclude>
                                         <exclude>org/codehaus/mojo/animal_sniffer/**</exclude>
                                         <exclude>org/apache/iceberg/spark/extensions/**</exclude>
-                                        <exclude>
-                                            org/apache/spark/sql/catalyst/analysis/ResolveProcedures**
-                                        </exclude>
                                         <exclude>
                                             org/apache/hadoop/hive/ql/optimizer/ppr/PartitionExpressionForMetastore**
                                         </exclude>
