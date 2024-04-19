@@ -26,7 +26,7 @@ import org.apache.amoro.scan.KeyedTableScan;
  * Represents an arctic table with keys supported, consist of one {@link ChangeTable} and one {@link
  * BaseTable}.
  */
-public interface KeyedTable extends ArcticTable {
+public interface KeyedTable extends MixedTable {
 
   /** Returns the {@link PrimaryKeySpec} of this table */
   PrimaryKeySpec primaryKeySpec();

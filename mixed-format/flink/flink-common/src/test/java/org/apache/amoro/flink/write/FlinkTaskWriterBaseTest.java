@@ -25,9 +25,9 @@ import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.source.DataIterator;
-import org.apache.amoro.io.ArcticFileIO;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.data.RowData;
@@ -54,24 +54,24 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
   Logger LOG = LoggerFactory.getLogger(FlinkTaskWriterBaseTest.class);
 
   default void testWriteAndReadArcticTable(
-      ArcticTable arcticTable, TableSchema flinkTableSchema, RowData expected) {
+      MixedTable mixedTable, TableSchema flinkTableSchema, RowData expected) {
 
     // This is a partial-write schema from Flink engine view.
     RowType rowType = (RowType) flinkTableSchema.toRowDataType().getLogicalType();
 
-    try (TaskWriter<RowData> taskWriter = createTaskWriter(arcticTable, rowType)) {
+    try (TaskWriter<RowData> taskWriter = createTaskWriter(mixedTable, rowType)) {
       Assert.assertNotNull(taskWriter);
 
-      writeAndCommit(expected, taskWriter, arcticTable);
+      writeAndCommit(expected, taskWriter, mixedTable);
 
-      arcticTable.refresh();
+      mixedTable.refresh();
 
       // This is a partial-read schema from Flink engine view, should reassign schema id to
       // selected-schema
       Schema selectedSchema =
-          TypeUtil.reassignIds(FlinkSchemaUtil.convert(flinkTableSchema), arcticTable.schema());
+          TypeUtil.reassignIds(FlinkSchemaUtil.convert(flinkTableSchema), mixedTable.schema());
 
-      assertRecords(arcticTable.schema(), selectedSchema, arcticTable, expected, flinkTableSchema);
+      assertRecords(mixedTable.schema(), selectedSchema, mixedTable, expected, flinkTableSchema);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -80,19 +80,19 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
   default void assertRecords(
       Schema tableSchema,
       Schema selectedSchema,
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       RowData expected,
       TableSchema flinkTableSchema)
       throws IOException {
     List<RowData> records;
-    if (arcticTable.isKeyedTable()) {
+    if (mixedTable.isKeyedTable()) {
       records =
           recordsOfKeyedTable(
-              arcticTable.asKeyedTable(), tableSchema, selectedSchema, arcticTable.io());
+              mixedTable.asKeyedTable(), tableSchema, selectedSchema, mixedTable.io());
     } else {
       records =
           recordsOfUnkeyedTable(
-              getTableLoader(getCatalogName(), getMetastoreUrl(), arcticTable),
+              getTableLoader(getCatalogName(), getMetastoreUrl(), mixedTable),
               selectedSchema,
               flinkTableSchema);
     }
@@ -107,21 +107,20 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
   String getCatalogName();
 
   default void writeAndCommit(
-      RowData expected, TaskWriter<RowData> taskWriter, ArcticTable arcticTable)
-      throws IOException {
-    writeAndCommit(expected, taskWriter, arcticTable, false);
+      RowData expected, TaskWriter<RowData> taskWriter, MixedTable mixedTable) throws IOException {
+    writeAndCommit(expected, taskWriter, mixedTable, false);
   }
 
   default void writeAndCommit(
       RowData expected,
       TaskWriter<RowData> taskWriter,
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       boolean upsertEnabled)
       throws IOException {
     taskWriter.write(expected);
     WriteResult writerResult = taskWriter.complete();
-    boolean writeToBase = arcticTable.isUnkeyedTable();
-    commit(arcticTable, writerResult, writeToBase);
+    boolean writeToBase = mixedTable.isUnkeyedTable();
+    commit(mixedTable, writerResult, writeToBase);
     Assert.assertEquals(upsertEnabled ? 2 : 1, writerResult.dataFiles().length);
   }
 
@@ -138,7 +137,7 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
   }
 
   default List<RowData> recordsOfKeyedTable(
-      KeyedTable table, Schema tableSchema, Schema projectedSchema, ArcticFileIO io) {
+      KeyedTable table, Schema tableSchema, Schema projectedSchema, MixedFileIO io) {
     List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(table, new AtomicInteger(0));
 
     RowDataReaderFunction rowDataReaderFunction =

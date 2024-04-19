@@ -18,7 +18,7 @@
 
 package org.apache.amoro.utils;
 
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.io.PathInfo;
 import org.apache.amoro.io.SupportsFileSystemOperations;
 import org.apache.iceberg.Files;
@@ -75,7 +75,7 @@ public class TestFileUtil {
 
   private static final TemporaryFolder temp = new TemporaryFolder();
 
-  static class LocalArcticFileIO implements ArcticFileIO, SupportsFileSystemOperations {
+  static class LocalMixedFileIO implements MixedFileIO, SupportsFileSystemOperations {
 
     @Override
     public <T> T doAs(Callable<T> callable) {
@@ -180,7 +180,7 @@ public class TestFileUtil {
     File file = temp.newFile("data/partition3/data-file-1");
 
     Set<String> exclude = Sets.newHashSet(file.getAbsolutePath());
-    try (LocalArcticFileIO io = new LocalArcticFileIO()) {
+    try (LocalMixedFileIO io = new LocalMixedFileIO()) {
       Lists.newArrayList(
               emptyPartition1.getAbsolutePath(),
               emptyPartition2.getAbsolutePath(),

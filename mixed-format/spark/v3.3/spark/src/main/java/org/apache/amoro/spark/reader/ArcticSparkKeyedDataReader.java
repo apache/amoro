@@ -19,7 +19,7 @@
 package org.apache.amoro.spark.reader;
 
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.spark.SparkInternalRowWrapper;
 import org.apache.amoro.spark.util.ArcticSparkUtils;
 import org.apache.amoro.table.PrimaryKeySpec;
@@ -40,7 +40,7 @@ import java.util.function.Function;
 public class ArcticSparkKeyedDataReader extends AbstractAdaptHiveKeyedDataReader<InternalRow> {
 
   public ArcticSparkKeyedDataReader(
-      ArcticFileIO fileIO,
+      MixedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,

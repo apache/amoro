@@ -19,18 +19,18 @@
 package org.apache.amoro.mixed;
 
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.io.ArcticFileIO;
 import org.apache.amoro.io.ArcticFileIOs;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.BasicKeyedTable;
 import org.apache.amoro.table.BasicUnkeyedTable;
 import org.apache.amoro.table.ChangeTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -101,8 +101,8 @@ public class MixedTables {
    * @param tableIdentifier mixed-format table identifier.
    * @return mixed format table instance.
    */
-  public ArcticTable loadTable(Table base, org.apache.amoro.table.TableIdentifier tableIdentifier) {
-    ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
+  public MixedTable loadTable(Table base, org.apache.amoro.table.TableIdentifier tableIdentifier) {
+    MixedFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
     PrimaryKeySpec keySpec =
         TablePropertyUtil.parsePrimaryKeySpec(base.schema(), base.properties());
     if (!keySpec.primaryKeyExisted()) {
@@ -132,7 +132,7 @@ public class MixedTables {
    * @param properties table properties
    * @return mixed format table.
    */
-  public ArcticTable createTable(
+  public MixedTable createTable(
       org.apache.amoro.table.TableIdentifier identifier,
       Schema schema,
       PartitionSpec partitionSpec,
@@ -143,7 +143,7 @@ public class MixedTables {
     TableIdentifier changeIdentifier = generateChangeStoreIdentifier(baseIdentifier);
 
     Table base = createBaseStore(baseIdentifier, schema, partitionSpec, keySpec, properties);
-    ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
+    MixedFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
     if (!keySpec.primaryKeyExisted()) {
       return new BasicUnkeyedTable(
           identifier, useArcticTableOperation(base, io), io, catalogProperties);
@@ -238,7 +238,7 @@ public class MixedTables {
    * @param purge - purge data when drop table
    * @return - true if table was deleted successfully.
    */
-  public boolean dropTable(ArcticTable table, boolean purge) {
+  public boolean dropTable(MixedTable table, boolean purge) {
     UnkeyedTable base =
         table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
     boolean deleted =
@@ -272,8 +272,8 @@ public class MixedTables {
     return tableMetaStore.doAs(() -> icebergCatalog.tableExists(identifier));
   }
 
-  private Table useArcticTableOperation(Table table, ArcticFileIO io) {
-    return ArcticCatalogUtil.useArcticTableOperations(
+  private Table useArcticTableOperation(Table table, MixedFileIO io) {
+    return MixedCatalogUtil.useArcticTableOperations(
         table, table.location(), io, tableMetaStore.getConfiguration());
   }
 }

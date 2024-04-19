@@ -20,7 +20,7 @@ package org.apache.amoro.flink.read.hybrid.split;
 
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyedFile;
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.utils.FileScanTaskUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -31,12 +31,12 @@ import java.util.Collection;
 public class SnapshotSplit extends ArcticSplit {
   private static final long serialVersionUID = 1L;
   private final int taskIndex;
-  private final Collection<ArcticFileScanTask> insertScanTasks;
+  private final Collection<MixedFileScanTask> insertScanTasks;
   private int insertFileOffset;
   private long insertRecordOffset;
   private DataTreeNode dataTreeNode;
 
-  public SnapshotSplit(Collection<ArcticFileScanTask> insertScanTasks, int taskIndex) {
+  public SnapshotSplit(Collection<MixedFileScanTask> insertScanTasks, int taskIndex) {
     Preconditions.checkArgument(insertScanTasks.size() > 0);
     this.insertScanTasks = insertScanTasks;
     this.taskIndex = taskIndex;
@@ -67,7 +67,7 @@ public class SnapshotSplit extends ArcticSplit {
     this.dataTreeNode = expectedNode;
   }
 
-  public Collection<ArcticFileScanTask> insertTasks() {
+  public Collection<MixedFileScanTask> insertTasks() {
     return insertScanTasks;
   }
 

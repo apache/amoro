@@ -19,17 +19,17 @@
 package org.apache.amoro.table;
 
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.io.ArcticFileIO;
-import org.apache.amoro.op.ArcticAppendFiles;
-import org.apache.amoro.op.ArcticDeleteFiles;
-import org.apache.amoro.op.ArcticOverwriteFiles;
-import org.apache.amoro.op.ArcticReplacePartitions;
-import org.apache.amoro.op.ArcticRewriteFiles;
-import org.apache.amoro.op.ArcticRowDelta;
-import org.apache.amoro.op.ArcticTransaction;
+import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.op.MixedAppendFiles;
+import org.apache.amoro.op.MixedDeleteFiles;
+import org.apache.amoro.op.MixedOverwriteFiles;
+import org.apache.amoro.op.MixedReplacePartitions;
+import org.apache.amoro.op.MixedRewriteFiles;
+import org.apache.amoro.op.MixedRowDelta;
+import org.apache.amoro.op.MixedTransaction;
 import org.apache.amoro.op.PartitionPropertiesUpdate;
 import org.apache.amoro.op.UpdatePartitionProperties;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
@@ -72,16 +72,16 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   private final Map<String, String> catalogProperties;
   private final TableIdentifier tableIdentifier;
   protected final Table icebergTable;
-  protected final ArcticFileIO arcticFileIO;
+  protected final MixedFileIO mixedFileIO;
 
   public BasicUnkeyedTable(
       TableIdentifier tableIdentifier,
       Table icebergTable,
-      ArcticFileIO arcticFileIO,
+      MixedFileIO mixedFileIO,
       Map<String, String> catalogProperties) {
     this.tableIdentifier = tableIdentifier;
     this.icebergTable = icebergTable;
-    this.arcticFileIO = arcticFileIO;
+    this.mixedFileIO = mixedFileIO;
     this.catalogProperties = catalogProperties;
   }
 
@@ -160,7 +160,7 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
     if (catalogProperties == null) {
       return icebergTable.properties();
     } else {
-      return ArcticCatalogUtil.mergeCatalogPropertiesToTable(
+      return MixedCatalogUtil.mergeCatalogPropertiesToTable(
           icebergTable.properties(), catalogProperties);
     }
   }
@@ -217,17 +217,17 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public AppendFiles newAppend() {
-    return ArcticAppendFiles.buildFor(this, false).onTableStore(icebergTable).build();
+    return MixedAppendFiles.buildFor(this, false).onTableStore(icebergTable).build();
   }
 
   @Override
   public AppendFiles newFastAppend() {
-    return ArcticAppendFiles.buildFor(this, true).onTableStore(icebergTable).build();
+    return MixedAppendFiles.buildFor(this, true).onTableStore(icebergTable).build();
   }
 
   @Override
   public RewriteFiles newRewrite() {
-    return ArcticRewriteFiles.buildFor(this).onTableStore(icebergTable).build();
+    return MixedRewriteFiles.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override
@@ -237,22 +237,22 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public OverwriteFiles newOverwrite() {
-    return ArcticOverwriteFiles.buildFor(this).onTableStore(icebergTable).build();
+    return MixedOverwriteFiles.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override
   public RowDelta newRowDelta() {
-    return ArcticRowDelta.buildFor(this).onTableStore(icebergTable).build();
+    return MixedRowDelta.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override
   public ReplacePartitions newReplacePartitions() {
-    return ArcticReplacePartitions.buildFor(this).onTableStore(icebergTable).build();
+    return MixedReplacePartitions.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override
   public DeleteFiles newDelete() {
-    return ArcticDeleteFiles.buildFor(this).onTableStore(icebergTable).build();
+    return MixedDeleteFiles.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override
@@ -268,12 +268,12 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public Transaction newTransaction() {
     Transaction transaction = icebergTable.newTransaction();
-    return new ArcticTransaction(this, transaction);
+    return new MixedTransaction(this, transaction);
   }
 
   @Override
-  public ArcticFileIO io() {
-    return arcticFileIO;
+  public MixedFileIO io() {
+    return mixedFileIO;
   }
 
   @Override

@@ -20,7 +20,7 @@ package org.apache.amoro.hive.io.writer;
 
 import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.io.writer.OutputFileFactory;
 import org.apache.amoro.io.writer.TaskWriterKey;
 import org.apache.iceberg.FileFormat;
@@ -57,7 +57,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final String hiveLocation;
   private final String hiveSubDirectory;
   private final PartitionSpec partitionSpec;
-  private final ArcticFileIO io;
+  private final MixedFileIO io;
   private final EncryptionManager encryptionManager;
   private final FileNameRules fileNameGenerator;
   private final boolean hiveConsistentWrite;
@@ -66,7 +66,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       String hiveLocation,
       PartitionSpec partitionSpec,
       FileFormat format,
-      ArcticFileIO io,
+      MixedFileIO io,
       EncryptionManager encryptionManager,
       int partitionId,
       long taskId,
@@ -89,7 +89,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       String hiveLocation,
       PartitionSpec partitionSpec,
       FileFormat format,
-      ArcticFileIO io,
+      MixedFileIO io,
       EncryptionManager encryptionManager,
       int partitionId,
       long taskId,

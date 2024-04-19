@@ -19,10 +19,10 @@
 package org.apache.amoro.hive.utils;
 
 import org.apache.amoro.hive.table.SupportHive;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 
 public class TableTypeUtil {
-  public static boolean isHive(ArcticTable arcticTable) {
-    return arcticTable instanceof SupportHive;
+  public static boolean isHive(MixedTable mixedTable) {
+    return mixedTable instanceof SupportHive;
   }
 }

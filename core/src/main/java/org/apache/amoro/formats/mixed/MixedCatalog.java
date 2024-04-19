@@ -21,8 +21,8 @@ package org.apache.amoro.formats.mixed;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 
@@ -30,10 +30,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class MixedCatalog implements FormatCatalog {
-  final ArcticCatalog catalog;
+  final MixedFormatCatalog catalog;
   final TableFormat format;
 
-  public MixedCatalog(ArcticCatalog catalog, TableFormat format) {
+  public MixedCatalog(MixedFormatCatalog catalog, TableFormat format) {
     this.catalog = catalog;
     this.format = format;
   }
@@ -66,9 +66,9 @@ public class MixedCatalog implements FormatCatalog {
   @Override
   public AmoroTable<?> loadTable(String database, String table) {
     try {
-      ArcticTable mixedTable =
+      MixedTable mixedTable =
           catalog.loadTable(TableIdentifier.of(catalog.name(), database, table));
-      return new MixedTable(mixedTable, format);
+      return new org.apache.amoro.formats.mixed.MixedTable(mixedTable, format);
     } catch (NoSuchTableException e) {
       throw new org.apache.amoro.NoSuchTableException(e);
     }

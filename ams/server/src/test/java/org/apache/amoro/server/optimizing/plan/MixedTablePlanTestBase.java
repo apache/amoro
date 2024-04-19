@@ -36,7 +36,7 @@ import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticDataFiles;
+import org.apache.amoro.utils.MixedDataFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -546,7 +546,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     return isPartitionedTable()
         ? Pair.of(
             getArcticTable().spec().specId(),
-            ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01"))
+            MixedDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01"))
         : Pair.of(getArcticTable().spec().specId(), new PartitionData(Types.StructType.of()));
   }
 

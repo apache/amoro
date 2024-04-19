@@ -21,19 +21,19 @@ package org.apache.amoro.server;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.catalog.BasicArcticCatalog;
-import org.apache.amoro.catalog.CatalogLoader;
+import org.apache.amoro.catalog.BasicMixedCatalog;
 import org.apache.amoro.data.ChangeAction;
-import org.apache.amoro.io.ArcticFileIO;
 import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.InternalMixedIcebergCatalog;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableBuilder;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticCatalogUtil;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.catalog.Namespace;
@@ -73,15 +73,15 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
           MixedDataTestHelpers.createRecord(3, "333", 0, "2022-01-03T12:00:00"),
           MixedDataTestHelpers.createRecord(4, "444", 0, "2022-01-01T12:00:00"));
   private static final Logger LOG = LoggerFactory.getLogger(TestInternalMixedCatalogService.class);
-  private ArcticCatalog catalog;
+  private MixedFormatCatalog catalog;
 
-  private static List<Record> writeTestData(ArcticTable table) {
+  private static List<Record> writeTestData(MixedTable table) {
     return writeTestData(table, BASE_RECORDS, CHANGE_INSERT, CHANGE_DELETE);
   }
 
   /** write test records to the target table and return the expected records */
   private static List<Record> writeTestData(
-      ArcticTable table,
+      MixedTable table,
       List<Record> baseAdded,
       List<Record> changeAdded,
       List<Record> changeDelete) {
@@ -93,7 +93,7 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
     if (baseAdded != null && !baseAdded.isEmpty()) {
       txId = table.isKeyedTable() ? table.asKeyedTable().beginTransaction("") : 1L;
       List<DataFile> files = MixedDataTestHelpers.writeBaseStore(table, txId, baseAdded, false);
-      UnkeyedTable baseStore = ArcticTableUtil.baseStore(table);
+      UnkeyedTable baseStore = MixedTableUtil.baseStore(table);
       AppendFiles appendFiles = baseStore.newAppend();
       files.forEach(appendFiles::appendFile);
       appendFiles.commit();
@@ -153,7 +153,7 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
         InternalMixedIcebergCatalog.class.getName(), catalog.getClass().getName());
   }
 
-  private ArcticCatalog loadMixedIcebergCatalog() {
+  private MixedFormatCatalog loadMixedIcebergCatalog() {
     return CatalogLoader.load(ams.getTableServiceUrl() + "/" + catalogName());
   }
 
@@ -162,7 +162,7 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
 
     @Test
     public void test() {
-      ArcticCatalog catalog = loadMixedIcebergCatalog();
+      MixedFormatCatalog catalog = loadMixedIcebergCatalog();
       Assertions.assertEquals(
           InternalMixedIcebergCatalog.class.getName(), catalog.getClass().getName());
       Assertions.assertTrue(catalog.listDatabases().isEmpty());
@@ -219,12 +219,12 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
       Assertions.assertEquals(expects, tables);
 
       // assert load table
-      ArcticTable mixedIcebergTable = catalog.loadTable(tableIdentifier);
+      MixedTable mixedIcebergTable = catalog.loadTable(tableIdentifier);
       Assertions.assertEquals(withPrimary, mixedIcebergTable.isKeyedTable());
 
       AmoroTable<?> serverTable = serverCatalog.loadTable(database, table);
       Assertions.assertEquals(TableFormat.MIXED_ICEBERG, serverTable.format());
-      ArcticTable serverMixedIceberg = (ArcticTable) serverTable.originalTable();
+      MixedTable serverMixedIceberg = (MixedTable) serverTable.originalTable();
       Assertions.assertEquals(withPrimary, serverMixedIceberg.isKeyedTable());
       if (withPrimary) {
         Assertions.assertEquals(
@@ -267,7 +267,7 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
       assertTableRuntime(tableIdentifier, TableFormat.MIXED_ICEBERG);
 
       // load table
-      ArcticTable table = catalog.loadTable(tableIdentifier);
+      MixedTable table = catalog.loadTable(tableIdentifier);
 
       // write and commit records.
       List<Record> expectedResult = writeTestData(table);
@@ -296,18 +296,18 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
         Lists.newArrayList(
             MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
             MixedDataTestHelpers.createRecord(1, "111", 0, "2022-01-01T12:00:00"));
-    ArcticCatalog historicalCatalog;
+    MixedFormatCatalog historicalCatalog;
 
     @BeforeEach
     public void setupTest() {
       CatalogMeta meta = serverCatalog.getMetadata();
       meta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, ams.getTableServiceUrl());
 
-      ArcticCatalog catalog = new BasicArcticCatalog();
+      MixedFormatCatalog catalog = new BasicMixedCatalog();
       catalog.initialize(
           meta.getCatalogName(),
           meta.getCatalogProperties(),
-          ArcticCatalogUtil.buildMetaStore(meta));
+          MixedCatalogUtil.buildMetaStore(meta));
       this.historicalCatalog = catalog;
       this.historicalCatalog.createDatabase(database);
     }
@@ -326,12 +326,12 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
         builder.withPrimaryKeySpec(keySpec);
       }
       // create historical table
-      ArcticTable historicalTable = builder.create();
+      MixedTable historicalTable = builder.create();
       // write and commit historical table
       List<Record> expectedResult = writeTestData(historicalTable);
 
       // load table base on rest catalog
-      ArcticTable restTable = catalog.loadTable(tableIdentifier);
+      MixedTable restTable = catalog.loadTable(tableIdentifier);
       List<Record> loadedRecords =
           MixedDataTestHelpers.readTable(restTable, Expressions.alwaysTrue());
 
@@ -359,7 +359,7 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
       // TODO: there is bug in unkeyed-table.location.
       String location =
           tableService.loadTableMetadata(tableIdentifier.buildTableIdentifier()).getTableLocation();
-      ArcticFileIO io = historicalTable.io();
+      MixedFileIO io = historicalTable.io();
       // drop table through rest-catalog
       catalog.dropTable(tableIdentifier, true);
       Assertions.assertTrue(catalog.listTables(database).isEmpty());

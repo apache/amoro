@@ -19,7 +19,7 @@
 package org.apache.amoro.spark.io;
 
 import org.apache.amoro.data.ChangeAction;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.io.writer.ChangeTaskWriter;
 import org.apache.amoro.io.writer.OutputFileFactory;
 import org.apache.amoro.spark.SparkInternalRowCastWrapper;
@@ -41,7 +41,7 @@ public class ArcticSparkChangeTaskWriter extends ChangeTaskWriter<InternalRow> {
       FileFormat format,
       FileAppenderFactory<InternalRow> appenderFactory,
       OutputFileFactory outputFileFactory,
-      ArcticFileIO io,
+      MixedFileIO io,
       long targetFileSize,
       long mask,
       Schema schema,

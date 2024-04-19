@@ -25,7 +25,7 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.data.DataTreeNode;
-import org.apache.amoro.io.writer.ArcticTreeNodePosDeleteWriter;
+import org.apache.amoro.io.writer.MixedTreeNodePosDeleteWriter;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
@@ -66,8 +66,8 @@ public class TestArcticTreeNodePosDeleteWriter extends TableTestBase {
     StructLike partitionData = GenericRecord.create(table.spec().schema());
     partitionData.set(0, 1);
 
-    ArcticTreeNodePosDeleteWriter<Record> writer =
-        new ArcticTreeNodePosDeleteWriter<>(
+    MixedTreeNodePosDeleteWriter<Record> writer =
+        new MixedTreeNodePosDeleteWriter<>(
             appenderFactory,
             FileFormat.PARQUET,
             partitionData,

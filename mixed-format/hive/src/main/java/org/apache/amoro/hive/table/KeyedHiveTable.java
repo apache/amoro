@@ -23,8 +23,8 @@ import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.op.BaseSchemaUpdate;
 import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
-import org.apache.amoro.io.ArcticFileIO;
-import org.apache.amoro.io.ArcticHadoopFileIO;
+import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.MixedHadoopFileIO;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
 import org.apache.amoro.table.BaseTable;
@@ -64,8 +64,8 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
   }
 
   @Override
-  public ArcticHadoopFileIO io() {
-    return (ArcticHadoopFileIO) super.io();
+  public MixedHadoopFileIO io() {
+    return (MixedHadoopFileIO) super.io();
   }
 
   @Override
@@ -125,9 +125,9 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     public HiveChangeInternalTable(
         TableIdentifier tableIdentifier,
         Table changeIcebergTable,
-        ArcticFileIO arcticFileIO,
+        MixedFileIO mixedFileIO,
         Map<String, String> catalogProperties) {
-      super(tableIdentifier, changeIcebergTable, arcticFileIO, catalogProperties);
+      super(tableIdentifier, changeIcebergTable, mixedFileIO, catalogProperties);
     }
 
     @Override
@@ -151,7 +151,7 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     public HiveBaseInternalTable(
         TableIdentifier tableIdentifier,
         Table icebergTable,
-        ArcticHadoopFileIO arcticFileIO,
+        MixedHadoopFileIO arcticFileIO,
         String tableLocation,
         HMSClientPool hiveClient,
         Map<String, String> catalogProperties,

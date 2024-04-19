@@ -50,9 +50,9 @@ public class TestKeyedTableScan extends TableDataTestBase {
       throws IOException {
     CloseableIterable<CombinedScanTask> combinedScanTasks =
         getArcticTable().asKeyedTable().newScan().planTasks();
-    final List<ArcticFileScanTask> allBaseTasks = new ArrayList<>();
-    final List<ArcticFileScanTask> allInsertTasks = new ArrayList<>();
-    final List<ArcticFileScanTask> allEquDeleteTasks = new ArrayList<>();
+    final List<MixedFileScanTask> allBaseTasks = new ArrayList<>();
+    final List<MixedFileScanTask> allInsertTasks = new ArrayList<>();
+    final List<MixedFileScanTask> allEquDeleteTasks = new ArrayList<>();
     try (CloseableIterator<CombinedScanTask> initTasks = combinedScanTasks.iterator()) {
       while (initTasks.hasNext()) {
         CombinedScanTask combinedScanTask = initTasks.next();

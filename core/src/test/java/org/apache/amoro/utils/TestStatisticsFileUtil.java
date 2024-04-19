@@ -66,8 +66,8 @@ public class TestStatisticsFileUtil extends TableTestBase {
             : getArcticTable().asUnkeyedTable();
     table
         .newAppend()
-        .set(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true")
-        .set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true")
+        .set(MixedTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true")
+        .set(MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true")
         .commit();
 
     Snapshot snapshot = table.currentSnapshot();
@@ -80,28 +80,28 @@ public class TestStatisticsFileUtil extends TableTestBase {
         StatisticsFileUtil.writerBuilder(table)
             .withSnapshotId(snapshot.snapshotId())
             .build()
-            .add(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, optimizedTime, dataSerializer)
-            .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer);
+            .add(MixedTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, optimizedTime, dataSerializer)
+            .add(MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer);
     StatisticsFile statisticsFile = writer.complete();
     table.updateStatistics().setStatistics(snapshot.snapshotId(), statisticsFile).commit();
 
     assertStructLikeEquals(
-        optimizedTime, readPartitionData(table, ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME));
+        optimizedTime, readPartitionData(table, MixedTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME));
     assertStructLikeEquals(
-        optimizedSequence, readPartitionData(table, ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE));
+        optimizedSequence, readPartitionData(table, MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE));
 
     table.newAppend().commit();
 
     assertStructLikeEquals(
-        optimizedTime, readPartitionData(table, ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME));
+        optimizedTime, readPartitionData(table, MixedTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME));
     assertStructLikeEquals(
-        optimizedSequence, readPartitionData(table, ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE));
+        optimizedSequence, readPartitionData(table, MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE));
   }
 
   private StatisticsFile findValidStatisticFile(Table table, String type) {
     Snapshot latestValidSnapshot =
-        ArcticTableUtil.findLatestValidSnapshot(
-            table, table.currentSnapshot().snapshotId(), ArcticTableUtil.isTypeExist(type));
+        MixedTableUtil.findLatestValidSnapshot(
+            table, table.currentSnapshot().snapshotId(), MixedTableUtil.isTypeExist(type));
     Preconditions.checkState(latestValidSnapshot != null, "Expect one valid snapshot");
     List<StatisticsFile> statisticsFiles =
         StatisticsFileUtil.getStatisticsFiles(table, latestValidSnapshot.snapshotId(), type);

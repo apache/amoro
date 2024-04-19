@@ -41,13 +41,13 @@ class BasicTableTrashManager implements TableTrashManager {
   private static final Logger LOG = LoggerFactory.getLogger(BasicTableTrashManager.class);
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
   private final TableIdentifier tableIdentifier;
-  private final ArcticHadoopFileIO arcticFileIO;
+  private final MixedHadoopFileIO arcticFileIO;
   private final String tableRootLocation;
   private final String trashLocation;
 
   BasicTableTrashManager(
       TableIdentifier tableIdentifier,
-      ArcticHadoopFileIO arcticFileIO,
+      MixedHadoopFileIO arcticFileIO,
       String tableRootLocation,
       String trashLocation) {
     this.tableIdentifier = tableIdentifier;

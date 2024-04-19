@@ -23,7 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.formats.iceberg.IcebergTable;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.server.ArcticManagementConf;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
@@ -33,7 +33,7 @@ import org.apache.amoro.server.table.internal.InternalIcebergHandler;
 import org.apache.amoro.server.table.internal.InternalTableCreator;
 import org.apache.amoro.server.table.internal.InternalTableHandler;
 import org.apache.amoro.server.utils.InternalTableUtil;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.TableOperations;
@@ -100,11 +100,11 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
     return IcebergTable.newIcebergTable(
         tableIdentifier,
         table,
-        ArcticCatalogUtil.buildMetaStore(getMetadata()),
+        MixedCatalogUtil.buildMetaStore(getMetadata()),
         getMetadata().getCatalogProperties());
   }
 
-  protected ArcticFileIO fileIO(CatalogMeta catalogMeta) {
+  protected MixedFileIO fileIO(CatalogMeta catalogMeta) {
     return InternalTableUtil.newIcebergFileIo(catalogMeta);
   }
 

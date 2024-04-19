@@ -19,7 +19,7 @@
 package org.apache.amoro.spark.reader;
 
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveUnkeyedDataReader;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.spark.SparkInternalRowWrapper;
 import org.apache.amoro.spark.util.ArcticSparkUtils;
 import org.apache.iceberg.Schema;
@@ -39,7 +39,7 @@ import java.util.function.Function;
 public class ArcticSparkUnkeyedDataReader extends AbstractAdaptHiveUnkeyedDataReader<InternalRow> {
 
   public ArcticSparkUnkeyedDataReader(
-      ArcticFileIO fileIO,
+      MixedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       String nameMapping,

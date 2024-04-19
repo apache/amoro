@@ -23,8 +23,8 @@ import org.apache.amoro.server.table.BasicTableSnapshot;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.TableSnapshot;
 import org.apache.amoro.server.utils.IcebergTableUtil;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -35,7 +35,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import java.util.List;
 
 public class OptimizingTestHelpers {
-  public static TableSnapshot getCurrentTableSnapshot(ArcticTable table) {
+  public static TableSnapshot getCurrentTableSnapshot(MixedTable table) {
     if (table.isKeyedTable()) {
       return getCurrentKeyedTableSnapshot(table.asKeyedTable());
     } else {
@@ -60,12 +60,12 @@ public class OptimizingTestHelpers {
     return newRecords;
   }
 
-  public static List<DataFile> appendBase(ArcticTable arcticTable, List<DataFile> dataFiles) {
+  public static List<DataFile> appendBase(MixedTable mixedTable, List<DataFile> dataFiles) {
     AppendFiles appendFiles;
-    if (arcticTable.isKeyedTable()) {
-      appendFiles = arcticTable.asKeyedTable().baseTable().newAppend();
+    if (mixedTable.isKeyedTable()) {
+      appendFiles = mixedTable.asKeyedTable().baseTable().newAppend();
     } else {
-      appendFiles = arcticTable.asUnkeyedTable().newAppend();
+      appendFiles = mixedTable.asUnkeyedTable().newAppend();
     }
     dataFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
@@ -73,12 +73,12 @@ public class OptimizingTestHelpers {
   }
 
   public static List<DeleteFile> appendBasePosDelete(
-      ArcticTable arcticTable, List<DeleteFile> deleteFiles) {
+      MixedTable mixedTable, List<DeleteFile> deleteFiles) {
     RowDelta rowDelta;
-    if (arcticTable.isKeyedTable()) {
-      rowDelta = arcticTable.asKeyedTable().baseTable().newRowDelta();
+    if (mixedTable.isKeyedTable()) {
+      rowDelta = mixedTable.asKeyedTable().baseTable().newRowDelta();
     } else {
-      rowDelta = arcticTable.asUnkeyedTable().newRowDelta();
+      rowDelta = mixedTable.asUnkeyedTable().newRowDelta();
     }
     deleteFiles.forEach(rowDelta::addDeletes);
     rowDelta.commit();

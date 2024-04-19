@@ -30,7 +30,7 @@ import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.hive.io.HiveDataTestHelpers;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.ReplacePartitions;
@@ -81,7 +81,7 @@ public class TestRewritePartitions extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     initDataFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     initDataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
@@ -99,7 +99,7 @@ public class TestRewritePartitions extends MixedHiveTableTestBase {
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(2L).writeHive(insertRecords);
     HiveDataTestHelpers.assertWriteConsistentFilesName(getArcticTable(), dataFiles);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     ReplacePartitions replacePartitions = baseStore.newReplacePartitions();
     dataFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
@@ -123,7 +123,7 @@ public class TestRewritePartitions extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(2L).writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     ReplacePartitions replacePartitions = baseStore.newReplacePartitions();
     dataFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();

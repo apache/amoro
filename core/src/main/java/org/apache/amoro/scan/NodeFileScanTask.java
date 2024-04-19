@@ -35,9 +35,9 @@ import java.util.stream.Stream;
 public class NodeFileScanTask implements KeyedTableScanTask {
   private static final Logger LOG = LoggerFactory.getLogger(NodeFileScanTask.class);
 
-  private List<ArcticFileScanTask> baseTasks = new ArrayList<>();
-  private List<ArcticFileScanTask> insertTasks = new ArrayList<>();
-  private List<ArcticFileScanTask> deleteFiles = new ArrayList<>();
+  private List<MixedFileScanTask> baseTasks = new ArrayList<>();
+  private List<MixedFileScanTask> insertTasks = new ArrayList<>();
+  private List<MixedFileScanTask> deleteFiles = new ArrayList<>();
   private long cost = 0;
   private final long openFileCost = Long.valueOf(TableProperties.SPLIT_OPEN_FILE_COST_DEFAULT);
   private DataTreeNode treeNode;
@@ -49,7 +49,7 @@ public class NodeFileScanTask implements KeyedTableScanTask {
     this.treeNode = treeNode;
   }
 
-  public NodeFileScanTask(List<ArcticFileScanTask> allTasks) {
+  public NodeFileScanTask(List<MixedFileScanTask> allTasks) {
     this.baseTasks =
         allTasks.stream()
             .filter(t -> t.file().type() == DataFileType.BASE_FILE)
@@ -84,26 +84,26 @@ public class NodeFileScanTask implements KeyedTableScanTask {
   }
 
   @Override
-  public List<ArcticFileScanTask> baseTasks() {
+  public List<MixedFileScanTask> baseTasks() {
     return baseTasks;
   }
 
   @Override
-  public List<ArcticFileScanTask> insertTasks() {
+  public List<MixedFileScanTask> insertTasks() {
     return insertTasks;
   }
 
   @Override
-  public List<ArcticFileScanTask> arcticEquityDeletes() {
+  public List<MixedFileScanTask> arcticEquityDeletes() {
     return deleteFiles;
   }
 
   @Override
-  public List<ArcticFileScanTask> dataTasks() {
+  public List<MixedFileScanTask> dataTasks() {
     return Stream.concat(baseTasks.stream(), insertTasks.stream()).collect(Collectors.toList());
   }
 
-  public void addFile(ArcticFileScanTask task) {
+  public void addFile(MixedFileScanTask task) {
 
     DataFileType fileType = task.fileType();
     if (fileType == null) {
@@ -130,7 +130,7 @@ public class NodeFileScanTask implements KeyedTableScanTask {
     }
   }
 
-  public void addTasks(List<ArcticFileScanTask> files) {
+  public void addTasks(List<MixedFileScanTask> files) {
     files.forEach(this::addFile);
   }
 

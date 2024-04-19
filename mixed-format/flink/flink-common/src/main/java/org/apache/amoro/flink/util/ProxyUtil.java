@@ -23,7 +23,7 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import org.apache.amoro.flink.interceptor.KerberosInterceptor;
 import org.apache.amoro.flink.interceptor.KerberosInvocationHandler;
 import org.apache.amoro.flink.interceptor.ProxyFactory;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 
 /**
  * A proxy util wraps an object with the kerberos authenticate ability by {@link
@@ -35,8 +35,8 @@ public class ProxyUtil {
     return handler.getProxy(obj);
   }
 
-  public static <T> Object getProxy(T obj, ArcticFileIO arcticFileIO) {
-    KerberosInvocationHandler<T> handler = new KerberosInvocationHandler<>(arcticFileIO);
+  public static <T> Object getProxy(T obj, MixedFileIO mixedFileIO) {
+    KerberosInvocationHandler<T> handler = new KerberosInvocationHandler<>(mixedFileIO);
     return getProxy(obj, handler);
   }
 
@@ -49,13 +49,13 @@ public class ProxyUtil {
   }
 
   public static <T> T getProxy(
-      Class<T> clazz, ArcticFileIO arcticFileIO, Class[] argumentTypes, Object[] arguments) {
-    return getProxy(clazz, new KerberosInterceptor(arcticFileIO), argumentTypes, arguments);
+      Class<T> clazz, MixedFileIO mixedFileIO, Class[] argumentTypes, Object[] arguments) {
+    return getProxy(clazz, new KerberosInterceptor(mixedFileIO), argumentTypes, arguments);
   }
 
   public static <T> ProxyFactory<T> getProxyFactory(
-      Class<T> clazz, ArcticFileIO arcticFileIO, Class[] argumentTypes, Object[] arguments) {
+      Class<T> clazz, MixedFileIO mixedFileIO, Class[] argumentTypes, Object[] arguments) {
     return new ProxyFactory<T>(
-        clazz, new KerberosInterceptor(arcticFileIO), argumentTypes, arguments);
+        clazz, new KerberosInterceptor(mixedFileIO), argumentTypes, arguments);
   }
 }

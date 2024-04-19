@@ -30,21 +30,21 @@ import org.apache.amoro.NoSuchDatabaseException;
 import org.apache.amoro.PooledAmsClient;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.TableMeta;
-import org.apache.amoro.catalog.ArcticCatalog;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClient;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.utils.CompatibleHivePropertyUtil;
 import org.apache.amoro.hive.utils.HiveSchemaUtil;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.io.ArcticFileIO;
 import org.apache.amoro.io.ArcticFileIOs;
-import org.apache.amoro.op.ArcticHadoopTableOperations;
+import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.op.CreateTableTransaction;
+import org.apache.amoro.op.MixedHadoopTableOperations;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.properties.MetaTableProperties;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableBuilder;
 import org.apache.amoro.table.TableIdentifier;
@@ -52,9 +52,9 @@ import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.blocker.BasicTableBlockerManager;
 import org.apache.amoro.table.blocker.TableBlockerManager;
-import org.apache.amoro.utils.ArcticCatalogUtil;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.ConvertStructUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
@@ -86,8 +86,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/** Implementation of {@link ArcticCatalog} to support Hive table as base store. */
-public class ArcticHiveCatalog implements ArcticCatalog {
+/** Implementation of {@link MixedFormatCatalog} to support Hive table as base store. */
+public class ArcticHiveCatalog implements MixedFormatCatalog {
 
   private static final Logger LOG = LoggerFactory.getLogger(ArcticHiveCatalog.class);
 
@@ -342,7 +342,7 @@ public class ArcticHiveCatalog implements ArcticCatalog {
   }
 
   @Override
-  public ArcticTable loadTable(TableIdentifier identifier) {
+  public MixedTable loadTable(TableIdentifier identifier) {
     validate(identifier);
     TableMeta meta = getArcticTableMeta(identifier);
     if (meta.getLocations() == null) {
@@ -379,23 +379,23 @@ public class ArcticHiveCatalog implements ArcticCatalog {
     protected String location;
 
     @Override
-    public ArcticTable create() {
+    public MixedTable create() {
       ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
       doCreateCheck();
       TableMeta meta = builder.build();
-      ArcticTable table = createTableByMeta(meta, schema, primaryKeySpec, partitionSpec);
+      MixedTable table = createTableByMeta(meta, schema, primaryKeySpec, partitionSpec);
       return table;
     }
 
     @Override
     public Transaction createTransaction() {
-      ArcticFileIO arcticFileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
+      MixedFileIO mixedFileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
       ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
       TableMeta meta = builder.build();
       String location = getTableLocationForCreate();
       TableOperations tableOperations =
-          new ArcticHadoopTableOperations(
-              new Path(location), arcticFileIO, tableMetaStore.getConfiguration());
+          new MixedHadoopTableOperations(
+              new Path(location), mixedFileIO, tableMetaStore.getConfiguration());
       TableMetadata tableMetadata =
           tableMetadata(schema, partitionSpec, sortOrder, properties, location);
       Transaction transaction =
@@ -414,7 +414,7 @@ public class ArcticHiveCatalog implements ArcticCatalog {
           });
     }
 
-    protected ArcticTable createTableByMeta(
+    protected MixedTable createTableByMeta(
         TableMeta tableMeta,
         Schema schema,
         PrimaryKeySpec primaryKeySpec,
@@ -424,7 +424,7 @@ public class ArcticHiveCatalog implements ArcticCatalog {
 
     protected void checkProperties() {
       Map<String, String> mergedProperties =
-          ArcticCatalogUtil.mergeCatalogPropertiesToTable(properties, catalogProperties);
+          MixedCatalogUtil.mergeCatalogPropertiesToTable(properties, catalogProperties);
       boolean enableStream =
           CompatiblePropertyUtil.propertyAsBoolean(
               mergedProperties,

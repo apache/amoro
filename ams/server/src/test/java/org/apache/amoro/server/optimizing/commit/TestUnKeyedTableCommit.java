@@ -29,7 +29,7 @@ import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.server.exception.OptimizingCommitException;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
@@ -62,7 +62,7 @@ public class TestUnKeyedTableCommit extends TableTestBase {
   protected StructLike partitionData;
   protected String partitionPath;
 
-  protected ArcticTable arcticTable;
+  protected MixedTable mixedTable;
 
   public TestUnKeyedTableCommit(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -79,8 +79,8 @@ public class TestUnKeyedTableCommit extends TableTestBase {
 
   @Before
   public void initTableFile() {
-    arcticTable = getArcticTable();
-    spec = arcticTable.spec();
+    mixedTable = getArcticTable();
+    spec = mixedTable.spec();
     partitionData = GenericRecord.create(spec.schema());
     partitionData.set(0, 1);
     partitionPath = spec.partitionToPath(partitionData);
@@ -235,20 +235,20 @@ public class TestUnKeyedTableCommit extends TableTestBase {
   }
 
   protected void addFile(DataFile dataFile) {
-    arcticTable.asUnkeyedTable().newAppend().appendFile(dataFile).commit();
+    mixedTable.asUnkeyedTable().newAppend().appendFile(dataFile).commit();
   }
 
   protected void addDelete(ContentFile<?> contentFile) {
-    arcticTable.asUnkeyedTable().newRowDelta().addDeletes((DeleteFile) contentFile).commit();
+    mixedTable.asUnkeyedTable().newRowDelta().addDeletes((DeleteFile) contentFile).commit();
   }
 
   protected Map<String, ContentFile<?>> getAllFiles() {
-    if (arcticTable.asUnkeyedTable().currentSnapshot() == null) {
+    if (mixedTable.asUnkeyedTable().currentSnapshot() == null) {
       return Collections.emptyMap();
     }
     Map<String, ContentFile<?>> maps = new HashMap<>();
     CloseableIterable<FileScanTask> fileScanTasks =
-        arcticTable.asUnkeyedTable().newScan().planFiles();
+        mixedTable.asUnkeyedTable().newScan().planFiles();
     for (FileScanTask fileScanTask : fileScanTasks) {
       maps.put(fileScanTask.file().path().toString(), fileScanTask.file());
       for (DeleteFile deleteFile : fileScanTask.deletes()) {
@@ -285,7 +285,7 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     Mockito.when(taskRuntime.getOutput()).thenReturn(output);
     UnKeyedTableCommit commit =
         new UnKeyedTableCommit(
-            Optional.ofNullable(arcticTable.asUnkeyedTable().currentSnapshot())
+            Optional.ofNullable(mixedTable.asUnkeyedTable().currentSnapshot())
                 .map(Snapshot::snapshotId)
                 .orElse(null),
             getArcticTable(),
@@ -320,11 +320,11 @@ public class TestUnKeyedTableCommit extends TableTestBase {
               .map(s -> allFiles.get(s.path().toString()))
               .toArray(ContentFile[]::new);
     }
-    return new RewriteFilesInput(rewriteData, rewritePos, null, delete, arcticTable);
+    return new RewriteFilesInput(rewriteData, rewritePos, null, delete, mixedTable);
   }
 
   private void checkFile(ContentFile<?>[] files) {
-    arcticTable.refresh();
+    mixedTable.refresh();
     Map<String, ContentFile<?>> maps = getAllFiles();
     Assert.assertEquals(files.length, maps.size());
     for (ContentFile file : files) {

@@ -19,8 +19,8 @@
 package org.apache.amoro.io.reader;
 
 import org.apache.amoro.data.DataTreeNode;
-import org.apache.amoro.io.ArcticFileIO;
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.NodeFilter;
 import org.apache.amoro.utils.map.StructLikeCollections;
@@ -48,7 +48,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Abstract implementation of iceberg data reader consuming {@link ArcticFileScanTask}.
+ * Abstract implementation of iceberg data reader consuming {@link MixedFileScanTask}.
  *
  * @param <T> to indicate the record data type.
  */
@@ -58,14 +58,14 @@ public abstract class AbstractUnkeyedDataReader<T> {
   protected final Schema projectedSchema;
   protected final String nameMapping;
   protected final boolean caseSensitive;
-  protected final ArcticFileIO fileIO;
+  protected final MixedFileIO fileIO;
   protected final BiFunction<Type, Object, Object> convertConstant;
   protected final Filter<T> dataNodeFilter;
   protected final boolean reuseContainer;
   private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
   public AbstractUnkeyedDataReader(
-      ArcticFileIO fileIO,
+      MixedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       String nameMapping,
@@ -87,7 +87,7 @@ public abstract class AbstractUnkeyedDataReader<T> {
   }
 
   public AbstractUnkeyedDataReader(
-      ArcticFileIO fileIO,
+      MixedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       String nameMapping,
@@ -107,7 +107,7 @@ public abstract class AbstractUnkeyedDataReader<T> {
   }
 
   public AbstractUnkeyedDataReader(
-      ArcticFileIO fileIO,
+      MixedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,

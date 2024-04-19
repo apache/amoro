@@ -28,7 +28,7 @@ import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.hive.io.HiveDataTestHelpers;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.properties.HiveTableProperties;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
@@ -438,11 +438,11 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     Assert.assertEquals(newPartitionLocation, hivePartition.getSd().getLocation());
   }
 
-  private String createEmptyLocationForHive(ArcticTable arcticTable) {
+  private String createEmptyLocationForHive(MixedTable mixedTable) {
     // create a new empty location for hive
     String newLocation =
-        ((SupportHive) arcticTable).hiveLocation() + "/ts_" + System.currentTimeMillis();
-    OutputFile file = arcticTable.io().newOutputFile(newLocation + "/.keep");
+        ((SupportHive) mixedTable).hiveLocation() + "/ts_" + System.currentTimeMillis();
+    OutputFile file = mixedTable.io().newOutputFile(newLocation + "/.keep");
     try {
       file.createOrOverwrite().close();
     } catch (IOException e) {
@@ -451,7 +451,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     return newLocation;
   }
 
-  private List<DataFile> writeAndCommitHive(ArcticTable table, long txId) {
+  private List<DataFile> writeAndCommitHive(MixedTable table, long txId) {
     String hiveSubDir = HiveTableUtil.newHiveSubdirectory(txId);
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writerOf(table)

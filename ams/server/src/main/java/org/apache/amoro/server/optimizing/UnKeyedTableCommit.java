@@ -35,7 +35,7 @@ import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.ArcticServiceConstants;
 import org.apache.amoro.server.exception.OptimizingCommitException;
 import org.apache.amoro.server.utils.IcebergTableUtil;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.amoro.utils.TableFileUtil;
@@ -73,11 +73,11 @@ public class UnKeyedTableCommit {
   private static final Logger LOG = LoggerFactory.getLogger(UnKeyedTableCommit.class);
 
   private final Long targetSnapshotId;
-  private final ArcticTable table;
+  private final MixedTable table;
   private final Collection<TaskRuntime> tasks;
 
   public UnKeyedTableCommit(
-      Long targetSnapshotId, ArcticTable table, Collection<TaskRuntime> tasks) {
+      Long targetSnapshotId, MixedTable table, Collection<TaskRuntime> tasks) {
     this.targetSnapshotId = targetSnapshotId;
     this.table = table;
     this.tasks = tasks;

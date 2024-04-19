@@ -18,7 +18,7 @@
 
 package org.apache.amoro.utils;
 
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -36,13 +36,13 @@ public class ExpressionUtil {
   /**
    * Convert partition data to data filter.
    *
-   * @param table the {@link ArcticTable} table
+   * @param table the {@link MixedTable} table
    * @param specId the partition spec id
    * @param partitions the collection of partition data
    * @return data filter converted from partition data
    */
   public static Expression convertPartitionDataToDataFilter(
-      ArcticTable table, int specId, Collection<StructLike> partitions) {
+      MixedTable table, int specId, Collection<StructLike> partitions) {
     Expression filter = Expressions.alwaysFalse();
     for (StructLike partition : partitions) {
       filter = Expressions.or(filter, convertPartitionDataToDataFilter(table, specId, partition));
@@ -53,14 +53,14 @@ public class ExpressionUtil {
   /**
    * Convert partition data to data filter.
    *
-   * @param table the {@link ArcticTable} table
+   * @param table the {@link MixedTable} table
    * @param specId the partition spec id
    * @param partition the partition data
    * @return data filter converted from partition data
    */
   public static Expression convertPartitionDataToDataFilter(
-      ArcticTable table, int specId, StructLike partition) {
-    PartitionSpec spec = ArcticTableUtil.getArcticTablePartitionSpecById(table, specId);
+      MixedTable table, int specId, StructLike partition) {
+    PartitionSpec spec = MixedTableUtil.getArcticTablePartitionSpecById(table, specId);
     Schema schema = table.schema();
     Expression filter = Expressions.alwaysTrue();
     for (int i = 0; i < spec.fields().size(); i++) {

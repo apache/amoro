@@ -20,7 +20,7 @@ package org.apache.amoro.flink.write;
 
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.data.PrimaryKeyData;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.io.writer.ChangeTaskWriter;
 import org.apache.amoro.io.writer.OutputFileFactory;
 import org.apache.amoro.table.KeyedTable;
@@ -55,7 +55,7 @@ public class FlinkChangeTaskWriter extends ChangeTaskWriter<RowData> {
       FileFormat format,
       FileAppenderFactory<RowData> appenderFactory,
       OutputFileFactory outputFileFactory,
-      ArcticFileIO io,
+      MixedFileIO io,
       long targetFileSize,
       long mask,
       Schema schema,

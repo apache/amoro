@@ -23,7 +23,7 @@ import org.apache.amoro.hive.op.OverwriteHiveFiles;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.op.OverwriteBaseFiles;
 import org.apache.amoro.properties.HiveTableProperties;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
@@ -78,7 +78,7 @@ public class HiveMetaSynchronizer {
    * @param table arctic table to accept the schema change
    * @param hiveClient hive client
    */
-  public static void syncHiveSchemaToArctic(ArcticTable table, HMSClientPool hiveClient) {
+  public static void syncHiveSchemaToArctic(MixedTable table, HMSClientPool hiveClient) {
     try {
       if (!HiveTableUtil.checkExist(hiveClient, table.id())) {
         LOG.warn("Hive table {} does not exist, try to skip sync schema to amoro", table.id());
@@ -402,7 +402,7 @@ public class HiveMetaSynchronizer {
 
   /** if iceberg partition location is existed, should update hive table location. */
   private static void handleInIcebergPartitions(
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       Set<String> inIcebergNotInHive,
       Map<String, StructLike> icebergPartitionMap,
       StructLikeMap<Map<String, String>> partitionProperty) {
@@ -416,18 +416,18 @@ public class HiveMetaSynchronizer {
           String currentLocation =
               property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
 
-          if (arcticTable.io().exists(currentLocation)) {
+          if (mixedTable.io().exists(currentLocation)) {
             int transientTime =
                 Integer.parseInt(
                     property.getOrDefault(
                         HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, "0"));
             List<DataFile> dataFiles =
-                getIcebergPartitionFiles(arcticTable, icebergPartitionMap.get(partition));
+                getIcebergPartitionFiles(mixedTable, icebergPartitionMap.get(partition));
             HivePartitionUtil.createPartitionIfAbsent(
-                ((SupportHive) arcticTable).getHMSClient(),
-                arcticTable,
+                ((SupportHive) mixedTable).getHMSClient(),
+                mixedTable,
                 HivePartitionUtil.partitionValuesAsList(
-                    icebergPartitionMap.get(partition), arcticTable.spec().partitionType()),
+                    icebergPartitionMap.get(partition), mixedTable.spec().partitionType()),
                 currentLocation,
                 dataFiles,
                 transientTime);
@@ -436,7 +436,7 @@ public class HiveMetaSynchronizer {
   }
 
   private static void handleInHivePartitions(
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       Set<String> inHiveNotInIceberg,
       Map<String, Partition> hivePartitionMap) {
     inHiveNotInIceberg.forEach(
@@ -447,13 +447,13 @@ public class HiveMetaSynchronizer {
                   hivePartition.getParameters(), HiveTableProperties.ARCTIC_TABLE_FLAG, false);
           if (isArctic) {
             HivePartitionUtil.dropPartition(
-                ((SupportHive) arcticTable).getHMSClient(), arcticTable, hivePartition);
+                ((SupportHive) mixedTable).getHMSClient(), mixedTable, hivePartition);
           }
         });
   }
 
   private static void handleInBothPartitions(
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       Set<String> inBoth,
       Map<String, Partition> hivePartitionMap,
       Map<String, StructLike> icebergPartitionMap,
@@ -478,10 +478,10 @@ public class HiveMetaSynchronizer {
                     property.getOrDefault(
                         HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, "0"));
             List<DataFile> dataFiles =
-                getIcebergPartitionFiles(arcticTable, icebergPartitionMap.get(partition));
+                getIcebergPartitionFiles(mixedTable, icebergPartitionMap.get(partition));
             HivePartitionUtil.updatePartitionLocation(
-                ((SupportHive) arcticTable).getHMSClient(),
-                arcticTable,
+                ((SupportHive) mixedTable).getHMSClient(),
+                mixedTable,
                 hivePartition,
                 currentLocation,
                 dataFiles,
@@ -489,19 +489,19 @@ public class HiveMetaSynchronizer {
           }
         });
 
-    handleInHivePartitions(arcticTable, inHiveNotInIceberg, hivePartitionMap);
+    handleInHivePartitions(mixedTable, inHiveNotInIceberg, hivePartitionMap);
   }
 
   private static List<DataFile> getIcebergPartitionFiles(
-      ArcticTable arcticTable, StructLike partition) {
+      MixedTable mixedTable, StructLike partition) {
     UnkeyedTable baseStore;
     baseStore =
-        arcticTable.isKeyedTable()
-            ? arcticTable.asKeyedTable().baseTable()
-            : arcticTable.asUnkeyedTable();
+        mixedTable.isKeyedTable()
+            ? mixedTable.asKeyedTable().baseTable()
+            : mixedTable.asUnkeyedTable();
 
     List<DataFile> partitionFiles = new ArrayList<>();
-    arcticTable
+    mixedTable
         .io()
         .doAs(
             () -> {
@@ -621,7 +621,7 @@ public class HiveMetaSynchronizer {
   }
 
   private static void overwriteTable(
-      ArcticTable table, List<DataFile> filesToDelete, List<DataFile> filesToAdd) {
+      MixedTable table, List<DataFile> filesToDelete, List<DataFile> filesToAdd) {
     if (filesToDelete.size() > 0 || filesToAdd.size() > 0) {
       LOG.info(
           "Table {} sync hive data change to arctic, delete files: {}, add files {}",

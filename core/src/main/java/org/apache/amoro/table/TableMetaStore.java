@@ -58,7 +58,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Stores hadoop config files for {@link ArcticTable} */
+/** Stores hadoop config files for {@link MixedTable} */
 public class TableMetaStore implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(TableMetaStore.class);
 

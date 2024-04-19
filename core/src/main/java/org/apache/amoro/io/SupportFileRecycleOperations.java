@@ -21,10 +21,10 @@ package org.apache.amoro.io;
 import java.time.LocalDate;
 
 /**
- * A mixed-in interface for {@link ArcticFileIO} which indicate the storage system support file
+ * A mixed-in interface for {@link MixedFileIO} which indicate the storage system support file
  * recycle operations.
  */
-public interface SupportFileRecycleOperations extends ArcticFileIO {
+public interface SupportFileRecycleOperations extends MixedFileIO {
 
   @Override
   default boolean supportsFileRecycle() {

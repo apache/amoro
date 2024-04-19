@@ -19,7 +19,7 @@
 package org.apache.amoro.flink.interceptor;
 
 import org.apache.amoro.flink.util.ReflectionUtil;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -31,14 +31,14 @@ import java.util.Map;
 /** Integrate flinkTable properties */
 public class FlinkTablePropertiesInvocationHandler implements InvocationHandler, Serializable {
 
-  private final ArcticTable arcticTable;
+  private final MixedTable mixedTable;
   private final Map<String, String> flinkTableProperties = new HashMap<>();
   protected Map<String, String> tablePropertiesCombined = new HashMap<>();
 
   public FlinkTablePropertiesInvocationHandler(
-      Map<String, String> flinkTableProperties, ArcticTable arcticTable) {
-    this.tablePropertiesCombined.putAll(arcticTable.properties());
-    this.arcticTable = arcticTable;
+      Map<String, String> flinkTableProperties, MixedTable mixedTable) {
+    this.tablePropertiesCombined.putAll(mixedTable.properties());
+    this.mixedTable = mixedTable;
     if (flinkTableProperties == null) {
       return;
     }
@@ -48,8 +48,8 @@ public class FlinkTablePropertiesInvocationHandler implements InvocationHandler,
 
   public Object getProxy() {
     return Proxy.newProxyInstance(
-        arcticTable.getClass().getClassLoader(),
-        ReflectionUtil.getAllInterface(arcticTable.getClass()),
+        mixedTable.getClass().getClassLoader(),
+        ReflectionUtil.getAllInterface(mixedTable.getClass()),
         this);
   }
 
@@ -60,7 +60,7 @@ public class FlinkTablePropertiesInvocationHandler implements InvocationHandler,
     } else if ("asKeyedTable".equals(method.getName())) {
       return proxy;
     }
-    Object result = method.invoke(arcticTable, args);
+    Object result = method.invoke(mixedTable, args);
     // rewrite the properties as of the arctic table properties may be updated.
     if ("refresh".equals(method.getName())) {
       rewriteProperties();
@@ -69,7 +69,7 @@ public class FlinkTablePropertiesInvocationHandler implements InvocationHandler,
   }
 
   private void rewriteProperties() {
-    Map<String, String> refreshedProperties = arcticTable.properties();
+    Map<String, String> refreshedProperties = mixedTable.properties();
     // iterate through the properties of the arctic table and update the properties of the
     // tablePropertiesCombined.
     for (Map.Entry<String, String> entry : refreshedProperties.entrySet()) {

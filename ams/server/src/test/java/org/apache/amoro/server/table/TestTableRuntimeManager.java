@@ -27,7 +27,7 @@ import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,9 +55,9 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
 
   @Test
   public void testLoadTable() {
-    ArcticTable arcticTable =
-        (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
-    validateArcticTable(arcticTable);
+    MixedTable mixedTable =
+        (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
+    validateArcticTable(mixedTable);
 
     // test load not existed table
     Assert.assertThrows(

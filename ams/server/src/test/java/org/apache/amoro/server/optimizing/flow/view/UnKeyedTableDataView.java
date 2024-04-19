@@ -24,7 +24,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.io.writer.RecordWithAction;
 import org.apache.amoro.server.optimizing.flow.RandomRecordGenerator;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -50,18 +50,18 @@ public class UnKeyedTableDataView extends AbstractTableDataView {
   private final InternalRecordWrapper wrapper;
 
   public UnKeyedTableDataView(
-      ArcticTable arcticTable, int partitionCount, long targetFileSize, Long seed) {
-    super(arcticTable, null, targetFileSize);
+      MixedTable mixedTable, int partitionCount, long targetFileSize, Long seed) {
+    super(mixedTable, null, targetFileSize);
 
     this.wrapper = new InternalRecordWrapper(schema.asStruct());
     this.targetFileSize = targetFileSize;
-    if (arcticTable.format() != TableFormat.ICEBERG) {
-      arcticTable.updateProperties().set(WRITE_TARGET_FILE_SIZE_BYTES, targetFileSize + "");
+    if (mixedTable.format() != TableFormat.ICEBERG) {
+      mixedTable.updateProperties().set(WRITE_TARGET_FILE_SIZE_BYTES, targetFileSize + "");
     }
 
     this.generator =
         new RandomRecordGenerator(
-            arcticTable.schema(), arcticTable.spec(), null, partitionCount, null, seed);
+            mixedTable.schema(), mixedTable.spec(), null, partitionCount, null, seed);
 
     this.view = StructLikeMap.create(schema.asStruct());
     // addRecords2Map(view, new DataReader(arcticTable).allData());
@@ -120,14 +120,14 @@ public class UnKeyedTableDataView extends AbstractTableDataView {
   }
 
   private void appendCommit(WriteResult writeResult) {
-    if (arcticTable.isKeyedTable()) {
-      AppendFiles appendFiles = arcticTable.asKeyedTable().changeTable().newAppend();
+    if (mixedTable.isKeyedTable()) {
+      AppendFiles appendFiles = mixedTable.asKeyedTable().changeTable().newAppend();
       for (DataFile dataFile : writeResult.dataFiles()) {
         appendFiles.appendFile(dataFile);
       }
       appendFiles.commit();
     } else {
-      RowDelta rowDelta = arcticTable.asUnkeyedTable().newRowDelta();
+      RowDelta rowDelta = mixedTable.asUnkeyedTable().newRowDelta();
       for (DataFile dataFile : writeResult.dataFiles()) {
         rowDelta.addRows(dataFile);
       }

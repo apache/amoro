@@ -19,19 +19,19 @@
 package org.apache.amoro.catalog;
 
 import org.apache.amoro.TableTestHelper;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableBuilder;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticCatalogUtil;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.junit.After;
 import org.junit.Before;
 
 public abstract class TableTestBase extends CatalogTestBase {
 
   private final TableTestHelper tableTestHelper;
-  private ArcticTable arcticTable;
+  private MixedTable mixedTable;
   private TableMetaStore tableMetaStore;
 
   public TableTestBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -41,7 +41,7 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   @Before
   public void setupTable() {
-    this.tableMetaStore = ArcticCatalogUtil.buildMetaStore(getCatalogMeta());
+    this.tableMetaStore = MixedCatalogUtil.buildMetaStore(getCatalogMeta());
 
     getUnifiedCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     switch (getTestFormat()) {
@@ -66,7 +66,7 @@ public abstract class TableTestBase extends CatalogTestBase {
     if (isPartitionedTable()) {
       tableBuilder.withPartitionSpec(tableTestHelper.partitionSpec());
     }
-    arcticTable = tableBuilder.create();
+    mixedTable = tableBuilder.create();
   }
 
   private void createIcebergFormatTable() {
@@ -77,8 +77,8 @@ public abstract class TableTestBase extends CatalogTestBase {
             tableTestHelper.tableSchema(),
             tableTestHelper.partitionSpec(),
             tableTestHelper.tableProperties());
-    arcticTable =
-        (ArcticTable)
+    mixedTable =
+        (MixedTable)
             getUnifiedCatalog()
                 .loadTable(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME)
                 .originalTable();
@@ -95,12 +95,12 @@ public abstract class TableTestBase extends CatalogTestBase {
     }
   }
 
-  protected ArcticTable getArcticTable() {
-    return arcticTable;
+  protected MixedTable getArcticTable() {
+    return mixedTable;
   }
 
   protected UnkeyedTable getBaseStore() {
-    return ArcticTableUtil.baseStore(arcticTable);
+    return MixedTableUtil.baseStore(mixedTable);
   }
 
   protected TableMetaStore getTableMetaStore() {

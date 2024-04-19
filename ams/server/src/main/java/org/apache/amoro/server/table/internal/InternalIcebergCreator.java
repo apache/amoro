@@ -22,7 +22,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.TableMeta;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.properties.MetaTableProperties;
 import org.apache.amoro.server.table.TableMetadata;
@@ -39,7 +39,7 @@ import org.apache.iceberg.util.LocationUtil;
 /** Table creator for iceberg format */
 public class InternalIcebergCreator implements InternalTableCreator {
 
-  protected final ArcticFileIO io;
+  protected final MixedFileIO io;
   protected final CreateTableRequest request;
   private final CatalogMeta catalogMeta;
   protected final String database;

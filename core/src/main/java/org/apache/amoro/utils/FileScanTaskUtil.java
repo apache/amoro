@@ -18,7 +18,7 @@
 
 package org.apache.amoro.utils;
 
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 
@@ -36,13 +36,13 @@ public class FileScanTaskUtil {
    * @param tasks the collection of ArcticFileScanTask objects to convert to a string
    * @return a string representation of the ArcticFileScanTask objects
    */
-  public static String toString(Collection<ArcticFileScanTask> tasks) {
+  public static String toString(Collection<MixedFileScanTask> tasks) {
     if (tasks == null) {
       return "[]";
     }
     return Iterables.toString(
         tasks.stream()
-            .map(ArcticFileScanTask::file)
+            .map(MixedFileScanTask::file)
             .map(
                 primaryKeyedFile ->
                     MoreObjects.toStringHelper(primaryKeyedFile)

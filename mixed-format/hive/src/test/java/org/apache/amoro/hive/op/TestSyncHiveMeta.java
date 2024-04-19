@@ -30,7 +30,7 @@ import org.apache.amoro.hive.utils.HivePartitionUtil;
 import org.apache.amoro.hive.utils.HiveSchemaUtil;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -122,7 +122,7 @@ public class TestSyncHiveMeta extends TableTestBase {
 
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
@@ -179,7 +179,7 @@ public class TestSyncHiveMeta extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();

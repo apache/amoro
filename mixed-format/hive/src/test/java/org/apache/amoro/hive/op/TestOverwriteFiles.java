@@ -31,7 +31,7 @@ import org.apache.amoro.hive.exceptions.CannotAlterHiveLocationException;
 import org.apache.amoro.hive.io.HiveDataTestHelpers;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
@@ -97,7 +97,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
     HiveDataTestHelpers.assertWriteConsistentFilesName(getArcticTable(), dataFiles);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
@@ -131,7 +131,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
     HiveDataTestHelpers.assertWriteConsistentFilesName(getArcticTable(), dataFiles);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     Transaction transaction = baseStore.newTransaction();
     OverwriteFiles overwriteFiles = transaction.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
@@ -162,7 +162,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
@@ -198,7 +198,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
             .transactionId(1L)
             .customHiveLocation(hiveLocation)
             .writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
@@ -232,7 +232,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
 
@@ -254,7 +254,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     TEST_HMS
         .getHiveClient()
         .alter_table(getArcticTable().id().getDatabase(), "new_table", hiveTable);
-    String tableRootLocation = ArcticTableUtil.tableRootLocation(getArcticTable());
+    String tableRootLocation = MixedTableUtil.tableRootLocation(getArcticTable());
     String newTableLocation =
         tableRootLocation.replace(getArcticTable().id().getTableName(), "new_table");
     getArcticTable().io().asFileSystemIO().deletePrefix(newTableLocation);
@@ -276,7 +276,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
             .transactionId(2L)
             .customHiveLocation(hiveLocation)
             .writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     rewriteDataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
@@ -301,7 +301,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
     Assert.assertEquals(2, dataFiles.size());
     DataFile deleteFile = dataFiles.get(0);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
@@ -325,7 +325,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
   public void testOverwriteWithFilesUnderDifferentDir() {
     // TODO should add cases for tables without partition spec
     Assume.assumeTrue(isPartitionedTable());
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
 
     List<Record> insertRecords = Lists.newArrayList();
@@ -352,7 +352,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
@@ -381,7 +381,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();

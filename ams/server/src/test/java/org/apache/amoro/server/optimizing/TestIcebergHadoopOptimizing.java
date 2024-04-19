@@ -25,7 +25,7 @@ import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.TableProperties;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
@@ -433,7 +433,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
       throw new IllegalStateException("unknown catalog");
     }
 
-    TableMetaStore tms = ArcticCatalogUtil.buildMetaStore(serverCatalog.getMetadata());
+    TableMetaStore tms = MixedCatalogUtil.buildMetaStore(serverCatalog.getMetadata());
     Catalog icebergCatalog =
         CatalogUtil.loadCatalog(impl, catalog, properties, tms.getConfiguration());
 

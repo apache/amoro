@@ -26,12 +26,12 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.config.Configurations;
-import org.apache.amoro.catalog.CatalogLoader;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
 import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.hive.utils.UpgradeHiveTableUtil;
+import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.catalog.ServerCatalog;
@@ -62,7 +62,7 @@ import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.TableProperties;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -157,7 +157,7 @@ public class TableController {
         "catalog.database.tableName can not be empty in any element");
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     CatalogMeta catalogMeta = serverCatalog.getMetadata();
-    TableMetaStore tableMetaStore = ArcticCatalogUtil.buildMetaStore(catalogMeta);
+    TableMetaStore tableMetaStore = MixedCatalogUtil.buildMetaStore(catalogMeta);
     HMSClientPool hmsClientPool =
         new CachedHiveClientPool(tableMetaStore, catalogMeta.getCatalogProperties());
 
@@ -198,9 +198,9 @@ public class TableController {
     CatalogMeta catalogMeta = serverCatalog.getMetadata();
     String amsUri = AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME);
     catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, amsUri);
-    TableMetaStore tableMetaStore = ArcticCatalogUtil.buildMetaStore(catalogMeta);
+    TableMetaStore tableMetaStore = MixedCatalogUtil.buildMetaStore(catalogMeta);
     // check whether catalog support MIXED_HIVE format.
-    Set<TableFormat> tableFormats = ArcticCatalogUtil.tableFormats(catalogMeta);
+    Set<TableFormat> tableFormats = MixedCatalogUtil.tableFormats(catalogMeta);
     Preconditions.checkState(
         tableFormats.contains(TableFormat.MIXED_HIVE),
         "Catalog %s does not support MIXED_HIVE format",
@@ -512,7 +512,7 @@ public class TableController {
     String catalogType = serverCatalog.getMetadata().getCatalogType();
     if (catalogType.equals(CATALOG_TYPE_HIVE)) {
       CatalogMeta catalogMeta = serverCatalog.getMetadata();
-      TableMetaStore tableMetaStore = ArcticCatalogUtil.buildMetaStore(catalogMeta);
+      TableMetaStore tableMetaStore = MixedCatalogUtil.buildMetaStore(catalogMeta);
       HMSClientPool hmsClientPool =
           new CachedHiveClientPool(tableMetaStore, catalogMeta.getCatalogProperties());
 

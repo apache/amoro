@@ -38,8 +38,8 @@ import org.apache.amoro.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.executor.ExecutorTestBase;
 import org.apache.amoro.server.utils.IcebergTableUtil;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
@@ -286,7 +286,7 @@ public class TestDataExpire extends ExecutorTestBase {
 
   @Test
   public void testFileLevel() {
-    ArcticTable table = getArcticTable();
+    MixedTable table = getArcticTable();
     table
         .updateProperties()
         .set(TableProperties.DATA_EXPIRATION_LEVEL, DataExpirationConfig.ExpireLevel.FILE.name())
@@ -396,23 +396,23 @@ public class TestDataExpire extends ExecutorTestBase {
       long lastCommitTime = icebergTableMaintainer.expireBaseOnRule(config, field).toEpochMilli();
       Assert.assertEquals(lastSnapshotTime, lastCommitTime);
     } else {
-      ArcticTable arcticTable = getArcticTable();
-      MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(arcticTable);
+      MixedTable mixedTable = getArcticTable();
+      MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(mixedTable);
       Types.NestedField field = getArcticTable().schema().findField(config.getExpirationField());
 
       long lastSnapshotTime;
-      if (arcticTable.isKeyedTable()) {
+      if (mixedTable.isKeyedTable()) {
         List<Record> changeRecords =
             Lists.newArrayList(
                 createRecord(2, "222", parseMillis("2022-01-01T12:00:05"), "2022-01-01T12:00:05"));
-        KeyedTable keyedTable = arcticTable.asKeyedTable();
+        KeyedTable keyedTable = mixedTable.asKeyedTable();
         OptimizingTestHelpers.appendChange(
             keyedTable,
             tableTestHelper()
                 .writeChangeStore(keyedTable, 2L, ChangeAction.INSERT, changeRecords, false));
         lastSnapshotTime = keyedTable.changeTable().currentSnapshot().timestampMillis();
       } else {
-        lastSnapshotTime = arcticTable.asUnkeyedTable().currentSnapshot().timestampMillis();
+        lastSnapshotTime = mixedTable.asUnkeyedTable().currentSnapshot().timestampMillis();
       }
       long lastCommitTime =
           mixedTableMaintainer.expireMixedBaseOnRule(config, field).toEpochMilli();
@@ -465,7 +465,7 @@ public class TestDataExpire extends ExecutorTestBase {
 
   @Test
   public void testGcDisabled() {
-    ArcticTable testTable = getArcticTable();
+    MixedTable testTable = getArcticTable();
     testTable.updateProperties().set("gc.enabled", "false").commit();
 
     ArrayList<Record> baseRecords =
@@ -565,7 +565,7 @@ public class TestDataExpire extends ExecutorTestBase {
         .collect(Collectors.toList());
   }
 
-  protected List<Record> readSortedBaseRecords(ArcticTable table) {
+  protected List<Record> readSortedBaseRecords(MixedTable table) {
     return tableTestHelper().readBaseStore(table, Expressions.alwaysTrue(), null, false).stream()
         .sorted(Comparator.comparing(o -> o.get(0, Integer.class)))
         .collect(Collectors.toList());

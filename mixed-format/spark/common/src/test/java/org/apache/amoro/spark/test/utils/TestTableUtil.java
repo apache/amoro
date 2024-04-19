@@ -26,9 +26,9 @@ import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.io.reader.GenericUnkeyedDataReader;
 import org.apache.amoro.io.writer.GenericTaskWriters;
 import org.apache.amoro.scan.CombinedScanTask;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MetadataColumns;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -163,7 +163,7 @@ public class TestTableUtil {
     return new Schema(fields);
   }
 
-  public static TableFiles files(ArcticTable table) {
+  public static TableFiles files(MixedTable table) {
     table.refresh();
     if (table.isUnkeyedTable()) {
       Pair<Set<DataFile>, Set<DeleteFile>> fileStatistic = icebergFiles(table.asUnkeyedTable());
@@ -217,11 +217,11 @@ public class TestTableUtil {
     }
   }
 
-  public static List<Record> tableRecords(ArcticTable table) {
+  public static List<Record> tableRecords(MixedTable table) {
     return tableRecords(table, Expressions.alwaysTrue());
   }
 
-  public static List<Record> tableRecords(ArcticTable table, Expression expression) {
+  public static List<Record> tableRecords(MixedTable table, Expression expression) {
     List<Record> records;
     table.refresh();
     if (table.isKeyedTable()) {
@@ -316,7 +316,7 @@ public class TestTableUtil {
     return result;
   }
 
-  public static List<DataFile> writeToBase(ArcticTable table, List<Record> data) {
+  public static List<DataFile> writeToBase(MixedTable table, List<Record> data) {
     TaskWriter<Record> baseWriter = null;
     UnkeyedTable baseTable = null;
     if (table.isKeyedTable()) {

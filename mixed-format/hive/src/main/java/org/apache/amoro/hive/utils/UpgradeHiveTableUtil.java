@@ -28,10 +28,10 @@ import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.table.UnkeyedHiveTable;
-import org.apache.amoro.io.ArcticHadoopFileIO;
+import org.apache.amoro.io.MixedHadoopFileIO;
 import org.apache.amoro.op.UpdatePartitionProperties;
 import org.apache.amoro.properties.HiveTableProperties;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.utils.TablePropertyUtil;
@@ -91,7 +91,7 @@ public class UpgradeHiveTableUtil {
       PrimaryKeySpec.Builder primaryKeyBuilder = PrimaryKeySpec.builderFor(schema);
       pkList.stream().forEach(p -> primaryKeyBuilder.addColumn(p));
 
-      ArcticTable arcticTable =
+      MixedTable mixedTable =
           arcticHiveCatalog
               .newTableBuilder(tableIdentifier, schema)
               .withProperties(properties)
@@ -101,7 +101,7 @@ public class UpgradeHiveTableUtil {
               .create();
       upgradeHive = true;
       UpgradeHiveTableUtil.hiveDataMigration(
-          (SupportHive) arcticTable, arcticHiveCatalog, tableIdentifier);
+          (SupportHive) mixedTable, arcticHiveCatalog, tableIdentifier);
     } catch (Throwable t) {
       if (upgradeHive) {
         arcticHiveCatalog.dropTable(tableIdentifier, false);
@@ -115,7 +115,7 @@ public class UpgradeHiveTableUtil {
       throws Exception {
     Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
     String hiveDataLocation = HiveTableUtil.hiveRootLocation(hiveTable.getSd().getLocation());
-    ArcticHadoopFileIO io = arcticTable.io();
+    MixedHadoopFileIO io = arcticTable.io();
     io.makeDirectories(hiveDataLocation);
     String newPath;
     if (hiveTable.getPartitionKeys().isEmpty()) {
@@ -235,7 +235,7 @@ public class UpgradeHiveTableUtil {
 
   @VisibleForTesting
   static void fillPartitionProperties(
-      ArcticTable table, ArcticHiveCatalog arcticHiveCatalog, Table hiveTable) {
+      MixedTable table, ArcticHiveCatalog arcticHiveCatalog, Table hiveTable) {
     UnkeyedHiveTable baseTable;
     if (table.isKeyedTable()) {
       baseTable = (UnkeyedHiveTable) table.asKeyedTable().baseTable();

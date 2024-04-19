@@ -31,12 +31,12 @@ import org.apache.amoro.io.writer.GenericChangeTaskWriter;
 import org.apache.amoro.io.writer.GenericTaskWriters;
 import org.apache.amoro.io.writer.SortedPosDeleteWriter;
 import org.apache.amoro.scan.CombinedScanTask;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MetadataColumns;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -152,7 +152,7 @@ public class MixedDataTestHelpers {
   }
 
   public static List<DataFile> writeBaseStore(
-      ArcticTable table, long txId, List<Record> records, boolean orderedWrite) {
+      MixedTable table, long txId, List<Record> records, boolean orderedWrite) {
     GenericTaskWriters.Builder builder = GenericTaskWriters.builderFor(table);
     if (table.isKeyedTable()) {
       builder.withTransactionId(txId);
@@ -168,7 +168,7 @@ public class MixedDataTestHelpers {
   }
 
   public static List<DeleteFile> writeBaseStorePosDelete(
-      ArcticTable table, long txId, DataFile dataFile, List<Long> pos) {
+      MixedTable table, long txId, DataFile dataFile, List<Long> pos) {
     GenericTaskWriters.Builder builder = GenericTaskWriters.builderFor(table);
     DataTreeNode node = FileNameRules.parseFileNodeFromFileName(dataFile.path().toString());
     if (table.isKeyedTable()) {
@@ -186,7 +186,7 @@ public class MixedDataTestHelpers {
   }
 
   public static List<DataFile> writeAndCommitBaseStore(
-      ArcticTable table, long txId, List<Record> records, boolean orderedWrite) {
+      MixedTable table, long txId, List<Record> records, boolean orderedWrite) {
     List<DataFile> dataFiles = writeBaseStore(table, txId, records, orderedWrite);
     AppendFiles appendFiles;
     if (table.isKeyedTable()) {
@@ -212,7 +212,7 @@ public class MixedDataTestHelpers {
     return writeFiles;
   }
 
-  public static List<Record> readTable(ArcticTable table, Expression expression) {
+  public static List<Record> readTable(MixedTable table, Expression expression) {
     table.refresh();
     if (table.isKeyedTable()) {
       return readKeyedTable(table.asKeyedTable(), expression);
@@ -356,12 +356,12 @@ public class MixedDataTestHelpers {
     return builder.build();
   }
 
-  public static List<Record> readBaseStore(ArcticTable table, Expression expression) {
+  public static List<Record> readBaseStore(MixedTable table, Expression expression) {
     return readBaseStore(table, expression, null, false);
   }
 
   public static List<Record> readBaseStore(
-      ArcticTable table, Expression expression, Schema projectSchema, boolean useDiskMap) {
+      MixedTable table, Expression expression, Schema projectSchema, boolean useDiskMap) {
     if (projectSchema == null) {
       projectSchema = table.schema();
     }
@@ -394,9 +394,9 @@ public class MixedDataTestHelpers {
   }
 
   public static List<Record> readBaseStore(
-      ArcticTable table, AbstractUnkeyedDataReader<Record> reader, Expression expression) {
+      MixedTable table, AbstractUnkeyedDataReader<Record> reader, Expression expression) {
 
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(table);
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(table);
     CloseableIterable<FileScanTask> fileScanTasks =
         baseStore.newScan().filter(expression).planFiles();
     ImmutableList.Builder<Record> builder = ImmutableList.builder();

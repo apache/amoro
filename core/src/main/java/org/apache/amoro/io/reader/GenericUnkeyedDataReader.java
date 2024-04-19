@@ -19,7 +19,7 @@
 package org.apache.amoro.io.reader;
 
 import org.apache.amoro.data.DataTreeNode;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.Schema;
@@ -41,7 +41,7 @@ import java.util.function.Function;
 
 public class GenericUnkeyedDataReader extends AbstractUnkeyedDataReader<Record> {
   public GenericUnkeyedDataReader(
-      ArcticFileIO fileIO,
+      MixedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       String nameMapping,
@@ -59,7 +59,7 @@ public class GenericUnkeyedDataReader extends AbstractUnkeyedDataReader<Record> 
   }
 
   public GenericUnkeyedDataReader(
-      ArcticFileIO fileIO,
+      MixedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       String nameMapping,
@@ -79,7 +79,7 @@ public class GenericUnkeyedDataReader extends AbstractUnkeyedDataReader<Record> 
   }
 
   public GenericUnkeyedDataReader(
-      ArcticFileIO fileIO,
+      MixedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,

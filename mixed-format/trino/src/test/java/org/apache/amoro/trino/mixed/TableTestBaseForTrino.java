@@ -23,8 +23,8 @@ import static org.apache.amoro.MockArcticMetastoreServer.TEST_DB_NAME;
 
 import org.apache.amoro.MockArcticMetastoreServer;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.catalog.CatalogLoader;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.io.reader.GenericKeyedDataReader;
@@ -112,7 +112,7 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
           .withRecordCount(2) // needs at least one record or else metrics will filter it out
           .build();
 
-  protected ArcticCatalog testCatalog;
+  protected MixedFormatCatalog testCatalog;
   protected UnkeyedTable testTable;
   protected KeyedTable testKeyedTable;
 

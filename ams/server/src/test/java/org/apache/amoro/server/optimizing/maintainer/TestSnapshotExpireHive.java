@@ -26,7 +26,7 @@ import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.hive.io.HiveDataTestHelpers;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
@@ -127,7 +127,7 @@ public class TestSnapshotExpireHive extends TestSnapshotExpire {
         file -> Assert.assertTrue(getArcticTable().io().exists(file.path().toString())));
   }
 
-  public List<DataFile> writeAndReplaceHivePartitions(ArcticTable table) {
+  public List<DataFile> writeAndReplaceHivePartitions(MixedTable table) {
     String hiveSubDir = HiveTableUtil.newHiveSubdirectory();
     HiveDataTestHelpers.WriterHelper writerHelper =
         HiveDataTestHelpers.writerOf(table).customHiveLocation(hiveSubDir).transactionId(0L);

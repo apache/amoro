@@ -25,7 +25,7 @@ import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.TestMixedCatalog;
 import org.apache.amoro.hive.TestHMS;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Table;
@@ -71,7 +71,7 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
   }
 
   @Override
-  protected void validateCreatedTable(ArcticTable table, boolean withKey) throws TException {
+  protected void validateCreatedTable(MixedTable table, boolean withKey) throws TException {
     super.validateCreatedTable(table, withKey);
     validateTableArcticProperties(table.id());
   }

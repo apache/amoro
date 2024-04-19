@@ -24,20 +24,20 @@ import org.apache.amoro.hive.table.KeyedHiveTable;
 import org.apache.amoro.hive.table.UnkeyedHiveTable;
 import org.apache.amoro.hive.utils.HiveSchemaUtil;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.io.ArcticFileIO;
 import org.apache.amoro.io.ArcticFileIOs;
-import org.apache.amoro.io.ArcticHadoopFileIO;
+import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.MixedHadoopFileIO;
 import org.apache.amoro.io.TableTrashManagers;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.properties.MetaTableProperties;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.TableProperties;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.iceberg.FileFormat;
@@ -88,7 +88,7 @@ public class MixedHiveTables {
     return tableMetaStore.doAs(() -> tables.load(location));
   }
 
-  public ArcticTable loadTableByMeta(TableMeta tableMeta) {
+  public MixedTable loadTableByMeta(TableMeta tableMeta) {
     if (tableMeta.getKeySpec() != null
         && tableMeta.getKeySpec().getFields() != null
         && tableMeta.getKeySpec().getFields().size() > 0) {
@@ -104,7 +104,7 @@ public class MixedHiveTables {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    ArcticHadoopFileIO fileIO =
+    MixedHadoopFileIO fileIO =
         ArcticFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
@@ -116,7 +116,7 @@ public class MixedHiveTables {
     UnkeyedHiveTable baseTable =
         new KeyedHiveTable.HiveBaseInternalTable(
             tableIdentifier,
-            ArcticCatalogUtil.useArcticTableOperations(
+            MixedCatalogUtil.useArcticTableOperations(
                 baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             tableLocation,
@@ -128,7 +128,7 @@ public class MixedHiveTables {
     ChangeTable changeTable =
         new KeyedHiveTable.HiveChangeInternalTable(
             tableIdentifier,
-            ArcticCatalogUtil.useArcticTableOperations(
+            MixedCatalogUtil.useArcticTableOperations(
                 changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -145,7 +145,7 @@ public class MixedHiveTables {
    * we check the privilege by calling existing method, the method will throw the
    * UncheckedIOException Exception
    */
-  private void checkPrivilege(ArcticFileIO fileIO, String fileLocation) {
+  private void checkPrivilege(MixedFileIO fileIO, String fileLocation) {
     if (!fileIO.exists(fileLocation)) {
       throw new NoSuchTableException("Table's base location %s does not exist ", fileLocation);
     }
@@ -155,7 +155,7 @@ public class MixedHiveTables {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
-    ArcticHadoopFileIO fileIO =
+    MixedHadoopFileIO fileIO =
         ArcticFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
@@ -166,7 +166,7 @@ public class MixedHiveTables {
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
     return new UnkeyedHiveTable(
         tableIdentifier,
-        ArcticCatalogUtil.useArcticTableOperations(
+        MixedCatalogUtil.useArcticTableOperations(
             table, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO,
         tableLocation,
@@ -192,7 +192,7 @@ public class MixedHiveTables {
       tableMeta.putToProperties(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000");
     }
 
-    ArcticHadoopFileIO fileIO =
+    MixedHadoopFileIO fileIO =
         ArcticFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
@@ -219,7 +219,7 @@ public class MixedHiveTables {
     UnkeyedHiveTable baseTable =
         new KeyedHiveTable.HiveBaseInternalTable(
             tableIdentifier,
-            ArcticCatalogUtil.useArcticTableOperations(
+            MixedCatalogUtil.useArcticTableOperations(
                 baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             tableLocation,
@@ -247,7 +247,7 @@ public class MixedHiveTables {
     ChangeTable changeTable =
         new KeyedHiveTable.HiveChangeInternalTable(
             tableIdentifier,
-            ArcticCatalogUtil.useArcticTableOperations(
+            MixedCatalogUtil.useArcticTableOperations(
                 changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -357,7 +357,7 @@ public class MixedHiveTables {
           "Failed to create hive table:" + tableMeta.getTableIdentifier(), e);
     }
 
-    ArcticHadoopFileIO fileIO =
+    MixedHadoopFileIO fileIO =
         ArcticFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
@@ -366,7 +366,7 @@ public class MixedHiveTables {
             catalogProperties);
     return new UnkeyedHiveTable(
         tableIdentifier,
-        ArcticCatalogUtil.useArcticTableOperations(
+        MixedCatalogUtil.useArcticTableOperations(
             table, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO,
         tableLocation,
@@ -376,11 +376,11 @@ public class MixedHiveTables {
 
   public void dropInternalTableByMeta(TableMeta tableMeta, boolean purge) {
     try {
-      ArcticFileIO fileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
+      MixedFileIO fileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
       Map<String, String> tableProperties = Maps.newHashMap();
       try {
-        ArcticTable arcticTable = loadTableByMeta(tableMeta);
-        tableProperties.putAll(arcticTable.properties());
+        MixedTable mixedTable = loadTableByMeta(tableMeta);
+        tableProperties.putAll(mixedTable.properties());
       } catch (Exception loadException) {
         LOG.warn("load table failed when dropping table", loadException);
       }
@@ -548,7 +548,7 @@ public class MixedHiveTables {
     return Boolean.parseBoolean(allowStringValue);
   }
 
-  public ArcticTable createTableByMeta(
+  public MixedTable createTableByMeta(
       TableMeta tableMeta,
       Schema schema,
       PrimaryKeySpec primaryKeySpec,

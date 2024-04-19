@@ -19,7 +19,7 @@
 package org.apache.amoro.server.table.internal;
 
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.utils.InternalTableUtil;
 import org.apache.iceberg.TableOperations;
@@ -33,7 +33,7 @@ public class InternalIcebergHandler implements InternalTableHandler<TableOperati
   private static final Logger LOG = LoggerFactory.getLogger(InternalIcebergHandler.class);
 
   private boolean closed = false;
-  protected final ArcticFileIO io;
+  protected final MixedFileIO io;
   private final TableMetadata tableMetadata;
 
   public InternalIcebergHandler(CatalogMeta catalogMeta, TableMetadata metadata) {

@@ -26,7 +26,7 @@ import org.apache.amoro.spark.test.utils.DataComparator;
 import org.apache.amoro.spark.test.utils.ExpectResultUtil;
 import org.apache.amoro.spark.test.utils.RecordGenerator;
 import org.apache.amoro.spark.test.utils.TestTableUtil;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
@@ -73,7 +73,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
   private final List<Record> target = Lists.newArrayList();
 
   public void setupTest(PrimaryKeySpec keySpec) {
-    ArcticTable table = createTarget(schema, builder -> builder.withPrimaryKeySpec(keySpec));
+    MixedTable table = createTarget(schema, builder -> builder.withPrimaryKeySpec(keySpec));
     target.addAll(base);
     target.addAll(change);
 
@@ -117,7 +117,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
             .whenNotMatched(s -> !s.getField("id").equals(5), Function.identity())
             .results();
 
-    ArcticTable table = loadTable();
+    MixedTable table = loadTable();
     List<Record> actual = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, actual).ignoreOrder("id").assertRecordsEqual();
   }
@@ -147,7 +147,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
                 })
             .results();
 
-    ArcticTable table = loadTable();
+    MixedTable table = loadTable();
     List<Record> actual = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, actual).ignoreOrder("id").assertRecordsEqual();
   }
@@ -156,7 +156,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
   @ParameterizedTest
   @MethodSource("args")
   public void testEmptyTarget(TableFormat format, PrimaryKeySpec keySpec) {
-    ArcticTable table = createTarget(schema, builder -> builder.withPrimaryKeySpec(keySpec));
+    MixedTable table = createTarget(schema, builder -> builder.withPrimaryKeySpec(keySpec));
     createViewSource(schema, source);
 
     sql(
@@ -197,7 +197,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
             .whenNotMatched(s -> true, Function.identity())
             .results();
 
-    ArcticTable table = loadTable();
+    MixedTable table = loadTable();
     List<Record> actual = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, actual).ignoreOrder("id").assertRecordsEqual();
   }
@@ -221,7 +221,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
             .whenMatched((t, s) -> true, (t, s) -> null)
             .results();
 
-    ArcticTable table = loadTable();
+    MixedTable table = loadTable();
     List<Record> actual = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, actual).ignoreOrder("id").assertRecordsEqual();
   }
@@ -254,7 +254,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
             .whenNotMatched(s -> true, dataAsPt)
             .results();
 
-    ArcticTable table = loadTable();
+    MixedTable table = loadTable();
     List<Record> actual = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, actual).ignoreOrder("id").assertRecordsEqual();
   }

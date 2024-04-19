@@ -20,7 +20,7 @@ package org.apache.amoro.flink.interceptor;
 
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
@@ -29,10 +29,10 @@ import java.lang.reflect.Method;
 public class KerberosInterceptor implements MethodInterceptor, Serializable {
 
   private static final long serialVersionUID = 1L;
-  private final ArcticFileIO arcticFileIO;
+  private final MixedFileIO mixedFileIO;
 
-  public KerberosInterceptor(ArcticFileIO arcticFileIO) {
-    this.arcticFileIO = arcticFileIO;
+  public KerberosInterceptor(MixedFileIO mixedFileIO) {
+    this.mixedFileIO = mixedFileIO;
   }
 
   @Override
@@ -41,7 +41,7 @@ public class KerberosInterceptor implements MethodInterceptor, Serializable {
     Object res;
     try {
       res =
-          arcticFileIO.doAs(
+          mixedFileIO.doAs(
               () -> {
                 try {
                   return proxy.invokeSuper(o, args);

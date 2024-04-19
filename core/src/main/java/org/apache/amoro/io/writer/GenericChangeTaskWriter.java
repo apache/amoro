@@ -19,7 +19,7 @@
 package org.apache.amoro.io.writer;
 
 import org.apache.amoro.data.ChangeAction;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.SchemaUtil;
 import org.apache.iceberg.FileFormat;
@@ -42,7 +42,7 @@ public class GenericChangeTaskWriter extends ChangeTaskWriter<Record> {
       FileFormat format,
       FileAppenderFactory<Record> appenderFactory,
       OutputFileFactory outputFileFactory,
-      ArcticFileIO io,
+      MixedFileIO io,
       long targetFileSize,
       long mask,
       Schema schema,

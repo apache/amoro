@@ -19,7 +19,7 @@
 package org.apache.amoro.flink.util;
 
 import org.apache.amoro.flink.interceptor.ProxyFactory;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -110,19 +110,19 @@ public class IcebergClassUtil {
       boolean replacePartitions,
       String branch,
       PartitionSpec spec,
-      ArcticFileIO arcticFileIO) {
+      MixedFileIO mixedFileIO) {
     OneInputStreamOperator<WriteResult, Void> obj =
         newIcebergFilesCommitter(tableLoader, replacePartitions, branch, spec);
-    return (OneInputStreamOperator) ProxyUtil.getProxy(obj, arcticFileIO);
+    return (OneInputStreamOperator) ProxyUtil.getProxy(obj, mixedFileIO);
   }
 
   public static ProxyFactory<AbstractStreamOperator> getIcebergStreamWriterProxyFactory(
-      String fullTableName, TaskWriterFactory taskWriterFactory, ArcticFileIO arcticFileIO) {
+      String fullTableName, TaskWriterFactory taskWriterFactory, MixedFileIO mixedFileIO) {
     Class<?> clazz = forName(ICEBERG_FILE_WRITER_CLASS);
     return (ProxyFactory<AbstractStreamOperator>)
         ProxyUtil.getProxyFactory(
             clazz,
-            arcticFileIO,
+            mixedFileIO,
             new Class[] {String.class, TaskWriterFactory.class},
             new Object[] {fullTableName, taskWriterFactory});
   }
@@ -162,9 +162,7 @@ public class IcebergClassUtil {
   }
 
   public static ProxyFactory<FlinkInputFormat> getInputFormatProxyFactory(
-      OneInputStreamOperatorFactory operatorFactory,
-      ArcticFileIO arcticFileIO,
-      Schema tableSchema) {
+      OneInputStreamOperatorFactory operatorFactory, MixedFileIO mixedFileIO, Schema tableSchema) {
     FlinkInputFormat inputFormat = getInputFormat(operatorFactory);
     TableLoader tableLoader =
         ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "tableLoader");
@@ -175,7 +173,7 @@ public class IcebergClassUtil {
 
     return ProxyUtil.getProxyFactory(
         FlinkInputFormat.class,
-        arcticFileIO,
+        mixedFileIO,
         new Class[] {
           TableLoader.class, Schema.class, FileIO.class, EncryptionManager.class, ScanContext.class
         },

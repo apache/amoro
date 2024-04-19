@@ -29,10 +29,10 @@ import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.hive.table.HiveLocationKind;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.BaseLocationKind;
 import org.apache.amoro.table.ChangeLocationKind;
 import org.apache.amoro.table.LocationKind;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.WriteOperationKind;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.GenericRowData;
@@ -118,7 +118,7 @@ public class TestAdaptHiveWriter extends TableTestBase {
   @Test
   public void testKeyedTableWriteTypeFromOperateKind() {
     Assume.assumeTrue(isKeyedTable());
-    ArcticTable testKeyedHiveTable = getArcticTable();
+    MixedTable testKeyedHiveTable = getArcticTable();
     FlinkTaskWriterBuilder builder =
         FlinkTaskWriterBuilder.buildFor(testKeyedHiveTable)
             .withFlinkSchema(FlinkSchemaUtil.convert(testKeyedHiveTable.schema()));
@@ -143,7 +143,7 @@ public class TestAdaptHiveWriter extends TableTestBase {
   @Test
   public void testUnKeyedTableWriteTypeFromOperateKind() {
     Assume.assumeFalse(isKeyedTable());
-    ArcticTable testHiveTable = getArcticTable();
+    MixedTable testHiveTable = getArcticTable();
     FlinkTaskWriterBuilder builder =
         FlinkTaskWriterBuilder.buildFor(testHiveTable)
             .withFlinkSchema(FlinkSchemaUtil.convert(testHiveTable.schema()));
@@ -254,7 +254,7 @@ public class TestAdaptHiveWriter extends TableTestBase {
   }
 
   public void testWrite(
-      ArcticTable table, LocationKind locationKind, List<RowData> records, String pathFeature)
+      MixedTable table, LocationKind locationKind, List<RowData> records, String pathFeature)
       throws IOException {
     FlinkTaskWriterBuilder builder =
         FlinkTaskWriterBuilder.buildFor(table)

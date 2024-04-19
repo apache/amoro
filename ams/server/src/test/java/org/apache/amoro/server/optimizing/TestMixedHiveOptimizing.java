@@ -19,10 +19,10 @@
 package org.apache.amoro.server.optimizing;
 
 import org.apache.amoro.hive.table.SupportHive;
-import org.apache.amoro.io.ArcticHadoopFileIO;
 import org.apache.amoro.io.MixedDataTestHelpers;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.io.MixedHadoopFileIO;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -41,18 +41,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
-  private final ArcticTable arcticTable;
+  private final MixedTable mixedTable;
   private final HiveMetaStoreClient hiveClient;
   private final BaseOptimizingChecker checker;
 
-  public TestMixedHiveOptimizing(ArcticTable arcticTable, HiveMetaStoreClient hiveClient) {
-    this.arcticTable = arcticTable;
+  public TestMixedHiveOptimizing(MixedTable mixedTable, HiveMetaStoreClient hiveClient) {
+    this.mixedTable = mixedTable;
     this.hiveClient = hiveClient;
-    this.checker = new BaseOptimizingChecker(arcticTable.id());
+    this.checker = new BaseOptimizingChecker(mixedTable.id());
   }
 
   public void testHiveKeyedTableMajorOptimizeNotMove() throws TException, IOException {
-    KeyedTable table = arcticTable.asKeyedTable();
+    KeyedTable table = mixedTable.asKeyedTable();
     // Step1: write 1 data file into base node(0,0)
     updateProperties(table, TableProperties.BASE_FILE_INDEX_HASH_BUCKET, 1 + "");
     writeBase(table, rangeFromTo(1, 100, "aaa", quickDateWithZone(3)));
@@ -90,7 +90,7 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
   }
 
   public void testHiveKeyedTableMajorOptimizeAndMove() throws TException, IOException {
-    KeyedTable table = arcticTable.asKeyedTable();
+    KeyedTable table = mixedTable.asKeyedTable();
     // Step1: write 1 data file into base node(0,0)
     updateProperties(table, TableProperties.BASE_FILE_INDEX_HASH_BUCKET, 1 + "");
     updateProperties(table, TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, 1000 + "");
@@ -116,7 +116,7 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
   }
 
   private Record newRecord(Object... val) {
-    return newRecord(arcticTable.schema(), val);
+    return newRecord(mixedTable.schema(), val);
   }
 
   public void emptyCommit(KeyedTable table) {
@@ -134,19 +134,19 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
 
   private List<Record> readHiveTableData() throws TException, IOException {
     Table table =
-        hiveClient.getTable(arcticTable.id().getDatabase(), arcticTable.id().getTableName());
+        hiveClient.getTable(mixedTable.id().getDatabase(), mixedTable.id().getTableName());
     String location = table.getSd().getLocation();
     List<String> files = filesInLocation(location);
     List<Record> records = new ArrayList<>();
     for (String file : files) {
       records.addAll(
-          MixedDataTestHelpers.readDataFile(FileFormat.PARQUET, arcticTable.schema(), file));
+          MixedDataTestHelpers.readDataFile(FileFormat.PARQUET, mixedTable.schema(), file));
     }
     return records;
   }
 
   private List<String> filesInLocation(String location) {
-    ArcticHadoopFileIO io = ((SupportHive) arcticTable).io();
+    MixedHadoopFileIO io = ((SupportHive) mixedTable).io();
     return Streams.stream(io.listDirectory(location))
         .map(FileInfo::location)
         .collect(Collectors.toList());

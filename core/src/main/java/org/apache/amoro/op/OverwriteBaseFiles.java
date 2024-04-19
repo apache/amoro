@@ -22,7 +22,7 @@ import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.StatisticsFileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -177,8 +177,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     // step1: overwrite data files
     if (!this.addFiles.isEmpty() || !this.deleteFiles.isEmpty()) {
       OverwriteFiles overwriteFiles = transaction.newOverwrite();
-      overwriteFiles.set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
-      overwriteFiles.set(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true");
+      overwriteFiles.set(MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
+      overwriteFiles.set(MixedTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true");
 
       if (conflictDetectionFilter != null && baseTable.currentSnapshot() != null) {
         overwriteFiles.conflictDetectionFilter(conflictDetectionFilter).validateNoConflictingData();
@@ -210,8 +210,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         || CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
       if (CollectionUtils.isEmpty(deleteDeleteFiles)) {
         RowDelta rowDelta = transaction.newRowDelta();
-        rowDelta.set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
-        rowDelta.set(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true");
+        rowDelta.set(MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
+        rowDelta.set(MixedTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true");
         if (baseTable.currentSnapshot() != null) {
           rowDelta.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
         }
@@ -230,8 +230,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         newSnapshots.add((CreateSnapshotEvent) rowDelta.updateEvent());
       } else {
         RewriteFiles rewriteFiles = transaction.newRewrite();
-        rewriteFiles.set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
-        rewriteFiles.set(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true");
+        rewriteFiles.set(MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
+        rewriteFiles.set(MixedTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true");
         if (baseTable.currentSnapshot() != null) {
           rewriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
         }
@@ -263,8 +263,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     // step3: set optimized sequence id, optimized time
     long commitTime = System.currentTimeMillis();
     PartitionSpec spec = transaction.table().spec();
-    StructLikeMap<Long> oldOptimizedSequence = ArcticTableUtil.readOptimizedSequence(keyedTable);
-    StructLikeMap<Long> oldOptimizedTime = ArcticTableUtil.readBaseOptimizedTime(keyedTable);
+    StructLikeMap<Long> oldOptimizedSequence = MixedTableUtil.readOptimizedSequence(keyedTable);
+    StructLikeMap<Long> oldOptimizedTime = MixedTableUtil.readBaseOptimizedTime(keyedTable);
     StructLikeMap<Long> optimizedSequence = StructLikeMap.create(spec.partitionType());
     StructLikeMap<Long> optimizedTime = StructLikeMap.create(spec.partitionType());
     if (oldOptimizedSequence != null) {
@@ -298,9 +298,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
             StatisticsFileUtil.writerBuilder(table)
                 .withSnapshotId(newSnapshot.snapshotId())
                 .build()
-                .add(
-                    ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer)
-                .add(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, optimizedTime, dataSerializer)
+                .add(MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer)
+                .add(MixedTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, optimizedTime, dataSerializer)
                 .complete();
         result.add(statisticsFile);
       }

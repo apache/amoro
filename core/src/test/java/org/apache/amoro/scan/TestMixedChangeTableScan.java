@@ -19,7 +19,7 @@
 package org.apache.amoro.scan;
 
 import org.apache.amoro.io.TableDataTestBase;
-import org.apache.amoro.utils.ArcticDataFiles;
+import org.apache.amoro.utils.MixedDataFiles;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
@@ -46,7 +46,7 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
     StructLikeMap<Long> fromSequence =
         StructLikeMap.create(getArcticTable().spec().partitionType());
     StructLike partitionData =
-        ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
+        MixedDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence);
@@ -78,7 +78,7 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
     StructLikeMap<Long> fromSequence =
         StructLikeMap.create(getArcticTable().spec().partitionType());
     StructLike partitionData =
-        ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
+        MixedDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable()
@@ -97,7 +97,7 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
     int taskCount = 0;
     for (FileScanTask task : tasks) {
       taskCount++;
-      Assert.assertTrue(task instanceof BasicArcticFileScanTask);
+      Assert.assertTrue(task instanceof BasicMixedFileScanTask);
       Assert.assertTrue(validator.test(task));
     }
     Assert.assertEquals(fileCnt, taskCount);

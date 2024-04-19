@@ -25,7 +25,7 @@ import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.io.FileIO;
@@ -265,13 +265,13 @@ public class TestBasicTableTrashManager extends TableTestBase {
   }
 
   private TableTrashManager build() {
-    ArcticTable table = getArcticTable();
-    Assert.assertTrue(table.io() instanceof ArcticHadoopFileIO);
+    MixedTable table = getArcticTable();
+    Assert.assertTrue(table.io() instanceof MixedHadoopFileIO);
     return TableTrashManagers.build(
         table.id(),
         getArcticTable().location(),
         table.properties(),
-        (ArcticHadoopFileIO) table.io());
+        (MixedHadoopFileIO) table.io());
   }
 
   private String createFile(FileIO io, String path) throws IOException {

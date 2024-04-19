@@ -54,7 +54,7 @@ public class TestArcticCatalogUtil {
     catalogProperties.put("ams.address", "127.0.0.1");
 
     Map<String, String> result =
-        ArcticCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+        MixedCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
@@ -75,7 +75,7 @@ public class TestArcticCatalogUtil {
     catalogProperties.put("ams.address", "127.0.0.1");
 
     Map<String, String> result =
-        ArcticCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+        MixedCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
@@ -100,7 +100,7 @@ public class TestArcticCatalogUtil {
     catalogProperties.put("ams.address", "127.0.0.1");
 
     Map<String, String> result =
-        ArcticCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+        MixedCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
@@ -127,7 +127,7 @@ public class TestArcticCatalogUtil {
     catalogProperties.put("ams.address", "127.0.0.1");
 
     Map<String, String> result =
-        ArcticCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+        MixedCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
@@ -164,7 +164,7 @@ public class TestArcticCatalogUtil {
     catalogProperties.put("ams.address", "127.0.0.1");
 
     Map<String, String> result =
-        ArcticCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+        MixedCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
@@ -202,7 +202,7 @@ public class TestArcticCatalogUtil {
     catalogProperties.put("ams.address", "127.0.0.1");
 
     Map<String, String> result =
-        ArcticCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+        MixedCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
@@ -235,7 +235,7 @@ public class TestArcticCatalogUtil {
     catalogProperties.put("ams.address", "127.0.0.1");
 
     Map<String, String> result =
-        ArcticCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+        MixedCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
@@ -266,7 +266,7 @@ public class TestArcticCatalogUtil {
     catalogProperties.put("ams.address", "127.0.0.1");
 
     Map<String, String> result =
-        ArcticCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+        MixedCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
@@ -284,13 +284,13 @@ public class TestArcticCatalogUtil {
 
     // hive catalog
     props =
-        ArcticCatalogUtil.withIcebergCatalogInitializeProperties(
+        MixedCatalogUtil.withIcebergCatalogInitializeProperties(
             name, typeHadoop, ImmutableMap.of(keyWarehouse, path));
     Assert.assertEquals(typeHadoop, props.get(type));
 
     // custom
     props =
-        ArcticCatalogUtil.withIcebergCatalogInitializeProperties(
+        MixedCatalogUtil.withIcebergCatalogInitializeProperties(
             name,
             typeCustom,
             ImmutableMap.of(keyWarehouse, path, CatalogProperties.CATALOG_IMPL, restImpl));
@@ -299,13 +299,13 @@ public class TestArcticCatalogUtil {
     Assert.assertThrows(
         IllegalArgumentException.class,
         () -> {
-          ArcticCatalogUtil.withIcebergCatalogInitializeProperties(
+          MixedCatalogUtil.withIcebergCatalogInitializeProperties(
               name, typeCustom, ImmutableMap.of(keyWarehouse, path));
         });
 
     // ams
     props =
-        ArcticCatalogUtil.withIcebergCatalogInitializeProperties(
+        MixedCatalogUtil.withIcebergCatalogInitializeProperties(
             name, typeAms, ImmutableMap.of(keyWarehouse, path));
     Assert.assertEquals(name, props.get(keyWarehouse));
     Assert.assertFalse(props.containsKey(type));

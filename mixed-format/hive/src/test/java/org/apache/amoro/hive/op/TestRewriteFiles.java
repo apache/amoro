@@ -31,7 +31,7 @@ import org.apache.amoro.hive.exceptions.CannotAlterHiveLocationException;
 import org.apache.amoro.hive.io.HiveDataTestHelpers;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
@@ -99,7 +99,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> initDataFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     initDataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
@@ -115,7 +115,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
     List<DataFile> newFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     RewriteFiles rewriteFiles = baseStore.newRewrite();
     rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), Sets.newHashSet(newFiles));
     rewriteFiles.commit();
@@ -133,7 +133,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     List<DataFile> newFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
 
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     Transaction transaction = baseStore.newTransaction();
     RewriteFiles rewriteFiles = transaction.newRewrite();
     rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), Sets.newHashSet(newFiles));
@@ -167,7 +167,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
     List<DataFile> newFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     RewriteFiles rewriteFiles = baseStore.newRewrite();
     rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), Sets.newHashSet(newFiles));
 
@@ -188,7 +188,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     TEST_HMS
         .getHiveClient()
         .alter_table(getArcticTable().id().getDatabase(), "new_table", hiveTable);
-    String tableRootLocation = ArcticTableUtil.tableRootLocation(getArcticTable());
+    String tableRootLocation = MixedTableUtil.tableRootLocation(getArcticTable());
     String newTableLocation =
         tableRootLocation.replace(getArcticTable().id().getTableName(), "new_table");
     getArcticTable().io().asFileSystemIO().deletePrefix(newTableLocation);
@@ -212,7 +212,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
             .transactionId(2L)
             .customHiveLocation(hiveLocation)
             .writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     RewriteFiles rewriteFiles = baseStore.newRewrite();
     rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), Sets.newHashSet(rewriteDataFiles));
     rewriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
@@ -236,7 +236,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-01T12:00:00"));
     initDataFiles =
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     initDataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
@@ -273,7 +273,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
         HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
     addFiles.addAll(dataFiles);
 
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     RewriteFiles rewriteFiles = baseStore.newRewrite();
     rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), addFiles);
 
@@ -293,7 +293,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     Set<DataFile> addFiles = Sets.newHashSet(dataFiles);
     addFiles.addAll(initDataFiles);
 
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     RewriteFiles rewriteFiles = baseStore.newRewrite();
     rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), addFiles);
 
@@ -305,7 +305,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     // TODO should add cases for tables without partition spec
     Assume.assumeTrue(isPartitionedTable());
     initDataFiles();
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     RewriteFiles rewriteFiles = baseStore.newRewrite();
     rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), Sets.newHashSet(initDataFiles));
 

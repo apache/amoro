@@ -19,7 +19,7 @@
 package org.apache.amoro.server.optimizing.maintainer;
 
 import static org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintainer.FLINK_MAX_COMMITTED_CHECKPOINT_ID;
-import static org.apache.amoro.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
+import static org.apache.amoro.utils.MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
@@ -38,7 +38,7 @@ import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.StatisticsFileUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
@@ -140,7 +140,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
             .withSnapshotId(snapshot.snapshotId())
             .build()
             .add(
-                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
                 optimizedSequence,
                 StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
             .complete();
@@ -449,7 +449,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
             .withSnapshotId(s1.snapshotId())
             .build()
             .add(
-                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
                 StructLikeMap.create(baseTable.spec().partitionType()),
                 StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
             .complete();
@@ -463,7 +463,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
             .withSnapshotId(s2.snapshotId())
             .build()
             .add(
-                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
                 StructLikeMap.create(baseTable.spec().partitionType()),
                 StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
             .complete();

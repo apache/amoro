@@ -22,7 +22,7 @@ import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.TablePropertyUtil;
@@ -63,16 +63,16 @@ public class TestTableWatermark extends TableTestBase {
 
   private UnkeyedTable getOperationTable() {
     if (operationTable == null) {
-      ArcticTable arcticTable = getArcticTable();
+      MixedTable mixedTable = getArcticTable();
       if (isKeyedTable()) {
         if (onBaseTable) {
-          operationTable = arcticTable.asKeyedTable().baseTable();
+          operationTable = mixedTable.asKeyedTable().baseTable();
         } else {
-          operationTable = arcticTable.asKeyedTable().changeTable();
+          operationTable = mixedTable.asKeyedTable().changeTable();
         }
       } else {
         if (onBaseTable) {
-          operationTable = arcticTable.asUnkeyedTable();
+          operationTable = mixedTable.asUnkeyedTable();
         } else {
           throw new IllegalArgumentException("Unkeyed table do not have change store");
         }

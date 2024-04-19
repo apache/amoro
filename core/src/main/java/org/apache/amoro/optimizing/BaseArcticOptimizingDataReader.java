@@ -20,11 +20,11 @@ package org.apache.amoro.optimizing;
 
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyedFile;
-import org.apache.amoro.io.ArcticFileIO;
-import org.apache.amoro.io.reader.ArcticDeleteFilter;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.io.reader.DataReaderCommon;
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.io.reader.MixedDeleteFilter;
 import org.apache.amoro.scan.KeyedTableScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.FileScanTask;
@@ -48,13 +48,13 @@ import java.util.stream.Collectors;
 
 /**
  * Abstract implementation of arctic data reader consuming {@link KeyedTableScanTask}, return
- * records after filtering with {@link ArcticDeleteFilter}.
+ * records after filtering with {@link MixedDeleteFilter}.
  *
  * @param <T> to indicate the record data type.
  */
 public abstract class BaseArcticOptimizingDataReader<T> {
 
-  protected final ArcticFileIO fileIO;
+  protected final MixedFileIO fileIO;
   protected final Schema tableSchema;
   protected final Schema projectedSchema;
   protected final String nameMapping;
@@ -67,7 +67,7 @@ public abstract class BaseArcticOptimizingDataReader<T> {
   protected StructLikeCollections structLikeCollections;
 
   public BaseArcticOptimizingDataReader(
-      ArcticFileIO fileIO,
+      MixedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
@@ -93,22 +93,22 @@ public abstract class BaseArcticOptimizingDataReader<T> {
   }
 
   public CloseableIterator<T> readData(KeyedTableScanTask keyedTableScanTask) {
-    ArcticDeleteFilter<T> arcticDeleteFilter =
-        new GenericArcticDeleteFilter(
+    MixedDeleteFilter<T> mixedDeleteFilter =
+        new GenericMixedDeleteFilter(
             keyedTableScanTask,
             tableSchema,
             projectedSchema,
             primaryKeySpec,
             sourceNodes,
             structLikeCollections);
-    Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
+    Schema newProjectedSchema = mixedDeleteFilter.requiredSchema();
 
     CloseableIterable<T> dataIterable =
         CloseableIterable.concat(
             CloseableIterable.transform(
                 CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
                 fileScanTask ->
-                    arcticDeleteFilter.filter(
+                    mixedDeleteFilter.filter(
                         newParquetIterable(
                             fileScanTask,
                             newProjectedSchema,
@@ -120,7 +120,7 @@ public abstract class BaseArcticOptimizingDataReader<T> {
   public CloseableIterator<T> readDeletedData(KeyedTableScanTask keyedTableScanTask) {
     List<PrimaryKeyedFile> equDeleteFiles =
         keyedTableScanTask.arcticEquityDeletes().stream()
-            .map(ArcticFileScanTask::file)
+            .map(MixedFileScanTask::file)
             .collect(Collectors.toList());
 
     boolean hasDeleteFile =
@@ -128,8 +128,8 @@ public abstract class BaseArcticOptimizingDataReader<T> {
             || keyedTableScanTask.dataTasks().stream().allMatch(s -> s.deletes().size() > 0);
 
     if (hasDeleteFile) {
-      ArcticDeleteFilter<T> arcticDeleteFilter =
-          new GenericArcticDeleteFilter(
+      MixedDeleteFilter<T> mixedDeleteFilter =
+          new GenericMixedDeleteFilter(
               keyedTableScanTask,
               tableSchema,
               projectedSchema,
@@ -137,14 +137,14 @@ public abstract class BaseArcticOptimizingDataReader<T> {
               sourceNodes,
               structLikeCollections);
 
-      Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
+      Schema newProjectedSchema = mixedDeleteFilter.requiredSchema();
 
       CloseableIterable<T> dataIterable =
           CloseableIterable.concat(
               CloseableIterable.transform(
                   CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
                   fileScanTask ->
-                      arcticDeleteFilter.filterNegate(
+                      mixedDeleteFilter.filterNegate(
                           newParquetIterable(
                               fileScanTask,
                               newProjectedSchema,
@@ -181,11 +181,11 @@ public abstract class BaseArcticOptimizingDataReader<T> {
 
   protected abstract Function<Schema, Function<T, StructLike>> toStructLikeFunction();
 
-  private class GenericArcticDeleteFilter extends ArcticDeleteFilter<T> {
+  private class GenericMixedDeleteFilter extends MixedDeleteFilter<T> {
 
     protected Function<T, StructLike> asStructLike;
 
-    protected GenericArcticDeleteFilter(
+    protected GenericMixedDeleteFilter(
         KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema,
         Schema requestedSchema,
@@ -195,7 +195,7 @@ public abstract class BaseArcticOptimizingDataReader<T> {
           BaseArcticOptimizingDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
-    protected GenericArcticDeleteFilter(
+    protected GenericMixedDeleteFilter(
         KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema,
         Schema requestedSchema,
@@ -213,7 +213,7 @@ public abstract class BaseArcticOptimizingDataReader<T> {
           BaseArcticOptimizingDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
-    protected GenericArcticDeleteFilter(
+    protected GenericMixedDeleteFilter(
         KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema,
         Schema requestedSchema,
@@ -235,7 +235,7 @@ public abstract class BaseArcticOptimizingDataReader<T> {
     }
 
     @Override
-    protected ArcticFileIO getArcticFileIo() {
+    protected MixedFileIO getArcticFileIo() {
       return fileIO;
     }
   }

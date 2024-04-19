@@ -23,7 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.io.IcebergDataTestHelpers;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -63,7 +63,7 @@ public class TestUnkeyedExpressionUtil extends TableTestBase {
           Types.NestedField.optional(4, "op_time", Types.TimestampType.withoutZone()));
 
   @Override
-  protected ArcticTable getArcticTable() {
+  protected MixedTable getArcticTable() {
     return super.getArcticTable();
   }
 

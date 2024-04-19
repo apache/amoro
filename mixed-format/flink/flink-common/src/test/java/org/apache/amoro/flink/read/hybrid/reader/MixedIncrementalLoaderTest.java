@@ -28,8 +28,8 @@ import org.apache.amoro.flink.read.hybrid.enumerator.MergeOnReadIncrementalPlann
 import org.apache.amoro.flink.read.source.FlinkArcticMORDataReader;
 import org.apache.amoro.flink.util.DataUtil;
 import org.apache.amoro.flink.write.FlinkTaskWriterBaseTest;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableSchema;
@@ -70,7 +70,7 @@ public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTa
 
   @Before
   public void before() throws IOException {
-    ArcticTable arcticTable = getArcticTable();
+    MixedTable mixedTable = getArcticTable();
     TableSchema flinkPartialSchema =
         TableSchema.builder()
             .field("id", DataTypes.INT())
@@ -88,8 +88,8 @@ public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTa
             DataUtil.toRowData(1000014, "d", 1013L, LocalDateTime.parse("2022-06-21T10:10:11.0")),
             DataUtil.toRowData(1000015, "e", 1014L, LocalDateTime.parse("2022-06-21T10:10:11.0")));
     for (RowData rowData : expected) {
-      try (TaskWriter<RowData> taskWriter = createBaseTaskWriter(arcticTable, rowType)) {
-        writeAndCommit(rowData, taskWriter, arcticTable);
+      try (TaskWriter<RowData> taskWriter = createBaseTaskWriter(mixedTable, rowType)) {
+        writeAndCommit(rowData, taskWriter, mixedTable);
       }
     }
 
@@ -103,8 +103,8 @@ public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTa
             DataUtil.toRowData(1000024, "d", 1023L, LocalDateTime.parse("2022-06-28T10:10:11.0")),
             DataUtil.toRowData(1000025, "e", 1024L, LocalDateTime.parse("2022-06-28T10:10:11.0")));
     for (RowData rowData : expected) {
-      try (TaskWriter<RowData> taskWriter = createTaskWriter(arcticTable, rowType)) {
-        writeAndCommit(rowData, taskWriter, arcticTable);
+      try (TaskWriter<RowData> taskWriter = createTaskWriter(mixedTable, rowType)) {
+        writeAndCommit(rowData, taskWriter, mixedTable);
       }
     }
   }

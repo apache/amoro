@@ -18,7 +18,7 @@
 
 package org.apache.amoro.utils;
 
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.io.BulkDeletionFailureException;
 import org.apache.iceberg.util.Tasks;
@@ -64,7 +64,7 @@ public class TableFileUtil {
    * @param exclude the directory will not be deleted
    */
   public static void deleteEmptyDirectory(
-      ArcticFileIO io, String directoryPath, Set<String> exclude) {
+      MixedFileIO io, String directoryPath, Set<String> exclude) {
     if (!io.exists(directoryPath)) {
       LOG.debug("The target directory {} does not exist or has been deleted", directoryPath);
       return;
@@ -92,7 +92,7 @@ public class TableFileUtil {
    * @param workPool executor pool. Only applicable for non-bulk FileIO
    * @return deleted file count
    */
-  public static int deleteFiles(ArcticFileIO io, Set<String> files, ExecutorService workPool) {
+  public static int deleteFiles(MixedFileIO io, Set<String> files, ExecutorService workPool) {
     if (files == null || files.isEmpty()) {
       return 0;
     }
@@ -143,7 +143,7 @@ public class TableFileUtil {
    * @param files to deleted files
    * @return deleted file count
    */
-  public static int deleteFiles(ArcticFileIO io, Set<String> files) {
+  public static int deleteFiles(MixedFileIO io, Set<String> files) {
     return deleteFiles(io, files, null);
   }
 
@@ -156,7 +156,7 @@ public class TableFileUtil {
    * @return deleted file count
    */
   public static int parallelDeleteFiles(
-      ArcticFileIO io, Set<String> files, ExecutorService workPool) {
+      MixedFileIO io, Set<String> files, ExecutorService workPool) {
     return deleteFiles(io, files, workPool);
   }
 

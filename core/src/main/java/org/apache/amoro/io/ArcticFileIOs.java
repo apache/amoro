@@ -21,7 +21,7 @@ package org.apache.amoro.io;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.TableProperties;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.util.PropertyUtil;
@@ -32,20 +32,20 @@ public class ArcticFileIOs {
 
   public static final boolean CLOSE_TRASH = true;
 
-  public static ArcticHadoopFileIO buildRecoverableHadoopFileIO(
+  public static MixedHadoopFileIO buildRecoverableHadoopFileIO(
       TableIdentifier tableIdentifier,
       String tableLocation,
       Map<String, String> tableProperties,
       TableMetaStore tableMetaStore,
       Map<String, String> catalogProperties) {
     tableProperties =
-        ArcticCatalogUtil.mergeCatalogPropertiesToTable(tableProperties, catalogProperties);
+        MixedCatalogUtil.mergeCatalogPropertiesToTable(tableProperties, catalogProperties);
     if (!CLOSE_TRASH
         && PropertyUtil.propertyAsBoolean(
             tableProperties,
             TableProperties.ENABLE_TABLE_TRASH,
             TableProperties.ENABLE_TABLE_TRASH_DEFAULT)) {
-      ArcticHadoopFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
+      MixedHadoopFileIO fileIO = new MixedHadoopFileIO(tableMetaStore);
       TableTrashManager trashManager =
           TableTrashManagers.build(tableIdentifier, tableLocation, tableProperties, fileIO);
       String trashFilePattern =
@@ -56,19 +56,19 @@ public class ArcticFileIOs {
 
       return new RecoverableHadoopFileIO(tableMetaStore, trashManager, trashFilePattern);
     } else {
-      return new ArcticHadoopFileIO(tableMetaStore);
+      return new MixedHadoopFileIO(tableMetaStore);
     }
   }
 
-  public static ArcticHadoopFileIO buildHadoopFileIO(TableMetaStore tableMetaStore) {
-    return new ArcticHadoopFileIO(tableMetaStore);
+  public static MixedHadoopFileIO buildHadoopFileIO(TableMetaStore tableMetaStore) {
+    return new MixedHadoopFileIO(tableMetaStore);
   }
 
-  public static ArcticFileIO buildAdaptIcebergFileIO(TableMetaStore tableMetaStore, FileIO io) {
+  public static MixedFileIO buildAdaptIcebergFileIO(TableMetaStore tableMetaStore, FileIO io) {
     if (io instanceof HadoopFileIO) {
       return buildHadoopFileIO(tableMetaStore);
     } else {
-      return new ArcticFileIOAdapter(io);
+      return new MixedFileIOAdapter(io);
     }
   }
 }

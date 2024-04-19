@@ -18,8 +18,8 @@
 
 package org.apache.amoro.io.reader;
 
-import org.apache.amoro.io.ArcticFileIO;
 import org.apache.amoro.io.CloseablePredicate;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.amoro.utils.map.StructLikeBaseMap;
@@ -174,7 +174,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
   protected abstract InputFile getInputFile(ContentFile<?> contentFile);
 
-  protected abstract ArcticFileIO getArcticFileIo();
+  protected abstract MixedFileIO getArcticFileIo();
 
   public Set<Integer> deleteIds() {
     return deleteIds;

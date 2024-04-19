@@ -20,7 +20,7 @@ package org.apache.amoro.op;
 
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.io.TableDataTestBase;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
@@ -54,7 +54,7 @@ public class TestRewritePartitions extends TableDataTestBase {
     // rewrite 1 partition by data file
 
     StructLikeMap<Long> partitionOptimizedSequence =
-        ArcticTableUtil.readOptimizedSequence(getArcticTable().asKeyedTable());
+        MixedTableUtil.readOptimizedSequence(getArcticTable().asKeyedTable());
     // expect result: 1 partition with new txId, 2,3 partition use old txId
     Assert.assertEquals(
         txId,

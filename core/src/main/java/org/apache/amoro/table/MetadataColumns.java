@@ -25,7 +25,7 @@ import org.apache.iceberg.types.Types.NestedField;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Addition metadata columns for {@link ArcticTable} */
+/** Addition metadata columns for {@link MixedTable} */
 public class MetadataColumns {
 
   // IDs Integer.MAX_VALUE - (1001-9999) are used for arctic metadata columns

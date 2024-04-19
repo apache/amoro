@@ -24,7 +24,7 @@ import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
 import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,13 +53,13 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
     long startTime = System.currentTimeMillis();
     ServerTableIdentifier tableIdentifier = tableRuntime.getTableIdentifier();
     try {
-      ArcticTable arcticTable = (ArcticTable) loadTable(tableRuntime).originalTable();
-      if (!TableTypeUtil.isHive(arcticTable)) {
+      MixedTable mixedTable = (MixedTable) loadTable(tableRuntime).originalTable();
+      if (!TableTypeUtil.isHive(mixedTable)) {
         LOG.debug("{} is not a support hive table", tableIdentifier);
         return;
       }
       LOG.info("{} start hive sync", tableIdentifier);
-      syncIcebergToHive(arcticTable);
+      syncIcebergToHive(mixedTable);
     } catch (Exception e) {
       LOG.error("{} hive sync failed", tableIdentifier, e);
     } finally {
@@ -70,7 +70,7 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
     }
   }
 
-  public static void syncIcebergToHive(ArcticTable arcticTable) {
-    HiveMetaSynchronizer.syncArcticDataToHive((SupportHive) arcticTable);
+  public static void syncIcebergToHive(MixedTable mixedTable) {
+    HiveMetaSynchronizer.syncArcticDataToHive((SupportHive) mixedTable);
   }
 }

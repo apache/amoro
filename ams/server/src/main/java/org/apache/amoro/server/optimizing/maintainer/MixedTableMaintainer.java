@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.optimizing.maintainer;
 
-import static org.apache.amoro.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
+import static org.apache.amoro.utils.MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 import org.apache.amoro.IcebergFileEntry;
@@ -29,12 +29,12 @@ import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.HiveLocationUtil;
 import org.apache.amoro.server.utils.IcebergTableUtil;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -76,7 +76,7 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(MixedTableMaintainer.class);
 
-  private final ArcticTable arcticTable;
+  private final MixedTable mixedTable;
 
   private ChangeTableMaintainer changeMaintainer;
 
@@ -88,11 +88,11 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   private final Set<String> hiveFiles;
 
-  public MixedTableMaintainer(ArcticTable arcticTable) {
-    this.arcticTable = arcticTable;
-    if (arcticTable.isKeyedTable()) {
-      ChangeTable changeTable = arcticTable.asKeyedTable().changeTable();
-      BaseTable baseTable = arcticTable.asKeyedTable().baseTable();
+  public MixedTableMaintainer(MixedTable mixedTable) {
+    this.mixedTable = mixedTable;
+    if (mixedTable.isKeyedTable()) {
+      ChangeTable changeTable = mixedTable.asKeyedTable().changeTable();
+      BaseTable baseTable = mixedTable.asKeyedTable().baseTable();
       changeMaintainer = new ChangeTableMaintainer(changeTable);
       baseMaintainer = new BaseTableMaintainer(baseTable);
       changeFiles =
@@ -104,16 +104,16 @@ public class MixedTableMaintainer implements TableMaintainer {
               IcebergTableUtil.getAllContentFilePath(baseTable),
               IcebergTableUtil.getAllStatisticsFilePath(baseTable));
     } else {
-      baseMaintainer = new BaseTableMaintainer(arcticTable.asUnkeyedTable());
+      baseMaintainer = new BaseTableMaintainer(mixedTable.asUnkeyedTable());
       changeFiles = new HashSet<>();
       baseFiles =
           Sets.union(
-              IcebergTableUtil.getAllContentFilePath(arcticTable.asUnkeyedTable()),
-              IcebergTableUtil.getAllStatisticsFilePath(arcticTable.asUnkeyedTable()));
+              IcebergTableUtil.getAllContentFilePath(mixedTable.asUnkeyedTable()),
+              IcebergTableUtil.getAllStatisticsFilePath(mixedTable.asUnkeyedTable()));
     }
 
-    if (TableTypeUtil.isHive(arcticTable)) {
-      hiveFiles = HiveLocationUtil.getHiveLocation(arcticTable);
+    if (TableTypeUtil.isHive(mixedTable)) {
+      hiveFiles = HiveLocationUtil.getHiveLocation(mixedTable);
     } else {
       hiveFiles = new HashSet<>();
     }
@@ -149,8 +149,8 @@ public class MixedTableMaintainer implements TableMaintainer {
       DataExpirationConfig expirationConfig =
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
       Types.NestedField field =
-          arcticTable.schema().findField(expirationConfig.getExpirationField());
-      if (!expirationConfig.isValid(field, arcticTable.name())) {
+          mixedTable.schema().findField(expirationConfig.getExpirationField());
+      if (!expirationConfig.isValid(field, mixedTable.name())) {
         return;
       }
 
@@ -181,17 +181,17 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
-    Types.NestedField field = arcticTable.schema().findField(expirationConfig.getExpirationField());
+    Types.NestedField field = mixedTable.schema().findField(expirationConfig.getExpirationField());
     LOG.info(
         "Expiring data older than {} in mixed table {} ",
         Instant.ofEpochMilli(expireTimestamp)
             .atZone(IcebergTableMaintainer.getDefaultZoneId(field))
             .toLocalDateTime(),
-        arcticTable.name());
+        mixedTable.name());
 
     Expression dataFilter =
         IcebergTableMaintainer.getDataExpression(
-            arcticTable.schema(), expirationConfig, expireTimestamp);
+            mixedTable.schema(), expirationConfig, expireTimestamp);
 
     Pair<IcebergTableMaintainer.ExpireFiles, IcebergTableMaintainer.ExpireFiles> mixedExpiredFiles =
         mixedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp);
@@ -202,7 +202,7 @@ public class MixedTableMaintainer implements TableMaintainer {
   private Pair<IcebergTableMaintainer.ExpireFiles, IcebergTableMaintainer.ExpireFiles>
       mixedExpiredFileScan(
           DataExpirationConfig expirationConfig, Expression dataFilter, long expireTimestamp) {
-    return arcticTable.isKeyedTable()
+    return mixedTable.isKeyedTable()
         ? keyedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp)
         : Pair.of(
             new IcebergTableMaintainer.ExpireFiles(),
@@ -215,7 +215,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     Map<StructLike, IcebergTableMaintainer.DataFileFreshness> partitionFreshness =
         Maps.newConcurrentMap();
 
-    KeyedTable keyedTable = arcticTable.asKeyedTable();
+    KeyedTable keyedTable = mixedTable.asKeyedTable();
     ChangeTable changeTable = keyedTable.changeTable();
     BaseTable baseTable = keyedTable.baseTable();
 
@@ -379,12 +379,12 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     private void deleteChangeFile(List<IcebergFileEntry> expiredDataFileEntries) {
-      KeyedTable keyedTable = arcticTable.asKeyedTable();
+      KeyedTable keyedTable = mixedTable.asKeyedTable();
       if (CollectionUtils.isEmpty(expiredDataFileEntries)) {
         return;
       }
 
-      StructLikeMap<Long> optimizedSequences = ArcticTableUtil.readOptimizedSequence(keyedTable);
+      StructLikeMap<Long> optimizedSequences = MixedTableUtil.readOptimizedSequence(keyedTable);
       if (MapUtils.isEmpty(optimizedSequences)) {
         LOG.info("table {} not contains max transaction id", keyedTable.id());
         return;
@@ -505,7 +505,7 @@ public class MixedTableMaintainer implements TableMaintainer {
      * @return time of the latest snapshot with the optimized sequence flag in summary
      */
     private long fetchLatestOptimizedSequenceSnapshotTime(Table table) {
-      if (arcticTable.isKeyedTable()) {
+      if (mixedTable.isKeyedTable()) {
         Snapshot snapshot =
             findLatestSnapshotContainsKey(table, BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST);
         return snapshot == null ? Long.MAX_VALUE : snapshot.timestampMillis();

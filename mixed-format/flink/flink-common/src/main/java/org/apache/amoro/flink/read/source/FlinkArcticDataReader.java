@@ -21,9 +21,9 @@ package org.apache.amoro.flink.read.source;
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.flink.read.AdaptHiveFlinkParquetReaders;
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveUnkeyedDataReader;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.MixedFileIO;
 import org.apache.amoro.io.reader.DeleteFilter;
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
@@ -58,7 +58,7 @@ public class FlinkArcticDataReader extends AbstractAdaptHiveUnkeyedDataReader<Ro
   private static final long serialVersionUID = -6773693031945244386L;
 
   public FlinkArcticDataReader(
-      ArcticFileIO fileIO,
+      MixedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       String nameMapping,
@@ -76,7 +76,7 @@ public class FlinkArcticDataReader extends AbstractAdaptHiveUnkeyedDataReader<Ro
   }
 
   public FlinkArcticDataReader(
-      ArcticFileIO fileIO,
+      MixedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
@@ -121,8 +121,8 @@ public class FlinkArcticDataReader extends AbstractAdaptHiveUnkeyedDataReader<Ro
 
   @Override
   public CloseableIterator<RowData> open(FileScanTask fileScanTask) {
-    ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask) fileScanTask;
-    CloseableIterable<RowData> rowDataIterable = readData(arcticFileScanTask);
+    MixedFileScanTask mixedFileScanTask = (MixedFileScanTask) fileScanTask;
+    CloseableIterable<RowData> rowDataIterable = readData(mixedFileScanTask);
     return fileIO.doAs(rowDataIterable::iterator);
   }
 }

@@ -21,11 +21,11 @@ package org.apache.amoro.formats.mixed;
 import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.FormatCatalogFactory;
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.catalog.CatalogLoader;
+import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 
 import java.util.Map;
 
@@ -36,7 +36,7 @@ public class MixedIcebergCatalogFactory implements FormatCatalogFactory {
       String metastoreType,
       Map<String, String> properties,
       TableMetaStore metaStore) {
-    ArcticCatalog catalog =
+    MixedFormatCatalog catalog =
         CatalogLoader.createCatalog(catalogName, metastoreType, properties, metaStore);
     return new MixedCatalog(catalog, format());
   }
@@ -50,7 +50,7 @@ public class MixedIcebergCatalogFactory implements FormatCatalogFactory {
   public Map<String, String> convertCatalogProperties(
       String catalogName, String metastoreType, Map<String, String> unifiedCatalogProperties) {
     Map<String, String> properties =
-        ArcticCatalogUtil.withIcebergCatalogInitializeProperties(
+        MixedCatalogUtil.withIcebergCatalogInitializeProperties(
             catalogName, metastoreType, unifiedCatalogProperties);
     properties.put(CatalogMetaProperties.TABLE_FORMATS, format().name());
     return properties;

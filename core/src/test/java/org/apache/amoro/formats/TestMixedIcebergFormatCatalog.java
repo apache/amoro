@@ -18,7 +18,7 @@
 
 package org.apache.amoro.formats;
 
-import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
@@ -62,7 +62,7 @@ public class TestMixedIcebergFormatCatalog extends TestAmoroCatalogBase {
     return catalog().listDatabases();
   }
 
-  private ArcticCatalog catalog() {
-    return (ArcticCatalog) originalCatalog;
+  private MixedFormatCatalog catalog() {
+    return (MixedFormatCatalog) originalCatalog;
   }
 }

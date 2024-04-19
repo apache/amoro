@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink;
 
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.catalog.CatalogLoader;
+import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.utils.ConfigurationFileUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -33,14 +33,14 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Build {@link ArcticCatalog}. */
+/** Build {@link MixedFormatCatalog}. */
 public class InternalCatalogBuilder implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(InternalCatalogBuilder.class);
 
   private String metastoreUrl;
   private Map<String, String> properties = new HashMap<>(0);
 
-  private ArcticCatalog createBaseArcticCatalog() {
+  private MixedFormatCatalog createBaseArcticCatalog() {
     Preconditions.checkArgument(
         StringUtils.isNotBlank(metastoreUrl),
         "metastoreUrl can not be empty. e.g: thrift://127.0.0.1:port/catalogName");
@@ -61,7 +61,7 @@ public class InternalCatalogBuilder implements Serializable {
     return new InternalCatalogBuilder();
   }
 
-  public ArcticCatalog build() {
+  public MixedFormatCatalog build() {
     return createBaseArcticCatalog();
   }
 

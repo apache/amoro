@@ -45,13 +45,13 @@ import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticDataFiles;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedDataFiles;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.HasTableOperations;
@@ -103,7 +103,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   @Override
   public ServerTableMeta getTableDetail(AmoroTable<?> amoroTable) {
-    ArcticTable table = getTable(amoroTable);
+    MixedTable table = getTable(amoroTable);
     String tableFormat = decorateTableFormat(amoroTable);
     // set basic info
     TableBasicInfo tableBasicInfo = getTableBasicInfo(table);
@@ -187,23 +187,22 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   @Override
   public List<AmoroSnapshotsOfTable> getSnapshots(
       AmoroTable<?> amoroTable, String ref, OperationType operationType) {
-    ArcticTable arcticTable = getTable(amoroTable);
+    MixedTable mixedTable = getTable(amoroTable);
     List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
     List<Pair<Table, Long>> tableAndSnapshotIdList = new ArrayList<>();
-    if (arcticTable.isKeyedTable()) {
+    if (mixedTable.isKeyedTable()) {
       tableAndSnapshotIdList.add(
           Pair.of(
-              arcticTable.asKeyedTable().changeTable(),
-              snapshotIdOfTableRef(arcticTable.asKeyedTable().changeTable(), ref)));
+              mixedTable.asKeyedTable().changeTable(),
+              snapshotIdOfTableRef(mixedTable.asKeyedTable().changeTable(), ref)));
       tableAndSnapshotIdList.add(
           Pair.of(
-              arcticTable.asKeyedTable().baseTable(),
-              snapshotIdOfTableRef(arcticTable.asKeyedTable().baseTable(), ref)));
+              mixedTable.asKeyedTable().baseTable(),
+              snapshotIdOfTableRef(mixedTable.asKeyedTable().baseTable(), ref)));
     } else {
       tableAndSnapshotIdList.add(
           Pair.of(
-              arcticTable.asUnkeyedTable(),
-              snapshotIdOfTableRef(arcticTable.asUnkeyedTable(), ref)));
+              mixedTable.asUnkeyedTable(), snapshotIdOfTableRef(mixedTable.asUnkeyedTable(), ref)));
     }
     tableAndSnapshotIdList.forEach(
         tableAndSnapshotId -> collectSnapshots(snapshotsOfTables, tableAndSnapshotId));
@@ -299,16 +298,16 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   @Override
   public List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, long snapshotId) {
-    ArcticTable arcticTable = getTable(amoroTable);
+    MixedTable mixedTable = getTable(amoroTable);
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     Snapshot snapshot;
-    if (arcticTable.isKeyedTable()) {
-      snapshot = arcticTable.asKeyedTable().changeTable().snapshot(snapshotId);
+    if (mixedTable.isKeyedTable()) {
+      snapshot = mixedTable.asKeyedTable().changeTable().snapshot(snapshotId);
       if (snapshot == null) {
-        snapshot = arcticTable.asKeyedTable().baseTable().snapshot(snapshotId);
+        snapshot = mixedTable.asKeyedTable().baseTable().snapshot(snapshotId);
       }
     } else {
-      snapshot = arcticTable.asUnkeyedTable().snapshot(snapshotId);
+      snapshot = mixedTable.asUnkeyedTable().snapshot(snapshotId);
     }
     if (snapshot == null) {
       throw new IllegalArgumentException(
@@ -317,7 +316,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     final long snapshotTime = snapshot.timestampMillis();
     String commitId = String.valueOf(snapshotId);
     snapshot
-        .addedDataFiles(arcticTable.io())
+        .addedDataFiles(mixedTable.io())
         .forEach(
             f ->
                 result.add(
@@ -325,13 +324,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         commitId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
-                        ArcticTableUtil.getArcticTablePartitionSpecById(arcticTable, f.specId())
+                        MixedTableUtil.getArcticTablePartitionSpecById(mixedTable, f.specId())
                             .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),
                         "add")));
     snapshot
-        .removedDataFiles(arcticTable.io())
+        .removedDataFiles(mixedTable.io())
         .forEach(
             f ->
                 result.add(
@@ -339,13 +338,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         commitId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
-                        ArcticTableUtil.getArcticTablePartitionSpecById(arcticTable, f.specId())
+                        MixedTableUtil.getArcticTablePartitionSpecById(mixedTable, f.specId())
                             .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),
                         "remove")));
     snapshot
-        .addedDeleteFiles(arcticTable.io())
+        .addedDeleteFiles(mixedTable.io())
         .forEach(
             f ->
                 result.add(
@@ -353,13 +352,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         commitId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
-                        ArcticTableUtil.getArcticTablePartitionSpecById(arcticTable, f.specId())
+                        MixedTableUtil.getArcticTablePartitionSpecById(mixedTable, f.specId())
                             .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),
                         "add")));
     snapshot
-        .removedDeleteFiles(arcticTable.io())
+        .removedDeleteFiles(mixedTable.io())
         .forEach(
             f ->
                 result.add(
@@ -367,7 +366,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                         commitId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
-                        ArcticTableUtil.getArcticTablePartitionSpecById(arcticTable, f.specId())
+                        MixedTableUtil.getArcticTablePartitionSpecById(mixedTable, f.specId())
                             .partitionToPath(f.partition()),
                         f.path().toString(),
                         f.fileSizeInBytes(),
@@ -377,12 +376,12 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   @Override
   public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) {
-    ArcticTable arcticTable = getTable(amoroTable);
+    MixedTable mixedTable = getTable(amoroTable);
     Table table;
-    if (arcticTable.isKeyedTable()) {
-      table = arcticTable.asKeyedTable().baseTable();
+    if (mixedTable.isKeyedTable()) {
+      table = mixedTable.asKeyedTable().baseTable();
     } else {
-      table = arcticTable.asUnkeyedTable();
+      table = mixedTable.asUnkeyedTable();
     }
 
     IcebergTableMetaExtract extract = new IcebergTableMetaExtract();
@@ -392,8 +391,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   @Override
   public List<PartitionBaseInfo> getTablePartitions(AmoroTable<?> amoroTable) {
-    ArcticTable arcticTable = getTable(amoroTable);
-    if (arcticTable.spec().isUnpartitioned()) {
+    MixedTable mixedTable = getTable(amoroTable);
+    if (mixedTable.spec().isUnpartitioned()) {
       return new ArrayList<>();
     }
     Map<String, PartitionBaseInfo> partitionBaseInfoHashMap = new HashMap<>();
@@ -522,14 +521,14 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   private CloseableIterable<PartitionFileBaseInfo> getTableFilesInternal(
       AmoroTable<?> amoroTable, String partition, Integer specId) {
-    ArcticTable arcticTable = getTable(amoroTable);
-    if (arcticTable.isKeyedTable()) {
+    MixedTable mixedTable = getTable(amoroTable);
+    if (mixedTable.isKeyedTable()) {
       return CloseableIterable.concat(
           Arrays.asList(
-              collectFileInfo(arcticTable.asKeyedTable().changeTable(), true, partition, specId),
-              collectFileInfo(arcticTable.asKeyedTable().baseTable(), false, partition, specId)));
+              collectFileInfo(mixedTable.asKeyedTable().changeTable(), true, partition, specId),
+              collectFileInfo(mixedTable.asKeyedTable().baseTable(), false, partition, specId)));
     } else {
-      return collectFileInfo(arcticTable.asUnkeyedTable(), false, partition, specId);
+      return collectFileInfo(mixedTable.asUnkeyedTable(), false, partition, specId);
     }
   }
 
@@ -541,7 +540,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
         new IcebergFindFiles(table).ignoreDeleted().planWith(executorService);
 
     if (table.spec().isPartitioned() && partition != null && specId != null) {
-      GenericRecord partitionData = ArcticDataFiles.data(specs.get(specId), partition);
+      GenericRecord partitionData = MixedDataFiles.data(specs.get(specId), partition);
       manifestReader.inPartitions(specs.get(specId), partitionData);
     }
 
@@ -575,7 +574,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
         });
   }
 
-  private TableBasicInfo getTableBasicInfo(ArcticTable table) {
+  private TableBasicInfo getTableBasicInfo(MixedTable table) {
     try {
       TableBasicInfo tableBasicInfo = new TableBasicInfo();
       tableBasicInfo.setTableIdentifier(table.id());
@@ -625,7 +624,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     }
   }
 
-  private ServerTableMeta getServerTableMeta(ArcticTable table) {
+  private ServerTableMeta getServerTableMeta(MixedTable table) {
     ServerTableMeta serverTableMeta = new ServerTableMeta();
     serverTableMeta.setTableType(table.format().toString());
     serverTableMeta.setTableIdentifier(table.id());
@@ -673,16 +672,16 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     serverTableMeta.setProperties(properties);
   }
 
-  private ArcticTable getTable(AmoroTable<?> amoroTable) {
-    return (ArcticTable) amoroTable.originalTable();
+  private MixedTable getTable(AmoroTable<?> amoroTable) {
+    return (MixedTable) amoroTable.originalTable();
   }
 
   private List<TagOrBranchInfo> getTableTagsOrBranches(
       AmoroTable<?> amoroTable, Predicate<SnapshotRef> predicate) {
-    ArcticTable arcticTable = getTable(amoroTable);
+    MixedTable mixedTable = getTable(amoroTable);
     List<TagOrBranchInfo> result = new ArrayList<>();
     Map<String, SnapshotRef> snapshotRefs;
-    if (arcticTable.isKeyedTable()) {
+    if (mixedTable.isKeyedTable()) {
       // todo temporarily responds to the problem of Mixed Format table.
       if (predicate.test(SnapshotRef.branchBuilder(-1).build())) {
         return ImmutableList.of(TagOrBranchInfo.MAIN_BRANCH);
@@ -690,7 +689,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
         return Collections.emptyList();
       }
     } else {
-      snapshotRefs = arcticTable.asUnkeyedTable().refs();
+      snapshotRefs = mixedTable.asUnkeyedTable().refs();
       snapshotRefs.forEach(
           (name, snapshotRef) -> {
             if (predicate.test(snapshotRef)) {

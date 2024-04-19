@@ -45,7 +45,7 @@ public class TestArcticDataFiles {
     partitionKey.partition(
         internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T11:00:00"))));
     String partitionPath = spec.partitionToPath(partitionKey);
-    StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
+    StructLike partitionData = MixedDataFiles.data(spec, partitionPath);
     StructLikeWrapper p1 = StructLikeWrapper.forType(spec.partitionType());
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
@@ -62,7 +62,7 @@ public class TestArcticDataFiles {
     partitionKey.partition(
         internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T11:00:00"))));
     String partitionPath = spec.partitionToPath(partitionKey);
-    StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
+    StructLike partitionData = MixedDataFiles.data(spec, partitionPath);
     StructLikeWrapper p1 = StructLikeWrapper.forType(spec.partitionType());
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
@@ -81,7 +81,7 @@ public class TestArcticDataFiles {
     partitionKey.partition(
         internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T09:30:00"))));
     String partitionPath = spec.partitionToPath(partitionKey);
-    StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
+    StructLike partitionData = MixedDataFiles.data(spec, partitionPath);
     StructLikeWrapper p1 = StructLikeWrapper.forType(spec.partitionType());
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
@@ -91,7 +91,7 @@ public class TestArcticDataFiles {
     partitionKey.partition(
         internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T12:00:00"))));
     partitionPath = spec.partitionToPath(partitionKey);
-    partitionData = ArcticDataFiles.data(spec, partitionPath);
+    partitionData = MixedDataFiles.data(spec, partitionPath);
     p1.set(partitionKey);
     p2.set(partitionData);
     Assert.assertEquals(p1, p2);
@@ -99,7 +99,7 @@ public class TestArcticDataFiles {
     partitionKey.partition(
         internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T15:30:00"))));
     partitionPath = spec.partitionToPath(partitionKey);
-    partitionData = ArcticDataFiles.data(spec, partitionPath);
+    partitionData = MixedDataFiles.data(spec, partitionPath);
     p1.set(partitionKey);
     p2.set(partitionData);
     Assert.assertEquals(p1, p2);
@@ -107,7 +107,7 @@ public class TestArcticDataFiles {
     partitionKey.partition(
         internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-12T00:00:00"))));
     partitionPath = spec.partitionToPath(partitionKey);
-    partitionData = ArcticDataFiles.data(spec, partitionPath);
+    partitionData = MixedDataFiles.data(spec, partitionPath);
     p1.set(partitionKey);
     p2.set(partitionData);
     Assert.assertEquals(p1, p2);
@@ -122,7 +122,7 @@ public class TestArcticDataFiles {
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(schema.asStruct());
     partitionKey.partition(internalRecordWrapper.wrap(record.copy("dt", 1)));
     String partitionPath = spec.partitionToPath(partitionKey);
-    StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
+    StructLike partitionData = MixedDataFiles.data(spec, partitionPath);
     StructLikeWrapper p1 = StructLikeWrapper.forType(spec.partitionType());
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
@@ -139,7 +139,7 @@ public class TestArcticDataFiles {
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(schema.asStruct());
     partitionKey.partition(internalRecordWrapper.wrap(record.copy("dt", 1)));
     String partitionPath = spec.partitionToPath(partitionKey);
-    StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
+    StructLike partitionData = MixedDataFiles.data(spec, partitionPath);
     StructLikeWrapper p1 = StructLikeWrapper.forType(spec.partitionType());
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
@@ -153,7 +153,7 @@ public class TestArcticDataFiles {
     PartitionSpec spec = PartitionSpec.builderFor(schema).identity("name").build();
     PartitionKey partitionKey = new PartitionKey(spec, schema);
     String partitionPath = "name=null";
-    StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
+    StructLike partitionData = MixedDataFiles.data(spec, partitionPath);
     Assert.assertNull(partitionData.get(0, Types.StringType.get().typeId().javaClass()));
   }
 
@@ -173,7 +173,7 @@ public class TestArcticDataFiles {
 
     String partitionToPath = spec.partitionToPath(partitionKey);
     Assert.assertEquals("day=2023-01-01/name=AAA+BBB%2FCCC%3D_*-%5C%25", partitionToPath);
-    GenericRecord partitionData = ArcticDataFiles.data(spec, partitionToPath);
+    GenericRecord partitionData = MixedDataFiles.data(spec, partitionToPath);
     StructLikeWrapper p1 = StructLikeWrapper.forType(spec.partitionType());
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());

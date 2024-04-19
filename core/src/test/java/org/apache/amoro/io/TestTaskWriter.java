@@ -33,7 +33,7 @@ import org.apache.amoro.io.writer.SortedPosDeleteWriter;
 import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -125,7 +125,7 @@ public class TestTaskWriter extends TableTestBase {
       }
     }
 
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     AppendFiles appendFiles = baseStore.newAppend();
     files.forEach(appendFiles::appendFile);
     appendFiles.commit();
@@ -163,7 +163,7 @@ public class TestTaskWriter extends TableTestBase {
     writer.delete(dataFile.path(), 5);
     List<DeleteFile> result = writer.complete();
     Assert.assertEquals(1, result.size());
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getArcticTable());
     RowDelta rowDelta = baseStore.newRowDelta();
     result.forEach(rowDelta::addDeletes);
     rowDelta.commit();

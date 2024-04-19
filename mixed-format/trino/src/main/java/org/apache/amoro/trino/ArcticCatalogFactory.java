@@ -18,14 +18,14 @@
 
 package org.apache.amoro.trino;
 
-import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.table.TableMetaStore;
 
 /** A interface of factory to generate ArcticCatalog */
 public interface ArcticCatalogFactory {
 
   /** generate ArcticCatalog */
-  ArcticCatalog getArcticCatalog();
+  MixedFormatCatalog getArcticCatalog();
 
   TableMetaStore getTableMetastore();
 }
