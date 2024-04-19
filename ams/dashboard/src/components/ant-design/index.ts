@@ -18,7 +18,6 @@
 
 import { App } from 'vue'
 import {
-  ConfigProvider,
   Select,
   Menu,
   Button,
@@ -44,7 +43,6 @@ import {
 } from 'ant-design-vue-v3'
 
 const compontens = [
-  ConfigProvider,
   Spin,
   InputNumber,
   Select,
