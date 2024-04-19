@@ -27,7 +27,6 @@ import {
   Form,
   InputNumber,
   Pagination,
-  Spin,
   List,
   Breadcrumb,
   Checkbox,
@@ -42,7 +41,6 @@ import {
 } from 'ant-design-vue-v3'
 
 const compontens = [
-  Spin,
   InputNumber,
   Menu,
   Button,
