@@ -16,20 +16,20 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.table;
+package org.apache.amoro.server.table;
 
-import static com.netease.arctic.api.metrics.MetricDefine.defineCounter;
-import static com.netease.arctic.api.metrics.MetricDefine.defineGauge;
+import static org.apache.amoro.api.metrics.MetricDefine.defineCounter;
+import static org.apache.amoro.api.metrics.MetricDefine.defineGauge;
 
-import com.netease.arctic.api.ServerTableIdentifier;
-import com.netease.arctic.api.metrics.Counter;
-import com.netease.arctic.api.metrics.Gauge;
-import com.netease.arctic.api.metrics.Metric;
-import com.netease.arctic.api.metrics.MetricDefine;
-import com.netease.arctic.api.metrics.MetricKey;
-import com.netease.arctic.server.metrics.MetricRegistry;
-import com.netease.arctic.server.optimizing.OptimizingStatus;
-import com.netease.arctic.server.optimizing.OptimizingType;
+import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.api.metrics.Counter;
+import org.apache.amoro.api.metrics.Gauge;
+import org.apache.amoro.api.metrics.Metric;
+import org.apache.amoro.api.metrics.MetricDefine;
+import org.apache.amoro.api.metrics.MetricKey;
+import org.apache.amoro.server.metrics.MetricRegistry;
+import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
