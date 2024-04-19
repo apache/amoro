@@ -18,11 +18,11 @@
 
 package org.apache.amoro.hive.io.reader;
 
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.io.reader.ArcticDeleteFilter;
-import com.netease.arctic.scan.KeyedTableScanTask;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.utils.map.StructLikeCollections;
+import org.apache.amoro.data.DataTreeNode;
+import org.apache.amoro.io.reader.ArcticDeleteFilter;
+import org.apache.amoro.scan.KeyedTableScanTask;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;

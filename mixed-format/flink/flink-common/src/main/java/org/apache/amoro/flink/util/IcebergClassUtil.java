@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.util;
 
-import com.netease.arctic.io.ArcticFileIO;
 import org.apache.amoro.flink.interceptor.ProxyFactory;
+import org.apache.amoro.io.ArcticFileIO;
 import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;

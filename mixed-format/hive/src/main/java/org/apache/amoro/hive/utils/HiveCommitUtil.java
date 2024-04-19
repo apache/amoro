@@ -18,8 +18,8 @@
 
 package org.apache.amoro.hive.utils;
 
-import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.utils.TableFileUtil;
+import org.apache.amoro.io.ArcticHadoopFileIO;
+import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;

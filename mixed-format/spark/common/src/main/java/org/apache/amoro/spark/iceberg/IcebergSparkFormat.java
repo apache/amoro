@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.iceberg;
 
-import com.netease.arctic.TableFormat;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.spark.SparkTableFormat;
 import org.apache.amoro.spark.mixed.MixedFormatSparkUtil;
 import org.apache.iceberg.BaseMetastoreTableOperations;

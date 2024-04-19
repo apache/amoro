@@ -18,8 +18,8 @@
 
 package org.apache.amoro.hive.formats;
 
-import com.netease.arctic.formats.MixedIcebergHadoopCatalogTestHelper;
-import com.netease.arctic.properties.CatalogMetaProperties;
+import org.apache.amoro.formats.MixedIcebergHadoopCatalogTestHelper;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.iceberg.CatalogProperties;

@@ -22,9 +22,9 @@ import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 import static java.util.Locale.ENGLISH;
 
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.TableIdentifier;
 import io.trino.plugin.hive.util.HiveUtil;
 import io.trino.plugin.iceberg.ColumnIdentity;
 import io.trino.plugin.iceberg.catalog.TrinoCatalog;

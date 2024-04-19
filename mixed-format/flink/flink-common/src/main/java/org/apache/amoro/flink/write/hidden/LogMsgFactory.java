@@ -18,9 +18,9 @@
 
 package org.apache.amoro.flink.write.hidden;
 
-import com.netease.arctic.log.LogData;
-import com.netease.arctic.log.LogDataJsonSerialization;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
+import org.apache.amoro.log.LogData;
+import org.apache.amoro.log.LogDataJsonSerialization;
 import org.apache.flink.configuration.Configuration;
 
 import java.io.Serializable;

@@ -23,9 +23,9 @@ import static org.apache.flink.table.api.Expressions.$;
 import static org.apache.flink.table.expressions.ApiExpressionUtils.valueLiteral;
 import static org.apache.flink.table.functions.BuiltInFunctionDefinitions.EQUALS;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.amoro.flink.util.DataUtil;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;

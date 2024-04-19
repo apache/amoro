@@ -18,15 +18,15 @@
 
 package org.apache.amoro.hive.optimizing;
 
-import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.io.writer.ArcticTreeNodePosDeleteWriter;
-import com.netease.arctic.optimizing.AbstractRewriteFilesExecutor;
-import com.netease.arctic.optimizing.OptimizingDataReader;
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.WriteOperationKind;
-import com.netease.arctic.utils.map.StructLikeCollections;
+import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
+import org.apache.amoro.io.writer.ArcticTreeNodePosDeleteWriter;
+import org.apache.amoro.optimizing.AbstractRewriteFilesExecutor;
+import org.apache.amoro.optimizing.OptimizingDataReader;
+import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.WriteOperationKind;
+import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.deletes.PositionDelete;

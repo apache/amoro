@@ -18,12 +18,12 @@
 
 package org.apache.amoro.flink.read.hybrid.assigner;
 
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.scan.ArcticFileScanTask;
+import org.apache.amoro.data.DataTreeNode;
+import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.flink.read.hybrid.enumerator.ArcticSourceEnumState;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplitState;
+import org.apache.amoro.scan.ArcticFileScanTask;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.util.FlinkRuntimeException;

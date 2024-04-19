@@ -18,10 +18,10 @@
 
 package org.apache.amoro.spark.mixed;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.properties.HiveTableProperties;
-import com.netease.arctic.table.TableProperties;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.hive.utils.CompatibleHivePropertyUtil;
+import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.table.TableProperties;
 import org.apache.spark.sql.connector.catalog.Table;
 
 /** Util class for mixed format in spark engines. */

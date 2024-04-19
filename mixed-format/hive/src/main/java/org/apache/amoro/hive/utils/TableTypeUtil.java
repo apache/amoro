@@ -18,8 +18,8 @@
 
 package org.apache.amoro.hive.utils;
 
-import com.netease.arctic.table.ArcticTable;
 import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.table.ArcticTable;
 
 public class TableTypeUtil {
   public static boolean isHive(ArcticTable arcticTable) {

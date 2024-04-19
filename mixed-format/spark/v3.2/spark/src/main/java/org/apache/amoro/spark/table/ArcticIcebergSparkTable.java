@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.table;
 
-import com.netease.arctic.table.UnkeyedTable;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.spark.SparkSchemaUtil;

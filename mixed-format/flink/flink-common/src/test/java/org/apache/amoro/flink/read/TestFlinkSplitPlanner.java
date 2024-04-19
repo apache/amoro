@@ -18,9 +18,9 @@
 
 package org.apache.amoro.flink.read;
 
-import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import org.apache.amoro.flink.read.hybrid.reader.TestRowDataReaderFunction;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.scan.ChangeTableIncrementalScan;
 import org.apache.iceberg.Snapshot;
 import org.junit.Assert;
 import org.junit.Test;

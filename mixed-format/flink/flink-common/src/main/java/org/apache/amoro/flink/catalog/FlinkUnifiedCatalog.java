@@ -18,22 +18,22 @@
 
 package org.apache.amoro.flink.catalog;
 
-import static com.netease.arctic.Constants.THRIFT_TABLE_SERVICE_NAME;
+import static org.apache.amoro.Constants.THRIFT_TABLE_SERVICE_NAME;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.TABLE_FORMAT;
 
-import com.netease.arctic.AlreadyExistsException;
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.NoSuchDatabaseException;
-import com.netease.arctic.NoSuchTableException;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.UnifiedCatalog;
-import com.netease.arctic.client.ArcticThriftUrl;
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.AlreadyExistsException;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.NoSuchDatabaseException;
+import org.apache.amoro.NoSuchTableException;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.UnifiedCatalog;
+import org.apache.amoro.client.ArcticThriftUrl;
 import org.apache.amoro.flink.catalog.factories.FlinkUnifiedCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.iceberg.IcebergFlinkCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.mixed.MixedCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.paimon.PaimonFlinkCatalogFactory;
 import org.apache.amoro.flink.table.AmoroDynamicTableFactory;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;

@@ -18,11 +18,11 @@
 
 package org.apache.amoro.trino.mixed;
 
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.writer.GenericBaseTaskWriter;
-import com.netease.arctic.io.writer.GenericChangeTaskWriter;
-import com.netease.arctic.io.writer.GenericTaskWriters;
-import com.netease.arctic.io.writer.SortedPosDeleteWriter;
+import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.io.writer.GenericBaseTaskWriter;
+import org.apache.amoro.io.writer.GenericChangeTaskWriter;
+import org.apache.amoro.io.writer.GenericTaskWriters;
+import org.apache.amoro.io.writer.SortedPosDeleteWriter;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;

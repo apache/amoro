@@ -171,12 +171,12 @@ AMS provides implementations of `LocalContainer` and `FlinkContainer` by default
 ```yaml
 containers:
   - name: localContainer
-    container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
+    container-impl: org.apache.amoro.optimizer.LocalOptimizerContainer
     properties:
       export.JAVA_HOME: "/opt/java"   # JDK environment
   
   - name: flinkContainer
-    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
+    container-impl: org.apache.amoro.optimizer.FlinkOptimizerContainer
     properties:
       flink-home: "/opt/flink/"                                     # The installation directory of Flink
       export.JVM_ARGS: "-Djava.security.krb5.conf=/opt/krb5.conf"   # Submitting Flink jobs with Java parameters, such as Kerberos parameters.

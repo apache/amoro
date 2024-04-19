@@ -18,13 +18,13 @@
 
 package org.apache.amoro.flink.read.hybrid.enumerator;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.table.KeyedTable;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
+import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
+import org.apache.amoro.table.KeyedTable;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;

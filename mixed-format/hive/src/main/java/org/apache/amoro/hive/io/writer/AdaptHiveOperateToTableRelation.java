@@ -18,13 +18,13 @@
 
 package org.apache.amoro.hive.io.writer;
 
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseLocationKind;
-import com.netease.arctic.table.ChangeLocationKind;
-import com.netease.arctic.table.LocationKind;
-import com.netease.arctic.table.WriteOperationKind;
 import org.apache.amoro.hive.table.HiveLocationKind;
 import org.apache.amoro.hive.utils.TableTypeUtil;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.BaseLocationKind;
+import org.apache.amoro.table.ChangeLocationKind;
+import org.apache.amoro.table.LocationKind;
+import org.apache.amoro.table.WriteOperationKind;
 
 public class AdaptHiveOperateToTableRelation implements OperateToTableRelation {
 

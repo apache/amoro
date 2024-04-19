@@ -18,13 +18,13 @@
 
 package org.apache.amoro.spark.io;
 
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.writer.ChangeTaskWriter;
-import com.netease.arctic.io.writer.OutputFileFactory;
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.writer.ChangeTaskWriter;
+import org.apache.amoro.io.writer.OutputFileFactory;
 import org.apache.amoro.spark.SparkInternalRowCastWrapper;
 import org.apache.amoro.spark.SparkInternalRowWrapper;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;

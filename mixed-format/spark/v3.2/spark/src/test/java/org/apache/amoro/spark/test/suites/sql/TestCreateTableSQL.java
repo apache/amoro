@@ -18,13 +18,13 @@
 
 package org.apache.amoro.spark.test.suites.sql;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.spark.mixed.SparkSQLProperties;
 import org.apache.amoro.spark.test.MixedTableTestBase;
 import org.apache.amoro.spark.test.extensions.EnableCatalogSelect;
 import org.apache.amoro.spark.test.utils.Asserts;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;

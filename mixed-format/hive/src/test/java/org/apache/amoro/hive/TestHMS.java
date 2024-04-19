@@ -18,7 +18,7 @@
 
 package org.apache.amoro.hive;
 
-import com.netease.arctic.SingletonResourceUtil;
+import org.apache.amoro.SingletonResourceUtil;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.junit.rules.ExternalResource;

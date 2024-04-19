@@ -18,17 +18,17 @@
 
 package org.apache.amoro.hive.optimizing;
 
-import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.optimizing.OptimizingDataReader;
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.BasicArcticFileScanTask;
-import com.netease.arctic.scan.NodeFileScanTask;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.utils.map.StructLikeCollections;
+import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.io.reader.AdaptHiveGenericKeyedDataReader;
+import org.apache.amoro.optimizing.OptimizingDataReader;
+import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.BasicArcticFileScanTask;
+import org.apache.amoro.scan.NodeFileScanTask;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
@@ -79,7 +79,7 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
         new Schema(
             MetadataColumns.FILE_PATH,
             MetadataColumns.ROW_POSITION,
-            com.netease.arctic.table.MetadataColumns.TREE_NODE_FIELD);
+            org.apache.amoro.table.MetadataColumns.TREE_NODE_FIELD);
     AdaptHiveGenericKeyedDataReader reader = arcticDataReader(schema);
     return wrapIterator2Iterable(
         reader.readDeletedData(nodeFileScanTask(input.rePosDeletedDataFilesForMixed())));

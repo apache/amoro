@@ -22,16 +22,16 @@ import static org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions.LEG
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.io.reader.GenericKeyedDataReader;
-import com.netease.arctic.scan.CombinedScanTask;
-import com.netease.arctic.scan.KeyedTableScanTask;
-import com.netease.arctic.table.KeyedTable;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.amoro.flink.write.ArcticRowDataTaskWriterFactory;
+import org.apache.amoro.io.reader.GenericKeyedDataReader;
+import org.apache.amoro.scan.CombinedScanTask;
+import org.apache.amoro.scan.KeyedTableScanTask;
+import org.apache.amoro.table.KeyedTable;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.StateBackend;

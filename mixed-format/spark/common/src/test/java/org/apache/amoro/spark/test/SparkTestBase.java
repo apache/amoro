@@ -18,13 +18,13 @@
 
 package org.apache.amoro.spark.test;
 
-import com.netease.arctic.AlreadyExistsException;
-import com.netease.arctic.Constants;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.UnifiedCatalog;
-import com.netease.arctic.UnifiedCatalogLoader;
-import com.netease.arctic.client.ArcticThriftUrl;
-import com.netease.arctic.properties.HiveTableProperties;
+import org.apache.amoro.AlreadyExistsException;
+import org.apache.amoro.Constants;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.UnifiedCatalog;
+import org.apache.amoro.UnifiedCatalogLoader;
+import org.apache.amoro.client.ArcticThriftUrl;
+import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.spark.test.utils.TestTableUtil;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;

@@ -18,11 +18,11 @@
 
 package org.apache.amoro.hive.op;
 
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.utils.HiveTableUtil;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.TableProperties;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;

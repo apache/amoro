@@ -18,13 +18,13 @@
 
 package org.apache.amoro.flink.read.source;
 
-import static com.netease.arctic.data.ChangeAction.DELETE;
-import static com.netease.arctic.data.ChangeAction.INSERT;
-import static com.netease.arctic.data.ChangeAction.UPDATE_AFTER;
-import static com.netease.arctic.data.ChangeAction.UPDATE_BEFORE;
+import static org.apache.amoro.data.ChangeAction.DELETE;
+import static org.apache.amoro.data.ChangeAction.INSERT;
+import static org.apache.amoro.data.ChangeAction.UPDATE_AFTER;
+import static org.apache.amoro.data.ChangeAction.UPDATE_BEFORE;
 
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.scan.ArcticFileScanTask;
+import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.scan.ArcticFileScanTask;
 
 import java.io.IOException;
 import java.util.Collection;

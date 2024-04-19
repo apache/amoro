@@ -20,10 +20,10 @@ package org.apache.amoro.flink.write.hidden.kafka;
 
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
-import com.netease.arctic.log.LogDataJsonSerialization;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
 import org.apache.amoro.flink.write.hidden.ArcticLogPartitioner;
 import org.apache.amoro.flink.write.hidden.LogMsgFactory;
+import org.apache.amoro.log.LogDataJsonSerialization;
 
 import java.util.Properties;
 

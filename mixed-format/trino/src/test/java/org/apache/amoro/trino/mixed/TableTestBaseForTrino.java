@@ -18,25 +18,25 @@
 
 package org.apache.amoro.trino.mixed;
 
-import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.MockArcticMetastoreServer.TEST_DB_NAME;
+import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.MockArcticMetastoreServer.TEST_DB_NAME;
 
-import com.netease.arctic.MockArcticMetastoreServer;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.reader.GenericKeyedDataReader;
-import com.netease.arctic.io.writer.GenericBaseTaskWriter;
-import com.netease.arctic.io.writer.GenericChangeTaskWriter;
-import com.netease.arctic.io.writer.GenericTaskWriters;
-import com.netease.arctic.scan.CombinedScanTask;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
+import org.apache.amoro.MockArcticMetastoreServer;
+import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.catalog.CatalogLoader;
+import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.io.reader.GenericKeyedDataReader;
+import org.apache.amoro.io.writer.GenericBaseTaskWriter;
+import org.apache.amoro.io.writer.GenericChangeTaskWriter;
+import org.apache.amoro.io.writer.GenericTaskWriters;
+import org.apache.amoro.scan.CombinedScanTask;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.PrimaryKeySpec;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.table.UnkeyedTable;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testng.services.ManageTestResources;
 import org.apache.iceberg.AppendFiles;

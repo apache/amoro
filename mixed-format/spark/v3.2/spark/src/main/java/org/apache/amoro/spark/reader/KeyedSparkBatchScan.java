@@ -18,13 +18,13 @@
 
 package org.apache.amoro.spark.reader;
 
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.scan.CombinedScanTask;
-import com.netease.arctic.scan.KeyedTableScan;
-import com.netease.arctic.scan.KeyedTableScanTask;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.scan.CombinedScanTask;
+import org.apache.amoro.scan.KeyedTableScan;
+import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.spark.util.Stats;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.expressions.Expression;

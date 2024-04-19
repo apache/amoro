@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.test.utils;
 
-import com.netease.arctic.utils.StructLikeSet;
+import org.apache.amoro.utils.StructLikeSet;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;

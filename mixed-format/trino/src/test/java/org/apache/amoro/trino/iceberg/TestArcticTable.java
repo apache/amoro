@@ -18,9 +18,9 @@
 
 package org.apache.amoro.trino.iceberg;
 
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.table.BasicUnkeyedTable;
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.table.BasicUnkeyedTable;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.DeleteFiles;

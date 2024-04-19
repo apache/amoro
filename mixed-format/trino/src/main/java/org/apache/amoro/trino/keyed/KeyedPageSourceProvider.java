@@ -19,9 +19,9 @@
 package org.apache.amoro.trino.keyed;
 
 import com.google.inject.Inject;
-import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.KeyedTableScanTask;
+import org.apache.amoro.data.PrimaryKeyedFile;
+import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.trino.delete.TrinoRow;
 import org.apache.amoro.trino.unkeyed.IcebergPageSourceProvider;
 import io.trino.filesystem.TrinoFileSystemFactory;

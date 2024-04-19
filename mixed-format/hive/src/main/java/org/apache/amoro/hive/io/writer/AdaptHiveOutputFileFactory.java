@@ -18,11 +18,11 @@
 
 package org.apache.amoro.hive.io.writer;
 
-import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.writer.OutputFileFactory;
-import com.netease.arctic.io.writer.TaskWriterKey;
+import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.hive.utils.HiveTableUtil;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.writer.OutputFileFactory;
+import org.apache.amoro.io.writer.TaskWriterKey;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;

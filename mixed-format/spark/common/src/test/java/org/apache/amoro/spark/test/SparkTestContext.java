@@ -18,13 +18,13 @@
 
 package org.apache.amoro.spark.test;
 
-import com.netease.arctic.SingletonResourceUtil;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TestAms;
-import com.netease.arctic.api.CatalogMeta;
-import com.netease.arctic.properties.CatalogMetaProperties;
+import org.apache.amoro.SingletonResourceUtil;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TestAms;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.spark.SparkUnifiedCatalog;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;

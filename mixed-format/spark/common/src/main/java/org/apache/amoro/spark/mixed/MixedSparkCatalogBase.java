@@ -21,11 +21,11 @@ package org.apache.amoro.spark.mixed;
 import static org.apache.amoro.spark.mixed.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
 import static org.apache.amoro.spark.mixed.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE_DEFAULT;
 
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableMetaStore;
+import org.apache.amoro.catalog.ArcticCatalog;
+import org.apache.amoro.catalog.CatalogLoader;
 import org.apache.amoro.spark.SupportAuthentication;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableMetaStore;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;

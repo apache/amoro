@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.hybrid.split;
 
-import com.netease.arctic.data.DataTreeNode;
+import org.apache.amoro.data.DataTreeNode;
 import org.apache.flink.api.connector.source.SourceSplit;
 
 import java.io.Serializable;

@@ -18,9 +18,9 @@
 
 package org.apache.amoro.spark.reader;
 
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.table.UnkeyedTable;
+import org.apache.amoro.io.ArcticFileIO;
 import org.apache.amoro.spark.util.Stats;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.CombinedScanTask;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Schema;

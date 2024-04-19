@@ -236,7 +236,7 @@
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.iceberg.</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.iceberg.
+                                    <shadedPattern>org.apache.amoro.shaded.org.apache.iceberg.
                                     </shadedPattern>
                                     <excludes>
                                         <exclude>org.apache.iceberg.mr.hive.*</exclude>
@@ -245,35 +245,35 @@
                                 <!--            parquet                    -->
                                 <relocation>
                                     <pattern>org.apache.parquet.</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.parquet.
+                                    <shadedPattern>org.apache.amoro.shaded.org.apache.parquet.
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>shaded.parquet.</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.shaded.parquet.
+                                    <shadedPattern>org.apache.amoro.shaded.shaded.parquet.
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>parquet.</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.parquet.
+                                    <shadedPattern>org.apache.amoro.shaded.parquet.
                                     </shadedPattern>
                                 </relocation>
                                 <!--           org.apache.commons, commons-lang                    -->
                                 <relocation>
                                     <pattern>org.apache.commons</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.commons
+                                    <shadedPattern>org.apache.amoro.shaded.org.apache.commons
                                     </shadedPattern>
                                 </relocation>
                                 <!--             com.fasterxml.jackson.core                   -->
                                 <relocation>
                                     <pattern>com.fasterxml</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.com.fasterxml
+                                    <shadedPattern>org.apache.amoro.shaded.com.fasterxml
                                     </shadedPattern>
                                 </relocation>
                                 <!--              thrift                  -->
                                 <relocation>
                                     <pattern>org.apache.thrift</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.thrift
+                                    <shadedPattern>org.apache.amoro.shaded.org.apache.thrift
                                     </shadedPattern>
                                     <excludes>
                                         <exclude>org.apache.thrift.TException</exclude>
@@ -283,67 +283,67 @@
                                 <relocation>
                                     <pattern>com.github.benmanes.caffeine</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shaded.com.github.benmanes.caffeine
+                                        org.apache.amoro.shaded.com.github.benmanes.caffeine
                                     </shadedPattern>
                                 </relocation>
                                 <!--               avro                 -->
                                 <relocation>
                                     <pattern>org.apache.avro</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.avro
+                                    <shadedPattern>org.apache.amoro.shaded.org.apache.avro
                                     </shadedPattern>
                                 </relocation>
                                 <!--               zookeeper                 -->
                                 <relocation>
                                     <pattern>org.apache.zookeeper</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.zookeeper
+                                    <shadedPattern>org.apache.amoro.shaded.org.apache.zookeeper
                                     </shadedPattern>
                                 </relocation>
                                 <!--               curator                 -->
                                 <relocation>
                                     <pattern>org.apache.curator</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.curator
+                                    <shadedPattern>org.apache.amoro.shaded.org.apache.curator
                                     </shadedPattern>
                                 </relocation>
                                 <!--               orc                 -->
                                 <relocation>
                                     <pattern>org.apache.orc</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.orc
+                                    <shadedPattern>org.apache.amoro.shaded.org.apache.orc
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.threeten.extra</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.threeten.extra
+                                    <shadedPattern>org.apache.amoro.shaded.org.threeten.extra
                                     </shadedPattern>
                                 </relocation>
                                 <!--               cglib                 -->
                                 <relocation>
                                     <pattern>net.sf.cglib</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.net.sf.cglib
+                                    <shadedPattern>org.apache.amoro.shaded.net.sf.cglib
                                     </shadedPattern>
                                 </relocation>
                                 <!--               guava                 -->
                                 <relocation>
                                     <pattern>com.google</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.com.google
+                                    <shadedPattern>org.apache.amoro.shaded.com.google
                                     </shadedPattern>
                                 </relocation>
                                 <!--             asm                   -->
                                 <relocation>
                                     <pattern>org.objectweb.asm</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.objectweb.asm
+                                    <shadedPattern>org.apache.amoro.shaded.org.objectweb.asm
                                     </shadedPattern>
                                 </relocation>
                                 <!--              flink-sql-connector-kafka                  -->
                                 <relocation>
                                     <pattern>org.apache.flink.connector.kafka</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shaded.org.apache.flink.connector.kafka
+                                        org.apache.amoro.shaded.org.apache.flink.connector.kafka
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.flink.streaming.connectors.kafka</pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shaded.org.apache.flink.streaming.connectors.kafka
+                                        org.apache.amoro.shaded.org.apache.flink.streaming.connectors.kafka
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
@@ -351,7 +351,7 @@
                                         org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema
                                     </pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema
+                                        org.apache.amoro.shaded.org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
@@ -359,7 +359,7 @@
                                         org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema
                                     </pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema
+                                        org.apache.amoro.shaded.org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
@@ -367,7 +367,7 @@
                                         org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
                                     </pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
+                                        org.apache.amoro.shaded.org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
@@ -375,22 +375,22 @@
                                         org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema
                                     </pattern>
                                     <shadedPattern>
-                                        com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema
+                                        org.apache.amoro.shaded.org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.kafka</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.kafka
+                                    <shadedPattern>org.apache.amoro.shaded.org.apache.kafka
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.facebook.fb303</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.com.facebook.fb303
+                                    <shadedPattern>org.apache.amoro.shaded.com.facebook.fb303
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.hc</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.hc
+                                    <shadedPattern>org.apache.amoro.shaded.org.apache.hc
                                     </shadedPattern>
                                 </relocation>
                             </relocations>

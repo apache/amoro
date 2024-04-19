@@ -21,12 +21,12 @@ package org.apache.amoro.flink.read.source.log.kafka;
 import static org.apache.amoro.flink.read.source.log.LogSourceHelper.checkMagicNum;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
 
-import com.netease.arctic.log.LogData;
-import com.netease.arctic.log.LogDataJsonDeserialization;
 import org.apache.amoro.flink.read.internals.KafkaPartitionSplitReader;
 import org.apache.amoro.flink.read.source.log.LogSourceHelper;
 import org.apache.amoro.flink.shuffle.LogRecordV1;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
+import org.apache.amoro.log.LogData;
+import org.apache.amoro.log.LogDataJsonDeserialization;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.kafka.source.metrics.KafkaSourceReaderMetrics;

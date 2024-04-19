@@ -22,10 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.netease.arctic.formats.AmoroCatalogTestHelper;
-import com.netease.arctic.formats.PaimonHadoopCatalogTestHelper;
-import com.netease.arctic.formats.paimon.PaimonTable;
 import org.apache.amoro.flink.table.AmoroCatalogITCaseBase;
+import org.apache.amoro.formats.AmoroCatalogTestHelper;
+import org.apache.amoro.formats.PaimonHadoopCatalogTestHelper;
+import org.apache.amoro.formats.paimon.PaimonTable;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.formats.PaimonHiveCatalogTestHelper;
 import org.apache.flink.table.api.TableResult;

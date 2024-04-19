@@ -18,21 +18,16 @@
 
 package org.apache.amoro.flink.read;
 
-import static com.netease.arctic.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.MockArcticMetastoreServer.TEST_DB_NAME;
+import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.MockArcticMetastoreServer.TEST_DB_NAME;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.TableFileUtil;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.ArcticCatalog;
 import org.apache.amoro.flink.read.hybrid.reader.ReaderFunction;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
 import org.apache.amoro.flink.read.hybrid.reader.TestRowDataReaderFunction;
@@ -42,6 +37,11 @@ import org.apache.amoro.flink.read.source.DataIterator;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.flink.util.ArcticUtils;
 import org.apache.amoro.flink.write.FlinkSink;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.utils.TableFileUtil;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.JobStatus;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;

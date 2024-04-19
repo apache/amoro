@@ -18,8 +18,8 @@
 
 package org.apache.amoro.spark.sql.connector.expressions;
 
-import com.netease.arctic.data.PrimaryKeyData;
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.data.PrimaryKeyData;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;

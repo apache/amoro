@@ -20,9 +20,9 @@ package org.apache.amoro.flink.write.hidden;
 
 import static org.apache.amoro.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
 
-import com.netease.arctic.log.LogData;
 import org.apache.amoro.flink.shuffle.LogRecordV1;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
+import org.apache.amoro.log.LogData;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.Schema;

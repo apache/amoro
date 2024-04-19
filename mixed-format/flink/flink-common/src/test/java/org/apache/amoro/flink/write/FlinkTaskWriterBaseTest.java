@@ -18,16 +18,16 @@
 
 package org.apache.amoro.flink.write;
 
-import static com.netease.arctic.BasicTableTestHelper.PRIMARY_KEY_SPEC;
+import static org.apache.amoro.BasicTableTestHelper.PRIMARY_KEY_SPEC;
 
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import org.apache.amoro.flink.FlinkTableTestBase;
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.source.DataIterator;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.data.RowData;

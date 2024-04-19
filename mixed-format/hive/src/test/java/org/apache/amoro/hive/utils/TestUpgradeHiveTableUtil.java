@@ -18,18 +18,18 @@
 
 package org.apache.amoro.hive.utils;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.catalog.CatalogTestBase;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.properties.HiveTableProperties;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.catalog.CatalogTestBase;
+import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.hive.table.UnkeyedHiveTable;
+import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.Partition;

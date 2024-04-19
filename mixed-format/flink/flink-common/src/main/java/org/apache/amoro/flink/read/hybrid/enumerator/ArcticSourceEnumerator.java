@@ -23,7 +23,6 @@ import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STAR
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static org.apache.amoro.flink.util.ArcticUtils.loadArcticTable;
 
-import com.netease.arctic.table.KeyedTable;
 import org.apache.amoro.flink.read.hybrid.assigner.ShuffleSplitAssigner;
 import org.apache.amoro.flink.read.hybrid.assigner.SplitAssigner;
 import org.apache.amoro.flink.read.hybrid.reader.ArcticSourceReader;
@@ -34,6 +33,7 @@ import org.apache.amoro.flink.read.hybrid.split.SplitRequestEvent;
 import org.apache.amoro.flink.read.hybrid.split.TemporalJoinSplits;
 import org.apache.amoro.flink.read.source.ArcticScanContext;
 import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.table.KeyedTable;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.util.FlinkRuntimeException;

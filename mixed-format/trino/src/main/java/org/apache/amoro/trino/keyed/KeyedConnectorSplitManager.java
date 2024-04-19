@@ -20,11 +20,11 @@ package org.apache.amoro.trino.keyed;
 
 import static io.trino.plugin.iceberg.ExpressionConverter.toIcebergExpression;
 
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.CombinedScanTask;
-import com.netease.arctic.scan.KeyedTableScan;
-import com.netease.arctic.scan.KeyedTableScanTask;
-import com.netease.arctic.table.KeyedTable;
+import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.CombinedScanTask;
+import org.apache.amoro.scan.KeyedTableScan;
+import org.apache.amoro.scan.KeyedTableScanTask;
+import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.trino.ArcticSessionProperties;
 import org.apache.amoro.trino.ArcticTransactionManager;
 import org.apache.amoro.trino.util.MetricUtil;

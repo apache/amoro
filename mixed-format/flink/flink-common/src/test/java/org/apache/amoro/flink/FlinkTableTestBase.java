@@ -18,12 +18,12 @@
 
 package org.apache.amoro.flink;
 
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.flink.write.ArcticRowDataTaskWriterFactory;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.AppendFiles;

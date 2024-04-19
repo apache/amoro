@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.interceptor;
 
-import com.netease.arctic.table.ArcticTable;
 import org.apache.amoro.flink.util.ReflectionUtil;
+import org.apache.amoro.table.ArcticTable;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;

@@ -29,13 +29,13 @@ import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_
 import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_STRATEGY_DATA_TYPE;
 import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_STRATEGY_EXPR;
 
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.catalog.CatalogTestBase;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
+import org.apache.amoro.catalog.CatalogTestBase;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
+import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.StateBackend;

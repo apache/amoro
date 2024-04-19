@@ -23,10 +23,10 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
 import static org.apache.iceberg.relocated.com.google.common.base.Throwables.throwIfInstanceOf;
 
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.table.MetadataColumns;
+import org.apache.amoro.data.DataFileType;
+import org.apache.amoro.data.PrimaryKeyedFile;
+import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.table.MetadataColumns;
 import org.apache.amoro.trino.delete.TrinoDeleteFile;
 import org.apache.amoro.trino.delete.TrinoRow;
 import org.apache.amoro.trino.unkeyed.IcebergPageSourceProvider;

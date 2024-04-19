@@ -20,7 +20,7 @@ package org.apache.spark.sql.amoro.catalyst
 
 import java.util.UUID
 
-import com.netease.arctic.data.PrimaryKeyData
+import org.apache.amoro.data.PrimaryKeyData
 import org.apache.amoro.spark.SparkInternalRowWrapper
 import org.apache.amoro.spark.sql.connector.expressions.FileIndexBucket
 import org.apache.iceberg.Schema

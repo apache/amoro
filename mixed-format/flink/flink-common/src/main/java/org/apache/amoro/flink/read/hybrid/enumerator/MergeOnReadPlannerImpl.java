@@ -21,10 +21,10 @@ package org.apache.amoro.flink.read.hybrid.enumerator;
 import static org.apache.amoro.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
 import static org.apache.amoro.flink.util.ArcticUtils.loadArcticTable;
 
-import com.netease.arctic.table.KeyedTable;
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.table.KeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.expressions.Expression;

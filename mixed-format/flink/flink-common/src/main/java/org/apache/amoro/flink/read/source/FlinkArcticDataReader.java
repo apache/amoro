@@ -18,13 +18,13 @@
 
 package org.apache.amoro.flink.read.source;
 
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.reader.DeleteFilter;
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.flink.read.AdaptHiveFlinkParquetReaders;
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveUnkeyedDataReader;
+import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.reader.DeleteFilter;
+import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.FileScanTask;

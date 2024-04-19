@@ -18,12 +18,12 @@
 
 package org.apache.amoro.flink.util;
 
-import com.netease.arctic.io.ArcticFileIO;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import org.apache.amoro.flink.interceptor.KerberosInterceptor;
 import org.apache.amoro.flink.interceptor.KerberosInvocationHandler;
 import org.apache.amoro.flink.interceptor.ProxyFactory;
+import org.apache.amoro.io.ArcticFileIO;
 
 /**
  * A proxy util wraps an object with the kerberos authenticate ability by {@link

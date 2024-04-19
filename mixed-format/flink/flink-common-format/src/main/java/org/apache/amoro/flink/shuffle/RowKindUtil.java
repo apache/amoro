@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.shuffle;
 
-import com.netease.arctic.data.ChangeAction;
+import org.apache.amoro.data.ChangeAction;
 import org.apache.flink.types.RowKind;
 
 /** An util that converts between {@link RowKind} and {@link ChangeAction}. */

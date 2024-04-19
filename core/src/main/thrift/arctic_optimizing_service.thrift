@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-namespace java com.netease.arctic.api
+namespace java org.apache.amoro.api
 
 include "arctic_commons.thrift"
 

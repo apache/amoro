@@ -21,10 +21,10 @@ package org.apache.amoro.flink.read;
 import static org.apache.amoro.flink.write.TestArcticFileWriter.TARGET_FILE_SIZE;
 import static org.apache.amoro.flink.write.TestArcticFileWriter.createUnkeyedTaskWriter;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableFormat;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
+import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.flink.table.FlinkSource;
