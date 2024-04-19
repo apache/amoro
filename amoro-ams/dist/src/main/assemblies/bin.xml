@@ -30,7 +30,7 @@
     <files>
         <file>
             <source>
-                ../optimizer/flink-optimizer/target/flink-optimizer-${project.version}-jar-with-dependencies.jar
+                ../amoro-ams-optimizer/flink-optimizer/target/flink-optimizer-${project.version}-jar-with-dependencies.jar
             </source>
             <outputDirectory>plugin/optimizer/flink</outputDirectory>
             <destName>optimizer-job.jar</destName>
@@ -38,7 +38,7 @@
         </file>
         <file>
             <source>
-                ../optimizer/spark-optimizer/target/spark-optimizer-${project.version}-jar-with-dependencies.jar
+                ../amoro-ams-optimizer/spark-optimizer/target/spark-optimizer-${project.version}-jar-with-dependencies.jar
             </source>
             <outputDirectory>plugin/optimizer/spark</outputDirectory>
             <destName>optimizer-job.jar</destName>
@@ -46,14 +46,14 @@
         </file>
         <file>
             <source>
-                ../metric-reporter/prometheus-reporter/target/prometheus-reporter-${project.version}-jar-with-dependencies.jar
+                ../amoro-ams-metric-reporter/prometheus-reporter/target/prometheus-reporter-${project.version}-jar-with-dependencies.jar
             </source>
             <outputDirectory>plugin/metrics-reporter</outputDirectory>
             <destName>prometheus-reporter.jar</destName>
             <fileMode>0644</fileMode>
         </file>
         <file>
-            <source>../server/target/amoro-ams-server-${project.version}.jar</source>
+            <source>../amoro-ams-server/target/amoro-ams-server-${project.version}.jar</source>
             <outputDirectory>lib/</outputDirectory>
             <destName>amoro-ams-server-${project.version}.jar</destName>
             <fileMode>0644</fileMode>
@@ -77,22 +77,22 @@
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../server/src/main/resources/mysql</directory>
+            <directory>../amoro-ams-server/src/main/resources/mysql</directory>
             <outputDirectory>conf/mysql</outputDirectory>
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../server/src/main/resources/postgres</directory>
+            <directory>../amoro-ams-server/src/main/resources/postgres</directory>
             <outputDirectory>conf/postgres</outputDirectory>
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../server/src/main/resources/derby</directory>
+            <directory>../amoro-ams-server/src/main/resources/derby</directory>
             <outputDirectory>conf/derby</outputDirectory>
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../server/target/amoro-ams-server-dependency/lib</directory>
+            <directory>../amoro-ams-server/target/amoro-ams-server-dependency/lib</directory>
             <outputDirectory>lib/</outputDirectory>
             <fileMode>0644</fileMode>
         </fileSet>
