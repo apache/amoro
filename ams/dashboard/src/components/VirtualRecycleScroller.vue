@@ -41,7 +41,7 @@ import { defineComponent } from 'vue'
 import { RecycleScroller } from 'vue-virtual-scroller'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import { IMap, tableTypeIconMap } from '@/types/common.type'
-import { Empty } from 'ant-design-vue'
+import { Empty } from 'ant-design-vue-v3'
 
 export default defineComponent ({
   components: {

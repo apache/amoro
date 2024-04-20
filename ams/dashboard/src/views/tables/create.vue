@@ -56,7 +56,7 @@ limitations under the License.
 
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
-import type { SelectProps } from 'ant-design-vue'
+import type { SelectProps } from 'ant-design-vue-v3'
 import { LeftOutlined } from '@ant-design/icons-vue'
 import { TableBasicInfo } from '@/types/common.type'
 import { usePlaceholder } from '@/hooks/usePlaceholder'

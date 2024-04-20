@@ -40,7 +40,7 @@
             <a-input-search
               v-model:value="DBSearchInput"
               :placeholder="placeholder.filterDBPh"
-              @change="(val) => handleSearch('db',val)"
+              @change="() => handleSearch('db')"
               class="theme-dark"
             >
               <template #prefix>
@@ -65,7 +65,7 @@
             <a-input-search
               v-model:value="tableSearchInput"
               :placeholder="placeholder.filterTablePh"
-              @change="(val) => handleSearch('table', val)"
+              @change="() => handleSearch('table')"
               class="theme-dark"
             >
               <template #prefix>
@@ -120,7 +120,7 @@ export default defineComponent({
     virtualRecycleScroller
   },
   emits: ['goCreatePage'],
-  setup(props, { emit }) {
+  setup(_, { emit }) {
     const router = useRouter()
     const route = useRoute()
     const store = useStore()
@@ -271,7 +271,7 @@ export default defineComponent({
         return
       }
       if (state.allDatabaseListLoaded.length) {
-        state.databaseList = filteredDatabases
+        state.databaseList = filteredDatabases.value
         return
       }
 
@@ -303,7 +303,7 @@ export default defineComponent({
         return
       }
       if (state.allTableListLoaded.length) {
-        state.tableList = filteredTables
+        state.tableList = filteredTables.value
         return
       }
 

@@ -59,7 +59,7 @@ import { getOperations } from '@/services/table.service'
 import { useRoute } from 'vue-router'
 import { dateFormat } from '@/utils'
 import useClipboard from 'vue-clipboard3'
-import { message } from 'ant-design-vue'
+import { message } from 'ant-design-vue-v3'
 
 const { toClipboard } = useClipboard()
 const { t } = useI18n()

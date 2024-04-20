@@ -23,8 +23,8 @@
 </template>
 
 <script lang="ts" setup>
-import enUS from 'ant-design-vue/es/locale/en_US'
-import zhCN from 'ant-design-vue/es/locale/zh_CN'
+import enUS from 'ant-design-vue-v3/es/locale/en_US'
+import zhCN from 'ant-design-vue-v3/es/locale/zh_CN'
 import { ref } from 'vue'
 
 const locale = ref(enUS.locale)

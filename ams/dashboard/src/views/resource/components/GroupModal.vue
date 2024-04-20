@@ -73,7 +73,7 @@ import {
   updateResourceGroupsAPI
 } from '@/services/optimize.service'
 import Properties from '@/views/catalogs/Properties.vue'
-import { message } from 'ant-design-vue'
+import { message } from 'ant-design-vue-v3'
 
 import { useI18n } from 'vue-i18n'
 
