@@ -227,6 +227,7 @@ public class TableProperties {
 
   public static final String FILE_FORMAT_ORC = "orc";
   public static final String BASE_FILE_FORMAT = "base.write.format";
+  public static final String DELTA_FILE_FORMAT = "delta.write.format";
   public static final String BASE_FILE_FORMAT_DEFAULT = FILE_FORMAT_PARQUET;
 
   public static final String CHANGE_FILE_FORMAT = "change.write.format";
