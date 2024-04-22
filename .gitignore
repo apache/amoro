@@ -68,8 +68,8 @@ conf/
 *.tgz
 
 # dashboard static resources
-ams/dashboard/src/main/resources/static/
-ams/dashboard/node/
+amoro-ams/amoro-ams-dashboard/src/main/resources/static/
+amoro-ams/amoro-ams-dashboard/node/
 
-!ams/dist/src/main/arctic-bin/bin/
-!ams/dist/src/main/arctic-bin/conf/
+!amoro-ams/dist/src/main/arctic-bin/bin/
+!amoro-ams/dist/src/main/arctic-bin/conf/
