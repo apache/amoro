@@ -33,6 +33,8 @@
   </a-modal>
 </template>
 <script lang="ts">
+import { Select as ASelect } from 'ant-design-vue'
+
 import { defineComponent, reactive, ref } from 'vue'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 
@@ -42,6 +44,9 @@ interface FormState {
 }
 
 export default defineComponent({
+  components: {
+    ASelect
+  },
   props: {
     visible: {
       type: Boolean,
@@ -53,7 +58,7 @@ export default defineComponent({
     }
   },
   emits: ['cancel'],
-  setup(props, { emit }) {
+  setup(_, { emit }) {
     const placeholder = reactive(usePlaceholder())
 
     const formRef = ref()

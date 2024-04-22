@@ -87,6 +87,8 @@ limitations under the License.
 </template>
 
 <script lang="ts" setup>
+import { Button as AButton } from 'ant-design-vue'
+
 import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'

@@ -191,6 +191,8 @@ import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { useRoute } from 'vue-router'
 import { getResourceGroupsListAPI } from '@/services/optimize.service'
 
+import { Select as ASelect, Button as AButton } from 'ant-design-vue'
+
 interface IStorageConfigItem {
   label: string
   value: string
@@ -241,9 +243,6 @@ const isNewCatalog = computed(() => {
 // Hadoop and Custom support Iceberg format only.
 const isHiveMetastore = computed(() => {
   return formState.catalog.type === 'hive'
-})
-const isArcticMetastore = computed(() => {
-  return formState.catalog.type === 'ams'
 })
 const loading = ref<boolean>(false)
 const formRef = ref()

@@ -61,6 +61,8 @@ import { dateFormat } from '@/utils'
 import useClipboard from 'vue-clipboard3'
 import { message } from 'ant-design-vue-v3'
 
+import { Button as AButton } from 'ant-design-vue'
+
 const { toClipboard } = useClipboard()
 const { t } = useI18n()
 const columns: IColumns[] = shallowReactive([

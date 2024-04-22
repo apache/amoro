@@ -18,10 +18,6 @@
 
 import { App } from 'vue'
 import {
-  ConfigProvider,
-  Select,
-  Menu,
-  Button,
   Table,
   Tooltip,
   Input,
@@ -29,9 +25,6 @@ import {
   Form,
   InputNumber,
   Pagination,
-  Spin,
-  Divider,
-  Tabs,
   List,
   Breadcrumb,
   Checkbox,
@@ -46,14 +39,7 @@ import {
 } from 'ant-design-vue-v3'
 
 const compontens = [
-  ConfigProvider,
-  Spin,
-  Divider,
-  Tabs,
   InputNumber,
-  Select,
-  Menu,
-  Button,
   Tooltip,
   Table,
   Input,

@@ -61,6 +61,8 @@ import { bytesToSize, formatMS2Time, formatMS2DisplayTime } from '@/utils'
 import { Modal } from 'ant-design-vue-v3'
 import { useRouter } from 'vue-router'
 
+import { Select as ASelect } from 'ant-design-vue'
+
 const { t } = useI18n()
 const router = useRouter()
 
