@@ -19,7 +19,6 @@
 import { App } from 'vue'
 import {
   Modal,
-  Form,
   Pagination,
   List,
   Breadcrumb,
@@ -36,7 +35,6 @@ import {
 
 const compontens = [
   Modal,
-  Form,
   Pagination,
   List,
   Breadcrumb,

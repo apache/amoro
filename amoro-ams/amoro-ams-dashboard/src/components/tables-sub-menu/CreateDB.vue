@@ -33,7 +33,7 @@
   </a-modal>
 </template>
 <script lang="ts">
-import { Select as ASelect, Input as AInput } from 'ant-design-vue'
+import { Select as ASelect, Input as AInput, Form as AForm, FormItem as AFormItem } from 'ant-design-vue'
 
 import { defineComponent, reactive, ref } from 'vue'
 import { usePlaceholder } from '@/hooks/usePlaceholder'

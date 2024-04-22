@@ -67,7 +67,7 @@ import otherProperties from './components/Properties.vue'
 import { DetailColumnItem, IMap } from '@/types/common.type'
 import { getHiveTableDetail, upgradeHiveTable } from '@/services/table.service'
 
-import { Button as AButton } from 'ant-design-vue'
+import { Button as AButton, Form as AForm, FormItem as AFormItem } from 'ant-design-vue'
 
 const loading = ref<boolean>(false)
 const field = reactive<DetailColumnItem[]>([])

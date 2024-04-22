@@ -76,7 +76,7 @@ import { getUUid } from '@/utils/index'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { useI18n } from 'vue-i18n'
 
-import { Button as AButton, Table as ATable, Input as AInput } from 'ant-design-vue'
+import { Button as AButton, Table as ATable, Input as AInput, Form as AForm, FormItem as AFormItem } from 'ant-design-vue'
 
 const { t } = useI18n()
 const props = defineProps<{ propertiesObj: IMap<string>, isEdit: boolean }>()
