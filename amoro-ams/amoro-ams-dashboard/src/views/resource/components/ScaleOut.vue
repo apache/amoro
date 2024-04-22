@@ -50,6 +50,8 @@ import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { IIOptimizeGroupItem } from '@/types/common.type'
 import { scaleoutResource } from '@/services/optimize.service'
 
+import { Input as AInput } from 'ant-design-vue'
+
 interface FormState {
   resourceGroup: undefined | string;
   parallelism: number;

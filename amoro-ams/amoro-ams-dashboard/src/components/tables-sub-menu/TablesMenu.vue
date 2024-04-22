@@ -86,7 +86,7 @@
 </template>
 
 <script lang="ts">
-import { Select as ASelect } from 'ant-design-vue'
+import { Select as ASelect, InputSearch as AInputSearch } from 'ant-design-vue'
 
 import { defineComponent, onBeforeMount, reactive, toRefs, computed } from 'vue'
 import {

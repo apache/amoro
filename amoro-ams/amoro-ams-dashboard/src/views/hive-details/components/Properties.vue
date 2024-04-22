@@ -76,7 +76,7 @@ import { getUpgradeProperties } from '@/services/table.service'
 import { getUUid } from '@/utils/index'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 
-import { Button as AButton } from 'ant-design-vue'
+import { Button as AButton, Input as AInput } from 'ant-design-vue'
 
 interface IItem {
   key: string

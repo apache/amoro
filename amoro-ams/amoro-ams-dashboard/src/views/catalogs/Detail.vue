@@ -191,7 +191,7 @@ import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { useRoute } from 'vue-router'
 import { getResourceGroupsListAPI } from '@/services/optimize.service'
 
-import { Select as ASelect, Button as AButton } from 'ant-design-vue'
+import { Select as ASelect, Button as AButton, Input as AInput } from 'ant-design-vue'
 
 interface IStorageConfigItem {
   label: string

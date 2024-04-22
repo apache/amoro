@@ -18,10 +18,8 @@
 
 import { App } from 'vue'
 import {
-  Input,
   Modal,
   Form,
-  InputNumber,
   Pagination,
   List,
   Breadcrumb,
@@ -37,8 +35,6 @@ import {
 } from 'ant-design-vue-v3'
 
 const compontens = [
-  InputNumber,
-  Input,
   Modal,
   Form,
   Pagination,

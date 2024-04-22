@@ -75,7 +75,7 @@ import {
 import Properties from '@/views/catalogs/Properties.vue'
 import { message } from 'ant-design-vue-v3'
 
-import { Select as ASelect } from 'ant-design-vue'
+import { Select as ASelect, Input as AInput } from 'ant-design-vue'
 
 import { useI18n } from 'vue-i18n'
 

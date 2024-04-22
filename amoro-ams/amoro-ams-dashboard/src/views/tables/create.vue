@@ -61,7 +61,7 @@ import { LeftOutlined } from '@ant-design/icons-vue'
 import { TableBasicInfo } from '@/types/common.type'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 
-import { Select as ASelect } from 'ant-design-vue'
+import { Select as ASelect, Input as AInput } from 'ant-design-vue'
 
 const emit = defineEmits<{
  (e: 'goBack'): void
