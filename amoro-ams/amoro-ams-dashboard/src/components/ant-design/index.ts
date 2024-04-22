@@ -19,9 +19,6 @@
 import { App } from 'vue'
 import {
   Modal,
-  Pagination,
-  List,
-  Breadcrumb,
   Checkbox,
   AutoComplete,
   Empty,
@@ -35,9 +32,6 @@ import {
 
 const compontens = [
   Modal,
-  Pagination,
-  List,
-  Breadcrumb,
   Checkbox,
   AutoComplete,
   Empty,

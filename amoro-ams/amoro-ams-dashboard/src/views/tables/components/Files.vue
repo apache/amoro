@@ -95,7 +95,7 @@ import { useRoute } from 'vue-router'
 import { dateFormat } from '@/utils'
 import { SearchOutlined, CloseCircleOutlined } from '@ant-design/icons-vue'
 
-import { Button as AButton, Table as ATable, Tooltip as ATooltip, InputSearch as AInputSearch } from 'ant-design-vue'
+import { Button as AButton, Table as ATable, Tooltip as ATooltip, InputSearch as AInputSearch, Breadcrumb as ABreadcrumb, BreadcrumbItem as ABreadcrumbItem } from 'ant-design-vue'
 
 
 const hasBreadcrumb = ref<boolean>(false)
