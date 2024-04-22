@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -23,144 +22,119 @@ limitations under the License.
       <div class="content-wrap">
         <a-form ref="formRef" :model="formState" class="catalog-form">
           <a-form-item>
-            <p class="header">{{$t('basic')}}</p>
+            <p class="header">{{ $t('basic') }}</p>
           </a-form-item>
-          <a-form-item :label="$t('name')" :name="['catalog', 'name']" :rules="[{ required: isEdit && isNewCatalog, validator: validatorName }]">
+          <a-form-item :label="$t('name')" :name="['catalog', 'name']"
+            :rules="[{ required: isEdit && isNewCatalog, validator: validatorName }]">
             <a-input v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.name" />
-            <span v-else class="config-value">{{formState.catalog.name}}</span>
+            <span v-else class="config-value">{{ formState.catalog.name }}</span>
           </a-form-item>
           <a-form-item :label="$t('type')" :name="['catalog', 'typeshow']">
-            <a-select
-              v-if="isEdit && isNewCatalog"
-              v-model:value="formState.catalog.typeshow"
-              :options="typwShowOptions"
-              :placeholder="placeholder.selectPh"
-              @change="changeTypeShow"
-            />
-            <span v-else>{{formState.catalog.typeshow}}</span>
+            <a-select v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.typeshow"
+              :options="typwShowOptions" :placeholder="placeholder.selectPh" @change="changeTypeShow" />
+            <span v-else>{{ formState.catalog.typeshow }}</span>
           </a-form-item>
-          <a-form-item :label="$t('metastore')" v-if="formState.catalog.typeshow === typeShowMap['External Catalog']" :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
-            <a-select
-              v-if="isEdit && isNewCatalog"
-              v-model:value="formState.catalog.type"
-              :options="catalogTypeOps"
-              :placeholder="placeholder.selectPh"
-              @change="changeMetastore"
-            />
-            <span v-else>{{metastoreType}}</span>
+          <a-form-item :label="$t('metastore')" v-if="formState.catalog.typeshow === typeShowMap['External Catalog']"
+            :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
+            <a-select v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.type" :options="catalogTypeOps"
+              :placeholder="placeholder.selectPh" @change="changeMetastore" />
+            <span v-else>{{ metastoreType }}</span>
           </a-form-item>
-          <a-form-item :label="$t('tableFormat')" :name="['tableFormatList']" :rules="[{ required: isEdit && isNewCatalog }]">
-            <a-checkbox-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormatList" @change="changeTableFormat">
-              <a-checkbox v-for="item in formatOptions" :key="item" :value="item">{{tableFormatText[item]}}</a-checkbox>
+          <a-form-item :label="$t('tableFormat')" :name="['tableFormatList']"
+            :rules="[{ required: isEdit && isNewCatalog }]">
+            <a-checkbox-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormatList"
+              @change="changeTableFormat">
+              <a-checkbox v-for="item in formatOptions" :key="item" :value="item">{{ tableFormatText[item] }}</a-checkbox>
             </a-checkbox-group>
           </a-form-item>
-          <a-form-item :label="$t('optimizerGroup')" :name="['catalog', 'optimizerGroup']" :rules="[{ required: isEdit }]">
-            <a-select
-              v-if="isEdit"
-              v-model:value="formState.catalog.optimizerGroup"
-              :options="optimizerGroupList"
-              :placeholder="placeholder.selectPh"
-            />
-            <span v-else>{{formState.catalog.optimizerGroup}}</span>
+          <a-form-item :label="$t('optimizerGroup')" :name="['catalog', 'optimizerGroup']"
+            :rules="[{ required: isEdit }]">
+            <a-select v-if="isEdit" v-model:value="formState.catalog.optimizerGroup" :options="optimizerGroupList"
+              :placeholder="placeholder.selectPh" />
+            <span v-else>{{ formState.catalog.optimizerGroup }}</span>
           </a-form-item>
           <a-form-item>
-            <p class="header">{{$t('storageConfigName')}}</p>
+            <p class="header">{{ $t('storageConfigName') }}</p>
           </a-form-item>
           <a-form-item label="Type" :name="['storageConfig', 'storage.type']" :rules="[{ required: isEdit }]">
-            <a-select
-              v-if="isEdit"
-              v-model:value="formState.storageConfig['storage.type']"
-              :placeholder="placeholder.selectPh"
-              :options="storageConfigTypeOps"
-            />
-            <span v-else class="config-value">{{formState.storageConfig['storage.type']}}</span>
+            <a-select v-if="isEdit" v-model:value="formState.storageConfig['storage.type']"
+              :placeholder="placeholder.selectPh" :options="storageConfigTypeOps" />
+            <span v-else class="config-value">{{ formState.storageConfig['storage.type'] }}</span>
           </a-form-item>
-          <a-form-item v-if="formState.storageConfig['storage.type'] === 'S3'" label="Endpoint" :name="['storageConfig', 'storage.s3.endpoint']" :rules="[{ required: false }]">
+          <a-form-item v-if="formState.storageConfig['storage.type'] === 'S3'" label="Endpoint"
+            :name="['storageConfig', 'storage.s3.endpoint']" :rules="[{ required: false }]">
             <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.endpoint']" />
-            <span v-else class="config-value">{{formState.storageConfig['storage.s3.endpoint']}}</span>
+            <span v-else class="config-value">{{ formState.storageConfig['storage.s3.endpoint'] }}</span>
           </a-form-item>
-          <a-form-item v-if="formState.storageConfig['storage.type'] === 'S3'" label="Region" :name="['storageConfig', 'storage.s3.region']" :rules="[{ required: false }]">
+          <a-form-item v-if="formState.storageConfig['storage.type'] === 'S3'" label="Region"
+            :name="['storageConfig', 'storage.s3.region']" :rules="[{ required: false }]">
             <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.region']" />
-            <span v-else class="config-value">{{formState.storageConfig['storage.s3.region']}}</span>
+            <span v-else class="config-value">{{ formState.storageConfig['storage.s3.region'] }}</span>
           </a-form-item>
           <div v-if="formState.storageConfig['storage.type'] === 'Hadoop'">
-            <a-form-item
-              v-for="config in formState.storageConfigArray"
-              :key="config.label"
-              :label="config.label"
+            <a-form-item v-for="config in formState.storageConfigArray" :key="config.label" :label="config.label"
               class="g-flex-ac">
-              <a-upload
-                v-if="isEdit"
-                v-model:file-list="config.fileList"
-                name="file"
-                accept=".xml"
-                :showUploadList="false"
-                :action="uploadUrl"
-                :disabled="config.uploadLoading"
-                @change="(args) => uploadFile(args, config, 'STORAGE')"
-              >
-                <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">{{ $t('upload') }}</a-button>
+              <a-upload v-if="isEdit" v-model:file-list="config.fileList" name="file" accept=".xml"
+                :showUploadList="false" :action="uploadUrl" :disabled="config.uploadLoading"
+                @change="(args) => uploadFile(args, config, 'STORAGE')">
+                <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">{{ $t('upload')
+                  }}</a-button>
               </a-upload>
-              <span v-if="config.isSuccess || config.fileName" class="config-value" :class="{ 'view-active': !!config.fileUrl }" @click="viewFileDetail(config.fileUrl)">{{ config.fileName }}</span>
+              <span v-if="config.isSuccess || config.fileName" class="config-value"
+                :class="{ 'view-active': !!config.fileUrl }" @click="viewFileDetail(config.fileUrl)">{{ config.fileName
+                }}</span>
             </a-form-item>
           </div>
           <a-form-item>
-            <p class="header">{{$t('authenticationConfig')}}</p>
+            <p class="header">{{ $t('authenticationConfig') }}</p>
           </a-form-item>
           <a-form-item label="Type" :name="['authConfig', 'auth.type']" :rules="[{ required: isEdit }]">
-            <a-select
-              v-if="isEdit"
-              v-model:value="formState.authConfig['auth.type']"
-              :placeholder="placeholder.selectPh"
-              :options="authTypeOptions"
-            />
-            <span v-else class="config-value">{{formState.authConfig['auth.type']}}</span>
+            <a-select v-if="isEdit" v-model:value="formState.authConfig['auth.type']"
+              :placeholder="placeholder.selectPh" :options="authTypeOptions" />
+            <span v-else class="config-value">{{ formState.authConfig['auth.type'] }}</span>
           </a-form-item>
-          <a-form-item v-if="formState.authConfig['auth.type'] === 'SIMPLE'" label="Hadoop Username" :name="['authConfig', 'auth.simple.hadoop_username']" :rules="[{ required: isEdit }]">
+          <a-form-item v-if="formState.authConfig['auth.type'] === 'SIMPLE'" label="Hadoop Username"
+            :name="['authConfig', 'auth.simple.hadoop_username']" :rules="[{ required: isEdit }]">
             <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.simple.hadoop_username']" />
-            <span v-else class="config-value">{{formState.authConfig['auth.simple.hadoop_username']}}</span>
+            <span v-else class="config-value">{{ formState.authConfig['auth.simple.hadoop_username'] }}</span>
           </a-form-item>
-          <a-form-item v-if="formState.authConfig['auth.type'] === 'KERBEROS'" label="Kerberos Principal" :name="['authConfig', 'auth.kerberos.principal']" :rules="[{ required: isEdit }]">
+          <a-form-item v-if="formState.authConfig['auth.type'] === 'KERBEROS'" label="Kerberos Principal"
+            :name="['authConfig', 'auth.kerberos.principal']" :rules="[{ required: isEdit }]">
             <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.kerberos.principal']" />
-            <span v-else class="config-value">{{formState.authConfig['auth.kerberos.principal']}}</span>
+            <span v-else class="config-value">{{ formState.authConfig['auth.kerberos.principal'] }}</span>
           </a-form-item>
           <div v-if="formState.authConfig['auth.type'] === 'KERBEROS'">
-            <a-form-item
-              v-for="config in formState.authConfigArray"
-              :key="config.label"
-              :label="config.label"
+            <a-form-item v-for="config in formState.authConfigArray" :key="config.label" :label="config.label"
               class="g-flex-ac">
-              <a-upload
-                v-if="isEdit"
-                v-model:file-list="config.fileList"
-                name="file"
-                :accept="config.key === 'auth.kerberos.keytab' ? '.keytab' : '.conf'"
-                :showUploadList="false"
-                :action="uploadUrl"
-                :disabled="config.uploadLoading"
-                @change="(args) => uploadFile(args, config)"
-              >
-                <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">{{$t('upload')}}</a-button>
+              <a-upload v-if="isEdit" v-model:file-list="config.fileList" name="file"
+                :accept="config.key === 'auth.kerberos.keytab' ? '.keytab' : '.conf'" :showUploadList="false"
+                :action="uploadUrl" :disabled="config.uploadLoading" @change="(args) => uploadFile(args, config)">
+                <a-button type="primary" ghost :loading="config.uploadLoading"
+                  class="g-mr-12">{{ $t('upload') }}</a-button>
               </a-upload>
-              <span v-if="config.isSuccess || config.fileName" class="config-value auth-filename" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)" :title="config.fileName">{{config.fileName}}</span>
+              <span v-if="config.isSuccess || config.fileName" class="config-value auth-filename"
+                :class="{ 'view-active': !!config.fileUrl }" @click="viewFileDetail(config.fileUrl)"
+                :title="config.fileName">{{ config.fileName }}</span>
             </a-form-item>
           </div>
-          <a-form-item v-if="formState.authConfig['auth.type'] === 'AK/SK'" label="Access Key" :name="['authConfig', 'auth.ak_sk.access_key']" :rules="[{ required: isEdit }]">
+          <a-form-item v-if="formState.authConfig['auth.type'] === 'AK/SK'" label="Access Key"
+            :name="['authConfig', 'auth.ak_sk.access_key']" :rules="[{ required: isEdit }]">
             <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.access_key']" />
-            <span v-else class="config-value">{{formState.authConfig['auth.ak_sk.access_key']}}</span>
+            <span v-else class="config-value">{{ formState.authConfig['auth.ak_sk.access_key'] }}</span>
           </a-form-item>
-          <a-form-item v-if="formState.authConfig['auth.type'] === 'AK/SK'" label="Secret Key" :name="['authConfig', 'auth.ak_sk.secret_key']" :rules="[{ required: isEdit }]">
+          <a-form-item v-if="formState.authConfig['auth.type'] === 'AK/SK'" label="Secret Key"
+            :name="['authConfig', 'auth.ak_sk.secret_key']" :rules="[{ required: isEdit }]">
             <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.secret_key']" />
-            <span v-else class="config-value">{{formState.authConfig['auth.ak_sk.secret_key']}}</span>
+            <span v-else class="config-value">{{ formState.authConfig['auth.ak_sk.secret_key'] }}</span>
           </a-form-item>
           <a-form-item>
-            <p class="header">{{$t('properties')}}</p>
+            <p class="header">{{ $t('properties') }}</p>
           </a-form-item>
           <a-form-item>
             <Properties :propertiesObj="formState.properties" :isEdit="isEdit" ref="propertiesRef" />
           </a-form-item>
           <a-form-item>
-            <p class="header">{{$t('tableProperties')}}</p>
+            <p class="header">{{ $t('tableProperties') }}</p>
           </a-form-item>
           <a-form-item>
             <Properties :propertiesObj="formState.tableProperties" :isEdit="isEdit" ref="tablePropertiesRef" />
@@ -169,12 +143,12 @@ limitations under the License.
       </div>
     </div>
     <div v-if="isEdit" class="footer-btn">
-      <a-button type="primary" @click="handleSave" class="save-btn g-mr-12">{{$t('save')}}</a-button>
-      <a-button @click="handleCancle">{{$t('cancel')}}</a-button>
+      <a-button type="primary" @click="handleSave" class="save-btn g-mr-12">{{ $t('save') }}</a-button>
+      <a-button @click="handleCancle">{{ $t('cancel') }}</a-button>
     </div>
     <div v-if="!isEdit" class="footer-btn">
-      <a-button type="primary" @click="handleEdit" class="edit-btn g-mr-12">{{$t('edit')}}</a-button>
-      <a-button @click="handleRemove" class="remove-btn">{{$t('remove')}}</a-button>
+      <a-button type="primary" @click="handleEdit" class="edit-btn g-mr-12">{{ $t('edit') }}</a-button>
+      <a-button @click="handleRemove" class="remove-btn">{{ $t('remove') }}</a-button>
     </div>
     <u-loading v-if="loading" />
   </div>
@@ -191,7 +165,16 @@ import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { useRoute } from 'vue-router'
 import { getResourceGroupsListAPI } from '@/services/optimize.service'
 
-import { Select as ASelect, Button as AButton, Input as AInput, Form as AForm, FormItem as AFormItem } from 'ant-design-vue'
+import {
+  Select as ASelect,
+  Button as AButton,
+  Input as AInput,
+  Form as AForm,
+  FormItem as AFormItem,
+  Checkbox as ACheckbox,
+  CheckboxGroup as ACheckboxGroup,
+  Upload as AUpload
+} from 'ant-design-vue'
 
 interface IStorageConfigItem {
   label: string
@@ -220,8 +203,8 @@ const typeShowMap = { 'Internal Catalog': 'Internal Catalog', 'External Catalog'
 
 const props = defineProps<{ isEdit: boolean }>()
 const emit = defineEmits<{
- (e: 'updateEdit', val: boolean, catalog?: ICatalogItem): void,
- (e: 'updateCatalogs'): void
+  (e: 'updateEdit', val: boolean, catalog?: ICatalogItem): void,
+  (e: 'updateCatalogs'): void
 }>()
 
 const { t } = useI18n()
@@ -262,7 +245,7 @@ const tableFormatText = {
   [tableFormatMap.MIXED_ICEBERG]: 'Mixed Iceberg',
   [tableFormatMap.PAIMON]: 'Paimon'
 }
-const storeSupportFormat: {[prop:string]: string[]} = {
+const storeSupportFormat: { [prop: string]: string[] } = {
   ams: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
   hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON],
   hadoop: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON],
@@ -289,7 +272,7 @@ const typwShowOptions = ref([
   { label: typeShowMap['Internal Catalog'], value: typeShowMap['Internal Catalog'] },
   { label: typeShowMap['External Catalog'], value: typeShowMap['External Catalog'] }
 ])
-const formState:FormState = reactive({
+const formState: FormState = reactive({
   catalog: {
     name: '',
     type: 'ams',
@@ -343,16 +326,16 @@ watch(() => route.query,
   (value) => {
     value && initData()
   }, {
-    immediate: true,
-    deep: true
-  }
+  immediate: true,
+  deep: true
+}
 )
 const catalogTypeOps = reactive<ILableAndValue[]>([])
 const optimizerGroupList = ref<ILableAndValue[]>([])
 function initData() {
   getConfigInfo()
 }
-const getOptimizerGroupList = async() => {
+const getOptimizerGroupList = async () => {
   const res = await getResourceGroupsListAPI()
   const list = (res || []).map((item: IIOptimizeGroupItem) => ({ lable: item.resourceGroup.name, value: item.resourceGroup.name }))
   optimizerGroupList.value = list
@@ -609,7 +592,7 @@ function getFileIdParams() {
 function handleSave() {
   formRef.value
     .validateFields()
-    .then(async() => {
+    .then(async () => {
       const { catalog, tableFormatList, storageConfig, authConfig } = formState
       const properties = await propertiesRef.value.getProperties()
       const tableProperties = await tablePropertiesRef.value.getProperties()
@@ -640,7 +623,7 @@ function handleSave() {
         formRef.value.resetFields()
       }).catch(() => {
         message.error(`${t('save')} ${t('failed')}`)
-      }).finally (() => {
+      }).finally(() => {
         loading.value = false
       })
     })
@@ -655,7 +638,7 @@ function handleCancle() {
 async function deleteCatalogModal() {
   Modal.confirm({
     title: t('deleteCatalogModalTitle'),
-    onOk: async() => {
+    onOk: async () => {
       await delCatalog(formState.catalog.name)
       message.success(`${t('remove')} ${t('success')}`)
       emit('updateEdit', false, {})
@@ -708,38 +691,47 @@ onMounted(() => {
   flex-direction: column;
   border: 1px solid #e8e8f0;
   border-left: 0;
+
   .detail-content-wrap {
     height: 100%;
     padding-right: 200px;
     overflow: auto;
   }
+
   .content-wrap {
     display: flex;
     flex: 1;
     overflow: auto;
     flex-direction: column;
+
     .ant-form-item {
       margin-bottom: 8px;
     }
+
     :deep(.ant-form-item-label) {
-      > label {
+      >label {
         word-break: break-all;
         white-space: pre-wrap;
       }
+
       width: 280px;
       margin-right: 16px;
     }
+
     .header {
       font-size: 16px;
       font-weight: 600;
       color: #102048;
     }
+
     .view-active {
       color: @primary-color;
       cursor: pointer;
     }
+
     .config-value {
       word-break: break-all;
+
       &.auth-filename {
         max-width: 72%;
         overflow: hidden;
@@ -751,14 +743,18 @@ onMounted(() => {
       }
     }
   }
+
   .footer-btn {
     height: 44px;
     flex-shrink: 0;
     padding-top: 12px;
     background-color: #fff;
-    .edit-btn, .save-btn {
+
+    .edit-btn,
+    .save-btn {
       min-width: 60px;
     }
+
     .remove-btn {
       &:hover {
         background-color: #ff4d4f;

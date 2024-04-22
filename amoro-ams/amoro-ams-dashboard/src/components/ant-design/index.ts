@@ -19,26 +19,12 @@
 import { App } from 'vue'
 import {
   Modal,
-  Checkbox,
-  AutoComplete,
-  Empty,
-  Upload,
-  Radio,
-  Collapse,
-  Row,
   Col,
   Dropdown
 } from 'ant-design-vue-v3'
 
 const compontens = [
   Modal,
-  Checkbox,
-  AutoComplete,
-  Empty,
-  Upload,
-  Radio,
-  Collapse,
-  Row,
   Col,
   Dropdown
 ]
