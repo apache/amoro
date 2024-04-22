@@ -39,9 +39,9 @@
     </licenses>
 
     <modules>
-        <module>core</module>
-        <module>ams</module>
-        <module>mixed-format</module>
+        <module>amoro-core</module>
+        <module>amoro-ams</module>
+        <module>amoro-mixed-format</module>
     </modules>
 
     <scm>

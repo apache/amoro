@@ -33,12 +33,12 @@
     <url>https://amoro.apache.org</url>
 
     <modules>
-        <module>api</module>
-        <module>server</module>
-        <module>dashboard</module>
-        <module>optimizer</module>
+        <module>amoro-ams-api</module>
+        <module>amoro-ams-server</module>
+        <module>amoro-ams-dashboard</module>
+        <module>amoro-ams-optimizer</module>
+        <module>amoro-ams-metric-reporter</module>
         <module>dist</module>
-        <module>metric-reporter</module>
     </modules>
 
 </project>

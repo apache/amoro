@@ -35,10 +35,10 @@
     <url>https://amoro.apache.org</url>
 
     <modules>
-        <module>flink</module>
-        <module>spark</module>
-        <module>hive</module>
-        <module>trino</module>
+        <module>amoro-mixed-format-flink</module>
+        <module>amoro-mixed-format-spark</module>
+        <module>amoro-mixed-format-hive</module>
+        <module>amoro-mixed-format-trino</module>
     </modules>
 
 </project>
