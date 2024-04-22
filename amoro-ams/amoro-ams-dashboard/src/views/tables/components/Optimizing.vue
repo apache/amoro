@@ -138,7 +138,7 @@ import { useRoute } from 'vue-router'
 import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
 
-import { Button as AButton, Table as ATable } from 'ant-design-vue'
+import { Button as AButton, Table as ATable, Tooltip as ATooltip } from 'ant-design-vue'
 
 const hasBreadcrumb = ref<boolean>(false)
 

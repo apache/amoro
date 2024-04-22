@@ -45,7 +45,7 @@ import useStore from '@/store'
 import { getVersionInfo } from '@/services/global.service'
 import loginService from '@/services/login.service'
 
-import { Button as AButton } from 'ant-design-vue'
+import { Button as AButton, Tooltip as ATooltip } from 'ant-design-vue'
 
 interface IVersion {
   version: string

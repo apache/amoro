@@ -87,7 +87,7 @@ limitations under the License.
 </template>
 
 <script lang="ts" setup>
-import { Button as AButton, Table as ATable } from 'ant-design-vue'
+import { Button as AButton, Table as ATable, Tooltip as ATooltip } from 'ant-design-vue'
 
 import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
