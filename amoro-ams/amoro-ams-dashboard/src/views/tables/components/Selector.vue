@@ -85,7 +85,7 @@ limitations under the License.
 
 <script lang="ts" setup>
 // TODO: replace to antv-4. After all replacements are completed, switch to automatic import.
-import { Tabs as ATabs, TabPane as ATabPane, Select as ASelect, SelectOption as ASelectOption, Button as AButton, Input as AInput } from 'ant-design-vue'
+import { Dropdown as ADropdown, Tabs as ATabs, TabPane as ATabPane, Select as ASelect, SelectOption as ASelectOption, Button as AButton, Input as AInput } from 'ant-design-vue'
 
 import { computed, onMounted, reactive, ref } from 'vue'
 import { CheckOutlined, DownOutlined } from '@ant-design/icons-vue'

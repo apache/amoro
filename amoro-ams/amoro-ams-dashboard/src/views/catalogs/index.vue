@@ -40,11 +40,10 @@ import { onMounted, reactive, ref } from 'vue'
 import { ICatalogItem } from '@/types/common.type'
 import { getCatalogList } from '@/services/table.service'
 import Detail from './Detail.vue'
-import { Modal } from 'ant-design-vue-v3'
 import { useI18n } from 'vue-i18n'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 
-import { Button as AButton, Empty as AEmpty } from 'ant-design-vue'
+import { Modal, Button as AButton, Empty as AEmpty } from 'ant-design-vue'
 
 const { t } = useI18n()
 const router = useRouter()
