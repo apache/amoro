@@ -133,12 +133,12 @@ import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
 import { IColumns, BreadcrumbOptimizingItem } from '@/types/common.type'
 import { getOptimizingProcesses, getTasksByOptimizingProcessId, cancelOptimizingProcess } from '@/services/table.service'
-import { Modal, message } from 'ant-design-vue-v3'
+import { Modal } from 'ant-design-vue-v3'
 import { useRoute } from 'vue-router'
 import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
 
-import { Button as AButton } from 'ant-design-vue'
+import { Button as AButton, Table as ATable } from 'ant-design-vue'
 
 const hasBreadcrumb = ref<boolean>(false)
 

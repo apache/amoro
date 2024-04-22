@@ -18,7 +18,6 @@
 
 import { App } from 'vue'
 import {
-  Table,
   Tooltip,
   Input,
   Modal,
@@ -41,7 +40,6 @@ import {
 const compontens = [
   InputNumber,
   Tooltip,
-  Table,
   Input,
   Modal,
   Form,

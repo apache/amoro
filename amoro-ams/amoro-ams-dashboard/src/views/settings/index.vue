@@ -74,7 +74,7 @@ limitations under the License.
 
 <script lang="ts" setup>
 // TODO: replace to antv-4. After all replacements are completed, switch to automatic import.
-import { Tabs as ATabs, TabPane as ATabPane } from 'ant-design-vue'
+import { Tabs as ATabs, TabPane as ATabPane, Table as ATable } from 'ant-design-vue'
 
 import { reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
