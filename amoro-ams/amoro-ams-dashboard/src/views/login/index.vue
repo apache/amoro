@@ -80,12 +80,11 @@ limitations under the License.
 import { computed, defineComponent, onMounted, reactive } from 'vue'
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
 import loginService from '@/services/login.service'
-import { message } from 'ant-design-vue-v3'
 import { useRouter } from 'vue-router'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import useStore from '@/store'
 
-import { Button as AButton, Input as AInput, InputPassword as AInputPassword, Form as AForm, FormItem as AFormItem } from 'ant-design-vue'
+import { message, Button as AButton, Input as AInput, InputPassword as AInputPassword, Form as AForm, FormItem as AFormItem } from 'ant-design-vue'
 
 interface FormState {
   username: string;
