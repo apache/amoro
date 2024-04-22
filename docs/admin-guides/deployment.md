@@ -35,8 +35,8 @@ You can build based on the master branch without compiling Trino. The compilatio
 git clone https://github.com/apache/amoro.git
 cd amoro
 base_dir=$(pwd) 
-mvn clean package -DskipTests -pl '!mixed-format/trino'
-cd ams/dist/target/
+mvn clean package -DskipTests -pl '!amoro-mixed-format/amoro-mixed-format-trino'
+cd amoro-ams/dist/target/
 ls
 amoro-x.y.z-bin.zip # AMS release package
 dist-x.y.z-tests.jar
@@ -44,14 +44,14 @@ dist-x.y.z.jar
 archive-tmp/
 maven-archiver/
 
-cd ${base_dir}/mixed-format/flink/v1.15/flink-runtime/target
+cd ${base_dir}/amoro-mixed-format/amoro-mixed-format-flink/v1.15/amoro-mixed-format-flink-runtime-1.15/target
 ls 
 amoro-mixed-format-flink-runtime-1.15-x.y.z-tests.jar
 amoro-mixed-format-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
 original-amoro-mixed-format-flink-runtime-1.15-x.y.z.jar
 maven-archiver/
 
-cd ${base_dir}/mixed-format/spark/v3.2/spark-runtime/target
+cd ${base_dir}/amoro-mixed-format/amoro-mixed-format-spark/v3.2/amoro-mixed-format-spark-3.2-runtime/target
 ls
 amoro-mixed-format-spark-3.2-runtime-x.y.z.jar # Spark v3.2 runtime package)
 amoro-mixed-format-spark-3.2-runtime-x.y.z-tests.jar
