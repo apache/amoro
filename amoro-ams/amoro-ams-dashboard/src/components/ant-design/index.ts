@@ -19,13 +19,11 @@
 import { App } from 'vue'
 import {
   Modal,
-  Col,
   Dropdown
 } from 'ant-design-vue-v3'
 
 const compontens = [
   Modal,
-  Col,
   Dropdown
 ]
 export default function (app: App): void {
