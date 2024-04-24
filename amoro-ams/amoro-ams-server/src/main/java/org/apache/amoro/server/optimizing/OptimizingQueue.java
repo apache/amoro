@@ -414,6 +414,9 @@ public class OptimizingQueue extends PersistentBase {
     public void close() {
       lock.lock();
       try {
+        if (this.status != Status.RUNNING) {
+          return;
+        }
         this.status = OptimizingProcess.Status.CLOSED;
         this.endTime = System.currentTimeMillis();
         persistProcessCompleted(false);
