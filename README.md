@@ -139,8 +139,8 @@ Amoro is built using Maven with Java 1.8 and Java 17(only for `amoro-mixed-forma
 
 >Spotless is skipped by default in `trino` module. So if you want to perform checkstyle when building `trino` module, you must be in a Java 17 environment.
 
-* To invoke a build include `mixed-format/trino` module in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless`
-* To only build `mixed-format/trino` and its dependent modules in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless -pl 'amoro-mixed-format/amoro-mixed-format-trino' -am`
+* To invoke a build include `amoro-mixed-format/amoro-mixed-format-trino` module in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless`
+* To only build `amoro-mixed-format/amoro-mixed-format-trino` and its dependent modules in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless -pl 'amoro-mixed-format/amoro-mixed-format-trino' -am`
 
 ## Quickstart
 
