@@ -39,5 +39,15 @@ public class TestTimeUtil {
         UnsupportedOperationException.class, () -> TimeUtil.parsePeriod("10min"));
     Assertions.assertThrows(
         UnsupportedOperationException.class, () -> TimeUtil.parseDuration("7w"));
+    Assertions.assertThrows(
+        UnsupportedOperationException.class, () -> TimeUtil.parseDuration("30q"));
+  }
+
+  @Test
+  public void testNegativeValue() {
+    Assertions.assertThrows(
+        UnsupportedOperationException.class, () -> TimeUtil.parsePeriod("-10d"));
+    Assertions.assertThrows(
+        UnsupportedOperationException.class, () -> TimeUtil.parseDuration("-7h"));
   }
 }

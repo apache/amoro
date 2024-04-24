@@ -20,7 +20,7 @@ package org.apache.amoro.api.config;
 
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
 
-import com.netease.arctic.utils.TimeUtil;
+import org.apache.amoro.utils.TimeUtil;
 
 import javax.annotation.Nonnull;
 
