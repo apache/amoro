@@ -35,7 +35,7 @@ r
   </a>
 </p>
 
-Amoro(former name was Arctic) is a Lakehouse management system built on open data lake formats.
+Apache Amoro (incubating) is a Lakehouse management system built on open data lake formats.
 Working with compute engines including Flink, Spark, and Trino, Amoro brings pluggable and self-managed features for Lakehouse to provide out-of-the-box data warehouse experience,
 and helps data platforms or products easily build infra-decoupled, stream-and-batch-fused and lake-native architecture.
 
@@ -98,20 +98,20 @@ Amoro contains modules as below:
 
 - `amoro-core` contains core abstractions and common implementation for other modules
 - `amoro-ams` is amoro management service module
-    - `ams-api` contains ams thrift api and common interfaces
-    - `ams-dashboard` is the dashboard frontend for ams
-    - `ams-server` is the backend server for ams
-    - `ams-optimizer` provides default optimizer implementation
+    - `amoro-ams-api` contains ams thrift api and common interfaces
+    - `amoro-ams-dashboard` is the dashboard frontend for ams
+    - `amoro-ams-server` is the backend server for ams
+    - `amoro-ams-optimizer` provides default optimizer implementation
 - `amoro-mixed-format` provides Mixed format implementation
-    - `amoro-hive` integrates with Apache Hive and implements Mixed Hive format
-    - `amoro-flink` provides Flink connectors for Mixed format tables (use amoro-flink-runtime for a shaded version)
-    - `amoro-spark` provides Spark connectors for Mixed format tables (use amoro-spark-runtime for a shaded version)
-    - `amoro-trino` provides Trino connectors for Mixed format tables
+    - `amoro-mixed-format-hive` integrates with Apache Hive and implements Mixed Hive format
+    - `amoro-mixed-format-flink` provides Flink connectors for Mixed format tables (use amoro-flink-runtime for a shaded version)
+    - `amoro-mixed-format-spark` provides Spark connectors for Mixed format tables (use amoro-spark-runtime for a shaded version)
+    - `amoro-mixed-format-trino` provides Trino connectors for Mixed format tables
 
 
 ## Building
 
-Amoro is built using Maven with Java 1.8 and Java 17(only for `mixed-format/trino` module).
+Amoro is built using Maven with Java 1.8 and Java 17(only for `amoro-mixed-format/amoro-mixed-format-trino` module).
 
 * To build Trino module need config `toolchains.xml` in `${user.home}/.m2/` dir, the content is
 
@@ -133,7 +133,7 @@ Amoro is built using Maven with Java 1.8 and Java 17(only for `mixed-format/trin
 
 * To invoke a build and run tests: `mvn package -P toolchain`
 * To skip tests: `mvn -DskipTests package -P toolchain`
-* To package without trino module and JAVA 17 dependency: `mvn clean package -DskipTests -pl '!mixed-format/trino'`
+* To package without trino module and JAVA 17 dependency: `mvn clean package -DskipTests -pl '!amoro-mixed-format/amoro-mixed-format-trino'`
 * To build with hadoop 2.x(the default is 3.x) `mvn clean package -DskipTests -Dhadoop=v2`
 * To indicate Flink version for optimizer (the default is 1.18.1): `mvn clean package -Dflink-optimizer.flink-version=1.15.4`. If the version of Flink is below 1.15.0, you also need to add the `-Pflink-pre-1.15` parameter: `mvn clean package -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`.
   `mvn clean package -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6 -DskipTests`
@@ -141,7 +141,8 @@ Amoro is built using Maven with Java 1.8 and Java 17(only for `mixed-format/trin
 >Spotless is skipped by default in `trino` module. So if you want to perform checkstyle when building `trino` module, you must be in a Java 17 environment.
 
 * To invoke a build include `mixed-format/trino` module in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless`
-* To only build `mixed-format/trino` and its dependent modules in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless -pl 'mixed-format/trino' -am`
+* To only build `mixed-format/trino` and its dependent modules in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless -pl 'amoro-mixed-format/amoro-mixed-format-trino' -am`
+
 ## Quickstart
 
 Visit [https://amoro.apache.org/quick-demo/](https://amoro.apache.org/quick-demo/) to quickly
