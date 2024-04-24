@@ -46,7 +46,7 @@
 
 
 {{- define "amoro.optimizer.container.flink" -}}
-container-impl: com.netease.arctic.server.manager.FlinkOptimizerContainer
+container-impl: org.apache.amoro.server.manager.FlinkOptimizerContainer
 properties:
   target: kubernetes-application
   job-uri: {{ .Values.optimizer.flink.image.jobUri | quote }}
@@ -61,7 +61,7 @@ properties:
 {{- end -}}
 
 {{- define "amoro.optimizer.container.spark" -}}
-container-impl: com.netease.arctic.server.manager.SparkOptimizerContainer
+container-impl: org.apache.amoro.server.manager.SparkOptimizerContainer
 properties:
   job-uri: {{ .Values.optimizer.spark.image.jobUri | quote }}
   ams-optimizing-uri: {{include "amoro.svc.optimizing.uri" . | quote}}
@@ -76,7 +76,7 @@ properties:
 
 
 {{- define "amoro.optimizer.container.local" -}}
-container-impl: com.netease.arctic.server.manager.LocalOptimizerContainer
+container-impl: org.apache.amoro.server.manager.LocalOptimizerContainer
 properties:
   export.JAVA_HOME: "/opt/java"   # JDK environment
   {{- with .Values.optimizer.local.properties -}}
