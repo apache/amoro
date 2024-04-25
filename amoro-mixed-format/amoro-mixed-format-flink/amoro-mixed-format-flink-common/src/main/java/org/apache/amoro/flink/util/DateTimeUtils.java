@@ -958,8 +958,8 @@ public class DateTimeUtils {
     int j = julian + 32044;
     int g = j / 146097;
     int dg = j % 146097;
-    int c = (dg / '躬' + 1) * 3 / 4;
-    int dc = dg - c * '躬';
+    int c = (dg / 1461 + 1) * 3 / 4;
+    int dc = dg - c * 1461;
     int b = dc / 1461;
     int db = dc % 1461;
     int a = (db / 365 + 1) * 3 / 4;
