@@ -62,7 +62,7 @@ public class TestMetricDefine {
             new MetricDefine(
                 "different-name", Arrays.asList("tag1", "tag2"), MetricType.Counter, "description"),
             false),
-        // The order of tags in the collection is different, should return true
+        // Return true if the order of elements in tags is different
         Arguments.of(
             new MetricDefine(
                 "test-define", Arrays.asList("tag2", "tag1"), MetricType.Counter, "description"),
