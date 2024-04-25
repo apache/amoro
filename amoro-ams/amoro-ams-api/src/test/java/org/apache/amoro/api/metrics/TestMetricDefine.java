@@ -52,12 +52,12 @@ public class TestMetricDefine {
   static Stream<Arguments> provideMetricNamesForEquality() {
 
     return Stream.of(
-        // The same "name," "tags," and "type" should return true.
+        // Return true with the same name, tags and type
         Arguments.of(
             new MetricDefine(
                 "test-define", Arrays.asList("tag1", "tag2"), MetricType.Counter, "description"),
             true),
-        // Different "name" should return false.
+        // Return false with the different name
         Arguments.of(
             new MetricDefine(
                 "different-name", Arrays.asList("tag1", "tag2"), MetricType.Counter, "description"),
@@ -67,17 +67,18 @@ public class TestMetricDefine {
             new MetricDefine(
                 "test-define", Arrays.asList("tag2", "tag1"), MetricType.Counter, "description"),
             true),
-        // Different tags collections should return false
+        // Return false if tags contain different elements inside
         Arguments.of(
             new MetricDefine(
                 "test-define", Arrays.asList("tag3", "tag4"), MetricType.Counter, "description"),
             false),
-        // Different MetricType should return false
+        // Return false with different MetricType
         Arguments.of(
             new MetricDefine(
                 "test-define", Arrays.asList("tag1", "tag2"), MetricType.Gauge, "description"),
             false),
-        // Even though the description is different, because it does not participate in equals and hashCode, should return true
+        // Return true if they are different with description. That is because the description isn't
+        // truly involved in the functions of equals and hashCode.
         Arguments.of(
             new MetricDefine(
                 "test-define",
