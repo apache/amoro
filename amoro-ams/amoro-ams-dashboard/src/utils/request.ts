@@ -93,7 +93,7 @@ instance.interceptors.response.use(
     if (response.status === 200 && response.data) {
       return response
     } else {
-      return Promise.reject(new Error('网络错误'))
+      return Promise.reject(new Error('Network error'))
     }
   },
   (error) => {

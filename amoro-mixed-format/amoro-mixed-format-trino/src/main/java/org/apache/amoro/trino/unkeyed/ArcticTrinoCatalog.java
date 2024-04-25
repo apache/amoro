@@ -197,7 +197,6 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   @Override
   public String defaultTableLocation(ConnectorSession session, SchemaTableName schemaTableName) {
-    // 不会使用
     return null;
   }
 

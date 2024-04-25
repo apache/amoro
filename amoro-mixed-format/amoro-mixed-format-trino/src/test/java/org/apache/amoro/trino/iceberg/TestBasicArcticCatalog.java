@@ -48,7 +48,7 @@ public class TestBasicArcticCatalog extends BasicArcticCatalog {
     this.location = location;
     Configuration conf = new Configuration();
     this.catalog = new HadoopCatalog(conf, location);
-    // 创建catalog.db，便于测试
+    // Create catalog.db for testing purposes
     if (!catalog.namespaceExists(Namespace.of(catalog.name(), "tpch"))) {
       catalog.createNamespace(Namespace.of(catalog.name(), "tpch"));
     }
