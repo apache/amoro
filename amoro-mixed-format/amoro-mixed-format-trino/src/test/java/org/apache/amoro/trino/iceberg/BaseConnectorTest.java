@@ -2759,7 +2759,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
               + "(test) VALUES 'Hello', U&'hello\\6d4B\\8Bd5world\\7F16\\7801' ",
           2);
       assertThat(computeActual("SELECT test FROM " + table.getName()).getOnlyColumnAsSet())
-          .containsExactlyInAnyOrder("Hello", "hello test world encoding");
+          .containsExactlyInAnyOrder("Hello", "hello测试world编码");
     }
 
     try (TestTable table =
@@ -2795,7 +2795,7 @@ public abstract class BaseConnectorTest extends AbstractTestQueries {
               + "(test) VALUES 'Hello', U&'hello\\6d4B\\8Bd5\\+10FFFFworld\\7F16\\7801' ",
           2);
       assertThat(computeActual("SELECT test FROM " + table.getName()).getOnlyColumnAsSet())
-          .containsExactlyInAnyOrder("Hello", "hello test world encoding");
+              .containsExactlyInAnyOrder("Hello", "hello测试􏿿world编码");
     }
   }
 
