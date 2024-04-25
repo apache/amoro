@@ -49,12 +49,18 @@ public class ProxyUtil {
   }
 
   public static <T> T getProxy(
-          Class<T> clazz, AuthenticatedFileIO authenticatedFileIO, Class[] argumentTypes, Object[] arguments) {
+      Class<T> clazz,
+      AuthenticatedFileIO authenticatedFileIO,
+      Class[] argumentTypes,
+      Object[] arguments) {
     return getProxy(clazz, new KerberosInterceptor(authenticatedFileIO), argumentTypes, arguments);
   }
 
   public static <T> ProxyFactory<T> getProxyFactory(
-          Class<T> clazz, AuthenticatedFileIO authenticatedFileIO, Class[] argumentTypes, Object[] arguments) {
+      Class<T> clazz,
+      AuthenticatedFileIO authenticatedFileIO,
+      Class[] argumentTypes,
+      Object[] arguments) {
     return new ProxyFactory<T>(
         clazz, new KerberosInterceptor(authenticatedFileIO), argumentTypes, arguments);
   }

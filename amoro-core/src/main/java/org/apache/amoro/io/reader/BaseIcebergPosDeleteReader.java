@@ -53,7 +53,9 @@ public class BaseIcebergPosDeleteReader {
   protected final List<DeleteFile> posDeleteFiles;
 
   public BaseIcebergPosDeleteReader(
-          AuthenticatedFileIO fileIO, EncryptionManager encryptionManager, List<DeleteFile> posDeleteFiles) {
+      AuthenticatedFileIO fileIO,
+      EncryptionManager encryptionManager,
+      List<DeleteFile> posDeleteFiles) {
     this.fileIO = fileIO;
     this.encryptionManager = encryptionManager;
     this.posDeleteFiles = posDeleteFiles;

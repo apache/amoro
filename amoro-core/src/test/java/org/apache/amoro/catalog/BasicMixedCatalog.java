@@ -294,7 +294,8 @@ public class BasicMixedCatalog implements MixedFormatCatalog {
 
     @Override
     public Transaction createTransaction() {
-      AuthenticatedFileIO authenticatedFileIO = AuthenticatedFileIOs.buildHadoopFileIO(tableMetaStore);
+      AuthenticatedFileIO authenticatedFileIO =
+          AuthenticatedFileIOs.buildHadoopFileIO(tableMetaStore);
       ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
       TableMeta meta = builder.build();
       String location = getTableLocationForCreate();

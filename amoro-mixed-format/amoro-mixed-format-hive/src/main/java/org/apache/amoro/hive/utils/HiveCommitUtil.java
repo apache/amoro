@@ -36,7 +36,7 @@ public class HiveCommitUtil {
    * consistency.
    */
   public static List<DataFile> commitConsistentWriteFiles(
-          List<DataFile> dataFiles, AuthenticatedHadoopFileIO fileIO, PartitionSpec spec) {
+      List<DataFile> dataFiles, AuthenticatedHadoopFileIO fileIO, PartitionSpec spec) {
     return applyConsistentWriteFile(
         dataFiles,
         spec,

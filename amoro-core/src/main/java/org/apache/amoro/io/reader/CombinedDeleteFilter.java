@@ -18,8 +18,8 @@
 
 package org.apache.amoro.io.reader;
 
-import org.apache.amoro.io.CloseablePredicate;
 import org.apache.amoro.io.AuthenticatedFileIO;
+import org.apache.amoro.io.CloseablePredicate;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.amoro.utils.map.StructLikeBaseMap;

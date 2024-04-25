@@ -64,7 +64,7 @@ public class TableFileUtil {
    * @param exclude the directory will not be deleted
    */
   public static void deleteEmptyDirectory(
-          AuthenticatedFileIO io, String directoryPath, Set<String> exclude) {
+      AuthenticatedFileIO io, String directoryPath, Set<String> exclude) {
     if (!io.exists(directoryPath)) {
       LOG.debug("The target directory {} does not exist or has been deleted", directoryPath);
       return;
@@ -92,7 +92,8 @@ public class TableFileUtil {
    * @param workPool executor pool. Only applicable for non-bulk FileIO
    * @return deleted file count
    */
-  public static int deleteFiles(AuthenticatedFileIO io, Set<String> files, ExecutorService workPool) {
+  public static int deleteFiles(
+      AuthenticatedFileIO io, Set<String> files, ExecutorService workPool) {
     if (files == null || files.isEmpty()) {
       return 0;
     }
@@ -156,7 +157,7 @@ public class TableFileUtil {
    * @return deleted file count
    */
   public static int parallelDeleteFiles(
-          AuthenticatedFileIO io, Set<String> files, ExecutorService workPool) {
+      AuthenticatedFileIO io, Set<String> files, ExecutorService workPool) {
     return deleteFiles(io, files, workPool);
   }
 

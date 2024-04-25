@@ -117,12 +117,14 @@ public class IcebergClassUtil {
   }
 
   public static ProxyFactory<AbstractStreamOperator> getIcebergStreamWriterProxyFactory(
-      String fullTableName, TaskWriterFactory taskWriterFactory, AuthenticatedFileIO authenticatedFileIO) {
+      String fullTableName,
+      TaskWriterFactory taskWriterFactory,
+      AuthenticatedFileIO authenticatedFileIO) {
     Class<?> clazz = forName(ICEBERG_FILE_WRITER_CLASS);
     return (ProxyFactory<AbstractStreamOperator>)
         ProxyUtil.getProxyFactory(
             clazz,
-                authenticatedFileIO,
+            authenticatedFileIO,
             new Class[] {String.class, TaskWriterFactory.class},
             new Object[] {fullTableName, taskWriterFactory});
   }
@@ -162,7 +164,9 @@ public class IcebergClassUtil {
   }
 
   public static ProxyFactory<FlinkInputFormat> getInputFormatProxyFactory(
-          OneInputStreamOperatorFactory operatorFactory, AuthenticatedFileIO authenticatedFileIO, Schema tableSchema) {
+      OneInputStreamOperatorFactory operatorFactory,
+      AuthenticatedFileIO authenticatedFileIO,
+      Schema tableSchema) {
     FlinkInputFormat inputFormat = getInputFormat(operatorFactory);
     TableLoader tableLoader =
         ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "tableLoader");
@@ -173,7 +177,7 @@ public class IcebergClassUtil {
 
     return ProxyUtil.getProxyFactory(
         FlinkInputFormat.class,
-            authenticatedFileIO,
+        authenticatedFileIO,
         new Class[] {
           TableLoader.class, Schema.class, FileIO.class, EncryptionManager.class, ScanContext.class
         },

@@ -64,7 +64,8 @@ public class AuthenticatedFileIOs {
     return new AuthenticatedHadoopFileIO(tableMetaStore);
   }
 
-  public static AuthenticatedFileIO buildAdaptIcebergFileIO(TableMetaStore tableMetaStore, FileIO io) {
+  public static AuthenticatedFileIO buildAdaptIcebergFileIO(
+      TableMetaStore tableMetaStore, FileIO io) {
     if (io instanceof HadoopFileIO) {
       return buildHadoopFileIO(tableMetaStore);
     } else {

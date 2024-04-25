@@ -268,7 +268,10 @@ public class TestBasicTableTrashManager extends TableTestBase {
     MixedTable table = getMixedTable();
     Assert.assertTrue(table.io() instanceof AuthenticatedHadoopFileIO);
     return TableTrashManagers.build(
-        table.id(), getMixedTable().location(), table.properties(), (AuthenticatedHadoopFileIO) table.io());
+        table.id(),
+        getMixedTable().location(),
+        table.properties(),
+        (AuthenticatedHadoopFileIO) table.io());
   }
 
   private String createFile(FileIO io, String path) throws IOException {

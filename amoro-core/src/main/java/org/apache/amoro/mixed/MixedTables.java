@@ -102,7 +102,8 @@ public class MixedTables {
    * @return mixed format table instance.
    */
   public MixedTable loadTable(Table base, org.apache.amoro.table.TableIdentifier tableIdentifier) {
-    AuthenticatedFileIO io = AuthenticatedFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
+    AuthenticatedFileIO io =
+        AuthenticatedFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
     PrimaryKeySpec keySpec =
         TablePropertyUtil.parsePrimaryKeySpec(base.schema(), base.properties());
     if (!keySpec.primaryKeyExisted()) {
@@ -140,7 +141,8 @@ public class MixedTables {
     TableIdentifier changeIdentifier = generateChangeStoreIdentifier(baseIdentifier);
 
     Table base = createBaseStore(baseIdentifier, schema, partitionSpec, keySpec, properties);
-    AuthenticatedFileIO io = AuthenticatedFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
+    AuthenticatedFileIO io =
+        AuthenticatedFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
     if (!keySpec.primaryKeyExisted()) {
       return new BasicUnkeyedTable(
           identifier, useMixedTableOperation(base, io), io, catalogProperties);

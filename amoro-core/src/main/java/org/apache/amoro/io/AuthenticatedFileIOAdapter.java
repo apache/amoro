@@ -28,7 +28,9 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-/** An adapter class to make a {@link FileIO} object adapt to {@link AuthenticatedFileIO} interface. */
+/**
+ * An adapter class to make a {@link FileIO} object adapt to {@link AuthenticatedFileIO} interface.
+ */
 public class AuthenticatedFileIOAdapter implements AuthenticatedFileIO {
 
   private final FileIO io;
@@ -81,7 +83,8 @@ public class AuthenticatedFileIOAdapter implements AuthenticatedFileIO {
 
   @Override
   public boolean supportFileSystemOperations() {
-    return io instanceof AuthenticatedFileIO && ((AuthenticatedFileIO) io).supportFileSystemOperations();
+    return io instanceof AuthenticatedFileIO
+        && ((AuthenticatedFileIO) io).supportFileSystemOperations();
   }
 
   @Override

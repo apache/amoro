@@ -75,7 +75,8 @@ public class TestFileUtil {
 
   private static final TemporaryFolder temp = new TemporaryFolder();
 
-  static class LocalAuthenticatedFileIO implements AuthenticatedFileIO, SupportsFileSystemOperations {
+  static class LocalAuthenticatedFileIO
+      implements AuthenticatedFileIO, SupportsFileSystemOperations {
 
     @Override
     public <T> T doAs(Callable<T> callable) {

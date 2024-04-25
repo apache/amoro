@@ -49,7 +49,8 @@ public class IcebergTable implements AmoroTable<UnkeyedTable> {
       Table icebergTable,
       TableMetaStore metaStore,
       Map<String, String> catalogProperties) {
-    AuthenticatedFileIO io = AuthenticatedFileIOs.buildAdaptIcebergFileIO(metaStore, icebergTable.io());
+    AuthenticatedFileIO io =
+        AuthenticatedFileIOs.buildAdaptIcebergFileIO(metaStore, icebergTable.io());
 
     UnkeyedTable wrapped =
         new BasicUnkeyedTable(

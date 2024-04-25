@@ -207,7 +207,10 @@ public class MixedCatalogUtil {
 
   /** Wrap table operation with authorization logic for {@link Table}. */
   public static Table useMixedTableOperations(
-          Table table, String tableLocation, AuthenticatedFileIO authenticatedFileIO, Configuration configuration) {
+      Table table,
+      String tableLocation,
+      AuthenticatedFileIO authenticatedFileIO,
+      Configuration configuration) {
     if (table instanceof org.apache.iceberg.BaseTable) {
       org.apache.iceberg.BaseTable baseTable = (org.apache.iceberg.BaseTable) table;
       if (baseTable.operations() instanceof MixedHadoopTableOperations) {
@@ -216,11 +219,13 @@ public class MixedCatalogUtil {
         return table;
       } else if (baseTable.operations() instanceof HadoopTableOperations) {
         return new org.apache.iceberg.BaseTable(
-            new MixedHadoopTableOperations(new Path(tableLocation), authenticatedFileIO, configuration),
+            new MixedHadoopTableOperations(
+                new Path(tableLocation), authenticatedFileIO, configuration),
             table.name());
       } else {
         return new org.apache.iceberg.BaseTable(
-            new MixedTableOperations(((BaseTable) table).operations(), authenticatedFileIO), table.name());
+            new MixedTableOperations(((BaseTable) table).operations(), authenticatedFileIO),
+            table.name());
       }
     }
     return table;

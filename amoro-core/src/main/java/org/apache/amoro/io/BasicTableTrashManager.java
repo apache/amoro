@@ -102,8 +102,7 @@ class BasicTableTrashManager implements TableTrashManager {
   public void moveFileToTrash(String path) {
     try {
       Preconditions.checkArgument(
-          !fileIO.supportFileSystemOperations()
-              || !fileIO.asFileSystemIO().isDirectory(path),
+          !fileIO.supportFileSystemOperations() || !fileIO.asFileSystemIO().isDirectory(path),
           "should not move a directory to trash " + path);
       String targetFileLocation =
           generateFileLocationInTrash(

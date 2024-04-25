@@ -19,8 +19,8 @@
 package org.apache.amoro.server.optimizing;
 
 import org.apache.amoro.hive.table.SupportHive;
-import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.io.AuthenticatedHadoopFileIO;
+import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
