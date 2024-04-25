@@ -25,7 +25,7 @@ This is the Dashboard frontend for Amoro Management Service (AMS).
 
 ## Installing Dependencies
 
-In the `ams/dashboard` directory, run `pnpm install` to install all the dependencies.
+In the `amoro-ams/amoro-ams-dashboard` directory, run `pnpm install` to install all the dependencies.
 
 ## Running Locally
 
@@ -35,13 +35,13 @@ After completing the [Installing Dependencies](#Installing Dependencies) step, y
 
 <b>If You are a frontend developer</b>
 
-In the `ams/dashboard` directory, run `pnpm dev:mock` to start a development server for the dashboard app at `http://127.0.0.1:8080`.
+In the `amoro-ams/amoro-ams-dashboard` directory, run `pnpm dev:mock` to start a development server for the dashboard app at `http://127.0.0.1:8080`.
 
 <b>If You not. You just running `pnpm dev`</b>
 
 ### Configure the ams Server to connect to
 
-1. open the `vite.config.ts` under the folder `ams/dashboard`
+1. open the `vite.config.ts` under the folder `amoro-ams/amoro-ams-dashboard`
 
 2. find the `proxy` configuration then unpack annotations and change the `target` to you server location
 
@@ -69,12 +69,12 @@ proxy: {
 
 ## Building Project
 
-In the `ams/dashboard` directory, run `pnpm build` to prepare the dashboard for deployment.
+In the `amoro-ams/amoro-ams-dashboard` directory, run `pnpm build` to prepare the dashboard for deployment.
 
 ## Top Level Directory Structure
 
 ```
-ams/dashboard
+amoro-ams/amoro-ams-dashboard
  |-- mock
  |-- public
  |-- src
@@ -91,13 +91,13 @@ ams/dashboard
  |-- pnpm-lock
 ```
 
-- [public](ams/dashboard/public): The index.html and favicon.ico of this project.
-- [src](ams/dashboard/src): The source files of this project.
-  - [src/components](ams/dashboard/src/components): All the shared components in the repo, can be used in all views.
-  - [src/views](ams/dashboard/src/views): All the views.
-  - [src/services](ams/dashboard/src/services): The services for the feature component to communicate with ams server.
-  - [src/utils](ams/dashboard/src/utils): The utility functions in this project.
-  - [src/App.vue](ams/dashboard/src/main.tsx): The entrance of this project.
-- [vite.config.ts](/ams/dashboard/vite.config.ts): The configuration file of vue3.
-- [package.json](ams/dashboard/package.json): The project build files and package management, it defines the scripts/tasks and the dependent packages for this project.
-- [pnpm-lock.yaml](ams/dashboard/pnpm-lock.yaml): The package management pnpm lock file.
+- [public](amoro-ams/amoro-ams-dashboard/public): The index.html and favicon.ico of this project.
+- [src](amoro-ams/amoro-ams-dashboard/src): The source files of this project.
+  - [src/components](amoro-ams/amoro-ams-dashboard/src/components): All the shared components in the repo, can be used in all views.
+  - [src/views](amoro-ams/amoro-ams-dashboard/src/views): All the views.
+  - [src/services](amoro-ams/amoro-ams-dashboard/src/services): The services for the feature component to communicate with ams server.
+  - [src/utils](amoro-ams/amoro-ams-dashboard/src/utils): The utility functions in this project.
+  - [src/App.vue](amoro-ams/amoro-ams-dashboard/src/main.tsx): The entrance of this project.
+- [vite.config.ts](/amoro-ams/amoro-ams-dashboard/vite.config.ts): The configuration file of vue3.
+- [package.json](amoro-ams/amoro-ams-dashboard/package.json): The project build files and package management, it defines the scripts/tasks and the dependent packages for this project.
+- [pnpm-lock.yaml](amoro-ams/amoro-ams-dashboard/pnpm-lock.yaml): The package management pnpm lock file.
