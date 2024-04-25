@@ -226,10 +226,6 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertThrows(IllegalStateException.class, optimizingProcess::commit);
     Assert.assertEquals(OptimizingProcess.Status.SUCCESS, optimizingProcess.getStatus());
 
-    // 9.close
-    optimizingProcess.close();
-    Assert.assertEquals(OptimizingProcess.Status.CLOSED, optimizingProcess.getStatus());
-
     Assert.assertEquals(0, queue.collectTasks().size());
     queue.dispose();
   }

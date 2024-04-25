@@ -23,22 +23,22 @@
     <parent>
         <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-mixed-format-flink</artifactId>
-        <version>0.7.0-SNAPSHOT</version>
+        <version>0.7-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>amoro-mixed-format-flink-runtime-1.17</artifactId>
-    <name>Amoro Project Mixed Format Flink 1.17 Runtime</name>
+    <artifactId>amoro-mixed-format-flink-runtime-1.16</artifactId>
+    <name>Amoro Project Mixed Format Flink 1.16 Runtime</name>
     <url>https://amoro.apache.org</url>
 
     <properties>
-        <flink.version>1.17.1</flink.version>
+        <flink.version>1.16.2</flink.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-mixed-format-flink-1.17</artifactId>
+            <artifactId>amoro-mixed-format-flink-1.16</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -46,7 +46,6 @@
             <artifactId>flink-connector-kafka</artifactId>
             <version>${flink.version}</version>
         </dependency>
-        <!--    conflict with iceberg-flink    -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
