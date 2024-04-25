@@ -27,7 +27,7 @@ import org.apache.amoro.hive.utils.HiveCommitUtil;
 import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
 import org.apache.amoro.hive.utils.HivePartitionUtil;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.io.MixedHadoopFileIO;
+import org.apache.amoro.io.AuthenticatedHadoopFileIO;
 import org.apache.amoro.op.UpdatePartitionProperties;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.utils.TableFileUtil;
@@ -317,7 +317,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   private void checkPartitionDelete(Set<String> deleteFiles, Partition partition) {
     String partitionLocation = partition.getSd().getLocation();
 
-    try (MixedHadoopFileIO io = table.io()) {
+    try (AuthenticatedHadoopFileIO io = table.io()) {
       io.listDirectory(partitionLocation)
           .forEach(
               f -> {
@@ -372,7 +372,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
             .collect(Collectors.toSet());
 
     for (String partitionLocation : partitionsToCheck) {
-      try (MixedHadoopFileIO io = table.io()) {
+      try (AuthenticatedHadoopFileIO io = table.io()) {
         io.listPrefix(partitionLocation)
             .forEach(
                 f -> {

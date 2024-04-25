@@ -28,7 +28,7 @@ import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.table.UnkeyedHiveTable;
-import org.apache.amoro.io.MixedHadoopFileIO;
+import org.apache.amoro.io.AuthenticatedHadoopFileIO;
 import org.apache.amoro.op.UpdatePartitionProperties;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.table.MixedTable;
@@ -115,7 +115,7 @@ public class UpgradeHiveTableUtil {
       throws Exception {
     Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
     String hiveDataLocation = HiveTableUtil.hiveRootLocation(hiveTable.getSd().getLocation());
-    MixedHadoopFileIO io = arcticTable.io();
+    AuthenticatedHadoopFileIO io = arcticTable.io();
     io.makeDirectories(hiveDataLocation);
     String newPath;
     if (hiveTable.getPartitionKeys().isEmpty()) {

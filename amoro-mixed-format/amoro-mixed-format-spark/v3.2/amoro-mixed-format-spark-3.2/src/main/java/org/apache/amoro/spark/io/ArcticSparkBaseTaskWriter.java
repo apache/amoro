@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.io;
 
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.writer.BaseTaskWriter;
 import org.apache.amoro.io.writer.OutputFileFactory;
 import org.apache.amoro.spark.SparkInternalRowWrapper;
@@ -40,7 +40,7 @@ public class ArcticSparkBaseTaskWriter extends BaseTaskWriter<InternalRow> {
       FileFormat format,
       FileAppenderFactory<InternalRow> appenderFactory,
       OutputFileFactory outputFileFactory,
-      MixedFileIO io,
+      AuthenticatedFileIO io,
       long targetFileSize,
       long mask,
       Schema schema,

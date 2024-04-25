@@ -21,7 +21,7 @@ package org.apache.amoro.utils;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.TableMeta;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.op.MixedHadoopTableOperations;
 import org.apache.amoro.op.MixedTableOperations;
 import org.apache.amoro.properties.CatalogMetaProperties;
@@ -207,7 +207,7 @@ public class MixedCatalogUtil {
 
   /** Wrap table operation with authorization logic for {@link Table}. */
   public static Table useMixedTableOperations(
-      Table table, String tableLocation, MixedFileIO mixedFileIO, Configuration configuration) {
+          Table table, String tableLocation, AuthenticatedFileIO authenticatedFileIO, Configuration configuration) {
     if (table instanceof org.apache.iceberg.BaseTable) {
       org.apache.iceberg.BaseTable baseTable = (org.apache.iceberg.BaseTable) table;
       if (baseTable.operations() instanceof MixedHadoopTableOperations) {
@@ -216,11 +216,11 @@ public class MixedCatalogUtil {
         return table;
       } else if (baseTable.operations() instanceof HadoopTableOperations) {
         return new org.apache.iceberg.BaseTable(
-            new MixedHadoopTableOperations(new Path(tableLocation), mixedFileIO, configuration),
+            new MixedHadoopTableOperations(new Path(tableLocation), authenticatedFileIO, configuration),
             table.name());
       } else {
         return new org.apache.iceberg.BaseTable(
-            new MixedTableOperations(((BaseTable) table).operations(), mixedFileIO), table.name());
+            new MixedTableOperations(((BaseTable) table).operations(), authenticatedFileIO), table.name());
       }
     }
     return table;

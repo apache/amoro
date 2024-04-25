@@ -21,7 +21,7 @@ package org.apache.amoro.io.writer;
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.FileNameRules;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -48,7 +48,7 @@ import org.apache.iceberg.io.OutputFile;
 public class CommonOutputFileFactory implements OutputFileFactory {
   private final String baseLocation;
   private final PartitionSpec partitionSpec;
-  private final MixedFileIO io;
+  private final AuthenticatedFileIO io;
   private final EncryptionManager encryptionManager;
   private final FileNameRules fileNameGenerator;
 
@@ -56,7 +56,7 @@ public class CommonOutputFileFactory implements OutputFileFactory {
       String baseLocation,
       PartitionSpec partitionSpec,
       FileFormat format,
-      MixedFileIO io,
+      AuthenticatedFileIO io,
       EncryptionManager encryptionManager,
       int partitionId,
       long taskId,

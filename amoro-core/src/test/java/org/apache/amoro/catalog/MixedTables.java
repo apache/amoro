@@ -19,8 +19,8 @@
 package org.apache.amoro.catalog;
 
 import org.apache.amoro.api.TableMeta;
-import org.apache.amoro.io.MixedFileIO;
-import org.apache.amoro.io.MixedFileIOs;
+import org.apache.amoro.io.AuthenticatedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIOs;
 import org.apache.amoro.io.TableTrashManagers;
 import org.apache.amoro.properties.MetaTableProperties;
 import org.apache.amoro.table.BaseTable;
@@ -87,8 +87,8 @@ public class MixedTables {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    MixedFileIO fileIO =
-        MixedFileIOs.buildRecoverableHadoopFileIO(
+    AuthenticatedFileIO fileIO =
+        AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -139,8 +139,8 @@ public class MixedTables {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
 
-    MixedFileIO fileIO =
-        MixedFileIOs.buildRecoverableHadoopFileIO(
+    AuthenticatedFileIO fileIO =
+        AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -177,8 +177,8 @@ public class MixedTables {
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
     fillTableProperties(tableMeta);
-    MixedFileIO fileIO =
-        MixedFileIOs.buildRecoverableHadoopFileIO(
+    AuthenticatedFileIO fileIO =
+        AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -252,8 +252,8 @@ public class MixedTables {
                 throw new IllegalStateException("create table failed", e);
               }
             });
-    MixedFileIO fileIO =
-        MixedFileIOs.buildRecoverableHadoopFileIO(
+    AuthenticatedFileIO fileIO =
+        AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -269,7 +269,7 @@ public class MixedTables {
 
   public void dropTableByMeta(TableMeta tableMeta, boolean purge) {
     try {
-      MixedFileIO fileIO = MixedFileIOs.buildHadoopFileIO(tableMetaStore);
+      AuthenticatedFileIO fileIO = AuthenticatedFileIOs.buildHadoopFileIO(tableMetaStore);
       Map<String, String> tableProperties = Maps.newHashMap();
       try {
         MixedTable mixedTable = loadTableByMeta(tableMeta);

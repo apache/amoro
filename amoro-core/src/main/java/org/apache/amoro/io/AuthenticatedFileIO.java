@@ -26,7 +26,7 @@ import org.apache.iceberg.io.SupportsPrefixOperations;
 import java.util.concurrent.Callable;
 
 /** extension from {@link FileIO}, adding more operations for mixed-format tables. */
-public interface MixedFileIO extends FileIO {
+public interface AuthenticatedFileIO extends FileIO {
 
   /**
    * Run the given action with login user.

@@ -36,8 +36,8 @@ import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.utils.CompatibleHivePropertyUtil;
 import org.apache.amoro.hive.utils.HiveSchemaUtil;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.io.MixedFileIO;
-import org.apache.amoro.io.MixedFileIOs;
+import org.apache.amoro.io.AuthenticatedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIOs;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.op.CreateTableTransaction;
 import org.apache.amoro.op.MixedHadoopTableOperations;
@@ -389,13 +389,13 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
 
     @Override
     public Transaction createTransaction() {
-      MixedFileIO mixedFileIO = MixedFileIOs.buildHadoopFileIO(tableMetaStore);
+      AuthenticatedFileIO authenticatedFileIO = AuthenticatedFileIOs.buildHadoopFileIO(tableMetaStore);
       ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
       TableMeta meta = builder.build();
       String location = getTableLocationForCreate();
       TableOperations tableOperations =
           new MixedHadoopTableOperations(
-              new Path(location), mixedFileIO, tableMetaStore.getConfiguration());
+              new Path(location), authenticatedFileIO, tableMetaStore.getConfiguration());
       TableMetadata tableMetadata =
           tableMetadata(schema, partitionSpec, sortOrder, properties, location);
       Transaction transaction =

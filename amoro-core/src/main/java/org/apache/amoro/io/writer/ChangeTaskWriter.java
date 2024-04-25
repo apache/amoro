@@ -20,7 +20,7 @@ package org.apache.amoro.io.writer;
 
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.data.DataFileType;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.FileFormat;
@@ -43,7 +43,7 @@ public abstract class ChangeTaskWriter<T> extends BaseTaskWriter<T> {
       FileFormat format,
       FileAppenderFactory<T> appenderFactory,
       OutputFileFactory outputFileFactory,
-      MixedFileIO io,
+      AuthenticatedFileIO io,
       long targetFileSize,
       long mask,
       Schema schema,

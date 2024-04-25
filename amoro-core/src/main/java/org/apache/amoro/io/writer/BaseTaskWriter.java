@@ -21,7 +21,7 @@ package org.apache.amoro.io.writer;
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyData;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.DataFile;
@@ -56,14 +56,14 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
 
   private final PartitionKey partitionKey;
   private final PrimaryKeyData primaryKey;
-  private final MixedFileIO io;
+  private final AuthenticatedFileIO io;
   private final WriterHolder<T> writerHolder;
 
   protected BaseTaskWriter(
       FileFormat format,
       FileAppenderFactory<T> appenderFactory,
       OutputFileFactory outputFileFactory,
-      MixedFileIO io,
+      AuthenticatedFileIO io,
       long targetFileSize,
       long mask,
       Schema schema,
@@ -167,7 +167,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     protected final FileFormat format;
     protected final FileAppenderFactory<T> appenderFactory;
     protected final OutputFileFactory outputFileFactory;
-    protected final MixedFileIO io;
+    protected final AuthenticatedFileIO io;
     protected final long targetFileSize;
     protected final List<DataFile> completedFiles = Lists.newArrayList();
     private boolean closed = false;
@@ -176,7 +176,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
         FileFormat format,
         FileAppenderFactory<T> appenderFactory,
         OutputFileFactory outputFileFactory,
-        MixedFileIO io,
+        AuthenticatedFileIO io,
         long targetFileSize) {
       this.format = format;
       this.appenderFactory = appenderFactory;
@@ -232,7 +232,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
         FileFormat format,
         FileAppenderFactory<T> appenderFactory,
         OutputFileFactory outputFileFactory,
-        MixedFileIO io,
+        AuthenticatedFileIO io,
         long targetFileSize) {
       super(format, appenderFactory, outputFileFactory, io, targetFileSize);
     }
@@ -285,7 +285,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
         FileFormat format,
         FileAppenderFactory<T> appenderFactory,
         OutputFileFactory outputFileFactory,
-        MixedFileIO io,
+        AuthenticatedFileIO io,
         long targetFileSize) {
       super(format, appenderFactory, outputFileFactory, io, targetFileSize);
     }
@@ -334,9 +334,9 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     private final DataWriter<T> dataWriter;
     private long currentRows = 0;
 
-    private final MixedFileIO io;
+    private final AuthenticatedFileIO io;
 
-    protected TaskDataWriter(DataWriter<T> dataWriter, MixedFileIO io) {
+    protected TaskDataWriter(DataWriter<T> dataWriter, AuthenticatedFileIO io) {
       this.dataWriter = dataWriter;
       this.io = io;
     }

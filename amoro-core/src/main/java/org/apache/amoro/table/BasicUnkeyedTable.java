@@ -19,7 +19,7 @@
 package org.apache.amoro.table;
 
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.op.MixedAppendFiles;
 import org.apache.amoro.op.MixedDeleteFiles;
 import org.apache.amoro.op.MixedOverwriteFiles;
@@ -72,16 +72,16 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   private final Map<String, String> catalogProperties;
   private final TableIdentifier tableIdentifier;
   protected final Table icebergTable;
-  protected final MixedFileIO mixedFileIO;
+  protected final AuthenticatedFileIO authenticatedFileIO;
 
   public BasicUnkeyedTable(
       TableIdentifier tableIdentifier,
       Table icebergTable,
-      MixedFileIO mixedFileIO,
+      AuthenticatedFileIO authenticatedFileIO,
       Map<String, String> catalogProperties) {
     this.tableIdentifier = tableIdentifier;
     this.icebergTable = icebergTable;
-    this.mixedFileIO = mixedFileIO;
+    this.authenticatedFileIO = authenticatedFileIO;
     this.catalogProperties = catalogProperties;
   }
 
@@ -272,8 +272,8 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   }
 
   @Override
-  public MixedFileIO io() {
-    return mixedFileIO;
+  public AuthenticatedFileIO io() {
+    return authenticatedFileIO;
   }
 
   @Override

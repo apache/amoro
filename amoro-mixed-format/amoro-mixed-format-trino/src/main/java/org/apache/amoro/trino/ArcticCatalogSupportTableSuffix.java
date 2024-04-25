@@ -20,7 +20,7 @@ package org.apache.amoro.trino;
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.mixed.MixedFormatCatalog;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.op.UpdatePartitionProperties;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
 import org.apache.amoro.table.MixedTable;
@@ -328,7 +328,7 @@ public class ArcticCatalogSupportTableSuffix implements MixedFormatCatalog {
     }
 
     @Override
-    public MixedFileIO io() {
+    public AuthenticatedFileIO io() {
       return table.io();
     }
 

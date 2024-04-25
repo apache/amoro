@@ -23,7 +23,7 @@ import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.io.CloseableIterableWrapper;
 import org.apache.amoro.io.CloseablePredicate;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.table.MetadataColumns;
@@ -201,7 +201,7 @@ public abstract class MixedDeleteFilter<T> {
     return filePathAccessor.get(asStructLike(record)).toString();
   }
 
-  protected MixedFileIO getMixedFileIo() {
+  protected AuthenticatedFileIO getFileIO() {
     return null;
   }
 
@@ -268,7 +268,7 @@ public abstract class MixedDeleteFilter<T> {
     // init map
     try (CloseableIterable<StructLike> deletes = structLikeIterable) {
       Iterator<StructLike> it =
-          getMixedFileIo() == null ? deletes.iterator() : getMixedFileIo().doAs(deletes::iterator);
+          getFileIO() == null ? deletes.iterator() : getFileIO().doAs(deletes::iterator);
       while (it.hasNext()) {
         StructLike structLike = it.next();
         StructLike deletePK = deletePKProjectRow.copyFor(structLike);

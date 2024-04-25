@@ -19,7 +19,7 @@
 package org.apache.amoro.io.reader;
 
 import org.apache.amoro.io.CloseablePredicate;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.amoro.utils.map.StructLikeBaseMap;
@@ -174,7 +174,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
   protected abstract InputFile getInputFile(ContentFile<?> contentFile);
 
-  protected abstract MixedFileIO getMixedFileIo();
+  protected abstract AuthenticatedFileIO getFileIO();
 
   public Set<Integer> deleteIds() {
     return deleteIds;
@@ -268,7 +268,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     // init map
     try (CloseableIterable<RecordWithLsn> deletes = deleteRecords) {
       Iterator<RecordWithLsn> it =
-          getMixedFileIo() == null ? deletes.iterator() : getMixedFileIo().doAs(deletes::iterator);
+          getFileIO() == null ? deletes.iterator() : getFileIO().doAs(deletes::iterator);
       while (it.hasNext()) {
         RecordWithLsn recordWithLsn = it.next();
         StructLike deletePK = internalRecordWrapper.copyFor(recordWithLsn.getRecord());

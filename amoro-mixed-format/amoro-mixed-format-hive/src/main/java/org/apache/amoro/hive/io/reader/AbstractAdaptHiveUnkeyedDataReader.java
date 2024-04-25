@@ -19,7 +19,7 @@
 package org.apache.amoro.hive.io.reader;
 
 import org.apache.amoro.data.DataTreeNode;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.reader.AbstractUnkeyedDataReader;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.map.StructLikeCollections;
@@ -38,7 +38,7 @@ import java.util.function.BiFunction;
 public abstract class AbstractAdaptHiveUnkeyedDataReader<T> extends AbstractUnkeyedDataReader<T> {
 
   public AbstractAdaptHiveUnkeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       String nameMapping,
@@ -58,7 +58,7 @@ public abstract class AbstractAdaptHiveUnkeyedDataReader<T> extends AbstractUnke
   }
 
   public AbstractAdaptHiveUnkeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       String nameMapping,
@@ -76,7 +76,7 @@ public abstract class AbstractAdaptHiveUnkeyedDataReader<T> extends AbstractUnke
   }
 
   public AbstractAdaptHiveUnkeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,

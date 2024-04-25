@@ -18,7 +18,7 @@
 
 package org.apache.amoro.op;
 
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.utils.IcebergInMemoryLockManager;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -29,21 +29,21 @@ import org.apache.iceberg.hadoop.HadoopTableOperations;
 
 public class MixedHadoopTableOperations extends HadoopTableOperations {
 
-  private final MixedFileIO mixedFileIO;
+  private final AuthenticatedFileIO authenticatedFileIO;
 
-  public MixedHadoopTableOperations(Path location, MixedFileIO fileIO, Configuration conf) {
+  public MixedHadoopTableOperations(Path location, AuthenticatedFileIO fileIO, Configuration conf) {
     super(location, fileIO, conf, IcebergInMemoryLockManager.instance());
-    this.mixedFileIO = fileIO;
+    this.authenticatedFileIO = fileIO;
   }
 
   @Override
   public TableMetadata refresh() {
-    return mixedFileIO.doAs(super::refresh);
+    return authenticatedFileIO.doAs(super::refresh);
   }
 
   @Override
   public void commit(TableMetadata base, TableMetadata metadata) {
-    mixedFileIO.doAs(
+    authenticatedFileIO.doAs(
         () -> {
           try {
             super.commit(base, metadata);

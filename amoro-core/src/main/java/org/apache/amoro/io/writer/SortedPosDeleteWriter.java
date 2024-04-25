@@ -20,7 +20,7 @@ package org.apache.amoro.io.writer;
 
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.DataTreeNode;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.table.BaseTable;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
@@ -57,7 +57,7 @@ public class SortedPosDeleteWriter<T> implements Closeable {
 
   private final FileAppenderFactory<T> appenderFactory;
   private final OutputFileFactory fileFactory;
-  private final MixedFileIO io;
+  private final AuthenticatedFileIO io;
   private final FileFormat format;
   private final TaskWriterKey writerKey;
   private final long recordsNumThreshold;
@@ -67,7 +67,7 @@ public class SortedPosDeleteWriter<T> implements Closeable {
   public SortedPosDeleteWriter(
       FileAppenderFactory<T> appenderFactory,
       OutputFileFactory fileFactory,
-      MixedFileIO io,
+      AuthenticatedFileIO io,
       FileFormat format,
       long mask,
       long index,
@@ -85,7 +85,7 @@ public class SortedPosDeleteWriter<T> implements Closeable {
   public SortedPosDeleteWriter(
       FileAppenderFactory<T> appenderFactory,
       OutputFileFactory fileFactory,
-      MixedFileIO io,
+      AuthenticatedFileIO io,
       FileFormat format,
       long mask,
       long index,
@@ -104,7 +104,7 @@ public class SortedPosDeleteWriter<T> implements Closeable {
   public SortedPosDeleteWriter(
       FileAppenderFactory<T> appenderFactory,
       OutputFileFactory fileFactory,
-      MixedFileIO io,
+      AuthenticatedFileIO io,
       FileFormat format,
       StructLike partitionKey) {
     this(

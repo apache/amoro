@@ -32,15 +32,15 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class TestRecoverableMixedFileIO extends TableTestBase {
+public class TestRecoverableAuthenticatedFileIO extends TableTestBase {
   private RecoverableHadoopFileIO recoverableHadoopFileIO;
-  private MixedFileIO mixedFileIO;
+  private AuthenticatedFileIO authenticatedFileIO;
   TableTrashManager trashManager;
   private String file1;
   private String file2;
   private String file3;
 
-  public TestRecoverableMixedFileIO() {
+  public TestRecoverableAuthenticatedFileIO() {
     super(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(true, true));
@@ -54,11 +54,11 @@ public class TestRecoverableMixedFileIO extends TableTestBase {
             mixedTable.id(),
             mixedTable.location(),
             mixedTable.properties(),
-            (MixedHadoopFileIO) mixedTable.io());
+            (AuthenticatedHadoopFileIO) mixedTable.io());
     recoverableHadoopFileIO =
         new RecoverableHadoopFileIO(
             getTableMetaStore(), trashManager, TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT);
-    mixedFileIO = mixedTable.io();
+    authenticatedFileIO = mixedTable.io();
 
     file1 = getMixedTable().location() + "/base/test/test1/test1.parquet";
     file2 = getMixedTable().location() + "/base/test/test2/test2.parquet";
@@ -77,8 +77,8 @@ public class TestRecoverableMixedFileIO extends TableTestBase {
     String newLocation = getMixedTable().location() + "/base/test/test4.parquet";
     createFile(file1);
     recoverableHadoopFileIO.rename(file1, newLocation);
-    Assert.assertFalse(mixedFileIO.exists(file1));
-    Assert.assertTrue(mixedFileIO.exists(newLocation));
+    Assert.assertFalse(authenticatedFileIO.exists(file1));
+    Assert.assertTrue(authenticatedFileIO.exists(newLocation));
   }
 
   @Test
@@ -88,7 +88,7 @@ public class TestRecoverableMixedFileIO extends TableTestBase {
     createFile(file3);
     String dir = getMixedTable().location() + "/base/test";
     recoverableHadoopFileIO.deletePrefix(dir);
-    Assert.assertFalse(mixedFileIO.exists(dir));
+    Assert.assertFalse(authenticatedFileIO.exists(dir));
   }
 
   @Test
@@ -111,7 +111,7 @@ public class TestRecoverableMixedFileIO extends TableTestBase {
   @Test
   public void isEmptyDirectory() {
     String dir = getMixedTable().location() + "/location";
-    mixedFileIO.asFileSystemIO().makeDirectories(dir);
+    authenticatedFileIO.asFileSystemIO().makeDirectories(dir);
     Assert.assertTrue(recoverableHadoopFileIO.isEmptyDirectory(dir));
     Assert.assertFalse(recoverableHadoopFileIO.isEmptyDirectory(getMixedTable().location()));
   }
@@ -120,7 +120,7 @@ public class TestRecoverableMixedFileIO extends TableTestBase {
   public void deleteFile() throws IOException {
     createFile(file1);
     recoverableHadoopFileIO.deleteFile(file1);
-    Assert.assertFalse(mixedFileIO.exists(file1));
+    Assert.assertFalse(authenticatedFileIO.exists(file1));
     Assert.assertTrue(trashManager.fileExistInTrash(file1));
   }
 
@@ -128,7 +128,7 @@ public class TestRecoverableMixedFileIO extends TableTestBase {
   public void deleteInputFile() throws IOException {
     createFile(file1);
     recoverableHadoopFileIO.deleteFile(recoverableHadoopFileIO.newInputFile(file1));
-    Assert.assertFalse(mixedFileIO.exists(file1));
+    Assert.assertFalse(authenticatedFileIO.exists(file1));
     Assert.assertTrue(trashManager.fileExistInTrash(file1));
   }
 
@@ -136,7 +136,7 @@ public class TestRecoverableMixedFileIO extends TableTestBase {
   public void deleteOutputFile() throws IOException {
     createFile(file1);
     recoverableHadoopFileIO.deleteFile(recoverableHadoopFileIO.newOutputFile(file1));
-    Assert.assertFalse(mixedFileIO.exists(file1));
+    Assert.assertFalse(authenticatedFileIO.exists(file1));
     Assert.assertTrue(trashManager.fileExistInTrash(file1));
   }
 
@@ -165,7 +165,7 @@ public class TestRecoverableMixedFileIO extends TableTestBase {
   }
 
   private void createFile(String path) throws IOException {
-    OutputFile baseOrphanDataFile = mixedFileIO.newOutputFile(path);
+    OutputFile baseOrphanDataFile = authenticatedFileIO.newOutputFile(path);
     baseOrphanDataFile.createOrOverwrite().close();
   }
 }

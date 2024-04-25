@@ -24,9 +24,9 @@ import org.apache.amoro.hive.table.KeyedHiveTable;
 import org.apache.amoro.hive.table.UnkeyedHiveTable;
 import org.apache.amoro.hive.utils.HiveSchemaUtil;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.io.MixedFileIO;
-import org.apache.amoro.io.MixedFileIOs;
-import org.apache.amoro.io.MixedHadoopFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIOs;
+import org.apache.amoro.io.AuthenticatedHadoopFileIO;
 import org.apache.amoro.io.TableTrashManagers;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.properties.MetaTableProperties;
@@ -104,8 +104,8 @@ public class MixedHiveTables {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    MixedHadoopFileIO fileIO =
-        MixedFileIOs.buildRecoverableHadoopFileIO(
+    AuthenticatedHadoopFileIO fileIO =
+        AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -145,7 +145,7 @@ public class MixedHiveTables {
    * we check the privilege by calling existing method, the method will throw the
    * UncheckedIOException Exception
    */
-  private void checkPrivilege(MixedFileIO fileIO, String fileLocation) {
+  private void checkPrivilege(AuthenticatedFileIO fileIO, String fileLocation) {
     if (!fileIO.exists(fileLocation)) {
       throw new NoSuchTableException("Table's base location %s does not exist ", fileLocation);
     }
@@ -155,8 +155,8 @@ public class MixedHiveTables {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
-    MixedHadoopFileIO fileIO =
-        MixedFileIOs.buildRecoverableHadoopFileIO(
+    AuthenticatedHadoopFileIO fileIO =
+        AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -192,8 +192,8 @@ public class MixedHiveTables {
       tableMeta.putToProperties(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000");
     }
 
-    MixedHadoopFileIO fileIO =
-        MixedFileIOs.buildRecoverableHadoopFileIO(
+    AuthenticatedHadoopFileIO fileIO =
+        AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -357,8 +357,8 @@ public class MixedHiveTables {
           "Failed to create hive table:" + tableMeta.getTableIdentifier(), e);
     }
 
-    MixedHadoopFileIO fileIO =
-        MixedFileIOs.buildRecoverableHadoopFileIO(
+    AuthenticatedHadoopFileIO fileIO =
+        AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
@@ -376,7 +376,7 @@ public class MixedHiveTables {
 
   public void dropInternalTableByMeta(TableMeta tableMeta, boolean purge) {
     try {
-      MixedFileIO fileIO = MixedFileIOs.buildHadoopFileIO(tableMetaStore);
+      AuthenticatedFileIO fileIO = AuthenticatedFileIOs.buildHadoopFileIO(tableMetaStore);
       Map<String, String> tableProperties = Maps.newHashMap();
       try {
         MixedTable mixedTable = loadTableByMeta(tableMeta);

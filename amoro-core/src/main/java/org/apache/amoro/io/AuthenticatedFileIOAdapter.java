@@ -28,19 +28,19 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-/** An adapter class to make a {@link FileIO} object adapt to {@link MixedFileIO} interface. */
-public class MixedFileIOAdapter implements MixedFileIO {
+/** An adapter class to make a {@link FileIO} object adapt to {@link AuthenticatedFileIO} interface. */
+public class AuthenticatedFileIOAdapter implements AuthenticatedFileIO {
 
   private final FileIO io;
 
-  public MixedFileIOAdapter(FileIO io) {
+  public AuthenticatedFileIOAdapter(FileIO io) {
     this.io = io;
   }
 
   @Override
   public <T> T doAs(Callable<T> callable) {
-    if (io instanceof MixedFileIO) {
-      return ((MixedFileIO) io).doAs(callable);
+    if (io instanceof AuthenticatedFileIO) {
+      return ((AuthenticatedFileIO) io).doAs(callable);
     }
     try {
       return callable.call();
@@ -51,10 +51,10 @@ public class MixedFileIOAdapter implements MixedFileIO {
 
   @Override
   public boolean exists(String path) {
-    if (io instanceof MixedFileIO) {
-      return ((MixedFileIO) io).exists(path);
+    if (io instanceof AuthenticatedFileIO) {
+      return ((AuthenticatedFileIO) io).exists(path);
     }
-    return MixedFileIO.super.exists(path);
+    return AuthenticatedFileIO.super.exists(path);
   }
 
   @Override
@@ -81,24 +81,24 @@ public class MixedFileIOAdapter implements MixedFileIO {
 
   @Override
   public boolean supportFileSystemOperations() {
-    return io instanceof MixedFileIO && ((MixedFileIO) io).supportFileSystemOperations();
+    return io instanceof AuthenticatedFileIO && ((AuthenticatedFileIO) io).supportFileSystemOperations();
   }
 
   @Override
   public SupportsFileSystemOperations asFileSystemIO() {
     Preconditions.checkArgument(this.supportFileSystemOperations());
-    return ((MixedFileIO) io).asFileSystemIO();
+    return ((AuthenticatedFileIO) io).asFileSystemIO();
   }
 
   @Override
   public boolean supportsFileRecycle() {
-    return io instanceof MixedFileIO && ((MixedFileIO) io).supportsFileRecycle();
+    return io instanceof AuthenticatedFileIO && ((AuthenticatedFileIO) io).supportsFileRecycle();
   }
 
   @Override
   public SupportFileRecycleOperations asFileRecycleIO() {
     Preconditions.checkArgument(this.supportsFileRecycle());
-    return ((MixedFileIO) io).asFileRecycleIO();
+    return ((AuthenticatedFileIO) io).asFileRecycleIO();
   }
 
   @Override

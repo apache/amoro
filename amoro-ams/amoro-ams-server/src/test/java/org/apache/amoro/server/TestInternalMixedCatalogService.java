@@ -24,7 +24,7 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.catalog.BasicMixedCatalog;
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.io.MixedDataTestHelpers;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.InternalMixedIcebergCatalog;
 import org.apache.amoro.mixed.MixedFormatCatalog;
@@ -359,7 +359,7 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
       // TODO: there is bug in unkeyed-table.location.
       String location =
           tableService.loadTableMetadata(tableIdentifier.buildTableIdentifier()).getTableLocation();
-      MixedFileIO io = historicalTable.io();
+      AuthenticatedFileIO io = historicalTable.io();
       // drop table through rest-catalog
       catalog.dropTable(tableIdentifier, true);
       Assertions.assertTrue(catalog.listTables(database).isEmpty());

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.hive.utils;
 
-import org.apache.amoro.io.MixedHadoopFileIO;
+import org.apache.amoro.io.AuthenticatedHadoopFileIO;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
@@ -36,7 +36,7 @@ public class HiveCommitUtil {
    * consistency.
    */
   public static List<DataFile> commitConsistentWriteFiles(
-      List<DataFile> dataFiles, MixedHadoopFileIO fileIO, PartitionSpec spec) {
+          List<DataFile> dataFiles, AuthenticatedHadoopFileIO fileIO, PartitionSpec spec) {
     return applyConsistentWriteFile(
         dataFiles,
         spec,

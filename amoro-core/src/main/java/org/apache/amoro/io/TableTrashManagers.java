@@ -42,7 +42,7 @@ public class TableTrashManagers {
       TableIdentifier tableIdentifier,
       String tableLocation,
       Map<String, String> tableProperties,
-      MixedHadoopFileIO fileIO) {
+      AuthenticatedHadoopFileIO fileIO) {
     String customTrashRootLocation =
         tableProperties.get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
     String trashLocation =

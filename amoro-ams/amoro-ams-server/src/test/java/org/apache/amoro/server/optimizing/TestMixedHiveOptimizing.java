@@ -20,7 +20,7 @@ package org.apache.amoro.server.optimizing;
 
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.io.MixedDataTestHelpers;
-import org.apache.amoro.io.MixedHadoopFileIO;
+import org.apache.amoro.io.AuthenticatedHadoopFileIO;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
@@ -146,7 +146,7 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
   }
 
   private List<String> filesInLocation(String location) {
-    MixedHadoopFileIO io = ((SupportHive) mixedTable).io();
+    AuthenticatedHadoopFileIO io = ((SupportHive) mixedTable).io();
     return Streams.stream(io.listDirectory(location))
         .map(FileInfo::location)
         .collect(Collectors.toList());

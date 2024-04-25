@@ -19,7 +19,7 @@
 package org.apache.amoro.table;
 
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.UpdateProperties;
@@ -52,8 +52,8 @@ public interface MixedTable extends Serializable {
   /** Returns the location of this table */
   String location();
 
-  /** Returns a {@link MixedFileIO} to read and write files in this table */
-  MixedFileIO io();
+  /** Returns a {@link AuthenticatedFileIO} to read and write files in this table */
+  AuthenticatedFileIO io();
 
   /** Refresh the current table metadata. */
   void refresh();

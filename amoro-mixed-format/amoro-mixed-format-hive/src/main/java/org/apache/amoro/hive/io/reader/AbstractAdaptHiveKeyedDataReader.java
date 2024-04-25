@@ -19,7 +19,7 @@
 package org.apache.amoro.hive.io.reader;
 
 import org.apache.amoro.data.DataTreeNode;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.reader.AbstractKeyedDataReader;
 import org.apache.amoro.io.reader.MixedDeleteFilter;
 import org.apache.amoro.scan.KeyedTableScanTask;
@@ -43,7 +43,7 @@ import java.util.function.Function;
 public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedDataReader<T> {
 
   public AbstractAdaptHiveKeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
@@ -67,7 +67,7 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
   }
 
   public AbstractAdaptHiveKeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
@@ -87,7 +87,7 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
   }
 
   public AbstractAdaptHiveKeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
@@ -200,7 +200,7 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
     }
 
     @Override
-    protected MixedFileIO getMixedFileIo() {
+    protected AuthenticatedFileIO getFileIO() {
       return fileIO;
     }
   }

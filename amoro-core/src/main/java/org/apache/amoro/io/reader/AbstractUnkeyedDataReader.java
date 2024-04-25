@@ -19,7 +19,7 @@
 package org.apache.amoro.io.reader;
 
 import org.apache.amoro.data.DataTreeNode;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.NodeFilter;
@@ -58,14 +58,14 @@ public abstract class AbstractUnkeyedDataReader<T> {
   protected final Schema projectedSchema;
   protected final String nameMapping;
   protected final boolean caseSensitive;
-  protected final MixedFileIO fileIO;
+  protected final AuthenticatedFileIO fileIO;
   protected final BiFunction<Type, Object, Object> convertConstant;
   protected final Filter<T> dataNodeFilter;
   protected final boolean reuseContainer;
   private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
   public AbstractUnkeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       String nameMapping,
@@ -87,7 +87,7 @@ public abstract class AbstractUnkeyedDataReader<T> {
   }
 
   public AbstractUnkeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       String nameMapping,
@@ -107,7 +107,7 @@ public abstract class AbstractUnkeyedDataReader<T> {
   }
 
   public AbstractUnkeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,

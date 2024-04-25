@@ -18,7 +18,7 @@
 
 package org.apache.amoro.op;
 
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.io.FileIO;
@@ -28,26 +28,26 @@ import org.apache.iceberg.io.LocationProvider;
 public class MixedTableOperations implements TableOperations {
 
   private final TableOperations ops;
-  private final MixedFileIO mixedFileIO;
+  private final AuthenticatedFileIO authenticatedFileIO;
 
-  public MixedTableOperations(TableOperations ops, MixedFileIO mixedFileIO) {
+  public MixedTableOperations(TableOperations ops, AuthenticatedFileIO authenticatedFileIO) {
     this.ops = ops;
-    this.mixedFileIO = mixedFileIO;
+    this.authenticatedFileIO = authenticatedFileIO;
   }
 
   @Override
   public TableMetadata current() {
-    return mixedFileIO.doAs(ops::current);
+    return authenticatedFileIO.doAs(ops::current);
   }
 
   @Override
   public TableMetadata refresh() {
-    return mixedFileIO.doAs(ops::refresh);
+    return authenticatedFileIO.doAs(ops::refresh);
   }
 
   @Override
   public void commit(TableMetadata base, TableMetadata metadata) {
-    mixedFileIO.doAs(
+    authenticatedFileIO.doAs(
         () -> {
           ops.commit(base, metadata);
           return null;
@@ -56,7 +56,7 @@ public class MixedTableOperations implements TableOperations {
 
   @Override
   public FileIO io() {
-    return mixedFileIO;
+    return authenticatedFileIO;
   }
 
   @Override
@@ -75,17 +75,17 @@ public class MixedTableOperations implements TableOperations {
     return new TableOperations() {
       @Override
       public TableMetadata current() {
-        return mixedFileIO.doAs(temp::current);
+        return authenticatedFileIO.doAs(temp::current);
       }
 
       @Override
       public TableMetadata refresh() {
-        return mixedFileIO.doAs(temp::refresh);
+        return authenticatedFileIO.doAs(temp::refresh);
       }
 
       @Override
       public void commit(TableMetadata base, TableMetadata metadata) {
-        mixedFileIO.doAs(
+        authenticatedFileIO.doAs(
             () -> {
               temp.commit(base, metadata);
               return null;
@@ -94,17 +94,17 @@ public class MixedTableOperations implements TableOperations {
 
       @Override
       public FileIO io() {
-        return mixedFileIO;
+        return authenticatedFileIO;
       }
 
       @Override
       public String metadataFileLocation(String fileName) {
-        return mixedFileIO.doAs(() -> temp.metadataFileLocation(fileName));
+        return authenticatedFileIO.doAs(() -> temp.metadataFileLocation(fileName));
       }
 
       @Override
       public LocationProvider locationProvider() {
-        return mixedFileIO.doAs(temp::locationProvider);
+        return authenticatedFileIO.doAs(temp::locationProvider);
       }
     };
   }

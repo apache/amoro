@@ -29,8 +29,8 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.AlreadyExistsException;
 import org.apache.amoro.api.NoSuchObjectException;
 import org.apache.amoro.api.TableMeta;
-import org.apache.amoro.io.MixedFileIO;
-import org.apache.amoro.io.MixedFileIOs;
+import org.apache.amoro.io.AuthenticatedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIOs;
 import org.apache.amoro.mixed.InternalMixedIcebergCatalog;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.op.CreateTableTransaction;
@@ -294,13 +294,13 @@ public class BasicMixedCatalog implements MixedFormatCatalog {
 
     @Override
     public Transaction createTransaction() {
-      MixedFileIO mixedFileIO = MixedFileIOs.buildHadoopFileIO(tableMetaStore);
+      AuthenticatedFileIO authenticatedFileIO = AuthenticatedFileIOs.buildHadoopFileIO(tableMetaStore);
       ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
       TableMeta meta = builder.build();
       String location = getTableLocationForCreate();
       TableOperations tableOperations =
           new MixedHadoopTableOperations(
-              new Path(location), mixedFileIO, tableMetaStore.getConfiguration());
+              new Path(location), authenticatedFileIO, tableMetaStore.getConfiguration());
       TableMetadata tableMetadata =
           tableMetadata(schema, partitionSpec, sortOrder, properties, location);
       Transaction transaction =

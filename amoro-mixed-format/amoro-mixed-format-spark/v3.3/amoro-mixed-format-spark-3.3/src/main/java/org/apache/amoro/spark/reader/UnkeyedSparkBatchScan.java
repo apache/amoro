@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.reader;
 
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.spark.util.Stats;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.CombinedScanTask;
@@ -224,7 +224,7 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
 
   private static class ArcticInputPartition implements InputPartition, Serializable {
     final CombinedScanTask combinedScanTask;
-    final MixedFileIO io;
+    final AuthenticatedFileIO io;
     final boolean caseSensitive;
     final Schema expectedSchema;
     final Schema tableSchema;

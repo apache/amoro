@@ -24,7 +24,7 @@ import org.apache.amoro.hive.table.UnkeyedHiveTable;
 import org.apache.amoro.hive.utils.HiveCommitUtil;
 import org.apache.amoro.hive.utils.HivePartitionUtil;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.io.MixedHadoopFileIO;
+import org.apache.amoro.io.AuthenticatedHadoopFileIO;
 import org.apache.amoro.op.UpdatePartitionProperties;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.utils.TableFileUtil;
@@ -295,7 +295,7 @@ public class ReplaceHivePartitions implements ReplacePartitions {
     List<String> filePathCollect =
         dataFiles.stream().map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
 
-    try (MixedHadoopFileIO io = table.io()) {
+    try (AuthenticatedHadoopFileIO io = table.io()) {
       for (FileInfo info : io.listPrefix(partitionLocation)) {
         if (!filePathCollect.contains(info.location())) {
           io.deleteFile(info.location());

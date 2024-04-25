@@ -19,7 +19,7 @@
 package org.apache.amoro.hive.io.reader;
 
 import org.apache.amoro.data.DataTreeNode;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.Schema;
@@ -42,7 +42,7 @@ import java.util.function.Function;
 public class AdaptHiveGenericUnkeyedDataReader extends AbstractAdaptHiveUnkeyedDataReader<Record> {
 
   public AdaptHiveGenericUnkeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       String nameMapping,
@@ -62,7 +62,7 @@ public class AdaptHiveGenericUnkeyedDataReader extends AbstractAdaptHiveUnkeyedD
   }
 
   public AdaptHiveGenericUnkeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       String nameMapping,
@@ -80,7 +80,7 @@ public class AdaptHiveGenericUnkeyedDataReader extends AbstractAdaptHiveUnkeyedD
   }
 
   public AdaptHiveGenericUnkeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,

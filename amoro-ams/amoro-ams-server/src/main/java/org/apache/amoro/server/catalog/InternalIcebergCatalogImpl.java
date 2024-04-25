@@ -23,7 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.formats.iceberg.IcebergTable;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.server.ArcticManagementConf;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
@@ -104,7 +104,7 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
         getMetadata().getCatalogProperties());
   }
 
-  protected MixedFileIO fileIO(CatalogMeta catalogMeta) {
+  protected AuthenticatedFileIO fileIO(CatalogMeta catalogMeta) {
     return InternalTableUtil.newIcebergFileIo(catalogMeta);
   }
 

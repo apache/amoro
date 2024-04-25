@@ -18,7 +18,7 @@
 
 package org.apache.amoro.io.writer;
 
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
@@ -37,7 +37,7 @@ public class GenericBaseTaskWriter extends BaseTaskWriter<Record> {
       FileFormat format,
       FileAppenderFactory<Record> appenderFactory,
       OutputFileFactory outputFileFactory,
-      MixedFileIO io,
+      AuthenticatedFileIO io,
       long targetFileSize,
       long mask,
       Schema schema,

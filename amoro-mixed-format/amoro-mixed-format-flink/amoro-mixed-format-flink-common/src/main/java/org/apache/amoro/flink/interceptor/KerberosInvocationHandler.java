@@ -19,7 +19,7 @@
 package org.apache.amoro.flink.interceptor;
 
 import org.apache.amoro.flink.util.ReflectionUtil;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -35,11 +35,11 @@ import java.lang.reflect.Proxy;
 public class KerberosInvocationHandler<T> implements InvocationHandler, Serializable {
 
   private static final long serialVersionUID = 1L;
-  private final MixedFileIO mixedFileIO;
+  private final AuthenticatedFileIO authenticatedFileIO;
   private T obj;
 
-  public KerberosInvocationHandler(MixedFileIO mixedFileIO) {
-    this.mixedFileIO = mixedFileIO;
+  public KerberosInvocationHandler(AuthenticatedFileIO authenticatedFileIO) {
+    this.authenticatedFileIO = authenticatedFileIO;
   }
 
   public Object getProxy(T obj) {
@@ -53,7 +53,7 @@ public class KerberosInvocationHandler<T> implements InvocationHandler, Serializ
     Object res;
     try {
       res =
-          mixedFileIO.doAs(
+          authenticatedFileIO.doAs(
               () -> {
                 try {
                   method.setAccessible(true);

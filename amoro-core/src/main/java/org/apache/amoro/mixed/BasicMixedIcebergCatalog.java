@@ -20,7 +20,7 @@ package org.apache.amoro.mixed;
 
 import org.apache.amoro.AmsClient;
 import org.apache.amoro.PooledAmsClient;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.TableTrashManagers;
 import org.apache.amoro.op.CreateTableTransaction;
 import org.apache.amoro.properties.CatalogMetaProperties;
@@ -171,7 +171,7 @@ public class BasicMixedIcebergCatalog implements MixedFormatCatalog {
     // delete custom trash location
     String customTrashLocation =
         table.properties().get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
-    MixedFileIO io = table.io();
+    AuthenticatedFileIO io = table.io();
     // delete custom trash location
     if (customTrashLocation != null) {
       String trashParentLocation =

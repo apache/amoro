@@ -30,7 +30,7 @@ import org.apache.amoro.flink.read.source.FlinkArcticDataReader;
 import org.apache.amoro.flink.read.source.FlinkArcticMORDataReader;
 import org.apache.amoro.flink.read.source.MergeOnReadDataIterator;
 import org.apache.amoro.flink.util.ArcticUtils;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.NodeFilter;
 import org.apache.flink.configuration.ReadableConfig;
@@ -52,7 +52,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
   private final Schema readSchema;
   private final String nameMapping;
   private final boolean caseSensitive;
-  private final MixedFileIO io;
+  private final AuthenticatedFileIO io;
   private final PrimaryKeySpec primaryKeySpec;
   /** The accurate selected columns size if the arctic source projected */
   private final int columnSize;
@@ -71,7 +71,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
       PrimaryKeySpec primaryKeySpec,
       String nameMapping,
       boolean caseSensitive,
-      MixedFileIO io) {
+      AuthenticatedFileIO io) {
     this(
         config,
         tableSchema,
@@ -90,7 +90,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
       PrimaryKeySpec primaryKeySpec,
       String nameMapping,
       boolean caseSensitive,
-      MixedFileIO io,
+      AuthenticatedFileIO io,
       boolean reuse) {
     super(
         new ArrayPoolDataIteratorBatcher<>(

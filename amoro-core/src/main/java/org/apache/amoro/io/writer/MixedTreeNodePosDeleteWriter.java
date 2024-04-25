@@ -19,7 +19,7 @@
 package org.apache.amoro.io.writer;
 
 import org.apache.amoro.data.DataTreeNode;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
@@ -55,7 +55,7 @@ public class MixedTreeNodePosDeleteWriter<T>
   private final FileAppenderFactory<T> appenderFactory;
   private final FileFormat format;
   private final StructLike partition;
-  private final MixedFileIO fileIO;
+  private final AuthenticatedFileIO fileIO;
   private final EncryptionManager encryptionManager;
   private final Long transactionId;
 
@@ -67,7 +67,7 @@ public class MixedTreeNodePosDeleteWriter<T>
       FileAppenderFactory<T> appenderFactory,
       FileFormat format,
       StructLike partition,
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       EncryptionManager encryptionManager,
       Long transactionId,
       String location,

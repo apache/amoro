@@ -21,7 +21,7 @@ package org.apache.amoro.flink.read.source;
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.flink.read.AdaptHiveFlinkParquetReaders;
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveUnkeyedDataReader;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.reader.DeleteFilter;
 import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.table.PrimaryKeySpec;
@@ -58,7 +58,7 @@ public class FlinkArcticDataReader extends AbstractAdaptHiveUnkeyedDataReader<Ro
   private static final long serialVersionUID = -6773693031945244386L;
 
   public FlinkArcticDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       String nameMapping,
@@ -76,7 +76,7 @@ public class FlinkArcticDataReader extends AbstractAdaptHiveUnkeyedDataReader<Ro
   }
 
   public FlinkArcticDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,

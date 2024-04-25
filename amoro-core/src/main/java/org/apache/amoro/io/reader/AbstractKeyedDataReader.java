@@ -19,7 +19,7 @@
 package org.apache.amoro.io.reader;
 
 import org.apache.amoro.data.DataTreeNode;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.map.StructLikeCollections;
@@ -56,7 +56,7 @@ import java.util.function.Function;
  */
 public abstract class AbstractKeyedDataReader<T> implements Serializable {
 
-  protected final MixedFileIO fileIO;
+  protected final AuthenticatedFileIO fileIO;
   protected final Schema tableSchema;
   protected final Schema projectedSchema;
   protected final String nameMapping;
@@ -68,7 +68,7 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
   protected StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
   public AbstractKeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
@@ -92,7 +92,7 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
   }
 
   public AbstractKeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
@@ -113,7 +113,7 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
   }
 
   public AbstractKeyedDataReader(
-      MixedFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
@@ -332,7 +332,7 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
     }
 
     @Override
-    protected MixedFileIO getMixedFileIo() {
+    protected AuthenticatedFileIO getFileIO() {
       return fileIO;
     }
   }

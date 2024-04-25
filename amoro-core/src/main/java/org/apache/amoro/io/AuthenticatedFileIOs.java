@@ -28,11 +28,11 @@ import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Map;
 
-public class MixedFileIOs {
+public class AuthenticatedFileIOs {
 
   public static final boolean CLOSE_TRASH = true;
 
-  public static MixedHadoopFileIO buildRecoverableHadoopFileIO(
+  public static AuthenticatedHadoopFileIO buildRecoverableHadoopFileIO(
       TableIdentifier tableIdentifier,
       String tableLocation,
       Map<String, String> tableProperties,
@@ -45,7 +45,7 @@ public class MixedFileIOs {
             tableProperties,
             TableProperties.ENABLE_TABLE_TRASH,
             TableProperties.ENABLE_TABLE_TRASH_DEFAULT)) {
-      MixedHadoopFileIO fileIO = new MixedHadoopFileIO(tableMetaStore);
+      AuthenticatedHadoopFileIO fileIO = new AuthenticatedHadoopFileIO(tableMetaStore);
       TableTrashManager trashManager =
           TableTrashManagers.build(tableIdentifier, tableLocation, tableProperties, fileIO);
       String trashFilePattern =
@@ -56,19 +56,19 @@ public class MixedFileIOs {
 
       return new RecoverableHadoopFileIO(tableMetaStore, trashManager, trashFilePattern);
     } else {
-      return new MixedHadoopFileIO(tableMetaStore);
+      return new AuthenticatedHadoopFileIO(tableMetaStore);
     }
   }
 
-  public static MixedHadoopFileIO buildHadoopFileIO(TableMetaStore tableMetaStore) {
-    return new MixedHadoopFileIO(tableMetaStore);
+  public static AuthenticatedHadoopFileIO buildHadoopFileIO(TableMetaStore tableMetaStore) {
+    return new AuthenticatedHadoopFileIO(tableMetaStore);
   }
 
-  public static MixedFileIO buildAdaptIcebergFileIO(TableMetaStore tableMetaStore, FileIO io) {
+  public static AuthenticatedFileIO buildAdaptIcebergFileIO(TableMetaStore tableMetaStore, FileIO io) {
     if (io instanceof HadoopFileIO) {
       return buildHadoopFileIO(tableMetaStore);
     } else {
-      return new MixedFileIOAdapter(io);
+      return new AuthenticatedFileIOAdapter(io);
     }
   }
 }

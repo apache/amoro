@@ -18,7 +18,7 @@
 
 package org.apache.amoro.io.reader;
 
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;
@@ -48,12 +48,12 @@ public class BaseIcebergPosDeleteReader {
   private static final Accessor<StructLike> POSITION_ACCESSOR =
       POS_DELETE_SCHEMA.accessorForField(MetadataColumns.DELETE_FILE_POS.fieldId());
 
-  protected final MixedFileIO fileIO;
+  protected final AuthenticatedFileIO fileIO;
   protected final EncryptionManager encryptionManager;
   protected final List<DeleteFile> posDeleteFiles;
 
   public BaseIcebergPosDeleteReader(
-      MixedFileIO fileIO, EncryptionManager encryptionManager, List<DeleteFile> posDeleteFiles) {
+          AuthenticatedFileIO fileIO, EncryptionManager encryptionManager, List<DeleteFile> posDeleteFiles) {
     this.fileIO = fileIO;
     this.encryptionManager = encryptionManager;
     this.posDeleteFiles = posDeleteFiles;

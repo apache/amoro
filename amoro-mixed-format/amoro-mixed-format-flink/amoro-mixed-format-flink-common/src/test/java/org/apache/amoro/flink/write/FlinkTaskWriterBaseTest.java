@@ -25,7 +25,7 @@ import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.source.DataIterator;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.flink.configuration.Configuration;
@@ -137,7 +137,7 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
   }
 
   default List<RowData> recordsOfKeyedTable(
-      KeyedTable table, Schema tableSchema, Schema projectedSchema, MixedFileIO io) {
+      KeyedTable table, Schema tableSchema, Schema projectedSchema, AuthenticatedFileIO io) {
     List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(table, new AtomicInteger(0));
 
     RowDataReaderFunction rowDataReaderFunction =

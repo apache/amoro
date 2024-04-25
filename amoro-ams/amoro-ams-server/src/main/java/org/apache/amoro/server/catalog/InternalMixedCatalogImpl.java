@@ -24,7 +24,7 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.config.Configurations;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.mixed.InternalMixedIcebergCatalog;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.TableMetadata;
@@ -117,7 +117,7 @@ public class InternalMixedCatalogImpl extends InternalIcebergCatalogImpl {
 
     org.apache.amoro.table.TableIdentifier tableIdentifier =
         org.apache.amoro.table.TableIdentifier.of(name(), database, tableName);
-    MixedFileIO fileIO = InternalTableUtil.newIcebergFileIo(getMetadata());
+    AuthenticatedFileIO fileIO = InternalTableUtil.newIcebergFileIo(getMetadata());
     MixedTable mixedIcebergTable;
 
     BaseTable baseTable = loadTableStore(tableMetadata, false);

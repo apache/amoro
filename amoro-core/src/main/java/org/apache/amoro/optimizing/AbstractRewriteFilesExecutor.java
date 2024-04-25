@@ -23,7 +23,7 @@ import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 import static org.apache.iceberg.TableProperties.DELETE_DEFAULT_FILE_FORMAT;
 
 import org.apache.amoro.data.DataTreeNode;
-import org.apache.amoro.io.MixedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.writer.SetTreeNode;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
@@ -72,7 +72,7 @@ public abstract class AbstractRewriteFilesExecutor
 
   protected OptimizingDataReader dataReader;
 
-  protected MixedFileIO io;
+  protected AuthenticatedFileIO io;
 
   protected StructLikeCollections structLikeCollections;
 

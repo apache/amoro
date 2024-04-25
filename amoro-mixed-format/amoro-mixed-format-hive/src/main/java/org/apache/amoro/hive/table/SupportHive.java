@@ -19,13 +19,13 @@
 package org.apache.amoro.hive.table;
 
 import org.apache.amoro.hive.HMSClientPool;
-import org.apache.amoro.io.MixedHadoopFileIO;
+import org.apache.amoro.io.AuthenticatedHadoopFileIO;
 import org.apache.amoro.table.MixedTable;
 
 /** Mix-in interface to mark task use hive as base store */
 public interface SupportHive extends MixedTable {
 
-  MixedHadoopFileIO io();
+  AuthenticatedHadoopFileIO io();
 
   /**
    * Base path to store hive data files

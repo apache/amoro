@@ -42,14 +42,14 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
-/** Implementation of {@link MixedFileIO} for hadoop file system with authentication. */
-public class MixedHadoopFileIO extends HadoopFileIO
-    implements MixedFileIO, SupportsPrefixOperations, SupportsFileSystemOperations {
+/** Implementation of {@link AuthenticatedFileIO} for hadoop file system with authentication. */
+public class AuthenticatedHadoopFileIO extends HadoopFileIO
+    implements AuthenticatedFileIO, SupportsPrefixOperations, SupportsFileSystemOperations {
 
   private final TableMetaStore tableMetaStore;
   private boolean fileRecycleEnabled;
 
-  MixedHadoopFileIO(TableMetaStore tableMetaStore) {
+  AuthenticatedHadoopFileIO(TableMetaStore tableMetaStore) {
     super(tableMetaStore.getConfiguration());
     this.tableMetaStore = tableMetaStore;
   }
