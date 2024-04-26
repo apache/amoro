@@ -22,8 +22,6 @@ import org.apache.amoro.server.utils.MemoryUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-
 public class TestMemoryUtil {
 
   @Test
@@ -38,8 +36,11 @@ public class TestMemoryUtil {
 
     Assertions.assertArrayEquals(expected, actual);
 
-    Assertions.assertThrows(IllegalArgumentException.class, () -> MemoryUtil.convertToMegabytes("1024a"));
-    Assertions.assertThrows(IllegalArgumentException.class, () -> MemoryUtil.convertToMegabytes("1023.11"));
-    Assertions.assertThrows(IllegalArgumentException.class, () -> MemoryUtil.convertToMegabytes("abc"));
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> MemoryUtil.convertToMegabytes("1024a"));
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> MemoryUtil.convertToMegabytes("1023.11"));
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> MemoryUtil.convertToMegabytes("abc"));
   }
 }

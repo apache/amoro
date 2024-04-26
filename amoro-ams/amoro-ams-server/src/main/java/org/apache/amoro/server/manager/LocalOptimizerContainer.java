@@ -53,7 +53,8 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
 
   @Override
   protected String buildOptimizerStartupArgsString(Resource resource) {
-    long memoryPerThread = MemoryUtil.convertToMegabytes(resource.getRequiredProperty(JOB_MEMORY_PROPERTY));
+    long memoryPerThread =
+        MemoryUtil.convertToMegabytes(resource.getRequiredProperty(JOB_MEMORY_PROPERTY));
     long memory = memoryPerThread * resource.getThreadCount();
     return String.format(
         "%s/bin/optimizer.sh %s %s",

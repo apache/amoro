@@ -23,28 +23,27 @@ import java.util.regex.Pattern;
 
 /** This is a memory converter util. */
 public class MemoryUtil {
-    private static final Pattern MEMORY_PATTERN = Pattern.compile("(\\d+)([kKmMgG]?)");
+  private static final Pattern MEMORY_PATTERN = Pattern.compile("(\\d+)([kKmMgG]?)");
 
-    // Convert memory string to megabytes (m)
-    public static long convertToMegabytes(String memoryString) {
-        Matcher matcher = MEMORY_PATTERN.matcher(memoryString.trim());
-        if (matcher.matches()) {
-            long value = Long.parseLong(matcher.group(1));
-            String unit = matcher.group(2).toLowerCase();
-            switch (unit) {
-                case "":
-                case "m":
-                    return value;
-                case "k":
-                    return value / 1024;
-                case "g":
-                    return value * 1024;
-                default:
-                    throw new IllegalArgumentException("Invalid memory unit: " + unit);
-            }
-        } else {
-            throw new IllegalArgumentException("Invalid memory string: " + memoryString);
-        }
+  // Convert memory string to megabytes (m)
+  public static long convertToMegabytes(String memoryString) {
+    Matcher matcher = MEMORY_PATTERN.matcher(memoryString.trim());
+    if (matcher.matches()) {
+      long value = Long.parseLong(matcher.group(1));
+      String unit = matcher.group(2).toLowerCase();
+      switch (unit) {
+        case "":
+        case "m":
+          return value;
+        case "k":
+          return value / 1024;
+        case "g":
+          return value * 1024;
+        default:
+          throw new IllegalArgumentException("Invalid memory unit: " + unit);
+      }
+    } else {
+      throw new IllegalArgumentException("Invalid memory string: " + memoryString);
     }
-
+  }
 }
