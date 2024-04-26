@@ -105,7 +105,7 @@ public class KeyedConnectorSplitManager implements ConnectorSplitManager {
     ClassLoader pluginClassloader = arcticTable.getClass().getClassLoader();
 
     try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(pluginClassloader)) {
-      // 优化
+      // Optimization
       CloseableIterable<CombinedScanTask> combinedScanTasks =
           MetricUtil.duration(tableScan::planTasks, "plan tasks");
 
