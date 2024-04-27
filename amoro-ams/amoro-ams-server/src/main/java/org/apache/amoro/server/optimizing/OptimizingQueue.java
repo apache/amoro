@@ -476,11 +476,11 @@ public class OptimizingQueue extends PersistentBase {
     // the cleanup of task should be done after unlock to avoid deadlock
     @Override
     public void releaseResourcesIfNecessary() {
-      if (this.status == OptimizingProcess.Status.FAILED || this.status == OptimizingProcess.Status.CLOSED) {
+      if (this.status == OptimizingProcess.Status.FAILED
+          || this.status == OptimizingProcess.Status.CLOSED) {
         cancelTasks();
       }
     }
-
 
     @Override
     public boolean isClosed() {
