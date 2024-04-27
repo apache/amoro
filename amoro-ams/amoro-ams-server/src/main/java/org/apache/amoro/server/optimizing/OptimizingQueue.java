@@ -196,7 +196,7 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   private TaskRuntime fetchTask() {
-    return Optional.ofNullable(retryTaskQueue.poll()).orElseGet(() -> fetchScheduledTask());
+    return Optional.ofNullable(retryTaskQueue.poll()).orElseGet(this::fetchScheduledTask);
   }
 
   private TaskRuntime fetchScheduledTask() {
@@ -424,7 +424,7 @@ public class OptimizingQueue extends PersistentBase {
       } finally {
         lock.unlock();
       }
-      cancelTasks();
+      releaseResourcesIfNecessary();
     }
 
     @Override
@@ -471,11 +471,16 @@ public class OptimizingQueue extends PersistentBase {
       } finally {
         lock.unlock();
       }
-      // the cleanup of task should be done after unlock to avoid deadlock
-      if (this.status == OptimizingProcess.Status.FAILED) {
+    }
+
+    // the cleanup of task should be done after unlock to avoid deadlock
+    @Override
+    public void releaseResourcesIfNecessary() {
+      if (this.status == OptimizingProcess.Status.FAILED || this.status == OptimizingProcess.Status.CLOSED) {
         cancelTasks();
       }
     }
+
 
     @Override
     public boolean isClosed() {

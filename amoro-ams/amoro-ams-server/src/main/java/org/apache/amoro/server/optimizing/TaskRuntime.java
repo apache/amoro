@@ -105,6 +105,7 @@ public class TaskRuntime extends StatedPersistentBase {
           token = null;
           threadId = -1;
         });
+    owner.releaseResourcesIfNecessary();
   }
 
   void reset() {
@@ -431,6 +432,8 @@ public class TaskRuntime extends StatedPersistentBase {
 
   public interface TaskOwner {
     void acceptResult(TaskRuntime taskRuntime);
+
+    void releaseResourcesIfNecessary();
 
     boolean isClosed();
   }
