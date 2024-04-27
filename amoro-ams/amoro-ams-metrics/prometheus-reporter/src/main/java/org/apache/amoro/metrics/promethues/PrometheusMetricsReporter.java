@@ -35,9 +35,10 @@ public class PrometheusMetricsReporter implements MetricReporter {
 
   @Override
   public void open(Map<String, String> properties) {
-    int port = Optional.ofNullable(properties.get(PORT))
-              .map(Integer::valueOf)
-              .orElseThrow(() -> new IllegalArgumentException("Lack required property: " + PORT));
+    int port =
+        Optional.ofNullable(properties.get(PORT))
+            .map(Integer::valueOf)
+            .orElseThrow(() -> new IllegalArgumentException("Lack required property: " + PORT));
 
     try {
       this.server = new HTTPServer(port);
