@@ -37,7 +37,7 @@
         <module>amoro-ams-server</module>
         <module>amoro-ams-dashboard</module>
         <module>amoro-ams-optimizer</module>
-        <module>amoro-ams-metric-reporter</module>
+        <module>amoro-ams-metrics</module>
         <module>dist</module>
     </modules>
 

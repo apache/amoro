@@ -27,7 +27,7 @@
         <version>0.7-SNAPSHOT</version>
     </parent>
 
-    <artifactId>amoro-ams-metric-reporter</artifactId>
+    <artifactId>amoro-ams-metrics</artifactId>
     <packaging>pom</packaging>
     <name>Amoro Project AMS Metric Reporter Parent</name>
     <url>https://amoro.apache.org</url>

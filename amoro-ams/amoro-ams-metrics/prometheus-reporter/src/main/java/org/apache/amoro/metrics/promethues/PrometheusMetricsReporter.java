@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.metrics.reporter.promethues;
+package org.apache.amoro.metrics.promethues;
 
 import io.prometheus.client.exporter.HTTPServer;
 import org.apache.amoro.api.metrics.MetricReporter;
@@ -27,22 +27,20 @@ import java.util.Map;
 import java.util.Optional;
 
 /** Prometheus exporter */
-public class PrometheusExporterMetricReporter implements MetricReporter {
+public class PrometheusMetricsReporter implements MetricReporter {
 
   public static final String PORT = "port";
 
-  private int port;
   private HTTPServer server;
 
   @Override
   public void open(Map<String, String> properties) {
-    this.port =
-        Optional.ofNullable(properties.get(PORT))
-            .map(Integer::valueOf)
-            .orElseThrow(() -> new IllegalArgumentException("Lack required property: " + PORT));
+    int port = Optional.ofNullable(properties.get(PORT))
+              .map(Integer::valueOf)
+              .orElseThrow(() -> new IllegalArgumentException("Lack required property: " + PORT));
 
     try {
-      this.server = new HTTPServer(this.port);
+      this.server = new HTTPServer(port);
     } catch (IOException e) {
       throw new RuntimeException("Start prometheus exporter server failed.", e);
     }
@@ -60,7 +58,7 @@ public class PrometheusExporterMetricReporter implements MetricReporter {
 
   @Override
   public void setGlobalMetricSet(MetricSet globalMetricSet) {
-    MetricCollector collector = new MetricCollector(globalMetricSet);
+    MetricsCollector collector = new MetricsCollector(globalMetricSet);
     collector.register();
   }
 }
