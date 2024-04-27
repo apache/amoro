@@ -21,12 +21,12 @@ package org.apache.amoro.formats;
 import org.apache.amoro.AmoroCatalog;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.catalog.CatalogLoader;
 import org.apache.amoro.formats.mixed.MixedIcebergCatalogFactory;
+import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -37,7 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MixedIcebergHadoopCatalogTestHelper
-    extends AbstractFormatCatalogTestHelper<ArcticCatalog> {
+    extends AbstractFormatCatalogTestHelper<MixedFormatCatalog> {
 
   public static final Schema SCHEMA =
       new Schema(
@@ -63,7 +63,7 @@ public class MixedIcebergHadoopCatalogTestHelper
   @Override
   public AmoroCatalog amoroCatalog() {
     MixedIcebergCatalogFactory mixedIcebergCatalogFactory = new MixedIcebergCatalogFactory();
-    TableMetaStore metaStore = ArcticCatalogUtil.buildMetaStore(getCatalogMeta());
+    TableMetaStore metaStore = MixedCatalogUtil.buildMetaStore(getCatalogMeta());
     Map<String, String> properties =
         mixedIcebergCatalogFactory.convertCatalogProperties(
             catalogName, getMetastoreType(), catalogProperties);
@@ -72,9 +72,9 @@ public class MixedIcebergHadoopCatalogTestHelper
   }
 
   @Override
-  public ArcticCatalog originalCatalog() {
+  public MixedFormatCatalog originalCatalog() {
     CatalogMeta meta = getCatalogMeta();
-    TableMetaStore metaStore = ArcticCatalogUtil.buildMetaStore(meta);
+    TableMetaStore metaStore = MixedCatalogUtil.buildMetaStore(meta);
     return CatalogLoader.createCatalog(
         catalogName(), meta.getCatalogType(), meta.getCatalogProperties(), metaStore);
   }
@@ -99,7 +99,7 @@ public class MixedIcebergHadoopCatalogTestHelper
 
   @Override
   public void clean() {
-    ArcticCatalog catalog = originalCatalog();
+    MixedFormatCatalog catalog = originalCatalog();
     catalog
         .listDatabases()
         .forEach(
@@ -115,7 +115,7 @@ public class MixedIcebergHadoopCatalogTestHelper
 
   @Override
   public void createTable(String db, String tableName) throws Exception {
-    ArcticCatalog catalog = originalCatalog();
+    MixedFormatCatalog catalog = originalCatalog();
     catalog
         .newTableBuilder(TableIdentifier.of(catalogName(), db, tableName), SCHEMA)
         .withPartitionSpec(SPEC)
@@ -124,7 +124,7 @@ public class MixedIcebergHadoopCatalogTestHelper
 
   @Override
   public void createDatabase(String database) {
-    ArcticCatalog catalog = originalCatalog();
+    MixedFormatCatalog catalog = originalCatalog();
     catalog.createDatabase(database);
   }
 

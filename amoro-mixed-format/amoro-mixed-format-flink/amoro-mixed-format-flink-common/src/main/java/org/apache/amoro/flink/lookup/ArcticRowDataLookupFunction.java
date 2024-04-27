@@ -21,7 +21,7 @@ package org.apache.amoro.flink.lookup;
 import org.apache.amoro.flink.read.hybrid.reader.DataIteratorReaderFunction;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.functions.FunctionContext;
@@ -41,7 +41,7 @@ public class ArcticRowDataLookupFunction extends LookupFunction {
 
   public ArcticRowDataLookupFunction(
       TableFactory<RowData> tableFactory,
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       List<String> joinKeys,
       Schema projectSchema,
       List<Expression> filters,
@@ -53,7 +53,7 @@ public class ArcticRowDataLookupFunction extends LookupFunction {
     this.basicLookupFunction =
         new BasicLookupFunction<>(
             tableFactory,
-            arcticTable,
+            mixedTable,
             joinKeys,
             projectSchema,
             filters,

@@ -21,7 +21,7 @@ package org.apache.amoro.formats.iceberg;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
@@ -41,7 +41,7 @@ public class IcebergCatalog implements FormatCatalog {
   private final Map<String, String> properties;
 
   public IcebergCatalog(Catalog catalog, Map<String, String> properties, TableMetaStore metaStore) {
-    this.icebergCatalog = ArcticCatalogUtil.buildCacheCatalog(catalog, properties);
+    this.icebergCatalog = MixedCatalogUtil.buildCacheCatalog(catalog, properties);
     if (catalog instanceof SupportsNamespaces) {
       this.asNamespaceCatalog = (SupportsNamespaces) catalog;
     }

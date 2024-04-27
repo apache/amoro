@@ -20,7 +20,7 @@ package org.apache.amoro.flink.read;
 
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,15 +36,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class PartitionAndNodeGroup {
   AtomicInteger splitCount = new AtomicInteger();
-  Collection<ArcticFileScanTask> insertTasks;
-  Collection<ArcticFileScanTask> deleteTasks;
+  Collection<MixedFileScanTask> insertTasks;
+  Collection<MixedFileScanTask> deleteTasks;
 
-  public PartitionAndNodeGroup insertFileScanTask(Set<ArcticFileScanTask> insertTasks) {
+  public PartitionAndNodeGroup insertFileScanTask(Set<MixedFileScanTask> insertTasks) {
     this.insertTasks = insertTasks;
     return this;
   }
 
-  public PartitionAndNodeGroup deleteFileScanTask(Set<ArcticFileScanTask> deleteTasks) {
+  public PartitionAndNodeGroup deleteFileScanTask(Set<MixedFileScanTask> deleteTasks) {
     this.deleteTasks = deleteTasks;
     return this;
   }
@@ -76,14 +76,14 @@ public class PartitionAndNodeGroup {
   }
 
   /**
-   * Split the collection of {@link ArcticFileScanTask} into different groups.
+   * Split the collection of {@link MixedFileScanTask} into different groups.
    *
    * @param insert if plan insert files or not
    * @param nodes the key of nodes is partition info which the file located, the value of nodes is
    *     hashmap of arctic tree node id and {@link Node}
    */
   private void plan(boolean insert, Map<String, Map<Long, Node>> nodes) {
-    Collection<ArcticFileScanTask> tasks = insert ? insertTasks : deleteTasks;
+    Collection<MixedFileScanTask> tasks = insert ? insertTasks : deleteTasks;
     if (tasks == null) {
       return;
     }
@@ -105,14 +105,14 @@ public class PartitionAndNodeGroup {
   }
 
   private static class Node {
-    List<ArcticFileScanTask> inserts = new ArrayList<>(1);
-    List<ArcticFileScanTask> deletes = new ArrayList<>(1);
+    List<MixedFileScanTask> inserts = new ArrayList<>(1);
+    List<MixedFileScanTask> deletes = new ArrayList<>(1);
 
-    void addInsert(ArcticFileScanTask task) {
+    void addInsert(MixedFileScanTask task) {
       inserts.add(task);
     }
 
-    void addDelete(ArcticFileScanTask task) {
+    void addDelete(MixedFileScanTask task) {
       deletes.add(task);
     }
   }

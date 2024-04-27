@@ -21,8 +21,8 @@ package org.apache.amoro.spark.mixed;
 import static org.apache.amoro.spark.mixed.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
 import static org.apache.amoro.spark.mixed.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE_DEFAULT;
 
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.catalog.CatalogLoader;
+import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.spark.SupportAuthentication;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
@@ -52,7 +52,7 @@ public abstract class MixedSparkCatalogBase
   private String catalogName = null;
   private TableMetaStore tableMetaStore;
 
-  protected ArcticCatalog catalog;
+  protected MixedFormatCatalog catalog;
   private CaseInsensitiveStringMap options;
 
   @Override

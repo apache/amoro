@@ -22,7 +22,7 @@ import org.apache.amoro.AmoroCatalog;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.formats.iceberg.IcebergCatalogFactory;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -73,7 +73,7 @@ public class IcebergHadoopCatalogTestHelper extends AbstractFormatCatalogTestHel
   @Override
   public AmoroCatalog amoroCatalog() {
     IcebergCatalogFactory icebergCatalogFactory = new IcebergCatalogFactory();
-    TableMetaStore metaStore = ArcticCatalogUtil.buildMetaStore(getCatalogMeta());
+    TableMetaStore metaStore = MixedCatalogUtil.buildMetaStore(getCatalogMeta());
     Map<String, String> properties =
         icebergCatalogFactory.convertCatalogProperties(
             catalogName, getMetastoreType(), catalogProperties);
@@ -83,9 +83,9 @@ public class IcebergHadoopCatalogTestHelper extends AbstractFormatCatalogTestHel
   @Override
   public Catalog originalCatalog() {
     Map<String, String> props =
-        ArcticCatalogUtil.withIcebergCatalogInitializeProperties(
+        MixedCatalogUtil.withIcebergCatalogInitializeProperties(
             catalogName, getMetastoreType(), catalogProperties);
-    TableMetaStore metaStore = ArcticCatalogUtil.buildMetaStore(getCatalogMeta());
+    TableMetaStore metaStore = MixedCatalogUtil.buildMetaStore(getCatalogMeta());
     return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(
         catalogName, props, metaStore.getConfiguration());
   }

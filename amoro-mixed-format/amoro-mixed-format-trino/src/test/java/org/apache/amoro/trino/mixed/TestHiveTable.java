@@ -18,15 +18,15 @@
 
 package org.apache.amoro.trino.mixed;
 
-import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.MockAmoroManagementServer.TEST_CATALOG_NAME;
 import static org.apache.amoro.table.TableProperties.BASE_FILE_FORMAT;
 import static org.apache.amoro.table.TableProperties.CHANGE_FILE_FORMAT;
 import static org.apache.amoro.table.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.apache.amoro.MockArcticMetastoreServer;
+import org.apache.amoro.MockAmoroManagementServer;
 import org.apache.amoro.data.ChangeAction;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.BaseLocationKind;
 import org.apache.amoro.table.ChangeLocationKind;
 import org.apache.amoro.table.LocationKind;
@@ -143,7 +143,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
 
   @Override
   protected QueryRunner createQueryRunner() throws Exception {
-    AMS = MockArcticMetastoreServer.getInstance();
+    AMS = MockAmoroManagementServer.getInstance();
     startMetastore();
     setupTables();
     initData();
@@ -328,25 +328,25 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
     stopMetastore();
   }
 
-  private void write(ArcticTable table, LocationKind locationKind, List<Record> records)
+  private void write(MixedTable table, LocationKind locationKind, List<Record> records)
       throws IOException {
     write(table, locationKind, records, ChangeAction.INSERT, null);
   }
 
   private void write(
-      ArcticTable table, LocationKind locationKind, List<Record> records, ChangeAction changeAction)
+          MixedTable table, LocationKind locationKind, List<Record> records, ChangeAction changeAction)
       throws IOException {
     write(table, locationKind, records, changeAction, null);
   }
 
   private void write(
-      ArcticTable table, LocationKind locationKind, List<Record> records, FileFormat fileFormat)
+          MixedTable table, LocationKind locationKind, List<Record> records, FileFormat fileFormat)
       throws IOException {
     write(table, locationKind, records, ChangeAction.INSERT, fileFormat);
   }
 
   private void write(
-      ArcticTable table,
+      MixedTable table,
       LocationKind locationKind,
       List<Record> records,
       ChangeAction changeAction,
@@ -383,7 +383,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
   }
 
   private List<TaskWriter<Record>> genWriters(
-      ArcticTable table,
+      MixedTable table,
       LocationKind locationKind,
       ChangeAction changeAction,
       FileFormat... fileFormat) {

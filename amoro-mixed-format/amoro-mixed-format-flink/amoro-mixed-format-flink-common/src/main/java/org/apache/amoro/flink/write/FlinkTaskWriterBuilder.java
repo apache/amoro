@@ -28,11 +28,11 @@ import org.apache.amoro.io.writer.OutputFileFactory;
 import org.apache.amoro.io.writer.SortedPosDeleteWriter;
 import org.apache.amoro.io.writer.TaskWriterBuilder;
 import org.apache.amoro.properties.HiveTableProperties;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.BaseLocationKind;
 import org.apache.amoro.table.ChangeLocationKind;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.LocationKind;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
@@ -57,14 +57,14 @@ import java.util.Locale;
 
 public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
 
-  private final ArcticTable table;
+  private final MixedTable table;
   private Long transactionId;
   private int partitionId = 0;
   private long taskId = 0;
   private RowType flinkSchema;
   private long mask;
 
-  private FlinkTaskWriterBuilder(ArcticTable table) {
+  private FlinkTaskWriterBuilder(MixedTable table) {
     this.table = table;
   }
 
@@ -283,7 +283,7 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
     throw new UnsupportedOperationException("flink not support position delete");
   }
 
-  public static FlinkTaskWriterBuilder buildFor(ArcticTable table) {
+  public static FlinkTaskWriterBuilder buildFor(MixedTable table) {
     return new FlinkTaskWriterBuilder(table);
   }
 }

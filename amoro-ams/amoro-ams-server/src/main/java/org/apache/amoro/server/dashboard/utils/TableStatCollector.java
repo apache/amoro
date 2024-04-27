@@ -22,8 +22,8 @@ import org.apache.amoro.Constants;
 import org.apache.amoro.server.dashboard.model.FilesStatistics;
 import org.apache.amoro.server.dashboard.model.SnapshotInfo;
 import org.apache.amoro.server.dashboard.model.TableStatistics;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.Snapshot;
@@ -213,7 +213,7 @@ public class TableStatCollector {
   }
 
   public static void fillTableStatistics(
-      TableStatistics tableStatistics, UnkeyedTable arcticInternalTable, ArcticTable table) {
+      TableStatistics tableStatistics, UnkeyedTable arcticInternalTable, MixedTable table) {
     if (arcticInternalTable == null) {
       initEmptyTableStatistics(tableStatistics, table.id());
       return;

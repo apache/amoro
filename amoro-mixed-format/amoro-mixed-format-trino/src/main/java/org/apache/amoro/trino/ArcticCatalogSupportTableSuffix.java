@@ -19,11 +19,11 @@
 package org.apache.amoro.trino;
 
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.op.UpdatePartitionProperties;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.BasicUnkeyedTable;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.KeyedTable;
@@ -66,14 +66,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * A wrapper of {@link ArcticCatalog} to resolve sub table, such as
+ * A wrapper of {@link MixedFormatCatalog} to resolve sub table, such as
  * "tableName#change","tableName#base"
  */
-public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
+public class ArcticCatalogSupportTableSuffix implements MixedFormatCatalog {
 
-  private final ArcticCatalog arcticCatalog;
+  private final MixedFormatCatalog arcticCatalog;
 
-  public ArcticCatalogSupportTableSuffix(ArcticCatalog arcticCatalog) {
+  public ArcticCatalogSupportTableSuffix(MixedFormatCatalog arcticCatalog) {
     this.arcticCatalog = arcticCatalog;
   }
 
@@ -108,7 +108,7 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   }
 
   @Override
-  public ArcticTable loadTable(TableIdentifier tableIdentifier) {
+  public MixedTable loadTable(TableIdentifier tableIdentifier) {
     TableNameResolve tableNameResolve = new TableNameResolve(tableIdentifier.getTableName());
     if (tableNameResolve.withSuffix()) {
       TableIdentifier newTableIdentifier =
@@ -116,15 +116,15 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
               tableIdentifier.getCatalog(),
               tableIdentifier.getDatabase(),
               tableNameResolve.getTableName());
-      ArcticTable arcticTable = arcticCatalog.loadTable(newTableIdentifier);
-      if (arcticTable.isUnkeyedTable()) {
+      MixedTable mixedTable = arcticCatalog.loadTable(newTableIdentifier);
+      if (mixedTable.isUnkeyedTable()) {
         throw new IllegalArgumentException(
             "table "
                 + newTableIdentifier
                 + " is not keyed table can not use "
                 + "change or base suffix");
       }
-      KeyedTable keyedTable = arcticTable.asKeyedTable();
+      KeyedTable keyedTable = mixedTable.asKeyedTable();
       if (tableNameResolve.isBase()) {
         return keyedTable.baseTable();
       } else {
@@ -328,7 +328,7 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     }
 
     @Override
-    public ArcticFileIO io() {
+    public AuthenticatedFileIO io() {
       return table.io();
     }
 

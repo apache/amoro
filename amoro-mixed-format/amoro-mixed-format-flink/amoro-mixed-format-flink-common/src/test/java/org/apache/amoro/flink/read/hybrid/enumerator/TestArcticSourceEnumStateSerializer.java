@@ -72,7 +72,7 @@ public class TestArcticSourceEnumStateSerializer extends TestShuffleSplitAssigne
     SplitEnumeratorContext<ArcticSplit> splitEnumeratorContext =
         new InternalSplitEnumeratorContext(3);
     try (ShuffleSplitAssigner actualAssigner =
-        new ShuffleSplitAssigner(splitEnumeratorContext, getArcticTable().name(), actual)) {
+        new ShuffleSplitAssigner(splitEnumeratorContext, getMixedTable().name(), actual)) {
       List<ArcticSplit> actualSplits = new ArrayList<>();
 
       int subtaskId = 2;

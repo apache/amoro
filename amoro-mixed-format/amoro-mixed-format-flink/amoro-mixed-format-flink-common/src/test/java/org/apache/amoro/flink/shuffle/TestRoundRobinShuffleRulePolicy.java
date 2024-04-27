@@ -60,7 +60,7 @@ public class TestRoundRobinShuffleRulePolicy extends FlinkTestBase {
     Assume.assumeTrue(isKeyedTable());
     Assume.assumeTrue(isPartitionedTable());
     ShuffleHelper helper =
-        ShuffleHelper.build(getArcticTable(), getArcticTable().schema(), FLINK_ROW_TYPE);
+        ShuffleHelper.build(getMixedTable(), getMixedTable().schema(), FLINK_ROW_TYPE);
     RoundRobinShuffleRulePolicy policy = new RoundRobinShuffleRulePolicy(helper, 5, 2);
     Map<Integer, Set<DataTreeNode>> subTaskTreeNodes = policy.getSubtaskTreeNodes();
     Assert.assertEquals(subTaskTreeNodes.size(), 5);
@@ -99,7 +99,7 @@ public class TestRoundRobinShuffleRulePolicy extends FlinkTestBase {
     Assume.assumeTrue(isKeyedTable());
     Assume.assumeFalse(isPartitionedTable());
     ShuffleHelper helper =
-        ShuffleHelper.build(getArcticTable(), getArcticTable().schema(), FLINK_ROW_TYPE);
+        ShuffleHelper.build(getMixedTable(), getMixedTable().schema(), FLINK_ROW_TYPE);
     RoundRobinShuffleRulePolicy policy = new RoundRobinShuffleRulePolicy(helper, 5, 2);
     Map<Integer, Set<DataTreeNode>> subTaskTreeNodes = policy.getSubtaskTreeNodes();
     Assert.assertEquals(subTaskTreeNodes.size(), 5);
@@ -138,7 +138,7 @@ public class TestRoundRobinShuffleRulePolicy extends FlinkTestBase {
     Assume.assumeFalse(isKeyedTable());
     Assume.assumeTrue(isPartitionedTable());
     ShuffleHelper helper =
-        ShuffleHelper.build(getArcticTable(), getArcticTable().schema(), FLINK_ROW_TYPE);
+        ShuffleHelper.build(getMixedTable(), getMixedTable().schema(), FLINK_ROW_TYPE);
     RoundRobinShuffleRulePolicy policy = new RoundRobinShuffleRulePolicy(helper, 5, 2);
     Map<Integer, Set<DataTreeNode>> subTaskTreeNodes = policy.getSubtaskTreeNodes();
     Assert.assertEquals(subTaskTreeNodes.size(), 5);

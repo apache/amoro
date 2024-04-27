@@ -18,7 +18,7 @@
 
 package org.apache.amoro.io.reader;
 
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.optimizing.OptimizingDataReader;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.scan.CombinedIcebergScanTask;
@@ -64,7 +64,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected final Schema tableSchema;
   protected final String nameMapping;
   protected final boolean caseSensitive;
-  protected final ArcticFileIO fileIO;
+  protected final AuthenticatedFileIO fileIO;
   protected final EncryptionManager encryptionManager;
   protected final BiFunction<Type, Object, Object> convertConstant;
   protected final boolean reuseContainer;
@@ -75,7 +75,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected RewriteFilesInput input;
 
   public GenericCombinedIcebergDataReader(
-      ArcticFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       PartitionSpec spec,
       EncryptionManager encryptionManager,
@@ -314,7 +314,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     }
 
     @Override
-    protected ArcticFileIO getArcticFileIo() {
+    protected AuthenticatedFileIO getFileIO() {
       return fileIO;
     }
   }

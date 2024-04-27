@@ -22,8 +22,8 @@ import static org.apache.iceberg.spark.Spark3Util.toTransforms;
 
 import org.apache.amoro.spark.SparkAdapterLoader;
 import org.apache.amoro.spark.sql.connector.expressions.FileIndexBucket;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.DistributionHashMode;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.MetadataColumns;
@@ -74,7 +74,7 @@ public class DistributionAndOrderingUtil {
    * @param writeBase write to base store
    * @return array of expressions indicate how to shuffle incoming data.
    */
-  public static Expression[] buildTableRequiredDistribution(ArcticTable table, boolean writeBase) {
+  public static Expression[] buildTableRequiredDistribution(MixedTable table, boolean writeBase) {
     DistributionHashMode distributionHashMode =
         DistributionHashMode.autoSelect(table.isKeyedTable(), !table.spec().isUnpartitioned());
 
@@ -94,7 +94,7 @@ public class DistributionAndOrderingUtil {
   }
 
   private static Transform toTransformsFromPrimary(
-      ArcticTable table, PrimaryKeySpec primaryKeySpec, boolean writeBase) {
+      MixedTable table, PrimaryKeySpec primaryKeySpec, boolean writeBase) {
     int numBucket =
         PropertyUtil.propertyAsInt(
             table.properties(),
@@ -123,7 +123,7 @@ public class DistributionAndOrderingUtil {
    * @return array of expression to indicate how incoming data will be sorted.
    */
   public static Expression[] buildTableRequiredSortOrder(
-      ArcticTable table, boolean rowLevelOperation, boolean writeBase) {
+      MixedTable table, boolean rowLevelOperation, boolean writeBase) {
     Schema schema = table.schema();
     PartitionSpec partitionSpec = table.spec();
     PrimaryKeySpec keySpec = PrimaryKeySpec.noPrimaryKey();

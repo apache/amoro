@@ -23,8 +23,8 @@ import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.table.ArcticTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
@@ -50,7 +50,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   protected final TableRuntime tableRuntime;
   private CommonPartitionEvaluator evaluator;
   private TaskSplitter taskSplitter;
-  protected ArcticTable tableObject;
+  protected MixedTable tableObject;
   private Long fromSequence = null;
   private Long toSequence = null;
   protected final long planTime;
@@ -74,7 +74,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
   public AbstractPartitionPlan(
       TableRuntime tableRuntime,
-      ArcticTable table,
+      MixedTable table,
       Pair<Integer, StructLike> partition,
       long planTime) {
     this.partition = partition;
@@ -288,7 +288,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
               rewriteDeleteFiles.toArray(new ContentFile[0]),
               tableObject);
       PartitionSpec spec =
-          ArcticTableUtil.getArcticTablePartitionSpecById(tableObject, partition.first());
+          MixedTableUtil.getMixedTablePartitionSpecById(tableObject, partition.first());
       String partitionPath = spec.partitionToPath(partition.second());
       return new TaskDescriptor(
           tableRuntime.getTableIdentifier().getId(),

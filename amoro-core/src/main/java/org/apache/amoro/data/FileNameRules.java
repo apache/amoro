@@ -93,8 +93,9 @@ public class FileNameRules {
   }
 
   /**
-   * Parse FileMeta for ChangeStore. Flink write transactionId as 0. If it is not arctic file format
-   * or transactionId from path is 0, we set transactionId as iceberg sequenceNumber.
+   * Parse FileMeta for ChangeStore. Flink write transactionId as 0. If it is not file format of
+   * mixed-format tables or transactionId from path is 0, we set transactionId as iceberg
+   * sequenceNumber.
    *
    * @param path file path
    * @param sequenceNumber iceberg sequenceNumber
@@ -103,7 +104,7 @@ public class FileNameRules {
   public static DefaultKeyedFile.FileMeta parseChange(String path, Long sequenceNumber) {
     String fileName = TableFileUtil.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    if (matchArcticFileFormat(matcher)) {
+    if (matchMixedFileFormat(matcher)) {
       DataFileType type;
       long transactionId;
       long nodeId = Long.parseLong(matcher.group(1));
@@ -122,8 +123,8 @@ public class FileNameRules {
   }
 
   /**
-   * Parse FileMeta for BaseStore. Path writen by hive can not be parsed by arctic file format, we
-   * set it to be DEFAULT_BASE_FILE_META.
+   * Parse FileMeta for BaseStore. Path written by hive can not be parsed file format of
+   * mixed-format tables, we set it to be DEFAULT_BASE_FILE_META.
    *
    * @param path - path
    * @return fileMeta
@@ -131,7 +132,7 @@ public class FileNameRules {
   public static DefaultKeyedFile.FileMeta parseBase(String path) {
     String fileName = TableFileUtil.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    if (matchArcticFileFormat(matcher)) {
+    if (matchMixedFileFormat(matcher)) {
       long nodeId = Long.parseLong(matcher.group(1));
       DataFileType type = DataFileType.ofShortName(matcher.group(2));
       if (type == DataFileType.INSERT_FILE) {
@@ -149,12 +150,12 @@ public class FileNameRules {
    * Parse file type for ChangeStore.
    *
    * @param path - path
-   * @return file type, return INSERT_FILE if is not arctic file format
+   * @return file type, return INSERT_FILE if is not file format of mixe-format tables.
    */
   public static DataFileType parseFileTypeForChange(String path) {
     String fileName = TableFileUtil.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    if (matchArcticFileFormat(matcher)) {
+    if (matchMixedFileFormat(matcher)) {
       return DataFileType.ofShortName(matcher.group(2));
     } else {
       return DataFileType.INSERT_FILE;
@@ -165,12 +166,12 @@ public class FileNameRules {
    * Parse file type for BaseStore.
    *
    * @param path - path
-   * @return file type, return BASE_FILE if is not arctic file format
+   * @return file type, return BASE_FILE if is not file format of mixed-format tables
    */
   public static DataFileType parseFileTypeForBase(String path) {
     String fileName = TableFileUtil.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    if (matchArcticFileFormat(matcher)) {
+    if (matchMixedFileFormat(matcher)) {
       DataFileType type;
       type = DataFileType.ofShortName(matcher.group(2));
       if (type == DataFileType.INSERT_FILE) {
@@ -203,12 +204,12 @@ public class FileNameRules {
    * Parse keyed file node id from file name.
    *
    * @param path path
-   * @return node, return node(0,0) if path is not arctic file format.
+   * @return node, return node(0,0) if path is not file format of mixed-format tables.
    */
   public static DataTreeNode parseFileNodeFromFileName(String path) {
     path = TableFileUtil.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(path);
-    if (matchArcticFileFormat(matcher)) {
+    if (matchMixedFileFormat(matcher)) {
       long nodeId = Long.parseLong(matcher.group(1));
       return DataTreeNode.ofId(nodeId);
     } else {
@@ -220,12 +221,12 @@ public class FileNameRules {
    * Parse transaction id from file name.
    *
    * @param path path
-   * @return transactionId, return 0 if path is not arctic file format.
+   * @return transactionId, return 0 if path is not file format of mixed-format tables.
    */
   public static long parseTransactionId(String path) {
     String fileName = TableFileUtil.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    if (matchArcticFileFormat(matcher)) {
+    if (matchMixedFileFormat(matcher)) {
       return Long.parseLong(matcher.group(3));
     } else {
       return 0L;
@@ -236,26 +237,14 @@ public class FileNameRules {
    * Parse transaction id of change file.
    *
    * @param path path
-   * @return transactionId, return 0 if path is not arctic file format.
+   * @return transactionId, return 0 if path is not file format of mixed-format tables.
    */
   public static long parseChangeTransactionId(String path, long sequenceNumber) {
     long transactionId = parseTransactionId(path);
     return transactionId == 0 ? sequenceNumber : transactionId;
   }
 
-  /**
-   * Check if is arctic file format.
-   *
-   * @param path - path
-   * @return true if is arctic file format
-   */
-  public static boolean isArcticFileFormat(String path) {
-    String fileName = TableFileUtil.getFileName(path);
-    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    return matchArcticFileFormat(matcher);
-  }
-
-  private static boolean matchArcticFileFormat(Matcher fileNameMatcher) {
+  private static boolean matchMixedFileFormat(Matcher fileNameMatcher) {
     return fileNameMatcher.matches() && validFileType(fileNameMatcher.group(2));
   }
 

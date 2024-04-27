@@ -58,7 +58,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Stores hadoop config files for {@link ArcticTable} */
+/** Stores hadoop config files for {@link MixedTable} */
 public class TableMetaStore implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(TableMetaStore.class);
 
@@ -467,7 +467,7 @@ public class TableMetaStore implements Serializable {
             String.format(
                 "%s/%s/%s",
                 path,
-                "arctic_krb_conf",
+                "amoro_krb_conf",
                 md5() + "_" + ManagementFactory.getRuntimeMXBean().getName());
         LOG.info("Generated conf path: {}", confPath);
         Path p = Paths.get(confPath);

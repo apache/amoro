@@ -29,7 +29,7 @@ import org.apache.amoro.hive.op.ReplaceHivePartitions;
 import org.apache.amoro.hive.op.RewriteHiveFiles;
 import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.io.ArcticHadoopFileIO;
+import org.apache.amoro.io.AuthenticatedHadoopFileIO;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.BasicUnkeyedTable;
@@ -51,12 +51,12 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
   private final String tableLocation;
 
   private boolean syncHiveChange = true;
-  private final ArcticHadoopFileIO fileIO;
+  private final AuthenticatedHadoopFileIO fileIO;
 
   public UnkeyedHiveTable(
       TableIdentifier tableIdentifier,
       Table icebergTable,
-      ArcticHadoopFileIO arcticFileIO,
+      AuthenticatedHadoopFileIO arcticFileIO,
       String tableLocation,
       HMSClientPool hiveClient,
       Map<String, String> catalogProperties) {
@@ -73,7 +73,7 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
   public UnkeyedHiveTable(
       TableIdentifier tableIdentifier,
       Table icebergTable,
-      ArcticHadoopFileIO arcticFileIO,
+      AuthenticatedHadoopFileIO arcticFileIO,
       String tableLocation,
       HMSClientPool hiveClient,
       Map<String, String> catalogProperties,
@@ -97,7 +97,7 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
   }
 
   @Override
-  public ArcticHadoopFileIO io() {
+  public AuthenticatedHadoopFileIO io() {
     return this.fileIO;
   }
 

@@ -105,12 +105,12 @@ public class TestIcebergCombinedReader extends TableTestBase {
   public void initDataAndReader() throws IOException {
     StructLike partitionData = getPartitionData();
     OutputFileFactory outputFileFactory =
-        OutputFileFactory.builderFor(getArcticTable().asUnkeyedTable(), 0, 1)
+        OutputFileFactory.builderFor(getMixedTable().asUnkeyedTable(), 0, 1)
             .format(fileFormat)
             .build();
     DataFile dataFile =
         FileHelpers.writeDataFile(
-            getArcticTable().asUnkeyedTable(),
+            getMixedTable().asUnkeyedTable(),
             outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
             partitionData,
             Arrays.asList(
@@ -122,7 +122,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
     GenericRecord idRecord = GenericRecord.create(idSchema);
     DeleteFile eqDeleteFile =
         FileHelpers.writeDeleteFile(
-            getArcticTable().asUnkeyedTable(),
+            getMixedTable().asUnkeyedTable(),
             outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
             partitionData,
             Collections.singletonList(idRecord.copy("id", 1)),
@@ -132,7 +132,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
     deletes.add(Pair.of(dataFile.path(), 1L));
     DeleteFile posDeleteFile =
         FileHelpers.writeDeleteFile(
-                getArcticTable().asUnkeyedTable(),
+                getMixedTable().asUnkeyedTable(),
                 outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
                 partitionData,
                 deletes)
@@ -142,14 +142,14 @@ public class TestIcebergCombinedReader extends TableTestBase {
     IntStream.range(2, 100).forEach(id -> records.add(idRecord.copy("id", id)));
     DeleteFile eqDeleteFile1 =
         FileHelpers.writeDeleteFile(
-            getArcticTable().asUnkeyedTable(),
+            getMixedTable().asUnkeyedTable(),
             outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
             partitionData,
             records,
             idSchema);
     DeleteFile eqDeleteFile2 =
         FileHelpers.writeDeleteFile(
-            getArcticTable().asUnkeyedTable(),
+            getMixedTable().asUnkeyedTable(),
             outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
             partitionData,
             records,
@@ -164,14 +164,14 @@ public class TestIcebergCombinedReader extends TableTestBase {
               MixedDataTestHelpers.wrapIcebergDeleteFile(posDeleteFile, 3L)
             },
             new DeleteFile[] {},
-            getArcticTable());
+            getMixedTable());
     dataScanTask =
         new RewriteFilesInput(
             new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
             new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
             new DeleteFile[] {},
             new DeleteFile[] {},
-            getArcticTable());
+            getMixedTable());
     filterEqDeleteScanTask =
         new RewriteFilesInput(
             new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
@@ -181,17 +181,17 @@ public class TestIcebergCombinedReader extends TableTestBase {
               MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile1, 2L),
               MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile2, 3L)
             },
-            getArcticTable());
+            getMixedTable());
   }
 
   @Test
   public void readAllData() throws IOException {
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
-            getArcticTable().io(),
-            getArcticTable().schema(),
-            getArcticTable().spec(),
-            getArcticTable().asUnkeyedTable().encryption(),
+            getMixedTable().io(),
+            getMixedTable().schema(),
+            getMixedTable().spec(),
+            getMixedTable().asUnkeyedTable().encryption(),
             null,
             false,
             IdentityPartitionConverters::convertConstant,
@@ -210,10 +210,10 @@ public class TestIcebergCombinedReader extends TableTestBase {
   public void readAllDataNegate() throws IOException {
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
-            getArcticTable().io(),
-            getArcticTable().schema(),
-            getArcticTable().spec(),
-            getArcticTable().asUnkeyedTable().encryption(),
+            getMixedTable().io(),
+            getMixedTable().schema(),
+            getMixedTable().spec(),
+            getMixedTable().asUnkeyedTable().encryption(),
             null,
             false,
             IdentityPartitionConverters::convertConstant,
@@ -234,10 +234,10 @@ public class TestIcebergCombinedReader extends TableTestBase {
   public void readOnlyData() throws IOException {
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
-            getArcticTable().io(),
-            getArcticTable().schema(),
-            getArcticTable().spec(),
-            getArcticTable().asUnkeyedTable().encryption(),
+            getMixedTable().io(),
+            getMixedTable().schema(),
+            getMixedTable().spec(),
+            getMixedTable().asUnkeyedTable().encryption(),
             null,
             false,
             IdentityPartitionConverters::convertConstant,
@@ -254,10 +254,10 @@ public class TestIcebergCombinedReader extends TableTestBase {
   public void readOnlyDataNegate() throws IOException {
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
-            getArcticTable().io(),
-            getArcticTable().schema(),
-            getArcticTable().spec(),
-            getArcticTable().asUnkeyedTable().encryption(),
+            getMixedTable().io(),
+            getMixedTable().schema(),
+            getMixedTable().spec(),
+            getMixedTable().asUnkeyedTable().encryption(),
             null,
             false,
             IdentityPartitionConverters::convertConstant,
@@ -275,10 +275,10 @@ public class TestIcebergCombinedReader extends TableTestBase {
     CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 100L;
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
-            getArcticTable().io(),
-            getArcticTable().schema(),
-            getArcticTable().spec(),
-            getArcticTable().asUnkeyedTable().encryption(),
+            getMixedTable().io(),
+            getMixedTable().schema(),
+            getMixedTable().spec(),
+            getMixedTable().asUnkeyedTable().encryption(),
             null,
             false,
             IdentityPartitionConverters::convertConstant,

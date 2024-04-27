@@ -22,8 +22,8 @@ import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 import static java.util.Locale.ENGLISH;
 
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import io.trino.plugin.hive.util.HiveUtil;
 import io.trino.plugin.iceberg.ColumnIdentity;
@@ -50,9 +50,9 @@ import java.util.stream.Collectors;
 /** A TrinoCatalog for Arctic, this is in order to reuse iceberg code */
 public class ArcticTrinoCatalog implements TrinoCatalog {
 
-  private final ArcticCatalog arcticCatalog;
+  private final MixedFormatCatalog arcticCatalog;
 
-  public ArcticTrinoCatalog(ArcticCatalog arcticCatalog) {
+  public ArcticTrinoCatalog(MixedFormatCatalog arcticCatalog) {
     this.arcticCatalog = arcticCatalog;
   }
 
@@ -167,9 +167,9 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   @Override
   public Table loadTable(ConnectorSession session, SchemaTableName schemaTableName) {
-    ArcticTable arcticTable = arcticCatalog.loadTable(getTableIdentifier(schemaTableName));
-    if (arcticTable instanceof Table) {
-      return (Table) arcticTable;
+    MixedTable mixedTable = arcticCatalog.loadTable(getTableIdentifier(schemaTableName));
+    if (mixedTable instanceof Table) {
+      return (Table) mixedTable;
     }
     throw new TrinoException(NOT_SUPPORTED, "table is not standard no key table");
   }

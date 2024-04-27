@@ -44,7 +44,7 @@ public class TestUpdateTable extends TableTestBase {
 
   @Test
   public void testUpdateProperties() throws TException {
-    Map<String, String> properties = getArcticTable().properties();
+    Map<String, String> properties = getMixedTable().properties();
     final String testProps = "test.props";
     final String testPropsValue = "values11111";
 
@@ -54,19 +54,19 @@ public class TestUpdateTable extends TableTestBase {
     Assert.assertFalse(properties.containsKey(testProps));
     Assert.assertFalse(properties.containsKey(testProps2));
 
-    UpdateProperties updateProperties = getArcticTable().updateProperties();
+    UpdateProperties updateProperties = getMixedTable().updateProperties();
     updateProperties.set(testProps, testPropsValue);
     updateProperties.commit();
 
-    properties = getArcticTable().properties();
+    properties = getMixedTable().properties();
     Assert.assertTrue(properties.containsKey(testProps));
     Assert.assertEquals(testPropsValue, properties.get(testProps));
 
-    updateProperties = getArcticTable().updateProperties();
+    updateProperties = getMixedTable().updateProperties();
     updateProperties.remove(testProps);
     updateProperties.set(testProps2, testPropsVal2);
     updateProperties.commit();
-    properties = getArcticTable().properties();
+    properties = getMixedTable().properties();
     Assert.assertTrue(properties.containsKey(testProps2));
     Assert.assertEquals(testPropsVal2, properties.get(testProps2));
     Assert.assertFalse(properties.containsKey(testProps));
@@ -74,7 +74,7 @@ public class TestUpdateTable extends TableTestBase {
 
   @Test
   public void testSyncSchema() {
-    UpdateSchema us = getArcticTable().asKeyedTable().baseTable().updateSchema();
+    UpdateSchema us = getMixedTable().asKeyedTable().baseTable().updateSchema();
     us.addColumn("height", Types.FloatType.get(), "height");
     us.addColumn("birthday", Types.DateType.get());
     us.addColumn(
@@ -114,9 +114,9 @@ public class TestUpdateTable extends TableTestBase {
         "2-D cartesian points");
 
     us.commit();
-    KeyedSchemaUpdate.syncSchema(getArcticTable().asKeyedTable());
+    KeyedSchemaUpdate.syncSchema(getMixedTable().asKeyedTable());
 
-    us = getArcticTable().asKeyedTable().baseTable().updateSchema();
+    us = getMixedTable().asKeyedTable().baseTable().updateSchema();
     // primitive
     us.renameColumn("name", "name.nick");
     us.addColumn(
@@ -163,11 +163,11 @@ public class TestUpdateTable extends TableTestBase {
     us.deleteColumn("preferences.feature2.item1");
 
     us.commit();
-    KeyedSchemaUpdate.syncSchema(getArcticTable().asKeyedTable());
+    KeyedSchemaUpdate.syncSchema(getMixedTable().asKeyedTable());
 
     Assert.assertEquals(
         "Should match base and change schema",
-        getArcticTable().asKeyedTable().baseTable().schema().asStruct(),
-        getArcticTable().asKeyedTable().changeTable().schema().asStruct());
+        getMixedTable().asKeyedTable().baseTable().schema().asStruct(),
+        getMixedTable().asKeyedTable().changeTable().schema().asStruct());
   }
 }

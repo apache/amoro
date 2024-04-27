@@ -60,6 +60,6 @@ public class MixedFormatSparkUtil {
   public static boolean isMixedHiveTable(Table table) {
     return table.properties() != null
         && CompatibleHivePropertyUtil.propertyAsBoolean(
-            table.properties(), HiveTableProperties.ARCTIC_TABLE_FLAG, false);
+            table.properties(), HiveTableProperties.MIXED_TABLE_FLAG, false);
   }
 }

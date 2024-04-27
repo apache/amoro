@@ -23,7 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.catalog.Catalog;
@@ -100,7 +100,7 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
           "Cannot build mixed-tables for table format:" + tableFormat);
     }
     return new MixedTables(
-        catalogMeta.getCatalogProperties(), ArcticCatalogUtil.buildMetaStore(catalogMeta));
+        catalogMeta.getCatalogProperties(), MixedCatalogUtil.buildMetaStore(catalogMeta));
   }
 
   @Override

@@ -84,7 +84,7 @@ public class TestHiveTaskReader extends TestTaskReader {
         Sets.newHashSet(
             tableTestHelper()
                 .readKeyedTable(
-                    getArcticTable().asKeyedTable(),
+                    getMixedTable().asKeyedTable(),
                     Expressions.equal("op_time_wz", "2022-01-01T12:00:00Z"),
                     null,
                     isUseDiskMap(),
@@ -100,7 +100,7 @@ public class TestHiveTaskReader extends TestTaskReader {
         Sets.newHashSet(
             tableTestHelper()
                 .readKeyedTable(
-                    getArcticTable().asKeyedTable(),
+                    getMixedTable().asKeyedTable(),
                     Expressions.greaterThan("op_time_wz", "2022-02-01T12:00:00Z"),
                     null,
                     isUseDiskMap(),
@@ -118,7 +118,7 @@ public class TestHiveTaskReader extends TestTaskReader {
         Sets.newHashSet(
             tableTestHelper()
                 .readKeyedTable(
-                    getArcticTable().asKeyedTable(),
+                    getMixedTable().asKeyedTable(),
                     Expressions.greaterThan("op_time_day", "2022-01-10"),
                     null,
                     isUseDiskMap(),

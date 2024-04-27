@@ -26,11 +26,11 @@ import static org.apache.amoro.server.table.internal.InternalTableConstants.S3_P
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.io.ArcticFileIO;
-import org.apache.amoro.io.ArcticFileIOs;
+import org.apache.amoro.io.AuthenticatedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIOs;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
@@ -80,9 +80,9 @@ public class InternalTableUtil {
    * @param meta catalog meta
    * @return iceberg file io
    */
-  public static ArcticFileIO newIcebergFileIo(CatalogMeta meta) {
+  public static AuthenticatedFileIO newIcebergFileIo(CatalogMeta meta) {
     Map<String, String> catalogProperties = meta.getCatalogProperties();
-    TableMetaStore store = ArcticCatalogUtil.buildMetaStore(meta);
+    TableMetaStore store = MixedCatalogUtil.buildMetaStore(meta);
     Configuration conf = store.getConfiguration();
     String warehouse = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
     String defaultImpl = HADOOP_FILE_IO_IMPL;
@@ -91,7 +91,7 @@ public class InternalTableUtil {
     }
     String ioImpl = catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, defaultImpl);
     FileIO fileIO = org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
-    return ArcticFileIOs.buildAdaptIcebergFileIO(store, fileIO);
+    return AuthenticatedFileIOs.buildAdaptIcebergFileIO(store, fileIO);
   }
 
   /**

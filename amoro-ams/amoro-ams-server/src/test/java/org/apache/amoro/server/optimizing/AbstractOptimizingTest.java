@@ -22,8 +22,8 @@ import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.server.AmsEnvironment;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.table.WriteOperationKind;
 import org.apache.iceberg.AppendFiles;
@@ -131,7 +131,7 @@ public abstract class AbstractOptimizingTest {
     updateProperties.commit();
   }
 
-  protected static void updateProperties(ArcticTable table, String key, String value) {
+  protected static void updateProperties(MixedTable table, String key, String value) {
     UpdateProperties updateProperties = table.updateProperties();
     updateProperties.set(key, value);
     updateProperties.commit();
@@ -249,7 +249,7 @@ public abstract class AbstractOptimizingTest {
     appendFiles.commit();
   }
 
-  protected static List<DataFile> writeBase(ArcticTable table, List<Record> insertRows) {
+  protected static List<DataFile> writeBase(MixedTable table, List<Record> insertRows) {
     UnkeyedTable baseTable;
     if (table.isUnkeyedTable()) {
       baseTable = table.asUnkeyedTable();

@@ -20,7 +20,7 @@ package org.apache.amoro.trino.keyed;
 
 import com.google.inject.Inject;
 import org.apache.amoro.data.PrimaryKeyedFile;
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.trino.delete.TrinoRow;
 import org.apache.amoro.trino.unkeyed.IcebergPageSourceProvider;
@@ -36,7 +36,7 @@ import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.type.TypeManager;
-import org.apache.amoro.hive.io.reader.AdaptHiveArcticDeleteFilter;
+import org.apache.amoro.hive.io.reader.AdaptHiveMixedDeleteFilter;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SchemaParser;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
@@ -75,8 +75,8 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         columns.stream().map(IcebergColumnHandle.class::cast).collect(Collectors.toList());
     KeyedTableScanTask keyedTableScanTask = keyedConnectorSplit.getKeyedTableScanTask();
     List<PrimaryKeyedFile> equDeleteFiles =
-        keyedTableScanTask.arcticEquityDeletes().stream()
-            .map(ArcticFileScanTask::file)
+        keyedTableScanTask.mixedEquityDeletes().stream()
+            .map(MixedFileScanTask::file)
             .collect(Collectors.toList());
     Schema tableSchema =
         SchemaParser.fromJson(keyedTableHandle.getIcebergTableHandle().getTableSchemaJson());
@@ -96,7 +96,7 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         .filter(column -> !columns.contains(column))
         .forEach(requiredColumnsBuilder::add);
     List<IcebergColumnHandle> requiredColumns = requiredColumnsBuilder.build();
-    AdaptHiveArcticDeleteFilter<TrinoRow> arcticDeleteFilter =
+    AdaptHiveMixedDeleteFilter<TrinoRow> arcticDeleteFilter =
         new KeyedDeleteFilter(
             keyedTableScanTask,
             tableSchema,

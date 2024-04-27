@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.write;
 
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.writer.BaseTaskWriter;
 import org.apache.amoro.io.writer.OutputFileFactory;
 import org.apache.amoro.table.KeyedTable;
@@ -44,7 +44,7 @@ public class FlinkBaseTaskWriter extends BaseTaskWriter<RowData> {
       FileFormat format,
       FileAppenderFactory<RowData> appenderFactory,
       OutputFileFactory outputFileFactory,
-      ArcticFileIO io,
+      AuthenticatedFileIO io,
       long targetFileSize,
       long mask,
       Schema schema,

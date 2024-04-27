@@ -27,8 +27,8 @@ import org.apache.amoro.spark.test.utils.DataComparator;
 import org.apache.amoro.spark.test.utils.ExpectResultUtil;
 import org.apache.amoro.spark.test.utils.RecordGenerator;
 import org.apache.amoro.spark.test.utils.TestTableUtil;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.MetadataColumns;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.FileFormat;
@@ -128,7 +128,7 @@ public class TestInsertIntoSQL extends MixedTableTestBase {
       PrimaryKeySpec keySpec,
       PartitionSpec ptSpec,
       FileFormat fileFormat) {
-    ArcticTable table =
+    MixedTable table =
         createTarget(
             schema,
             tableBuilder ->
@@ -183,7 +183,7 @@ public class TestInsertIntoSQL extends MixedTableTestBase {
       PrimaryKeySpec keySpec,
       PartitionSpec ptSpec,
       FileFormat fileFormat) {
-    ArcticTable table =
+    MixedTable table =
         createTarget(
             schema,
             tableBuilder ->

@@ -41,8 +41,8 @@ import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
 import org.apache.amoro.server.optimizing.plan.TaskDescriptor;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
-import org.apache.amoro.table.ArcticTable;
-import org.apache.amoro.utils.ArcticDataFiles;
+import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.utils.MixedDataFiles;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.commons.collections.CollectionUtils;
@@ -69,12 +69,12 @@ public class CompleteOptimizingFlow {
 
   private final int availableCore;
 
-  private final ArcticTable table;
+  private final MixedTable table;
 
   private final List<Checker> checkers;
 
   private CompleteOptimizingFlow(
-      ArcticTable table,
+      MixedTable table,
       int availableCore,
       Long targetSize,
       Integer fragmentRatio,
@@ -102,7 +102,7 @@ public class CompleteOptimizingFlow {
     updateProperties.commit();
   }
 
-  public static Builder builder(ArcticTable table, int availableCore) {
+  public static Builder builder(MixedTable table, int availableCore) {
     return new Builder(table, availableCore);
   }
 
@@ -250,7 +250,7 @@ public class CompleteOptimizingFlow {
           if (spec.isUnpartitioned()) {
             results.put(TablePropertyUtil.EMPTY_STRUCT, sequence);
           } else {
-            StructLike partitionData = ArcticDataFiles.data(spec, partition);
+            StructLike partitionData = MixedDataFiles.data(spec, partition);
             results.put(partitionData, sequence);
           }
         });
@@ -260,7 +260,7 @@ public class CompleteOptimizingFlow {
   public interface Checker {
 
     boolean condition(
-        ArcticTable table,
+        MixedTable table,
         @Nullable List<TaskDescriptor> latestTaskDescriptors,
         OptimizingPlanner latestPlanner,
         @Nullable UnKeyedTableCommit latestCommit);
@@ -268,7 +268,7 @@ public class CompleteOptimizingFlow {
     boolean senseHasChecked();
 
     void check(
-        ArcticTable table,
+        MixedTable table,
         @Nullable List<TaskDescriptor> latestTaskDescriptors,
         OptimizingPlanner latestPlanner,
         @Nullable UnKeyedTableCommit latestCommit)
@@ -276,7 +276,7 @@ public class CompleteOptimizingFlow {
   }
 
   public static final class Builder {
-    private final ArcticTable table;
+    private final MixedTable table;
     private final int availableCore;
     private Long targetSize;
     private Integer fragmentRatio;
@@ -285,7 +285,7 @@ public class CompleteOptimizingFlow {
 
     private final List<Checker> checkers = new ArrayList<>();
 
-    public Builder(ArcticTable table, int availableCore) {
+    public Builder(MixedTable table, int availableCore) {
       this.table = table;
       this.availableCore = availableCore;
     }

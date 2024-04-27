@@ -18,11 +18,11 @@
 
 package org.apache.amoro.trino.mixed;
 
-import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.MockAmoroManagementServer.TEST_CATALOG_NAME;
 
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.catalog.CatalogLoader;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableProperties;
 import io.trino.testng.services.ManageTestResources;
@@ -200,9 +200,9 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   public static class DataFileBuilder {
     final TableIdentifier identifier;
     final Table hiveTable;
-    final ArcticTable table;
+    final MixedTable table;
 
-    public DataFileBuilder(ArcticTable table) throws TException {
+    public DataFileBuilder(MixedTable table) throws TException {
       identifier = table.id();
       this.table = table;
       hiveTable = hms.getClient().getTable(identifier.getDatabase(), identifier.getTableName());
@@ -246,7 +246,7 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
    * @throws TException
    */
   public static void assertHivePartitionLocations(
-      Map<String, String> partitionLocations, ArcticTable table) throws TException {
+      Map<String, String> partitionLocations, MixedTable table) throws TException {
     TableIdentifier identifier = table.id();
     final String database = identifier.getDatabase();
     final String tableName = identifier.getTableName();

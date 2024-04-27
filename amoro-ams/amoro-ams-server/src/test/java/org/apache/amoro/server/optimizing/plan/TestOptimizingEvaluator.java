@@ -85,8 +85,8 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
     long transactionId = beginTransaction();
     dataFiles.addAll(
         OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
 
     OptimizingEvaluator optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertFalse(optimizingEvaluator.isNecessary());
@@ -99,8 +99,8 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
     transactionId = beginTransaction();
     dataFiles.addAll(
         OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
 
     optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertTrue(optimizingEvaluator.isNecessary());
@@ -110,7 +110,7 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
   }
 
   protected OptimizingEvaluator buildOptimizingEvaluator() {
-    return new OptimizingEvaluator(getTableRuntime(), getArcticTable());
+    return new OptimizingEvaluator(getTableRuntime(), getMixedTable());
   }
 
   protected void assertEmptyInput(OptimizingEvaluator.PendingInput input) {
@@ -192,14 +192,14 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
 
   @Override
   protected TableFileScanHelper getTableFileScanHelper() {
-    if (getArcticTable().isKeyedTable()) {
+    if (getMixedTable().isKeyedTable()) {
       return new KeyedTableFileScanHelper(
-          getArcticTable().asKeyedTable(),
-          OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable().asKeyedTable()));
+          getMixedTable().asKeyedTable(),
+          OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getMixedTable().asKeyedTable()));
     } else {
       return new UnkeyedTableFileScanHelper(
-          getArcticTable().asUnkeyedTable(),
-          OptimizingTestHelpers.getCurrentTableSnapshot(getArcticTable()).snapshotId());
+          getMixedTable().asUnkeyedTable(),
+          OptimizingTestHelpers.getCurrentTableSnapshot(getMixedTable()).snapshotId());
     }
   }
 }

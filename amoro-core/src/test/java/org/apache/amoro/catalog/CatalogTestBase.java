@@ -18,14 +18,15 @@
 
 package org.apache.amoro.catalog;
 
-import org.apache.amoro.MockArcticMetastoreServer;
+import org.apache.amoro.MockAmoroManagementServer;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TestAms;
 import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.commons.lang3.SystemUtils;
-import org.apache.iceberg.catalog.Catalog;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -40,15 +41,15 @@ public abstract class CatalogTestBase {
   private final CatalogTestHelper testHelper;
   @Rule public TemporaryFolder temp = new TemporaryFolder();
   private UnifiedCatalog unifiedCatalog;
-  private ArcticCatalog mixedFormatCatalog;
+  private MixedFormatCatalog mixedFormatCatalog;
   private CatalogMeta catalogMeta;
-  private Catalog icebergCatalog;
+  private org.apache.iceberg.catalog.Catalog icebergCatalog;
 
   public CatalogTestBase(CatalogTestHelper testHelper) {
     this.testHelper = testHelper;
   }
 
-  public static MockArcticMetastoreServer.AmsHandler getAmsHandler() {
+  public static MockAmoroManagementServer.AmsHandler getAmsHandler() {
     return TEST_AMS.getAmsHandler();
   }
 
@@ -71,7 +72,7 @@ public abstract class CatalogTestBase {
     }
   }
 
-  protected ArcticCatalog getMixedFormatCatalog() {
+  protected MixedFormatCatalog getMixedFormatCatalog() {
     if (mixedFormatCatalog == null) {
       mixedFormatCatalog = CatalogLoader.load(getCatalogUrl());
     }
@@ -94,7 +95,7 @@ public abstract class CatalogTestBase {
     return testHelper.tableFormat();
   }
 
-  protected Catalog getIcebergCatalog() {
+  protected org.apache.iceberg.catalog.Catalog getIcebergCatalog() {
     if (icebergCatalog == null) {
       icebergCatalog = testHelper.buildIcebergCatalog(catalogMeta);
     }

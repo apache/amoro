@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.table;
 
-import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.MockAmoroManagementServer.TEST_CATALOG_NAME;
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static org.apache.amoro.table.TableProperties.ENABLE_LOG_STORE;
 import static org.apache.amoro.table.TableProperties.LOG_STORE_ADDRESS;
@@ -27,7 +27,6 @@ import static org.apache.amoro.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
-import org.apache.amoro.catalog.ArcticCatalog;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
@@ -37,7 +36,8 @@ import org.apache.amoro.flink.util.TestUtil;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
@@ -82,7 +82,7 @@ public class TestUnkeyed extends FlinkTestBase {
   private static final String DB = TableTestHelper.TEST_TABLE_ID.getDatabase();
 
   private String catalog;
-  private ArcticCatalog arcticCatalog;
+  private MixedFormatCatalog arcticCatalog;
   private String db;
   private String topic;
 
@@ -159,7 +159,7 @@ public class TestUnkeyed extends FlinkTestBase {
             + "("
             + " id INT, name STRING, age SMALLINT, sex TINYINT, score BIGINT, height FLOAT, speed DOUBLE, ts TIMESTAMP)");
 
-    ArcticTable table = arcticCatalog.loadTable(TableIdentifier.of(catalog, db, TestUnkeyed.TABLE));
+    MixedTable table = arcticCatalog.loadTable(TableIdentifier.of(catalog, db, TestUnkeyed.TABLE));
 
     Schema required =
         new Schema(
@@ -197,7 +197,7 @@ public class TestUnkeyed extends FlinkTestBase {
             Types.NestedField.optional(6, "height", Types.FloatType.get()),
             Types.NestedField.optional(7, "speed", Types.DoubleType.get()),
             Types.NestedField.optional(8, "ts", Types.TimestampType.withoutZone()));
-    ArcticTable table = arcticCatalog.loadTable(TableIdentifier.of(catalog, db, TABLE));
+    MixedTable table = arcticCatalog.loadTable(TableIdentifier.of(catalog, db, TABLE));
     Assert.assertEquals(required.asStruct(), table.schema().asStruct());
 
     PartitionSpec requiredSpec = PartitionSpec.builderFor(required).identity("ts").build();
@@ -305,7 +305,7 @@ public class TestUnkeyed extends FlinkTestBase {
             + TABLE
             + "/*+ OPTIONS('arctic.emit.mode'='file')*/ select * from input");
 
-    ArcticTable table = arcticCatalog.loadTable(TableIdentifier.of(catalog, db, TABLE));
+    MixedTable table = arcticCatalog.loadTable(TableIdentifier.of(catalog, db, TABLE));
     Iterable<Snapshot> snapshots = table.asUnkeyedTable().snapshots();
     Snapshot s = snapshots.iterator().next();
 
@@ -353,7 +353,7 @@ public class TestUnkeyed extends FlinkTestBase {
     sql("insert into arcticCatalog." + db + "." + TABLE + " select * from input");
     sql("insert into arcticCatalog." + db + "." + TABLE + " select * from input");
 
-    ArcticTable table = arcticCatalog.loadTable(TableIdentifier.of(catalog, db, TABLE));
+    MixedTable table = arcticCatalog.loadTable(TableIdentifier.of(catalog, db, TABLE));
 
     Iterable<Snapshot> snapshots = table.asUnkeyedTable().snapshots();
     Snapshot s = snapshots.iterator().next();
@@ -658,7 +658,7 @@ public class TestUnkeyed extends FlinkTestBase {
             + " where dt='2022-05-18' ");
 
     TableIdentifier identifier = TableIdentifier.of(catalog, db, TABLE);
-    ArcticTable table = arcticCatalog.loadTable(identifier);
+    MixedTable table = arcticCatalog.loadTable(identifier);
     Iterable<Snapshot> snapshots = table.asUnkeyedTable().snapshots();
     Snapshot s = snapshots.iterator().next();
 
@@ -741,7 +741,7 @@ public class TestUnkeyed extends FlinkTestBase {
             + " where dt='2022-05-18' ");
 
     TableIdentifier identifier = TableIdentifier.of(catalog, db, TABLE);
-    ArcticTable table = arcticCatalog.loadTable(identifier);
+    MixedTable table = arcticCatalog.loadTable(identifier);
     Iterable<Snapshot> snapshots = table.asUnkeyedTable().snapshots();
     Snapshot s = snapshots.iterator().next();
 

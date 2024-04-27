@@ -20,10 +20,10 @@ package org.apache.amoro.hive.io.writer;
 
 import org.apache.amoro.hive.table.HiveLocationKind;
 import org.apache.amoro.hive.utils.TableTypeUtil;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.BaseLocationKind;
 import org.apache.amoro.table.ChangeLocationKind;
 import org.apache.amoro.table.LocationKind;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.WriteOperationKind;
 
 public class AdaptHiveOperateToTableRelation implements OperateToTableRelation {
@@ -33,9 +33,9 @@ public class AdaptHiveOperateToTableRelation implements OperateToTableRelation {
 
   @Override
   public LocationKind getLocationKindsFromOperateKind(
-      ArcticTable arcticTable, WriteOperationKind writeOperationKind) {
-    if (arcticTable.isKeyedTable()) {
-      if (TableTypeUtil.isHive(arcticTable)) {
+      MixedTable mixedTable, WriteOperationKind writeOperationKind) {
+    if (mixedTable.isKeyedTable()) {
+      if (TableTypeUtil.isHive(mixedTable)) {
         switch (writeOperationKind) {
           case APPEND:
             return ChangeLocationKind.INSTANT;
@@ -58,7 +58,7 @@ public class AdaptHiveOperateToTableRelation implements OperateToTableRelation {
         }
       }
     } else {
-      if (TableTypeUtil.isHive(arcticTable)) {
+      if (TableTypeUtil.isHive(mixedTable)) {
         switch (writeOperationKind) {
           case APPEND:
           case MAJOR_OPTIMIZE:

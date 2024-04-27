@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.read;
 
-import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static org.apache.amoro.MockArcticMetastoreServer.TEST_DB_NAME;
+import static org.apache.amoro.MockAmoroManagementServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.MockAmoroManagementServer.TEST_DB_NAME;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static org.apache.flink.util.Preconditions.checkArgument;
@@ -27,7 +27,6 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableTestHelper;
-import org.apache.amoro.catalog.ArcticCatalog;
 import org.apache.amoro.flink.read.hybrid.reader.ReaderFunction;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
 import org.apache.amoro.flink.read.hybrid.reader.TestRowDataReaderFunction;
@@ -37,8 +36,9 @@ import org.apache.amoro.flink.read.source.DataIterator;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.flink.util.ArcticUtils;
 import org.apache.amoro.flink.write.FlinkSink;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.TableFileUtil;
@@ -127,7 +127,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
 
   @Before
   public void testSetup() throws IOException {
-    ArcticCatalog testCatalog = getMixedFormatCatalog();
+    MixedFormatCatalog testCatalog = getMixedFormatCatalog();
 
     String db = FAIL_TABLE_ID.getDatabase();
     if (!testCatalog.listDatabases().contains(db)) {
@@ -920,7 +920,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     ArcticTableLoader tableLoader = ArcticTableLoader.of(tableIdentifier, catalogBuilder);
     ArcticScanContext arcticScanContext =
         initArcticScanContext(isStreaming, scanStartupMode, monitorInterval);
-    ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
+    MixedTable table = ArcticUtils.loadArcticTable(tableLoader);
     ReaderFunction<RowData> rowDataReaderFunction = initRowDataReadFunction(table.asKeyedTable());
     TypeInformation<RowData> typeInformation =
         InternalTypeInfo.of(FlinkSchemaUtil.convert(table.schema()));

@@ -21,7 +21,7 @@ package org.apache.amoro.server.optimizing.maintainer;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.Table;
 
 /**
@@ -61,7 +61,7 @@ public interface TableMaintainer {
   static TableMaintainer ofTable(AmoroTable<?> amoroTable) {
     TableFormat format = amoroTable.format();
     if (format == TableFormat.MIXED_HIVE || format == TableFormat.MIXED_ICEBERG) {
-      return new MixedTableMaintainer((ArcticTable) amoroTable.originalTable());
+      return new MixedTableMaintainer((MixedTable) amoroTable.originalTable());
     } else if (format == TableFormat.ICEBERG) {
       return new IcebergTableMaintainer((Table) amoroTable.originalTable());
     } else {
