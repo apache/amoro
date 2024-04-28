@@ -1,0 +1,221 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#    or more contributor license agreements.  See the NOTICE file
+#    distributed with this work for additional information
+#    regarding copyright ownership.  The ASF licenses this file
+#    to you under the Apache License, Version 2.0 (the
+#    "License"); you may not use this file except in compliance
+#    with the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+
+suite: Test Amoro Ingress
+templates:
+  - amoro-ingress.yaml
+chart:
+  appVersion: 0.1.0
+  version: 0.6.0
+tests:
+  - it: Amoro Ingress should not exist when enabled to false
+    set:
+      ingress:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: Amoro Ingress should exist when enabled to true
+    set:
+      fullnameOverride: test
+      ingress:
+        enabled: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: test
+      - hasDocuments:
+          count: 1
+  - it: Amoro Ingress should contains common labels and common annotations if set
+    set:
+      ingress:
+        enabled: true
+      commonLabels:
+        LABEL: LABEL_V
+      commonAnnotations:
+        ANNOTATION: ANNOTATION_V
+    asserts:
+      - exists:
+          path: metadata.labels
+      - isSubset:
+          path: metadata.labels
+          content:
+            LABEL: LABEL_V
+      - exists:
+          path: metadata.annotations
+      - isSubset:
+          path: metadata.annotations
+          content:
+            ANNOTATION: ANNOTATION_V
+  - it: Amoro Ingress should contains ingress annotations if set
+    set:
+      ingress:
+        enabled: true
+        annotations:
+          ANNOTATION: ANNOTATION_V2
+    asserts:
+      - exists:
+          path: metadata.annotations
+      - isSubset:
+          path: metadata.annotations
+          content:
+            ANNOTATION: ANNOTATION_V2
+  - it: Amoro Ingress should not contains annotations when annotations not set
+    set:
+      ingress:
+        enabled: true
+    asserts:
+      - notExists:
+          path: metadata.annotations
+  - it: Amoro Ingress should not contains ingress className if not set
+    set:
+      ingress:
+        enabled: true
+        ingressClassName: ""
+    asserts:
+      - notExists:
+          path: spec.ingressClassName
+  - it: Amoro Ingress should contains ingress className if set
+    set:
+      ingress:
+        enabled: true
+        ingressClassName: "nginx"
+    asserts:
+      - exists:
+          path: spec.ingressClassName
+      - equal:
+          path: spec.ingressClassName
+          value: "nginx"
+  - it: Amoro Ingress should not contains ingress hostname if not set
+    set:
+      ingress:
+        enabled: true
+        hostname: ""
+    asserts:
+      - notExists:
+          path: spec.rules.host
+      - notExists:
+          path: spec.rules.http
+  - it: Amoro Ingress should contains ingress hostname and extra Paths if set
+    set:
+      ingress:
+        enabled: true
+        hostname: "localhost"
+        extraPaths:
+          - path: /*
+            backend:
+              serviceName: ssl-redirect
+              servicePort: use-annotation
+    asserts:
+      - contains:
+          path: spec.rules
+          content:
+            host: localhost
+            http:
+              paths:
+                - path: /*
+                  backend:
+                    serviceName: ssl-redirect
+                    servicePort: use-annotation
+                - backend:
+                    service:
+                      name: RELEASE-NAME-amoro-rest
+                      port:
+                        name: rest
+                  path: /
+                  pathType: ImplementationSpecific
+  - it: Amoro Ingress should contains extra Hosts if set
+    set:
+      ingress:
+        enabled: true
+        extraHosts:
+          - name: amoro.local
+            path: /
+    asserts:
+      - contains:
+          path: spec.rules
+          content:
+            host: amoro.local
+            http:
+              paths:
+                - backend:
+                    service:
+                      name: RELEASE-NAME-amoro-master-svc
+                      port:
+                        name: http
+                  path: /
+                  pathType: ImplementationSpecific
+  - it: Amoro Ingress should contains extra Rules if set
+    set:
+      ingress:
+        enabled: true
+        extraRules:
+          - host: foo.bar.com
+            http:
+              paths:
+                - backend:
+                    service:
+                      name: service1
+                      port:
+                        number: 80
+                  path: /foo
+                  pathType: Prefix
+    asserts:
+      - contains:
+          path: spec.rules
+          content:
+            host: foo.bar.com
+            http:
+              paths:
+                - backend:
+                    service:
+                      name: service1
+                      port:
+                        number: 80
+                  path: /foo
+                  pathType: Prefix
+  - it: Amoro Ingress should not contains tls when tls set to false
+    set:
+      ingress:
+        enabled: true
+        tls: false
+    asserts:
+      - notExists:
+          path: spec.tls
+  - it: Amoro Ingress should contains tls and extra Tls if set
+    set:
+      ingress:
+        enabled: true
+        hostname: "localhost"
+        tls: true
+        selfSigned: true
+        extraTls:
+          - hosts:
+              - amoro.local
+            secretName: amoro.local-tls
+    asserts:
+      - contains:
+          path: spec.tls
+          content:
+            hosts:
+              - amoro.local
+            secretName: amoro.local-tls
+      - contains:
+          path: spec.tls
+          content:
+            hosts:
+              - localhost
+            secretName: localhost-tls
