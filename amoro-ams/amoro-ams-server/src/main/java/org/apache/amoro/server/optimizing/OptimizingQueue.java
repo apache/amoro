@@ -37,10 +37,10 @@ import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableRuntimeMeta;
-import org.apache.amoro.table.ArcticTable;
-import org.apache.amoro.utils.ArcticDataFiles;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.ExceptionUtil;
+import org.apache.amoro.utils.MixedDataFiles;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -258,7 +258,7 @@ public class OptimizingQueue extends PersistentBase {
       OptimizingPlanner planner =
           new OptimizingPlanner(
               tableRuntime.refresh(table),
-              (ArcticTable) table.originalTable(),
+              (MixedTable) table.originalTable(),
               getAvailableCore(),
               maxInputSizePerThread());
       if (planner.isNecessary()) {
@@ -579,8 +579,8 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     private UnKeyedTableCommit buildCommit() {
-      ArcticTable table =
-          (ArcticTable) tableManager.loadTable(tableRuntime.getTableIdentifier()).originalTable();
+      MixedTable table =
+          (MixedTable) tableManager.loadTable(tableRuntime.getTableIdentifier()).originalTable();
       if (table.isUnkeyedTable()) {
         return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
       } else {
@@ -594,7 +594,7 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     private StructLikeMap<Long> convertPartitionSequence(
-        ArcticTable table, Map<String, Long> partitionSequence) {
+        MixedTable table, Map<String, Long> partitionSequence) {
       PartitionSpec spec = table.spec();
       StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
       partitionSequence.forEach(
@@ -602,7 +602,7 @@ public class OptimizingQueue extends PersistentBase {
             if (spec.isUnpartitioned()) {
               results.put(TablePropertyUtil.EMPTY_STRUCT, sequence);
             } else {
-              StructLike partitionData = ArcticDataFiles.data(spec, partition);
+              StructLike partitionData = MixedDataFiles.data(spec, partition);
               results.put(partitionData, sequence);
             }
           });

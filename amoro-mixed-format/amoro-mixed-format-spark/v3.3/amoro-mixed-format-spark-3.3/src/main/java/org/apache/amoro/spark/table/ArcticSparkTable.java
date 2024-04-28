@@ -18,11 +18,11 @@
 
 package org.apache.amoro.spark.table;
 
-import org.apache.amoro.catalog.ArcticCatalog;
 import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.spark.reader.SparkScanBuilder;
 import org.apache.amoro.spark.writer.ArcticSparkWriteBuilder;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -65,14 +65,14 @@ public class ArcticSparkTable
           TableCapability.OVERWRITE_BY_FILTER,
           TableCapability.OVERWRITE_DYNAMIC);
 
-  private final ArcticTable arcticTable;
+  private final MixedTable mixedTable;
   private final String sparkCatalogName;
   private StructType lazyTableSchema = null;
   private SparkSession lazySpark = null;
-  private final ArcticCatalog catalog;
+  private final MixedFormatCatalog catalog;
 
   public static Table ofArcticTable(
-      ArcticTable table, ArcticCatalog catalog, String sparkCatalogName) {
+      MixedTable table, MixedFormatCatalog catalog, String sparkCatalogName) {
     if (table.isUnkeyedTable()) {
       if (!(table instanceof SupportHive)) {
         return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false, sparkCatalogName);
@@ -81,8 +81,9 @@ public class ArcticSparkTable
     return new ArcticSparkTable(table, catalog, sparkCatalogName);
   }
 
-  public ArcticSparkTable(ArcticTable arcticTable, ArcticCatalog catalog, String sparkCatalogName) {
-    this.arcticTable = arcticTable;
+  public ArcticSparkTable(
+      MixedTable mixedTable, MixedFormatCatalog catalog, String sparkCatalogName) {
+    this.mixedTable = mixedTable;
     this.sparkCatalogName = sparkCatalogName;
     this.catalog = catalog;
   }
@@ -95,23 +96,23 @@ public class ArcticSparkTable
     return lazySpark;
   }
 
-  public ArcticTable table() {
-    return arcticTable;
+  public MixedTable table() {
+    return mixedTable;
   }
 
   @Override
   public String name() {
     return sparkCatalogName
         + "."
-        + arcticTable.id().getDatabase()
+        + mixedTable.id().getDatabase()
         + "."
-        + arcticTable.id().getTableName();
+        + mixedTable.id().getTableName();
   }
 
   @Override
   public StructType schema() {
     if (lazyTableSchema == null) {
-      Schema tableSchema = arcticTable.schema();
+      Schema tableSchema = mixedTable.schema();
       this.lazyTableSchema = SparkSchemaUtil.convert(tableSchema);
     }
 
@@ -121,27 +122,27 @@ public class ArcticSparkTable
   @Override
   public Transform[] partitioning() {
     // return toTransforms(arcticTable.spec());
-    return Spark3Util.toTransforms(arcticTable.spec());
+    return Spark3Util.toTransforms(mixedTable.spec());
   }
 
   @Override
   public Map<String, String> properties() {
     ImmutableMap.Builder<String, String> propsBuilder = ImmutableMap.builder();
 
-    if (!arcticTable.properties().containsKey(TableProperties.BASE_FILE_FORMAT)) {
+    if (!mixedTable.properties().containsKey(TableProperties.BASE_FILE_FORMAT)) {
       propsBuilder.put(TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT);
     }
 
-    if (!arcticTable.properties().containsKey(TableProperties.DELTA_FILE_FORMAT)) {
+    if (!mixedTable.properties().containsKey(TableProperties.DELTA_FILE_FORMAT)) {
       propsBuilder.put(
           TableProperties.DELTA_FILE_FORMAT,
-          arcticTable
+          mixedTable
               .properties()
               .getOrDefault(
                   TableProperties.CHANGE_FILE_FORMAT, TableProperties.CHANGE_FILE_FORMAT_DEFAULT));
     }
     propsBuilder.put("provider", "arctic");
-    arcticTable.properties().entrySet().stream()
+    mixedTable.properties().entrySet().stream()
         .filter(entry -> !RESERVED_PROPERTIES.contains(entry.getKey()))
         .forEach(propsBuilder::put);
 
@@ -155,7 +156,7 @@ public class ArcticSparkTable
 
   @Override
   public String toString() {
-    return arcticTable.toString();
+    return mixedTable.toString();
   }
 
   @Override
@@ -168,28 +169,28 @@ public class ArcticSparkTable
 
     // use only name in order to correctly invalidate Spark cache
     ArcticSparkTable that = (ArcticSparkTable) other;
-    return arcticTable.id().equals(that.arcticTable.id());
+    return mixedTable.id().equals(that.mixedTable.id());
   }
 
   @Override
   public int hashCode() {
     // use only name in order to correctly invalidate Spark cache
-    return arcticTable.id().hashCode();
+    return mixedTable.id().hashCode();
   }
 
   @Override
   public ScanBuilder newScanBuilder(CaseInsensitiveStringMap options) {
-    return new SparkScanBuilder(sparkSession(), arcticTable, options);
+    return new SparkScanBuilder(sparkSession(), mixedTable, options);
   }
 
   @Override
   public WriteBuilder newWriteBuilder(LogicalWriteInfo info) {
-    return new ArcticSparkWriteBuilder(arcticTable, info, catalog);
+    return new ArcticSparkWriteBuilder(mixedTable, info, catalog);
   }
 
   @Override
   public SupportsExtendIdentColumns newUpsertScanBuilder(CaseInsensitiveStringMap options) {
-    return new SparkScanBuilder(sparkSession(), arcticTable, options);
+    return new SparkScanBuilder(sparkSession(), mixedTable, options);
   }
 
   @Override
@@ -199,9 +200,9 @@ public class ArcticSparkTable
 
   @Override
   public boolean appendAsUpsert() {
-    return arcticTable.isKeyedTable()
+    return mixedTable.isKeyedTable()
         && Boolean.parseBoolean(
-            arcticTable.properties().getOrDefault(TableProperties.UPSERT_ENABLED, "false"));
+            mixedTable.properties().getOrDefault(TableProperties.UPSERT_ENABLED, "false"));
   }
 
   @Override

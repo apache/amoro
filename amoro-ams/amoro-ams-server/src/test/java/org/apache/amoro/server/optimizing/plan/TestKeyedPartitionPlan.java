@@ -90,10 +90,10 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
     long transactionId = beginTransaction();
     List<DataFile> dataFiles =
         OptimizingTestHelpers.appendChange(
-            getArcticTable(),
+            getMixedTable(),
             tableTestHelper()
                 .writeChangeStore(
-                    getArcticTable(), transactionId, ChangeAction.INSERT, newRecords, false));
+                    getMixedTable(), transactionId, ChangeAction.INSERT, newRecords, false));
 
     List<TaskDescriptor> taskDescriptors = planWithCurrentFiles();
 
@@ -120,32 +120,32 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
     transactionId = beginTransaction();
     dataFiles.addAll(
         OptimizingTestHelpers.appendChange(
-            getArcticTable(),
+            getMixedTable(),
             tableTestHelper()
                 .writeChangeStore(
-                    getArcticTable(), transactionId, ChangeAction.INSERT, newRecords, false)));
-    Snapshot fromSnapshot = getArcticTable().changeTable().currentSnapshot();
+                    getMixedTable(), transactionId, ChangeAction.INSERT, newRecords, false)));
+    Snapshot fromSnapshot = getMixedTable().changeTable().currentSnapshot();
 
     newRecords =
         OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
     List<DataFile> deleteFiles =
         OptimizingTestHelpers.appendChange(
-            getArcticTable(),
+            getMixedTable(),
             tableTestHelper()
                 .writeChangeStore(
-                    getArcticTable(), transactionId, ChangeAction.DELETE, newRecords, false));
+                    getMixedTable(), transactionId, ChangeAction.DELETE, newRecords, false));
 
     newRecords =
         OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
     dataFiles.addAll(
         OptimizingTestHelpers.appendChange(
-            getArcticTable(),
+            getMixedTable(),
             tableTestHelper()
                 .writeChangeStore(
-                    getArcticTable(), transactionId, ChangeAction.INSERT, newRecords, false)));
-    Snapshot toSnapshot = getArcticTable().changeTable().currentSnapshot();
+                    getMixedTable(), transactionId, ChangeAction.INSERT, newRecords, false)));
+    Snapshot toSnapshot = getMixedTable().changeTable().currentSnapshot();
 
     AbstractPartitionPlan plan = buildPlanWithCurrentFiles();
     Assert.assertEquals(fromSnapshot.sequenceNumber(), (long) plan.getFromSequence());
@@ -177,10 +177,10 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
     transactionId = beginTransaction();
     dataFiles.addAll(
         OptimizingTestHelpers.appendChange(
-            getArcticTable(),
+            getMixedTable(),
             tableTestHelper()
                 .writeChangeStore(
-                    getArcticTable(), transactionId, ChangeAction.INSERT, newRecords, false)));
+                    getMixedTable(), transactionId, ChangeAction.INSERT, newRecords, false)));
     StructLike partition = dataFiles.get(0).partition();
 
     // not trigger optimize
@@ -202,19 +202,19 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
   }
 
   @Override
-  protected KeyedTable getArcticTable() {
-    return super.getArcticTable().asKeyedTable();
+  protected KeyedTable getMixedTable() {
+    return super.getMixedTable().asKeyedTable();
   }
 
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
     return new MixedIcebergPartitionPlan(
-        getTableRuntime(), getArcticTable(), getPartition(), System.currentTimeMillis());
+        getTableRuntime(), getMixedTable(), getPartition(), System.currentTimeMillis());
   }
 
   @Override
   protected TableFileScanHelper getTableFileScanHelper() {
     return new KeyedTableFileScanHelper(
-        getArcticTable(), OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable()));
+        getMixedTable(), OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getMixedTable()));
   }
 }

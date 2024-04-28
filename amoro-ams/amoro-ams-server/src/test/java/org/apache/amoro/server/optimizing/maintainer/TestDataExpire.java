@@ -38,8 +38,8 @@ import org.apache.amoro.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.executor.ExecutorTestBase;
 import org.apache.amoro.server.utils.IcebergTableUtil;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
@@ -168,7 +168,7 @@ public class TestDataExpire extends ExecutorTestBase {
 
   @Test
   public void testPartitionLevel() {
-    if (getArcticTable().isUnkeyedTable()) {
+    if (getMixedTable().isUnkeyedTable()) {
       testUnKeyedPartitionLevel();
     } else {
       testKeyedPartitionLevel();
@@ -183,13 +183,13 @@ public class TestDataExpire extends ExecutorTestBase {
             createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
             createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00"));
     OptimizingTestHelpers.appendBase(
-        getArcticTable(), tableTestHelper().writeBaseStore(getArcticTable(), 0, records, false));
+        getMixedTable(), tableTestHelper().writeBaseStore(getMixedTable(), 0, records, false));
 
-    DataExpirationConfig config = new DataExpirationConfig(getArcticTable());
+    DataExpirationConfig config = new DataExpirationConfig(getMixedTable());
 
     getMaintainerAndExpire(config, "2022-01-03T18:00:00.000");
 
-    List<Record> result = readSortedBaseRecords(getArcticTable());
+    List<Record> result = readSortedBaseRecords(getMixedTable());
 
     List<Record> expected;
     if (tableTestHelper().partitionSpec().isPartitioned()) {
@@ -216,7 +216,7 @@ public class TestDataExpire extends ExecutorTestBase {
   }
 
   private void testKeyedPartitionLevel() {
-    KeyedTable keyedTable = getArcticTable().asKeyedTable();
+    KeyedTable keyedTable = getMixedTable().asKeyedTable();
 
     ArrayList<Record> baseRecords =
         Lists.newArrayList(
@@ -286,7 +286,7 @@ public class TestDataExpire extends ExecutorTestBase {
 
   @Test
   public void testFileLevel() {
-    ArcticTable table = getArcticTable();
+    MixedTable table = getMixedTable();
     table
         .updateProperties()
         .set(TableProperties.DATA_EXPIRATION_LEVEL, DataExpirationConfig.ExpireLevel.FILE.name())
@@ -299,7 +299,7 @@ public class TestDataExpire extends ExecutorTestBase {
   }
 
   private void testKeyedFileLevel() {
-    KeyedTable keyedTable = getArcticTable().asKeyedTable();
+    KeyedTable keyedTable = getMixedTable().asKeyedTable();
 
     ArrayList<Record> baseRecords =
         Lists.newArrayList(
@@ -321,7 +321,7 @@ public class TestDataExpire extends ExecutorTestBase {
 
     // expire partitions that order than 2022-01-02 18:00:00.000
     DataExpirationConfig config = new DataExpirationConfig(keyedTable);
-    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getArcticTable());
+    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable());
     mixedTableMaintainer.expireDataFrom(
         config,
         LocalDateTime.parse("2022-01-03T18:00:00.000")
@@ -351,18 +351,18 @@ public class TestDataExpire extends ExecutorTestBase {
     records.forEach(
         r ->
             OptimizingTestHelpers.appendBase(
-                getArcticTable(),
+                getMixedTable(),
                 tableTestHelper()
-                    .writeBaseStore(getArcticTable(), 0, Lists.newArrayList(r), false)));
+                    .writeBaseStore(getMixedTable(), 0, Lists.newArrayList(r), false)));
     CloseableIterable<TableFileScanHelper.FileScanResult> scan = getTableFileScanHelper().scan();
     assertScanResult(scan, 4, 0);
 
     // expire partitions that order than 2022-01-02 18:00:00.000
-    DataExpirationConfig config = new DataExpirationConfig(getArcticTable());
+    DataExpirationConfig config = new DataExpirationConfig(getMixedTable());
 
     getMaintainerAndExpire(config, "2022-01-03T18:00:00.000");
 
-    List<Record> result = readSortedBaseRecords(getArcticTable());
+    List<Record> result = readSortedBaseRecords(getMixedTable());
 
     List<Record> expected;
     if (expireByStringDate()) {
@@ -384,35 +384,35 @@ public class TestDataExpire extends ExecutorTestBase {
         Lists.newArrayList(
             createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"));
     OptimizingTestHelpers.appendBase(
-        getArcticTable(), tableTestHelper().writeBaseStore(getArcticTable(), 0, records, false));
+        getMixedTable(), tableTestHelper().writeBaseStore(getMixedTable(), 0, records, false));
 
-    DataExpirationConfig config = new DataExpirationConfig(getArcticTable());
+    DataExpirationConfig config = new DataExpirationConfig(getMixedTable());
 
     if (getTestFormat().equals(TableFormat.ICEBERG)) {
-      Table table = getArcticTable().asUnkeyedTable();
+      Table table = getMixedTable().asUnkeyedTable();
       IcebergTableMaintainer icebergTableMaintainer = new IcebergTableMaintainer(table);
       Types.NestedField field = table.schema().findField(config.getExpirationField());
       long lastSnapshotTime = table.currentSnapshot().timestampMillis();
       long lastCommitTime = icebergTableMaintainer.expireBaseOnRule(config, field).toEpochMilli();
       Assert.assertEquals(lastSnapshotTime, lastCommitTime);
     } else {
-      ArcticTable arcticTable = getArcticTable();
-      MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(arcticTable);
-      Types.NestedField field = getArcticTable().schema().findField(config.getExpirationField());
+      MixedTable mixedTable = getMixedTable();
+      MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(mixedTable);
+      Types.NestedField field = getMixedTable().schema().findField(config.getExpirationField());
 
       long lastSnapshotTime;
-      if (arcticTable.isKeyedTable()) {
+      if (mixedTable.isKeyedTable()) {
         List<Record> changeRecords =
             Lists.newArrayList(
                 createRecord(2, "222", parseMillis("2022-01-01T12:00:05"), "2022-01-01T12:00:05"));
-        KeyedTable keyedTable = arcticTable.asKeyedTable();
+        KeyedTable keyedTable = mixedTable.asKeyedTable();
         OptimizingTestHelpers.appendChange(
             keyedTable,
             tableTestHelper()
                 .writeChangeStore(keyedTable, 2L, ChangeAction.INSERT, changeRecords, false));
         lastSnapshotTime = keyedTable.changeTable().currentSnapshot().timestampMillis();
       } else {
-        lastSnapshotTime = arcticTable.asUnkeyedTable().currentSnapshot().timestampMillis();
+        lastSnapshotTime = mixedTable.asUnkeyedTable().currentSnapshot().timestampMillis();
       }
       long lastCommitTime =
           mixedTableMaintainer.expireMixedBaseOnRule(config, field).toEpochMilli();
@@ -422,7 +422,7 @@ public class TestDataExpire extends ExecutorTestBase {
 
   protected void getMaintainerAndExpire(DataExpirationConfig config, String datetime) {
     if (getTestFormat().equals(TableFormat.ICEBERG)) {
-      Table table = getArcticTable().asUnkeyedTable();
+      Table table = getMixedTable().asUnkeyedTable();
       IcebergTableMaintainer icebergTableMaintainer = new IcebergTableMaintainer(table);
       Types.NestedField field = table.schema().findField(config.getExpirationField());
       icebergTableMaintainer.expireDataFrom(
@@ -432,11 +432,11 @@ public class TestDataExpire extends ExecutorTestBase {
               : LocalDateTime.parse(datetime)
                   .atZone(
                       IcebergTableMaintainer.getDefaultZoneId(
-                          getArcticTable().schema().findField(config.getExpirationField())))
+                          getMixedTable().schema().findField(config.getExpirationField())))
                   .toInstant());
     } else {
-      MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getArcticTable());
-      Types.NestedField field = getArcticTable().schema().findField(config.getExpirationField());
+      MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable());
+      Types.NestedField field = getMixedTable().schema().findField(config.getExpirationField());
       mixedTableMaintainer.expireDataFrom(
           config,
           StringUtils.isBlank(datetime)
@@ -444,28 +444,28 @@ public class TestDataExpire extends ExecutorTestBase {
               : LocalDateTime.parse(datetime)
                   .atZone(
                       IcebergTableMaintainer.getDefaultZoneId(
-                          getArcticTable().schema().findField(config.getExpirationField())))
+                          getMixedTable().schema().findField(config.getExpirationField())))
                   .toInstant());
     }
   }
 
   @Test
   public void testNormalFieldPartitionLevel() {
-    getArcticTable().updateProperties().set(TableProperties.DATA_EXPIRATION_FIELD, "ts").commit();
+    getMixedTable().updateProperties().set(TableProperties.DATA_EXPIRATION_FIELD, "ts").commit();
 
     testPartitionLevel();
   }
 
   @Test
   public void testNormalFieldFileLevel() {
-    getArcticTable().updateProperties().set(TableProperties.DATA_EXPIRATION_FIELD, "ts").commit();
+    getMixedTable().updateProperties().set(TableProperties.DATA_EXPIRATION_FIELD, "ts").commit();
 
     testFileLevel();
   }
 
   @Test
   public void testGcDisabled() {
-    ArcticTable testTable = getArcticTable();
+    MixedTable testTable = getMixedTable();
     testTable.updateProperties().set("gc.enabled", "false").commit();
 
     ArrayList<Record> baseRecords =
@@ -483,7 +483,7 @@ public class TestDataExpire extends ExecutorTestBase {
     assertScanResult(scan, 1, 0);
 
     DataExpirationConfig config = new DataExpirationConfig(testTable);
-    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getArcticTable());
+    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable());
     mixedTableMaintainer.expireDataFrom(
         config,
         LocalDateTime.parse("2024-01-01T00:00:00.000")
@@ -503,7 +503,7 @@ public class TestDataExpire extends ExecutorTestBase {
 
   protected Record createRecord(int id, String name, long ts, String opTime) {
     Object time;
-    Schema schema = getArcticTable().schema();
+    Schema schema = getMixedTable().schema();
     Type type = schema.findField("op_time").type();
     switch (type.typeId()) {
       case TIMESTAMP:
@@ -533,7 +533,7 @@ public class TestDataExpire extends ExecutorTestBase {
         time = opTime;
     }
 
-    return MixedDataTestHelpers.createRecord(getArcticTable().schema(), id, name, ts, time);
+    return MixedDataTestHelpers.createRecord(getMixedTable().schema(), id, name, ts, time);
   }
 
   protected void assertScanResult(
@@ -565,7 +565,7 @@ public class TestDataExpire extends ExecutorTestBase {
         .collect(Collectors.toList());
   }
 
-  protected List<Record> readSortedBaseRecords(ArcticTable table) {
+  protected List<Record> readSortedBaseRecords(MixedTable table) {
     return tableTestHelper().readBaseStore(table, Expressions.alwaysTrue(), null, false).stream()
         .sorted(Comparator.comparing(o -> o.get(0, Integer.class)))
         .collect(Collectors.toList());
@@ -573,16 +573,16 @@ public class TestDataExpire extends ExecutorTestBase {
 
   protected KeyedTableFileScanHelper buildKeyedFileScanHelper() {
     long baseSnapshotId =
-        IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable(), true);
+        IcebergTableUtil.getSnapshotId(getMixedTable().asKeyedTable().baseTable(), true);
     long changeSnapshotId =
-        IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().changeTable(), true);
+        IcebergTableUtil.getSnapshotId(getMixedTable().asKeyedTable().changeTable(), true);
     return new KeyedTableFileScanHelper(
-        getArcticTable().asKeyedTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId));
+        getMixedTable().asKeyedTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId));
   }
 
   protected TableFileScanHelper getTableFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().asUnkeyedTable(), true);
-    return new UnkeyedTableFileScanHelper(getArcticTable().asUnkeyedTable(), baseSnapshotId);
+    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getMixedTable().asUnkeyedTable(), true);
+    return new UnkeyedTableFileScanHelper(getMixedTable().asUnkeyedTable(), baseSnapshotId);
   }
 
   protected static Map<String, String> getDefaultProp() {
@@ -604,8 +604,8 @@ public class TestDataExpire extends ExecutorTestBase {
   private boolean expireByStringDate() {
     String expireField =
         CompatiblePropertyUtil.propertyAsString(
-            getArcticTable().properties(), TableProperties.DATA_EXPIRATION_FIELD, "");
-    return getArcticTable()
+            getMixedTable().properties(), TableProperties.DATA_EXPIRATION_FIELD, "");
+    return getMixedTable()
         .schema()
         .findField(expireField)
         .type()

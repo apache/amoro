@@ -25,7 +25,7 @@ import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.trino.delete.TrinoRow;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
-import org.apache.amoro.hive.io.reader.AdaptHiveArcticDeleteFilter;
+import org.apache.amoro.hive.io.reader.AdaptHiveMixedDeleteFilter;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.FileIO;
@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Optional;
 
 /** KeyedDeleteFilter is used to do MOR for Keyed Table */
-public class KeyedDeleteFilter extends AdaptHiveArcticDeleteFilter<TrinoRow> {
+public class KeyedDeleteFilter extends AdaptHiveMixedDeleteFilter<TrinoRow> {
 
   private final FileIO fileIO;
 

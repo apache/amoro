@@ -44,8 +44,8 @@ public class TestBaseCombinedScanTask {
                 .withRecordCount(100L)
                 .build());
     DefaultKeyedFile keyedFile = DefaultKeyedFile.parseChange((DataFile) entry.getFile());
-    BasicArcticFileScanTask task =
-        new BasicArcticFileScanTask(keyedFile, null, PartitionSpec.unpartitioned(), null);
+    BasicMixedFileScanTask task =
+        new BasicMixedFileScanTask(keyedFile, null, PartitionSpec.unpartitioned(), null);
 
     BaseCombinedScanTask baseCombinedScanTask =
         new BaseCombinedScanTask(new NodeFileScanTask(Collections.singletonList(task)));

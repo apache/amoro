@@ -25,8 +25,8 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.flink.util.ArcticUtils;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
@@ -53,7 +53,7 @@ public class TestArcticFileCommitter extends FlinkTestBase {
   }
 
   public OneInputStreamOperatorTestHarness<WriteResult, Void> createArcticFileCommitter(
-      ArcticTableLoader tableLoader, ArcticTable table, OperatorSubtaskState operatorSubtaskState)
+      ArcticTableLoader tableLoader, MixedTable table, OperatorSubtaskState operatorSubtaskState)
       throws Exception {
     OneInputStreamOperator<WriteResult, Void> committer =
         FlinkSink.createFileCommitter(

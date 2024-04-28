@@ -7,7 +7,7 @@
 **/scalastyle-output.xml
 docs/**
 **/dependency-reduced-pom.xml
-**/arctic_krb_conf/**
+**/amoro_krb_conf/**
 **/metastore_db/**
 **/gen-antlr/**
 **/unit_test_base_tmp/**

@@ -42,15 +42,15 @@ public class TestUpdatePartitionProperties extends TableTestBase {
   @Test
   public void testUpdatePartitionProperties() {
     StructLikeMap<Map<String, String>> partitionProperties =
-        getArcticTable().asUnkeyedTable().partitionProperty();
+        getMixedTable().asUnkeyedTable().partitionProperty();
     Assert.assertEquals(0, partitionProperties.size());
     StructLike p0 = TestHelpers.Row.of(1200);
-    getArcticTable()
+    getMixedTable()
         .asUnkeyedTable()
         .updatePartitionProperties(null)
         .set(p0, "key", "value")
         .commit();
-    partitionProperties = getArcticTable().asUnkeyedTable().partitionProperty();
+    partitionProperties = getMixedTable().asUnkeyedTable().partitionProperty();
     Assert.assertEquals(1, partitionProperties.size());
     Assert.assertEquals("value", partitionProperties.get(p0).get("key"));
   }
@@ -58,19 +58,19 @@ public class TestUpdatePartitionProperties extends TableTestBase {
   @Test
   public void testUpdatePartitionPropertiesInTx() {
     StructLikeMap<Map<String, String>> partitionProperties =
-        getArcticTable().asUnkeyedTable().partitionProperty();
-    Transaction transaction = getArcticTable().asUnkeyedTable().newTransaction();
+        getMixedTable().asUnkeyedTable().partitionProperty();
+    Transaction transaction = getMixedTable().asUnkeyedTable().newTransaction();
     Assert.assertEquals(0, partitionProperties.size());
     StructLike p0 = TestHelpers.Row.of(1200);
-    getArcticTable()
+    getMixedTable()
         .asUnkeyedTable()
         .updatePartitionProperties(transaction)
         .set(p0, "key", "value")
         .commit();
-    partitionProperties = getArcticTable().asUnkeyedTable().partitionProperty();
+    partitionProperties = getMixedTable().asUnkeyedTable().partitionProperty();
     Assert.assertEquals(0, partitionProperties.size());
     transaction.commitTransaction();
-    partitionProperties = getArcticTable().asUnkeyedTable().partitionProperty();
+    partitionProperties = getMixedTable().asUnkeyedTable().partitionProperty();
     Assert.assertEquals(1, partitionProperties.size());
     Assert.assertEquals("value", partitionProperties.get(p0).get("key"));
   }
@@ -78,19 +78,19 @@ public class TestUpdatePartitionProperties extends TableTestBase {
   @Test
   public void testRemovePartitionProperties() {
     StructLikeMap<Map<String, String>> partitionProperties =
-        getArcticTable().asUnkeyedTable().partitionProperty();
+        getMixedTable().asUnkeyedTable().partitionProperty();
     Assert.assertEquals(0, partitionProperties.size());
     StructLike p0 = TestHelpers.Row.of(1200);
-    getArcticTable()
+    getMixedTable()
         .asUnkeyedTable()
         .updatePartitionProperties(null)
         .set(p0, "key", "value")
         .commit();
-    partitionProperties = getArcticTable().asUnkeyedTable().partitionProperty();
+    partitionProperties = getMixedTable().asUnkeyedTable().partitionProperty();
     Assert.assertEquals(1, partitionProperties.get(p0).size());
 
-    getArcticTable().asUnkeyedTable().updatePartitionProperties(null).remove(p0, "key").commit();
-    partitionProperties = getArcticTable().asUnkeyedTable().partitionProperty();
+    getMixedTable().asUnkeyedTable().updatePartitionProperties(null).remove(p0, "key").commit();
+    partitionProperties = getMixedTable().asUnkeyedTable().partitionProperty();
     Assert.assertEquals(0, partitionProperties.get(p0).size());
   }
 }

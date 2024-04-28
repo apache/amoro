@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.optimizing;
 
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.commons.lang3.RandomUtils;
@@ -31,17 +31,17 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import java.util.List;
 
 public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
-  private final ArcticTable arcticTable;
+  private final MixedTable mixedTable;
   private final BaseOptimizingChecker checker;
 
-  public TestMixedIcebergOptimizing(ArcticTable arcticTable) {
+  public TestMixedIcebergOptimizing(MixedTable mixedTable) {
     super();
-    this.arcticTable = arcticTable;
-    this.checker = new BaseOptimizingChecker(arcticTable.id());
+    this.mixedTable = mixedTable;
+    this.checker = new BaseOptimizingChecker(mixedTable.id());
   }
 
   public void testKeyedTableContinueOptimizing() {
-    KeyedTable table = arcticTable.asKeyedTable();
+    KeyedTable table = mixedTable.asKeyedTable();
     emptyCommit(table);
     emptyCommit(table);
     emptyCommit(table);
@@ -93,7 +93,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
             newRecord(9, "fff", quickDateWithZone(4)), newRecord(10, "ggg", quickDateWithZone(4))));
     // wait Minor/Major Optimize result
     optimizeHistory = checker.waitOptimizeResult();
-    if (arcticTable.spec().isPartitioned()) {
+    if (mixedTable.spec().isPartitioned()) {
       checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 6, 2);
     } else {
       checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 10, 4);
@@ -114,7 +114,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
             newRecord(10, "iii_new", quickDateWithZone(4))));
     // wait Minor/Major Optimize result
     optimizeHistory = checker.waitOptimizeResult();
-    if (arcticTable.spec().isPartitioned()) {
+    if (mixedTable.spec().isPartitioned()) {
       checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 6, 0);
     } else {
       checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 8, 0);
@@ -131,7 +131,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
   }
 
   public void testPkTableMajorOptimizeLeftPosDelete() {
-    KeyedTable table = arcticTable.asKeyedTable();
+    KeyedTable table = mixedTable.asKeyedTable();
     updateProperties(table, TableProperties.ENABLE_SELF_OPTIMIZING, "false");
     // Step1: insert base data
     StringBuilder stringBuilder = new StringBuilder();
@@ -219,7 +219,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
   }
 
   public void testNoPkPartitionTableOptimizing() {
-    UnkeyedTable table = arcticTable.asUnkeyedTable();
+    UnkeyedTable table = mixedTable.asUnkeyedTable();
 
     // Step 1: insert data
     writeBase(
@@ -260,7 +260,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
   }
 
   public void testNoPkTableOptimizing() {
-    UnkeyedTable table = arcticTable.asUnkeyedTable();
+    UnkeyedTable table = mixedTable.asUnkeyedTable();
 
     // Step 1: insert data
     writeBase(
@@ -301,7 +301,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
   }
 
   public void testKeyedTableTxIdNotInOrder() {
-    KeyedTable table = arcticTable.asKeyedTable();
+    KeyedTable table = mixedTable.asKeyedTable();
     updateProperties(table, TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET, "1");
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "5");
     updateProperties(table, TableProperties.BASE_FILE_INDEX_HASH_BUCKET, "1");
@@ -345,7 +345,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
   }
 
   private Record newRecord(Object... val) {
-    return newRecord(arcticTable.schema(), val);
+    return newRecord(mixedTable.schema(), val);
   }
 
   public void emptyCommit(KeyedTable table) {

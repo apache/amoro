@@ -48,7 +48,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
   @Test
   public void testDefaultNotEnableCreateTag() {
-    Table table = getArcticTable().asUnkeyedTable();
+    Table table = getMixedTable().asUnkeyedTable();
     checkNoTag(table);
     newAutoCreateIcebergTagAction(table, LocalDateTime.now()).execute();
     checkNoTag(table);
@@ -62,7 +62,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
   @Test
   public void testCreateDailyTag() {
-    Table table = getArcticTable().asUnkeyedTable();
+    Table table = getMixedTable().asUnkeyedTable();
     table
         .updateProperties()
         .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
@@ -85,7 +85,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
   @Test
   public void testCreateHourlyTag() {
-    Table table = getArcticTable().asUnkeyedTable();
+    Table table = getMixedTable().asUnkeyedTable();
     table
         .updateProperties()
         .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
@@ -109,7 +109,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
   @Test
   public void testCreateDailyOffsetTag() {
-    Table table = getArcticTable().asUnkeyedTable();
+    Table table = getMixedTable().asUnkeyedTable();
     table
         .updateProperties()
         .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
@@ -148,7 +148,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
   @Test
   public void testCreateHourlyOffsetTag() {
-    Table table = getArcticTable().asUnkeyedTable();
+    Table table = getMixedTable().asUnkeyedTable();
     table
         .updateProperties()
         .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
@@ -184,7 +184,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
   @Test
   public void testNotCreateDelayDailyTag() {
-    Table table = getArcticTable().asUnkeyedTable();
+    Table table = getMixedTable().asUnkeyedTable();
     table
         .updateProperties()
         .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
@@ -210,7 +210,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
   @Test
   public void testNotCreateDelayHourlyTag() {
-    Table table = getArcticTable().asUnkeyedTable();
+    Table table = getMixedTable().asUnkeyedTable();
     table
         .updateProperties()
         .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
@@ -237,7 +237,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
   @Test
   public void testTagFormat() {
-    Table table = getArcticTable().asUnkeyedTable();
+    Table table = getMixedTable().asUnkeyedTable();
     table
         .updateProperties()
         .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
@@ -275,7 +275,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
   @Test
   public void testTagExpiration() {
-    Table table = getArcticTable().asUnkeyedTable();
+    Table table = getMixedTable().asUnkeyedTable();
     long expireKeepMs = 20;
     table
         .updateProperties()

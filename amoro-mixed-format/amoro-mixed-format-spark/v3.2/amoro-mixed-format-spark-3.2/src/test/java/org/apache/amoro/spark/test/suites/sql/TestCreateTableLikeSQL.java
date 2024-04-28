@@ -26,7 +26,7 @@ import org.apache.amoro.spark.test.extensions.EnableCatalogSelect;
 import org.apache.amoro.spark.test.utils.Asserts;
 import org.apache.amoro.spark.test.utils.TestTable;
 import org.apache.amoro.spark.test.utils.TestTables;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -72,7 +72,7 @@ public class TestCreateTableLikeSQL extends MixedTableTestBase {
 
     sql("CREATE TABLE " + target() + " LIKE " + source() + " USING " + provider(format));
 
-    ArcticTable table = loadTable();
+    MixedTable table = loadTable();
     Types.NestedField tsField = table.schema().findField("ts");
     Asserts.assertType(expectTimestampType, tsField.type());
   }
@@ -92,7 +92,7 @@ public class TestCreateTableLikeSQL extends MixedTableTestBase {
 
     String sqlText = "CREATE TABLE " + target() + " LIKE " + source() + " USING arctic";
     sql(sqlText);
-    ArcticTable table = loadTable();
+    MixedTable table = loadTable();
     Asserts.assertType(source.schema.asStruct(), table.schema().asStruct());
     Asserts.assertPartition(source.ptSpec, table.spec());
     // CREATE TABLE LIKE do not copy properties.
@@ -117,7 +117,7 @@ public class TestCreateTableLikeSQL extends MixedTableTestBase {
   @ParameterizedTest
   @MethodSource
   public void testCreateTableLikeDataLakeTable(TableFormat format, TestTable source) {
-    ArcticTable expect =
+    MixedTable expect =
         createArcticSource(
             source.schema,
             builder ->
@@ -131,7 +131,7 @@ public class TestCreateTableLikeSQL extends MixedTableTestBase {
         "CREATE TABLE " + target() + " LIKE " + source() + " USING " + provider(format);
     sql(sqlText);
 
-    ArcticTable table = loadTable();
+    MixedTable table = loadTable();
     Asserts.assertType(expect.schema().asStruct(), table.schema().asStruct());
     Asserts.assertPartition(expect.spec(), table.spec());
     Assertions.assertEquals(expect.isKeyedTable(), table.isKeyedTable());

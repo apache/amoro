@@ -26,9 +26,9 @@ import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.UnifiedCatalogLoader;
-import org.apache.amoro.client.ArcticThriftUrl;
+import org.apache.amoro.client.AmsThriftUrl;
 import org.apache.amoro.flink.catalog.FlinkUnifiedCatalog;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.factories.CatalogFactory;
@@ -80,13 +80,13 @@ public class FlinkUnifiedCatalogFactory implements CatalogFactory {
     String metastoreUrl = helper.getOptions().get(CatalogFactoryOptions.METASTORE_URL);
 
     String amoroCatalogName =
-        ArcticThriftUrl.parse(metastoreUrl, THRIFT_TABLE_SERVICE_NAME).catalogName();
+        AmsThriftUrl.parse(metastoreUrl, THRIFT_TABLE_SERVICE_NAME).catalogName();
     UnifiedCatalog unifiedCatalog =
         UnifiedCatalogLoader.loadUnifiedCatalog(metastoreUrl, amoroCatalogName, Maps.newHashMap());
     Configuration hadoopConf = unifiedCatalog.authenticationContext().getConfiguration();
 
     Set<TableFormat> tableFormats =
-        ArcticCatalogUtil.tableFormats(unifiedCatalog.metastoreType(), unifiedCatalog.properties());
+        MixedCatalogUtil.tableFormats(unifiedCatalog.metastoreType(), unifiedCatalog.properties());
     validate(tableFormats);
 
     return new FlinkUnifiedCatalog(

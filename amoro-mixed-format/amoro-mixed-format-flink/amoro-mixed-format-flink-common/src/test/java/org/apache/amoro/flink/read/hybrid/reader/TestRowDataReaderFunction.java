@@ -27,8 +27,8 @@ import org.apache.amoro.flink.read.hybrid.enumerator.TestContinuousSplitPlannerI
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.flink.read.source.DataIterator;
-import org.apache.amoro.scan.ArcticFileScanTask;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.shaded.guava30.com.google.common.collect.Maps;
@@ -109,23 +109,23 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
     Snapshot snapshot = testKeyedTable.changeTable().snapshot(snapshotId);
     long fromSequence = snapshot.sequenceNumber();
 
-    Set<ArcticFileScanTask> appendLogTasks = new HashSet<>();
-    Set<ArcticFileScanTask> deleteLogTasks = new HashSet<>();
+    Set<MixedFileScanTask> appendLogTasks = new HashSet<>();
+    Set<MixedFileScanTask> deleteLogTasks = new HashSet<>();
     try (CloseableIterable<FileScanTask> tasks = changeTableScan.planFiles()) {
       for (FileScanTask fileScanTask : tasks) {
         if (fileScanTask.file().dataSequenceNumber() <= fromSequence) {
           continue;
         }
-        ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask) fileScanTask;
-        if (arcticFileScanTask.fileType().equals(DataFileType.INSERT_FILE)) {
-          appendLogTasks.add(arcticFileScanTask);
-        } else if (arcticFileScanTask.fileType().equals(DataFileType.EQ_DELETE_FILE)) {
-          deleteLogTasks.add(arcticFileScanTask);
+        MixedFileScanTask mixedFileScanTask = (MixedFileScanTask) fileScanTask;
+        if (mixedFileScanTask.fileType().equals(DataFileType.INSERT_FILE)) {
+          appendLogTasks.add(mixedFileScanTask);
+        } else if (mixedFileScanTask.fileType().equals(DataFileType.EQ_DELETE_FILE)) {
+          deleteLogTasks.add(mixedFileScanTask);
         } else {
           throw new IllegalArgumentException(
               String.format(
                   "DataFileType %s is not supported during change log reading period.",
-                  arcticFileScanTask.fileType()));
+                  mixedFileScanTask.fileType()));
         }
       }
     }

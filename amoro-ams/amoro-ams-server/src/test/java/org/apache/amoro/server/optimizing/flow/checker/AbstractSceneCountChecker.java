@@ -22,7 +22,7 @@ import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.flow.CompleteOptimizingFlow;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
 import org.apache.amoro.server.optimizing.plan.TaskDescriptor;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 
 import javax.annotation.Nullable;
 
@@ -40,7 +40,7 @@ public abstract class AbstractSceneCountChecker implements CompleteOptimizingFlo
 
   @Override
   public boolean condition(
-      ArcticTable table,
+      MixedTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit) {
@@ -52,7 +52,7 @@ public abstract class AbstractSceneCountChecker implements CompleteOptimizingFlo
   }
 
   protected abstract boolean internalCondition(
-      ArcticTable table,
+      MixedTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit);
@@ -64,7 +64,7 @@ public abstract class AbstractSceneCountChecker implements CompleteOptimizingFlo
 
   @Override
   public void check(
-      ArcticTable table,
+      MixedTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit)

@@ -30,8 +30,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.regex.Pattern;
 
-/** Implementation of {@link ArcticFileIO} with deleted files recovery support. */
-public class RecoverableHadoopFileIO extends ArcticHadoopFileIO
+/** Implementation of {@link AuthenticatedFileIO} with deleted files recovery support. */
+public class RecoverableHadoopFileIO extends AuthenticatedHadoopFileIO
     implements SupportFileRecycleOperations {
   private static final Logger LOG = LoggerFactory.getLogger(RecoverableHadoopFileIO.class);
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");

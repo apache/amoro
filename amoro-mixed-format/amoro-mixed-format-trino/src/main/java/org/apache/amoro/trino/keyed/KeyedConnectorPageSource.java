@@ -25,7 +25,7 @@ import static org.apache.iceberg.relocated.com.google.common.base.Throwables.thr
 
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.PrimaryKeyedFile;
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.table.MetadataColumns;
 import org.apache.amoro.trino.delete.TrinoDeleteFile;
 import org.apache.amoro.trino.delete.TrinoRow;
@@ -42,7 +42,7 @@ import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
-import org.apache.amoro.hive.io.reader.AdaptHiveArcticDeleteFilter;
+import org.apache.amoro.hive.io.reader.AdaptHiveMixedDeleteFilter;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.joda.time.DateTimeZone;
@@ -70,12 +70,12 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
   private final List<IcebergColumnHandle> requiredColumns;
   private final DynamicFilter dynamicFilter;
   private final TypeManager typeManager;
-  private final AdaptHiveArcticDeleteFilter<TrinoRow> arcticDeleteFilter;
+  private final AdaptHiveMixedDeleteFilter<TrinoRow> arcticDeleteFilter;
 
   private final List<ColumnHandle> requireColumnsDummy;
   private final Type[] requireColumnTypes;
   private final int[] expectedColumnIndexes;
-  private final Iterator<ArcticFileScanTask> dataTasksIt;
+  private final Iterator<MixedFileScanTask> dataTasksIt;
 
   private boolean close;
   long completedPositions;
@@ -92,7 +92,7 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
       KeyedTableHandle table,
       DynamicFilter dynamicFilter,
       TypeManager typeManager,
-      AdaptHiveArcticDeleteFilter<TrinoRow> arcticDeleteFilter) {
+      AdaptHiveMixedDeleteFilter<TrinoRow> arcticDeleteFilter) {
     this.expectedColumns = expectedColumns;
     this.icebergPageSourceProvider = icebergPageSourceProvider;
     this.transaction = transaction;
@@ -248,8 +248,8 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
     return page;
   }
 
-  private ConnectorPageSource open(ArcticFileScanTask arcticFileScanTask) {
-    PrimaryKeyedFile primaryKeyedFile = arcticFileScanTask.file();
+  private ConnectorPageSource open(MixedFileScanTask mixedFileScanTask) {
+    PrimaryKeyedFile primaryKeyedFile = mixedFileScanTask.file();
     Map<Integer, Optional<String>> idToConstant = new HashMap<>();
     idToConstant.put(
         MetadataColumns.TRANSACTION_ID_FILED_ID,
@@ -258,7 +258,7 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
       idToConstant.put(MetadataColumns.FILE_OFFSET_FILED_ID, Optional.of(Long.MAX_VALUE + ""));
     }
 
-    arcticDeleteFilter.setCurrentDataPath(arcticFileScanTask.file().path().toString());
+    arcticDeleteFilter.setCurrentDataPath(mixedFileScanTask.file().path().toString());
 
     return icebergPageSourceProvider.createPageSource(
         transaction,
@@ -273,7 +273,7 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
             ImmutableList.of(),
             split.getPartitionSpecJson(),
             split.getPartitionDataJson(),
-            arcticFileScanTask.deletes().stream()
+            mixedFileScanTask.deletes().stream()
                 .map(TrinoDeleteFile::copyOf)
                 .collect(Collectors.toList()),
             null,

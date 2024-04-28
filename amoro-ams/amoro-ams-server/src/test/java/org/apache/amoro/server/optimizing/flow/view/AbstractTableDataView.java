@@ -24,7 +24,7 @@ import org.apache.amoro.io.writer.GenericBaseTaskWriter;
 import org.apache.amoro.io.writer.GenericChangeTaskWriter;
 import org.apache.amoro.io.writer.GenericTaskWriters;
 import org.apache.amoro.io.writer.RecordWithAction;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractTableDataView implements TableDataView {
 
-  protected ArcticTable arcticTable;
+  protected MixedTable mixedTable;
 
   protected Schema primary;
 
@@ -59,17 +59,17 @@ public abstract class AbstractTableDataView implements TableDataView {
 
   protected long targetFileSize;
 
-  public AbstractTableDataView(ArcticTable arcticTable, Schema primary, long targetFileSize) {
-    this.arcticTable = arcticTable;
+  public AbstractTableDataView(MixedTable mixedTable, Schema primary, long targetFileSize) {
+    this.mixedTable = mixedTable;
     this.primary = primary;
-    this.schema = arcticTable.schema();
+    this.schema = mixedTable.schema();
     this.targetFileSize = targetFileSize;
   }
 
   protected WriteResult writeFile(List<RecordWithAction> records) throws IOException {
-    if (arcticTable.format() == TableFormat.ICEBERG) {
+    if (mixedTable.format() == TableFormat.ICEBERG) {
       return writeIceberg(records);
-    } else if (arcticTable.isKeyedTable()) {
+    } else if (mixedTable.isKeyedTable()) {
       return writeKeyedTable(records);
     } else {
       return writeUnKeyedTable(records);
@@ -78,7 +78,7 @@ public abstract class AbstractTableDataView implements TableDataView {
 
   private WriteResult writeKeyedTable(List<RecordWithAction> records) throws IOException {
     GenericChangeTaskWriter writer =
-        GenericTaskWriters.builderFor(arcticTable.asKeyedTable())
+        GenericTaskWriters.builderFor(mixedTable.asKeyedTable())
             .withTransactionId(0L)
             .buildChangeWriter();
     try {
@@ -92,7 +92,7 @@ public abstract class AbstractTableDataView implements TableDataView {
   }
 
   private WriteResult writeUnKeyedTable(List<RecordWithAction> records) throws IOException {
-    GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(arcticTable).buildBaseWriter();
+    GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(mixedTable).buildBaseWriter();
     try {
       for (Record record : records) {
         writer.write(record);
@@ -111,9 +111,9 @@ public abstract class AbstractTableDataView implements TableDataView {
                 .map(Types.NestedField::fieldId)
                 .collect(Collectors.toList()),
             schema,
-            arcticTable.asUnkeyedTable(),
+            mixedTable.asUnkeyedTable(),
             FileFormat.PARQUET,
-            OutputFileFactory.builderFor(arcticTable.asUnkeyedTable(), 1, 1)
+            OutputFileFactory.builderFor(mixedTable.asUnkeyedTable(), 1, 1)
                 .format(FileFormat.PARQUET)
                 .build());
     for (RecordWithAction record : records) {

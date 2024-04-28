@@ -36,7 +36,7 @@ import org.apache.amoro.server.optimizing.flow.checker.FullOptimizingWrite2HiveC
 import org.apache.amoro.server.optimizing.flow.checker.MinorOptimizingCheck;
 import org.apache.amoro.server.optimizing.flow.checker.OptimizingCountChecker;
 import org.apache.amoro.server.optimizing.flow.view.UnKeyedTableDataView;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -80,7 +80,7 @@ public class TestUnKeyedContinuousOptimizing extends TableTestBase {
 
   @Test
   public void run() throws Exception {
-    ArcticTable table = getArcticTable();
+    MixedTable table = getMixedTable();
 
     int partitionCount = 2;
 
@@ -159,7 +159,7 @@ public class TestUnKeyedContinuousOptimizing extends TableTestBase {
     }
   }
 
-  private static void mustFullCycle(ArcticTable table, RunnableWithException runnable)
+  private static void mustFullCycle(MixedTable table, RunnableWithException runnable)
       throws Exception {
     table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "1").commit();
     runnable.run();

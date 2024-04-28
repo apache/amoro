@@ -19,7 +19,7 @@
 package org.apache.amoro.spark.reader;
 
 import org.apache.amoro.spark.table.SupportsExtendIdentColumns;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
@@ -52,7 +52,7 @@ public class SparkScanBuilder
         SupportsPushDownRequiredColumns {
   private static final Filter[] NO_FILTERS = new Filter[0];
 
-  private final ArcticTable table;
+  private final MixedTable table;
   private final CaseInsensitiveStringMap options;
 
   private final List<String> metaColumns = Lists.newArrayList();
@@ -63,14 +63,14 @@ public class SparkScanBuilder
   private List<Expression> filterExpressions = Lists.newArrayList();
   private Filter[] pushedFilters = NO_FILTERS;
 
-  public SparkScanBuilder(SparkSession spark, ArcticTable table, CaseInsensitiveStringMap options) {
+  public SparkScanBuilder(SparkSession spark, MixedTable table, CaseInsensitiveStringMap options) {
     this.table = table;
     this.options = options;
     this.caseSensitive = Boolean.parseBoolean(spark.conf().get("spark.sql.caseSensitive"));
   }
 
   public SparkScanBuilder(
-      SparkSession spark, ArcticTable table, CaseInsensitiveStringMap options, Schema schema) {
+      SparkSession spark, MixedTable table, CaseInsensitiveStringMap options, Schema schema) {
     this.table = table;
     this.options = options;
     this.schema = schema;

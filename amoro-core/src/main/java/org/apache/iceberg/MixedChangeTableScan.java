@@ -19,7 +19,7 @@
 package org.apache.iceberg;
 
 import org.apache.amoro.data.DefaultKeyedFile;
-import org.apache.amoro.scan.BasicArcticFileScanTask;
+import org.apache.amoro.scan.BasicMixedFileScanTask;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.utils.TablePropertyUtil;
@@ -29,7 +29,7 @@ import org.apache.iceberg.util.StructLikeMap;
 
 /**
  * Table scan for {@link ChangeTable}, support filter files with data sequence number and return
- * {@link BasicArcticFileScanTask}.
+ * {@link BasicMixedFileScanTask}.
  */
 public class MixedChangeTableScan extends DataTableScan implements ChangeTableIncrementalScan {
   private StructLikeMap<Long> fromPartitionSequence;
@@ -104,7 +104,7 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
     return CloseableIterable.transform(
         filteredTasks,
         fileScanTask ->
-            new BasicArcticFileScanTask(
+            new BasicMixedFileScanTask(
                 DefaultKeyedFile.parseChange(fileScanTask.file()), null, table().spec(), null));
   }
 

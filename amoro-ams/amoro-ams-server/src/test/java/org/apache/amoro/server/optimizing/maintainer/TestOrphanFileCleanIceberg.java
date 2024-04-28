@@ -76,8 +76,8 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
     List<Record> records = Lists.newArrayListWithCapacity(3);
     records.add(tableTestHelper().generateTestRecord(1, "test1", 0, "2022-01-01T00:00:00"));
     List<DataFile> dataFiles1 =
-        tableTestHelper().writeBaseStore(getArcticTable().asUnkeyedTable(), 1L, records, false);
-    UnkeyedTable testTable = getArcticTable().asUnkeyedTable();
+        tableTestHelper().writeBaseStore(getMixedTable().asUnkeyedTable(), 1L, records, false);
+    UnkeyedTable testTable = getMixedTable().asUnkeyedTable();
     AppendFiles appendFiles = testTable.newAppend();
     dataFiles1.forEach(appendFiles::appendFile);
     appendFiles.commit();
@@ -91,7 +91,7 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
     records.clear();
     records.add(tableTestHelper().generateTestRecord(3, "test3", 0, "2022-01-02T00:00:00"));
     List<DataFile> dataFiles2 =
-        tableTestHelper().writeBaseStore(getArcticTable().asUnkeyedTable(), 1L, records, false);
+        tableTestHelper().writeBaseStore(getMixedTable().asUnkeyedTable(), 1L, records, false);
     testTable
         .newRewrite()
         .rewriteFiles(

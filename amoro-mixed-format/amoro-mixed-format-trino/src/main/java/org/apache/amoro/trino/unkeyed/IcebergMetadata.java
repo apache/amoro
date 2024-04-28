@@ -102,7 +102,7 @@ import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSe
 import static org.apache.iceberg.relocated.com.google.common.collect.Maps.transformValues;
 import static org.apache.iceberg.types.TypeUtil.indexParents;
 
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
@@ -365,7 +365,7 @@ public class IcebergMetadata implements ConnectorMetadata {
 
     Map<String, String> tableProperties = table.properties();
     String nameMappingJson = tableProperties.get(TableProperties.DEFAULT_NAME_MAPPING);
-    if (TableTypeUtil.isHive((ArcticTable) table)) {
+    if (TableTypeUtil.isHive((MixedTable) table)) {
       return new AdaptHiveIcebergTableHandle(
           tableName.getSchemaName(),
           name.getTableName(),

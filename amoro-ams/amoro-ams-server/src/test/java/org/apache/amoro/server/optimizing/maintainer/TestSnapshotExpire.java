@@ -19,7 +19,7 @@
 package org.apache.amoro.server.optimizing.maintainer;
 
 import static org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintainer.FLINK_MAX_COMMITTED_CHECKPOINT_ID;
-import static org.apache.amoro.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
+import static org.apache.amoro.utils.MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
@@ -38,7 +38,7 @@ import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.StatisticsFileUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
@@ -91,7 +91,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   @Test
   public void testExpireChangeTableFiles() {
     Assume.assumeTrue(isKeyedTable());
-    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
+    KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
     testKeyedTable.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
     testKeyedTable.updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
     List<DataFile> s1Files = insertChangeDataFiles(testKeyedTable, 1);
@@ -140,7 +140,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
             .withSnapshotId(snapshot.snapshotId())
             .build()
             .add(
-                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
                 optimizedSequence,
                 StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
             .complete();
@@ -151,7 +151,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   public void testExpiredChangeTableFilesInBase() {
     Assume.assumeTrue(isKeyedTable());
     Assume.assumeTrue(isPartitionedTable());
-    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
+    KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
     testKeyedTable.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
     testKeyedTable.updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
     List<DataFile> s1Files = insertChangeDataFiles(testKeyedTable, 1);
@@ -183,7 +183,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   @Test
   public void testNotExpireFlinkLatestCommit4ChangeTable() {
     Assume.assumeTrue(isKeyedTable());
-    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
+    KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
     insertChangeDataFiles(testKeyedTable, 1);
     insertChangeDataFiles(testKeyedTable, 2);
 
@@ -227,8 +227,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   public void testNotExpireFlinkLatestCommit4All() {
     UnkeyedTable table =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
     writeAndCommitBaseStore(table);
 
     AppendFiles appendFiles = table.newAppend();
@@ -254,7 +254,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     Assert.assertEquals(4, Iterables.size(table.snapshots()));
 
-    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(getArcticTable());
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(getMixedTable());
     tableMaintainer.expireSnapshots(tableRuntime);
 
     Assert.assertEquals(2, Iterables.size(table.snapshots()));
@@ -268,7 +268,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   @Test
   public void testNotExpireOptimizedSequenceCommit4All() {
     Assume.assumeTrue(isKeyedTable());
-    BaseTable table = getArcticTable().asKeyedTable().baseTable();
+    BaseTable table = getMixedTable().asKeyedTable().baseTable();
     writeAndCommitBaseStore(table);
 
     AppendFiles appendFiles = table.newAppend();
@@ -294,7 +294,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     Assert.assertEquals(4, Iterables.size(table.snapshots()));
 
-    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(getArcticTable());
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(getMixedTable());
     tableMaintainer.expireSnapshots(tableRuntime);
 
     Assert.assertEquals(2, Iterables.size(table.snapshots()));
@@ -309,8 +309,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   public void testNotExpireOptimizeCommit4All() {
     UnkeyedTable table =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
     table.newAppend().commit();
     table.newAppend().commit();
     table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
@@ -352,8 +352,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   public void testExpireTableFiles4All() {
     UnkeyedTable table =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
     table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
     List<DataFile> dataFiles = writeAndCommitBaseStore(table);
 
@@ -376,7 +376,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   @Test
   public void testExpireTableFilesRepeatedly() {
     Assume.assumeTrue(isKeyedTable());
-    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
+    KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
 
     testKeyedTable.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
     testKeyedTable.updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
@@ -438,7 +438,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   @Test
   public void testExpireStatisticsFiles() {
     Assume.assumeTrue(isKeyedTable());
-    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
+    KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
     BaseTable baseTable = testKeyedTable.baseTable();
     testKeyedTable.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
     // commit an empty snapshot and its statistic file
@@ -449,7 +449,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
             .withSnapshotId(s1.snapshotId())
             .build()
             .add(
-                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
                 StructLikeMap.create(baseTable.spec().partitionType()),
                 StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
             .complete();
@@ -463,7 +463,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
             .withSnapshotId(s2.snapshotId())
             .build()
             .add(
-                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
                 StructLikeMap.create(baseTable.spec().partitionType()),
                 StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
             .complete();
@@ -494,7 +494,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   @Test
   public void testChangeTableGcDisabled() {
     Assume.assumeTrue(isKeyedTable());
-    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
+    KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
     testKeyedTable.updateProperties().set("gc.enabled", "false").commit();
 
     insertChangeDataFiles(testKeyedTable, 1);
@@ -526,7 +526,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   @Test
   public void testBaseTableGcDisabled() {
     Assume.assumeFalse(isKeyedTable());
-    UnkeyedTable testUnkeyedTable = getArcticTable().asUnkeyedTable();
+    UnkeyedTable testUnkeyedTable = getMixedTable().asUnkeyedTable();
     testUnkeyedTable.updateProperties().set("gc.enabled", "false").commit();
 
     testUnkeyedTable.newAppend().commit();

@@ -23,7 +23,7 @@ import org.apache.amoro.flink.shuffle.ShuffleKey;
 import org.apache.amoro.flink.shuffle.ShuffleRulePolicy;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.flink.util.ArcticUtils;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.runtime.state.StateInitializationContext;
@@ -68,7 +68,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
    * KERBEROS if Arctic's table is KERBEROS enabled. It will cause ugi relevant exception when
    * deploy to yarn cluster.
    */
-  private transient ArcticTable table;
+  private transient MixedTable table;
 
   public ArcticFileWriter(
       ShuffleRulePolicy<RowData, ShuffleKey> shuffleRule,

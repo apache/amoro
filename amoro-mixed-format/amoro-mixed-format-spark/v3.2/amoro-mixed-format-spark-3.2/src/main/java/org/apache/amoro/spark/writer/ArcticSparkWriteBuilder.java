@@ -18,8 +18,8 @@
 
 package org.apache.amoro.spark.writer;
 
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -53,11 +53,12 @@ public class ArcticSparkWriteBuilder
 
   private WriteMode writeMode = WriteMode.APPEND;
   // private final ArcticWrite write;
-  private final ArcticTable table;
+  private final MixedTable table;
   private final LogicalWriteInfo info;
-  private final ArcticCatalog catalog;
+  private final MixedFormatCatalog catalog;
 
-  public ArcticSparkWriteBuilder(ArcticTable table, LogicalWriteInfo info, ArcticCatalog catalog) {
+  public ArcticSparkWriteBuilder(
+      MixedTable table, LogicalWriteInfo info, MixedFormatCatalog catalog) {
     this.options = info.options();
     if (options.containsKey(WriteMode.WRITE_MODE_KEY)) {
       this.writeMode = WriteMode.getWriteMode(options.get(WriteMode.WRITE_MODE_KEY));

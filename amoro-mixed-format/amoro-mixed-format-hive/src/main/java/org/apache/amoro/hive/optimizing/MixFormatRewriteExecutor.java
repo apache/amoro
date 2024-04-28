@@ -20,11 +20,11 @@ package org.apache.amoro.hive.optimizing;
 
 import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
-import org.apache.amoro.io.writer.ArcticTreeNodePosDeleteWriter;
+import org.apache.amoro.io.writer.MixedTreeNodePosDeleteWriter;
 import org.apache.amoro.optimizing.AbstractRewriteFilesExecutor;
 import org.apache.amoro.optimizing.OptimizingDataReader;
 import org.apache.amoro.optimizing.RewriteFilesInput;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.WriteOperationKind;
 import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.commons.lang3.StringUtils;
@@ -44,7 +44,7 @@ public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   public MixFormatRewriteExecutor(
       RewriteFilesInput input,
-      ArcticTable table,
+      MixedTable table,
       StructLikeCollections structLikeCollections,
       String outputDir) {
     super(input, table, structLikeCollections);
@@ -59,7 +59,7 @@ public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
   @Override
   protected FileWriter<PositionDelete<Record>, DeleteWriteResult> posWriter() {
     FileAppenderFactory<Record> appenderFactory = fullMetricAppenderFactory(table.spec());
-    return new ArcticTreeNodePosDeleteWriter<>(
+    return new MixedTreeNodePosDeleteWriter<>(
         appenderFactory,
         deleteFileFormat(),
         partition(),

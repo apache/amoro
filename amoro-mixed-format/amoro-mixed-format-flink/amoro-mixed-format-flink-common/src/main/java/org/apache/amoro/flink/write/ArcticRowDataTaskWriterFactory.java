@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.write;
 
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.WriteOperationKind;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
@@ -29,7 +29,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 /** This is an Arctic table writer factory. */
 public class ArcticRowDataTaskWriterFactory implements TaskWriterFactory<RowData> {
 
-  private final ArcticTable table;
+  private final MixedTable table;
   private final RowType flinkSchema;
 
   private final boolean overwrite;
@@ -39,7 +39,7 @@ public class ArcticRowDataTaskWriterFactory implements TaskWriterFactory<RowData
   private transient Integer taskId = null;
   private transient Integer attemptId = null;
 
-  public ArcticRowDataTaskWriterFactory(ArcticTable table, RowType flinkSchema, boolean overwrite) {
+  public ArcticRowDataTaskWriterFactory(MixedTable table, RowType flinkSchema, boolean overwrite) {
     this.table = table;
     this.flinkSchema = flinkSchema;
     this.overwrite = overwrite;

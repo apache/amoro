@@ -25,7 +25,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.UnifiedCatalogLoader;
-import org.apache.amoro.client.ArcticThriftUrl;
+import org.apache.amoro.client.AmsThriftUrl;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -79,7 +79,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
     properties.remove(SparkUnifiedCatalogProperties.URI);
     Preconditions.checkNotNull(uri, "lack required option: %s", SparkUnifiedCatalogProperties.URI);
 
-    ArcticThriftUrl catalogUri = ArcticThriftUrl.parse(uri, Constants.THRIFT_TABLE_SERVICE_NAME);
+    AmsThriftUrl catalogUri = AmsThriftUrl.parse(uri, Constants.THRIFT_TABLE_SERVICE_NAME);
     String registerCatalogName = catalogUri.catalogName();
 
     if (StringUtils.isBlank(registerCatalogName)) {

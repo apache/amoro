@@ -22,8 +22,8 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.data.ChangeAction;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -54,7 +54,7 @@ public class ExecutorTestBase extends TableTestBase {
     return builder.build();
   }
 
-  public List<DataFile> writeAndCommitBaseStore(ArcticTable table) {
+  public List<DataFile> writeAndCommitBaseStore(MixedTable table) {
     UnkeyedTable baseTable =
         table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
     // write 4 file,100 records to 2 partitions(2022-1-1\2022-1-2)
@@ -76,13 +76,13 @@ public class ExecutorTestBase extends TableTestBase {
     return writeFiles;
   }
 
-  public void writeAndCommitBaseAndChange(ArcticTable table) {
+  public void writeAndCommitBaseAndChange(MixedTable table) {
     writeAndCommitBaseStore(table);
     writeAndCommitChangeStore(
         table.asKeyedTable(), 2, ChangeAction.INSERT, createRecords(101, 100));
   }
 
-  public static void assertMetadataExists(ArcticTable table) {
+  public static void assertMetadataExists(MixedTable table) {
     if (table.isKeyedTable()) {
       checkMetadataExistence(table.asKeyedTable().changeTable());
     }

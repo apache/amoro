@@ -36,7 +36,7 @@ import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
 import org.apache.amoro.flink.util.ArcticUtils;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.flink.configuration.ConfigOption;
@@ -117,21 +117,21 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     }
     ArcticTableLoader tableLoader =
         createTableLoader(objectPath, actualCatalogName, actualBuilder, options.toMap());
-    ArcticTable arcticTable = ArcticUtils.loadArcticTable(tableLoader);
+    MixedTable mixedTable = ArcticUtils.loadArcticTable(tableLoader);
 
-    Configuration confWithAll = Configuration.fromMap(arcticTable.properties());
+    Configuration confWithAll = Configuration.fromMap(mixedTable.properties());
 
     ScanTableSource arcticDynamicSource;
 
     String readMode =
         PropertyUtil.propertyAsString(
-            arcticTable.properties(),
+            mixedTable.properties(),
             ArcticValidator.ARCTIC_READ_MODE,
             ArcticValidator.ARCTIC_READ_MODE_DEFAULT);
 
     boolean dimTable =
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
-            arcticTable.properties(),
+            mixedTable.properties(),
             ArcticValidator.DIM_TABLE_ENABLE.key(),
             ArcticValidator.DIM_TABLE_ENABLE.defaultValue());
 
@@ -150,28 +150,28 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         boolean batchMode = context.getConfiguration().get(RUNTIME_MODE).equals(BATCH);
         LOG.info("Building a file reader in {} runtime mode", batchMode ? "batch" : "streaming");
         arcticDynamicSource =
-            new ArcticFileSource(tableLoader, tableSchema, arcticTable, confWithAll, batchMode);
+            new ArcticFileSource(tableLoader, tableSchema, mixedTable, confWithAll, batchMode);
         break;
       case ArcticValidator.ARCTIC_READ_LOG:
       default:
         Preconditions.checkArgument(
             CompatiblePropertyUtil.propertyAsBoolean(
-                arcticTable.properties(), ENABLE_LOG_STORE, ENABLE_LOG_STORE_DEFAULT),
+                mixedTable.properties(), ENABLE_LOG_STORE, ENABLE_LOG_STORE_DEFAULT),
             String.format("Read log should enable %s at first", ENABLE_LOG_STORE));
-        arcticDynamicSource = createLogSource(arcticTable, context, confWithAll);
+        arcticDynamicSource = createLogSource(mixedTable, context, confWithAll);
     }
 
     return generateDynamicTableSource(
-        identifier.getObjectName(), arcticDynamicSource, arcticTable, tableLoader);
+        identifier.getObjectName(), arcticDynamicSource, mixedTable, tableLoader);
   }
 
   protected DynamicTableSource generateDynamicTableSource(
       String tableName,
       ScanTableSource arcticDynamicSource,
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       ArcticTableLoader tableLoader) {
     return new ArcticDynamicSource(
-        tableName, arcticDynamicSource, arcticTable, arcticTable.properties(), tableLoader);
+        tableName, arcticDynamicSource, mixedTable, mixedTable.properties(), tableLoader);
   }
 
   @Override
@@ -188,7 +188,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
             internalCatalogBuilder,
             options);
 
-    ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
+    MixedTable table = ArcticUtils.loadArcticTable(tableLoader);
     return new ArcticDynamicSink(catalogTable, tableLoader, table.isKeyedTable());
   }
 
@@ -242,13 +242,13 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
   }
 
   private ScanTableSource createLogSource(
-      ArcticTable arcticTable, Context context, ReadableConfig tableOptions) {
+      MixedTable mixedTable, Context context, ReadableConfig tableOptions) {
     CatalogTable catalogTable = context.getCatalogTable();
     TableSchema physicalSchema = TableSchemaUtils.getPhysicalSchema(catalogTable.getSchema());
     Schema schema = FlinkSchemaUtil.convert(physicalSchema);
 
     final Properties properties =
-        KafkaConnectorOptionsUtil.getKafkaProperties(arcticTable.properties());
+        KafkaConnectorOptionsUtil.getKafkaProperties(mixedTable.properties());
 
     // add topic-partition discovery
     final Optional<Long> partitionDiscoveryInterval =
@@ -258,6 +258,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         partitionDiscoveryInterval.orElse(-1L).toString());
 
     LOG.info("build log source");
-    return new LogDynamicSource(properties, schema, tableOptions, arcticTable);
+    return new LogDynamicSource(properties, schema, tableOptions, mixedTable);
   }
 }

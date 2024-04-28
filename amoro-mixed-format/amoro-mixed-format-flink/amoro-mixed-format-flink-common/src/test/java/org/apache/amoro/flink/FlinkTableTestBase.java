@@ -20,8 +20,8 @@ package org.apache.amoro.flink;
 
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.flink.write.ArcticRowDataTaskWriterFactory;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.flink.table.data.RowData;
@@ -37,16 +37,16 @@ import java.util.Arrays;
  * base class in the future.
  */
 public interface FlinkTableTestBase {
-  default TaskWriter<RowData> createTaskWriter(ArcticTable arcticTable, RowType rowType) {
-    return arcticTable.isKeyedTable()
-        ? createKeyedTaskWriter((KeyedTable) arcticTable, rowType)
-        : createUnkeyedTaskWriter((UnkeyedTable) arcticTable, rowType);
+  default TaskWriter<RowData> createTaskWriter(MixedTable mixedTable, RowType rowType) {
+    return mixedTable.isKeyedTable()
+        ? createKeyedTaskWriter((KeyedTable) mixedTable, rowType)
+        : createUnkeyedTaskWriter((UnkeyedTable) mixedTable, rowType);
   }
 
-  default TaskWriter<RowData> createBaseTaskWriter(ArcticTable arcticTable, RowType rowType) {
-    return arcticTable.isKeyedTable()
-        ? createKeyedTaskWriter((KeyedTable) arcticTable, rowType, true, 3)
-        : createUnkeyedTaskWriter((UnkeyedTable) arcticTable, rowType);
+  default TaskWriter<RowData> createBaseTaskWriter(MixedTable mixedTable, RowType rowType) {
+    return mixedTable.isKeyedTable()
+        ? createKeyedTaskWriter((KeyedTable) mixedTable, rowType, true, 3)
+        : createUnkeyedTaskWriter((UnkeyedTable) mixedTable, rowType);
   }
 
   default TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType) {
@@ -63,17 +63,17 @@ public interface FlinkTableTestBase {
   }
 
   default TaskWriter<RowData> createTaskWriter(
-      ArcticTable arcticTable, RowType rowType, boolean overwrite, long mask) {
+      MixedTable mixedTable, RowType rowType, boolean overwrite, long mask) {
     ArcticRowDataTaskWriterFactory taskWriterFactory =
-        new ArcticRowDataTaskWriterFactory(arcticTable, rowType, overwrite);
+        new ArcticRowDataTaskWriterFactory(mixedTable, rowType, overwrite);
     taskWriterFactory.setMask(mask);
     taskWriterFactory.initialize(0, 0);
     return taskWriterFactory.create();
   }
 
-  default void commit(ArcticTable arcticTable, WriteResult result, boolean base) {
-    if (arcticTable.isKeyedTable()) {
-      KeyedTable keyedTable = arcticTable.asKeyedTable();
+  default void commit(MixedTable mixedTable, WriteResult result, boolean base) {
+    if (mixedTable.isKeyedTable()) {
+      KeyedTable keyedTable = mixedTable.asKeyedTable();
       if (base) {
         AppendFiles baseAppend = keyedTable.baseTable().newAppend();
         Arrays.stream(result.dataFiles()).forEach(baseAppend::appendFile);
@@ -88,9 +88,9 @@ public interface FlinkTableTestBase {
         throw new IllegalArgumentException(
             String.format(
                 "arctic table %s is a unkeyed table, can't commit to change table",
-                arcticTable.name()));
+                mixedTable.name()));
       }
-      UnkeyedTable unkeyedTable = arcticTable.asUnkeyedTable();
+      UnkeyedTable unkeyedTable = mixedTable.asUnkeyedTable();
       AppendFiles baseAppend = unkeyedTable.newAppend();
       Arrays.stream(result.dataFiles()).forEach(baseAppend::appendFile);
       baseAppend.commit();
@@ -98,12 +98,12 @@ public interface FlinkTableTestBase {
   }
 
   default ArcticTableLoader getTableLoader(
-      String catalogName, String metastoreUrl, ArcticTable arcticTable) {
+      String catalogName, String metastoreUrl, MixedTable mixedTable) {
     TableIdentifier identifier =
         TableIdentifier.of(
-            catalogName, arcticTable.id().getDatabase(), arcticTable.id().getTableName());
+            catalogName, mixedTable.id().getDatabase(), mixedTable.id().getTableName());
     InternalCatalogBuilder internalCatalogBuilder =
         InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl);
-    return ArcticTableLoader.of(identifier, internalCatalogBuilder, arcticTable.properties());
+    return ArcticTableLoader.of(identifier, internalCatalogBuilder, mixedTable.properties());
   }
 }

@@ -25,7 +25,7 @@ import org.apache.amoro.server.optimizing.flow.view.MatchResult;
 import org.apache.amoro.server.optimizing.flow.view.TableDataView;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
 import org.apache.amoro.server.optimizing.plan.TaskDescriptor;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.iceberg.data.Record;
@@ -61,7 +61,7 @@ public abstract class AbstractHiveChecker extends OptimizingCountChecker {
 
   @Override
   public void check(
-      ArcticTable table,
+      MixedTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit)
@@ -76,7 +76,7 @@ public abstract class AbstractHiveChecker extends OptimizingCountChecker {
     }
   }
 
-  private List<String> dataLocations(ArcticTable table) throws Exception {
+  private List<String> dataLocations(MixedTable table) throws Exception {
     SupportHive supportHive = (SupportHive) table;
     HMSClientPool hmsClient = supportHive.getHMSClient();
     if (table.spec().isUnpartitioned()) {
@@ -101,7 +101,7 @@ public abstract class AbstractHiveChecker extends OptimizingCountChecker {
     }
   }
 
-  private List<Record> readAllRecordsInHive(ArcticTable table, List<String> locations)
+  private List<Record> readAllRecordsInHive(MixedTable table, List<String> locations)
       throws InterruptedException, ExecutionException {
     List<Path> allFiles =
         locations.stream()
@@ -139,7 +139,7 @@ public abstract class AbstractHiveChecker extends OptimizingCountChecker {
     return allRecordsInHive;
   }
 
-  private CloseableIterable<Record> newParquetIterable(String path, ArcticTable table) {
+  private CloseableIterable<Record> newParquetIterable(String path, MixedTable table) {
     AdaptHiveParquet.ReadBuilder builder =
         AdaptHiveParquet.read(table.io().newInputFile(path))
             .project(table.schema())
