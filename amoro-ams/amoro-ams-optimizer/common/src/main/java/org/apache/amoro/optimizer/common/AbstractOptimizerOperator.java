@@ -40,7 +40,7 @@ public class AbstractOptimizerOperator implements Serializable {
 
   private final OptimizerConfig config;
   private final AtomicReference<String> token = new AtomicReference<>();
-  private boolean stopped = false;
+  private volatile boolean stopped = false;
 
   public AbstractOptimizerOperator(OptimizerConfig config) {
     Preconditions.checkNotNull(config);
