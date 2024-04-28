@@ -1,0 +1,57 @@
+suite: Test Amoro RBAC
+templates:
+  - amoro-rbac.yaml
+chart:
+  appVersion: 0.1.0
+  version: 0.6.0
+tests:
+  - it: Amoro rbac documents should not exist when serviceAccount.create is false
+    set:
+      serviceAccount:
+        create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: Amoro rbac documents should not exist when serviceAccount.rbac.create is false
+    set:
+      serviceAccount:
+        rbac:
+          create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: Amoro rbac documents should count 2 for default value
+    set:
+      fullnameOverride: test
+    asserts:
+      - hasDocuments:
+          count: 2
+      - containsDocument:
+          kind: Role
+          apiVersion: rbac.authorization.k8s.io/v1
+          name: test
+        documentIndex: 0
+      - containsDocument:
+          kind: RoleBinding
+          apiVersion: rbac.authorization.k8s.io/v1
+          name: test
+        documentIndex: 1
+  - it: Amoro rbac documents should count 2 when serviceAccount.rbac.cluster is true
+    set:
+      fullnameOverride: test
+      serviceAccount:
+        rbac:
+          cluster: true
+    asserts:
+      - hasDocuments:
+          count: 2
+      - containsDocument:
+          kind: ClusterRole
+          apiVersion: rbac.authorization.k8s.io/v1
+          name: test
+        documentIndex: 0
+      - containsDocument:
+          kind: ClusterRoleBinding
+          apiVersion: rbac.authorization.k8s.io/v1
+          name: test
+        documentIndex: 1
