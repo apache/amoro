@@ -85,7 +85,7 @@ jobs:
           echo "MVN_HADOOP=-Dhadoop=${{ matrix.hadoop }}" >> $GITHUB_ENV
 
       - name: Build dist module with Maven
-        run: mvn clean install -pl 'ams/dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp
+        run: mvn clean install -pl 'amoro-ams/dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp
 
       - name: Build and Push Amoro Docker Image
         uses: docker/build-push-action@v4
@@ -160,7 +160,7 @@ jobs:
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'ams/optimizer/flink-optimizer' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
+        run: mvn clean package -pl 'amoro-ams/amoro-ams-optimizer/flink-optimizer' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
 
       - name: Build and Push Flink Optimizer Docker Image
         uses: docker/build-push-action@v4
@@ -232,7 +232,7 @@ jobs:
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'ams/optimizer/spark-optimizer' -am -e ${OPTIMIZER_SPARK} -DskipTests -B -ntp
+        run: mvn clean package -pl 'amoro-ams/amoro-ams-optimizer/spark-optimizer' -am -e ${OPTIMIZER_SPARK} -DskipTests -B -ntp
 
       - name: Build and Push Spark Optimizer Docker Image
         uses: docker/build-push-action@v4
@@ -295,7 +295,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'mixed/flink/v1.17/flink-runtime' -am -e -DskipTests -B -ntp
+        run: mvn clean package -pl 'amoro-mixed-format/amoro-mixed-format-flink/v1.17/amoro-mixed-format-flink-runtime-1.17' -am -e -DskipTests -B -ntp
 
       - name: Build and Push Flink Optimizer Docker Image
         uses: docker/build-push-action@v4
