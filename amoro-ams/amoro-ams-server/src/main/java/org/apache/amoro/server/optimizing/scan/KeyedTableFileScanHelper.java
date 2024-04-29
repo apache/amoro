@@ -29,8 +29,8 @@ import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticTableUtil;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
@@ -166,7 +166,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
       StructLikeMap<Long> optimizedSequence =
           baseSnapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID
               ? StructLikeMap.create(arcticTable.spec().partitionType())
-              : ArcticTableUtil.readOptimizedSequence(arcticTable, baseSnapshotId);
+              : MixedTableUtil.readOptimizedSequence(arcticTable, baseSnapshotId);
       long maxSequence = getMaxSequenceLimit(arcticTable, changeSnapshotId, optimizedSequence);
       if (maxSequence != Long.MIN_VALUE) {
         ChangeTableIncrementalScan changeTableIncrementalScan =

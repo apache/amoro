@@ -23,7 +23,7 @@ import org.apache.amoro.spark.mixed.SparkSQLProperties;
 import org.apache.amoro.spark.test.MixedTableTestBase;
 import org.apache.amoro.spark.test.utils.RecordGenerator;
 import org.apache.amoro.spark.test.utils.TestTableUtil;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.Schema;
@@ -145,8 +145,8 @@ public class TestArcticSessionCatalog extends MixedTableTestBase {
     createViewSource(SCHEMA, source);
     Table hiveTable = loadHiveTable();
     Map<String, String> properties = Maps.newHashMap(hiveTable.getParameters());
-    properties.remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
-    properties.put(HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY, "true");
+    properties.remove(HiveTableProperties.MIXED_TABLE_FLAG);
+    properties.put(HiveTableProperties.AMORO_TABLE_FLAG_LEGACY, "true");
     hiveTable.setParameters(properties);
     try {
       CONTEXT
@@ -157,7 +157,7 @@ public class TestArcticSessionCatalog extends MixedTableTestBase {
     }
 
     sql("insert into " + target() + " select * from " + source());
-    ArcticTable table = loadTable();
+    MixedTable table = loadTable();
     List<Record> changes = TestTableUtil.changeRecordsWithAction(table.asKeyedTable());
     Assertions.assertTrue(changes.size() > 0);
   }

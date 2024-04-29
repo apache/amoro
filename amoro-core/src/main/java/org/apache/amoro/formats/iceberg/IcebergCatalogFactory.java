@@ -22,7 +22,7 @@ import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.FormatCatalogFactory;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.catalog.Catalog;
@@ -37,7 +37,7 @@ public class IcebergCatalogFactory implements FormatCatalogFactory {
       String name, String metastoreType, Map<String, String> properties, TableMetaStore metaStore) {
     Preconditions.checkArgument(StringUtils.isNotBlank(metastoreType), "metastore type is blank");
     properties =
-        ArcticCatalogUtil.withIcebergCatalogInitializeProperties(name, metastoreType, properties);
+        MixedCatalogUtil.withIcebergCatalogInitializeProperties(name, metastoreType, properties);
 
     Catalog icebergCatalog =
         CatalogUtil.buildIcebergCatalog(name, properties, metaStore.getConfiguration());
@@ -52,7 +52,7 @@ public class IcebergCatalogFactory implements FormatCatalogFactory {
   @Override
   public Map<String, String> convertCatalogProperties(
       String catalogName, String metastoreType, Map<String, String> unifiedCatalogProperties) {
-    return ArcticCatalogUtil.withIcebergCatalogInitializeProperties(
+    return MixedCatalogUtil.withIcebergCatalogInitializeProperties(
         catalogName, metastoreType, unifiedCatalogProperties);
   }
 }

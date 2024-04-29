@@ -23,7 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.util.DataUtil;
 import org.apache.amoro.flink.write.FlinkTaskWriterBaseTest;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.flink.table.api.TableResult;
@@ -170,18 +170,18 @@ public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskW
       boolean writeToBaseStore,
       boolean upsertEnabled)
       throws IOException {
-    ArcticTable arcticTable = getMixedFormatCatalog().loadTable(table);
-    Assert.assertNotNull(arcticTable);
-    RowType rowType = FlinkSchemaUtil.convert(arcticTable.schema());
+    MixedTable mixedTable = getMixedFormatCatalog().loadTable(table);
+    Assert.assertNotNull(mixedTable);
+    RowType rowType = FlinkSchemaUtil.convert(mixedTable.schema());
     for (RowData rowData : expected) {
       try (TaskWriter<RowData> taskWriter =
           writeToBaseStore
-              ? createBaseTaskWriter(arcticTable, rowType)
-              : createTaskWriter(arcticTable, rowType)) {
+              ? createBaseTaskWriter(mixedTable, rowType)
+              : createTaskWriter(mixedTable, rowType)) {
         if (writeToBaseStore) {
-          writeAndCommit(rowData, taskWriter, arcticTable);
+          writeAndCommit(rowData, taskWriter, mixedTable);
         } else {
-          writeAndCommit(rowData, taskWriter, arcticTable, upsertEnabled);
+          writeAndCommit(rowData, taskWriter, mixedTable, upsertEnabled);
         }
       }
     }

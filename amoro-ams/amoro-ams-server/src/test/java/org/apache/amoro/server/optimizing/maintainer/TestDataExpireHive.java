@@ -66,7 +66,7 @@ public class TestDataExpireHive extends TestDataExpire {
   @Override
   protected Record createRecord(int id, String name, long ts, String opTime) {
     return MixedDataTestHelpers.createRecord(
-        getArcticTable().schema(),
+        getMixedTable().schema(),
         id,
         name,
         ts,

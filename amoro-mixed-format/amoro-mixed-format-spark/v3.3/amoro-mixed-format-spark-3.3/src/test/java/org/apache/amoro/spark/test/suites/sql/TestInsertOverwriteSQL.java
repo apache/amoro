@@ -30,7 +30,7 @@ import org.apache.amoro.spark.test.utils.ExpectResultUtil;
 import org.apache.amoro.spark.test.utils.RecordGenerator;
 import org.apache.amoro.spark.test.utils.TableFiles;
 import org.apache.amoro.spark.test.utils.TestTableUtil;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.DataFile;
@@ -104,7 +104,7 @@ public class TestInsertOverwriteSQL extends MixedTableTestBase {
           RecordGenerator.newRecord(SCHEMA, 13, "xxx", "EEE"),
           RecordGenerator.newRecord(SCHEMA, 14, "xxx", "EEE"));
 
-  private ArcticTable table;
+  private MixedTable table;
   private List<Record> target;
   private List<DataFile> initFiles;
 

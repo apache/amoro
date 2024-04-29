@@ -24,7 +24,7 @@ import org.apache.iceberg.Transaction;
 
 import java.util.Map;
 
-/** A builder used to create valid {@link ArcticTable}. */
+/** A builder used to create valid {@link MixedTable}. */
 public interface TableBuilder {
   /**
    * Sets a partition spec for table.
@@ -72,7 +72,7 @@ public interface TableBuilder {
    *
    * @return the created table
    */
-  ArcticTable create();
+  MixedTable create();
 
   /** Create a transaction for create table; */
   Transaction createTransaction();

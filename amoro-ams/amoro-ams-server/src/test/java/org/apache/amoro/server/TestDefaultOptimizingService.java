@@ -40,7 +40,7 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.executor.TableRuntimeRefreshExecutor;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.SerializationUtil;
 import org.apache.iceberg.AppendFiles;
@@ -110,10 +110,10 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   private void initTableWithFiles() {
-    ArcticTable arcticTable =
-        (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
-    appendData(arcticTable.asUnkeyedTable(), 1);
-    appendData(arcticTable.asUnkeyedTable(), 2);
+    MixedTable mixedTable =
+        (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
+    appendData(mixedTable.asUnkeyedTable(), 1);
+    appendData(mixedTable.asUnkeyedTable(), 2);
     TableRuntime runtime = tableService().getRuntime(serverTableIdentifier());
 
     runtime.refresh(tableService().loadTable(serverTableIdentifier()));

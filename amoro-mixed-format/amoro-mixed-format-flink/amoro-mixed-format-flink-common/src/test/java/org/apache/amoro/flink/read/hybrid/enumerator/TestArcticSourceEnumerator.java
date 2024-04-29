@@ -81,7 +81,7 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
 
   @Before
   public void init() throws IOException {
-    testKeyedTable = getArcticTable().asKeyedTable();
+    testKeyedTable = getMixedTable().asKeyedTable();
     // write change insert
     {
       TaskWriter<RowData> taskWriter = createKeyedTaskWriter(testKeyedTable, FLINK_ROW_TYPE, false);

@@ -21,12 +21,12 @@ package org.apache.amoro.server.table.internal;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.TableMeta;
-import org.apache.amoro.op.ArcticHadoopTableOperations;
+import org.apache.amoro.op.MixedHadoopTableOperations;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.utils.InternalTableUtil;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableOperations;
@@ -65,11 +65,10 @@ public class InternalMixedIcebergHandler extends InternalIcebergHandler {
     if (InternalTableUtil.isLegacyMixedIceberg(tableMetadata())) {
       String tableLocation =
           changeStore ? tableMetadata().getChangeLocation() : tableMetadata().getBaseLocation();
-      TableMetaStore metaStore = ArcticCatalogUtil.buildMetaStore(catalogMeta);
+      TableMetaStore metaStore = MixedCatalogUtil.buildMetaStore(catalogMeta);
 
-      ArcticHadoopTableOperations ops =
-          new ArcticHadoopTableOperations(
-              new Path(tableLocation), io, metaStore.getConfiguration());
+      MixedHadoopTableOperations ops =
+          new MixedHadoopTableOperations(new Path(tableLocation), io, metaStore.getConfiguration());
       org.apache.iceberg.TableMetadata current = ops.current();
       if (current == null) {
         return ops;

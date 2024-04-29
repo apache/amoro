@@ -42,7 +42,7 @@ public interface LogData<T> {
   byte[] getVersionBytes();
 
   /**
-   * The job id generated from an upstream job(e.g. arctic log writer operator in the flink
+   * The job id generated from an upstream job(e.g. mixed-format log writer operator in the flink
    * application)
    *
    * @return generated from {@link IdGenerator} ordinarily

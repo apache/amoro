@@ -83,7 +83,7 @@ public class HiveTableUtil {
     properties.put("totalSize", totalSize + "");
     properties.put("numRows", numRows + "");
     properties.put("numFiles", files.size() + "");
-    properties.put(HiveTableProperties.ARCTIC_TABLE_FLAG, "true");
+    properties.put(HiveTableProperties.MIXED_TABLE_FLAG, "true");
     return properties;
   }
 

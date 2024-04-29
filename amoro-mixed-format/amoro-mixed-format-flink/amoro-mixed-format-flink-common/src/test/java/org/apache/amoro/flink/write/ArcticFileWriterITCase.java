@@ -27,8 +27,8 @@ import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.amoro.flink.read.TestArcticSource;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.flink.util.ArcticUtils;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.flink.api.common.RuntimeExecutionMode;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.state.ListState;
@@ -237,7 +237,7 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
     DataStreamSource<RowData> source =
         env.addSource(new StreamingExecutionTestSource(latchId, NUM_RECORDS, triggerFailover))
             .setParallelism(4);
-    ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
+    MixedTable table = ArcticUtils.loadArcticTable(tableLoader);
     FlinkSink.forRowData(source)
         .context(Optional::of)
         .table(table)

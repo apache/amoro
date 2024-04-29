@@ -32,7 +32,7 @@ import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.Pair;
@@ -95,9 +95,9 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
         createTableId.getId().longValue(), handler.getInitTables().get(0).getTableId());
 
     // test change properties
-    ArcticTable arcticTable = (ArcticTable) tableService().loadTable(createTableId).originalTable();
+    MixedTable mixedTable = (MixedTable) tableService().loadTable(createTableId).originalTable();
 
-    arcticTable.updateProperties().set(TableProperties.ENABLE_ORPHAN_CLEAN, "true").commit();
+    mixedTable.updateProperties().set(TableProperties.ENABLE_ORPHAN_CLEAN, "true").commit();
     tableService()
         .getRuntime(createTableId)
         .refresh(tableService.loadTable(serverTableIdentifier()));
@@ -136,7 +136,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
         Lists.newArrayList();
     private final List<Pair<TableRuntime, TableConfiguration>> configChangedTables =
         Lists.newArrayList();
-    private final List<Pair<ArcticTable, TableRuntime>> addedTables = Lists.newArrayList();
+    private final List<Pair<MixedTable, TableRuntime>> addedTables = Lists.newArrayList();
     private final List<TableRuntime> removedTables = Lists.newArrayList();
     private boolean disposed = false;
 
@@ -153,7 +153,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
 
     @Override
     protected void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
-      addedTables.add(Pair.of((ArcticTable) table.originalTable(), tableRuntime));
+      addedTables.add(Pair.of((MixedTable) table.originalTable(), tableRuntime));
     }
 
     @Override
@@ -183,7 +183,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
       return configChangedTables;
     }
 
-    public List<Pair<ArcticTable, TableRuntime>> getAddedTables() {
+    public List<Pair<MixedTable, TableRuntime>> getAddedTables() {
       return addedTables;
     }
 

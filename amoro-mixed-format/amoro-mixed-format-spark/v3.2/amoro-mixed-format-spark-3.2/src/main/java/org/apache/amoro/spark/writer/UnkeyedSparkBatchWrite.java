@@ -31,8 +31,8 @@ import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFA
 
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.OperationConflictException;
-import org.apache.amoro.catalog.ArcticCatalog;
 import org.apache.amoro.hive.utils.HiveTableUtil;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.spark.io.TaskWriters;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.table.blocker.Blocker;
@@ -74,9 +74,10 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private final boolean orderedWriter;
 
-  private final ArcticCatalog catalog;
+  private final MixedFormatCatalog catalog;
 
-  public UnkeyedSparkBatchWrite(UnkeyedTable table, LogicalWriteInfo info, ArcticCatalog catalog) {
+  public UnkeyedSparkBatchWrite(
+      UnkeyedTable table, LogicalWriteInfo info, MixedFormatCatalog catalog) {
     this.table = table;
     this.dsSchema = info.schema();
     this.orderedWriter =

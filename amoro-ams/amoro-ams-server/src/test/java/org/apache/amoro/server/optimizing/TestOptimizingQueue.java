@@ -51,7 +51,7 @@ import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableRuntimeMeta;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.SerializationUtil;
@@ -346,10 +346,10 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   }
 
   protected TableRuntimeMeta initTableWithFiles() {
-    ArcticTable arcticTable =
-        (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
-    appendData(arcticTable.asUnkeyedTable(), 1);
-    appendData(arcticTable.asUnkeyedTable(), 2);
+    MixedTable mixedTable =
+        (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
+    appendData(mixedTable.asUnkeyedTable(), 1);
+    appendData(mixedTable.asUnkeyedTable(), 2);
     TableRuntimeMeta tableRuntimeMeta =
         buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
     TableRuntime runtime = tableRuntimeMeta.getTableRuntime();
@@ -360,8 +360,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   private TableRuntimeMeta buildTableRuntimeMeta(
       OptimizingStatus status, ResourceGroup resourceGroup) {
-    ArcticTable arcticTable =
-        (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
+    MixedTable mixedTable =
+        (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     TableRuntimeMeta tableRuntimeMeta = new TableRuntimeMeta();
     tableRuntimeMeta.setCatalogName(serverTableIdentifier().getCatalog());
     tableRuntimeMeta.setDbName(serverTableIdentifier().getDatabase());
@@ -369,7 +369,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     tableRuntimeMeta.setTableId(serverTableIdentifier().getId());
     tableRuntimeMeta.setFormat(TableFormat.ICEBERG);
     tableRuntimeMeta.setTableStatus(status);
-    tableRuntimeMeta.setTableConfig(TableConfiguration.parseConfig(arcticTable.properties()));
+    tableRuntimeMeta.setTableConfig(TableConfiguration.parseConfig(mixedTable.properties()));
     tableRuntimeMeta.setOptimizerGroup(resourceGroup.getName());
     tableRuntimeMeta.constructTableRuntime(tableService());
     return tableRuntimeMeta;

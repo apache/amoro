@@ -18,11 +18,11 @@
 
 package org.apache.amoro.flink.table;
 
-import org.apache.amoro.catalog.ArcticCatalog;
 import org.apache.amoro.flink.InternalCatalogBuilder;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.amoro.flink.interceptor.FlinkTablePropertiesInvocationHandler;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.flink.TableLoader;
@@ -46,7 +46,7 @@ public class ArcticTableLoader implements TableLoader {
    */
   protected boolean loadBaseForKeyedTable;
 
-  protected transient ArcticCatalog arcticCatalog;
+  protected transient MixedFormatCatalog arcticCatalog;
 
   public static ArcticTableLoader of(
       TableIdentifier tableIdentifier, InternalCatalogBuilder catalogBuilder) {
@@ -107,8 +107,8 @@ public class ArcticTableLoader implements TableLoader {
     return arcticCatalog != null;
   }
 
-  public ArcticTable loadArcticTable() {
-    return ((ArcticTable)
+  public MixedTable loadArcticTable() {
+    return ((MixedTable)
         new FlinkTablePropertiesInvocationHandler(
                 flinkTableProperties, arcticCatalog.loadTable(tableIdentifier))
             .getProxy());
@@ -120,7 +120,7 @@ public class ArcticTableLoader implements TableLoader {
 
   @Override
   public Table loadTable() {
-    ArcticTable table = loadArcticTable();
+    MixedTable table = loadArcticTable();
 
     if (table.isKeyedTable()) {
       if (loadBaseForKeyedTable) {

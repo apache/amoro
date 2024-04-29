@@ -27,7 +27,7 @@ import org.apache.amoro.NoSuchDatabaseException;
 import org.apache.amoro.NoSuchTableException;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.UnifiedCatalog;
-import org.apache.amoro.client.ArcticThriftUrl;
+import org.apache.amoro.client.AmsThriftUrl;
 import org.apache.amoro.flink.catalog.factories.FlinkUnifiedCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.iceberg.IcebergFlinkCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.mixed.MixedCatalogFactory;
@@ -89,7 +89,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
       org.apache.hadoop.conf.Configuration hadoopConf) {
     super(context.getName(), defaultDatabase);
     this.amsUri = amsUri;
-    this.amoroCatalogName = ArcticThriftUrl.parse(amsUri, THRIFT_TABLE_SERVICE_NAME).catalogName();
+    this.amoroCatalogName = AmsThriftUrl.parse(amsUri, THRIFT_TABLE_SERVICE_NAME).catalogName();
     this.unifiedCatalog = unifiedCatalog;
     this.context = context;
     this.hadoopConf = hadoopConf;

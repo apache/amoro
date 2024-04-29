@@ -20,7 +20,7 @@ package org.apache.amoro.flink.table;
 
 import org.apache.amoro.flink.util.ArcticUtils;
 import org.apache.amoro.flink.write.FlinkSink;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.table.catalog.CatalogTable;
@@ -70,7 +70,7 @@ public class ArcticDynamicSink
 
   @Override
   public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
-    ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
+    MixedTable table = ArcticUtils.loadArcticTable(tableLoader);
 
     return new DataStreamSinkProvider() {
       @Override

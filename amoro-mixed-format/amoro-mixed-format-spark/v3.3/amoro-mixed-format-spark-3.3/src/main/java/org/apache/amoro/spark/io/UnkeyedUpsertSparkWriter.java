@@ -26,7 +26,7 @@ import org.apache.amoro.io.writer.OutputFileFactory;
 import org.apache.amoro.io.writer.SortedPosDeleteWriter;
 import org.apache.amoro.spark.SparkInternalRowCastWrapper;
 import org.apache.amoro.spark.SparkInternalRowWrapper;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
@@ -55,13 +55,13 @@ public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
   private final OutputFileFactory fileFactory;
   private final FileFormat format;
   private final Schema schema;
-  private final ArcticTable table;
+  private final MixedTable table;
   private final ArcticSparkBaseTaskWriter writer;
   private final Map<PartitionKey, SortedPosDeleteWriter<InternalRow>> writerMap = new HashMap<>();
   private boolean closed = false;
 
   public UnkeyedUpsertSparkWriter(
-      ArcticTable table,
+      MixedTable table,
       FileAppenderFactory<InternalRow> appenderFactory,
       OutputFileFactory fileFactory,
       FileFormat format,

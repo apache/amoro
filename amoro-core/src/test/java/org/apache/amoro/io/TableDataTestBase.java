@@ -91,26 +91,26 @@ public abstract class TableDataTestBase extends TableTestBase {
     // write base with transaction id:1, (id=1),(id=2),(id=3),(id=4)
     List<DataFile> baseFiles =
         tableTestHelper()
-            .writeBaseStore(getArcticTable().asKeyedTable(), 1L, baseRecords(allRecords), false);
+            .writeBaseStore(getMixedTable().asKeyedTable(), 1L, baseRecords(allRecords), false);
     dataFileForPositionDelete =
         baseFiles.stream()
             .filter(s -> s.path().toString().contains("op_time_day=2022-01-04"))
             .findAny()
             .orElseThrow(() -> new IllegalStateException("Cannot find data file to delete"));
-    AppendFiles baseAppend = getArcticTable().asKeyedTable().baseTable().newAppend();
+    AppendFiles baseAppend = getMixedTable().asKeyedTable().baseTable().newAppend();
     baseFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
 
     // write position with transaction id:4, (id=4)
     DeleteFile posDeleteFiles =
         MixedDataTestHelpers.writeBaseStorePosDelete(
-                getArcticTable(), 4L, dataFileForPositionDelete, Collections.singletonList(0L))
+                getMixedTable(), 4L, dataFileForPositionDelete, Collections.singletonList(0L))
             .stream()
             .findAny()
             .orElseThrow(() -> new IllegalStateException("Cannot get delete file from writer"));
 
     this.deleteFileOfPositionDelete = posDeleteFiles;
-    getArcticTable().asKeyedTable().baseTable().newRowDelta().addDeletes(posDeleteFiles).commit();
+    getMixedTable().asKeyedTable().baseTable().newRowDelta().addDeletes(posDeleteFiles).commit();
 
     // write change insert with transaction id:2, (id=5),(id=6)
     writeChangeStore(2L, ChangeAction.INSERT, changeInsertRecords(allRecords));
@@ -122,8 +122,8 @@ public abstract class TableDataTestBase extends TableTestBase {
   protected void writeChangeStore(Long txId, ChangeAction insert, List<Record> records) {
     List<DataFile> insertFiles =
         tableTestHelper()
-            .writeChangeStore(getArcticTable().asKeyedTable(), txId, insert, records, false);
-    AppendFiles changeAppendInsert = getArcticTable().asKeyedTable().changeTable().newAppend();
+            .writeChangeStore(getMixedTable().asKeyedTable(), txId, insert, records, false);
+    AppendFiles changeAppendInsert = getMixedTable().asKeyedTable().changeTable().newAppend();
     insertFiles.forEach(changeAppendInsert::appendFile);
     changeAppendInsert.commit();
   }

@@ -22,7 +22,7 @@ import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.TablePropertyUtil;
@@ -63,16 +63,16 @@ public class TestTableWatermark extends TableTestBase {
 
   private UnkeyedTable getOperationTable() {
     if (operationTable == null) {
-      ArcticTable arcticTable = getArcticTable();
+      MixedTable mixedTable = getMixedTable();
       if (isKeyedTable()) {
         if (onBaseTable) {
-          operationTable = arcticTable.asKeyedTable().baseTable();
+          operationTable = mixedTable.asKeyedTable().baseTable();
         } else {
-          operationTable = arcticTable.asKeyedTable().changeTable();
+          operationTable = mixedTable.asKeyedTable().changeTable();
         }
       } else {
         if (onBaseTable) {
-          operationTable = arcticTable.asUnkeyedTable();
+          operationTable = mixedTable.asUnkeyedTable();
         } else {
           throw new IllegalArgumentException("Unkeyed table do not have change store");
         }
@@ -163,7 +163,7 @@ public class TestTableWatermark extends TableTestBase {
 
   private void testTableWatermark(Function<DataFile, Void> tableOperation) {
     long start = System.currentTimeMillis();
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(TableProperties.TABLE_EVENT_TIME_FIELD, "op_time")
         .set(TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS, "10")
@@ -185,7 +185,7 @@ public class TestTableWatermark extends TableTestBase {
             upperBounds);
 
     DataFile file1 =
-        DataFiles.builder(getArcticTable().spec())
+        DataFiles.builder(getMixedTable().spec())
             .withPath("/path/to/file1.parquet")
             .withFileSizeInBytes(0)
             .withPartitionPath("op_time_day=2022-01-01")
@@ -193,6 +193,6 @@ public class TestTableWatermark extends TableTestBase {
             .build();
     tableOperation.apply(file1);
     Assert.assertEquals(
-        start - 20000, TablePropertyUtil.getTableWatermark(getArcticTable().properties()));
+        start - 20000, TablePropertyUtil.getTableWatermark(getMixedTable().properties()));
   }
 }

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.source;
 
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.flink.annotation.Internal;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -32,7 +32,7 @@ import java.util.NoSuchElementException;
 import java.util.function.Function;
 
 /**
- * Flink data iterator that reads {@link ArcticFileScanTask} into a {@link CloseableIterator}
+ * Flink data iterator that reads {@link MixedFileScanTask} into a {@link CloseableIterator}
  *
  * @param <T> T is the output data type returned by this iterator.
  */
@@ -42,7 +42,7 @@ public class DataIterator<T> implements CloseableIterator<T> {
   private final FileScanTaskReader<T> fileScanTaskReader;
   private final int taskSize;
 
-  private Iterator<ArcticFileScanTask> tasks;
+  private Iterator<MixedFileScanTask> tasks;
   private CloseableIterator<T> currentIterator;
   private int fileOffset;
   private long recordOffset;
@@ -56,7 +56,7 @@ public class DataIterator<T> implements CloseableIterator<T> {
 
   public DataIterator(
       FileScanTaskReader<T> fileScanTaskReader,
-      Collection<ArcticFileScanTask> tasks,
+      Collection<MixedFileScanTask> tasks,
       Function<T, Long> arcticFileOffsetGetter,
       Function<T, T> arcticMetaColumnRemover) {
     this.fileScanTaskReader = fileScanTaskReader;
@@ -150,7 +150,7 @@ public class DataIterator<T> implements CloseableIterator<T> {
     }
   }
 
-  private CloseableIterator<T> openTaskIterator(ArcticFileScanTask scanTask) {
+  private CloseableIterator<T> openTaskIterator(MixedFileScanTask scanTask) {
     return fileScanTaskReader.open(scanTask);
   }
 

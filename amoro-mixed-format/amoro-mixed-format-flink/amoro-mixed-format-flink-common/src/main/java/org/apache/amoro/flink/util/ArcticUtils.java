@@ -37,7 +37,7 @@ import org.apache.amoro.flink.write.ArcticLogWriter;
 import org.apache.amoro.flink.write.AutomaticLogWriter;
 import org.apache.amoro.flink.write.hidden.HiddenLogWriter;
 import org.apache.amoro.flink.write.hidden.kafka.HiddenKafkaFactory;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
@@ -69,9 +69,9 @@ public class ArcticUtils {
 
   public static final Logger LOG = LoggerFactory.getLogger(ArcticUtils.class);
 
-  public static ArcticTable loadArcticTable(ArcticTableLoader tableLoader) {
+  public static MixedTable loadArcticTable(ArcticTableLoader tableLoader) {
     tableLoader.open();
-    ArcticTable table = tableLoader.loadArcticTable();
+    MixedTable table = tableLoader.loadArcticTable();
     try {
       tableLoader.close();
     } catch (IOException e) {
@@ -80,7 +80,7 @@ public class ArcticUtils {
     return table;
   }
 
-  public static List<String> getPrimaryKeys(ArcticTable table) {
+  public static List<String> getPrimaryKeys(MixedTable table) {
     if (table.isUnkeyedTable()) {
       return Collections.emptyList();
     }
@@ -92,16 +92,15 @@ public class ArcticUtils {
   public static MetricsGenerator getMetricsGenerator(
       boolean metricsEventLatency,
       boolean metricsEnable,
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       RowType flinkSchemaRowType,
       Schema writeSchema) {
     MetricsGenerator metricsGenerator;
     if (metricsEventLatency) {
-      String modifyTimeColumn =
-          arcticTable.properties().get(TableProperties.TABLE_EVENT_TIME_FIELD);
+      String modifyTimeColumn = mixedTable.properties().get(TableProperties.TABLE_EVENT_TIME_FIELD);
       metricsGenerator =
           MetricsGenerator.newGenerator(
-              arcticTable.schema(), flinkSchemaRowType, modifyTimeColumn, metricsEnable);
+              mixedTable.schema(), flinkSchemaRowType, modifyTimeColumn, metricsEnable);
     } else {
       metricsGenerator = MetricsGenerator.empty(metricsEnable);
     }

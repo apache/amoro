@@ -27,7 +27,7 @@ import org.apache.amoro.spark.test.utils.DataComparator;
 import org.apache.amoro.spark.test.utils.TableFiles;
 import org.apache.amoro.spark.test.utils.TestTableUtil;
 import org.apache.amoro.spark.test.utils.TestTables;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
@@ -92,7 +92,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
             + source();
     sql(sqlText);
 
-    ArcticTable table = loadTable();
+    MixedTable table = loadTable();
     Types.NestedField f = table.schema().findField("ts");
     Asserts.assertType(expectType, f.type());
   }
@@ -223,7 +223,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
     Schema expectSchema = TestTableUtil.toSchemaWithPrimaryKey(SIMPLE_SOURCE_SCHEMA, keySpec);
     expectSchema = TestTableUtil.timestampToWithoutZone(expectSchema);
 
-    ArcticTable table = loadTable();
+    MixedTable table = loadTable();
     Asserts.assertPartition(ptSpec, table.spec());
     Assertions.assertEquals(keySpec.primaryKeyExisted(), table.isKeyedTable());
     if (table.isKeyedTable()) {
@@ -326,7 +326,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
             + " AS SELECT * FROM "
             + source();
     sql(sqlText);
-    ArcticTable table = loadTable();
+    MixedTable table = loadTable();
     Map<String, String> tableProperties = table.properties();
     Asserts.assertHashMapContainExpect(expectProperties, tableProperties);
   }

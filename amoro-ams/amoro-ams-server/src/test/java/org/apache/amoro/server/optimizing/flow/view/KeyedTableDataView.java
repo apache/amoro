@@ -25,7 +25,7 @@ import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.io.writer.RecordWithAction;
 import org.apache.amoro.server.optimizing.flow.DataReader;
 import org.apache.amoro.server.optimizing.flow.RandomRecordGenerator;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -66,36 +66,36 @@ public class KeyedTableDataView extends AbstractTableDataView {
   private final RandomRecordGenerator generator;
 
   public KeyedTableDataView(
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       Schema primary,
       int partitionCount,
       int primaryUpperBound,
       long targetFileSize,
       Long seed)
       throws Exception {
-    super(arcticTable, primary, targetFileSize);
+    super(mixedTable, primary, targetFileSize);
     org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument(
         primary.columns().size() == 1
             && primary.columns().get(0).type().typeId() == Type.TypeID.INTEGER);
     this.schemaSize = schema.columns().size();
 
     this.primaryUpperBound = primaryUpperBound;
-    if (arcticTable.format() != TableFormat.ICEBERG) {
-      arcticTable.updateProperties().set(WRITE_TARGET_FILE_SIZE_BYTES, targetFileSize + "");
+    if (mixedTable.format() != TableFormat.ICEBERG) {
+      mixedTable.updateProperties().set(WRITE_TARGET_FILE_SIZE_BYTES, targetFileSize + "");
     }
 
     this.view = StructLikeMap.create(primary.asStruct());
-    List<Record> records = new DataReader(arcticTable).allData();
+    List<Record> records = new DataReader(mixedTable).allData();
     for (Record record : records) {
       view.put(record, record);
     }
 
     Map<Integer, Map<Integer, Object>> primaryRelationWithPartition = new HashMap<>();
-    if (!arcticTable.spec().isUnpartitioned()) {
+    if (!mixedTable.spec().isUnpartitioned()) {
       Integer primaryField =
           primary.columns().stream().map(Types.NestedField::fieldId).findAny().get();
       Set<Integer> partitionFields =
-          arcticTable.spec().fields().stream()
+          mixedTable.spec().fields().stream()
               .map(PartitionField::sourceId)
               .collect(Collectors.toSet());
       for (Record record : records) {
@@ -118,8 +118,8 @@ public class KeyedTableDataView extends AbstractTableDataView {
 
     this.generator =
         new RandomRecordGenerator(
-            arcticTable.schema(),
-            arcticTable.spec(),
+            mixedTable.schema(),
+            mixedTable.spec(),
             primary,
             partitionCount,
             primaryRelationWithPartition,
@@ -281,14 +281,14 @@ public class KeyedTableDataView extends AbstractTableDataView {
   }
 
   private void upsertCommit(WriteResult writeResult) {
-    if (arcticTable.isKeyedTable()) {
-      AppendFiles appendFiles = arcticTable.asKeyedTable().changeTable().newAppend();
+    if (mixedTable.isKeyedTable()) {
+      AppendFiles appendFiles = mixedTable.asKeyedTable().changeTable().newAppend();
       for (DataFile dataFile : writeResult.dataFiles()) {
         appendFiles.appendFile(dataFile);
       }
       appendFiles.commit();
     } else {
-      RowDelta rowDelta = arcticTable.asUnkeyedTable().newRowDelta();
+      RowDelta rowDelta = mixedTable.asUnkeyedTable().newRowDelta();
       for (DataFile dataFile : writeResult.dataFiles()) {
         rowDelta.addRows(dataFile);
       }

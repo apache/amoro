@@ -28,7 +28,7 @@ import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.hive.io.HiveDataTestHelpers;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.properties.HiveTableProperties;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
@@ -76,8 +76,8 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
   }
 
   @Override
-  protected SupportHive getArcticTable() {
-    return (SupportHive) super.getArcticTable();
+  protected SupportHive getMixedTable() {
+    return (SupportHive) super.getMixedTable();
   }
 
   @Test
@@ -85,38 +85,36 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     Assume.assumeFalse(isPartitionedTable());
     UnkeyedTable baseTable =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
-    String newLocation = createEmptyLocationForHive(getArcticTable());
+    String newLocation = createEmptyLocationForHive(getMixedTable());
     baseTable
         .updatePartitionProperties(null)
         .set(EMPTY_STRUCT, HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, newLocation)
         .commit();
     String hiveLocation =
-        (getArcticTable())
+        (getMixedTable())
             .getHMSClient()
             .run(
                 client -> {
                   Table hiveTable =
                       client.getTable(
-                          getArcticTable().id().getDatabase(),
-                          getArcticTable().id().getTableName());
+                          getMixedTable().id().getDatabase(), getMixedTable().id().getTableName());
                   return hiveTable.getSd().getLocation();
                 });
     Assert.assertNotEquals(newLocation, hiveLocation);
 
-    HiveMetaSynchronizer.syncArcticDataToHive(getArcticTable());
+    HiveMetaSynchronizer.syncArcticDataToHive(getMixedTable());
     hiveLocation =
-        (getArcticTable())
+        (getMixedTable())
             .getHMSClient()
             .run(
                 client -> {
                   Table hiveTable =
                       client.getTable(
-                          getArcticTable().id().getDatabase(),
-                          getArcticTable().id().getTableName());
+                          getMixedTable().id().getDatabase(), getMixedTable().id().getTableName());
                   return hiveTable.getSd().getLocation();
                 });
     Assert.assertEquals(newLocation, hiveLocation);
@@ -127,33 +125,31 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     Assume.assumeFalse(isPartitionedTable());
     UnkeyedTable baseTable =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
 
     String oldHiveLocation =
-        getArcticTable()
+        getMixedTable()
             .getHMSClient()
             .run(
                 client -> {
                   Table hiveTable =
                       client.getTable(
-                          getArcticTable().id().getDatabase(),
-                          getArcticTable().id().getTableName());
+                          getMixedTable().id().getDatabase(), getMixedTable().id().getTableName());
                   return hiveTable.getSd().getLocation();
                 });
 
-    HiveMetaSynchronizer.syncArcticDataToHive(getArcticTable());
+    HiveMetaSynchronizer.syncArcticDataToHive(getMixedTable());
     String newHiveLocation =
-        getArcticTable()
+        getMixedTable()
             .getHMSClient()
             .run(
                 client -> {
                   Table hiveTable =
                       client.getTable(
-                          getArcticTable().id().getDatabase(),
-                          getArcticTable().id().getTableName());
+                          getMixedTable().id().getDatabase(), getMixedTable().id().getTableName());
                   return hiveTable.getSd().getLocation();
                 });
     Assert.assertEquals(oldHiveLocation, newHiveLocation);
@@ -164,11 +160,11 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     Assume.assumeTrue(isPartitionedTable());
     UnkeyedTable baseTable =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
-    List<DataFile> dataFiles = writeAndCommitHive(getArcticTable(), 1);
+    List<DataFile> dataFiles = writeAndCommitHive(getMixedTable(), 1);
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     baseTable
         .updatePartitionProperties(null)
@@ -180,28 +176,28 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
 
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(
-            dataFiles.get(0).partition(), getArcticTable().spec().partitionType());
+            dataFiles.get(0).partition(), getMixedTable().spec().partitionType());
     Assert.assertThrows(
         NoSuchObjectException.class,
         () ->
-            getArcticTable()
+            getMixedTable()
                 .getHMSClient()
                 .run(
                     client ->
                         client.getPartition(
-                            getArcticTable().id().getDatabase(),
-                            getArcticTable().id().getTableName(),
+                            getMixedTable().id().getDatabase(),
+                            getMixedTable().id().getTableName(),
                             partitionValues)));
 
-    HiveMetaSynchronizer.syncArcticDataToHive(getArcticTable());
+    HiveMetaSynchronizer.syncArcticDataToHive(getMixedTable());
     Partition hivePartition =
-        getArcticTable()
+        getMixedTable()
             .getHMSClient()
             .run(
                 client ->
                     client.getPartition(
-                        getArcticTable().id().getDatabase(),
-                        getArcticTable().id().getTableName(),
+                        getMixedTable().id().getDatabase(),
+                        getMixedTable().id().getTableName(),
                         partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
   }
@@ -211,23 +207,23 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     Assume.assumeTrue(isPartitionedTable());
     UnkeyedTable baseTable =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
 
-    List<DataFile> dataFiles = writeAndCommitHive(getArcticTable(), 1);
+    List<DataFile> dataFiles = writeAndCommitHive(getMixedTable(), 1);
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(
-            dataFiles.get(0).partition(), getArcticTable().spec().partitionType());
-    getArcticTable()
+            dataFiles.get(0).partition(), getMixedTable().spec().partitionType());
+    getMixedTable()
         .getHMSClient()
         .run(
             client -> {
               Table hiveTable =
                   client.getTable(
-                      getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
+                      getMixedTable().id().getDatabase(), getMixedTable().id().getTableName());
               StorageDescriptor tableSd = hiveTable.getSd();
               PrincipalPrivilegeSet privilegeSet = hiveTable.getPrivileges();
               int lastAccessTime = (int) (System.currentTimeMillis() / 1000);
@@ -247,7 +243,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
               p.putToParameters("transient_lastDdlTime", lastAccessTime + "");
               p.putToParameters("totalSize", totalSize + "");
               p.putToParameters("numFiles", files + "");
-              p.putToParameters(HiveTableProperties.ARCTIC_TABLE_FLAG, "true");
+              p.putToParameters(HiveTableProperties.MIXED_TABLE_FLAG, "true");
               if (privilegeSet != null) {
                 p.setPrivileges(privilegeSet.deepCopy());
               }
@@ -256,28 +252,28 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
             });
 
     Partition hivePartition =
-        getArcticTable()
+        getMixedTable()
             .getHMSClient()
             .run(
                 client ->
                     client.getPartition(
-                        getArcticTable().id().getDatabase(),
-                        getArcticTable().id().getTableName(),
+                        getMixedTable().id().getDatabase(),
+                        getMixedTable().id().getTableName(),
                         partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
 
-    HiveMetaSynchronizer.syncArcticDataToHive(getArcticTable());
+    HiveMetaSynchronizer.syncArcticDataToHive(getMixedTable());
 
     Assert.assertThrows(
         NoSuchObjectException.class,
         () ->
-            getArcticTable()
+            getMixedTable()
                 .getHMSClient()
                 .run(
                     client ->
                         client.getPartition(
-                            getArcticTable().id().getDatabase(),
-                            getArcticTable().id().getTableName(),
+                            getMixedTable().id().getDatabase(),
+                            getMixedTable().id().getTableName(),
                             partitionValues)));
   }
 
@@ -286,23 +282,23 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     Assume.assumeTrue(isPartitionedTable());
     UnkeyedTable baseTable =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
 
-    List<DataFile> dataFiles = writeAndCommitHive(getArcticTable(), 1);
+    List<DataFile> dataFiles = writeAndCommitHive(getMixedTable(), 1);
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(
-            dataFiles.get(0).partition(), getArcticTable().spec().partitionType());
-    getArcticTable()
+            dataFiles.get(0).partition(), getMixedTable().spec().partitionType());
+    getMixedTable()
         .getHMSClient()
         .run(
             client -> {
               Table hiveTable =
                   client.getTable(
-                      getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
+                      getMixedTable().id().getDatabase(), getMixedTable().id().getTableName());
               StorageDescriptor tableSd = hiveTable.getSd();
               PrincipalPrivilegeSet privilegeSet = hiveTable.getPrivileges();
               int lastAccessTime = (int) (System.currentTimeMillis() / 1000);
@@ -330,26 +326,26 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
             });
 
     Partition hivePartition =
-        getArcticTable()
+        getMixedTable()
             .getHMSClient()
             .run(
                 client ->
                     client.getPartition(
-                        getArcticTable().id().getDatabase(),
-                        getArcticTable().id().getTableName(),
+                        getMixedTable().id().getDatabase(),
+                        getMixedTable().id().getTableName(),
                         partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
 
-    HiveMetaSynchronizer.syncArcticDataToHive(getArcticTable());
+    HiveMetaSynchronizer.syncArcticDataToHive(getMixedTable());
 
     hivePartition =
-        getArcticTable()
+        getMixedTable()
             .getHMSClient()
             .run(
                 client ->
                     client.getPartition(
-                        getArcticTable().id().getDatabase(),
-                        getArcticTable().id().getTableName(),
+                        getMixedTable().id().getDatabase(),
+                        getMixedTable().id().getTableName(),
                         partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
   }
@@ -359,23 +355,23 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     Assume.assumeTrue(isPartitionedTable());
     UnkeyedTable baseTable =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
 
-    List<DataFile> dataFiles = writeAndCommitHive(getArcticTable(), 1);
+    List<DataFile> dataFiles = writeAndCommitHive(getMixedTable(), 1);
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(
-            dataFiles.get(0).partition(), getArcticTable().spec().partitionType());
-    getArcticTable()
+            dataFiles.get(0).partition(), getMixedTable().spec().partitionType());
+    getMixedTable()
         .getHMSClient()
         .run(
             client -> {
               Table hiveTable =
                   client.getTable(
-                      getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
+                      getMixedTable().id().getDatabase(), getMixedTable().id().getTableName());
               StorageDescriptor tableSd = hiveTable.getSd();
               PrincipalPrivilegeSet privilegeSet = hiveTable.getPrivileges();
               int lastAccessTime = (int) (System.currentTimeMillis() / 1000);
@@ -403,17 +399,17 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
             });
 
     Partition hivePartition =
-        getArcticTable()
+        getMixedTable()
             .getHMSClient()
             .run(
                 client ->
                     client.getPartition(
-                        getArcticTable().id().getDatabase(),
-                        getArcticTable().id().getTableName(),
+                        getMixedTable().id().getDatabase(),
+                        getMixedTable().id().getTableName(),
                         partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
 
-    List<DataFile> newDataFiles = writeAndCommitHive(getArcticTable(), 2);
+    List<DataFile> newDataFiles = writeAndCommitHive(getMixedTable(), 2);
     String newPartitionLocation = TableFileUtil.getFileDir(newDataFiles.get(0).path().toString());
     baseTable
         .updatePartitionProperties(null)
@@ -424,25 +420,25 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
         .commit();
     Assert.assertNotEquals(newPartitionLocation, hivePartition.getSd().getLocation());
 
-    HiveMetaSynchronizer.syncArcticDataToHive(getArcticTable());
+    HiveMetaSynchronizer.syncArcticDataToHive(getMixedTable());
 
     hivePartition =
-        getArcticTable()
+        getMixedTable()
             .getHMSClient()
             .run(
                 client ->
                     client.getPartition(
-                        getArcticTable().id().getDatabase(),
-                        getArcticTable().id().getTableName(),
+                        getMixedTable().id().getDatabase(),
+                        getMixedTable().id().getTableName(),
                         partitionValues));
     Assert.assertEquals(newPartitionLocation, hivePartition.getSd().getLocation());
   }
 
-  private String createEmptyLocationForHive(ArcticTable arcticTable) {
+  private String createEmptyLocationForHive(MixedTable mixedTable) {
     // create a new empty location for hive
     String newLocation =
-        ((SupportHive) arcticTable).hiveLocation() + "/ts_" + System.currentTimeMillis();
-    OutputFile file = arcticTable.io().newOutputFile(newLocation + "/.keep");
+        ((SupportHive) mixedTable).hiveLocation() + "/ts_" + System.currentTimeMillis();
+    OutputFile file = mixedTable.io().newOutputFile(newLocation + "/.keep");
     try {
       file.createOrOverwrite().close();
     } catch (IOException e) {
@@ -451,7 +447,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     return newLocation;
   }
 
-  private List<DataFile> writeAndCommitHive(ArcticTable table, long txId) {
+  private List<DataFile> writeAndCommitHive(MixedTable table, long txId) {
     String hiveSubDir = HiveTableUtil.newHiveSubdirectory(txId);
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writerOf(table)

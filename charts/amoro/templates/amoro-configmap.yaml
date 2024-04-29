@@ -113,6 +113,10 @@ data:
       - name: {{ .Values.optimizer.local.name | default "local" }}
         {{- include "amoro.optimizer.container.local" . | nindent 8 }}
       {{ end }}
+      {{- if .Values.optimizer.kubernetes.enabled }}
+      - name: {{ .Values.optimizer.local.name | default "kubernetes" }}
+        {{- include "amoro.optimizer.container.kubernetes" . | nindent 8 }}
+      {{ end }}
 
 
     {{- with .Values.amoroConf.amoroDefaults }}
