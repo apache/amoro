@@ -248,6 +248,13 @@ optimizer:
     ## @param optimizer.local.properties properties for optimizer container
     ##
     properties: ~
+  kubernetes:
+    # enable the kubernetes optimizer container
+    enabled: true
+    properties:
+      namespace: "default"
+      kube-config-path: "～/.kube/config"
+      image: "arctic163/amoro:0.6"
   extra: []
 
 ## Configure the ingress resource that allows you to access the
