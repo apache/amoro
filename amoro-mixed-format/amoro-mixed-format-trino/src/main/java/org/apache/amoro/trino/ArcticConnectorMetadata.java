@@ -21,8 +21,8 @@ package org.apache.amoro.trino;
 import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.trino.keyed.KeyedConnectorMetadata;
 import org.apache.amoro.trino.keyed.KeyedTableHandle;
@@ -80,14 +80,14 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
 
   private final IcebergMetadata icebergMetadata;
 
-  private final ArcticCatalog arcticCatalog;
+  private final MixedFormatCatalog arcticCatalog;
 
-  private final Map<SchemaTableName, ArcticTable> tableCache = new ConcurrentHashMap<>();
+  private final Map<SchemaTableName, MixedTable> tableCache = new ConcurrentHashMap<>();
 
   public ArcticConnectorMetadata(
       KeyedConnectorMetadata keyedConnectorMetadata,
       IcebergMetadata icebergMetadata,
-      ArcticCatalog arcticCatalog) {
+      MixedFormatCatalog arcticCatalog) {
     this.keyedConnectorMetadata = keyedConnectorMetadata;
     this.icebergMetadata = icebergMetadata;
     this.arcticCatalog = arcticCatalog;
@@ -102,13 +102,13 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
 
   @Override
   public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName) {
-    ArcticTable arcticTable;
+    MixedTable mixedTable;
     try {
-      arcticTable = getArcticTable(tableName);
+      mixedTable = getArcticTable(tableName);
     } catch (NoSuchTableException e) {
       return null;
     }
-    if (arcticTable.isKeyedTable()) {
+    if (mixedTable.isKeyedTable()) {
       return keyedConnectorMetadata.getTableHandle(session, tableName);
     } else {
       return icebergMetadata.getTableHandle(session, tableName);
@@ -171,15 +171,15 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   public Iterator<TableColumnsMetadata> streamTableColumns(
       ConnectorSession session, SchemaTablePrefix prefix) {
     if (prefix.getTable().isPresent()) {
-      ArcticTable arcticTable;
+      MixedTable mixedTable;
       try {
-        arcticTable =
+        mixedTable =
             getArcticTable(new SchemaTableName(prefix.getSchema().get(), prefix.getTable().get()));
       } catch (NoSuchTableException e) {
         List<TableColumnsMetadata> schemaTableNames = ImmutableList.of();
         return schemaTableNames.iterator();
       }
-      if (arcticTable.isKeyedTable()) {
+      if (mixedTable.isKeyedTable()) {
         return keyedConnectorMetadata.streamTableColumns(session, prefix);
       } else {
         return icebergMetadata.streamTableColumns(session, prefix);
@@ -453,7 +453,7 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
     // TODO: cleanup open transaction
   }
 
-  public ArcticTable getArcticTable(SchemaTableName schemaTableName) {
+  public MixedTable getArcticTable(SchemaTableName schemaTableName) {
     return tableCache.computeIfAbsent(
         schemaTableName, ignore -> arcticCatalog.loadTable(getTableIdentifier(schemaTableName)));
   }

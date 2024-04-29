@@ -60,7 +60,7 @@ public class ZookeeperService {
             .sessionTimeoutMs(5000)
             .connectionTimeoutMs(5000)
             .retryPolicy(retryPolicy)
-            .zookeeperFactory(new ArcticZookeeperFactory(zkClientConfig))
+            .zookeeperFactory(new AmoroZookeeperFactory(zkClientConfig))
             .build();
     client.start();
     return client;

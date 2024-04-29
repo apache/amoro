@@ -20,8 +20,8 @@ package org.apache.amoro.hive.op;
 
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.FileFormat;
@@ -33,18 +33,18 @@ import java.util.Locale;
 
 /** Schema evolution API implementation for {@link KeyedTable}. */
 public class HiveSchemaUpdate extends BaseSchemaUpdate {
-  private final ArcticTable arcticTable;
+  private final MixedTable mixedTable;
   private final HMSClientPool hiveClient;
   private final HMSClientPool transactionClient;
   private final UpdateSchema updateSchema;
 
   public HiveSchemaUpdate(
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       HMSClientPool hiveClient,
       HMSClientPool transactionClient,
       UpdateSchema updateSchema) {
-    super(arcticTable, updateSchema);
-    this.arcticTable = arcticTable;
+    super(mixedTable, updateSchema);
+    this.mixedTable = mixedTable;
     this.hiveClient = hiveClient;
     this.updateSchema = updateSchema;
     this.transactionClient = transactionClient;
@@ -52,10 +52,10 @@ public class HiveSchemaUpdate extends BaseSchemaUpdate {
 
   @Override
   public void commit() {
-    Table tbl = HiveTableUtil.loadHmsTable(hiveClient, arcticTable.id());
+    Table tbl = HiveTableUtil.loadHmsTable(hiveClient, mixedTable.id());
     if (tbl == null) {
       throw new RuntimeException(
-          String.format("there is no such hive table named %s", arcticTable.id().toString()));
+          String.format("there is no such hive table named %s", mixedTable.id().toString()));
     }
     Schema newSchema = this.updateSchema.apply();
     this.updateSchema.commit();
@@ -66,11 +66,11 @@ public class HiveSchemaUpdate extends BaseSchemaUpdate {
     tbl.setSd(
         HiveTableUtil.storageDescriptor(
             newSchema,
-            arcticTable.spec(),
+            mixedTable.spec(),
             tbl.getSd().getLocation(),
             FileFormat.valueOf(
                 PropertyUtil.propertyAsString(
-                        arcticTable.properties(),
+                        mixedTable.properties(),
                         TableProperties.DEFAULT_FILE_FORMAT,
                         TableProperties.DEFAULT_FILE_FORMAT_DEFAULT)
                     .toUpperCase(Locale.ENGLISH))));

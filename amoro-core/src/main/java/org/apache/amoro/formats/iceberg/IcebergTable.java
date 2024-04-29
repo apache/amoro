@@ -21,13 +21,13 @@ package org.apache.amoro.formats.iceberg;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableSnapshot;
-import org.apache.amoro.io.ArcticFileIO;
-import org.apache.amoro.io.ArcticFileIOs;
+import org.apache.amoro.io.AuthenticatedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIOs;
 import org.apache.amoro.table.BasicUnkeyedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 
@@ -49,12 +49,13 @@ public class IcebergTable implements AmoroTable<UnkeyedTable> {
       Table icebergTable,
       TableMetaStore metaStore,
       Map<String, String> catalogProperties) {
-    ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(metaStore, icebergTable.io());
+    AuthenticatedFileIO io =
+        AuthenticatedFileIOs.buildAdaptIcebergFileIO(metaStore, icebergTable.io());
 
     UnkeyedTable wrapped =
         new BasicUnkeyedTable(
             identifier,
-            ArcticCatalogUtil.useArcticTableOperations(
+            MixedCatalogUtil.useMixedTableOperations(
                 icebergTable, icebergTable.location(), io, metaStore.getConfiguration()),
             io,
             catalogProperties) {

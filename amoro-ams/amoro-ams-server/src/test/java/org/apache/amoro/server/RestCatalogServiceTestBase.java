@@ -30,7 +30,7 @@ import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -99,7 +99,7 @@ public abstract class RestCatalogServiceTestBase {
     clientProperties.putIfAbsent("warehouse", catalogName());
 
     CatalogMeta catalogMeta = serverCatalog.getMetadata();
-    TableMetaStore store = ArcticCatalogUtil.buildMetaStore(catalogMeta);
+    TableMetaStore store = MixedCatalogUtil.buildMetaStore(catalogMeta);
 
     return (RESTCatalog)
         CatalogUtil.loadCatalog(

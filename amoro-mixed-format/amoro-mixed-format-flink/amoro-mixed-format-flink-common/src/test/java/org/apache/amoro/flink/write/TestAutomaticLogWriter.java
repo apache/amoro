@@ -198,7 +198,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     DataStream<RowData> input =
         env.fromElements(expects.stream().map(DataUtil::toRowData).toArray(RowData[]::new));
 
-    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
+    KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
     UpdateProperties up = testKeyedTable.updateProperties();
     up.set(LOG_STORE_ADDRESS, KAFKA_CONTAINER.getBootstrapServers());
     up.set(LOG_STORE_MESSAGE_TOPIC, topic);
@@ -239,7 +239,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
         Thread.currentThread().getStackTrace()[1].getMethodName() + isGapNone + logstoreEnabled;
     byte[] jobId = IdGenerator.generateUpstreamId();
     Duration gap;
-    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
+    KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
     UpdateProperties up = testKeyedTable.updateProperties();
     up.set(LOG_STORE_ADDRESS, KAFKA_CONTAINER.getBootstrapServers());
     up.set(LOG_STORE_MESSAGE_TOPIC, topic);
@@ -386,7 +386,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
             tableLoader,
             writeLogstoreWatermarkGap);
 
-    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
+    KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
     RowType flinkSchemaRowType = (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType();
     Schema writeSchema =
         TypeUtil.reassignIds(FlinkSchemaUtil.convert(FLINK_SCHEMA), testKeyedTable.schema());

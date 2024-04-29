@@ -22,11 +22,11 @@ import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.io.reader.AdaptHiveGenericKeyedDataReader;
 import org.apache.amoro.optimizing.OptimizingDataReader;
 import org.apache.amoro.optimizing.RewriteFilesInput;
-import org.apache.amoro.scan.ArcticFileScanTask;
-import org.apache.amoro.scan.BasicArcticFileScanTask;
+import org.apache.amoro.scan.BasicMixedFileScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.scan.NodeFileScanTask;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.DeleteFile;
@@ -50,14 +50,14 @@ import java.util.stream.Collectors;
  */
 public class MixFormatOptimizingDataReader implements OptimizingDataReader {
 
-  private final ArcticTable table;
+  private final MixedTable table;
 
   private final StructLikeCollections structLikeCollections;
 
   private final RewriteFilesInput input;
 
   public MixFormatOptimizingDataReader(
-      ArcticTable table, StructLikeCollections structLikeCollections, RewriteFilesInput input) {
+      MixedTable table, StructLikeCollections structLikeCollections, RewriteFilesInput input) {
     this.table = table;
     this.structLikeCollections = structLikeCollections;
     this.input = input;
@@ -118,9 +118,9 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
     allTaskFiles.addAll(equlityDeleteList);
     allTaskFiles.addAll(dataFiles);
 
-    List<ArcticFileScanTask> fileScanTasks =
+    List<MixedFileScanTask> fileScanTasks =
         allTaskFiles.stream()
-            .map(file -> new BasicArcticFileScanTask(file, posDeleteList, table.spec()))
+            .map(file -> new BasicMixedFileScanTask(file, posDeleteList, table.spec()))
             .collect(Collectors.toList());
     return new NodeFileScanTask(fileScanTasks);
   }

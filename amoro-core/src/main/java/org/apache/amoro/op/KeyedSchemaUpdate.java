@@ -163,7 +163,8 @@ public class KeyedSchemaUpdate implements UpdateSchema {
 
   @Override
   public UpdateSchema setIdentifierFields(Collection<String> names) {
-    throw new UnsupportedOperationException("unsupported setIdentifierFields arctic table.");
+    throw new UnsupportedOperationException(
+        "Mixed-format tables do not support setting identifier files.");
   }
 
   /**

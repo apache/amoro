@@ -30,7 +30,7 @@ import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.UpdateProperties;
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -71,17 +71,17 @@ public class TestTableRefresh extends FlinkTestBase {
         ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
 
     tableLoader.open();
-    ArcticTable arcticTable = tableLoader.loadArcticTable();
+    MixedTable mixedTable = tableLoader.loadArcticTable();
     boolean catchUp = true;
     String catchUpTs = "1";
 
-    UpdateProperties updateProperties = arcticTable.updateProperties();
+    UpdateProperties updateProperties = mixedTable.updateProperties();
     updateProperties.set(LOG_STORE_CATCH_UP.key(), String.valueOf(catchUp));
     updateProperties.set(LOG_STORE_CATCH_UP_TIMESTAMP.key(), catchUpTs);
     updateProperties.commit();
 
-    arcticTable.refresh();
-    Map<String, String> properties = arcticTable.properties();
+    mixedTable.refresh();
+    Map<String, String> properties = mixedTable.properties();
     Assert.assertEquals(String.valueOf(catchUp), properties.get(LOG_STORE_CATCH_UP.key()));
     Assert.assertEquals(catchUpTs, properties.get(LOG_STORE_CATCH_UP_TIMESTAMP.key()));
   }

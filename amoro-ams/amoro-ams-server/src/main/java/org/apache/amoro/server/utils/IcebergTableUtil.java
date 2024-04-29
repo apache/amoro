@@ -25,7 +25,7 @@ import org.apache.amoro.server.table.BasicTableSnapshot;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableSnapshot;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
@@ -64,8 +64,8 @@ public class IcebergTableUtil {
     }
   }
 
-  public static TableSnapshot getSnapshot(ArcticTable arcticTable, TableRuntime tableRuntime) {
-    if (arcticTable.isUnkeyedTable()) {
+  public static TableSnapshot getSnapshot(MixedTable mixedTable, TableRuntime tableRuntime) {
+    if (mixedTable.isUnkeyedTable()) {
       return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
     } else {
       return new KeyedTableSnapshot(

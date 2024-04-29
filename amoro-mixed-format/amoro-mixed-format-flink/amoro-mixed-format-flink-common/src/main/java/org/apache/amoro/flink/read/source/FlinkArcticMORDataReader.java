@@ -20,7 +20,7 @@ package org.apache.amoro.flink.read.source;
 
 import org.apache.amoro.flink.read.AdaptHiveFlinkParquetReaders;
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
@@ -41,7 +41,7 @@ import java.util.function.Function;
 
 public class FlinkArcticMORDataReader extends AbstractAdaptHiveKeyedDataReader<RowData> {
   public FlinkArcticMORDataReader(
-      ArcticFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,

@@ -51,7 +51,7 @@ public class TestWatermarkGenerator extends TableTestBase {
   @Test
   public void testDefaultEventTime() {
     long start = System.currentTimeMillis();
-    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getArcticTable());
+    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getMixedTable());
     Assert.assertEquals(-1, watermarkGenerator.watermark());
     watermarkGenerator.addFile(DataFileTestHelpers.getFile(1));
     Assert.assertTrue(watermarkGenerator.watermark() >= start);
@@ -60,13 +60,13 @@ public class TestWatermarkGenerator extends TableTestBase {
   @Test
   public void testTimestampEventTime() {
     long start = System.currentTimeMillis();
-    getArcticTable()
+    getMixedTable()
         .asUnkeyedTable()
         .updateProperties()
         .set(TableProperties.TABLE_EVENT_TIME_FIELD, "op_time")
         .set(TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS, "10")
         .commit();
-    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getArcticTable());
+    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getMixedTable());
 
     Map<Integer, ByteBuffer> lowerBounds = Maps.newHashMap();
     Map<Integer, ByteBuffer> upperBounds = Maps.newHashMap();
@@ -112,14 +112,14 @@ public class TestWatermarkGenerator extends TableTestBase {
   @Test
   public void testLongEventTime() {
     long start = System.currentTimeMillis();
-    getArcticTable()
+    getMixedTable()
         .asUnkeyedTable()
         .updateProperties()
         .set(TableProperties.TABLE_EVENT_TIME_FIELD, "ts")
         .set(TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS, "5")
         .set(TableProperties.TABLE_EVENT_TIME_NUMBER_FORMAT, "TIMESTAMP_S")
         .commit();
-    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getArcticTable());
+    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getMixedTable());
 
     Map<Integer, ByteBuffer> lowerBounds = Maps.newHashMap();
     Map<Integer, ByteBuffer> upperBounds = Maps.newHashMap();
@@ -163,13 +163,13 @@ public class TestWatermarkGenerator extends TableTestBase {
 
   @Test
   public void testStringEventTime() throws ParseException {
-    getArcticTable()
+    getMixedTable()
         .asUnkeyedTable()
         .updateProperties()
         .set(TableProperties.TABLE_EVENT_TIME_FIELD, "name")
         .set(TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS, "1")
         .commit();
-    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getArcticTable());
+    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getMixedTable());
 
     Map<Integer, ByteBuffer> lowerBounds = Maps.newHashMap();
     Map<Integer, ByteBuffer> upperBounds = Maps.newHashMap();
@@ -215,13 +215,13 @@ public class TestWatermarkGenerator extends TableTestBase {
 
   @Test
   public void testWithWrongConfigs() {
-    getArcticTable()
+    getMixedTable()
         .asUnkeyedTable()
         .updateProperties()
         .set(TableProperties.TABLE_EVENT_TIME_FIELD, "name")
         .set(TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS, "1")
         .commit();
-    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getArcticTable());
+    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getMixedTable());
 
     Map<Integer, ByteBuffer> lowerBounds = Maps.newHashMap();
     Map<Integer, ByteBuffer> upperBounds = Maps.newHashMap();

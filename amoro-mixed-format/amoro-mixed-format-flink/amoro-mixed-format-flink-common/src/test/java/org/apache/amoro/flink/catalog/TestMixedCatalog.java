@@ -34,7 +34,7 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestBase;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
@@ -295,7 +295,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             + " PRIMARY KEY (id) NOT ENFORCED "
             + ") PARTITIONED BY(t) ");
 
-    ArcticTable amoroTable =
+    MixedTable amoroTable =
         getMixedFormatCatalog().loadTable(TableIdentifier.of(catalogName, DB, TABLE));
     String beforeExpr =
         amoroTable.properties().get(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, 2, EXPR));

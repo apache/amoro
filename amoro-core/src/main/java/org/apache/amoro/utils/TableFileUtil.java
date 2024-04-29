@@ -18,7 +18,7 @@
 
 package org.apache.amoro.utils;
 
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.io.BulkDeletionFailureException;
 import org.apache.iceberg.util.Tasks;
@@ -59,12 +59,12 @@ public class TableFileUtil {
   /**
    * Try to recursiveDelete the empty directory
    *
-   * @param io arcticTableFileIo
+   * @param io mixed-format file io
    * @param directoryPath directory location
    * @param exclude the directory will not be deleted
    */
   public static void deleteEmptyDirectory(
-      ArcticFileIO io, String directoryPath, Set<String> exclude) {
+      AuthenticatedFileIO io, String directoryPath, Set<String> exclude) {
     if (!io.exists(directoryPath)) {
       LOG.debug("The target directory {} does not exist or has been deleted", directoryPath);
       return;
@@ -87,12 +87,13 @@ public class TableFileUtil {
   /**
    * Helper to delete files. Bulk deletion is used if possible.
    *
-   * @param io arctic file io
+   * @param io mixed-format file io
    * @param files files to delete
    * @param workPool executor pool. Only applicable for non-bulk FileIO
    * @return deleted file count
    */
-  public static int deleteFiles(ArcticFileIO io, Set<String> files, ExecutorService workPool) {
+  public static int deleteFiles(
+      AuthenticatedFileIO io, Set<String> files, ExecutorService workPool) {
     if (files == null || files.isEmpty()) {
       return 0;
     }
@@ -139,24 +140,24 @@ public class TableFileUtil {
   /**
    * Helper to delete files sequentially
    *
-   * @param io arctic file io
+   * @param io mixed-format file io
    * @param files to deleted files
    * @return deleted file count
    */
-  public static int deleteFiles(ArcticFileIO io, Set<String> files) {
+  public static int deleteFiles(AuthenticatedFileIO io, Set<String> files) {
     return deleteFiles(io, files, null);
   }
 
   /**
    * Helper to delete files in parallel
    *
-   * @param io arctic file io
+   * @param io mixed-format file io
    * @param files to deleted files
    * @param workPool executor pool
    * @return deleted file count
    */
   public static int parallelDeleteFiles(
-      ArcticFileIO io, Set<String> files, ExecutorService workPool) {
+      AuthenticatedFileIO io, Set<String> files, ExecutorService workPool) {
     return deleteFiles(io, files, workPool);
   }
 

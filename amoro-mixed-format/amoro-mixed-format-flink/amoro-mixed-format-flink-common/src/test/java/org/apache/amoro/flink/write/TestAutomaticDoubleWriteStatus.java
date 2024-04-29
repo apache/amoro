@@ -27,7 +27,7 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.amoro.flink.table.ArcticTableLoader;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.iceberg.UpdateProperties;
 import org.junit.Assert;
@@ -48,8 +48,8 @@ public class TestAutomaticDoubleWriteStatus extends FlinkTestBase {
   public void testTableProperties() {
     tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     tableLoader.open();
-    ArcticTable arcticTable = tableLoader.loadArcticTable();
-    UpdateProperties up = arcticTable.updateProperties();
+    MixedTable mixedTable = tableLoader.loadArcticTable();
+    UpdateProperties up = mixedTable.updateProperties();
     up.set(AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key(), "10");
     up.commit();
     AutomaticDoubleWriteStatus status =
@@ -59,13 +59,12 @@ public class TestAutomaticDoubleWriteStatus extends FlinkTestBase {
     Assert.assertFalse(status.isDoubleWrite());
     status.processWatermark(new Watermark(System.currentTimeMillis() - 11 * 1000));
     Assert.assertFalse(status.isDoubleWrite());
-    Assert.assertFalse(
-        Boolean.parseBoolean(arcticTable.properties().get(LOG_STORE_CATCH_UP.key())));
+    Assert.assertFalse(Boolean.parseBoolean(mixedTable.properties().get(LOG_STORE_CATCH_UP.key())));
     status.processWatermark(new Watermark(System.currentTimeMillis() - 9 * 1000));
     Assert.assertTrue(status.isDoubleWrite());
     Assert.assertTrue(status.isDoubleWrite());
 
-    arcticTable.refresh();
-    Assert.assertTrue(Boolean.parseBoolean(arcticTable.properties().get(LOG_STORE_CATCH_UP.key())));
+    mixedTable.refresh();
+    Assert.assertTrue(Boolean.parseBoolean(mixedTable.properties().get(LOG_STORE_CATCH_UP.key())));
   }
 }

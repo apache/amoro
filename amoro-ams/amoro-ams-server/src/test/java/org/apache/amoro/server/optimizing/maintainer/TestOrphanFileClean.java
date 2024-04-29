@@ -87,38 +87,38 @@ public class TestOrphanFileClean extends ExecutorTestBase {
   @Test
   public void orphanDataFileClean() throws IOException {
     if (isKeyedTable()) {
-      writeAndCommitBaseAndChange(getArcticTable());
+      writeAndCommitBaseAndChange(getMixedTable());
     } else {
-      writeAndCommitBaseStore(getArcticTable());
+      writeAndCommitBaseStore(getMixedTable());
     }
 
     UnkeyedTable baseTable =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
     String baseOrphanFileDir =
         baseTable.location() + File.separator + DATA_FOLDER_NAME + File.separator + "testLocation";
     String baseOrphanFilePath = baseOrphanFileDir + File.separator + "orphan.parquet";
-    OutputFile baseOrphanDataFile = getArcticTable().io().newOutputFile(baseOrphanFilePath);
+    OutputFile baseOrphanDataFile = getMixedTable().io().newOutputFile(baseOrphanFilePath);
     baseOrphanDataFile.createOrOverwrite().close();
-    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFileDir));
-    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
+    Assert.assertTrue(getMixedTable().io().exists(baseOrphanFileDir));
+    Assert.assertTrue(getMixedTable().io().exists(baseOrphanFilePath));
 
     String changeOrphanFilePath =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().changeTable().location()
+            ? getMixedTable().asKeyedTable().changeTable().location()
                 + File.separator
                 + DATA_FOLDER_NAME
                 + File.separator
                 + "orphan.parquet"
             : "";
     if (isKeyedTable()) {
-      OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(changeOrphanFilePath);
+      OutputFile changeOrphanDataFile = getMixedTable().io().newOutputFile(changeOrphanFilePath);
       changeOrphanDataFile.createOrOverwrite().close();
-      Assert.assertTrue(getArcticTable().io().exists(changeOrphanFilePath));
+      Assert.assertTrue(getMixedTable().io().exists(changeOrphanFilePath));
     }
 
-    MixedTableMaintainer maintainer = new MixedTableMaintainer(getArcticTable());
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable());
     maintainer.cleanContentFiles(
         System.currentTimeMillis()
             - TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT * 60 * 1000);
@@ -126,95 +126,95 @@ public class TestOrphanFileClean extends ExecutorTestBase {
         System.currentTimeMillis()
             - TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT * 60 * 1000);
 
-    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFileDir));
-    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
+    Assert.assertTrue(getMixedTable().io().exists(baseOrphanFileDir));
+    Assert.assertTrue(getMixedTable().io().exists(baseOrphanFilePath));
 
     if (isKeyedTable()) {
-      Assert.assertTrue(getArcticTable().io().exists(changeOrphanFilePath));
+      Assert.assertTrue(getMixedTable().io().exists(changeOrphanFilePath));
     }
 
     maintainer.cleanContentFiles(System.currentTimeMillis());
     maintainer.cleanMetadata(System.currentTimeMillis());
 
-    Assert.assertFalse(getArcticTable().io().exists(baseOrphanFileDir));
-    Assert.assertFalse(getArcticTable().io().exists(baseOrphanFilePath));
+    Assert.assertFalse(getMixedTable().io().exists(baseOrphanFileDir));
+    Assert.assertFalse(getMixedTable().io().exists(baseOrphanFilePath));
     baseTable
         .newScan()
         .planFiles()
         .forEach(
-            task -> Assert.assertTrue(getArcticTable().io().exists(task.file().path().toString())));
+            task -> Assert.assertTrue(getMixedTable().io().exists(task.file().path().toString())));
     if (isKeyedTable()) {
-      Assert.assertFalse(getArcticTable().io().exists(changeOrphanFilePath));
-      getArcticTable()
+      Assert.assertFalse(getMixedTable().io().exists(changeOrphanFilePath));
+      getMixedTable()
           .asKeyedTable()
           .changeTable()
           .newScan()
           .planFiles()
           .forEach(
               task ->
-                  Assert.assertTrue(getArcticTable().io().exists(task.file().path().toString())));
+                  Assert.assertTrue(getMixedTable().io().exists(task.file().path().toString())));
     }
   }
 
   @Test
   public void orphanMetadataFileClean() throws IOException {
     if (isKeyedTable()) {
-      writeAndCommitBaseAndChange(getArcticTable());
+      writeAndCommitBaseAndChange(getMixedTable());
     } else {
-      writeAndCommitBaseStore(getArcticTable());
+      writeAndCommitBaseStore(getMixedTable());
     }
 
     UnkeyedTable baseTable =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
     String baseOrphanFilePath =
         baseTable.location() + File.separator + "metadata" + File.separator + "orphan.avro";
 
     String changeOrphanFilePath =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().changeTable().location()
+            ? getMixedTable().asKeyedTable().changeTable().location()
                 + File.separator
                 + "metadata"
                 + File.separator
                 + "orphan.avro"
             : "";
 
-    OutputFile baseOrphanDataFile = getArcticTable().io().newOutputFile(baseOrphanFilePath);
+    OutputFile baseOrphanDataFile = getMixedTable().io().newOutputFile(baseOrphanFilePath);
     baseOrphanDataFile.createOrOverwrite().close();
-    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
+    Assert.assertTrue(getMixedTable().io().exists(baseOrphanFilePath));
 
     String changeInvalidMetadataJson =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().changeTable().location()
+            ? getMixedTable().asKeyedTable().changeTable().location()
                 + File.separator
                 + "metadata"
                 + File.separator
                 + "v0.metadata.json"
             : "";
     if (isKeyedTable()) {
-      OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(changeOrphanFilePath);
+      OutputFile changeOrphanDataFile = getMixedTable().io().newOutputFile(changeOrphanFilePath);
       changeOrphanDataFile.createOrOverwrite().close();
-      getArcticTable().io().newOutputFile(changeInvalidMetadataJson).createOrOverwrite().close();
-      Assert.assertTrue(getArcticTable().io().exists(changeOrphanFilePath));
-      Assert.assertTrue(getArcticTable().io().exists(changeInvalidMetadataJson));
+      getMixedTable().io().newOutputFile(changeInvalidMetadataJson).createOrOverwrite().close();
+      Assert.assertTrue(getMixedTable().io().exists(changeOrphanFilePath));
+      Assert.assertTrue(getMixedTable().io().exists(changeInvalidMetadataJson));
     }
 
-    MixedTableMaintainer maintainer = new MixedTableMaintainer(getArcticTable());
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable());
     maintainer.cleanMetadata(System.currentTimeMillis());
 
-    Assert.assertFalse(getArcticTable().io().exists(baseOrphanFilePath));
+    Assert.assertFalse(getMixedTable().io().exists(baseOrphanFilePath));
     if (isKeyedTable()) {
-      Assert.assertFalse(getArcticTable().io().exists(changeOrphanFilePath));
-      Assert.assertFalse(getArcticTable().io().exists(changeInvalidMetadataJson));
+      Assert.assertFalse(getMixedTable().io().exists(changeOrphanFilePath));
+      Assert.assertFalse(getMixedTable().io().exists(changeInvalidMetadataJson));
     }
-    ExecutorTestBase.assertMetadataExists(getArcticTable());
+    ExecutorTestBase.assertMetadataExists(getMixedTable());
   }
 
   @Test
   public void orphanChangeDataFileInBaseClean() {
     Assume.assumeTrue(isKeyedTable());
-    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
+    KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
     List<DataFile> dataFiles =
         tableTestHelper()
             .writeChangeStore(
@@ -237,7 +237,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     }
     pathAll.forEach(path -> Assert.assertTrue(testKeyedTable.io().exists(path)));
 
-    MixedTableMaintainer maintainer = new MixedTableMaintainer(getArcticTable());
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable());
     maintainer.cleanContentFiles(System.currentTimeMillis());
 
     fileInBaseStore.forEach(path -> Assert.assertTrue(testKeyedTable.io().exists(path)));
@@ -247,17 +247,17 @@ public class TestOrphanFileClean extends ExecutorTestBase {
   @Test
   public void notDeleteFlinkTemporaryFile() throws IOException {
     if (isKeyedTable()) {
-      writeAndCommitBaseAndChange(getArcticTable());
+      writeAndCommitBaseAndChange(getMixedTable());
     } else {
-      writeAndCommitBaseStore(getArcticTable());
+      writeAndCommitBaseStore(getMixedTable());
     }
     String flinkJobId = "flinkJobTest";
     String fakeFlinkJobId = "fakeFlinkJobTest";
 
     UnkeyedTable baseTable =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
     String baseOrphanFilePath =
         baseTable.location()
             + File.separator
@@ -268,7 +268,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
 
     String changeOrphanFilePath =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().changeTable().location()
+            ? getMixedTable().asKeyedTable().changeTable().location()
                 + File.separator
                 + "metadata"
                 + File.separator
@@ -277,7 +277,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
             : "";
     String fakeChangeOrphanFilePath =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().changeTable().location()
+            ? getMixedTable().asKeyedTable().changeTable().location()
                 + File.separator
                 + "metadata"
                 + File.separator
@@ -286,58 +286,58 @@ public class TestOrphanFileClean extends ExecutorTestBase {
             : "";
     String changeInvalidMetadataJson =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().changeTable().location()
+            ? getMixedTable().asKeyedTable().changeTable().location()
                 + File.separator
                 + "metadata"
                 + File.separator
                 + "v0.metadata.json"
             : "";
 
-    OutputFile baseOrphanDataFile = getArcticTable().io().newOutputFile(baseOrphanFilePath);
+    OutputFile baseOrphanDataFile = getMixedTable().io().newOutputFile(baseOrphanFilePath);
     baseOrphanDataFile.createOrOverwrite().close();
-    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
+    Assert.assertTrue(getMixedTable().io().exists(baseOrphanFilePath));
 
     if (isKeyedTable()) {
-      OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(changeOrphanFilePath);
+      OutputFile changeOrphanDataFile = getMixedTable().io().newOutputFile(changeOrphanFilePath);
       changeOrphanDataFile.createOrOverwrite().close();
       OutputFile fakeChangeOrphanDataFile =
-          getArcticTable().io().newOutputFile(fakeChangeOrphanFilePath);
+          getMixedTable().io().newOutputFile(fakeChangeOrphanFilePath);
       fakeChangeOrphanDataFile.createOrOverwrite().close();
 
-      getArcticTable().io().newOutputFile(changeInvalidMetadataJson).createOrOverwrite().close();
-      AppendFiles appendFiles = getArcticTable().asKeyedTable().changeTable().newAppend();
+      getMixedTable().io().newOutputFile(changeInvalidMetadataJson).createOrOverwrite().close();
+      AppendFiles appendFiles = getMixedTable().asKeyedTable().changeTable().newAppend();
       appendFiles.set(FLINK_JOB_ID, fakeFlinkJobId);
       appendFiles.commit();
       // set flink.job-id to change table
-      AppendFiles appendFiles2 = getArcticTable().asKeyedTable().changeTable().newAppend();
+      AppendFiles appendFiles2 = getMixedTable().asKeyedTable().changeTable().newAppend();
       appendFiles2.set(FLINK_JOB_ID, flinkJobId);
       appendFiles2.commit();
 
-      Assert.assertTrue(getArcticTable().io().exists(changeOrphanFilePath));
-      Assert.assertTrue(getArcticTable().io().exists(fakeChangeOrphanFilePath));
-      Assert.assertTrue(getArcticTable().io().exists(changeInvalidMetadataJson));
+      Assert.assertTrue(getMixedTable().io().exists(changeOrphanFilePath));
+      Assert.assertTrue(getMixedTable().io().exists(fakeChangeOrphanFilePath));
+      Assert.assertTrue(getMixedTable().io().exists(changeInvalidMetadataJson));
     }
 
-    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(getArcticTable());
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(getMixedTable());
     tableMaintainer.cleanMetadata(System.currentTimeMillis());
-    Assert.assertFalse(getArcticTable().io().exists(baseOrphanFilePath));
+    Assert.assertFalse(getMixedTable().io().exists(baseOrphanFilePath));
     if (isKeyedTable()) {
       // files whose file name starts with flink.job-id should not be deleted
-      Assert.assertTrue(getArcticTable().io().exists(changeOrphanFilePath));
-      Assert.assertFalse(getArcticTable().io().exists(fakeChangeOrphanFilePath));
-      Assert.assertFalse(getArcticTable().io().exists(changeInvalidMetadataJson));
+      Assert.assertTrue(getMixedTable().io().exists(changeOrphanFilePath));
+      Assert.assertFalse(getMixedTable().io().exists(fakeChangeOrphanFilePath));
+      Assert.assertFalse(getMixedTable().io().exists(changeInvalidMetadataJson));
     }
 
-    ExecutorTestBase.assertMetadataExists(getArcticTable());
+    ExecutorTestBase.assertMetadataExists(getMixedTable());
   }
 
   @Test
   public void notDeleteStatisticsFile() {
     UnkeyedTable unkeyedTable;
     if (isKeyedTable()) {
-      unkeyedTable = getArcticTable().asKeyedTable().baseTable();
+      unkeyedTable = getMixedTable().asKeyedTable().baseTable();
     } else {
-      unkeyedTable = getArcticTable().asUnkeyedTable();
+      unkeyedTable = getMixedTable().asUnkeyedTable();
     }
     StatisticsFile file1 =
         commitStatisticsFile(unkeyedTable, unkeyedTable.location() + "/metadata/test1.puffin");
@@ -349,8 +349,8 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     Assert.assertTrue(unkeyedTable.io().exists(file1.path()));
     Assert.assertTrue(unkeyedTable.io().exists(file2.path()));
     Assert.assertTrue(unkeyedTable.io().exists(file3.path()));
-    new MixedTableMaintainer(getArcticTable()).cleanContentFiles(System.currentTimeMillis() + 1);
-    new MixedTableMaintainer(getArcticTable()).cleanMetadata(System.currentTimeMillis() + 1);
+    new MixedTableMaintainer(getMixedTable()).cleanContentFiles(System.currentTimeMillis() + 1);
+    new MixedTableMaintainer(getMixedTable()).cleanMetadata(System.currentTimeMillis() + 1);
     Assert.assertTrue(unkeyedTable.io().exists(file1.path()));
     Assert.assertTrue(unkeyedTable.io().exists(file2.path()));
     Assert.assertTrue(unkeyedTable.io().exists(file3.path()));
@@ -359,15 +359,15 @@ public class TestOrphanFileClean extends ExecutorTestBase {
   @Test
   public void testGcDisabled() throws IOException {
     if (isKeyedTable()) {
-      writeAndCommitBaseAndChange(getArcticTable());
+      writeAndCommitBaseAndChange(getMixedTable());
     } else {
-      writeAndCommitBaseStore(getArcticTable());
+      writeAndCommitBaseStore(getMixedTable());
     }
 
     UnkeyedTable baseTable =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().baseTable()
-            : getArcticTable().asUnkeyedTable();
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
     baseTable
         .updateProperties()
         .set(TableProperties.ENABLE_ORPHAN_CLEAN, "true")
@@ -378,23 +378,23 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     String baseOrphanFileDir =
         baseTable.location() + File.separator + DATA_FOLDER_NAME + File.separator + "testLocation";
     String baseOrphanFilePath = baseOrphanFileDir + File.separator + "orphan.parquet";
-    OutputFile baseOrphanDataFile = getArcticTable().io().newOutputFile(baseOrphanFilePath);
+    OutputFile baseOrphanDataFile = getMixedTable().io().newOutputFile(baseOrphanFilePath);
     baseOrphanDataFile.createOrOverwrite().close();
-    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFileDir));
-    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
+    Assert.assertTrue(getMixedTable().io().exists(baseOrphanFileDir));
+    Assert.assertTrue(getMixedTable().io().exists(baseOrphanFilePath));
 
     String changeOrphanFilePath =
         isKeyedTable()
-            ? getArcticTable().asKeyedTable().changeTable().location()
+            ? getMixedTable().asKeyedTable().changeTable().location()
                 + File.separator
                 + DATA_FOLDER_NAME
                 + File.separator
                 + "orphan.parquet"
             : "";
     if (isKeyedTable()) {
-      OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(changeOrphanFilePath);
+      OutputFile changeOrphanDataFile = getMixedTable().io().newOutputFile(changeOrphanFilePath);
       changeOrphanDataFile.createOrOverwrite().close();
-      Assert.assertTrue(getArcticTable().io().exists(changeOrphanFilePath));
+      Assert.assertTrue(getMixedTable().io().exists(changeOrphanFilePath));
     }
 
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
@@ -404,19 +404,19 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     Mockito.when(tableRuntime.getTableConfiguration())
         .thenReturn(TableConfiguration.parseConfig(baseTable.properties()));
 
-    MixedTableMaintainer maintainer = new MixedTableMaintainer(getArcticTable());
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable());
     maintainer.cleanOrphanFiles(tableRuntime);
 
-    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFileDir));
-    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
+    Assert.assertTrue(getMixedTable().io().exists(baseOrphanFileDir));
+    Assert.assertTrue(getMixedTable().io().exists(baseOrphanFilePath));
 
     baseTable.updateProperties().set("gc.enabled", "true").commit();
     Mockito.when(tableRuntime.getTableConfiguration())
         .thenReturn(TableConfiguration.parseConfig(baseTable.properties()));
     maintainer.cleanOrphanFiles(tableRuntime);
 
-    Assert.assertFalse(getArcticTable().io().exists(baseOrphanFileDir));
-    Assert.assertFalse(getArcticTable().io().exists(baseOrphanFilePath));
+    Assert.assertFalse(getMixedTable().io().exists(baseOrphanFileDir));
+    Assert.assertFalse(getMixedTable().io().exists(baseOrphanFilePath));
   }
 
   private StatisticsFile commitStatisticsFile(UnkeyedTable table, String fileLocation) {

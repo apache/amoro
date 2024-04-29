@@ -19,9 +19,9 @@
 package org.apache.amoro.spark.test;
 
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.catalog.CatalogLoader;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableBuilder;
 import org.apache.commons.lang.StringUtils;
@@ -49,10 +49,10 @@ public class MixedTableTestBase extends SparkTestBase {
   protected static final PartitionSpec UNPARTITIONED = PartitionSpec.unpartitioned();
   protected static final PrimaryKeySpec NO_PRIMARY_KEY = PrimaryKeySpec.noPrimaryKey();
 
-  private ArcticCatalog mixedCatalog = null;
+  private MixedFormatCatalog mixedCatalog = null;
   private String currentSparkCatalog = null;
 
-  protected ArcticCatalog catalog() {
+  protected MixedFormatCatalog catalog() {
     boolean reInitMixedCatalog =
         mixedCatalog == null || (!currentCatalog.equals(currentSparkCatalog));
     if (reInitMixedCatalog) {
@@ -63,7 +63,7 @@ public class MixedTableTestBase extends SparkTestBase {
     return mixedCatalog;
   }
 
-  public ArcticTable loadTable() {
+  public MixedTable loadTable() {
     return catalog().loadTable(target().toArcticIdentifier());
   }
 
@@ -73,17 +73,17 @@ public class MixedTableTestBase extends SparkTestBase {
     return "arctic";
   }
 
-  public ArcticTable createArcticSource(Schema schema, Consumer<TableBuilder> consumer) {
+  public MixedTable createArcticSource(Schema schema, Consumer<TableBuilder> consumer) {
     TestIdentifier identifier =
         TestIdentifier.ofDataLake(currentCatalog, catalog().name(), database(), sourceTable, true);
     TableBuilder builder = catalog().newTableBuilder(identifier.toArcticIdentifier(), schema);
     consumer.accept(builder);
-    ArcticTable source = builder.create();
+    MixedTable source = builder.create();
     this.source = identifier;
     return source;
   }
 
-  public ArcticTable createTarget(Schema schema, Consumer<TableBuilder> consumer) {
+  public MixedTable createTarget(Schema schema, Consumer<TableBuilder> consumer) {
     TestIdentifier identifier = target();
     TableBuilder builder = catalog().newTableBuilder(identifier.toArcticIdentifier(), schema);
     consumer.accept(builder);
@@ -145,7 +145,7 @@ public class MixedTableTestBase extends SparkTestBase {
         descPrimaryKeys.stream().sorted().distinct().toArray());
   }
 
-  public void assertShowCreateTable(List<Row> rows, TestIdentifier id, ArcticTable table) {
+  public void assertShowCreateTable(List<Row> rows, TestIdentifier id, MixedTable table) {
     StringBuilder showCreateSqlBuilder = new StringBuilder();
     for (Row r : rows) {
       showCreateSqlBuilder.append(r.getString(0));

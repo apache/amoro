@@ -21,25 +21,24 @@ package org.apache.amoro.formats.mixed;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableSnapshot;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.Snapshot;
 
 import java.util.Map;
 
-public class MixedTable implements AmoroTable<ArcticTable> {
+public class MixedTable implements AmoroTable<org.apache.amoro.table.MixedTable> {
 
-  private final ArcticTable arcticTable;
+  private final org.apache.amoro.table.MixedTable mixedTable;
   private final TableFormat format;
 
-  public MixedTable(ArcticTable arcticTable, TableFormat format) {
-    this.arcticTable = arcticTable;
+  public MixedTable(org.apache.amoro.table.MixedTable mixedTable, TableFormat format) {
+    this.mixedTable = mixedTable;
     this.format = format;
   }
 
   @Override
   public TableIdentifier id() {
-    return arcticTable.id();
+    return mixedTable.id();
   }
 
   @Override
@@ -49,24 +48,24 @@ public class MixedTable implements AmoroTable<ArcticTable> {
 
   @Override
   public Map<String, String> properties() {
-    return arcticTable.properties();
+    return mixedTable.properties();
   }
 
   @Override
-  public ArcticTable originalTable() {
-    return arcticTable;
+  public org.apache.amoro.table.MixedTable originalTable() {
+    return mixedTable;
   }
 
   @Override
   public TableSnapshot currentSnapshot() {
     Snapshot changeSnapshot;
     Snapshot baseSnapshot;
-    if (arcticTable.isKeyedTable()) {
-      changeSnapshot = arcticTable.asKeyedTable().changeTable().currentSnapshot();
-      baseSnapshot = arcticTable.asKeyedTable().baseTable().currentSnapshot();
+    if (mixedTable.isKeyedTable()) {
+      changeSnapshot = mixedTable.asKeyedTable().changeTable().currentSnapshot();
+      baseSnapshot = mixedTable.asKeyedTable().baseTable().currentSnapshot();
     } else {
       changeSnapshot = null;
-      baseSnapshot = arcticTable.asUnkeyedTable().currentSnapshot();
+      baseSnapshot = mixedTable.asUnkeyedTable().currentSnapshot();
     }
 
     if (changeSnapshot == null && baseSnapshot == null) {

@@ -30,7 +30,7 @@ public class MixedHiveTableTestBase extends TableTestBase {
   }
 
   @Override
-  protected SupportHive getArcticTable() {
-    return (SupportHive) super.getArcticTable();
+  protected SupportHive getMixedTable() {
+    return (SupportHive) super.getMixedTable();
   }
 }

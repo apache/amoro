@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.source;
 
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.Preconditions;
@@ -39,7 +39,7 @@ public class MergeOnReadDataIterator extends DataIterator<RowData> {
   public MergeOnReadDataIterator(
       FlinkArcticMORDataReader flinkArcticMORDataReader,
       KeyedTableScanTask keyedTableScanTask,
-      ArcticFileIO io) {
+      AuthenticatedFileIO io) {
     super();
     this.iterator =
         IteratorWithIO.of(io, io.doAs(() -> flinkArcticMORDataReader.readData(keyedTableScanTask)));
@@ -97,15 +97,15 @@ public class MergeOnReadDataIterator extends DataIterator<RowData> {
   }
 
   static class IteratorWithIO implements CloseableIterator<RowData> {
-    private final ArcticFileIO io;
+    private final AuthenticatedFileIO io;
     private final CloseableIterator<RowData> iterator;
 
-    private IteratorWithIO(ArcticFileIO io, CloseableIterator<RowData> iterator) {
+    private IteratorWithIO(AuthenticatedFileIO io, CloseableIterator<RowData> iterator) {
       this.io = io;
       this.iterator = iterator;
     }
 
-    static IteratorWithIO of(ArcticFileIO io, CloseableIterator<RowData> iterator) {
+    static IteratorWithIO of(AuthenticatedFileIO io, CloseableIterator<RowData> iterator) {
       Preconditions.checkNotNull(io);
       return new IteratorWithIO(io, iterator);
     }

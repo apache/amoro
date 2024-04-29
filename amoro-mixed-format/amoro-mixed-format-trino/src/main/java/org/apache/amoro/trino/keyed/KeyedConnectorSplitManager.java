@@ -20,7 +20,7 @@ package org.apache.amoro.trino.keyed;
 
 import static io.trino.plugin.iceberg.ExpressionConverter.toIcebergExpression;
 
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScan;
 import org.apache.amoro.scan.KeyedTableScanTask;
@@ -118,12 +118,12 @@ public class KeyedConnectorSplitManager implements ConnectorSplitManager {
           fileScanTaskList.stream()
               .map(
                   s -> {
-                    ArcticFileScanTask arcticFileScanTask = s.dataTasks().get(0);
+                    MixedFileScanTask mixedFileScanTask = s.dataTasks().get(0);
                     KeyedConnectorSplit keyedConnectorSplit =
                         new KeyedConnectorSplit(
                             ObjectSerializerUtil.write(s),
-                            PartitionSpecParser.toJson(arcticFileScanTask.spec()),
-                            PartitionData.toJson(arcticFileScanTask.file().partition()));
+                            PartitionSpecParser.toJson(mixedFileScanTask.spec()),
+                            PartitionData.toJson(mixedFileScanTask.file().partition()));
                     return keyedConnectorSplit;
                   })
               .collect(Collectors.toList());

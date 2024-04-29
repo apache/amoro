@@ -28,7 +28,7 @@ import org.apache.amoro.flink.read.source.FlinkArcticMORDataReader;
 import org.apache.amoro.flink.util.FilterUtil;
 import org.apache.amoro.flink.util.IcebergAndFlinkFilters;
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.SchemaUtil;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.Configuration;
@@ -87,7 +87,7 @@ public class ArcticDynamicSource
   protected final String tableName;
 
   protected final ScanTableSource arcticDynamicSource;
-  protected final ArcticTable arcticTable;
+  protected final MixedTable mixedTable;
   protected final Map<String, String> properties;
 
   protected int[] projectFields;
@@ -100,19 +100,19 @@ public class ArcticDynamicSource
   /**
    * @param tableName tableName
    * @param arcticDynamicSource underlying source
-   * @param arcticTable arcticTable
+   * @param mixedTable arcticTable
    * @param properties With all ArcticTable properties and sql options
    * @param tableLoader
    */
   public ArcticDynamicSource(
       String tableName,
       ScanTableSource arcticDynamicSource,
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       Map<String, String> properties,
       ArcticTableLoader tableLoader) {
     this.tableName = tableName;
     this.arcticDynamicSource = arcticDynamicSource;
-    this.arcticTable = arcticTable;
+    this.mixedTable = mixedTable;
     this.properties = properties;
     this.tableLoader = tableLoader;
   }
@@ -120,7 +120,7 @@ public class ArcticDynamicSource
   public ArcticDynamicSource(
       String tableName,
       ScanTableSource arcticDynamicSource,
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       Map<String, String> properties,
       ArcticTableLoader tableLoader,
       int[] projectFields,
@@ -128,7 +128,7 @@ public class ArcticDynamicSource
       ResolvedExpression flinkExpression) {
     this.tableName = tableName;
     this.arcticDynamicSource = arcticDynamicSource;
-    this.arcticTable = arcticTable;
+    this.mixedTable = mixedTable;
     this.properties = properties;
     this.tableLoader = tableLoader;
     this.projectFields = projectFields;
@@ -156,7 +156,7 @@ public class ArcticDynamicSource
     return new ArcticDynamicSource(
         tableName,
         arcticDynamicSource,
-        arcticTable,
+        mixedTable,
         properties,
         tableLoader,
         projectFields,
@@ -262,13 +262,13 @@ public class ArcticDynamicSource
         generatePredicate(projectedSchema, flinkExpression);
 
     AbstractAdaptHiveKeyedDataReader<RowData> flinkArcticMORDataReader =
-        generateMORReader(arcticTable, projectedSchema);
+        generateMORReader(mixedTable, projectedSchema);
     DataIteratorReaderFunction<RowData> readerFunction =
-        generateReaderFunction(arcticTable, projectedSchema);
+        generateReaderFunction(mixedTable, projectedSchema);
 
     return new ArcticRowDataLookupFunction(
         KVTableFactory.INSTANCE,
-        arcticTable,
+        mixedTable,
         joinKeyNames,
         projectedSchema,
         filters,
@@ -280,27 +280,27 @@ public class ArcticDynamicSource
   }
 
   protected DataIteratorReaderFunction<RowData> generateReaderFunction(
-      ArcticTable arcticTable, Schema projectedSchema) {
+      MixedTable mixedTable, Schema projectedSchema) {
     return new RowDataReaderFunction(
         new Configuration(),
-        arcticTable.schema(),
+        mixedTable.schema(),
         projectedSchema,
-        arcticTable.asKeyedTable().primaryKeySpec(),
+        mixedTable.asKeyedTable().primaryKeySpec(),
         null,
         true,
-        arcticTable.io(),
+        mixedTable.io(),
         true);
   }
 
   protected AbstractAdaptHiveKeyedDataReader<RowData> generateMORReader(
-      ArcticTable arcticTable, Schema projectedSchema) {
+      MixedTable mixedTable, Schema projectedSchema) {
     BiFunction<Type, Object, Object> convertConstant = new ConvertTask();
 
     return new FlinkArcticMORDataReader(
-        arcticTable.io(),
-        arcticTable.schema(),
+        mixedTable.io(),
+        mixedTable.schema(),
         projectedSchema,
-        arcticTable.asKeyedTable().primaryKeySpec(),
+        mixedTable.asKeyedTable().primaryKeySpec(),
         null,
         true,
         convertConstant,
@@ -323,16 +323,16 @@ public class ArcticDynamicSource
   }
 
   protected Schema getProjectedSchema() {
-    Schema arcticTableSchema = arcticTable.schema();
+    Schema arcticTableSchema = mixedTable.schema();
     Schema projectedSchema;
     if (projectFields == null) {
       LOG.info("The projected fields is null.");
-      projectedSchema = arcticTable.schema();
+      projectedSchema = mixedTable.schema();
     } else {
-      if (arcticTable.isUnkeyedTable()) {
+      if (mixedTable.isUnkeyedTable()) {
         throw new UnsupportedOperationException("Unkeyed table doesn't support lookup join.");
       }
-      List<String> primaryKeys = arcticTable.asKeyedTable().primaryKeySpec().fieldNames();
+      List<String> primaryKeys = mixedTable.asKeyedTable().primaryKeySpec().fieldNames();
       List<Integer> projectFieldList =
           Arrays.stream(projectFields).boxed().collect(Collectors.toList());
       List<Types.NestedField> columns = arcticTableSchema.columns();
@@ -350,8 +350,7 @@ public class ArcticDynamicSource
               .map(index -> columns.get(index).name())
               .collect(Collectors.toList());
       projectedSchema = SchemaUtil.selectInOrder(arcticTableSchema, projectedFieldNames);
-      LOG.info(
-          "The projected schema {}.\n table schema {}.", projectedSchema, arcticTable.schema());
+      LOG.info("The projected schema {}.\n table schema {}.", projectedSchema, mixedTable.schema());
     }
     return projectedSchema;
   }

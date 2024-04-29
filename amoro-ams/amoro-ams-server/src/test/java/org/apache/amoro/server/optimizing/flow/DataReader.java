@@ -22,8 +22,8 @@ import org.apache.amoro.hive.io.reader.AdaptHiveGenericKeyedDataReader;
 import org.apache.amoro.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScanTask;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.data.IdentityPartitionConverters;
@@ -40,9 +40,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class DataReader {
-  private final ArcticTable table;
+  private final MixedTable table;
 
-  public DataReader(ArcticTable table) {
+  public DataReader(MixedTable table) {
     this.table = table;
   }
 

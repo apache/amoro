@@ -19,8 +19,8 @@
 package org.apache.amoro;
 
 import org.apache.amoro.data.ChangeAction;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.DataFile;
@@ -63,7 +63,7 @@ public interface TableTestHelper {
       boolean orderedWrite);
 
   List<DataFile> writeBaseStore(
-      ArcticTable keyedTable, long txId, List<Record> records, boolean orderedWrite);
+      MixedTable keyedTable, long txId, List<Record> records, boolean orderedWrite);
 
   List<Record> readKeyedTable(
       KeyedTable keyedTable,
@@ -76,5 +76,5 @@ public interface TableTestHelper {
       KeyedTable keyedTable, Expression expression, Schema projectSchema, boolean useDiskMap);
 
   List<Record> readBaseStore(
-      ArcticTable table, Expression expression, Schema projectSchema, boolean useDiskMap);
+      MixedTable table, Expression expression, Schema projectSchema, boolean useDiskMap);
 }

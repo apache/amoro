@@ -40,7 +40,7 @@ import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.blocker.RenewableBlocker;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
@@ -300,7 +300,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   private boolean refreshSnapshots(AmoroTable<?> amoroTable) {
-    ArcticTable table = (ArcticTable) amoroTable.originalTable();
+    MixedTable table = (MixedTable) amoroTable.originalTable();
     if (table.isKeyedTable()) {
       long lastSnapshotId = currentSnapshotId;
       long changeSnapshotId = currentChangeSnapshotId;

@@ -24,7 +24,7 @@ import org.apache.amoro.flink.read.source.log.kafka.LogKafkaSource;
 import org.apache.amoro.flink.read.source.log.kafka.LogKafkaSourceBuilder;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.configuration.ReadableConfig;
@@ -58,7 +58,7 @@ public class LogDynamicSource
 
   private static final Logger LOG = LoggerFactory.getLogger(LogDynamicSource.class);
 
-  private final ArcticTable arcticTable;
+  private final MixedTable mixedTable;
   private final Schema schema;
   private final ReadableConfig tableOptions;
   private final Optional<String> consumerChangelogMode;
@@ -84,17 +84,17 @@ public class LogDynamicSource
           .build();
 
   public LogDynamicSource(
-      Properties properties, Schema schema, ReadableConfig tableOptions, ArcticTable arcticTable) {
+      Properties properties, Schema schema, ReadableConfig tableOptions, MixedTable mixedTable) {
     this.schema = schema;
     this.tableOptions = tableOptions;
     this.consumerChangelogMode =
         tableOptions.getOptional(ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE);
     this.logRetractionEnable =
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
-            arcticTable.properties(),
+            mixedTable.properties(),
             ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(),
             ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue());
-    this.arcticTable = arcticTable;
+    this.mixedTable = mixedTable;
     this.properties = properties;
   }
 
@@ -102,14 +102,14 @@ public class LogDynamicSource
       Properties properties,
       Schema schema,
       ReadableConfig tableOptions,
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       boolean logRetractionEnable,
       Optional<String> consumerChangelogMode) {
     this.schema = schema;
     this.tableOptions = tableOptions;
     this.consumerChangelogMode = consumerChangelogMode;
     this.logRetractionEnable = logRetractionEnable;
-    this.arcticTable = arcticTable;
+    this.mixedTable = mixedTable;
     this.properties = properties;
   }
 
@@ -118,7 +118,7 @@ public class LogDynamicSource
     LOG.info("Schema used for create KafkaSource is: {}", projectedSchema);
 
     LogKafkaSourceBuilder kafkaSourceBuilder =
-        LogKafkaSource.builder(projectedSchema, arcticTable.properties());
+        LogKafkaSource.builder(projectedSchema, mixedTable.properties());
     kafkaSourceBuilder.setProperties(properties);
 
     LOG.info("build log kafka source");
@@ -129,7 +129,7 @@ public class LogDynamicSource
   public ChangelogMode getChangelogMode() {
     String changeLogMode =
         consumerChangelogMode.orElse(
-            arcticTable.isKeyedTable()
+            mixedTable.isKeyedTable()
                 ? ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_ALL_KINDS
                 : ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY);
     switch (changeLogMode) {
@@ -168,7 +168,7 @@ public class LogDynamicSource
                 .getOptional(ArcticValidator.SCAN_PARALLELISM)
                 .orElse(execEnv.getParallelism());
         return execEnv
-            .fromSource(kafkaSource, watermarkStrategy, "LogStoreSource-" + arcticTable.name())
+            .fromSource(kafkaSource, watermarkStrategy, "LogStoreSource-" + mixedTable.name())
             .setParallelism(scanParallelism);
       }
 
@@ -185,14 +185,14 @@ public class LogDynamicSource
         this.properties,
         this.schema,
         this.tableOptions,
-        this.arcticTable,
+        this.mixedTable,
         this.logRetractionEnable,
         this.consumerChangelogMode);
   }
 
   @Override
   public String asSummaryString() {
-    return "Arctic Log: " + arcticTable.name();
+    return "Arctic Log: " + mixedTable.name();
   }
 
   @Override

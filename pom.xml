@@ -103,7 +103,8 @@
         <mockito.version>4.11.0</mockito.version>
         <curator.version>5.6.0</curator.version>
         <zookeeper.version>3.9.1</zookeeper.version>
-        <jackson.shaded.version>2.14.2-0.4.0-incubating</jackson.shaded.version>
+        <jackson.version>2.14.2</jackson.version>
+        <paimon.jackson.version>2.14.2-0.4.0-incubating</paimon.jackson.version>
         <parquet-avro.version>1.13.1</parquet-avro.version>
         <orc-core.version>1.8.3</orc-core.version>
         <awssdk.version>2.24.12</awssdk.version>
@@ -219,6 +220,14 @@
                 <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-mixed-format-hive</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
             </dependency>
 
             <dependency>
@@ -532,7 +541,7 @@
             <dependency>
                 <groupId>org.apache.paimon</groupId>
                 <artifactId>paimon-shade-jackson-2</artifactId>
-                <version>${jackson.shaded.version}</version>
+                <version>${paimon.jackson.version}</version>
             </dependency>
 
             <dependency>

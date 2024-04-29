@@ -24,21 +24,21 @@ import org.slf4j.LoggerFactory;
 
 public class TestAms extends ExternalResource {
   private static final Logger LOG = LoggerFactory.getLogger(TestAms.class);
-  private static MockArcticMetastoreServer SINGLETON;
+  private static MockAmoroManagementServer SINGLETON;
 
   static {
     if (SingletonResourceUtil.isUseSingletonResource()) {
-      SINGLETON = new MockArcticMetastoreServer();
+      SINGLETON = new MockAmoroManagementServer();
     }
   }
 
-  private final MockArcticMetastoreServer mockAms;
+  private final MockAmoroManagementServer mockAms;
 
   public TestAms() {
     if (SingletonResourceUtil.isUseSingletonResource()) {
       mockAms = SINGLETON;
     } else {
-      mockAms = new MockArcticMetastoreServer();
+      mockAms = new MockAmoroManagementServer();
     }
   }
 
@@ -46,11 +46,11 @@ public class TestAms extends ExternalResource {
     return mockAms.getServerUrl();
   }
 
-  public MockArcticMetastoreServer.AmsHandler getAmsHandler() {
+  public MockAmoroManagementServer.AmsHandler getAmsHandler() {
     return mockAms.handler();
   }
 
-  public MockArcticMetastoreServer.OptimizerManagerHandler getOptimizerHandler() {
+  public MockAmoroManagementServer.OptimizerManagerHandler getOptimizerHandler() {
     return mockAms.optimizerHandler();
   }
 
