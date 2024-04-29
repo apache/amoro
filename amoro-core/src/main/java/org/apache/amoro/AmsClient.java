@@ -18,9 +18,9 @@
 
 package org.apache.amoro;
 
-import org.apache.amoro.api.ArcticTableMetastore;
+import org.apache.amoro.api.AmoroTableMetastore;
 
 import java.io.Serializable;
 
 /** Thrift client API to communicate with ams. */
-public interface AmsClient extends ArcticTableMetastore.Iface, Serializable {}
+public interface AmsClient extends AmoroTableMetastore.Iface, Serializable {}

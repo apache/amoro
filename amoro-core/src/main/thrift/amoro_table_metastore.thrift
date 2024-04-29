@@ -18,7 +18,7 @@
 
 namespace java org.apache.amoro.api
 
-include "arctic_commons.thrift"
+include "amoro_commons.thrift"
 
 struct CatalogMeta {
   1: required string catalogName;
@@ -60,7 +60,7 @@ struct TableChange {
 
 // task commit info
 struct TableCommitMeta {
-    1: arctic_commons.TableIdentifier tableIdentifier;
+    1: amoro_commons.TableIdentifier tableIdentifier;
     2: string action;
     3: list<TableChange> changes;
     4: i64 commitTime;
@@ -85,7 +85,7 @@ struct SchemaUpdateMeta {
 }
 
 struct TableMeta {
-    1:arctic_commons.TableIdentifier tableIdentifier;
+    1:amoro_commons.TableIdentifier tableIdentifier;
     2:PrimaryKeySpec keySpec;
     3:optional map<string, string> properties;
     4:map<string, string> locations ;
@@ -115,55 +115,55 @@ enum BlockableOperation {
 
 
 /**
-* replace TableContainer、ArcticTableItem
+* replace TableContainer、AmoroTableItem
 **/
-service ArcticTableMetastore {
+service AmoroTableMetastore {
 
     void ping()
 
     // catalog api
     list<CatalogMeta> getCatalogs()
 
-    CatalogMeta getCatalog(1: string name) throws (1: arctic_commons.NoSuchObjectException e1)
+    CatalogMeta getCatalog(1: string name) throws (1: amoro_commons.NoSuchObjectException e1)
 
-    list<string> getDatabases(1: string catalogName) throws (1: arctic_commons.NoSuchObjectException e)
+    list<string> getDatabases(1: string catalogName) throws (1: amoro_commons.NoSuchObjectException e)
 
     void createDatabase(1: string catalogName, 2: string database) throws (
-          1: arctic_commons.NoSuchObjectException e1,
-          2: arctic_commons.AlreadyExistsException e2)
+          1: amoro_commons.NoSuchObjectException e1,
+          2: amoro_commons.AlreadyExistsException e2)
 
     void dropDatabase(1: string catalogName, 2: string database) throws (
-          1: arctic_commons.NoSuchObjectException e1,
-          2: arctic_commons.NotSupportedException e2)
+          1: amoro_commons.NoSuchObjectException e1,
+          2: amoro_commons.NotSupportedException e2)
 
     void createTableMeta(1: TableMeta tableMeta)
           throws(
-          1: arctic_commons.AlreadyExistsException e1,
-          2: arctic_commons.InvalidObjectException e2
-          3: arctic_commons.MetaException e3)
+          1: amoro_commons.AlreadyExistsException e1,
+          2: amoro_commons.InvalidObjectException e2
+          3: amoro_commons.MetaException e3)
 
     list<TableMeta> listTables(1: string catalogName, 2: string database)
-        throws(1: arctic_commons.NoSuchObjectException e);
+        throws(1: amoro_commons.NoSuchObjectException e);
 
-    TableMeta getTable(1:arctic_commons.TableIdentifier tableIdentifier)
-            throws(1: arctic_commons.NoSuchObjectException e);
+    TableMeta getTable(1:amoro_commons.TableIdentifier tableIdentifier)
+            throws(1: amoro_commons.NoSuchObjectException e);
 
-    void removeTable(1:arctic_commons.TableIdentifier tableIdentifier, 2:bool deleteData)
+    void removeTable(1:amoro_commons.TableIdentifier tableIdentifier, 2:bool deleteData)
         throws(
-        1:arctic_commons.NoSuchObjectException e1,
-        2:arctic_commons.MetaException e2)
+        1:amoro_commons.NoSuchObjectException e1,
+        2:amoro_commons.MetaException e2)
 
-    void tableCommit(1: TableCommitMeta commit) throws (1: arctic_commons.MetaException e1)
+    void tableCommit(1: TableCommitMeta commit) throws (1: amoro_commons.MetaException e1)
 
-    i64 allocateTransactionId(1:arctic_commons.TableIdentifier tableIdentifier, 2:string transactionSignature)
+    i64 allocateTransactionId(1:amoro_commons.TableIdentifier tableIdentifier, 2:string transactionSignature)
 
-    Blocker block(1:arctic_commons.TableIdentifier tableIdentifier, 2:list<BlockableOperation> operations, 3:map<string, string> properties)
-            throws (1: arctic_commons.OperationConflictException e1)
+    Blocker block(1:amoro_commons.TableIdentifier tableIdentifier, 2:list<BlockableOperation> operations, 3:map<string, string> properties)
+            throws (1: amoro_commons.OperationConflictException e1)
 
-    void releaseBlocker(1:arctic_commons.TableIdentifier tableIdentifier, 2:string blockerId)
+    void releaseBlocker(1:amoro_commons.TableIdentifier tableIdentifier, 2:string blockerId)
 
-    i64 renewBlocker(1:arctic_commons.TableIdentifier tableIdentifier, 2:string blockerId)
-        throws(1: arctic_commons.NoSuchObjectException e)
+    i64 renewBlocker(1:amoro_commons.TableIdentifier tableIdentifier, 2:string blockerId)
+        throws(1: amoro_commons.NoSuchObjectException e)
 
-    list<Blocker> getBlockers(1:arctic_commons.TableIdentifier tableIdentifier)
+    list<Blocker> getBlockers(1:amoro_commons.TableIdentifier tableIdentifier)
 }

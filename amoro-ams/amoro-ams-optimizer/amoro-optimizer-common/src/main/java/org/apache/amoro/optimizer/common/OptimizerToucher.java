@@ -19,7 +19,7 @@
 package org.apache.amoro.optimizer.common;
 
 import org.apache.amoro.ErrorCodes;
-import org.apache.amoro.api.ArcticException;
+import org.apache.amoro.api.AmoroException;
 import org.apache.amoro.api.OptimizerProperties;
 import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -93,8 +93,8 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
         return true;
       } catch (TException e) {
         LOG.error("Register optimizer to ams failed", e);
-        if (e instanceof ArcticException
-            && ErrorCodes.FORBIDDEN_ERROR_CODE == ((ArcticException) e).getErrorCode()) {
+        if (e instanceof AmoroException
+            && ErrorCodes.FORBIDDEN_ERROR_CODE == ((AmoroException) e).getErrorCode()) {
           System.exit(1); // Don't need to try again
         }
         return false;
@@ -112,8 +112,8 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
           });
       LOG.debug("Optimizer[{}] touch ams", getToken());
     } catch (TException e) {
-      if (e instanceof ArcticException
-          && ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE == ((ArcticException) e).getErrorCode()) {
+      if (e instanceof AmoroException
+          && ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE == ((AmoroException) e).getErrorCode()) {
         setToken(null);
         LOG.error("Got authorization error from ams, try to register later", e);
       } else {

@@ -19,8 +19,8 @@
 package org.apache.amoro;
 
 import org.apache.amoro.api.AlreadyExistsException;
-import org.apache.amoro.api.ArcticException;
-import org.apache.amoro.api.ArcticTableMetastore;
+import org.apache.amoro.api.AmoroException;
+import org.apache.amoro.api.AmoroTableMetastore;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.Blocker;
 import org.apache.amoro.api.CatalogMeta;
@@ -152,8 +152,8 @@ public class MockAmoroManagementServer implements Runnable {
     try {
       TServerSocket socket = new TServerSocket(port);
       TMultiplexedProcessor processor = new TMultiplexedProcessor();
-      ArcticTableMetastore.Processor<AmsHandler> amsProcessor =
-          new ArcticTableMetastore.Processor<>(amsHandler);
+      AmoroTableMetastore.Processor<AmsHandler> amsProcessor =
+          new AmoroTableMetastore.Processor<>(amsHandler);
       processor.registerProcessor("TableMetastore", amsProcessor);
 
       OptimizingService.Processor<OptimizerManagerHandler> optimizerManProcessor =
@@ -210,7 +210,7 @@ public class MockAmoroManagementServer implements Runnable {
     }
   }
 
-  public static class AmsHandler implements ArcticTableMetastore.Iface {
+  public static class AmsHandler implements AmoroTableMetastore.Iface {
     private static final long DEFAULT_BLOCKER_TIMEOUT = 60_000;
     private final ConcurrentLinkedQueue<CatalogMeta> catalogs = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<TableMeta> tables = new ConcurrentLinkedQueue<>();
@@ -437,7 +437,7 @@ public class MockAmoroManagementServer implements Runnable {
       }
       Map<Integer, OptimizingTaskId> executingTasksMap = executingTasks.get(authToken);
       if (executingTasksMap.containsKey(threadId)) {
-        throw new ArcticException(
+        throw new AmoroException(
             ErrorCodes.TASK_RUNTIME_ERROR_CODE,
             "DuplicateTask",
             String.format(
@@ -484,9 +484,9 @@ public class MockAmoroManagementServer implements Runnable {
       return completedTasks;
     }
 
-    private void checkToken(String token) throws ArcticException {
+    private void checkToken(String token) throws AmoroException {
       if (!registeredOptimizers.containsKey(token)) {
-        throw new ArcticException(
+        throw new AmoroException(
             ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE, "unknown token", "unknown token");
       }
     }

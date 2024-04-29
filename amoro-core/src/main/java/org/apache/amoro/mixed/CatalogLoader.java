@@ -22,7 +22,7 @@ import org.apache.amoro.AmsClient;
 import org.apache.amoro.Constants;
 import org.apache.amoro.PooledAmsClient;
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.api.ArcticTableMetastore;
+import org.apache.amoro.api.AmoroTableMetastore;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.NoSuchObjectException;
 import org.apache.amoro.client.AmsClientPools;
@@ -149,7 +149,7 @@ public class CatalogLoader {
    */
   public static List<String> catalogs(String metastoreUrl) {
     try {
-      return ((ArcticTableMetastore.Iface) AmsClientPools.getClientPool(metastoreUrl).iface())
+      return ((AmoroTableMetastore.Iface) AmsClientPools.getClientPool(metastoreUrl).iface())
           .getCatalogs().stream().map(CatalogMeta::getCatalogName).collect(Collectors.toList());
     } catch (TException e) {
       throw new IllegalStateException("failed when load catalogs", e);

@@ -47,7 +47,7 @@ exception OperationConflictException {
   1: string message
 }
 
-exception ArcticException {
+exception AmoroException {
   1: i32 errorCode
   2: string errorName
   3: string message
