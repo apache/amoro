@@ -174,7 +174,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             FLINK_VERSION=${{ matrix.flink }}
-            OPTIMIZER_JOB=ams/optimizer/flink-optimizer/target/flink-optimizer-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
+            OPTIMIZER_JOB=amoro-ams/amoro-ams-optimizer/flink-optimizer/target/flink-optimizer-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
 
   docker-optimizer-spark:
     name: Push Amoro Optimizer-Spark Docker Image to Docker Hub
@@ -246,7 +246,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             SPARK_VERSION=${{ matrix.spark }}
-            OPTIMIZER_JOB=ams/optimizer/spark-optimizer/target/spark-optimizer-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
+            OPTIMIZER_JOB=amoro-ams/amoro-ams-optimizer/spark-optimizer/target/spark-optimizer-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
 
 
   docker-quickdemo:
