@@ -18,123 +18,188 @@
 ## @param kubeVersion Force target Kubernetes version (using Helm capabilities if not set)
 ##
 kubeVersion: ""
-fullnameOverride: ""
 clusterDomain: cluster.local
 
-image:
-  repository: arctic163/amoro
-  pullPolicy: IfNotPresent
-  tag: ""
+## @param fullnameOverride used to name different instances
+## If not set, default value is amoro-{random string} created by bitnamicharts dependency
+##
+fullnameOverride: ""
 
+## @param nameOverride used to name different clusters, especially for label app.kubernetes.io/name
+## If not set, default value is amoro
+##
+nameOverride: ""
+
+## AMS image info
+##
+image:
+  ## @param image.repository AMS image repository
+  ##
+  repository: arctic163/amoro
+  ## @param image.tag for AMS image repository
+  ##
+  tag: ""
+  ## @param image.pullPolicy pull policy for AMS image, along with other images, e.g. Flink Optimizer
+  ##
+  pullPolicy: IfNotPresent
+
+## @param imagePullSecrets pull secret for image if needed
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+##
 imagePullSecrets: [ ]
 
-# ServiceAccount of Amoro to schedule optimizer.
+## ServiceAccount of Amoro to schedule optimizer
+## ref: https://kubernetes.io/docs/reference/kubernetes-api/authentication-resources/service-account-v1/
+##
 serviceAccount:
-  # Specifies whether a service account should be created or using an existed account
+  ## @param serviceAccount.create specifies whether a service account should be created or using an existed account
+  ##
   create: true
-  # Annotations to add to the service account
+  ##  @param serviceAccount.annotations will be added to the service account
+  ##
   annotations: { }
-  # Specifies ServiceAccount name to be used if `create: false`
+  ## Using an existed account, set @param name to the account and @param serviceAccount.create := false, or creating a new one with @param serviceAccount.create := true
+  ## The default value is amoro-{random string} which automatically created by bitnamicharts dependency, or override by @param fullnameOverride
+  ##
   name: ~
-  # if `serviceAccount.create` == true. role and role-bind will be created
+  ## RBAC related with serviceAccount
+  ## Role ref: https://kubernetes.io/docs/reference/kubernetes-api/authorization-resources/role-v1/
+  ## RoleBinding ref: https://kubernetes.io/docs/reference/kubernetes-api/authorization-resources/role-binding-v1/
+  ## ClusterRole ref: https://kubernetes.io/docs/reference/kubernetes-api/authorization-resources/cluster-role-v1/
+  ## ClusterRoleBinding ref: https://kubernetes.io/docs/reference/kubernetes-api/authorization-resources/cluster-role-binding-v1/
+  ##
   rbac:
-    # create a role/role-bind if automatically create service account
+    ## If @param serviceAccount.rbac.create := true, role/role-bind or cluster-role/cluster-role-bind will be created along with service account
+    ##
     create: true
-    # create a cluster-role and cluster-role-bind if cluster := true
+    ## Create a cluster-role and cluster-role-bind if @param serviceAccount.rbac.cluster := true. Otherwise, role and role-bind will be done
+    ##
     cluster: false
 
 
+## Service of Amoro to provide connection method
+## ref: https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
+##
 server:
-  # AMS REST Service
+  ## AMS REST Service
+  ##
   rest:
     enabled: true
     port: 1630
     service:
+      ## @param type Can set as "ClusterIP" or "NodePort". If set to "NodePort", @param nodePort below should set a value
+      ##
       type: ClusterIP
       port: "{{ .Values.server.rest.port }}"
       nodePort: ~
       annotations: { }
 
-  # AMS Thrift Server For table services
+  ## AMS Thrift Server For table services
+  ##
   table:
     enabled: true
     port: 1260
     service:
+      ## @param type Can set as "ClusterIP" or "NodePort". If set to "NodePort", @param nodePort below should set a value
+      ##
       type: ClusterIP
       port: "{{ .Values.server.table.port }}"
       nodePort: ~
       annotations: { }
-  # AMS Thrift Server For optimizing services
+
+  ## AMS Thrift Server For optimizing services
+  ##
   optimizing:
     enabled: true
     port: 1261
     service:
+      ## @param type Can set as "ClusterIP" or "NodePort". If set to "NodePort", @param nodePort below should set a value
+      ##
       type: ClusterIP
       port: "{{ .Values.server.optimizing.port }}"
       nodePort: ~
       annotations: { }
 
-# amoro Base Dir, default /usr/local/amoro
+## @param amoroHome is amoro Base Dir, default /usr/local/amoro
+##
 amoroHome: ~
 
-# jvm options
+## @param jvmOptions jvm options
+##
 jvmOptions: ~
-#  xms=8196
-#  xmx=8196
-#  jmx.remote.port=
-#  extra.options="-XX:NewRatio=1 -XX:SurvivorRatio=3"
+## e.g:
+## jvmOptions：
+##   xms=8196
+##   xmx=8196
+##   jmx.remote.port=
+##   extra.options="-XX:NewRatio=1 -XX:SurvivorRatio=3"
 
-# AMS configurations files
+## AMS configurations files
+##
 amoroConf:
-  # ams database properties,default is derby. If production,suggest use mysql
+  ## AMS database properties, default value is derby. For production environment, suggest to use mysql
+  ##
   database:
     type: derby
     driver: org.apache.derby.jdbc.EmbeddedDriver
     url: jdbc:derby:/tmp/amoro/derby;create=true
-  #    type: mysql
-  #    driver: com.mysql.cj.jdbc.Driver
-  #    url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
-  #    username: admin
-  #    password: admin
 
-  #    type: postgres
-  #    driver: org.postgresql.Driver
-  #    url: jdbc:postgresql://127.0.0.1:5432/db
-  #    username: admin
-  #    password: admin
+  ## e.g:
+  ##    type: mysql
+  ##    driver: com.mysql.cj.jdbc.Driver
+  ##    url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
+  ##    username: admin
+  ##    password: admin
 
+  ## e.g:
+  ##    type: postgres
+  ##    driver: org.postgresql.Driver
+  ##    url: jdbc:postgresql://127.0.0.1:5432/db
+  ##    username: admin
+  ##    password: admin
+
+  ## AMS terminal properties, default value is local. Another choice is kyuubi.
+  ##
   terminal:
     backend: local
     icebergHandleTimestampWithoutTimezone: false
 
-#  Kyuubi terminal backend configuration.
-#  terminal:
-#    backend: kyuubi
-#    kyuubiJdbcUrl: jdbc:hive2://127.0.0.1:10009/
+  ## Kyuubi terminal backend configuration.
+  ## ref: https://kyuubi.readthedocs.io/en/master/quick_start/index.html
+  ## e.g:
+  ##  terminal:
+  ##    backend: kyuubi
+  ##    kyuubiJdbcUrl: jdbc:hive2://127.0.0.1:10009/
 
-  # The value (templated string) is used for conf.yaml file
-  # See https://github.com/apache/amoro/blob/master/dist/src/main/arctic-bin/conf/config.yaml for more details
-  #
+  ## @param amoroDefaults The value (templated string) is used for conf.yaml file
+  ## ref: https://github.com/apache/amoro/blob/master/dist/src/main/arctic-bin/conf/config.yaml
+  ##
   amoroDefaults: ~
-
-  # The value (templated string) is used for conf/log4j2.xml file
-  # See example at conf/log4j2.xml.template https://github.com/apache/amoro/blob/master/dist/src/main/arctic-bin/conf/log4j2.xml for more details
+  ##
+  ## @param log4j2 The value (templated string) is used for conf/log4j2.xml file
+  ## ref: https://github.com/apache/amoro/blob/master/dist/src/main/arctic-bin/conf/log4j2.xml
   log4j2: ~
 
-
 ## Configure the container of optimizer that allows you to submit optimizer by AMS
+##
 optimizer:
-  # flink optimizer
+  ## flink optimizer
+  ##
   flink:
-    ## enable the flink optimizer.
+    ## @param optimizer.flink.enabled Enable the flink optimizer
+    ##
     enabled: true
-    ## container name, default is flink
+    ## @param optimizer.flink.name container name, default value is flink
+    ##
     name: ~
-    ## image information of flink optimizer.
+    ## image information of flink optimizer
+    ##
     image:
-      ## the image repository
+      ## @param optimizer.flink.image.repository the image repository
+      ##
       repository: arctic163/optimizer-flink
-      ## the image tag, if not set, the default value is the same with amoro image tag.
+      ## @param optimizer.flink.image.tag the image tag, if not set, the default value is the same with amoro image tag
+      ##
       tag: ~
       jobUri: "local:///opt/flink/usrlib/optimizer-job.jar"
     properties: {
@@ -142,17 +207,24 @@ optimizer:
       "flink-conf.taskmanager.memory.network.max": "32mb",
       "flink-conf.taskmanager.memory.network.min": "32mb"
     }
-  # spark optimizer
+  ##
+  ## spark optimizer
+  ##
   spark:
-    ## enable the spark optimizer.
+    ## @param optimizer.spark.enabled enable the spark optimizer
+    ##
     enabled: true
-    ## container name, default is spark
+    ## @param optimizer.spark.name container name, default value is spark
+    ##
     name: ~
-    ## image information of spark optimizer.
+    ## image information of spark optimizer
+    ##
     image:
-      ## the image repository
+      ## @param optimizer.spark.image.repository the image repository
+      ##
       repository: arctic163/optimizer-spark
-      ## the image tag, if not set, the default value is the same with amoro image tag.
+      ## @param optimizer.spark.image.tag the image tag, if not set, the default value is the same with amoro image tag
+      ##
       tag: ~
       jobUri: "local:///opt/spark/usrlib/optimizer-job.jar"
     properties: {
@@ -163,16 +235,20 @@ optimizer:
       "spark-conf.spark.shuffle.service.enabled": "false",
       "spark-conf.spark.dynamicAllocation.shuffleTracking.enabled": "true"
     }
-  # local optimizer
+  ##
+  ## local optimizer
+  ##
   local:
-    # enable the local optimizer container
+    ## @param optimizer.local.enabled enable the local optimizer container
+    ##
     enabled: true
-    # local optimizer container name. default is local
+    ## @param optimizer.local.name local optimizer container name. default value is local
+    ##
     name: ~
-    # properties for optimizer container.
+    ## @param optimizer.local.properties properties for optimizer container
+    ##
     properties: ~
   extra: []
-
 
 ## Configure the ingress resource that allows you to access the
 ## Amoro installation. Set up the URL
@@ -185,7 +261,7 @@ ingress:
   ## @param ingress.apiVersion Force Ingress API version (automatically detected if not set)
   ##
   apiVersion: ""
-  ## @param ingress.ingressClassName IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
+  ## @param ingress.ingressClassName IngressClass that will be used to implement the Ingress (Kubernetes 1.18+)
   ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster.
   ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
   ##
@@ -203,8 +279,7 @@ ingress:
   ## For a full list of possible ingress annotations, please see
   ## ref: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
   ## Use this parameter to set the required annotations for cert-manager, see
-  ## ref: https://cert-manager.io/docs/usage/ingress/#supported-annotations
-  ##
+  ## ref: https://cert-manager.io/docs/usage/ingress/##supported-annotations
   ## e.g:
   ## annotations:
   ##   kubernetes.io/ingress.class: nginx
@@ -240,7 +315,7 @@ ingress:
   ##
   extraPaths: [ ]
   ## @param ingress.extraTls The tls configuration for additional hostnames to be covered with this ingress record.
-  ## see: https://kubernetes.io/docs/concepts/services-networking/ingress/#tls
+  ## see: https://kubernetes.io/docs/concepts/services-networking/ingress/##tls
   ## e.g:
   ## extraTls:
   ## - hosts:
@@ -256,8 +331,7 @@ ingress:
   ## If it is not set and you're NOT using cert-manager either, self-signed certificates will be created valid for 365 days
   ## It is also possible to create and manage the certificates outside of this helm chart
   ## Please see README.md for more information
-  ##
-  ## Example
+  ## e.g:
   ## secrets:
   ##   - name: amoro.local-tls
   ##     key: ""
@@ -265,7 +339,7 @@ ingress:
   ##
   secrets: [ ]
   ## @param ingress.extraRules Additional rules to be covered with this ingress record
-  ## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-rules
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/##ingress-rules
   ## e.g:
   ## extraRules:
   ## - host: example.local
@@ -279,20 +353,8 @@ ingress:
   ##
   extraRules: [ ]
 
-
-
-# Environment variables (templated)
-env: [ ]
-# Environment variables from ConfigMaps and Secrets (templated)
-envFrom: [ ]
-
-# Additional volumes for AMS pod (templated)
-volumes: [ ]
-# Additional volumeMounts for AMS container (templated)
-volumeMounts: [ ]
-
-
-# Liveness probe
+## Liveness probe
+##
 livenessProbe:
   enabled: true
   initialDelaySeconds: 40
@@ -301,7 +363,8 @@ livenessProbe:
   failureThreshold: 10
   successThreshold: 1
 
-# Readiness probe
+## Readiness probe
+##
 readinessProbe:
   enabled: true
   initialDelaySeconds: 30
@@ -310,21 +373,45 @@ readinessProbe:
   failureThreshold: 10
   successThreshold: 1
 
-# Resource requests and limits for Amoro pods
+## Resource requests and limits for Amoro pods
+##
 resources: { }
-#  resources:
-#    requests:
-#      cpu: 2
-#      memory: 4Gi
-#    limits:
-#      cpu: 4
-#      memory: 10Gi
+## e.g:
+##  resources:
+##    requests:
+##      cpu: 2
+##      memory: 4Gi
+##    limits:
+##      cpu: 4
+##      memory: 10Gi
 
-# Constrain Amoro pods to nodes with specific node labels
+## @param env Environment variables (templated)
+##
+env: [ ]
+## @param envFrom Environment variables from ConfigMaps and Secrets (templated)
+##
+envFrom: [ ]
+## @param volumes Additional volumes for AMS pod (templated)
+##
+volumes: [ ]
+## @param volumeMounts Additional volumeMounts for AMS container (templated)
+##
+volumeMounts: [ ]
+## @param nodeSelector Constrain Amoro pods to nodes with specific node labels
+##
 nodeSelector: { }
-# Allow to schedule Amoro pods on nodes with matching taints
+## @param tolerations Allow to schedule Amoro pods on nodes with matching taints
+##
 tolerations: [ ]
-# Constrain Amoro pods to nodes by complex affinity/anti-affinity rules
+## @param affinity Constrain Amoro pods to nodes by complex affinity/anti-affinity rules
+##
 affinity: { }
-# Amoro pods security context
+## @param securityContext Amoro pods security context
+##
 securityContext: { }
+## @param commonLabels Amoro Common Labels for custom
+##
+commonLabels: { }
+## @param commonAnnotations Amoro Common Annotations for custom
+##
+commonAnnotations: { }
