@@ -23,7 +23,7 @@ import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.flink.read.hybrid.enumerator.ArcticSourceEnumState;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.hybrid.split.ArcticSplitState;
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.util.FlinkRuntimeException;
@@ -314,7 +314,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   private PrimaryKeyedFile findAnyFileInArcticSplit(ArcticSplit arcticSplit) {
     AtomicReference<PrimaryKeyedFile> file = new AtomicReference<>();
     if (arcticSplit.isChangelogSplit()) {
-      List<ArcticFileScanTask> arcticSplits =
+      List<MixedFileScanTask> arcticSplits =
           new ArrayList<>(arcticSplit.asChangelogSplit().insertTasks());
       arcticSplits.addAll(arcticSplit.asChangelogSplit().deleteTasks());
       arcticSplits.stream().findFirst().ifPresent(task -> file.set(task.file()));
@@ -323,7 +323,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
       }
     }
 
-    List<ArcticFileScanTask> arcticSplits =
+    List<MixedFileScanTask> arcticSplits =
         new ArrayList<>(arcticSplit.asSnapshotSplit().insertTasks());
     arcticSplits.stream().findFirst().ifPresent(task -> file.set(task.file()));
     if (file.get() != null) {

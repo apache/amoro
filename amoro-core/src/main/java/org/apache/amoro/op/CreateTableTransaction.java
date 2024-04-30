@@ -18,7 +18,7 @@
 
 package org.apache.amoro.op;
 
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
@@ -46,12 +46,12 @@ import java.util.function.Supplier;
 
 public class CreateTableTransaction implements Transaction {
   private final List<DataFile> appendDataFiles = Lists.newArrayList();
-  private final Supplier<ArcticTable> tableCreator;
+  private final Supplier<MixedTable> tableCreator;
   private final Runnable rollback;
   private final Transaction transaction;
 
   public CreateTableTransaction(
-      Transaction transaction, Supplier<ArcticTable> tableSupplier, Runnable rollback) {
+      Transaction transaction, Supplier<MixedTable> tableSupplier, Runnable rollback) {
     this.transaction = transaction;
     this.tableCreator = tableSupplier;
     this.rollback = rollback;
@@ -185,7 +185,7 @@ public class CreateTableTransaction implements Transaction {
 
   @Override
   public void commitTransaction() {
-    ArcticTable table = tableCreator.get();
+    MixedTable table = tableCreator.get();
     try {
       Transaction tx;
       if (table.isUnkeyedTable()) {

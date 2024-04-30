@@ -27,7 +27,7 @@ import org.apache.amoro.flink.util.ArcticUtils;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.amoro.flink.util.IcebergClassUtil;
 import org.apache.amoro.flink.util.ProxyUtil;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.io.InputFormat;
 import org.apache.flink.api.dag.Transformation;
@@ -69,7 +69,7 @@ public class FlinkSource {
     private static final String ARCTIC_FILE_TRANSFORMATION = "arctic-file";
     private ProviderContext context;
     private StreamExecutionEnvironment env;
-    private ArcticTable arcticTable;
+    private MixedTable mixedTable;
     private ArcticTableLoader tableLoader;
     private TableSchema projectedSchema;
     private List<Expression> filters;
@@ -92,9 +92,9 @@ public class FlinkSource {
       return this;
     }
 
-    public Builder arcticTable(ArcticTable arcticTable) {
-      this.arcticTable = arcticTable;
-      properties.putAll(arcticTable.properties());
+    public Builder arcticTable(MixedTable mixedTable) {
+      this.mixedTable = mixedTable;
+      properties.putAll(mixedTable.properties());
       return this;
     }
 
@@ -146,7 +146,7 @@ public class FlinkSource {
       Preconditions.checkNotNull(env, "StreamExecutionEnvironment should not be null");
       loadTableIfNeeded();
 
-      if (arcticTable.isUnkeyedTable()) {
+      if (mixedTable.isUnkeyedTable()) {
         return buildUnkeyedTableSource();
       }
 
@@ -158,12 +158,12 @@ public class FlinkSource {
       RowType rowType;
 
       if (projectedSchema == null) {
-        contextBuilder.project(arcticTable.schema());
-        rowType = FlinkSchemaUtil.convert(arcticTable.schema());
+        contextBuilder.project(mixedTable.schema());
+        rowType = FlinkSchemaUtil.convert(mixedTable.schema());
       } else {
         contextBuilder.project(
             FlinkSchemaUtil.convert(
-                arcticTable.schema(),
+                mixedTable.schema(),
                 org.apache.amoro.flink.FlinkSchemaUtil.filterWatermark(projectedSchema)));
         // If dim table is enabled, we reserve a RowTime field in Emitter.
         if (dimTable) {
@@ -180,12 +180,12 @@ public class FlinkSource {
       RowDataReaderFunction rowDataReaderFunction =
           new RowDataReaderFunction(
               flinkConf,
-              arcticTable.schema(),
+              mixedTable.schema(),
               scanContext.project(),
-              arcticTable.asKeyedTable().primaryKeySpec(),
+              mixedTable.asKeyedTable().primaryKeySpec(),
               scanContext.nameMapping(),
               scanContext.caseSensitive(),
-              arcticTable.io());
+              mixedTable.io());
 
       int scanParallelism =
           flinkConf.getOptional(ArcticValidator.SCAN_PARALLELISM).orElse(env.getParallelism());
@@ -196,7 +196,7 @@ public class FlinkSource {
                       scanContext,
                       rowDataReaderFunction,
                       InternalTypeInfo.of(rowType),
-                      arcticTable.name(),
+                      mixedTable.name(),
                       dimTable),
                   watermarkStrategy,
                   ArcticSource.class.getName())
@@ -206,11 +206,11 @@ public class FlinkSource {
     }
 
     private void loadTableIfNeeded() {
-      if (tableLoader == null || arcticTable != null) {
+      if (tableLoader == null || mixedTable != null) {
         return;
       }
-      arcticTable = ArcticUtils.loadArcticTable(tableLoader);
-      properties.putAll(arcticTable.properties());
+      mixedTable = ArcticUtils.loadArcticTable(tableLoader);
+      properties.putAll(mixedTable.properties());
     }
 
     public DataStream<RowData> buildUnkeyedTableSource() {
@@ -239,7 +239,7 @@ public class FlinkSource {
             (OneInputTransformation<RowData, RowData>) ds.getTransformation();
         OneInputStreamOperatorFactory op = (OneInputStreamOperatorFactory) tf.getOperatorFactory();
         ProxyFactory<FlinkInputFormat> inputFormatProxyFactory =
-            IcebergClassUtil.getInputFormatProxyFactory(op, arcticTable.io(), arcticTable.schema());
+            IcebergClassUtil.getInputFormatProxyFactory(op, mixedTable.io(), mixedTable.schema());
 
         if (tf.getInputs().isEmpty()) {
           return env.addSource(
@@ -252,7 +252,7 @@ public class FlinkSource {
         SourceFunction function = IcebergClassUtil.getSourceFunction(source);
 
         SourceFunction functionProxy =
-            (SourceFunction) ProxyUtil.getProxy(function, arcticTable.io());
+            (SourceFunction) ProxyUtil.getProxy(function, mixedTable.io());
         DataStreamSource sourceStream =
             env.addSource(functionProxy, tfSource.getName(), tfSource.getOutputType());
         context.generateUid(ARCTIC_FILE_TRANSFORMATION).ifPresent(sourceStream::uid);
@@ -270,7 +270,7 @@ public class FlinkSource {
           (InputFormatSourceFunction) IcebergClassUtil.getSourceFunction(source);
 
       InputFormat inputFormatProxy =
-          (InputFormat) ProxyUtil.getProxy(function.getFormat(), arcticTable.io());
+          (InputFormat) ProxyUtil.getProxy(function.getFormat(), mixedTable.io());
       DataStreamSource sourceStream =
           env.createInput(inputFormatProxy, tfSource.getOutputType())
               .setParallelism(scanParallelism);

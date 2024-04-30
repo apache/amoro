@@ -97,7 +97,7 @@ public class TestOptimizingPlanner extends TestOptimizingEvaluator {
   protected OptimizingPlanner buildOptimizingEvaluator() {
     return new OptimizingPlanner(
         getTableRuntime(),
-        getArcticTable(),
+        getMixedTable(),
         1,
         OptimizerProperties.MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT);
   }

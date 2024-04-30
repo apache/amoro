@@ -20,7 +20,7 @@ package org.apache.amoro.hive.utils;
 
 import org.apache.amoro.hive.HMSClient;
 import org.apache.amoro.hive.HMSClientPool;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.PartitionDropOptions;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
@@ -102,9 +102,9 @@ public class HivePartitionUtil {
   }
 
   public static Partition getPartition(
-      HMSClientPool hmsClient, ArcticTable arcticTable, List<String> partitionValues) {
-    String db = arcticTable.id().getDatabase();
-    String tableName = arcticTable.id().getTableName();
+      HMSClientPool hmsClient, MixedTable mixedTable, List<String> partitionValues) {
+    String db = mixedTable.id().getDatabase();
+    String tableName = mixedTable.id().getTableName();
 
     try {
       return hmsClient.run(
@@ -262,13 +262,13 @@ public class HivePartitionUtil {
 
   public static void createPartitionIfAbsent(
       HMSClientPool hmsClient,
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       List<String> partitionValues,
       String partitionLocation,
       List<DataFile> dataFiles,
       int accessTimestamp) {
-    String db = arcticTable.id().getDatabase();
-    String tableName = arcticTable.id().getTableName();
+    String db = mixedTable.id().getDatabase();
+    String tableName = mixedTable.id().getTableName();
 
     try {
       hmsClient.run(
@@ -292,7 +292,7 @@ public class HivePartitionUtil {
   }
 
   public static void dropPartition(
-      HMSClientPool hmsClient, ArcticTable arcticTable, Partition hivePartition) {
+      HMSClientPool hmsClient, MixedTable mixedTable, Partition hivePartition) {
     try {
       hmsClient.run(
           client -> {
@@ -303,8 +303,8 @@ public class HivePartitionUtil {
                     .purgeData(false)
                     .returnResults(false);
             return client.dropPartition(
-                arcticTable.id().getDatabase(),
-                arcticTable.id().getTableName(),
+                mixedTable.id().getDatabase(),
+                mixedTable.id().getTableName(),
                 hivePartition.getValues(),
                 options);
           });
@@ -315,13 +315,13 @@ public class HivePartitionUtil {
 
   public static void updatePartitionLocation(
       HMSClientPool hmsClient,
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       Partition hivePartition,
       String newLocation,
       List<DataFile> dataFiles,
       int accessTimestamp) {
-    dropPartition(hmsClient, arcticTable, hivePartition);
+    dropPartition(hmsClient, mixedTable, hivePartition);
     createPartitionIfAbsent(
-        hmsClient, arcticTable, hivePartition.getValues(), newLocation, dataFiles, accessTimestamp);
+        hmsClient, mixedTable, hivePartition.getValues(), newLocation, dataFiles, accessTimestamp);
   }
 }

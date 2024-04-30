@@ -26,14 +26,14 @@ import org.apache.amoro.hive.table.HiveLocationKind;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.properties.HiveTableProperties;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.BaseLocationKind;
 import org.apache.amoro.table.ChangeLocationKind;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.LocationKind;
 import org.apache.amoro.table.MetadataColumns;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.DataFile;
@@ -53,14 +53,14 @@ import java.util.List;
 
 public class HiveDataTestHelpers {
 
-  public static WriterHelper writerOf(ArcticTable table) {
+  public static WriterHelper writerOf(MixedTable table) {
     return new WriterHelper(table);
   }
 
   public static class WriterHelper {
-    ArcticTable table;
+    MixedTable table;
 
-    public WriterHelper(ArcticTable table) {
+    public WriterHelper(MixedTable table) {
       this.table = table;
     }
 
@@ -168,9 +168,9 @@ public class HiveDataTestHelpers {
   }
 
   /** Assert the consistent-write commit, all file will not be hidden file after commit. */
-  public static void assertWriteConsistentFilesCommit(ArcticTable table) {
+  public static void assertWriteConsistentFilesCommit(MixedTable table) {
     table.refresh();
-    UnkeyedTable unkeyedTable = ArcticTableUtil.baseStore(table);
+    UnkeyedTable unkeyedTable = MixedTableUtil.baseStore(table);
     unkeyedTable
         .newScan()
         .planFiles()
@@ -262,7 +262,7 @@ public class HiveDataTestHelpers {
   }
 
   public static List<Record> readBaseStore(
-      ArcticTable table, Expression expression, Schema projectSchema, boolean useDiskMap) {
+      MixedTable table, Expression expression, Schema projectSchema, boolean useDiskMap) {
     if (projectSchema == null) {
       projectSchema = table.schema();
     }

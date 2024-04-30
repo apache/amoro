@@ -25,17 +25,17 @@ import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 import org.apache.amoro.NoSuchDatabaseException;
-import org.apache.amoro.catalog.ArcticCatalog;
 import org.apache.amoro.flink.InternalCatalogBuilder;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.amoro.flink.table.DynamicTableFactory;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
 import org.apache.amoro.flink.util.ArcticUtils;
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScanTask;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableBuilder;
 import org.apache.amoro.table.TableIdentifier;
@@ -115,7 +115,7 @@ public class MixedCatalog extends AbstractCatalog {
 
   private final InternalCatalogBuilder catalogBuilder;
 
-  private ArcticCatalog internalCatalog;
+  private MixedFormatCatalog internalCatalog;
 
   public MixedCatalog(String name, String defaultDatabase, InternalCatalogBuilder catalogBuilder) {
     super(name, defaultDatabase);
@@ -198,7 +198,7 @@ public class MixedCatalog extends AbstractCatalog {
     if (!internalCatalog.tableExists(tableIdentifier)) {
       throw new TableNotExistException(this.getName(), tablePath);
     }
-    ArcticTable table = internalCatalog.loadTable(tableIdentifier);
+    MixedTable table = internalCatalog.loadTable(tableIdentifier);
     Schema arcticSchema = table.schema();
 
     Map<String, String> arcticProperties = Maps.newHashMap(table.properties());
@@ -357,9 +357,9 @@ public class MixedCatalog extends AbstractCatalog {
     validateFlinkTable(newTable);
 
     TableIdentifier tableIdentifier = getTableIdentifier(tablePath);
-    ArcticTable arcticTable;
+    MixedTable mixedTable;
     try {
-      arcticTable = internalCatalog.loadTable(tableIdentifier);
+      mixedTable = internalCatalog.loadTable(tableIdentifier);
     } catch (NoSuchTableException e) {
       if (!ignoreIfNotExists) {
         throw new TableNotExistException(internalCatalog.name(), tablePath, e);
@@ -370,12 +370,12 @@ public class MixedCatalog extends AbstractCatalog {
 
     // Currently, Flink SQL only support altering table properties.
     validateTableSchemaAndPartition(
-        toCatalogTable(arcticTable, tableIdentifier), (CatalogTable) newTable);
+        toCatalogTable(mixedTable, tableIdentifier), (CatalogTable) newTable);
 
-    if (arcticTable.isUnkeyedTable()) {
-      alterUnKeyedTable(arcticTable.asUnkeyedTable(), newTable);
-    } else if (arcticTable.isKeyedTable()) {
-      alterKeyedTable(arcticTable.asKeyedTable(), newTable);
+    if (mixedTable.isUnkeyedTable()) {
+      alterUnKeyedTable(mixedTable.asUnkeyedTable(), newTable);
+    } else if (mixedTable.isKeyedTable()) {
+      alterKeyedTable(mixedTable.asKeyedTable(), newTable);
     } else {
       throw new UnsupportedOperationException("Unsupported alter table");
     }
@@ -407,7 +407,7 @@ public class MixedCatalog extends AbstractCatalog {
       ObjectPath tablePath, List<Expression> filters)
       throws CatalogException, TableNotPartitionedException {
     TableIdentifier tableIdentifier = getTableIdentifier(tablePath);
-    ArcticTable arcticTable = internalCatalog.loadTable(tableIdentifier);
+    MixedTable mixedTable = internalCatalog.loadTable(tableIdentifier);
 
     org.apache.iceberg.expressions.Expression filter;
     List<org.apache.iceberg.expressions.Expression> expressions =
@@ -422,22 +422,22 @@ public class MixedCatalog extends AbstractCatalog {
             ? Expressions.alwaysTrue()
             : expressions.stream().reduce(Expressions::and).orElse(Expressions.alwaysTrue());
 
-    if (arcticTable.spec().isUnpartitioned()) {
+    if (mixedTable.spec().isUnpartitioned()) {
       throw new TableNotPartitionedException(internalCatalog.name(), tablePath);
     }
     Set<CatalogPartitionSpec> set = Sets.newHashSet();
-    if (arcticTable.isKeyedTable()) {
-      KeyedTable table = arcticTable.asKeyedTable();
+    if (mixedTable.isKeyedTable()) {
+      KeyedTable table = mixedTable.asKeyedTable();
       try (CloseableIterable<CombinedScanTask> combinedScanTasks =
           table.newScan().filter(filter).planTasks()) {
         for (CombinedScanTask combinedScanTask : combinedScanTasks) {
           combinedScanTask.tasks().stream()
               .flatMap(
-                  (Function<KeyedTableScanTask, Stream<ArcticFileScanTask>>)
+                  (Function<KeyedTableScanTask, Stream<MixedFileScanTask>>)
                       keyedTableScanTask ->
                           Stream.of(
                                   keyedTableScanTask.dataTasks(),
-                                  keyedTableScanTask.arcticEquityDeletes())
+                                  keyedTableScanTask.mixedEquityDeletes())
                               .flatMap(List::stream))
               .forEach(
                   arcticFileScanTask -> {
@@ -457,7 +457,7 @@ public class MixedCatalog extends AbstractCatalog {
             String.format("Failed to list partitions of table %s", tablePath), e);
       }
     } else {
-      UnkeyedTable table = arcticTable.asUnkeyedTable();
+      UnkeyedTable table = mixedTable.asUnkeyedTable();
       try (CloseableIterable<FileScanTask> tasks = table.newScan().filter(filter).planFiles()) {
         for (DataFile dataFile : CloseableIterable.transform(tasks, FileScanTask::file)) {
           Map<String, String> map = Maps.newHashMap();
@@ -731,7 +731,7 @@ public class MixedCatalog extends AbstractCatalog {
         table, setLocation, setSnapshotId, pickSnapshotId, setProperties);
   }
 
-  private CatalogTable toCatalogTable(ArcticTable table, TableIdentifier tableIdentifier) {
+  private CatalogTable toCatalogTable(MixedTable table, TableIdentifier tableIdentifier) {
     Schema arcticSchema = table.schema();
 
     Map<String, String> arcticProperties = Maps.newHashMap(table.properties());

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.utils.map;
 
-import org.apache.amoro.ArcticIOException;
+import org.apache.amoro.AmoroIOException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -70,7 +70,7 @@ public class TestRocksDBBackend {
       rocksDBBackend.get(CF_NAME, "name");
       Assert.fail();
     } catch (Throwable t) {
-      Assert.assertTrue(t instanceof ArcticIOException);
+      Assert.assertTrue(t instanceof AmoroIOException);
     }
   }
 

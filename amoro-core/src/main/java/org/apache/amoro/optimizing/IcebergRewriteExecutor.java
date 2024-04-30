@@ -21,7 +21,7 @@ package org.apache.amoro.optimizing;
 import org.apache.amoro.io.reader.GenericCombinedIcebergDataReader;
 import org.apache.amoro.io.writer.GenericIcebergPartitionedFanoutWriter;
 import org.apache.amoro.io.writer.IcebergFanoutPosDeleteWriter;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -42,7 +42,7 @@ import java.util.UUID;
 public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   public IcebergRewriteExecutor(
-      RewriteFilesInput input, ArcticTable table, StructLikeCollections structLikeCollections) {
+      RewriteFilesInput input, MixedTable table, StructLikeCollections structLikeCollections) {
     super(input, table, structLikeCollections);
   }
 

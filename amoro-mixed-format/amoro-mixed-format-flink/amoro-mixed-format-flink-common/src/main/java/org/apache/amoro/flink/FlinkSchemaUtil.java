@@ -28,7 +28,7 @@ import static org.apache.flink.table.descriptors.Schema.SCHEMA_PROCTIME;
 
 import org.apache.amoro.flink.table.ArcticDynamicSource;
 import org.apache.amoro.flink.table.FlinkSource;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -187,7 +187,7 @@ public class FlinkSchemaUtil {
    */
   @Deprecated
   public static List<Types.NestedField> addPrimaryKey(
-      List<Types.NestedField> projectedColumns, ArcticTable table) {
+      List<Types.NestedField> projectedColumns, MixedTable table) {
     List<String> primaryKeys =
         table.isUnkeyedTable()
             ? Collections.EMPTY_LIST
@@ -219,7 +219,7 @@ public class FlinkSchemaUtil {
   @Deprecated
   public static void addPrimaryKey(
       TableSchema.Builder builder,
-      ArcticTable table,
+      MixedTable table,
       TableSchema tableSchema,
       String[] projectedColumns) {
     Set<String> projectedNames = Arrays.stream(projectedColumns).collect(Collectors.toSet());

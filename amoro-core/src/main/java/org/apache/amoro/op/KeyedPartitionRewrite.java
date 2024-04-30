@@ -20,7 +20,7 @@ package org.apache.amoro.op;
 
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.KeyedTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.StatisticsFileUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
@@ -70,12 +70,12 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation
     Preconditions.checkArgument(this.optimizedSequence > 0, "optimized sequence must > 0.");
 
     ReplacePartitions replacePartitions = transaction.newReplacePartitions();
-    replacePartitions.set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
+    replacePartitions.set(MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
     addFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
     CreateSnapshotEvent newSnapshot = (CreateSnapshotEvent) replacePartitions.updateEvent();
 
-    StructLikeMap<Long> oldOptimizedSequence = ArcticTableUtil.readOptimizedSequence(keyedTable);
+    StructLikeMap<Long> oldOptimizedSequence = MixedTableUtil.readOptimizedSequence(keyedTable);
     StructLikeMap<Long> optimizedSequence = StructLikeMap.create(spec.partitionType());
     if (oldOptimizedSequence != null) {
       optimizedSequence.putAll(oldOptimizedSequence);
@@ -88,7 +88,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation
             .withSnapshotId(newSnapshot.snapshotId())
             .build()
             .add(
-                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
                 optimizedSequence,
                 StatisticsFileUtil.createPartitionDataSerializer(table.spec(), Long.class))
             .complete();

@@ -20,10 +20,10 @@ package org.apache.amoro.hive.op;
 
 import org.apache.amoro.hive.utils.HivePartitionUtil;
 import org.apache.amoro.properties.HiveTableProperties;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 public class UpdateHiveFilesTestHelpers {
 
   public static void validateHiveTableValues(
-      HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> exceptFiles)
+      HiveMetaStoreClient hiveClient, MixedTable table, List<DataFile> exceptFiles)
       throws TException {
     if (table.spec().isPartitioned()) {
       assertHivePartitionValues(hiveClient, table, exceptFiles);
@@ -56,7 +56,7 @@ public class UpdateHiveFilesTestHelpers {
   }
 
   private static void assertHivePartitionValues(
-      HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> files) throws TException {
+      HiveMetaStoreClient hiveClient, MixedTable table, List<DataFile> files) throws TException {
     StructLikeMap<List<DataFile>> filesByPartition = groupFilesByPartition(table.spec(), files);
     StructLikeMap<String> pathByPartition = pathByPartition(table.spec(), filesByPartition);
     TableIdentifier identifier = table.id();
@@ -67,7 +67,7 @@ public class UpdateHiveFilesTestHelpers {
 
     Assert.assertEquals(filesByPartition.size(), partitions.size());
 
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(table);
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(table);
     StructLikeMap<Map<String, String>> partitionProperties = baseStore.partitionProperty();
     for (Partition p : partitions) {
       StructLike partitionData = HivePartitionUtil.buildPartitionData(p.getValues(), table.spec());
@@ -93,7 +93,7 @@ public class UpdateHiveFilesTestHelpers {
   }
 
   private static void assertHiveTableValue(
-      HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> files) throws TException {
+      HiveMetaStoreClient hiveClient, MixedTable table, List<DataFile> files) throws TException {
     TableIdentifier identifier = table.id();
     final String database = identifier.getDatabase();
     final String tableName = identifier.getTableName();
@@ -103,7 +103,7 @@ public class UpdateHiveFilesTestHelpers {
     if (fileDir != null) {
       Assert.assertEquals(hiveTable.getSd().getLocation(), fileDir);
 
-      UnkeyedTable baseStore = ArcticTableUtil.baseStore(table);
+      UnkeyedTable baseStore = MixedTableUtil.baseStore(table);
       Map<String, String> properties =
           baseStore.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT);
       Assert.assertEquals(

@@ -27,9 +27,9 @@ import org.apache.amoro.spark.mixed.MixedSparkCatalogBase;
 import org.apache.amoro.spark.mixed.MixedTableStoreType;
 import org.apache.amoro.spark.table.ArcticSparkChangeTable;
 import org.apache.amoro.spark.table.ArcticSparkTable;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.BasicUnkeyedTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableBuilder;
 import org.apache.amoro.table.TableIdentifier;
@@ -71,7 +71,7 @@ public class ArcticSparkCatalog extends MixedSparkCatalogBase {
   public Table loadTable(Identifier ident) throws NoSuchTableException {
     checkAndRefreshCatalogMeta();
     TableIdentifier identifier;
-    ArcticTable table;
+    MixedTable table;
     try {
       if (isInnerTableIdentifier(ident)) {
         MixedTableStoreType type = MixedTableStoreType.from(ident.name());
@@ -88,7 +88,7 @@ public class ArcticSparkCatalog extends MixedSparkCatalogBase {
     return ArcticSparkTable.ofArcticTable(table, catalog, name());
   }
 
-  private Table loadInnerTable(ArcticTable table, MixedTableStoreType type) {
+  private Table loadInnerTable(MixedTable table, MixedTableStoreType type) {
     if (type != null) {
       switch (type) {
         case CHANGE:
@@ -128,7 +128,7 @@ public class ArcticSparkCatalog extends MixedSparkCatalogBase {
       } else {
         builder.withPartitionSpec(spec).withProperties(properties);
       }
-      ArcticTable table = builder.create();
+      MixedTable table = builder.create();
       return ArcticSparkTable.ofArcticTable(table, catalog, name());
     } catch (AlreadyExistsException e) {
       throw new TableAlreadyExistsException("Table " + ident + " already exists", Option.apply(e));
@@ -184,7 +184,7 @@ public class ArcticSparkCatalog extends MixedSparkCatalogBase {
   @Override
   public Table alterTable(Identifier ident, TableChange... changes) throws NoSuchTableException {
     TableIdentifier identifier = buildIdentifier(ident);
-    ArcticTable table;
+    MixedTable table;
     try {
       table = catalog.loadTable(identifier);
     } catch (org.apache.iceberg.exceptions.NoSuchTableException e) {

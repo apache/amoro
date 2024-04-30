@@ -56,7 +56,7 @@ elif [ "$1" == "ams" ]; then
 elif [ "$1" == "optimizer" ]; then
   args=("${args[@]:1}")
   echo "Start Amoro Optimizer"
-  exec "$AMORO_HOME/bin/optimizer.sh " "${args[@]}"
+  exec "$AMORO_HOME/bin/optimizer.sh" "start-foreground" "${args[@]}"
 fi
 
 # Running command in pass-through mode

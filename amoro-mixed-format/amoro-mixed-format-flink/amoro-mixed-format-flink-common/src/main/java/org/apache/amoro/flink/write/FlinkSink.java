@@ -44,8 +44,8 @@ import org.apache.amoro.flink.util.ArcticUtils;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.amoro.flink.util.IcebergClassUtil;
 import org.apache.amoro.flink.util.ProxyUtil;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.DistributionHashMode;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
@@ -93,7 +93,7 @@ public class FlinkSink {
   public static class Builder {
     private DataStream<RowData> rowDataInput = null;
     private ProviderContext context;
-    private ArcticTable table;
+    private MixedTable table;
     private ArcticTableLoader tableLoader;
     private TableSchema flinkSchema;
     private Properties producerConfig;
@@ -114,7 +114,7 @@ public class FlinkSink {
       return this;
     }
 
-    public Builder table(ArcticTable table) {
+    public Builder table(MixedTable table) {
       this.table = table;
       return this;
     }
@@ -309,7 +309,7 @@ public class FlinkSink {
         int writeOperatorParallelism,
         DistributionHashMode distributionHashMode,
         boolean overwrite,
-        ArcticTable table) {
+        MixedTable table) {
       if (distributionHashMode == DistributionHashMode.AUTO) {
         distributionHashMode =
             DistributionHashMode.autoSelect(
@@ -352,17 +352,17 @@ public class FlinkSink {
   }
 
   public static ArcticFileWriter createFileWriter(
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       ShuffleRulePolicy shufflePolicy,
       boolean overwrite,
       RowType flinkSchema,
       ArcticTableLoader tableLoader) {
     return createFileWriter(
-        arcticTable, shufflePolicy, overwrite, flinkSchema, ARCTIC_EMIT_FILE, tableLoader);
+        mixedTable, shufflePolicy, overwrite, flinkSchema, ARCTIC_EMIT_FILE, tableLoader);
   }
 
   public static ArcticFileWriter createFileWriter(
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       ShuffleRulePolicy shufflePolicy,
       boolean overwrite,
       RowType flinkSchema,
@@ -373,7 +373,7 @@ public class FlinkSink {
     }
     long maxOpenFilesSizeBytes =
         PropertyUtil.propertyAsLong(
-            arcticTable.properties(),
+            mixedTable.properties(),
             ARCTIC_WRITE_MAX_OPEN_FILE_SIZE,
             ARCTIC_WRITE_MAX_OPEN_FILE_SIZE_DEFAULT);
     LOG.info(
@@ -382,25 +382,25 @@ public class FlinkSink {
 
     int minFileSplitCount =
         PropertyUtil.propertyAsInt(
-            arcticTable.properties(),
+            mixedTable.properties(),
             TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
             TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT);
 
     boolean upsert =
-        arcticTable.isKeyedTable()
+        mixedTable.isKeyedTable()
             && PropertyUtil.propertyAsBoolean(
-                arcticTable.properties(),
+                mixedTable.properties(),
                 TableProperties.UPSERT_ENABLED,
                 TableProperties.UPSERT_ENABLED_DEFAULT);
     boolean submitEmptySnapshot =
         PropertyUtil.propertyAsBoolean(
-            arcticTable.properties(),
+            mixedTable.properties(),
             SUBMIT_EMPTY_SNAPSHOTS.key(),
             SUBMIT_EMPTY_SNAPSHOTS.defaultValue());
 
     return new ArcticFileWriter(
         shufflePolicy,
-        createTaskWriterFactory(arcticTable, overwrite, flinkSchema),
+        createTaskWriterFactory(mixedTable, overwrite, flinkSchema),
         minFileSplitCount,
         tableLoader,
         upsert,
@@ -408,21 +408,21 @@ public class FlinkSink {
   }
 
   private static TaskWriterFactory<RowData> createTaskWriterFactory(
-      ArcticTable arcticTable, boolean overwrite, RowType flinkSchema) {
-    return new ArcticRowDataTaskWriterFactory(arcticTable, flinkSchema, overwrite);
+      MixedTable mixedTable, boolean overwrite, RowType flinkSchema) {
+    return new ArcticRowDataTaskWriterFactory(mixedTable, flinkSchema, overwrite);
   }
 
   public static OneInputStreamOperator<WriteResult, Void> createFileCommitter(
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       ArcticTableLoader tableLoader,
       boolean overwrite,
       String branch,
       PartitionSpec spec) {
-    return createFileCommitter(arcticTable, tableLoader, overwrite, branch, spec, ARCTIC_EMIT_FILE);
+    return createFileCommitter(mixedTable, tableLoader, overwrite, branch, spec, ARCTIC_EMIT_FILE);
   }
 
   public static OneInputStreamOperator<WriteResult, Void> createFileCommitter(
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       ArcticTableLoader tableLoader,
       boolean overwrite,
       String branch,
@@ -435,7 +435,7 @@ public class FlinkSink {
     return (OneInputStreamOperator)
         ProxyUtil.getProxy(
             IcebergClassUtil.newIcebergFilesCommitter(
-                tableLoader, overwrite, branch, spec, arcticTable.io()),
-            arcticTable.io());
+                tableLoader, overwrite, branch, spec, mixedTable.io()),
+            mixedTable.io());
   }
 }

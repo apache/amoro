@@ -41,10 +41,10 @@ public class TestDefaultKeyedFile extends TableTestBase {
 
   @Test
   public void testDefaultKeyedFile() {
-    Long txId = getArcticTable().asKeyedTable().beginTransaction("begin");
+    Long txId = getMixedTable().asKeyedTable().beginTransaction("begin");
     List<DataFile> writeFiles =
         MixedDataTestHelpers.writeChangeStore(
-            getArcticTable().asKeyedTable(), txId, ChangeAction.INSERT, writeRecords(), false);
+            getMixedTable().asKeyedTable(), txId, ChangeAction.INSERT, writeRecords(), false);
 
     Assert.assertEquals(1, writeFiles.size());
     DefaultKeyedFile defaultKeyedFile = DefaultKeyedFile.parseChange(writeFiles.get(0));

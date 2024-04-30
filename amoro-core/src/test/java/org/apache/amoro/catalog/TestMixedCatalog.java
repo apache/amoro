@@ -24,8 +24,8 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.mixed.BasicMixedIcebergCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableBuilder;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.blocker.TableBlockerManager;
@@ -64,7 +64,7 @@ public class TestMixedCatalog extends CatalogTestBase {
     return BasicMixedIcebergCatalog.class.getName();
   }
 
-  protected void validateCreatedTable(ArcticTable table, boolean withKey) throws TException {
+  protected void validateCreatedTable(MixedTable table, boolean withKey) throws TException {
     Assert.assertEquals(getCreateTableSchema().asStruct(), table.schema().asStruct());
     Assert.assertEquals(getCreateTableSpec(), table.spec());
     Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, table.id());
@@ -120,7 +120,7 @@ public class TestMixedCatalog extends CatalogTestBase {
   }
 
   private void testCreateTableWithCatalogTableProperties(boolean withKey) throws TException {
-    ArcticTable mixedTable = createTestTable(withKey);
+    MixedTable mixedTable = createTestTable(withKey);
     validateCreatedTable(mixedTable, withKey);
 
     // equal to catalog default value
@@ -195,7 +195,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_LOG_STORE,
             "true");
     refreshMixedFormatCatalog();
-    ArcticTable createTable = createTestTable(withKey);
+    MixedTable createTable = createTestTable(withKey);
     Assert.assertFalse(
         PropertyUtil.propertyAsBoolean(
             createTable.properties(),
@@ -289,7 +289,7 @@ public class TestMixedCatalog extends CatalogTestBase {
     return builder;
   }
 
-  protected ArcticTable createTestTable(boolean withKey) {
+  protected MixedTable createTestTable(boolean withKey) {
     TableBuilder builder = createTestTableBuilder(withKey);
     return builder.create();
   }

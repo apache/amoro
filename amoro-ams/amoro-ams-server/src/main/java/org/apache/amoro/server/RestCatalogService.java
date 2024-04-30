@@ -46,7 +46,7 @@ import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.internal.InternalTableCreator;
 import org.apache.amoro.server.table.internal.InternalTableHandler;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableOperations;
@@ -435,7 +435,7 @@ public class RestCatalogService extends PersistentBase {
     ServerCatalog internalCatalog = tableService.getServerCatalog(catalog);
     Preconditions.checkArgument(
         internalCatalog instanceof InternalCatalog, "The catalog is not an iceberg rest catalog");
-    Set<TableFormat> tableFormats = ArcticCatalogUtil.tableFormats(internalCatalog.getMetadata());
+    Set<TableFormat> tableFormats = MixedCatalogUtil.tableFormats(internalCatalog.getMetadata());
     Preconditions.checkArgument(
         tableFormats.size() == 1
             && (tableFormats.contains(TableFormat.ICEBERG)

@@ -73,13 +73,13 @@ public class TestIcebergPartitionPlan extends TestUnkeyedPartitionPlan {
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
     return new IcebergPartitionPlan(
-        getTableRuntime(), getArcticTable(), getPartition(), System.currentTimeMillis());
+        getTableRuntime(), getMixedTable(), getPartition(), System.currentTimeMillis());
   }
 
   @Override
   protected TableFileScanHelper getTableFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable(), true);
-    return new IcebergTableFileScanHelper(getArcticTable(), baseSnapshotId);
+    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getMixedTable(), true);
+    return new IcebergTableFileScanHelper(getMixedTable(), baseSnapshotId);
   }
 
   protected Map<String, String> buildProperties() {

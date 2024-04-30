@@ -62,7 +62,7 @@ public class TestContinuousSplitPlannerImpl extends FlinkTestBase {
 
   @Before
   public void init() throws IOException {
-    testKeyedTable = getArcticTable().asKeyedTable();
+    testKeyedTable = getMixedTable().asKeyedTable();
     // write base
     {
       TaskWriter<RowData> taskWriter = createTaskWriter(true);

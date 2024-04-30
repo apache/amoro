@@ -80,8 +80,8 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
   public void testWritePosDelete() throws IOException {
     StructLike partitionData = getPartitionData();
     GenericAppenderFactory appenderFactory =
-        new GenericAppenderFactory(getArcticTable().schema(), getArcticTable().spec());
-    appenderFactory.setAll(getArcticTable().properties());
+        new GenericAppenderFactory(getMixedTable().schema(), getMixedTable().spec());
+    appenderFactory.setAll(getMixedTable().properties());
     appenderFactory.set(
         org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX
             + MetadataColumns.DELETE_FILE_PATH.name(),
@@ -96,8 +96,8 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
             appenderFactory,
             fileFormat,
             partitionData,
-            getArcticTable().io(),
-            getArcticTable().asUnkeyedTable().encryption(),
+            getMixedTable().io(),
+            getMixedTable().asUnkeyedTable().encryption(),
             "suffix");
 
     String dataDir = temp.newFolder("data").getPath();

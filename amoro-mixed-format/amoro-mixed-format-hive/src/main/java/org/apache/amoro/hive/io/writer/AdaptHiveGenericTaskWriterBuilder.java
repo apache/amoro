@@ -29,11 +29,11 @@ import org.apache.amoro.io.writer.OutputFileFactory;
 import org.apache.amoro.io.writer.SortedPosDeleteWriter;
 import org.apache.amoro.io.writer.TaskWriterBuilder;
 import org.apache.amoro.properties.HiveTableProperties;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.BaseLocationKind;
 import org.apache.amoro.table.ChangeLocationKind;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.LocationKind;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
@@ -58,7 +58,7 @@ import java.util.Locale;
 /** Builder to create writers for {@link KeyedTable} writing {@link Record}. */
 public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Record> {
 
-  private final ArcticTable table;
+  private final MixedTable table;
 
   private Long transactionId;
   private int partitionId = 0;
@@ -69,7 +69,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   private boolean orderedWriter = false;
   private Boolean hiveConsistentWrite;
 
-  private AdaptHiveGenericTaskWriterBuilder(ArcticTable table) {
+  private AdaptHiveGenericTaskWriterBuilder(MixedTable table) {
     this.table = table;
     this.hiveConsistentWrite =
         PropertyUtil.propertyAsBoolean(
@@ -325,7 +325,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     }
   }
 
-  public static AdaptHiveGenericTaskWriterBuilder builderFor(ArcticTable table) {
+  public static AdaptHiveGenericTaskWriterBuilder builderFor(MixedTable table) {
     return new AdaptHiveGenericTaskWriterBuilder(table);
   }
 }

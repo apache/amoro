@@ -19,9 +19,9 @@
 package org.apache.amoro.hive.io.reader;
 
 import org.apache.amoro.data.DataTreeNode;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.reader.AbstractKeyedDataReader;
-import org.apache.amoro.io.reader.ArcticDeleteFilter;
+import org.apache.amoro.io.reader.MixedDeleteFilter;
 import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.map.StructLikeCollections;
@@ -43,7 +43,7 @@ import java.util.function.Function;
 public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedDataReader<T> {
 
   public AbstractAdaptHiveKeyedDataReader(
-      ArcticFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
@@ -67,7 +67,7 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
   }
 
   public AbstractAdaptHiveKeyedDataReader(
-      ArcticFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
@@ -87,7 +87,7 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
   }
 
   public AbstractAdaptHiveKeyedDataReader(
-      ArcticFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
@@ -109,14 +109,14 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
   }
 
   @Override
-  protected ArcticDeleteFilter<T> createArcticDeleteFilter(
+  protected MixedDeleteFilter<T> createMixedDeleteFilter(
       KeyedTableScanTask keyedTableScanTask,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
       Set<DataTreeNode> sourceNodes,
       StructLikeCollections structLikeCollections) {
-    return new AdaptHiveGenericArcticDeleteFilter(
+    return new AdaptHiveGenericMixedDeleteFilter(
         keyedTableScanTask,
         tableSchema,
         projectedSchema,
@@ -146,11 +146,11 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
     return builder.build();
   }
 
-  private class AdaptHiveGenericArcticDeleteFilter extends AdaptHiveArcticDeleteFilter<T> {
+  private class AdaptHiveGenericMixedDeleteFilter extends AdaptHiveMixedDeleteFilter<T> {
 
     protected Function<T, StructLike> asStructLike;
 
-    protected AdaptHiveGenericArcticDeleteFilter(
+    protected AdaptHiveGenericMixedDeleteFilter(
         KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema,
         Schema requestedSchema,
@@ -160,7 +160,7 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
           AbstractAdaptHiveKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
-    protected AdaptHiveGenericArcticDeleteFilter(
+    protected AdaptHiveGenericMixedDeleteFilter(
         KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema,
         Schema requestedSchema,
@@ -178,7 +178,7 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
           AbstractAdaptHiveKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
-    protected AdaptHiveGenericArcticDeleteFilter(
+    protected AdaptHiveGenericMixedDeleteFilter(
         KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema,
         Schema requestedSchema,
@@ -200,7 +200,7 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
     }
 
     @Override
-    protected ArcticFileIO getArcticFileIo() {
+    protected AuthenticatedFileIO getFileIO() {
       return fileIO;
     }
   }

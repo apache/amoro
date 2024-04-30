@@ -19,9 +19,9 @@
 package org.apache.amoro.io.writer;
 
 import org.apache.amoro.data.ChangeAction;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
@@ -41,13 +41,13 @@ import java.util.Locale;
 /** Builder to create writers for {@link KeyedTable} writting {@link Record}. */
 public class GenericTaskWriters {
 
-  public static Builder builderFor(ArcticTable table) {
+  public static Builder builderFor(MixedTable table) {
     return new Builder(table);
   }
 
   public static class Builder {
 
-    private final ArcticTable table;
+    private final MixedTable table;
 
     private final UnkeyedTable base;
     private final ChangeTable change;
@@ -59,7 +59,7 @@ public class GenericTaskWriters {
     private ChangeAction changeAction = ChangeAction.INSERT;
     private boolean orderedWriter = false;
 
-    Builder(ArcticTable table) {
+    Builder(MixedTable table) {
       this.table = table;
       if (table.isKeyedTable()) {
         this.base = table.asKeyedTable().baseTable();

@@ -24,8 +24,7 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.config.Configurations;
-import org.apache.amoro.formats.mixed.MixedTable;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.mixed.InternalMixedIcebergCatalog;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.TableMetadata;
@@ -34,9 +33,9 @@ import org.apache.amoro.server.table.internal.InternalMixedIcebergHandler;
 import org.apache.amoro.server.table.internal.InternalTableCreator;
 import org.apache.amoro.server.table.internal.InternalTableHandler;
 import org.apache.amoro.server.utils.InternalTableUtil;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.BasicKeyedTable;
 import org.apache.amoro.table.BasicUnkeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.TableOperations;
@@ -118,8 +117,8 @@ public class InternalMixedCatalogImpl extends InternalIcebergCatalogImpl {
 
     org.apache.amoro.table.TableIdentifier tableIdentifier =
         org.apache.amoro.table.TableIdentifier.of(name(), database, tableName);
-    ArcticFileIO fileIO = InternalTableUtil.newIcebergFileIo(getMetadata());
-    ArcticTable mixedIcebergTable;
+    AuthenticatedFileIO fileIO = InternalTableUtil.newIcebergFileIo(getMetadata());
+    MixedTable mixedIcebergTable;
 
     BaseTable baseTable = loadTableStore(tableMetadata, false);
     if (InternalTableUtil.isKeyedMixedTable(tableMetadata)) {
@@ -144,7 +143,8 @@ public class InternalMixedCatalogImpl extends InternalIcebergCatalogImpl {
               tableIdentifier, baseTable, fileIO, getMetadata().getCatalogProperties());
     }
 
-    return new MixedTable(mixedIcebergTable, TableFormat.MIXED_ICEBERG);
+    return new org.apache.amoro.formats.mixed.MixedTable(
+        mixedIcebergTable, TableFormat.MIXED_ICEBERG);
   }
 
   protected TableFormat format() {

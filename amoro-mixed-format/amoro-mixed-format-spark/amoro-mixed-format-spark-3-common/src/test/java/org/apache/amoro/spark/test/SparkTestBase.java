@@ -23,7 +23,7 @@ import org.apache.amoro.Constants;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.UnifiedCatalogLoader;
-import org.apache.amoro.client.ArcticThriftUrl;
+import org.apache.amoro.client.AmsThriftUrl;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.spark.test.utils.TestTableUtil;
 import org.apache.hadoop.hive.metastore.TableType;
@@ -133,7 +133,7 @@ public class SparkTestBase {
     } catch (NoSuchElementException e) {
       uri = spark().conf().get("spark.sql.catalog." + sparkCatalog + ".url");
     }
-    ArcticThriftUrl catalogUri = ArcticThriftUrl.parse(uri, Constants.THRIFT_TABLE_SERVICE_NAME);
+    AmsThriftUrl catalogUri = AmsThriftUrl.parse(uri, Constants.THRIFT_TABLE_SERVICE_NAME);
     return catalogUri.catalogName();
   }
 

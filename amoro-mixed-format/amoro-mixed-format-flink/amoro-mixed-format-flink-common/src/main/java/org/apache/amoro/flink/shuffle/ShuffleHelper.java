@@ -21,8 +21,8 @@ package org.apache.amoro.flink.shuffle;
 import static org.apache.iceberg.IcebergSchemaUtil.projectPartition;
 
 import org.apache.amoro.data.PrimaryKeyData;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.util.CollectionUtil;
@@ -46,7 +46,7 @@ public class ShuffleHelper implements Serializable {
 
   public static ShuffleHelper EMPTY = new ShuffleHelper();
 
-  public static ShuffleHelper build(ArcticTable table, Schema schema, RowType rowType) {
+  public static ShuffleHelper build(MixedTable table, Schema schema, RowType rowType) {
     PartitionKey partitionKey = null;
 
     if (table.spec() != null && !CollectionUtil.isNullOrEmpty(table.spec().fields())) {

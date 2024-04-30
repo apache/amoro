@@ -24,7 +24,7 @@ import org.apache.amoro.io.IcebergDataTestHelpers;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.io.reader.GenericUnkeyedDataReader;
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
@@ -207,21 +207,20 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
       Arrays.stream(files).forEach(appendFiles::appendFile);
       appendFiles.commit();
 
-      ArcticTable arcticTable =
-          (ArcticTable) serverCatalog.loadTable(database, table).originalTable();
+      MixedTable mixedTable = (MixedTable) serverCatalog.loadTable(database, table).originalTable();
 
-      Assertions.assertEquals(TableFormat.ICEBERG, arcticTable.format());
+      Assertions.assertEquals(TableFormat.ICEBERG, mixedTable.format());
       GenericUnkeyedDataReader reader =
           new GenericUnkeyedDataReader(
-              arcticTable.io(),
-              arcticTable.schema(),
-              arcticTable.schema(),
+              mixedTable.io(),
+              mixedTable.schema(),
+              mixedTable.schema(),
               null,
               false,
               IdentityPartitionConverters::convertConstant,
               false);
       List<Record> records =
-          MixedDataTestHelpers.readBaseStore(arcticTable, reader, Expressions.alwaysTrue());
+          MixedDataTestHelpers.readBaseStore(mixedTable, reader, Expressions.alwaysTrue());
       Assertions.assertEquals(newRecords.size(), records.size());
     }
   }

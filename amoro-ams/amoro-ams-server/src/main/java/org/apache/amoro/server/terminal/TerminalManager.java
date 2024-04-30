@@ -34,7 +34,7 @@ import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.terminal.kyuubi.KyuubiTerminalSessionFactory;
 import org.apache.amoro.server.terminal.local.LocalSessionFactory;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -238,7 +238,7 @@ public class TerminalManager {
 
   private String catalogConnectorType(CatalogMeta catalogMeta) {
     String catalogType = catalogMeta.getCatalogType();
-    Set<TableFormat> tableFormatSet = ArcticCatalogUtil.tableFormats(catalogMeta);
+    Set<TableFormat> tableFormatSet = MixedCatalogUtil.tableFormats(catalogMeta);
 
     if (catalogType.equalsIgnoreCase(CatalogType.AMS.name())) {
       if (tableFormatSet.contains(TableFormat.MIXED_ICEBERG)) {
@@ -281,7 +281,7 @@ public class TerminalManager {
     if (catalogMeta.getStorageConfigs() != null) {
       Map<String, String> storageConfigs = catalogMeta.getStorageConfigs();
       if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equalsIgnoreCase(
-          ArcticCatalogUtil.getCompatibleStorageType(storageConfigs))) {
+          MixedCatalogUtil.getCompatibleStorageType(storageConfigs))) {
         builder
             .withBase64MetaStoreSite(
                 catalogMeta
@@ -363,7 +363,7 @@ public class TerminalManager {
   }
 
   private void applyClientProperties(CatalogMeta catalogMeta) {
-    Set<TableFormat> formats = ArcticCatalogUtil.tableFormats(catalogMeta);
+    Set<TableFormat> formats = MixedCatalogUtil.tableFormats(catalogMeta);
     String catalogType = catalogMeta.getCatalogType();
     if (formats.contains(TableFormat.ICEBERG)) {
       if (CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(catalogType)) {

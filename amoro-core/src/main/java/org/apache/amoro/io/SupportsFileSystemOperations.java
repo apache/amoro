@@ -21,10 +21,11 @@ package org.apache.amoro.io;
 import org.apache.iceberg.io.SupportsPrefixOperations;
 
 /**
- * A mixed-in interface for {@link ArcticFileIO} indicate that the storage system supports the file
- * system operations such as directories operations.
+ * A mixed-in interface for {@link AuthenticatedFileIO} indicate that the storage system supports
+ * the file system operations such as directories operations.
  */
-public interface SupportsFileSystemOperations extends ArcticFileIO, SupportsPrefixOperations {
+public interface SupportsFileSystemOperations
+    extends AuthenticatedFileIO, SupportsPrefixOperations {
 
   /**
    * Create a new directory and all non-existent parents directories.

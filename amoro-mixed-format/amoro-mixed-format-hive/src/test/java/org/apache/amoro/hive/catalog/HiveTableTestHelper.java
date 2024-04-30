@@ -24,8 +24,8 @@ import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.hive.io.HiveDataTestHelpers;
 import org.apache.amoro.io.MixedDataTestHelpers;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
@@ -113,7 +113,7 @@ public class HiveTableTestHelper extends BasicTableTestHelper {
 
   @Override
   public List<DataFile> writeBaseStore(
-      ArcticTable table, long txId, List<Record> records, boolean orderedWrite) {
+      MixedTable table, long txId, List<Record> records, boolean orderedWrite) {
     return HiveDataTestHelpers.writerOf(table)
         .transactionId(txId)
         .orderedWrite(orderedWrite)
@@ -139,7 +139,7 @@ public class HiveTableTestHelper extends BasicTableTestHelper {
 
   @Override
   public List<Record> readBaseStore(
-      ArcticTable table, Expression expression, Schema projectSchema, boolean useDiskMap) {
+      MixedTable table, Expression expression, Schema projectSchema, boolean useDiskMap) {
     return HiveDataTestHelpers.readBaseStore(table, expression, projectSchema, useDiskMap);
   }
 }

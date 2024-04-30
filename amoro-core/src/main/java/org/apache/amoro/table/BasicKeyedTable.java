@@ -19,7 +19,7 @@
 package org.apache.amoro.table;
 
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.op.KeyedPartitionRewrite;
 import org.apache.amoro.op.KeyedSchemaUpdate;
 import org.apache.amoro.op.OverwriteBaseFiles;
@@ -139,7 +139,7 @@ public class BasicKeyedTable implements KeyedTable {
   }
 
   @Override
-  public ArcticFileIO io() {
+  public AuthenticatedFileIO io() {
     return baseTable.io();
   }
 
@@ -211,9 +211,9 @@ public class BasicKeyedTable implements KeyedTable {
     public BaseInternalTable(
         TableIdentifier tableIdentifier,
         Table baseIcebergTable,
-        ArcticFileIO arcticFileIO,
+        AuthenticatedFileIO authenticatedFileIO,
         Map<String, String> catalogProperties) {
-      super(tableIdentifier, baseIcebergTable, arcticFileIO, catalogProperties);
+      super(tableIdentifier, baseIcebergTable, authenticatedFileIO, catalogProperties);
     }
   }
 
@@ -222,9 +222,9 @@ public class BasicKeyedTable implements KeyedTable {
     public ChangeInternalTable(
         TableIdentifier tableIdentifier,
         Table changeIcebergTable,
-        ArcticFileIO arcticFileIO,
+        AuthenticatedFileIO authenticatedFileIO,
         Map<String, String> catalogProperties) {
-      super(tableIdentifier, changeIcebergTable, arcticFileIO, catalogProperties);
+      super(tableIdentifier, changeIcebergTable, authenticatedFileIO, catalogProperties);
     }
 
     @Override

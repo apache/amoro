@@ -23,10 +23,10 @@ import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.flink.read.hybrid.split.MergeOnReadSplit;
 import org.apache.amoro.flink.read.hybrid.split.SnapshotSplit;
-import org.apache.amoro.scan.ArcticFileScanTask;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
 import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScan;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.expressions.Expression;
@@ -88,7 +88,7 @@ public class FlinkSplitPlanner {
 
   private static List<ArcticSplit> planFullTable(
       BaseAndChangeTask baseAndChangeTask, AtomicInteger splitCount) {
-    Collection<ArcticFileScanTask> baseTasks = baseAndChangeTask.allBaseTasks();
+    Collection<MixedFileScanTask> baseTasks = baseAndChangeTask.allBaseTasks();
     List<ArcticSplit> allSplits =
         baseTasks.stream()
             .map(
@@ -160,22 +160,22 @@ public class FlinkSplitPlanner {
   }
 
   private static class TransactionTask {
-    private Set<ArcticFileScanTask> insertTasks;
-    private Set<ArcticFileScanTask> deleteTasks;
+    private Set<MixedFileScanTask> insertTasks;
+    private Set<MixedFileScanTask> deleteTasks;
     Long transactionId;
 
     public TransactionTask(Long transactionId) {
       this.transactionId = transactionId;
     }
 
-    public void putInsertTask(ArcticFileScanTask insert) {
+    public void putInsertTask(MixedFileScanTask insert) {
       if (insertTasks == null) {
         insertTasks = new HashSet<>();
       }
       insertTasks.add(insert);
     }
 
-    public void putDeleteTask(ArcticFileScanTask delete) {
+    public void putDeleteTask(MixedFileScanTask delete) {
       if (deleteTasks == null) {
         deleteTasks = new HashSet<>();
       }
@@ -184,12 +184,11 @@ public class FlinkSplitPlanner {
   }
 
   public static class BaseAndChangeTask {
-    Collection<ArcticFileScanTask> allBaseTasks;
+    Collection<MixedFileScanTask> allBaseTasks;
     Collection<TransactionTask> changeTableTasks;
 
     private BaseAndChangeTask(
-        Collection<ArcticFileScanTask> allBaseTasks,
-        Map<Long, TransactionTask> changeTableTaskMap) {
+        Collection<MixedFileScanTask> allBaseTasks, Map<Long, TransactionTask> changeTableTaskMap) {
       this.allBaseTasks = allBaseTasks;
       if (changeTableTaskMap == null || changeTableTaskMap.isEmpty()) {
         this.changeTableTasks = Collections.emptyList();
@@ -208,7 +207,7 @@ public class FlinkSplitPlanner {
         int count = 0;
         while (tasksIterator.hasNext()) {
           count++;
-          ArcticFileScanTask fileScanTask = (ArcticFileScanTask) tasksIterator.next();
+          MixedFileScanTask fileScanTask = (MixedFileScanTask) tasksIterator.next();
           if (fileScanTask.file().type().equals(DataFileType.INSERT_FILE)) {
             taskMap(Collections.singleton(fileScanTask), true, transactionTasks);
           } else if (fileScanTask.file().type().equals(DataFileType.EQ_DELETE_FILE)) {
@@ -233,7 +232,7 @@ public class FlinkSplitPlanner {
 
     public static BaseAndChangeTask of(CloseableIterable<CombinedScanTask> combinedScanTasks) {
       try (CloseableIterator<CombinedScanTask> initTasks = combinedScanTasks.iterator()) {
-        final Set<ArcticFileScanTask> allBaseTasks = new HashSet<>();
+        final Set<MixedFileScanTask> allBaseTasks = new HashSet<>();
         final Map<Long, TransactionTask> transactionTasks = new HashMap<>();
 
         while (initTasks.hasNext()) {
@@ -245,10 +244,10 @@ public class FlinkSplitPlanner {
                     allBaseTasks.addAll(keyedTableScanTask.baseTasks());
 
                     taskMap(keyedTableScanTask.insertTasks(), true, transactionTasks);
-                    taskMap(keyedTableScanTask.arcticEquityDeletes(), false, transactionTasks);
+                    taskMap(keyedTableScanTask.mixedEquityDeletes(), false, transactionTasks);
                   });
         }
-        List<ArcticFileScanTask> baseTasks =
+        List<MixedFileScanTask> baseTasks =
             allBaseTasks.stream()
                 .sorted(Comparator.comparing(t -> t.file().transactionId()))
                 .collect(Collectors.toList());
@@ -260,7 +259,7 @@ public class FlinkSplitPlanner {
     }
 
     private static void taskMap(
-        Collection<ArcticFileScanTask> tasks,
+        Collection<MixedFileScanTask> tasks,
         boolean insert,
         Map<Long, TransactionTask> transactionTaskMap) {
       tasks.forEach(
@@ -277,7 +276,7 @@ public class FlinkSplitPlanner {
           });
     }
 
-    public Collection<ArcticFileScanTask> allBaseTasks() {
+    public Collection<MixedFileScanTask> allBaseTasks() {
       return allBaseTasks;
     }
 

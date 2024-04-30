@@ -27,7 +27,7 @@ import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.hive.table.UnkeyedHiveTable;
 import org.apache.amoro.properties.HiveTableProperties;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.TableType;
@@ -139,7 +139,7 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
         identifier,
         new ArrayList<>(),
         new HashMap<>());
-    ArcticTable table = getMixedFormatCatalog().loadTable(identifier);
+    MixedTable table = getMixedFormatCatalog().loadTable(identifier);
     UnkeyedHiveTable baseTable =
         table.isKeyedTable()
             ? (UnkeyedHiveTable) table.asKeyedTable().baseTable()

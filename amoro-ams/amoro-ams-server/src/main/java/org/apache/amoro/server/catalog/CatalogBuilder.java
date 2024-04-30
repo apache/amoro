@@ -29,7 +29,7 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.ArcticManagementConf;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -63,7 +63,7 @@ public class CatalogBuilder {
   public static ServerCatalog buildServerCatalog(
       CatalogMeta catalogMeta, Configurations serverConfiguration) {
     String type = catalogMeta.getCatalogType();
-    Set<TableFormat> tableFormats = ArcticCatalogUtil.tableFormats(catalogMeta);
+    Set<TableFormat> tableFormats = MixedCatalogUtil.tableFormats(catalogMeta);
 
     Preconditions.checkState(
         formatSupportedMatrix.containsKey(type), "unsupported catalog type: %s", type);
