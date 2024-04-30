@@ -55,7 +55,7 @@ core/derby.log
 target/
 
 # keberos configs
-*arctic_krb_conf/
+*amoro_krb_conf/
 
 # local config
 conf/
