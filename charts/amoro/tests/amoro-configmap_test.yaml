@@ -49,7 +49,7 @@ tests:
           pattern:
             |
             bind-port: 1260
-  - it: Amoro configMap should reflect database.username if set type to mysql
+  - it: Amoro configMap should reflect database.username if type is set to mysql
     set:
       amoroConf:
         database:
@@ -61,7 +61,7 @@ tests:
           pattern:
             |
             username: "aaa"
-  - it: Amoro configMap should reflect terminal iceberg params if set terminal to local
+  - it: Amoro configMap should reflect terminal iceberg params if terminal.backend is set to local
     set:
       amoroConf:
         terminal:
@@ -73,7 +73,7 @@ tests:
           pattern:
             |
             local.spark.sql.iceberg.handle-timestamp-without-timezone: true
-  - it: Amoro configMap should show kyuubi url if set terminal to kyuubi
+  - it: Amoro configMap should show kyuubi url if terminal.backend is set to kyuubi
     set:
       amoroConf:
         terminal:
@@ -85,7 +85,7 @@ tests:
           pattern:
             |
             kyuubi.jdbc.url: "jdbc:hive2://127.0.0.1:10009/"
-  - it: Amoro configMap should show flink if flink optimizer enabled
+  - it: Amoro configMap should show flink if flink optimizer enabled is set true
     set:
       optimizer:
         flink:
@@ -97,7 +97,7 @@ tests:
           pattern:
             |
             - name: flink1
-  - it: Amoro configMap should show spark if spark optimizer enabled
+  - it: Amoro configMap should show spark if spark optimizer enabled is set true
     set:
       optimizer:
         spark:
@@ -109,7 +109,7 @@ tests:
           pattern:
             |
             - name: spark1
-  - it: Amoro configMap should show local if local optimizer enabled
+  - it: Amoro configMap should show local if local optimizer enabled is set true
     set:
       optimizer:
         local:

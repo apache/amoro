@@ -43,7 +43,7 @@ tests:
           path: spec.template.metadata.labels
           content:
             app.kubernetes.io/name: test1
-  - it: Amoro Deployment should contains imagePullSecrets if set
+  - it: Amoro Deployment should contain imagePullSecrets if set
     template: amoro-deployment.yaml
     set:
       imagePullSecrets:
@@ -102,7 +102,7 @@ tests:
       - equal:
           path: spec.template.spec.containers[?(@.name == "amoro-ams")].imagePullPolicy
           value: Always
-  - it: Amoro Deployment should add env if database type is mysql
+  - it: Amoro Deployment should add env if database type is set to mysql
     template: amoro-deployment.yaml
     set:
       fullnameOverride: test
@@ -126,7 +126,7 @@ tests:
               secretKeyRef:
                 name: test
                 key: password
-  - it: Amoro Deployment should add env if database type is postgres
+  - it: Amoro Deployment should add env if database type is set to postgres
     template: amoro-deployment.yaml
     set:
       fullnameOverride: test
@@ -205,7 +205,7 @@ tests:
           content:
             name: optimizing
             containerPort: 1261
-  - it: Amoro Deployment should not exists livenessProbe if enabled is false
+  - it: Amoro Deployment should not exist livenessProbe if enabled is set to false
     template: amoro-deployment.yaml
     set:
       livenessProbe:
@@ -213,7 +213,7 @@ tests:
     asserts:
       - notExists:
           path: spec.template.spec.containers[?(@.name == "amoro-ams")].livenessProbe
-  - it: Amoro Deployment should exists livenessProbe if enabled is true
+  - it: Amoro Deployment should exist livenessProbe if enabled is set to true
     template: amoro-deployment.yaml
     set:
       livenessProbe:
@@ -236,7 +236,7 @@ tests:
       - equal:
           path: spec.template.spec.containers[?(@.name == "amoro-ams")].livenessProbe.successThreshold
           value: 1
-  - it: Amoro Deployment should not exists readinessProbe if enabled is false
+  - it: Amoro Deployment should not exist readinessProbe if enabled is set to false
     template: amoro-deployment.yaml
     set:
       readinessProbe:
@@ -244,7 +244,7 @@ tests:
     asserts:
       - notExists:
           path: spec.template.spec.containers[?(@.name == "amoro-ams")].readinessProbe
-  - it: Amoro Deployment should exists readinessProbe if enabled is true
+  - it: Amoro Deployment should exist readinessProbe if enabled is set to true
     template: amoro-deployment.yaml
     set:
       readinessProbe:
