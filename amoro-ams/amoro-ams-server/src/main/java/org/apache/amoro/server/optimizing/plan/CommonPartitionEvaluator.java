@@ -317,8 +317,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   public boolean isMinorNecessary() {
-    int smallFileCount = fragmentFileCount + equalityDeleteFileCount + posDeleteFileCount;
-    return smallFileCount >= config.getMinorLeastFileCount()
+    int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
+    return smallFileCount + posDeleteFileCount >= config.getMinorLeastFileCount()
         || (smallFileCount > 1 && reachMinorInterval())
         || combinePosSegmentFileCount > 0;
   }
