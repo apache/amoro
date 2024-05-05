@@ -63,3 +63,19 @@ Configuration guide documentation for Amoro lives [on the website](https://amoro
 ## Contributing
 
 Want to help build Amoro? Check out our [contributing documentation](https://amoro.apache.org/join-community/).
+
+### Unit Test
+
+Helm Chart for Amoro supports Unit Tests by [helm-unittest](https://github.com/helm-unittest/helm-unittest). Before 
+submitting PRs, please let all the tests passed .
+
+2 Steps for test. (Same as above，you should rebuild the charts/ first)
+
+- Install `helm-unittest`
+```shell
+helm plugin install https://github.com/helm-unittest/helm-unittest.git
+```
+- Execute Tests.
+```shell
+helm unittest ../amoro
+```
