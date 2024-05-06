@@ -37,8 +37,8 @@ import org.apache.amoro.flink.kafka.testutils.KafkaContainerTest;
 import org.apache.amoro.flink.metric.MetricsGenerator;
 import org.apache.amoro.flink.shuffle.LogRecordV1;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
-import org.apache.amoro.flink.table.ArcticTableLoader;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.table.AmoroTableLoader;
+import org.apache.amoro.flink.util.AmoroUtils;
 import org.apache.amoro.flink.util.DataUtil;
 import org.apache.amoro.flink.util.TestGlobalAggregateManager;
 import org.apache.amoro.flink.util.TestOneInputStreamOperatorIntern;
@@ -94,7 +94,7 @@ import java.util.stream.Collectors;
 @RunWith(Parameterized.class)
 public class TestAutomaticLogWriter extends FlinkTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestAutomaticLogWriter.class);
-  public ArcticTableLoader tableLoader;
+  public AmoroTableLoader tableLoader;
   public static final TestGlobalAggregateManager GLOBAL_AGGREGATE_MANGER =
       new TestGlobalAggregateManager();
 
@@ -131,7 +131,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
 
   @Before
   public void init() {
-    tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
+    tableLoader = AmoroTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     tableLoader.open();
   }
 
@@ -213,7 +213,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     FlinkSink.forRowData(input)
         .context(Optional::of)
         .table(testKeyedTable)
-        .tableLoader(ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
+        .tableLoader(AmoroTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
         .flinkSchema(FLINK_SCHEMA)
         .producerConfig(getPropertiesByTopic(topic))
         .topic(topic)
@@ -391,10 +391,10 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     Schema writeSchema =
         TypeUtil.reassignIds(FlinkSchemaUtil.convert(FLINK_SCHEMA), testKeyedTable.schema());
     MetricsGenerator metricsGenerator =
-        ArcticUtils.getMetricsGenerator(
+        AmoroUtils.getMetricsGenerator(
             false, false, testKeyedTable, flinkSchemaRowType, writeSchema);
 
-    ArcticFileWriter streamWriter =
+    AmoroFileWriter streamWriter =
         FlinkSink.createFileWriter(
             testKeyedTable,
             null,
@@ -402,8 +402,8 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
             (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType(),
             tableLoader);
 
-    ArcticWriter<WriteResult> arcticWriter =
-        new ArcticWriter<>(automaticLogWriter, streamWriter, metricsGenerator);
+    AmoroWriter<WriteResult> arcticWriter =
+        new AmoroWriter<>(automaticLogWriter, streamWriter, metricsGenerator);
 
     TestOneInputStreamOperatorIntern<RowData, WriteResult> harness =
         new TestOneInputStreamOperatorIntern<>(

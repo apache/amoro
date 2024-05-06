@@ -18,9 +18,9 @@
 
 package org.apache.amoro.flink.read.hybrid.assigner;
 
-import org.apache.amoro.flink.read.hybrid.enumerator.ArcticSourceEnumState;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplitState;
+import org.apache.amoro.flink.read.hybrid.enumerator.AmoroSourceEnumState;
+import org.apache.amoro.flink.read.hybrid.split.AmoroSplit;
+import org.apache.amoro.flink.read.hybrid.split.AmoroSplitState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,14 +42,14 @@ public class StaticSplitAssigner implements SplitAssigner {
   private static final long POLL_TIMEOUT = 200;
   private int totalSplitNum;
 
-  private final PriorityBlockingQueue<ArcticSplit> splitQueue;
+  private final PriorityBlockingQueue<AmoroSplit> splitQueue;
 
   private CompletableFuture<Void> availableFuture;
 
-  public StaticSplitAssigner(@Nullable ArcticSourceEnumState enumState) {
+  public StaticSplitAssigner(@Nullable AmoroSourceEnumState enumState) {
     this.splitQueue = new PriorityBlockingQueue<>();
     if (enumState != null) {
-      Collection<ArcticSplitState> splitStates = enumState.pendingSplits();
+      Collection<AmoroSplitState> splitStates = enumState.pendingSplits();
       splitStates.forEach(
           state -> onDiscoveredSplits(Collections.singleton(state.toSourceSplit())));
     }
@@ -65,8 +65,8 @@ public class StaticSplitAssigner implements SplitAssigner {
     return getNext();
   }
 
-  private Optional<ArcticSplit> getNextSplit() {
-    ArcticSplit arcticSplit = null;
+  private Optional<AmoroSplit> getNextSplit() {
+    AmoroSplit arcticSplit = null;
     try {
       arcticSplit = splitQueue.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
@@ -86,7 +86,7 @@ public class StaticSplitAssigner implements SplitAssigner {
   }
 
   @Override
-  public void onDiscoveredSplits(Collection<ArcticSplit> splits) {
+  public void onDiscoveredSplits(Collection<AmoroSplit> splits) {
     splits.forEach(this::putArcticIntoQueue);
     totalSplitNum += splits.size();
     // only complete pending future if new splits are discovered
@@ -94,17 +94,17 @@ public class StaticSplitAssigner implements SplitAssigner {
   }
 
   @Override
-  public void onUnassignedSplits(Collection<ArcticSplit> splits) {
+  public void onUnassignedSplits(Collection<AmoroSplit> splits) {
     onDiscoveredSplits(splits);
   }
 
-  void putArcticIntoQueue(final ArcticSplit split) {
+  void putArcticIntoQueue(final AmoroSplit split) {
     splitQueue.put(split);
   }
 
   @Override
-  public Collection<ArcticSplitState> state() {
-    return splitQueue.stream().map(ArcticSplitState::new).collect(Collectors.toList());
+  public Collection<AmoroSplitState> state() {
+    return splitQueue.stream().map(AmoroSplitState::new).collect(Collectors.toList());
   }
 
   @Override

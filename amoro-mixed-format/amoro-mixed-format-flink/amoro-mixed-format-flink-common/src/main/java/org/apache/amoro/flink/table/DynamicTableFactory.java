@@ -34,7 +34,7 @@ import org.apache.amoro.flink.InternalCatalogBuilder;
 import org.apache.amoro.flink.catalog.MixedCatalog;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.util.AmoroUtils;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
@@ -67,7 +67,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
-/** A factory generates {@link ArcticDynamicSource} and {@link ArcticDynamicSink} */
+/** A factory generates {@link AmoroDynamicSource} and {@link AmoroDynamicSink} */
 public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTableSinkFactory {
   private static final Logger LOG = LoggerFactory.getLogger(DynamicTableFactory.class);
   public static final String IDENTIFIER = "arctic";
@@ -115,9 +115,9 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     } else {
       objectPath = new ObjectPath(identifier.getDatabaseName(), identifier.getObjectName());
     }
-    ArcticTableLoader tableLoader =
+    AmoroTableLoader tableLoader =
         createTableLoader(objectPath, actualCatalogName, actualBuilder, options.toMap());
-    MixedTable mixedTable = ArcticUtils.loadArcticTable(tableLoader);
+    MixedTable mixedTable = AmoroUtils.loadArcticTable(tableLoader);
 
     Configuration confWithAll = Configuration.fromMap(mixedTable.properties());
 
@@ -150,7 +150,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         boolean batchMode = context.getConfiguration().get(RUNTIME_MODE).equals(BATCH);
         LOG.info("Building a file reader in {} runtime mode", batchMode ? "batch" : "streaming");
         arcticDynamicSource =
-            new ArcticFileSource(tableLoader, tableSchema, mixedTable, confWithAll, batchMode);
+            new AmoroFileSource(tableLoader, tableSchema, mixedTable, confWithAll, batchMode);
         break;
       case ArcticValidator.ARCTIC_READ_LOG:
       default:
@@ -169,30 +169,30 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
       String tableName,
       ScanTableSource arcticDynamicSource,
       MixedTable mixedTable,
-      ArcticTableLoader tableLoader) {
-    return new ArcticDynamicSource(
+      AmoroTableLoader tableLoader) {
+    return new AmoroDynamicSource(
         tableName, arcticDynamicSource, mixedTable, mixedTable.properties(), tableLoader);
   }
 
   @Override
-  public ArcticDynamicSink createDynamicTableSink(Context context) {
+  public AmoroDynamicSink createDynamicTableSink(Context context) {
     CatalogTable catalogTable = context.getCatalogTable();
 
     ObjectIdentifier identifier = context.getObjectIdentifier();
     Map<String, String> options = catalogTable.getOptions();
 
-    ArcticTableLoader tableLoader =
+    AmoroTableLoader tableLoader =
         createTableLoader(
             new ObjectPath(identifier.getDatabaseName(), identifier.getObjectName()),
             internalCatalogName,
             internalCatalogBuilder,
             options);
 
-    MixedTable table = ArcticUtils.loadArcticTable(tableLoader);
-    return new ArcticDynamicSink(catalogTable, tableLoader, table.isKeyedTable());
+    MixedTable table = AmoroUtils.loadArcticTable(tableLoader);
+    return new AmoroDynamicSink(catalogTable, tableLoader, table.isKeyedTable());
   }
 
-  private static ArcticTableLoader createTableLoader(
+  private static AmoroTableLoader createTableLoader(
       ObjectPath tablePath,
       String internalCatalogName,
       InternalCatalogBuilder catalogBuilder,
@@ -201,7 +201,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         TableIdentifier.of(
             internalCatalogName, tablePath.getDatabaseName(), tablePath.getObjectName());
 
-    return ArcticTableLoader.of(identifier, catalogBuilder, flinkTableProperties);
+    return AmoroTableLoader.of(identifier, catalogBuilder, flinkTableProperties);
   }
 
   @Override

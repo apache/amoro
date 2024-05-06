@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.hybrid.enumerator;
 
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.AmoroSplit;
 import org.apache.amoro.flink.read.hybrid.split.TemporalJoinSplits;
 import org.junit.Assert;
 import org.junit.Test;
@@ -41,15 +41,15 @@ public class TestTemporalJoinSplitsThreadSafe {
       allSplit.add(UUID.randomUUID().toString());
     }
 
-    Collection<ArcticSplit> arcticSplits =
-        allSplit.stream().map(TestArcticSplit::of).collect(Collectors.toList());
+    Collection<AmoroSplit> arcticSplits =
+        allSplit.stream().map(TestAmoroSplit::of).collect(Collectors.toList());
 
     for (int i = 0; i < 2; i++) {
       round(allSplit, arcticSplits);
     }
   }
 
-  public void round(List<String> allSplit, Collection<ArcticSplit> arcticSplits) {
+  public void round(List<String> allSplit, Collection<AmoroSplit> arcticSplits) {
     TemporalJoinSplits temporalJoinSplits = new TemporalJoinSplits(arcticSplits, null);
     int n = allSplit.size();
 
@@ -58,11 +58,11 @@ public class TestTemporalJoinSplitsThreadSafe {
     Collections.shuffle(s1);
     Collections.shuffle(s2);
 
-    List<ArcticSplit> as = new ArrayList<>(arcticSplits);
+    List<AmoroSplit> as = new ArrayList<>(arcticSplits);
     Collections.shuffle(as);
     int an = as.size();
-    List<ArcticSplit> as1 = new ArrayList<>(as.subList(0, (int) (2.0 / 3 * an)));
-    List<ArcticSplit> as2 = new ArrayList<>(as.subList((int) (1.0 / 3 * an), an));
+    List<AmoroSplit> as1 = new ArrayList<>(as.subList(0, (int) (2.0 / 3 * an)));
+    List<AmoroSplit> as2 = new ArrayList<>(as.subList((int) (1.0 / 3 * an), an));
     CompletableFuture<Void> f1 =
         CompletableFuture.runAsync(() -> temporalJoinSplits.removeAndReturnIfAllFinished(s1));
     CompletableFuture<Void> f2 =
@@ -75,15 +75,15 @@ public class TestTemporalJoinSplitsThreadSafe {
     Assert.assertTrue(temporalJoinSplits.removeAndReturnIfAllFinished(allSplit));
   }
 
-  static class TestArcticSplit extends ArcticSplit {
+  static class TestAmoroSplit extends AmoroSplit {
     private final String splitId;
 
-    public TestArcticSplit(String splitId) {
+    public TestAmoroSplit(String splitId) {
       this.splitId = splitId;
     }
 
-    public static TestArcticSplit of(String splitId) {
-      return new TestArcticSplit(splitId);
+    public static TestAmoroSplit of(String splitId) {
+      return new TestAmoroSplit(splitId);
     }
 
     @Override
@@ -95,8 +95,8 @@ public class TestTemporalJoinSplitsThreadSafe {
     public void updateOffset(Object[] recordOffsets) {}
 
     @Override
-    public ArcticSplit copy() {
-      return new TestArcticSplit(splitId);
+    public AmoroSplit copy() {
+      return new TestAmoroSplit(splitId);
     }
 
     @Override

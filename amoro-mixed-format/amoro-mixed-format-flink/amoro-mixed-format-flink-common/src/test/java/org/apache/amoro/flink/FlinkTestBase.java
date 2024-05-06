@@ -27,7 +27,7 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
-import org.apache.amoro.flink.write.ArcticRowDataTaskWriterFactory;
+import org.apache.amoro.flink.write.AmoroRowDataTaskWriterFactory;
 import org.apache.amoro.io.reader.GenericKeyedDataReader;
 import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScanTask;
@@ -315,8 +315,8 @@ public class FlinkTestBase extends TableTestBase {
 
   protected static TaskWriter<RowData> createKeyedTaskWriter(
       KeyedTable keyedTable, RowType rowType, boolean base, long mask) {
-    ArcticRowDataTaskWriterFactory taskWriterFactory =
-        new ArcticRowDataTaskWriterFactory(keyedTable, rowType, base);
+    AmoroRowDataTaskWriterFactory taskWriterFactory =
+        new AmoroRowDataTaskWriterFactory(keyedTable, rowType, base);
     taskWriterFactory.setMask(mask);
     taskWriterFactory.initialize(0, 0);
     return taskWriterFactory.create();

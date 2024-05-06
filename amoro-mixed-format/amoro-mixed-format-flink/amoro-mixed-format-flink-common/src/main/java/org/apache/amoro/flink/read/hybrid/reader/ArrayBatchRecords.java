@@ -44,13 +44,13 @@ import java.util.Set;
  * <p>This class uses array to store a batch of records from the same file (with the same
  * fileOffset).
  */
-class ArrayBatchRecords<T> implements RecordsWithSplitIds<ArcticRecordWithOffset<T>> {
+class ArrayBatchRecords<T> implements RecordsWithSplitIds<AmoroRecordWithOffset<T>> {
   @Nullable private String splitId;
   @Nullable private final Pool.Recycler<T[]> recycler;
   @Nullable private final T[] records;
   private final int numberOfRecords;
   private final Set<String> finishedSplits;
-  private final ArcticRecordWithOffset<T> recordWithOffset;
+  private final AmoroRecordWithOffset<T> recordWithOffset;
 
   // point to current read position within the records array
   private int position;
@@ -75,7 +75,7 @@ class ArrayBatchRecords<T> implements RecordsWithSplitIds<ArcticRecordWithOffset
     this.numberOfRecords = numberOfRecords;
     this.finishedSplits =
         Preconditions.checkNotNull(finishedSplits, "finishedSplits can be empty but not null");
-    this.recordWithOffset = new ArcticRecordWithOffset<>();
+    this.recordWithOffset = new AmoroRecordWithOffset<>();
 
     this.position = 0;
   }
@@ -96,7 +96,7 @@ class ArrayBatchRecords<T> implements RecordsWithSplitIds<ArcticRecordWithOffset
     this.recordPositions = Preconditions.checkNotNull(positions, "recordPositions can't be null");
     this.finishedSplits =
         Preconditions.checkNotNull(finishedSplits, "finishedSplits can be empty but not null");
-    this.recordWithOffset = new ArcticRecordWithOffset<>();
+    this.recordWithOffset = new AmoroRecordWithOffset<>();
 
     this.position = 0;
   }
@@ -113,7 +113,7 @@ class ArrayBatchRecords<T> implements RecordsWithSplitIds<ArcticRecordWithOffset
 
   @Nullable
   @Override
-  public ArcticRecordWithOffset<T> nextRecordFromSplit() {
+  public AmoroRecordWithOffset<T> nextRecordFromSplit() {
     if (position < numberOfRecords) {
       setRecordWithOffset();
       position++;
@@ -185,7 +185,7 @@ class ArrayBatchRecords<T> implements RecordsWithSplitIds<ArcticRecordWithOffset
    * @param positions fileOffset and recordOffset for all records in this batch
    * @param <T> record type
    */
-  public static <T> RecordsWithSplitIds<ArcticRecordWithOffset<T>> forRecords(
+  public static <T> RecordsWithSplitIds<AmoroRecordWithOffset<T>> forRecords(
       String splitId,
       Pool.Recycler<T[]> recycler,
       T[] records,

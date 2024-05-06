@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read;
 
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.AmoroSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.scan.MixedFileScanTask;
 
@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This is a group of the partitions and nodes of the arctic table, it can plan different nodes and
- * different partitions into different {@link ArcticSplit}.
+ * different partitions into different {@link AmoroSplit}.
  */
 public class PartitionAndNodeGroup {
   AtomicInteger splitCount = new AtomicInteger();
@@ -54,12 +54,12 @@ public class PartitionAndNodeGroup {
     return this;
   }
 
-  List<ArcticSplit> planSplits() {
+  List<AmoroSplit> planSplits() {
     Map<String, Map<Long, Node>> nodes = new HashMap<>();
     plan(true, nodes);
     plan(false, nodes);
 
-    List<ArcticSplit> splits = new ArrayList<>();
+    List<AmoroSplit> splits = new ArrayList<>();
 
     nodes
         .values()

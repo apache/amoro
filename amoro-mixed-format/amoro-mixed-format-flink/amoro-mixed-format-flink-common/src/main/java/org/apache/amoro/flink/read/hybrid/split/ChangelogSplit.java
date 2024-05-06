@@ -29,7 +29,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 /** A changelog split generated during planning change table. */
-public class ChangelogSplit extends ArcticSplit {
+public class ChangelogSplit extends AmoroSplit {
   private static final long serialVersionUID = 1L;
   private final int taskIndex;
   private final Collection<MixedFileScanTask> insertScanTasks;
@@ -80,7 +80,7 @@ public class ChangelogSplit extends ArcticSplit {
   }
 
   @Override
-  public ArcticSplit copy() {
+  public AmoroSplit copy() {
     return new ChangelogSplit(insertScanTasks, deleteScanTasks, taskIndex);
   }
 

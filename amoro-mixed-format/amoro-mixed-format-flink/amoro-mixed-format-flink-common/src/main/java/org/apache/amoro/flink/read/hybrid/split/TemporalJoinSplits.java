@@ -51,7 +51,7 @@ public class TemporalJoinSplits implements Serializable {
   /** transient because it is necessary to notify reader again after failover. */
   private transient boolean hasNotifiedReader = false;
 
-  public TemporalJoinSplits(Collection<ArcticSplit> splits, MetricGroup metricGroup) {
+  public TemporalJoinSplits(Collection<AmoroSplit> splits, MetricGroup metricGroup) {
     Preconditions.checkNotNull(splits, "plan splits should not be null");
     this.splits =
         splits.stream().map(SourceSplit::splitId).collect(Collectors.toMap((k) -> k, (i) -> false));
@@ -68,7 +68,7 @@ public class TemporalJoinSplits implements Serializable {
     return splits;
   }
 
-  public synchronized void addSplitsBack(Collection<ArcticSplit> splits) {
+  public synchronized void addSplitsBack(Collection<AmoroSplit> splits) {
     if (this.splits == null || CollectionUtil.isNullOrEmpty(splits)) {
       return;
     }

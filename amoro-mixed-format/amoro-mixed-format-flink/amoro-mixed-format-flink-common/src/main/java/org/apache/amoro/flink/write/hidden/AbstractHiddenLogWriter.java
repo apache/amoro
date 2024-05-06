@@ -23,7 +23,7 @@ import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.flink.shuffle.LogRecordV1;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
-import org.apache.amoro.flink.write.ArcticLogWriter;
+import org.apache.amoro.flink.write.AmoroLogWriter;
 import org.apache.amoro.log.FormatVersion;
 import org.apache.amoro.log.LogData;
 import org.apache.amoro.log.LogDataJsonSerialization;
@@ -52,7 +52,7 @@ import java.util.Properties;
  * will process records after all operators has sent flip message to the jobMaster and the jobMaster
  * has finished handling these requests.
  */
-public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
+public abstract class AbstractHiddenLogWriter extends AmoroLogWriter {
   public static final Logger LOG = LoggerFactory.getLogger(AbstractHiddenLogWriter.class);
 
   private static final long serialVersionUID = 1L;

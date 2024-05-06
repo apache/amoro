@@ -19,7 +19,7 @@
 package org.apache.amoro.flink.write;
 
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
-import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.flink.table.AmoroTableLoader;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
 import org.apache.amoro.flink.write.hidden.HiddenLogWriter;
 import org.apache.amoro.flink.write.hidden.LogMsgFactory;
@@ -42,9 +42,9 @@ import java.util.Properties;
  * timestamp is greater than the watermark of all subtasks plus the {@link
  * ArcticValidator#AUTO_EMIT_LOGSTORE_WATERMARK_GAP} value.
  */
-public class AutomaticLogWriter extends ArcticLogWriter {
+public class AutomaticLogWriter extends AmoroLogWriter {
   private final AutomaticDoubleWriteStatus status;
-  private final ArcticLogWriter arcticLogWriter;
+  private final AmoroLogWriter amoroLogWriter;
 
   public AutomaticLogWriter(
       Schema schema,
@@ -54,9 +54,9 @@ public class AutomaticLogWriter extends ArcticLogWriter {
       LogData.FieldGetterFactory<RowData> fieldGetterFactory,
       byte[] jobId,
       ShuffleHelper helper,
-      ArcticTableLoader tableLoader,
+      AmoroTableLoader tableLoader,
       Duration writeLogstoreWatermarkGap) {
-    this.arcticLogWriter =
+    this.amoroLogWriter =
         new HiddenLogWriter(
             schema, producerConfig, topic, factory, fieldGetterFactory, jobId, helper);
     this.status = new AutomaticDoubleWriteStatus(tableLoader, writeLogstoreWatermarkGap);
@@ -66,27 +66,27 @@ public class AutomaticLogWriter extends ArcticLogWriter {
   public void setup(
       StreamTask<?, ?> containingTask, StreamConfig config, Output<StreamRecord<RowData>> output) {
     super.setup(containingTask, config, output);
-    arcticLogWriter.setup(containingTask, config, output);
+    amoroLogWriter.setup(containingTask, config, output);
     status.setup(getRuntimeContext().getIndexOfThisSubtask());
   }
 
   @Override
   public void initializeState(StateInitializationContext context) throws Exception {
     super.initializeState(context);
-    arcticLogWriter.initializeState(context);
+    amoroLogWriter.initializeState(context);
   }
 
   @Override
   public void open() throws Exception {
     super.open();
-    arcticLogWriter.open();
+    amoroLogWriter.open();
     status.open();
   }
 
   @Override
   public void processElement(StreamRecord<RowData> element) throws Exception {
     if (status.isDoubleWrite()) {
-      arcticLogWriter.processElement(element);
+      amoroLogWriter.processElement(element);
     }
   }
 
@@ -99,7 +99,7 @@ public class AutomaticLogWriter extends ArcticLogWriter {
   @Override
   public void prepareSnapshotPreBarrier(long checkpointId) throws Exception {
     if (status.isDoubleWrite()) {
-      arcticLogWriter.prepareSnapshotPreBarrier(checkpointId);
+      amoroLogWriter.prepareSnapshotPreBarrier(checkpointId);
     } else {
       status.sync();
     }
@@ -108,35 +108,35 @@ public class AutomaticLogWriter extends ArcticLogWriter {
   @Override
   public void snapshotState(StateSnapshotContext context) throws Exception {
     if (status.isDoubleWrite()) {
-      arcticLogWriter.snapshotState(context);
+      amoroLogWriter.snapshotState(context);
     }
   }
 
   @Override
   public void notifyCheckpointComplete(long checkpointId) throws Exception {
     if (status.isDoubleWrite()) {
-      arcticLogWriter.notifyCheckpointComplete(checkpointId);
+      amoroLogWriter.notifyCheckpointComplete(checkpointId);
     }
   }
 
   @Override
   public void notifyCheckpointAborted(long checkpointId) throws Exception {
     if (status.isDoubleWrite()) {
-      arcticLogWriter.notifyCheckpointAborted(checkpointId);
+      amoroLogWriter.notifyCheckpointAborted(checkpointId);
     }
   }
 
   @Override
   public void close() throws Exception {
     if (status.isDoubleWrite()) {
-      arcticLogWriter.close();
+      amoroLogWriter.close();
     }
   }
 
   @Override
   public void endInput() throws Exception {
     if (status.isDoubleWrite()) {
-      arcticLogWriter.endInput();
+      amoroLogWriter.endInput();
     }
   }
 }

@@ -19,11 +19,11 @@
 package org.apache.amoro.flink.table;
 
 import org.apache.amoro.flink.interceptor.ProxyFactory;
-import org.apache.amoro.flink.read.ArcticSource;
+import org.apache.amoro.flink.read.AmoroSource;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
-import org.apache.amoro.flink.read.source.ArcticScanContext;
+import org.apache.amoro.flink.read.source.AmoroScanContext;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.util.AmoroUtils;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.amoro.flink.util.IcebergClassUtil;
 import org.apache.amoro.flink.util.ProxyUtil;
@@ -70,14 +70,14 @@ public class FlinkSource {
     private ProviderContext context;
     private StreamExecutionEnvironment env;
     private MixedTable mixedTable;
-    private ArcticTableLoader tableLoader;
+    private AmoroTableLoader tableLoader;
     private TableSchema projectedSchema;
     private List<Expression> filters;
     private ReadableConfig flinkConf = new Configuration();
     private final Map<String, String> properties = new HashMap<>();
     private long limit = -1L;
     private WatermarkStrategy<RowData> watermarkStrategy = WatermarkStrategy.noWatermarks();
-    private final ArcticScanContext.Builder contextBuilder = ArcticScanContext.arcticBuilder();
+    private final AmoroScanContext.Builder contextBuilder = AmoroScanContext.arcticBuilder();
     private boolean batchMode = false;
 
     private Builder() {}
@@ -98,7 +98,7 @@ public class FlinkSource {
       return this;
     }
 
-    public Builder tableLoader(ArcticTableLoader tableLoader) {
+    public Builder tableLoader(AmoroTableLoader tableLoader) {
       this.tableLoader = tableLoader;
       return this;
     }
@@ -174,7 +174,7 @@ public class FlinkSource {
                   org.apache.amoro.flink.FlinkSchemaUtil.filterWatermark(projectedSchema));
         }
       }
-      ArcticScanContext scanContext =
+      AmoroScanContext scanContext =
           contextBuilder.fromProperties(properties).batchMode(batchMode).build();
 
       RowDataReaderFunction rowDataReaderFunction =
@@ -191,7 +191,7 @@ public class FlinkSource {
           flinkConf.getOptional(ArcticValidator.SCAN_PARALLELISM).orElse(env.getParallelism());
       DataStreamSource<RowData> sourceStream =
           env.fromSource(
-                  new ArcticSource<>(
+                  new AmoroSource<>(
                       tableLoader,
                       scanContext,
                       rowDataReaderFunction,
@@ -199,7 +199,7 @@ public class FlinkSource {
                       mixedTable.name(),
                       dimTable),
                   watermarkStrategy,
-                  ArcticSource.class.getName())
+                  AmoroSource.class.getName())
               .setParallelism(scanParallelism);
       context.generateUid(ARCTIC_FILE_TRANSFORMATION).ifPresent(sourceStream::uid);
       return sourceStream;
@@ -209,7 +209,7 @@ public class FlinkSource {
       if (tableLoader == null || mixedTable != null) {
         return;
       }
-      mixedTable = ArcticUtils.loadArcticTable(tableLoader);
+      mixedTable = AmoroUtils.loadArcticTable(tableLoader);
       properties.putAll(mixedTable.properties());
     }
 

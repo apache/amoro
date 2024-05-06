@@ -38,9 +38,9 @@ import org.apache.amoro.flink.shuffle.RoundRobinShuffleRulePolicy;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
 import org.apache.amoro.flink.shuffle.ShuffleKey;
 import org.apache.amoro.flink.shuffle.ShuffleRulePolicy;
-import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.flink.table.AmoroTableLoader;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.util.AmoroUtils;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.amoro.flink.util.IcebergClassUtil;
 import org.apache.amoro.flink.util.ProxyUtil;
@@ -94,7 +94,7 @@ public class FlinkSink {
     private DataStream<RowData> rowDataInput = null;
     private ProviderContext context;
     private MixedTable table;
-    private ArcticTableLoader tableLoader;
+    private AmoroTableLoader tableLoader;
     private TableSchema flinkSchema;
     private Properties producerConfig;
     private String topic;
@@ -134,7 +134,7 @@ public class FlinkSink {
       return this;
     }
 
-    public Builder tableLoader(ArcticTableLoader tableLoader) {
+    public Builder tableLoader(AmoroTableLoader tableLoader) {
       this.tableLoader = tableLoader;
       return this;
     }
@@ -151,8 +151,8 @@ public class FlinkSink {
 
     DataStreamSink<?> withEmit(
         DataStream<RowData> input,
-        ArcticLogWriter logWriter,
-        ArcticFileWriter fileWriter,
+        AmoroLogWriter logWriter,
+        AmoroFileWriter fileWriter,
         OneInputStreamOperator<WriteResult, Void> committer,
         int writeOperatorParallelism,
         MetricsGenerator metricsGenerator,
@@ -160,10 +160,10 @@ public class FlinkSink {
       SingleOutputStreamOperator writerStream =
           input
               .transform(
-                  ArcticWriter.class.getName(),
+                  AmoroWriter.class.getName(),
                   TypeExtractor.createTypeInfo(WriteResult.class),
-                  new ArcticWriter<>(logWriter, fileWriter, metricsGenerator))
-              .name(String.format("ArcticWriter %s(%s)", table.name(), arcticEmitMode))
+                  new AmoroWriter<>(logWriter, fileWriter, metricsGenerator))
+              .name(String.format("AmoroWriter %s(%s)", table.name(), arcticEmitMode))
               .setParallelism(writeOperatorParallelism);
 
       if (committer != null) {
@@ -176,7 +176,7 @@ public class FlinkSink {
 
       return writerStream
           .addSink(new DiscardingSink<>())
-          .name(String.format("ArcticSink %s", table.name()))
+          .name(String.format("AmoroSink %s", table.name()))
           .setParallelism(1);
     }
 
@@ -227,12 +227,12 @@ public class FlinkSink {
 
       final Duration watermarkWriteGap = config.get(AUTO_EMIT_LOGSTORE_WATERMARK_GAP);
 
-      ArcticFileWriter fileWriter =
+      AmoroFileWriter fileWriter =
           createFileWriter(
               table, shufflePolicy, overwrite, flinkSchemaRowType, arcticEmitMode, tableLoader);
 
-      ArcticLogWriter logWriter =
-          ArcticUtils.buildArcticLogWriter(
+      AmoroLogWriter logWriter =
+          AmoroUtils.buildArcticLogWriter(
               table.properties(),
               producerConfig,
               topic,
@@ -243,7 +243,7 @@ public class FlinkSink {
               watermarkWriteGap);
 
       MetricsGenerator metricsGenerator =
-          ArcticUtils.getMetricsGenerator(
+          AmoroUtils.getMetricsGenerator(
               metricsEventLatency, metricsEnable, table, flinkSchemaRowType, writeSchema);
 
       if (shufflePolicy != null) {
@@ -264,7 +264,7 @@ public class FlinkSink {
 
     private void initTableIfNeeded() {
       if (table == null) {
-        table = ArcticUtils.loadArcticTable(tableLoader);
+        table = AmoroUtils.loadArcticTable(tableLoader);
       }
     }
 
@@ -331,7 +331,7 @@ public class FlinkSink {
                   + " for table without partition");
         }
         int writeFileSplit;
-        if (ArcticUtils.isToBase(overwrite)) {
+        if (AmoroUtils.isToBase(overwrite)) {
           writeFileSplit =
               PropertyUtil.propertyAsInt(
                   table.properties(),
@@ -351,24 +351,24 @@ public class FlinkSink {
     }
   }
 
-  public static ArcticFileWriter createFileWriter(
+  public static AmoroFileWriter createFileWriter(
       MixedTable mixedTable,
       ShuffleRulePolicy shufflePolicy,
       boolean overwrite,
       RowType flinkSchema,
-      ArcticTableLoader tableLoader) {
+      AmoroTableLoader tableLoader) {
     return createFileWriter(
         mixedTable, shufflePolicy, overwrite, flinkSchema, ARCTIC_EMIT_FILE, tableLoader);
   }
 
-  public static ArcticFileWriter createFileWriter(
+  public static AmoroFileWriter createFileWriter(
       MixedTable mixedTable,
       ShuffleRulePolicy shufflePolicy,
       boolean overwrite,
       RowType flinkSchema,
       String emitMode,
-      ArcticTableLoader tableLoader) {
-    if (!ArcticUtils.arcticFileWriterEnable(emitMode)) {
+      AmoroTableLoader tableLoader) {
+    if (!AmoroUtils.arcticFileWriterEnable(emitMode)) {
       return null;
     }
     long maxOpenFilesSizeBytes =
@@ -398,7 +398,7 @@ public class FlinkSink {
             SUBMIT_EMPTY_SNAPSHOTS.key(),
             SUBMIT_EMPTY_SNAPSHOTS.defaultValue());
 
-    return new ArcticFileWriter(
+    return new AmoroFileWriter(
         shufflePolicy,
         createTaskWriterFactory(mixedTable, overwrite, flinkSchema),
         minFileSplitCount,
@@ -409,12 +409,12 @@ public class FlinkSink {
 
   private static TaskWriterFactory<RowData> createTaskWriterFactory(
       MixedTable mixedTable, boolean overwrite, RowType flinkSchema) {
-    return new ArcticRowDataTaskWriterFactory(mixedTable, flinkSchema, overwrite);
+    return new AmoroRowDataTaskWriterFactory(mixedTable, flinkSchema, overwrite);
   }
 
   public static OneInputStreamOperator<WriteResult, Void> createFileCommitter(
       MixedTable mixedTable,
-      ArcticTableLoader tableLoader,
+      AmoroTableLoader tableLoader,
       boolean overwrite,
       String branch,
       PartitionSpec spec) {
@@ -423,15 +423,15 @@ public class FlinkSink {
 
   public static OneInputStreamOperator<WriteResult, Void> createFileCommitter(
       MixedTable mixedTable,
-      ArcticTableLoader tableLoader,
+      AmoroTableLoader tableLoader,
       boolean overwrite,
       String branch,
       PartitionSpec spec,
       String emitMode) {
-    if (!ArcticUtils.arcticFileWriterEnable(emitMode)) {
+    if (!AmoroUtils.arcticFileWriterEnable(emitMode)) {
       return null;
     }
-    tableLoader.switchLoadInternalTableForKeyedTable(ArcticUtils.isToBase(overwrite));
+    tableLoader.switchLoadInternalTableForKeyedTable(AmoroUtils.isToBase(overwrite));
     return (OneInputStreamOperator)
         ProxyUtil.getProxy(
             IcebergClassUtil.newIcebergFilesCommitter(

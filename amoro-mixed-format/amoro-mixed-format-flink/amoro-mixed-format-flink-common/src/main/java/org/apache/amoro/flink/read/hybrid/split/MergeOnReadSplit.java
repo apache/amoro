@@ -23,7 +23,7 @@ import org.apache.amoro.utils.FileScanTaskUtil;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
-public class MergeOnReadSplit extends ArcticSplit {
+public class MergeOnReadSplit extends AmoroSplit {
   private static final long serialVersionUID = 1L;
   private final int taskIndex;
   private final KeyedTableScanTask keyedTableScanTask;
@@ -51,7 +51,7 @@ public class MergeOnReadSplit extends ArcticSplit {
   }
 
   @Override
-  public ArcticSplit copy() {
+  public AmoroSplit copy() {
     return new MergeOnReadSplit(taskIndex, keyedTableScanTask);
   }
 

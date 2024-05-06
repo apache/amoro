@@ -67,8 +67,8 @@ public class TestTableRefresh extends FlinkTestBase {
 
   @Test
   public void testRefresh() {
-    ArcticTableLoader tableLoader =
-        ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
+    AmoroTableLoader tableLoader =
+        AmoroTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
 
     tableLoader.open();
     MixedTable mixedTable = tableLoader.loadArcticTable();

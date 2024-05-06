@@ -19,14 +19,14 @@
 package org.apache.amoro.flink.read.hybrid.enumerator;
 
 import static org.apache.amoro.flink.read.FlinkSplitPlanner.planChangeTable;
-import static org.apache.amoro.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
-import static org.apache.amoro.flink.util.ArcticUtils.loadArcticTable;
+import static org.apache.amoro.flink.read.hybrid.enumerator.AmoroEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
+import static org.apache.amoro.flink.util.AmoroUtils.loadArcticTable;
 
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.AmoroSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.flink.read.hybrid.split.SnapshotSplit;
-import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.flink.table.AmoroTableLoader;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.commons.collections.CollectionUtils;
@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Continuous planning {@link KeyedTable} by {@link ArcticEnumeratorOffset} and generate a {@link
+ * Continuous planning {@link KeyedTable} by {@link AmoroEnumeratorOffset} and generate a {@link
  * ContinuousEnumerationResult}.
  *
  * <p>{@link ContinuousEnumerationResult#splits()} includes the {@link SnapshotSplit}s and {@link
@@ -52,10 +52,10 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
   private static final Logger LOG = LoggerFactory.getLogger(ContinuousSplitPlannerImpl.class);
 
   protected transient KeyedTable table;
-  protected final ArcticTableLoader loader;
+  protected final AmoroTableLoader loader;
   protected static final AtomicInteger SPLIT_COUNT = new AtomicInteger();
 
-  public ContinuousSplitPlannerImpl(ArcticTableLoader loader) {
+  public ContinuousSplitPlannerImpl(AmoroTableLoader loader) {
     this.loader = loader;
   }
 
@@ -68,7 +68,7 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
 
   @Override
   public ContinuousEnumerationResult planSplits(
-      ArcticEnumeratorOffset lastOffset, List<Expression> filters) {
+      AmoroEnumeratorOffset lastOffset, List<Expression> filters) {
     if (table == null) {
       table = loadArcticTable(loader).asKeyedTable();
     }
@@ -81,7 +81,7 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
   }
 
   protected ContinuousEnumerationResult discoverIncrementalSplits(
-      ArcticEnumeratorOffset lastPosition, List<Expression> filters) {
+      AmoroEnumeratorOffset lastPosition, List<Expression> filters) {
     long fromChangeSnapshotId = lastPosition.changeSnapshotId();
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
     if (changeSnapshot != null && changeSnapshot.snapshotId() != fromChangeSnapshotId) {
@@ -99,9 +99,9 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
         changeTableScan = changeTableScan.fromSequence(snapshot.sequenceNumber());
       }
 
-      List<ArcticSplit> arcticChangeSplit = planChangeTable(changeTableScan, SPLIT_COUNT);
+      List<AmoroSplit> arcticChangeSplit = planChangeTable(changeTableScan, SPLIT_COUNT);
       return new ContinuousEnumerationResult(
-          arcticChangeSplit, lastPosition, ArcticEnumeratorOffset.of(snapshotId, null));
+          arcticChangeSplit, lastPosition, AmoroEnumeratorOffset.of(snapshotId, null));
     }
     return ContinuousEnumerationResult.EMPTY;
   }
@@ -111,7 +111,7 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
     // todo ShuffleSplitAssigner doesn't support MergeOnReadSplit right now,
     //  because it doesn't implement the dataTreeNode() method
     //  fix AMORO-1950 in the future.
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(table, filters, SPLIT_COUNT);
+    List<AmoroSplit> arcticSplits = FlinkSplitPlanner.planFullTable(table, filters, SPLIT_COUNT);
 
     long changeStartSnapshotId =
         changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
@@ -121,6 +121,6 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
     }
 
     return new ContinuousEnumerationResult(
-        arcticSplits, null, ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
+        arcticSplits, null, AmoroEnumeratorOffset.of(changeStartSnapshotId, null));
   }
 }

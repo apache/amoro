@@ -26,7 +26,7 @@ import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_
 import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_STRATEGY_EXPR;
 import static org.apache.flink.table.descriptors.Schema.SCHEMA_PROCTIME;
 
-import org.apache.amoro.flink.table.ArcticDynamicSource;
+import org.apache.amoro.flink.table.AmoroDynamicSource;
 import org.apache.amoro.flink.table.FlinkSource;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
@@ -116,7 +116,7 @@ public class FlinkSchemaUtil {
   }
 
   /**
-   * Add watermark info to help {@link FlinkSource} and {@link ArcticDynamicSource} distinguish the
+   * Add watermark info to help {@link FlinkSource} and {@link AmoroDynamicSource} distinguish the
    * watermark field. For now, it only be used in the case of Arctic as dim-table.
    */
   public static TableSchema getPhysicalSchemaForDimTable(TableSchema tableSchema) {

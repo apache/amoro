@@ -18,12 +18,12 @@
 
 package org.apache.amoro.flink.read.hybrid.enumerator;
 
-import static org.apache.amoro.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
-import static org.apache.amoro.flink.util.ArcticUtils.loadArcticTable;
+import static org.apache.amoro.flink.read.hybrid.enumerator.AmoroEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
+import static org.apache.amoro.flink.util.AmoroUtils.loadArcticTable;
 
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
-import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.flink.read.hybrid.split.AmoroSplit;
+import org.apache.amoro.flink.table.AmoroTableLoader;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.Snapshot;
@@ -40,16 +40,16 @@ public class MergeOnReadPlannerImpl implements ContinuousSplitPlanner {
   private static final Logger LOG = LoggerFactory.getLogger(MergeOnReadPlannerImpl.class);
 
   protected transient KeyedTable table;
-  protected final ArcticTableLoader loader;
+  protected final AmoroTableLoader loader;
   protected static final AtomicInteger SPLIT_COUNT = new AtomicInteger();
 
-  public MergeOnReadPlannerImpl(ArcticTableLoader loader) {
+  public MergeOnReadPlannerImpl(AmoroTableLoader loader) {
     this.loader = loader;
   }
 
   @Override
   public ContinuousEnumerationResult planSplits(
-      ArcticEnumeratorOffset ignored, List<Expression> filters) {
+      AmoroEnumeratorOffset ignored, List<Expression> filters) {
     // todo support mor the table from the specific offset in the future
     if (table == null) {
       table = loadArcticTable(loader).asKeyedTable();
@@ -60,7 +60,7 @@ public class MergeOnReadPlannerImpl implements ContinuousSplitPlanner {
 
   protected ContinuousEnumerationResult discoverInitialSplits(List<Expression> filters) {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.mergeOnReadPlan(table, filters, SPLIT_COUNT);
+    List<AmoroSplit> arcticSplits = FlinkSplitPlanner.mergeOnReadPlan(table, filters, SPLIT_COUNT);
 
     long changeStartSnapshotId =
         changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
@@ -70,7 +70,7 @@ public class MergeOnReadPlannerImpl implements ContinuousSplitPlanner {
     }
 
     return new ContinuousEnumerationResult(
-        arcticSplits, null, ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
+        arcticSplits, null, AmoroEnumeratorOffset.of(changeStartSnapshotId, null));
   }
 
   @Override

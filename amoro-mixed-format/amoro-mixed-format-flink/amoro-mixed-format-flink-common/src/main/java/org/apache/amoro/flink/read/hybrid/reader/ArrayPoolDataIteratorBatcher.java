@@ -46,7 +46,7 @@ class ArrayPoolDataIteratorBatcher<T> implements DataIteratorBatcher<T> {
   }
 
   @Override
-  public CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> batch(
+  public CloseableIterator<RecordsWithSplitIds<AmoroRecordWithOffset<T>>> batch(
       String splitId, DataIterator<T> inputIterator) {
     Preconditions.checkArgument(inputIterator != null, "Input data iterator can't be null");
     // lazily create pool as it is not serializable
@@ -67,7 +67,7 @@ class ArrayPoolDataIteratorBatcher<T> implements DataIteratorBatcher<T> {
   }
 
   private class ArrayPoolBatchIterator
-      implements CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> {
+      implements CloseableIterator<RecordsWithSplitIds<AmoroRecordWithOffset<T>>> {
 
     private final String splitId;
     private final DataIterator<T> inputIterator;
@@ -85,7 +85,7 @@ class ArrayPoolDataIteratorBatcher<T> implements DataIteratorBatcher<T> {
     }
 
     @Override
-    public RecordsWithSplitIds<ArcticRecordWithOffset<T>> next() {
+    public RecordsWithSplitIds<AmoroRecordWithOffset<T>> next() {
       if (!inputIterator.hasNext()) {
         throw new NoSuchElementException();
       }

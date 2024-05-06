@@ -22,14 +22,14 @@ import static org.apache.amoro.flink.shuffle.RowKindUtil.convertToFlinkRowKind;
 import static org.apache.amoro.utils.SchemaUtil.changeWriteSchema;
 import static org.apache.amoro.utils.SchemaUtil.fillUpIdentifierFields;
 
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.AmoroSplit;
 import org.apache.amoro.flink.read.source.ChangeLogDataIterator;
 import org.apache.amoro.flink.read.source.DataIterator;
 import org.apache.amoro.flink.read.source.FileScanTaskReader;
-import org.apache.amoro.flink.read.source.FlinkArcticDataReader;
-import org.apache.amoro.flink.read.source.FlinkArcticMORDataReader;
+import org.apache.amoro.flink.read.source.FlinkAmoroDataReader;
+import org.apache.amoro.flink.read.source.FlinkAmoroMORDataReader;
 import org.apache.amoro.flink.read.source.MergeOnReadDataIterator;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.util.AmoroUtils;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.NodeFilter;
@@ -43,7 +43,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import java.util.Collections;
 
 /**
- * This Function accept a {@link ArcticSplit} and produces an {@link DataIterator} of {@link
+ * This Function accept a {@link AmoroSplit} and produces an {@link DataIterator} of {@link
  * RowData}.
  */
 public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
@@ -111,10 +111,10 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
   }
 
   @Override
-  public DataIterator<RowData> createDataIterator(ArcticSplit split) {
+  public DataIterator<RowData> createDataIterator(AmoroSplit split) {
     if (split.isMergeOnReadSplit()) {
-      FlinkArcticMORDataReader morDataReader =
-          new FlinkArcticMORDataReader(
+      FlinkAmoroMORDataReader morDataReader =
+          new FlinkAmoroMORDataReader(
               io,
               tableSchema,
               readSchema,
@@ -127,7 +127,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
           morDataReader, split.asMergeOnReadSplit().keyedTableScanTask(), io);
     } else if (split.isSnapshotSplit()) {
       FileScanTaskReader<RowData> rowDataReader =
-          new FlinkArcticDataReader(
+          new FlinkAmoroDataReader(
               io,
               tableSchema,
               readSchema,
@@ -144,7 +144,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
           this::removeArcticMetaColumn);
     } else if (split.isChangelogSplit()) {
       FileScanTaskReader<RowData> rowDataReader =
-          new FlinkArcticDataReader(
+          new FlinkAmoroDataReader(
               io,
               wrapArcticFileOffsetColumnMeta(tableSchema),
               wrapArcticFileOffsetColumnMeta(readSchema),
@@ -178,10 +178,10 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
 
   /**
    * @param rowData It may have more columns than readSchema. Refer to {@link
-   *     FlinkArcticDataReader}'s annotation.
+   *     FlinkAmoroDataReader}'s annotation.
    */
   RowData removeArcticMetaColumn(RowData rowData) {
-    return ArcticUtils.removeArcticMetaColumn(rowData, columnSize);
+    return AmoroUtils.removeArcticMetaColumn(rowData, columnSize);
   }
 
   RowData transformRowKind(ChangeLogDataIterator.ChangeActionTrans<RowData> trans) {

@@ -18,10 +18,10 @@
 
 package org.apache.amoro.flink.read.hybrid.enumerator;
 
-import org.apache.amoro.flink.read.hybrid.reader.ArcticSourceReader;
+import org.apache.amoro.flink.read.hybrid.reader.AmoroSourceReader;
 import org.apache.flink.api.connector.source.SourceEvent;
 
-/** {@link ArcticSourceReader} won't set timestamp to RowData until receiving this Event. */
+/** {@link AmoroSourceReader} won't set timestamp to RowData until receiving this Event. */
 public class InitializationFinishedEvent implements SourceEvent {
   private static final long serialVersionUID = 1L;
 

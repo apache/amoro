@@ -26,7 +26,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
-import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.flink.table.AmoroTableLoader;
 import org.apache.amoro.table.MixedTable;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.iceberg.UpdateProperties;
@@ -36,7 +36,7 @@ import org.junit.Test;
 import java.time.Duration;
 
 public class TestAutomaticDoubleWriteStatus extends FlinkTestBase {
-  public ArcticTableLoader tableLoader;
+  public AmoroTableLoader tableLoader;
 
   public TestAutomaticDoubleWriteStatus() {
     super(
@@ -46,7 +46,7 @@ public class TestAutomaticDoubleWriteStatus extends FlinkTestBase {
 
   @Test
   public void testTableProperties() {
-    tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
+    tableLoader = AmoroTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     tableLoader.open();
     MixedTable mixedTable = tableLoader.loadArcticTable();
     UpdateProperties up = mixedTable.updateProperties();

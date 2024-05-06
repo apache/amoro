@@ -185,7 +185,7 @@ public class MockEnvironmentBuilder {
       this.ioManager = new IOManagerAsync();
     }
 
-    return new MockEnvironmentArctic(
+    return new MockEnvironmentAmoro(
         this.jobID,
         this.jobVertexID,
         this.taskName,

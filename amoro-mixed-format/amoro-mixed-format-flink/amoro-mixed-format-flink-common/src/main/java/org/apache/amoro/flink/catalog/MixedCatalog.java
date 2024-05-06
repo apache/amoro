@@ -29,7 +29,7 @@ import org.apache.amoro.flink.InternalCatalogBuilder;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.amoro.flink.table.DynamicTableFactory;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.util.AmoroUtils;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScanTask;
@@ -207,7 +207,7 @@ public class MixedCatalog extends AbstractCatalog {
 
     List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
     return CatalogTable.of(
-        toSchema(arcticSchema, ArcticUtils.getPrimaryKeys(table), arcticProperties).toSchema(),
+        toSchema(arcticSchema, AmoroUtils.getPrimaryKeys(table), arcticProperties).toSchema(),
         null,
         partitionKeys,
         arcticProperties);
@@ -740,7 +740,7 @@ public class MixedCatalog extends AbstractCatalog {
 
     List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
     return new CatalogTableImpl(
-        toSchema(arcticSchema, ArcticUtils.getPrimaryKeys(table), arcticProperties),
+        toSchema(arcticSchema, AmoroUtils.getPrimaryKeys(table), arcticProperties),
         partitionKeys,
         arcticProperties,
         null);

@@ -24,7 +24,7 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.enumerator.TestContinuousSplitPlannerImpl;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.AmoroSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.flink.read.source.DataIterator;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
@@ -71,7 +71,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   @Test
   public void testReadChangelog() throws IOException {
 
-    List<ArcticSplit> arcticSplits =
+    List<AmoroSplit> arcticSplits =
         FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
 
     RowDataReaderFunction rowDataReaderFunction =
@@ -143,7 +143,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   @Test
   public void testReadNodesUpMoved() throws IOException {
     writeUpdateWithSpecifiedMaskOne();
-    List<ArcticSplit> arcticSplits =
+    List<AmoroSplit> arcticSplits =
         FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
 
     RowDataReaderFunction rowDataReaderFunction =

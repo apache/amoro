@@ -18,11 +18,11 @@
 
 package org.apache.amoro.flink.read;
 
-import org.apache.amoro.flink.read.hybrid.enumerator.ArcticEnumeratorOffset;
+import org.apache.amoro.flink.read.hybrid.enumerator.AmoroEnumeratorOffset;
 import org.apache.amoro.flink.read.hybrid.enumerator.ContinuousEnumerationResult;
 import org.apache.amoro.flink.read.hybrid.enumerator.ContinuousSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.DataIteratorReaderFunction;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.AmoroSplit;
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterator;
@@ -52,8 +52,8 @@ public class MixedIncrementalLoader<T> implements AutoCloseable {
   private final DataIteratorReaderFunction<T> readerFunction;
   private AbstractAdaptHiveKeyedDataReader<T> flinkArcticMORDataReader;
   private final List<Expression> filters;
-  private final AtomicReference<ArcticEnumeratorOffset> enumeratorPosition;
-  private final Queue<ArcticSplit> splitQueue;
+  private final AtomicReference<AmoroEnumeratorOffset> enumeratorPosition;
+  private final Queue<AmoroSplit> splitQueue;
 
   public MixedIncrementalLoader(
       ContinuousSplitPlanner continuousSplitPlanner,
@@ -100,7 +100,7 @@ public class MixedIncrementalLoader<T> implements AutoCloseable {
   }
 
   public CloseableIterator<T> next() {
-    ArcticSplit split = splitQueue.poll();
+    AmoroSplit split = splitQueue.poll();
     if (split == null) {
       throw new IllegalStateException("next() called, but no more valid splits");
     }

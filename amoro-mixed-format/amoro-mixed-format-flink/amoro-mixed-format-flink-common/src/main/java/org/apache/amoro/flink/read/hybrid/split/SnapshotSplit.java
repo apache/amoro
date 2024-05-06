@@ -28,7 +28,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import java.util.Collection;
 
 /** A snapshot split generated during planning base table. */
-public class SnapshotSplit extends ArcticSplit {
+public class SnapshotSplit extends AmoroSplit {
   private static final long serialVersionUID = 1L;
   private final int taskIndex;
   private final Collection<MixedFileScanTask> insertScanTasks;
@@ -79,7 +79,7 @@ public class SnapshotSplit extends ArcticSplit {
   }
 
   @Override
-  public ArcticSplit copy() {
+  public AmoroSplit copy() {
     return new SnapshotSplit(insertScanTasks, taskIndex);
   }
 

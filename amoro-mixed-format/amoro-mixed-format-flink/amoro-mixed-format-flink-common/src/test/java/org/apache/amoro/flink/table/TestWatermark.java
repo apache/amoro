@@ -25,7 +25,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.util.AmoroUtils;
 import org.apache.amoro.flink.util.DataUtil;
 import org.apache.amoro.flink.util.TestUtil;
 import org.apache.amoro.table.KeyedTable;
@@ -120,8 +120,8 @@ public class TestWatermark extends FlinkTestBase {
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
     KeyedTable keyedTable =
         (KeyedTable)
-            ArcticUtils.loadArcticTable(
-                ArcticTableLoader.of(
+            AmoroUtils.loadArcticTable(
+                AmoroTableLoader.of(
                     TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
     List<RowData> baseData =
@@ -184,8 +184,8 @@ public class TestWatermark extends FlinkTestBase {
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
     KeyedTable keyedTable =
         (KeyedTable)
-            ArcticUtils.loadArcticTable(
-                ArcticTableLoader.of(
+            AmoroUtils.loadArcticTable(
+                AmoroTableLoader.of(
                     TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
     List<RowData> baseData =

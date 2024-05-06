@@ -32,6 +32,6 @@ import java.io.Serializable;
  */
 @FunctionalInterface
 public interface DataIteratorBatcher<T> extends Serializable {
-  CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> batch(
+  CloseableIterator<RecordsWithSplitIds<AmoroRecordWithOffset<T>>> batch(
       String splitId, DataIterator<T> inputIterator);
 }

@@ -18,9 +18,9 @@
 
 package org.apache.amoro.flink.write;
 
-import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.flink.table.AmoroTableLoader;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.util.AmoroUtils;
 import org.apache.amoro.table.MixedTable;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.iceberg.UpdateProperties;
@@ -36,14 +36,14 @@ public class AutomaticDoubleWriteStatus implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(AutomaticDoubleWriteStatus.class);
 
   private static final long serialVersionUID = 1L;
-  private final ArcticTableLoader tableLoader;
+  private final AmoroTableLoader tableLoader;
   private final AutomaticWriteSpecification specification;
   private MixedTable table;
   private transient boolean shouldDoubleWrite = false;
   private int subtaskId;
 
   public AutomaticDoubleWriteStatus(
-      ArcticTableLoader tableLoader, Duration writeLogstoreWatermarkGap) {
+      AmoroTableLoader tableLoader, Duration writeLogstoreWatermarkGap) {
     this.tableLoader = tableLoader;
     this.specification = new AutomaticWriteSpecification(writeLogstoreWatermarkGap);
   }
@@ -53,7 +53,7 @@ public class AutomaticDoubleWriteStatus implements Serializable {
   }
 
   public void open() {
-    table = ArcticUtils.loadArcticTable(tableLoader);
+    table = AmoroUtils.loadArcticTable(tableLoader);
     sync();
   }
 

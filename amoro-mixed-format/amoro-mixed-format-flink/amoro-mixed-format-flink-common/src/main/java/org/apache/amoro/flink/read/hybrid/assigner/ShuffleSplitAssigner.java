@@ -20,9 +20,9 @@ package org.apache.amoro.flink.read.hybrid.assigner;
 
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyedFile;
-import org.apache.amoro.flink.read.hybrid.enumerator.ArcticSourceEnumState;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplitState;
+import org.apache.amoro.flink.read.hybrid.enumerator.AmoroSourceEnumState;
+import org.apache.amoro.flink.read.hybrid.split.AmoroSplit;
+import org.apache.amoro.flink.read.hybrid.split.AmoroSplitState;
 import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
@@ -54,7 +54,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   private static final Logger LOG = LoggerFactory.getLogger(ShuffleSplitAssigner.class);
 
   private static final long POLL_TIMEOUT = 200;
-  private final SplitEnumeratorContext<ArcticSplit> enumeratorContext;
+  private final SplitEnumeratorContext<AmoroSplit> enumeratorContext;
 
   private int totalParallelism;
   private int totalSplitNum;
@@ -67,12 +67,12 @@ public class ShuffleSplitAssigner implements SplitAssigner {
    */
   private final Map<Long, Integer> partitionIndexSubtaskMap;
   /** Key is subtaskId, Value is the queue of unAssigned arctic splits. */
-  private final Map<Integer, PriorityBlockingQueue<ArcticSplit>> subtaskSplitMap;
+  private final Map<Integer, PriorityBlockingQueue<AmoroSplit>> subtaskSplitMap;
 
   private CompletableFuture<Void> availableFuture;
 
   @VisibleForTesting
-  public ShuffleSplitAssigner(SplitEnumeratorContext<ArcticSplit> enumeratorContext) {
+  public ShuffleSplitAssigner(SplitEnumeratorContext<AmoroSplit> enumeratorContext) {
     this.enumeratorContext = enumeratorContext;
     this.totalParallelism = enumeratorContext.currentParallelism();
     this.partitionIndexSubtaskMap = new ConcurrentHashMap<>();
@@ -80,9 +80,9 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   }
 
   public ShuffleSplitAssigner(
-      SplitEnumeratorContext<ArcticSplit> enumeratorContext,
+      SplitEnumeratorContext<AmoroSplit> enumeratorContext,
       String tableName,
-      @Nullable ArcticSourceEnumState enumState) {
+      @Nullable AmoroSourceEnumState enumState) {
     this.enumeratorContext = enumeratorContext;
     this.partitionIndexSubtaskMap = new ConcurrentHashMap<>();
     this.subtaskSplitMap = new ConcurrentHashMap<>();
@@ -120,7 +120,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
         .orElseGet(isEmpty() ? Split::unavailable : Split::subtaskUnavailable);
   }
 
-  private Optional<ArcticSplit> getNextSplit(int subTaskId) {
+  private Optional<AmoroSplit> getNextSplit(int subTaskId) {
     int currentParallelism = enumeratorContext.currentParallelism();
     if (totalParallelism != currentParallelism) {
       throw new FlinkRuntimeException(
@@ -129,9 +129,9 @@ public class ShuffleSplitAssigner implements SplitAssigner {
               totalParallelism, currentParallelism));
     }
     if (subtaskSplitMap.containsKey(subTaskId)) {
-      PriorityBlockingQueue<ArcticSplit> queue = subtaskSplitMap.get(subTaskId);
+      PriorityBlockingQueue<AmoroSplit> queue = subtaskSplitMap.get(subTaskId);
 
-      ArcticSplit arcticSplit = null;
+      AmoroSplit arcticSplit = null;
       try {
         arcticSplit = queue.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
@@ -156,18 +156,18 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   }
 
   @Override
-  public void onDiscoveredSplits(Collection<ArcticSplit> splits) {
+  public void onDiscoveredSplits(Collection<AmoroSplit> splits) {
     splits.forEach(this::putArcticIntoQueue);
     // only complete pending future if new splits are discovered
     completeAvailableFuturesIfNeeded();
   }
 
   @Override
-  public void onUnassignedSplits(Collection<ArcticSplit> splits) {
+  public void onUnassignedSplits(Collection<AmoroSplit> splits) {
     onDiscoveredSplits(splits);
   }
 
-  void putArcticIntoQueue(final ArcticSplit split) {
+  void putArcticIntoQueue(final AmoroSplit split) {
     List<DataTreeNode> exactlyTreeNodes = getExactlyTreeNodes(split);
 
     PrimaryKeyedFile file = findAnyFileInArcticSplit(split);
@@ -184,9 +184,9 @@ public class ShuffleSplitAssigner implements SplitAssigner {
           node.index(),
           subtaskId);
 
-      PriorityBlockingQueue<ArcticSplit> queue =
+      PriorityBlockingQueue<AmoroSplit> queue =
           subtaskSplitMap.getOrDefault(subtaskId, new PriorityBlockingQueue<>());
-      ArcticSplit copiedSplit = split.copy();
+      AmoroSplit copiedSplit = split.copy();
       copiedSplit.modifyTreeNode(node);
       LOG.info("put split into queue: {}", copiedSplit);
       queue.add(copiedSplit);
@@ -196,12 +196,12 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   }
 
   @Override
-  public Collection<ArcticSplitState> state() {
-    List<ArcticSplitState> arcticSplitStates = new ArrayList<>();
+  public Collection<AmoroSplitState> state() {
+    List<AmoroSplitState> arcticSplitStates = new ArrayList<>();
     subtaskSplitMap.forEach(
         (key, value) ->
             arcticSplitStates.addAll(
-                value.stream().map(ArcticSplitState::new).collect(Collectors.toList())));
+                value.stream().map(AmoroSplitState::new).collect(Collectors.toList())));
 
     return arcticSplitStates;
   }
@@ -218,8 +218,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
     if (subtaskSplitMap.isEmpty()) {
       return true;
     }
-    for (Map.Entry<Integer, PriorityBlockingQueue<ArcticSplit>> entry :
-        subtaskSplitMap.entrySet()) {
+    for (Map.Entry<Integer, PriorityBlockingQueue<AmoroSplit>> entry : subtaskSplitMap.entrySet()) {
       if (!entry.getValue().isEmpty()) {
         return false;
       }
@@ -276,7 +275,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
    * @param arcticSplit Arctic split.
    * @return The exact tree node list.
    */
-  public List<DataTreeNode> getExactlyTreeNodes(ArcticSplit arcticSplit) {
+  public List<DataTreeNode> getExactlyTreeNodes(AmoroSplit arcticSplit) {
     DataTreeNode dataTreeNode = arcticSplit.dataTreeNode();
     long mask = dataTreeNode.mask();
 
@@ -311,7 +310,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
    * @param arcticSplit arctic source split
    * @return anyone primary keyed file in the arcticSplit.
    */
-  private PrimaryKeyedFile findAnyFileInArcticSplit(ArcticSplit arcticSplit) {
+  private PrimaryKeyedFile findAnyFileInArcticSplit(AmoroSplit arcticSplit) {
     AtomicReference<PrimaryKeyedFile> file = new AtomicReference<>();
     if (arcticSplit.isChangelogSplit()) {
       List<MixedFileScanTask> arcticSplits =

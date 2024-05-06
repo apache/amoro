@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.hybrid.reader;
 
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.AmoroSplit;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.iceberg.io.CloseableIterator;
 
@@ -26,10 +26,10 @@ import java.io.Serializable;
 import java.util.function.Function;
 
 /**
- * This function that accepts one {@link ArcticSplit} and produces an iterator of {@link
- * ArcticRecordWithOffset<T>}.
+ * This function that accepts one {@link AmoroSplit} and produces an iterator of {@link
+ * AmoroRecordWithOffset <T>}.
  */
 @FunctionalInterface
 public interface ReaderFunction<T>
     extends Serializable,
-        Function<ArcticSplit, CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>>> {}
+        Function<AmoroSplit, CloseableIterator<RecordsWithSplitIds<AmoroRecordWithOffset<T>>>> {}

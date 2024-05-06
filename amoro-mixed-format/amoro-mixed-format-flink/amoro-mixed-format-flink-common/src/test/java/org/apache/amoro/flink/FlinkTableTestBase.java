@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink;
 
-import org.apache.amoro.flink.table.ArcticTableLoader;
-import org.apache.amoro.flink.write.ArcticRowDataTaskWriterFactory;
+import org.apache.amoro.flink.table.AmoroTableLoader;
+import org.apache.amoro.flink.write.AmoroRowDataTaskWriterFactory;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
@@ -64,8 +64,8 @@ public interface FlinkTableTestBase {
 
   default TaskWriter<RowData> createTaskWriter(
       MixedTable mixedTable, RowType rowType, boolean overwrite, long mask) {
-    ArcticRowDataTaskWriterFactory taskWriterFactory =
-        new ArcticRowDataTaskWriterFactory(mixedTable, rowType, overwrite);
+    AmoroRowDataTaskWriterFactory taskWriterFactory =
+        new AmoroRowDataTaskWriterFactory(mixedTable, rowType, overwrite);
     taskWriterFactory.setMask(mask);
     taskWriterFactory.initialize(0, 0);
     return taskWriterFactory.create();
@@ -97,13 +97,13 @@ public interface FlinkTableTestBase {
     }
   }
 
-  default ArcticTableLoader getTableLoader(
+  default AmoroTableLoader getTableLoader(
       String catalogName, String metastoreUrl, MixedTable mixedTable) {
     TableIdentifier identifier =
         TableIdentifier.of(
             catalogName, mixedTable.id().getDatabase(), mixedTable.id().getTableName());
     InternalCatalogBuilder internalCatalogBuilder =
         InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl);
-    return ArcticTableLoader.of(identifier, internalCatalogBuilder, mixedTable.properties());
+    return AmoroTableLoader.of(identifier, internalCatalogBuilder, mixedTable.properties());
   }
 }

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.hybrid.reader;
 
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.AmoroSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.flink.read.hybrid.split.MergeOnReadSplit;
 import org.apache.amoro.flink.read.hybrid.split.SnapshotSplit;
@@ -41,14 +41,14 @@ import java.util.Queue;
 /**
  * A hybrid source split reader that could read {@link SnapshotSplit} and {@link ChangelogSplit}.
  */
-public class HybridSplitReader<T> implements SplitReader<ArcticRecordWithOffset<T>, ArcticSplit> {
+public class HybridSplitReader<T> implements SplitReader<AmoroRecordWithOffset<T>, AmoroSplit> {
   private static final Logger LOG = LoggerFactory.getLogger(HybridSplitReader.class);
 
   private final ReaderFunction<T> openSplitFunction;
   private final int indexOfSubtask;
-  private final Queue<ArcticSplit> splits;
+  private final Queue<AmoroSplit> splits;
 
-  private CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> currentReader;
+  private CloseableIterator<RecordsWithSplitIds<AmoroRecordWithOffset<T>>> currentReader;
   private String currentSplitId;
 
   public HybridSplitReader(ReaderFunction<T> openSplitFunction, SourceReaderContext context) {
@@ -58,12 +58,12 @@ public class HybridSplitReader<T> implements SplitReader<ArcticRecordWithOffset<
   }
 
   @Override
-  public RecordsWithSplitIds<ArcticRecordWithOffset<T>> fetch() throws IOException {
+  public RecordsWithSplitIds<AmoroRecordWithOffset<T>> fetch() throws IOException {
     if (currentReader == null) {
       if (splits.isEmpty()) {
         return new RecordsBySplits<>(Collections.emptyMap(), Collections.emptySet());
       }
-      ArcticSplit arcticSplit = splits.poll();
+      AmoroSplit arcticSplit = splits.poll();
       currentReader = openSplitFunction.apply(arcticSplit);
       currentSplitId = arcticSplit.splitId();
     }
@@ -81,7 +81,7 @@ public class HybridSplitReader<T> implements SplitReader<ArcticRecordWithOffset<
   }
 
   @Override
-  public void handleSplitsChanges(SplitsChange<ArcticSplit> splitsChange) {
+  public void handleSplitsChanges(SplitsChange<AmoroSplit> splitsChange) {
     if (!(splitsChange instanceof SplitsAddition)) {
       throw new UnsupportedOperationException(
           String.format("The SplitChange type of %s is not supported.", splitsChange.getClass()));
@@ -118,7 +118,7 @@ public class HybridSplitReader<T> implements SplitReader<ArcticRecordWithOffset<
     }
   }
 
-  private RecordsWithSplitIds<ArcticRecordWithOffset<T>> finishSplit() throws IOException {
+  private RecordsWithSplitIds<AmoroRecordWithOffset<T>> finishSplit() throws IOException {
     if (currentReader != null) {
       currentReader.close();
       currentReader = null;

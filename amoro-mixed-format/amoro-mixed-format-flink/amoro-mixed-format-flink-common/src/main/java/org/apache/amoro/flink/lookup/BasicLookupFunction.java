@@ -19,13 +19,13 @@
 package org.apache.amoro.flink.lookup;
 
 import static org.apache.amoro.flink.table.descriptors.ArcticValidator.LOOKUP_RELOADING_INTERVAL;
-import static org.apache.amoro.flink.util.ArcticUtils.loadArcticTable;
+import static org.apache.amoro.flink.util.AmoroUtils.loadArcticTable;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 import org.apache.amoro.flink.read.MixedIncrementalLoader;
 import org.apache.amoro.flink.read.hybrid.enumerator.MergeOnReadIncrementalPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.DataIteratorReaderFunction;
-import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.flink.table.AmoroTableLoader;
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import org.apache.amoro.table.MixedTable;
 import org.apache.flink.configuration.Configuration;
@@ -65,7 +65,7 @@ public class BasicLookupFunction<T> implements Serializable {
   private final List<String> joinKeys;
   private final Schema projectSchema;
   private final List<Expression> filters;
-  private final ArcticTableLoader loader;
+  private final AmoroTableLoader loader;
   private long nextLoadTime = Long.MIN_VALUE;
   private final long reloadIntervalSeconds;
   private MixedIncrementalLoader<T> incrementalLoader;
@@ -85,7 +85,7 @@ public class BasicLookupFunction<T> implements Serializable {
       List<String> joinKeys,
       Schema projectSchema,
       List<Expression> filters,
-      ArcticTableLoader tableLoader,
+      AmoroTableLoader tableLoader,
       Configuration config,
       Predicate<T> predicate,
       AbstractAdaptHiveKeyedDataReader<T> flinkArcticMORDataReader,

@@ -30,7 +30,7 @@ import java.util.List;
 public interface ContinuousSplitPlanner extends Closeable {
 
   /** Discover the files appended between {@code lastPosition} and current table snapshot */
-  default ContinuousEnumerationResult planSplits(ArcticEnumeratorOffset lastPosition) {
+  default ContinuousEnumerationResult planSplits(AmoroEnumeratorOffset lastPosition) {
     return planSplits(lastPosition, Lists.newArrayList());
   }
 
@@ -39,5 +39,5 @@ public interface ContinuousSplitPlanner extends Closeable {
    * data with expressions.
    */
   ContinuousEnumerationResult planSplits(
-      ArcticEnumeratorOffset lastPosition, List<Expression> filters);
+      AmoroEnumeratorOffset lastPosition, List<Expression> filters);
 }
