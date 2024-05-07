@@ -27,9 +27,9 @@ import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.DefaultKeyedFile;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
-import org.apache.amoro.scan.ArcticFileScanTask;
 import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.server.exception.OptimizingCommitException;
 import org.apache.amoro.server.optimizing.KeyedTableCommit;
 import org.apache.amoro.server.optimizing.TaskRuntime;
@@ -72,30 +72,30 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
 
   @Before
   public void initTableFile() {
-    arcticTable = getArcticTable();
-    spec = arcticTable.spec();
+    mixedTable = getMixedTable();
+    spec = mixedTable.spec();
     partitionData = GenericRecord.create(spec.schema());
     partitionData.set(0, 1);
     partitionPath = spec.partitionToPath(partitionData);
   }
 
   protected void addFile(DataFile dataFile) {
-    arcticTable.asKeyedTable().changeTable().newAppend().appendFile(dataFile).commit();
+    mixedTable.asKeyedTable().changeTable().newAppend().appendFile(dataFile).commit();
   }
 
   protected Map<String, ContentFile<?>> getAllFiles() {
     Map<String, ContentFile<?>> maps = new HashMap<>();
     CloseableIterable<CombinedScanTask> combinedScanTasks =
-        arcticTable.asKeyedTable().newScan().planTasks();
+        mixedTable.asKeyedTable().newScan().planTasks();
     for (CombinedScanTask combinedScanTask : combinedScanTasks) {
       for (KeyedTableScanTask keyedTableScanTask : combinedScanTask.tasks()) {
-        for (ArcticFileScanTask task : keyedTableScanTask.dataTasks()) {
+        for (MixedFileScanTask task : keyedTableScanTask.dataTasks()) {
           maps.put(task.file().path().toString(), task.file());
           for (DeleteFile deleteFile : task.deletes()) {
             maps.put(deleteFile.path().toString(), deleteFile);
           }
         }
-        for (ArcticFileScanTask task : keyedTableScanTask.arcticEquityDeletes()) {
+        for (MixedFileScanTask task : keyedTableScanTask.mixedEquityDeletes()) {
           maps.put(task.file().path().toString(), task.file());
         }
       }
@@ -134,9 +134,9 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
     Mockito.when(taskRuntime.getOutput()).thenReturn(output);
     KeyedTableCommit commit =
         new KeyedTableCommit(
-            getArcticTable(),
+            getMixedTable(),
             Collections.singletonList(taskRuntime),
-            Optional.ofNullable(arcticTable.asKeyedTable().baseTable().currentSnapshot())
+            Optional.ofNullable(mixedTable.asKeyedTable().baseTable().currentSnapshot())
                 .map(Snapshot::snapshotId)
                 .orElse(null),
             fromSequence,
@@ -215,6 +215,6 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
                   })
               .toArray(ContentFile[]::new);
     }
-    return new RewriteFilesInput(rewriteData, rewritePos, null, delete, arcticTable);
+    return new RewriteFilesInput(rewriteData, rewritePos, null, delete, mixedTable);
   }
 }

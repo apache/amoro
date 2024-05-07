@@ -38,15 +38,15 @@ public interface KeyedTableScanTask extends Serializable {
   /** Returns the estimated count of record reading from the task */
   long recordCount();
 
-  /** Returns a list of {@link ArcticFileScanTask} for base files */
-  List<ArcticFileScanTask> baseTasks();
+  /** Returns a list of {@link MixedFileScanTask} for base files */
+  List<MixedFileScanTask> baseTasks();
 
-  /** Returns a list of {@link ArcticFileScanTask} for insert files */
-  List<ArcticFileScanTask> insertTasks();
+  /** Returns a list of {@link MixedFileScanTask} for insert files */
+  List<MixedFileScanTask> insertTasks();
 
-  /** Returns a list of {@link ArcticFileScanTask} for equality delete files */
-  List<ArcticFileScanTask> arcticEquityDeletes();
+  /** Returns a list of {@link MixedFileScanTask} for equality delete files */
+  List<MixedFileScanTask> mixedEquityDeletes();
 
-  /** Returns a list of {@link ArcticFileScanTask} for insert files and base files */
-  List<ArcticFileScanTask> dataTasks();
+  /** Returns a list of {@link MixedFileScanTask} for insert files and base files */
+  List<MixedFileScanTask> dataTasks();
 }

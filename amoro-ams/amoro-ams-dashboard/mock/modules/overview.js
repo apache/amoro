@@ -66,7 +66,7 @@ export default [
           '83.24'
         ],
         usedCpuDivision: [
-          '1828核/2196核'
+          '1828C/2196C'
         ],
         usedCpuPercent: [
           '83.24%'
@@ -75,7 +75,7 @@ export default [
           '83.24'
         ],
         usedMemDivision: [
-          '1828核/2196核10364G'
+          '1828C/2196C10364G'
         ],
         usedMemPercent: [
           '83.24%'

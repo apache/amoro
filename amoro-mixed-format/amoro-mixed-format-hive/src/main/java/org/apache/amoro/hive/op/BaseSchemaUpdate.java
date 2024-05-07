@@ -18,7 +18,7 @@
 
 package org.apache.amoro.hive.op;
 
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.UpdateSchema;
@@ -29,11 +29,11 @@ import java.util.Collection;
 
 public class BaseSchemaUpdate implements UpdateSchema {
 
-  private final ArcticTable arcticTable;
+  private final MixedTable mixedTable;
   private final UpdateSchema updateSchema;
 
-  public BaseSchemaUpdate(ArcticTable arcticTable, UpdateSchema updateSchema) {
-    this.arcticTable = arcticTable;
+  public BaseSchemaUpdate(MixedTable mixedTable, UpdateSchema updateSchema) {
+    this.mixedTable = mixedTable;
     this.updateSchema = updateSchema;
   }
 
@@ -140,13 +140,13 @@ public class BaseSchemaUpdate implements UpdateSchema {
   // It is strictly required that all non-partitioned columns precede partitioned columns in the
   // schema.
   private void moveColBeforePar(String name) {
-    if (!arcticTable.spec().isUnpartitioned()) {
+    if (!mixedTable.spec().isUnpartitioned()) {
       int parFieldMinIndex = Integer.MAX_VALUE;
       Types.NestedField firstParField = null;
-      for (PartitionField partitionField : arcticTable.spec().fields()) {
-        Types.NestedField sourceField = arcticTable.schema().findField(partitionField.sourceId());
-        if (arcticTable.schema().columns().indexOf(sourceField) < parFieldMinIndex) {
-          parFieldMinIndex = arcticTable.schema().columns().indexOf(sourceField);
+      for (PartitionField partitionField : mixedTable.spec().fields()) {
+        Types.NestedField sourceField = mixedTable.schema().findField(partitionField.sourceId());
+        if (mixedTable.schema().columns().indexOf(sourceField) < parFieldMinIndex) {
+          parFieldMinIndex = mixedTable.schema().columns().indexOf(sourceField);
           firstParField = sourceField;
         }
       }

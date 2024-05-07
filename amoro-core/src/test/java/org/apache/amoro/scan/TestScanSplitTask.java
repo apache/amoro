@@ -40,14 +40,14 @@ public class TestScanSplitTask extends TableDataTestBase {
     writeInsertFileIntoBaseStore();
     {
       CloseableIterable<CombinedScanTask> combinedScanTasks =
-          getArcticTable().asKeyedTable().newScan().planTasks();
+          getMixedTable().asKeyedTable().newScan().planTasks();
       for (CombinedScanTask combinedScanTask : combinedScanTasks) {
         Assert.assertEquals(combinedScanTask.tasks().size(), 7);
       }
     }
     {
       CloseableIterable<CombinedScanTask> combinedScanTasks =
-          getArcticTable().asKeyedTable().newScan().enableSplitTaskByDeleteRatio(0.04).planTasks();
+          getMixedTable().asKeyedTable().newScan().enableSplitTaskByDeleteRatio(0.04).planTasks();
       for (CombinedScanTask combinedScanTask : combinedScanTasks) {
         // If enableSplitTaskByDeleteRatio is turned on, tasks with delete content below the
         // threshold will be split
@@ -68,14 +68,14 @@ public class TestScanSplitTask extends TableDataTestBase {
     ImmutableList<Record> records = builder.build();
 
     GenericChangeTaskWriter writer =
-        GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+        GenericTaskWriters.builderFor(getMixedTable().asKeyedTable())
             .withTransactionId(5L)
             .buildChangeWriter();
     for (Record record : records) {
       writer.write(record);
     }
     WriteResult result = writer.complete();
-    AppendFiles baseAppend = getArcticTable().asKeyedTable().baseTable().newAppend();
+    AppendFiles baseAppend = getMixedTable().asKeyedTable().baseTable().newAppend();
     Arrays.stream(result.dataFiles()).forEach(baseAppend::appendFile);
     baseAppend.commit();
   }

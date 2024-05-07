@@ -52,7 +52,7 @@ public class WatermarkGenerator {
   private final SimpleDateFormat eventTimeStringFormat;
   private final String eventTimeNumberFormat;
 
-  public static WatermarkGenerator forTable(ArcticTable table) {
+  public static WatermarkGenerator forTable(MixedTable table) {
     Types.NestedField eventTimeField = INGEST_TIME_FIELD;
     String eventTimeName =
         table

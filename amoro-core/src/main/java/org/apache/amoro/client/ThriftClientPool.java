@@ -90,9 +90,8 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
               public ThriftClient<T> create() throws Exception {
 
                 // get from global list first
-                ArcticThriftUrl arcticThriftUrl = ArcticThriftUrl.parse(url, serviceName);
-                ServiceInfo serviceInfo =
-                    new ServiceInfo(arcticThriftUrl.host(), arcticThriftUrl.port());
+                AmsThriftUrl amsThriftUrl = AmsThriftUrl.parse(url, serviceName);
+                ServiceInfo serviceInfo = new ServiceInfo(amsThriftUrl.host(), amsThriftUrl.port());
                 TTransport transport = getTransport(serviceInfo);
 
                 try {
@@ -105,9 +104,9 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
                   if (poolConfig.isFailover()) {
                     for (int i = 0; i < 5; i++) {
                       try {
-                        arcticThriftUrl = ArcticThriftUrl.parse(url, serviceName);
-                        serviceInfo.setHost(arcticThriftUrl.host());
-                        serviceInfo.setPort(arcticThriftUrl.port());
+                        amsThriftUrl = AmsThriftUrl.parse(url, serviceName);
+                        serviceInfo.setHost(amsThriftUrl.host());
+                        serviceInfo.setPort(amsThriftUrl.port());
                         transport = getTransport(serviceInfo); // while break here
                         LOG.info(
                             "failover to next service host={}, port={}",

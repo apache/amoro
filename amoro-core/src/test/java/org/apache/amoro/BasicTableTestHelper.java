@@ -25,8 +25,8 @@ import static org.apache.amoro.table.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT
 
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.io.MixedDataTestHelpers;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
@@ -146,7 +146,7 @@ public class BasicTableTestHelper implements TableTestHelper {
 
   @Override
   public List<DataFile> writeBaseStore(
-      ArcticTable table, long txId, List<Record> records, boolean orderedWrite) {
+      MixedTable table, long txId, List<Record> records, boolean orderedWrite) {
     return MixedDataTestHelpers.writeBaseStore(table, txId, records, orderedWrite);
   }
 
@@ -169,7 +169,7 @@ public class BasicTableTestHelper implements TableTestHelper {
 
   @Override
   public List<Record> readBaseStore(
-      ArcticTable table, Expression expression, Schema projectSchema, boolean useDiskMap) {
+      MixedTable table, Expression expression, Schema projectSchema, boolean useDiskMap) {
     return MixedDataTestHelpers.readBaseStore(table, expression, projectSchema, useDiskMap);
   }
 

@@ -22,7 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
@@ -54,7 +54,7 @@ public class TablePropertyUtil {
         if (spec.isUnpartitioned()) {
           results.put(EMPTY_STRUCT, map.get(key));
         } else {
-          StructLike partitionData = ArcticDataFiles.data(spec, key);
+          StructLike partitionData = MixedDataFiles.data(spec, key);
           results.put(partitionData, map.get(key));
         }
       }
@@ -100,11 +100,11 @@ public class TablePropertyUtil {
   }
 
   public static Map<String, String> getPartitionProperties(
-      ArcticTable arcticTable, StructLike partition) {
+      MixedTable mixedTable, StructLike partition) {
     return getPartitionProperties(
-        arcticTable.isKeyedTable()
-            ? arcticTable.asKeyedTable().baseTable()
-            : arcticTable.asUnkeyedTable(),
+        mixedTable.isKeyedTable()
+            ? mixedTable.asKeyedTable().baseTable()
+            : mixedTable.asUnkeyedTable(),
         partition);
   }
 

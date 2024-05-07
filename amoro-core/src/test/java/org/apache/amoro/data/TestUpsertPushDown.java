@@ -76,37 +76,37 @@ public class TestUpsertPushDown extends TableTestBase {
   @Before
   public void initChangeStoreData() {
     MixedDataTestHelpers.writeAndCommitChangeStore(
-        getArcticTable().asKeyedTable(),
+        getMixedTable().asKeyedTable(),
         1L,
         ChangeAction.DELETE,
         writeRecords(1, "aaa", 0, 1),
         false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
-        getArcticTable().asKeyedTable(),
+        getMixedTable().asKeyedTable(),
         2L,
         ChangeAction.UPDATE_AFTER,
         writeRecords(1, "aaa", 0, 1),
         false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
-        getArcticTable().asKeyedTable(),
+        getMixedTable().asKeyedTable(),
         3L,
         ChangeAction.DELETE,
         writeRecords(2, "bbb", 0, 2),
         false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
-        getArcticTable().asKeyedTable(),
+        getMixedTable().asKeyedTable(),
         3L,
         ChangeAction.UPDATE_AFTER,
         writeRecords(2, "bbb", 0, 2),
         false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
-        getArcticTable().asKeyedTable(),
+        getMixedTable().asKeyedTable(),
         4L,
         ChangeAction.DELETE,
         writeRecords(2, "ccc", 0, 2),
         false);
     MixedDataTestHelpers.writeAndCommitChangeStore(
-        getArcticTable().asKeyedTable(),
+        getMixedTable().asKeyedTable(),
         5L,
         ChangeAction.UPDATE_AFTER,
         writeRecords(2, "ccc", 0, 2),
@@ -117,7 +117,7 @@ public class TestUpsertPushDown extends TableTestBase {
   public void testReadKeyedTableWithoutFilter() {
     List<Record> records =
         MixedDataTestHelpers.readKeyedTable(
-            getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
+            getMixedTable().asKeyedTable(), Expressions.alwaysTrue());
     Assert.assertEquals(records.size(), 2);
     Assert.assertTrue(recordToNameList(records).containsAll(Arrays.asList("aaa", "ccc")));
   }
@@ -133,7 +133,7 @@ public class TestUpsertPushDown extends TableTestBase {
             Expressions.and(Expressions.notNull("name"), Expressions.equal("name", "bbb")));
     List<Record> records =
         MixedDataTestHelpers.readKeyedTable(
-            getArcticTable().asKeyedTable(), partitionAndColumnFilter);
+            getMixedTable().asKeyedTable(), partitionAndColumnFilter);
     // Scan from change store only filter partition column expression, so record(name=ccc) is still
     // returned.
     Assert.assertEquals(records.size(), 1);
@@ -151,7 +151,7 @@ public class TestUpsertPushDown extends TableTestBase {
             Expressions.and(Expressions.notNull("name"), Expressions.equal("name", "bbb")));
     List<Record> records =
         MixedDataTestHelpers.readKeyedTable(
-            getArcticTable().asKeyedTable(), partitionOrColumnFilter);
+            getMixedTable().asKeyedTable(), partitionOrColumnFilter);
     Assert.assertEquals(records.size(), 2);
     Assert.assertTrue(recordToNameList(records).containsAll(Arrays.asList("aaa", "ccc")));
   }
@@ -163,7 +163,7 @@ public class TestUpsertPushDown extends TableTestBase {
         Expressions.and(
             Expressions.notNull("op_time"), Expressions.equal("op_time", "2022-01-02T12:00:00"));
     List<Record> records =
-        MixedDataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), partitionFilter);
+        MixedDataTestHelpers.readKeyedTable(getMixedTable().asKeyedTable(), partitionFilter);
     Assert.assertEquals(records.size(), 1);
     Assert.assertTrue(recordToNameList(records).contains("ccc"));
   }
@@ -173,7 +173,7 @@ public class TestUpsertPushDown extends TableTestBase {
     Expression columnFilter =
         Expressions.and(Expressions.notNull("name"), Expressions.equal("name", "bbb"));
     List<Record> records =
-        MixedDataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), columnFilter);
+        MixedDataTestHelpers.readKeyedTable(getMixedTable().asKeyedTable(), columnFilter);
     Assert.assertEquals(records.size(), 2);
     Assert.assertTrue(recordToNameList(records).containsAll(Arrays.asList("aaa", "ccc")));
   }
@@ -189,7 +189,7 @@ public class TestUpsertPushDown extends TableTestBase {
             Expressions.and(Expressions.notNull("name"), Expressions.equal("name", "bbb")));
     List<Record> records =
         MixedDataTestHelpers.readKeyedTable(
-            getArcticTable().asKeyedTable(), greaterPartitionAndColumnFilter);
+            getMixedTable().asKeyedTable(), greaterPartitionAndColumnFilter);
     Assert.assertEquals(records.size(), 1);
     Assert.assertTrue(recordToNameList(records).contains("ccc"));
   }

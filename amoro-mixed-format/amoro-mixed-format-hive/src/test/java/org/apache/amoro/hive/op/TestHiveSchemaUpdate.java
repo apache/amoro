@@ -65,7 +65,7 @@ public class TestHiveSchemaUpdate extends TableTestBase {
   public void testAddColumn() throws TException {
     String addColumnName = "test_add";
     String addColumnDoc = "test Doc";
-    getArcticTable()
+    getMixedTable()
         .updateSchema()
         .addColumn(addColumnName, Types.IntegerType.get(), addColumnDoc)
         .commit();
@@ -89,7 +89,7 @@ public class TestHiveSchemaUpdate extends TableTestBase {
 
   @Test
   public void testUpdateColumn() throws TException {
-    getArcticTable().updateSchema().updateColumn("id", Types.LongType.get(), "update doc").commit();
+    getMixedTable().updateSchema().updateColumn("id", Types.LongType.get(), "update doc").commit();
     Schema expectSchema =
         new Schema(
             Types.NestedField.required(1, "id", Types.LongType.get(), "update doc"),
@@ -136,20 +136,20 @@ public class TestHiveSchemaUpdate extends TableTestBase {
   }
 
   private void checkTableSchema(Schema expectSchema) throws TException {
-    Assert.assertEquals(expectSchema.asStruct(), getArcticTable().schema().asStruct());
+    Assert.assertEquals(expectSchema.asStruct(), getMixedTable().schema().asStruct());
     if (isKeyedTable()) {
       Assert.assertEquals(
           expectSchema.asStruct(),
-          getArcticTable().asKeyedTable().changeTable().schema().asStruct());
+          getMixedTable().asKeyedTable().changeTable().schema().asStruct());
       Assert.assertEquals(
-          expectSchema.asStruct(), getArcticTable().asKeyedTable().baseTable().schema().asStruct());
+          expectSchema.asStruct(), getMixedTable().asKeyedTable().baseTable().schema().asStruct());
     }
     Table hiveTable =
         TEST_HMS
             .getHiveClient()
-            .getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
+            .getTable(getMixedTable().id().getDatabase(), getMixedTable().id().getTableName());
     Assert.assertEquals(
-        HiveSchemaUtil.hiveTableFields(expectSchema, getArcticTable().spec()),
+        HiveSchemaUtil.hiveTableFields(expectSchema, getMixedTable().spec()),
         hiveTable.getSd().getCols());
   }
 }

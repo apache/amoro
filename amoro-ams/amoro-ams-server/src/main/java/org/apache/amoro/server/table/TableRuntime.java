@@ -40,7 +40,7 @@ import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.blocker.RenewableBlocker;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
@@ -94,7 +94,7 @@ public class TableRuntime extends StatedPersistentBase {
   @StateField private volatile long processId;
   @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
   private volatile long lastPlanTime;
-  private final TableMetrics metrics;
+  private final TableOptimizingMetrics optimizingMetrics;
   private final ReentrantLock blockerLock = new ReentrantLock();
 
   protected TableRuntime(
@@ -107,7 +107,7 @@ public class TableRuntime extends StatedPersistentBase {
     this.tableConfiguration = TableConfiguration.parseConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
-    metrics = new TableMetrics(tableIdentifier);
+    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
   }
 
   protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
@@ -136,8 +136,8 @@ public class TableRuntime extends StatedPersistentBase {
             ? OptimizingStatus.PENDING
             : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
-    metrics = new TableMetrics(tableIdentifier);
-    metrics.stateChanged(optimizingStatus, this.currentStatusStartTime);
+    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
+    optimizingMetrics.statusChanged(optimizingStatus, this.currentStatusStartTime);
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -149,7 +149,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void registerMetric(MetricRegistry metricRegistry) {
-    this.metrics.register(metricRegistry);
+    this.optimizingMetrics.register(metricRegistry);
   }
 
   public void dispose() {
@@ -162,7 +162,7 @@ public class TableRuntime extends StatedPersistentBase {
                       TableMetaMapper.class,
                       mapper -> mapper.deleteOptimizingRuntime(tableIdentifier.getId())));
         });
-    metrics.unregister();
+    optimizingMetrics.unregister();
   }
 
   public void beginPlanning() {
@@ -273,20 +273,22 @@ public class TableRuntime extends StatedPersistentBase {
     invokeConsistency(
         () -> {
           OptimizingStatus originalStatus = optimizingStatus;
+          OptimizingType processType = optimizingProcess.getOptimizingType();
           if (success) {
             lastOptimizedSnapshotId = optimizingProcess.getTargetSnapshotId();
             lastOptimizedChangeSnapshotId = optimizingProcess.getTargetChangeSnapshotId();
-            if (optimizingProcess.getOptimizingType() == OptimizingType.MINOR) {
+            if (processType == OptimizingType.MINOR) {
               lastMinorOptimizingTime = optimizingProcess.getPlanTime();
-            } else if (optimizingProcess.getOptimizingType() == OptimizingType.MAJOR) {
+            } else if (processType == OptimizingType.MAJOR) {
               lastMajorOptimizingTime = optimizingProcess.getPlanTime();
-            } else if (optimizingProcess.getOptimizingType() == OptimizingType.FULL) {
+            } else if (processType == OptimizingType.FULL) {
               lastFullOptimizingTime = optimizingProcess.getPlanTime();
             }
           }
           updateOptimizingStatus(OptimizingStatus.IDLE);
           optimizingProcess = null;
           persistUpdatingRuntime();
+          optimizingMetrics.processComplete(processType, success);
           tableHandler.handleTableChanged(this, originalStatus);
         });
   }
@@ -294,11 +296,11 @@ public class TableRuntime extends StatedPersistentBase {
   private void updateOptimizingStatus(OptimizingStatus status) {
     this.optimizingStatus = status;
     this.currentStatusStartTime = System.currentTimeMillis();
-    this.metrics.stateChanged(status, currentStatusStartTime);
+    this.optimizingMetrics.statusChanged(status, currentStatusStartTime);
   }
 
   private boolean refreshSnapshots(AmoroTable<?> amoroTable) {
-    ArcticTable table = (ArcticTable) amoroTable.originalTable();
+    MixedTable table = (MixedTable) amoroTable.originalTable();
     if (table.isKeyedTable()) {
       long lastSnapshotId = currentSnapshotId;
       long changeSnapshotId = currentChangeSnapshotId;

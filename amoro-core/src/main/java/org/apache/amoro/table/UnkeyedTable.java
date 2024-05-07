@@ -25,8 +25,8 @@ import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.Map;
 
-/** Represents an arctic table without keys supported, the same as an {@link Table} */
-public interface UnkeyedTable extends ArcticTable, Table {
+/** Represents an mixed-format table without keys supported, the same as an {@link Table} */
+public interface UnkeyedTable extends MixedTable, Table {
 
   /** Returns the partition properties map. */
   StructLikeMap<Map<String, String>> partitionProperty();

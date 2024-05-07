@@ -46,7 +46,7 @@ import static org.apache.iceberg.types.Conversions.fromByteBuffer;
 
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.PrimaryKeyedFile;
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
 import org.apache.amoro.trino.delete.TrinoDeleteFile;
 import io.airlift.units.DataSize;
@@ -464,8 +464,8 @@ public class IcebergSplitSource implements ConnectorSplitSource {
     Long transactionId = null;
     DataFileType dataFileType = null;
     if (isChange) {
-      ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask) task;
-      PrimaryKeyedFile primaryKeyedFile = arcticFileScanTask.file();
+      MixedFileScanTask mixedFileScanTask = (MixedFileScanTask) task;
+      PrimaryKeyedFile primaryKeyedFile = mixedFileScanTask.file();
       transactionId = primaryKeyedFile.transactionId();
       dataFileType = primaryKeyedFile.type();
     }

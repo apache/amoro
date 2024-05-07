@@ -18,7 +18,7 @@
 
 package org.apache.amoro.trino.mixed;
 
-import static org.apache.amoro.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.MockAmoroManagementServer.TEST_CATALOG_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.amoro.TableFormat;

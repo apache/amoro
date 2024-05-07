@@ -19,7 +19,7 @@
 package org.apache.amoro.io.reader;
 
 import org.apache.amoro.data.DataTreeNode;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.map.StructLikeCollections;
@@ -49,14 +49,14 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Abstract implementation of arctic data reader consuming {@link KeyedTableScanTask}, return
- * records after filtering with {@link ArcticDeleteFilter}.
+ * Abstract implementation of mixed-format data reader consuming {@link KeyedTableScanTask}, return
+ * records after filtering with {@link MixedDeleteFilter}.
  *
  * @param <T> to indicate the record data type.
  */
 public abstract class AbstractKeyedDataReader<T> implements Serializable {
 
-  protected final ArcticFileIO fileIO;
+  protected final AuthenticatedFileIO fileIO;
   protected final Schema tableSchema;
   protected final Schema projectedSchema;
   protected final String nameMapping;
@@ -68,7 +68,7 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
   protected StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
   public AbstractKeyedDataReader(
-      ArcticFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
@@ -92,7 +92,7 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
   }
 
   public AbstractKeyedDataReader(
-      ArcticFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
@@ -113,7 +113,7 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
   }
 
   public AbstractKeyedDataReader(
-      ArcticFileIO fileIO,
+      AuthenticatedFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
@@ -134,18 +134,18 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
   }
 
   public CloseableIterator<T> readData(KeyedTableScanTask keyedTableScanTask) {
-    ArcticDeleteFilter<T> arcticDeleteFilter =
-        createArcticDeleteFilter(
+    MixedDeleteFilter<T> mixedDeleteFilter =
+        createMixedDeleteFilter(
             keyedTableScanTask,
             tableSchema,
             projectedSchema,
             primaryKeySpec,
             sourceNodes,
             structLikeCollections);
-    Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
+    Schema newProjectedSchema = mixedDeleteFilter.requiredSchema();
 
     CloseableIterable<T> dataIterable =
-        arcticDeleteFilter.filter(
+        mixedDeleteFilter.filter(
             CloseableIterable.concat(
                 CloseableIterable.transform(
                     CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
@@ -176,12 +176,12 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
   // deleted records.
   public CloseableIterator<T> readDeletedData(KeyedTableScanTask keyedTableScanTask) {
     boolean hasDeleteFile =
-        keyedTableScanTask.arcticEquityDeletes().size() > 0
+        keyedTableScanTask.mixedEquityDeletes().size() > 0
             || keyedTableScanTask.dataTasks().stream()
-                .anyMatch(arcticFileScanTask -> arcticFileScanTask.deletes().size() > 0);
+                .anyMatch(mixedFileScanTask -> mixedFileScanTask.deletes().size() > 0);
     if (hasDeleteFile) {
-      ArcticDeleteFilter<T> arcticDeleteFilter =
-          createArcticDeleteFilter(
+      MixedDeleteFilter<T> mixedDeleteFilter =
+          createMixedDeleteFilter(
               keyedTableScanTask,
               tableSchema,
               projectedSchema,
@@ -189,10 +189,10 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
               sourceNodes,
               structLikeCollections);
 
-      Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
+      Schema newProjectedSchema = mixedDeleteFilter.requiredSchema();
 
       CloseableIterable<T> dataIterable =
-          arcticDeleteFilter.filterNegate(
+          mixedDeleteFilter.filterNegate(
               CloseableIterable.concat(
                   CloseableIterable.transform(
                       CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
@@ -221,14 +221,14 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
     }
   }
 
-  protected ArcticDeleteFilter<T> createArcticDeleteFilter(
+  protected MixedDeleteFilter<T> createMixedDeleteFilter(
       KeyedTableScanTask keyedTableScanTask,
       Schema tableSchema,
       Schema projectedSchema,
       PrimaryKeySpec primaryKeySpec,
       Set<DataTreeNode> sourceNodes,
       StructLikeCollections structLikeCollections) {
-    return new GenericArcticDeleteFilter(
+    return new GenericMixedDeleteFilter(
         keyedTableScanTask,
         tableSchema,
         projectedSchema,
@@ -278,11 +278,11 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
     return builder.build();
   }
 
-  private class GenericArcticDeleteFilter extends ArcticDeleteFilter<T> {
+  private class GenericMixedDeleteFilter extends MixedDeleteFilter<T> {
 
     protected Function<T, StructLike> asStructLike;
 
-    protected GenericArcticDeleteFilter(
+    protected GenericMixedDeleteFilter(
         KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema,
         Schema requestedSchema,
@@ -292,7 +292,7 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
           AbstractKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
-    protected GenericArcticDeleteFilter(
+    protected GenericMixedDeleteFilter(
         KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema,
         Schema requestedSchema,
@@ -310,7 +310,7 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
           AbstractKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
-    protected GenericArcticDeleteFilter(
+    protected GenericMixedDeleteFilter(
         KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema,
         Schema requestedSchema,
@@ -332,7 +332,7 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
     }
 
     @Override
-    protected ArcticFileIO getArcticFileIo() {
+    protected AuthenticatedFileIO getFileIO() {
       return fileIO;
     }
   }

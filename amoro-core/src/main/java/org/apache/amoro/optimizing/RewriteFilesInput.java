@@ -20,7 +20,7 @@ package org.apache.amoro.optimizing;
 
 import org.apache.amoro.data.DefaultKeyedFile;
 import org.apache.amoro.data.PrimaryKeyedFile;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -38,14 +38,14 @@ public class RewriteFilesInput extends BaseOptimizingInput {
   private final DataFile[] rePosDeletedDataFiles;
   private final ContentFile<?>[] readOnlyDeleteFiles;
   private final ContentFile<?>[] rewrittenDeleteFiles;
-  private final ArcticTable table;
+  private final MixedTable table;
 
   public RewriteFilesInput(
       DataFile[] rewrittenDataFiles,
       DataFile[] rePosDeletedDataFiles,
       ContentFile<?>[] readOnlyDeleteFiles,
       ContentFile<?>[] rewrittenDeleteFiles,
-      ArcticTable table) {
+      MixedTable table) {
     this.rewrittenDataFiles = rewrittenDataFiles;
     this.rePosDeletedDataFiles = rePosDeletedDataFiles;
     this.readOnlyDeleteFiles = readOnlyDeleteFiles;
@@ -148,7 +148,7 @@ public class RewriteFilesInput extends BaseOptimizingInput {
     return list.toArray(new ContentFile<?>[0]);
   }
 
-  public ArcticTable getTable() {
+  public MixedTable getTable() {
     return table;
   }
 

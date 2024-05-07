@@ -24,7 +24,7 @@ import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 
 /** Service for expiring tables periodically. */
 public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
@@ -46,7 +46,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     return Math.min(tableRuntime.getOptimizingConfig().getMinorLeastInterval() * 4L / 5, interval);
   }
 
-  private void tryEvaluatingPendingInput(TableRuntime tableRuntime, ArcticTable table) {
+  private void tryEvaluatingPendingInput(TableRuntime tableRuntime, MixedTable table) {
     if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
       OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
       if (evaluator.isNecessary()) {
@@ -80,13 +80,13 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
       long lastOptimizedChangeSnapshotId = tableRuntime.getLastOptimizedChangeSnapshotId();
       AmoroTable<?> table = loadTable(tableRuntime);
       tableRuntime.refresh(table);
-      ArcticTable arcticTable = (ArcticTable) table.originalTable();
-      if ((arcticTable.isKeyedTable()
+      MixedTable mixedTable = (MixedTable) table.originalTable();
+      if ((mixedTable.isKeyedTable()
               && (lastOptimizedSnapshotId != tableRuntime.getCurrentSnapshotId()
                   || lastOptimizedChangeSnapshotId != tableRuntime.getCurrentChangeSnapshotId()))
-          || (arcticTable.isUnkeyedTable()
+          || (mixedTable.isUnkeyedTable()
               && lastOptimizedSnapshotId != tableRuntime.getCurrentSnapshotId())) {
-        tryEvaluatingPendingInput(tableRuntime, arcticTable);
+        tryEvaluatingPendingInput(tableRuntime, mixedTable);
       }
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);

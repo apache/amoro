@@ -25,7 +25,7 @@ import org.apache.amoro.server.optimizing.flow.view.MatchResult;
 import org.apache.amoro.server.optimizing.flow.view.TableDataView;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
 import org.apache.amoro.server.optimizing.plan.TaskDescriptor;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.data.Record;
 
 import javax.annotation.Nullable;
@@ -44,7 +44,7 @@ public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
 
   @Override
   public boolean condition(
-      ArcticTable table,
+      MixedTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit) {
@@ -59,7 +59,7 @@ public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
 
   @Override
   public void check(
-      ArcticTable table,
+      MixedTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit)

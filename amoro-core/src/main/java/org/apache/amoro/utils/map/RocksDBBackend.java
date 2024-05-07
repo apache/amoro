@@ -18,7 +18,7 @@
 
 package org.apache.amoro.utils.map;
 
-import org.apache.amoro.ArcticIOException;
+import org.apache.amoro.AmoroIOException;
 import org.apache.amoro.utils.LocalFileUtil;
 import org.apache.amoro.utils.SerializationUtil;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
@@ -163,7 +163,7 @@ public class RocksDBBackend {
       if (rocksDB != null) {
         close();
       }
-      throw new ArcticIOException(re);
+      throw new AmoroIOException(re);
     }
   }
 
@@ -216,7 +216,7 @@ public class RocksDBBackend {
       byte[] payload = serializePayload(value);
       rocksDB.put(handleMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key), payload);
     } catch (Exception e) {
-      throw new ArcticIOException(e);
+      throw new AmoroIOException(e);
     }
   }
 
@@ -236,7 +236,7 @@ public class RocksDBBackend {
           cfHandler != null, "column family " + columnFamilyName + " does not exists in rocksdb");
       rocksDB.put(cfHandler, key, payload(value));
     } catch (Exception e) {
-      throw new ArcticIOException(e);
+      throw new AmoroIOException(e);
     }
   }
 
@@ -248,7 +248,7 @@ public class RocksDBBackend {
           columnFamilyHandle != null, "Column family handler couldn't be null.");
       rocksDB.put(columnFamilyHandle, key, payload(value));
     } catch (Exception e) {
-      throw new ArcticIOException(e);
+      throw new AmoroIOException(e);
     }
   }
 
@@ -264,7 +264,7 @@ public class RocksDBBackend {
       Preconditions.checkArgument(key != null, "keys in rocksdb can not be null!");
       rocksDB.delete(handleMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key));
     } catch (Exception e) {
-      throw new ArcticIOException(e);
+      throw new AmoroIOException(e);
     }
   }
 
@@ -279,7 +279,7 @@ public class RocksDBBackend {
       Preconditions.checkArgument(key != null, "keys in rocksdb can not be null!");
       rocksDB.delete(handleMap.get(columnFamilyName), key);
     } catch (Exception e) {
-      throw new ArcticIOException(e);
+      throw new AmoroIOException(e);
     }
   }
 
@@ -298,7 +298,7 @@ public class RocksDBBackend {
           rocksDB.get(handleMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key));
       return val == null ? null : SerializationUtil.kryoDeserialize(val);
     } catch (Exception e) {
-      throw new ArcticIOException(e);
+      throw new AmoroIOException(e);
     }
   }
 
@@ -314,7 +314,7 @@ public class RocksDBBackend {
       Preconditions.checkArgument(key != null, "keys in rocksdb can not be null!");
       return rocksDB.get(handleMap.get(columnFamilyName), key);
     } catch (Exception e) {
-      throw new ArcticIOException(e);
+      throw new AmoroIOException(e);
     }
   }
 
@@ -325,7 +325,7 @@ public class RocksDBBackend {
       Preconditions.checkNotNull(columnFamilyHandle, "Column Family Handle couldn't be null!");
       return rocksDB.get(columnFamilyHandle, key);
     } catch (Exception e) {
-      throw new ArcticIOException(e);
+      throw new AmoroIOException(e);
     }
   }
 
@@ -384,7 +384,7 @@ public class RocksDBBackend {
             handleMap.put(colFamilyName, handle);
             return descriptor;
           } catch (RocksDBException e) {
-            throw new ArcticIOException(e);
+            throw new AmoroIOException(e);
           }
         });
   }
@@ -405,7 +405,7 @@ public class RocksDBBackend {
             rocksDB.dropColumnFamily(handle);
             handle.close();
           } catch (RocksDBException e) {
-            throw new ArcticIOException(e);
+            throw new AmoroIOException(e);
           }
           handleMap.remove(columnFamilyName);
           return null;
@@ -431,7 +431,7 @@ public class RocksDBBackend {
       try {
         LocalFileUtil.deleteDirectory(new File(rocksDBBasePath));
       } catch (IOException e) {
-        throw new ArcticIOException(e.getMessage(), e);
+        throw new AmoroIOException(e.getMessage(), e);
       }
     }
   }
@@ -463,7 +463,7 @@ public class RocksDBBackend {
     try {
       rocksDB.setOptions(columnFamilyHandle, mutableColumnFamilyOptions);
     } catch (RocksDBException e) {
-      throw new ArcticIOException(e);
+      throw new AmoroIOException(e);
     }
   }
 

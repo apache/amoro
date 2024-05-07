@@ -25,7 +25,7 @@ import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.io.FileIO;
@@ -84,13 +84,13 @@ public class TestBasicTableTrashManager extends TableTestBase {
 
   @Test
   public void testDeleteAndRestore() throws IOException {
-    String tableRootLocation = getArcticTable().location();
+    String tableRootLocation = getMixedTable().location();
     TableTrashManager tableTrashManager = build();
     String trashLocation = tableTrashManager.getTrashLocation();
 
     String relativeFilePath = "base/test/test1.parquet";
     String path =
-        createFile(getArcticTable().io(), fullLocation(tableRootLocation, relativeFilePath));
+        createFile(getMixedTable().io(), fullLocation(tableRootLocation, relativeFilePath));
 
     Assert.assertFalse(tableTrashManager.fileExistInTrash(path));
     Assert.assertFalse(tableTrashManager.restoreFileFromTrash(path));
@@ -99,40 +99,40 @@ public class TestBasicTableTrashManager extends TableTestBase {
     tableTrashManager.moveFileToTrash(path);
     String fileLocationInTrash = generateFileLocationInTrash(relativeFilePath, trashLocation, now);
 
-    Assert.assertFalse(getArcticTable().io().exists(path));
-    Assert.assertTrue(getArcticTable().io().exists(fileLocationInTrash));
+    Assert.assertFalse(getMixedTable().io().exists(path));
+    Assert.assertTrue(getMixedTable().io().exists(fileLocationInTrash));
 
     Assert.assertTrue(tableTrashManager.fileExistInTrash(path));
     Assert.assertTrue(tableTrashManager.restoreFileFromTrash(path));
 
-    Assert.assertTrue(getArcticTable().io().exists(path));
-    Assert.assertFalse(getArcticTable().io().exists(fileLocationInTrash));
+    Assert.assertTrue(getMixedTable().io().exists(path));
+    Assert.assertFalse(getMixedTable().io().exists(fileLocationInTrash));
   }
 
   @Test
   public void testMoveAndOverwrite() throws IOException {
-    String tableRootLocation = getArcticTable().location();
+    String tableRootLocation = getMixedTable().location();
     TableTrashManager tableTrashManager = build();
 
     String relativeFilePath = "base/test/test1.parquet";
     String path =
-        createFile(getArcticTable().io(), fullLocation(tableRootLocation, relativeFilePath));
+        createFile(getMixedTable().io(), fullLocation(tableRootLocation, relativeFilePath));
 
     tableTrashManager.moveFileToTrash(path);
     Assert.assertTrue(tableTrashManager.fileExistInTrash(path));
-    createFile(getArcticTable().io(), fullLocation(tableRootLocation, relativeFilePath));
+    createFile(getMixedTable().io(), fullLocation(tableRootLocation, relativeFilePath));
     tableTrashManager.moveFileToTrash(path);
     Assert.assertTrue(tableTrashManager.fileExistInTrash(path));
   }
 
   @Test
   public void testDeleteDirectory() throws IOException {
-    String tableRootLocation = getArcticTable().location();
+    String tableRootLocation = getMixedTable().location();
     TableTrashManager tableTrashManager = build();
     String trashLocation = tableTrashManager.getTrashLocation();
     String relativeFilePath = "base/test/test1.parquet";
     String path =
-        createFile(getArcticTable().io(), fullLocation(tableRootLocation, relativeFilePath));
+        createFile(getMixedTable().io(), fullLocation(tableRootLocation, relativeFilePath));
 
     String directory = TableFileUtil.getFileDir(path);
     long now = System.currentTimeMillis();
@@ -146,33 +146,33 @@ public class TestBasicTableTrashManager extends TableTestBase {
     String directoryLocationInTrash =
         generateFileLocationInTrash(relativeDirectory, trashLocation, now);
 
-    Assert.assertTrue(getArcticTable().io().exists(directory));
-    Assert.assertFalse(getArcticTable().io().exists(directoryLocationInTrash));
+    Assert.assertTrue(getMixedTable().io().exists(directory));
+    Assert.assertFalse(getMixedTable().io().exists(directoryLocationInTrash));
   }
 
   @Test
   public void testRestoreDirectory() throws IOException {
-    String tableRootLocation = getArcticTable().location();
+    String tableRootLocation = getMixedTable().location();
     TableTrashManager tableTrashManager = build();
     String trashLocation = tableTrashManager.getTrashLocation();
     String relativeFilePath = "base/test/test1.parquet";
     String path =
-        createFile(getArcticTable().io(), fullLocation(tableRootLocation, relativeFilePath));
+        createFile(getMixedTable().io(), fullLocation(tableRootLocation, relativeFilePath));
 
     long now = System.currentTimeMillis();
     tableTrashManager.moveFileToTrash(path);
     String fileLocationInTrash = generateFileLocationInTrash(relativeFilePath, trashLocation, now);
 
-    Assert.assertFalse(getArcticTable().io().exists(path));
-    Assert.assertTrue(getArcticTable().io().exists(fileLocationInTrash));
+    Assert.assertFalse(getMixedTable().io().exists(path));
+    Assert.assertTrue(getMixedTable().io().exists(fileLocationInTrash));
 
-    Assert.assertFalse(getArcticTable().io().exists(path));
-    Assert.assertTrue(getArcticTable().io().exists(fileLocationInTrash));
+    Assert.assertFalse(getMixedTable().io().exists(path));
+    Assert.assertTrue(getMixedTable().io().exists(fileLocationInTrash));
   }
 
   @Test
   public void testCleanFiles() throws IOException {
-    String tableRootLocation = getArcticTable().location();
+    String tableRootLocation = getMixedTable().location();
     BasicTableTrashManager tableTrashManager = ((BasicTableTrashManager) build());
     String trashLocation = tableTrashManager.getTrashLocation();
     String file1 = fullLocation(tableRootLocation, "base/test/test1.parquet");
@@ -212,12 +212,12 @@ public class TestBasicTableTrashManager extends TableTestBase {
     String file5Day3 =
         generateFileLocationInTrash(
             getRelativeFileLocation(tableRootLocation, file5), trashLocation, day3);
-    createFile(getArcticTable().io(), file1Day1);
-    createFile(getArcticTable().io(), file2Day1);
-    createFile(getArcticTable().io(), file3Day1);
-    createFile(getArcticTable().io(), file4Day2);
-    createFile(getArcticTable().io(), file5Day3);
-    createFile(getArcticTable().io(), illegalFile);
+    createFile(getMixedTable().io(), file1Day1);
+    createFile(getMixedTable().io(), file2Day1);
+    createFile(getMixedTable().io(), file3Day1);
+    createFile(getMixedTable().io(), file4Day2);
+    createFile(getMixedTable().io(), file5Day3);
+    createFile(getMixedTable().io(), illegalFile);
 
     Assert.assertTrue(tableTrashManager.fileExistInTrash(file1));
     Assert.assertTrue(tableTrashManager.fileExistInTrash(file2));
@@ -235,43 +235,43 @@ public class TestBasicTableTrashManager extends TableTestBase {
     Assert.assertTrue(tableTrashManager.fileExistInTrash(file5));
     Assert.assertFalse(tableTrashManager.fileExistInTrash(illegalFile));
 
-    Assert.assertFalse(getArcticTable().io().exists(file1Day1));
-    Assert.assertFalse(getArcticTable().io().exists(file2Day1));
-    Assert.assertFalse(getArcticTable().io().exists(file3Day1));
-    Assert.assertFalse(getArcticTable().io().exists(file4Day2));
-    Assert.assertTrue(getArcticTable().io().exists(file5Day3));
-    Assert.assertTrue(getArcticTable().io().exists(illegalFile));
+    Assert.assertFalse(getMixedTable().io().exists(file1Day1));
+    Assert.assertFalse(getMixedTable().io().exists(file2Day1));
+    Assert.assertFalse(getMixedTable().io().exists(file3Day1));
+    Assert.assertFalse(getMixedTable().io().exists(file4Day2));
+    Assert.assertTrue(getMixedTable().io().exists(file5Day3));
+    Assert.assertTrue(getMixedTable().io().exists(illegalFile));
   }
 
   @Test
   public void testDeleteTrashLocation() throws IOException {
-    String tableRootLocation = getArcticTable().location();
+    String tableRootLocation = getMixedTable().location();
     String customTrashLocation = tempTrashLocation.newFolder().getPath().replace('\\', '/');
 
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION, customTrashLocation)
         .commit();
     String file1 = fullLocation(tableRootLocation, "base/test/test1.parquet");
-    createFile(getArcticTable().io(), file1);
+    createFile(getMixedTable().io(), file1);
     TableTrashManager tableTrashManager = build();
     tableTrashManager.moveFileToTrash(file1);
     Assert.assertTrue(tableTrashManager.fileExistInTrash(file1));
     String trashParentLocation =
-        TableTrashManagers.getTrashParentLocation(getArcticTable().id(), customTrashLocation);
-    getMixedFormatCatalog().dropTable(getArcticTable().id(), true);
-    Assert.assertFalse(getArcticTable().io().exists(trashParentLocation));
+        TableTrashManagers.getTrashParentLocation(getMixedTable().id(), customTrashLocation);
+    getMixedFormatCatalog().dropTable(getMixedTable().id(), true);
+    Assert.assertFalse(getMixedTable().io().exists(trashParentLocation));
     Assert.assertFalse(tableTrashManager.fileExistInTrash(file1));
   }
 
   private TableTrashManager build() {
-    ArcticTable table = getArcticTable();
-    Assert.assertTrue(table.io() instanceof ArcticHadoopFileIO);
+    MixedTable table = getMixedTable();
+    Assert.assertTrue(table.io() instanceof AuthenticatedHadoopFileIO);
     return TableTrashManagers.build(
         table.id(),
-        getArcticTable().location(),
+        getMixedTable().location(),
         table.properties(),
-        (ArcticHadoopFileIO) table.io());
+        (AuthenticatedHadoopFileIO) table.io());
   }
 
   private String createFile(FileIO io, String path) throws IOException {

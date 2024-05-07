@@ -26,7 +26,7 @@
     <parent>
         <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-ams</artifactId>
-        <version>0.7.0-SNAPSHOT</version>
+        <version>0.7-SNAPSHOT</version>
     </parent>
 
     <artifactId>amoro-ams-server</artifactId>
@@ -56,6 +56,11 @@
             <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-ams-dashboard</artifactId>
             <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-client</artifactId>
         </dependency>
 
         <dependency>
