@@ -33,10 +33,10 @@
     <url>https://amoro.apache.org</url>
 
     <modules>
-        <module>flink-optimizer</module>
-        <module>spark-optimizer</module>
-        <module>standalone-optimizer</module>
-        <module>common</module>
+        <module>amoro-optimizer-common</module>
+        <module>amoro-optimizer-flink</module>
+        <module>amoro-optimizer-spark</module>
+        <module>amoro-optimizer-standalone</module>
     </modules>
 
 </project>

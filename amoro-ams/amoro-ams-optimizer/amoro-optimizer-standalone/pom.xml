@@ -28,7 +28,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>standalone-optimizer</artifactId>
+    <artifactId>amoro-optimizer-standalone</artifactId>
     <name>Amoro Project AMS Standalone Optimizer</name>
     <url>https://amoro.apache.org</url>
 
@@ -36,7 +36,7 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>optimizer-common</artifactId>
+            <artifactId>amoro-optimizer-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 

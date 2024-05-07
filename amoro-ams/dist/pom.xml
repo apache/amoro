@@ -43,18 +43,18 @@
         </dependency>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>standalone-optimizer</artifactId>
+            <artifactId>amoro-optimizer-standalone</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>flink-optimizer</artifactId>
+            <artifactId>amoro-optimizer-flink</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>spark-optimizer</artifactId>
+            <artifactId>amoro-optimizer-spark</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>

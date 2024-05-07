@@ -28,7 +28,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>spark-optimizer</artifactId>
+    <artifactId>amoro-optimizer-spark</artifactId>
     <name>Amoro Project AMS Spark Optimizer</name>
     <url>https://amoro.apache.org</url>
 
@@ -40,7 +40,7 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>optimizer-common</artifactId>
+            <artifactId>amoro-optimizer-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 
