@@ -227,16 +227,18 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
         TableIdentifier.of(
             unifiedCatalog.name(), tablePath.getDatabaseName(), tablePath.getObjectName());
     if (!configuration.contains(TABLE_FORMAT)) {
-      // if user doesn't specified the table format, we get through unifiedCatalog.
+      // if user doesn't specify the table format, we try to load the table and get the table
+      // format.
       try {
         AmoroTable amoroTable =
             unifiedCatalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
         format = amoroTable.format();
       } catch (Throwable t) {
         LOG.warn(
-            "We can't  load table {}.{} through UnfiedCatalog, use default format",
+            "We can't load table {}.{} through unifiedCatalog, use default format {}",
             tablePath.getDatabaseName(),
-            tablePath.getObjectName());
+            tablePath.getObjectName(),
+            format.name());
       }
     }
     final TableFormat catalogFormat = format;
