@@ -19,13 +19,16 @@
 
 We provide a bash script to help you build docker image easier.
 
-You can build all images via the script in current dir.
+You can control which image is built by the follow parameters :
 
-```shell
-./build.sh all 
-```
+- amoro
+- optimizer-flink
+- optimizer-spark
+- quickdemo
+- namenode
+- datanode
 
-or just build only one image.
+e.g.
 
 ```shell
 ./build.sh amoro
