@@ -59,7 +59,7 @@ amoro-mixed-format-spark-3.2-runtime-x.y.z-sources.jar
 original-amoro-mixed-format-spark-3.2-runtime-x.y.z.jar
 ```
 
-If the Flink version in the ams/optimizer/flink-optimizer module you compiled is lower than 1.15, you must add the `-Pflink-pre-1.15` parameter before mvn.
+If the Flink version in the amoro-ams/amoro-ams-optimizer/amoro-optimizer-flink module you compiled is lower than 1.15, you must add the `-Pflink-pre-1.15` parameter before mvn.
 for example `mvn clean package -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6 -DskipTests` to compile.
 
 If you need to compile the Trino module at the same time, you need to install jdk17 locally and configure `toolchains.xml` in the user's `${user.home}/.m2/` directory,
