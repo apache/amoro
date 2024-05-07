@@ -30,7 +30,7 @@
     <files>
         <file>
             <source>
-                ../amoro-ams-optimizer/flink-optimizer/target/flink-optimizer-${project.version}-jar-with-dependencies.jar
+                ../amoro-ams-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${project.version}-jar-with-dependencies.jar
             </source>
             <outputDirectory>plugin/optimizer/flink</outputDirectory>
             <destName>optimizer-job.jar</destName>
@@ -38,7 +38,7 @@
         </file>
         <file>
             <source>
-                ../amoro-ams-optimizer/spark-optimizer/target/spark-optimizer-${project.version}-jar-with-dependencies.jar
+                ../amoro-ams-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${project.version}-jar-with-dependencies.jar
             </source>
             <outputDirectory>plugin/optimizer/spark</outputDirectory>
             <destName>optimizer-job.jar</destName>

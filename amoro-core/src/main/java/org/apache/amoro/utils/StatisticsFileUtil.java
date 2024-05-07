@@ -281,7 +281,7 @@ public class StatisticsFileUtil {
           if (spec.isUnpartitioned()) {
             results.put(TablePropertyUtil.EMPTY_STRUCT, map.get(key));
           } else {
-            StructLike partitionData = ArcticDataFiles.data(spec, key);
+            StructLike partitionData = MixedDataFiles.data(spec, key);
             results.put(partitionData, map.get(key));
           }
         }

@@ -21,7 +21,7 @@ package org.apache.amoro.flink.write;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.flink.table.descriptors.ArcticValidator;
 import org.apache.amoro.flink.util.ArcticUtils;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.iceberg.UpdateProperties;
 import org.slf4j.Logger;
@@ -38,7 +38,7 @@ public class AutomaticDoubleWriteStatus implements Serializable {
   private static final long serialVersionUID = 1L;
   private final ArcticTableLoader tableLoader;
   private final AutomaticWriteSpecification specification;
-  private ArcticTable table;
+  private MixedTable table;
   private transient boolean shouldDoubleWrite = false;
   private int subtaskId;
 

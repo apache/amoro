@@ -25,19 +25,18 @@ import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.TableMeta;
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.catalog.CatalogLoader;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.catalog.MixedTables;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
+import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.amoro.table.ArcticTable;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.ConvertStructUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
-import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
@@ -202,7 +201,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
                 catalogMeta.getCatalogName(),
                 catalogMeta.getCatalogType(),
                 catalogMeta.getCatalogProperties(),
-                ArcticCatalogUtil.buildMetaStore(catalogMeta));
+                MixedCatalogUtil.buildMetaStore(catalogMeta));
     catalog
         .newTableBuilder(tableTestHelper.id(), tableTestHelper.tableSchema())
         .withPartitionSpec(tableTestHelper.partitionSpec())
@@ -212,12 +211,12 @@ public class AMSTableTestBase extends TableServiceTestBase {
   }
 
   private void createMixedIcebergTable() {
-    ArcticCatalog catalog =
+    MixedFormatCatalog catalog =
         CatalogLoader.createCatalog(
             catalogMeta.getCatalogName(),
             catalogMeta.getCatalogType(),
             catalogMeta.getCatalogProperties(),
-            ArcticCatalogUtil.buildMetaStore(catalogMeta));
+            MixedCatalogUtil.buildMetaStore(catalogMeta));
     catalog
         .newTableBuilder(tableTestHelper.id(), tableTestHelper.tableSchema())
         .withPartitionSpec(tableTestHelper.partitionSpec())
@@ -227,7 +226,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
   }
 
   private void createIcebergTable() {
-    Catalog catalog = catalogTestHelper.buildIcebergCatalog(catalogMeta);
+    org.apache.iceberg.catalog.Catalog catalog = catalogTestHelper.buildIcebergCatalog(catalogMeta);
     catalog.createTable(
         TableIdentifier.of(tableTestHelper.id().getDatabase(), tableTestHelper.id().getTableName()),
         tableTestHelper.tableSchema(),
@@ -274,14 +273,13 @@ public class AMSTableTestBase extends TableServiceTestBase {
     return serverTableIdentifier;
   }
 
-  protected void validateArcticTable(ArcticTable arcticTable) {
-    Assert.assertEquals(catalogTestHelper().tableFormat(), arcticTable.format());
-    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, arcticTable.id());
+  protected void validateArcticTable(MixedTable mixedTable) {
+    Assert.assertEquals(catalogTestHelper().tableFormat(), mixedTable.format());
+    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, mixedTable.id());
+    Assert.assertEquals(tableTestHelper().tableSchema().asStruct(), mixedTable.schema().asStruct());
+    Assert.assertEquals(tableTestHelper().partitionSpec(), mixedTable.spec());
     Assert.assertEquals(
-        tableTestHelper().tableSchema().asStruct(), arcticTable.schema().asStruct());
-    Assert.assertEquals(tableTestHelper().partitionSpec(), arcticTable.spec());
-    Assert.assertEquals(
-        tableTestHelper().primaryKeySpec().primaryKeyExisted(), arcticTable.isKeyedTable());
+        tableTestHelper().primaryKeySpec().primaryKeyExisted(), mixedTable.isKeyedTable());
   }
 
   protected void validateTableRuntime(TableRuntime tableRuntime) {

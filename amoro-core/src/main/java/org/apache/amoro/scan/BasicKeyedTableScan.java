@@ -23,7 +23,7 @@ import org.apache.amoro.data.DefaultKeyedFile;
 import org.apache.amoro.scan.expressions.BasicPartitionEvaluator;
 import org.apache.amoro.table.BasicKeyedTable;
 import org.apache.amoro.table.TableProperties;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -101,11 +101,11 @@ public class BasicKeyedTableScan implements KeyedTableScan {
   @Override
   public CloseableIterable<CombinedScanTask> planTasks() {
     // base file
-    CloseableIterable<ArcticFileScanTask> baseFileList;
+    CloseableIterable<MixedFileScanTask> baseFileList;
     baseFileList = planBaseFiles();
 
     // change file
-    CloseableIterable<ArcticFileScanTask> changeFileList;
+    CloseableIterable<MixedFileScanTask> changeFileList;
     if (table.primaryKeySpec().primaryKeyExisted()) {
       changeFileList = planChangeFiles();
     } else {
@@ -113,7 +113,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
     }
 
     // 1. group files by partition
-    StructLikeMap<Collection<ArcticFileScanTask>> partitionedFiles =
+    StructLikeMap<Collection<MixedFileScanTask>> partitionedFiles =
         groupFilesByPartition(table.spec(), changeFileList, baseFileList);
     LOG.info("planning table {} need plan partition size {}", table.id(), partitionedFiles.size());
     partitionedFiles.forEach(this::partitionPlan);
@@ -132,7 +132,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
     return this;
   }
 
-  private CloseableIterable<ArcticFileScanTask> planBaseFiles() {
+  private CloseableIterable<MixedFileScanTask> planBaseFiles() {
     TableScan scan = table.baseTable().newScan();
     if (this.expression != null) {
       scan = scan.filter(this.expression);
@@ -141,15 +141,15 @@ public class BasicKeyedTableScan implements KeyedTableScan {
     return CloseableIterable.transform(
         fileScanTasks,
         fileScanTask ->
-            new BasicArcticFileScanTask(
+            new BasicMixedFileScanTask(
                 DefaultKeyedFile.parseBase(fileScanTask.file()),
                 fileScanTask.deletes(),
                 fileScanTask.spec(),
                 expression));
   }
 
-  private CloseableIterable<ArcticFileScanTask> planChangeFiles() {
-    StructLikeMap<Long> partitionOptimizedSequence = ArcticTableUtil.readOptimizedSequence(table);
+  private CloseableIterable<MixedFileScanTask> planChangeFiles() {
+    StructLikeMap<Long> partitionOptimizedSequence = MixedTableUtil.readOptimizedSequence(table);
     Expression partitionExpressions = Expressions.alwaysTrue();
     if (expression != null) {
       // Only push down filters related to partition
@@ -161,7 +161,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
 
     changeTableScan = changeTableScan.filter(partitionExpressions);
 
-    return CloseableIterable.transform(changeTableScan.planFiles(), s -> (ArcticFileScanTask) s);
+    return CloseableIterable.transform(changeTableScan.planFiles(), s -> (MixedFileScanTask) s);
   }
 
   private void split() {
@@ -175,7 +175,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
 
             if (splitTaskByDeleteRatio != null) {
               long deleteWeight =
-                  task.arcticEquityDeletes().stream()
+                  task.mixedEquityDeletes().stream()
                       .mapToLong(s -> s.file().fileSizeInBytes())
                       .map(s -> s + openFileCost)
                       .sum();
@@ -209,7 +209,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
     CloseableIterable<NodeFileScanTask> tasksIterable =
         splitNode(
             CloseableIterable.withNoopClose(task.dataTasks()),
-            task.arcticEquityDeletes(),
+            task.mixedEquityDeletes(),
             targetSize,
             lookBack,
             openFileCost);
@@ -217,12 +217,12 @@ public class BasicKeyedTableScan implements KeyedTableScan {
   }
 
   public CloseableIterable<NodeFileScanTask> splitNode(
-      CloseableIterable<ArcticFileScanTask> splitFiles,
-      List<ArcticFileScanTask> deleteFiles,
+      CloseableIterable<MixedFileScanTask> splitFiles,
+      List<MixedFileScanTask> deleteFiles,
       long splitSize,
       int lookback,
       long openFileCost) {
-    Function<ArcticFileScanTask, Long> weightFunc =
+    Function<MixedFileScanTask, Long> weightFunc =
         task -> Math.max(task.file().fileSizeInBytes(), openFileCost);
     return CloseableIterable.transform(
         CloseableIterable.combine(
@@ -232,7 +232,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
   }
 
   private NodeFileScanTask packingTask(
-      List<ArcticFileScanTask> datafiles, List<ArcticFileScanTask> deleteFiles) {
+      List<MixedFileScanTask> datafiles, List<MixedFileScanTask> deleteFiles) {
     // TODO Optimization: Add files in batch
     return new NodeFileScanTask(
         Stream.concat(datafiles.stream(), deleteFiles.stream()).collect(Collectors.toList()));
@@ -255,7 +255,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
    * Construct tree node task according to partition 1. Put all files into the node they originally
    * belonged to 2. Find all data nodes, traverse, and find the delete that intersects them
    */
-  private void partitionPlan(StructLike partition, Collection<ArcticFileScanTask> keyedTableTasks) {
+  private void partitionPlan(StructLike partition, Collection<MixedFileScanTask> keyedTableTasks) {
     Map<DataTreeNode, NodeFileScanTask> nodeFileScanTaskMap = new HashMap<>();
     // planfiles() cannot guarantee the uniqueness of the file,
     // so Set<path> here is used to remove duplicate files
@@ -282,8 +282,8 @@ public class BasicKeyedTableScan implements KeyedTableScan {
               (treeNode1, nodeFileScanTask1) -> {
                 if (!treeNode1.equals(treeNode)
                     && (treeNode1.isSonOf(treeNode) || treeNode.isSonOf(treeNode1))) {
-                  List<ArcticFileScanTask> deletes =
-                      nodeFileScanTask1.arcticEquityDeletes().stream()
+                  List<MixedFileScanTask> deletes =
+                      nodeFileScanTask1.mixedEquityDeletes().stream()
                           .filter(file -> file.file().node().equals(treeNode1))
                           .collect(Collectors.toList());
 
@@ -304,11 +304,11 @@ public class BasicKeyedTableScan implements KeyedTableScan {
     fileScanTasks.put(partition, fileScanTaskList);
   }
 
-  public StructLikeMap<Collection<ArcticFileScanTask>> groupFilesByPartition(
+  public StructLikeMap<Collection<MixedFileScanTask>> groupFilesByPartition(
       PartitionSpec partitionSpec,
-      CloseableIterable<ArcticFileScanTask> changeTasks,
-      CloseableIterable<ArcticFileScanTask> baseTasks) {
-    StructLikeMap<Collection<ArcticFileScanTask>> filesGroupedByPartition =
+      CloseableIterable<MixedFileScanTask> changeTasks,
+      CloseableIterable<MixedFileScanTask> baseTasks) {
+    StructLikeMap<Collection<MixedFileScanTask>> filesGroupedByPartition =
         StructLikeMap.create(partitionSpec.partitionType());
     try {
       changeTasks.forEach(

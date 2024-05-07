@@ -20,7 +20,7 @@ package org.apache.amoro.api.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.TimeUtil;
@@ -119,7 +119,7 @@ public class DataExpirationConfig {
     this.baseOnRule = baseOnRule;
   }
 
-  public DataExpirationConfig(ArcticTable table) {
+  public DataExpirationConfig(MixedTable table) {
     Map<String, String> properties = table.properties();
     expirationField =
         CompatiblePropertyUtil.propertyAsString(

@@ -27,7 +27,7 @@ import org.apache.amoro.flink.read.hybrid.enumerator.MergeOnReadIncrementalPlann
 import org.apache.amoro.flink.read.hybrid.reader.DataIteratorReaderFunction;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
@@ -60,7 +60,7 @@ import java.util.function.Predicate;
 public class BasicLookupFunction<T> implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(BasicLookupFunction.class);
   private static final long serialVersionUID = 1671720424494168710L;
-  private ArcticTable arcticTable;
+  private MixedTable mixedTable;
   private KVTable<T> kvTable;
   private final List<String> joinKeys;
   private final Schema projectSchema;
@@ -81,7 +81,7 @@ public class BasicLookupFunction<T> implements Serializable {
 
   public BasicLookupFunction(
       TableFactory<T> tableFactory,
-      ArcticTable arcticTable,
+      MixedTable mixedTable,
       List<String> joinKeys,
       Schema projectSchema,
       List<Expression> filters,
@@ -91,10 +91,10 @@ public class BasicLookupFunction<T> implements Serializable {
       AbstractAdaptHiveKeyedDataReader<T> flinkArcticMORDataReader,
       DataIteratorReaderFunction<T> readerFunction) {
     checkArgument(
-        arcticTable.isKeyedTable(),
+        mixedTable.isKeyedTable(),
         String.format(
             "Only keyed arctic table support lookup join, this table [%s] is an unkeyed table.",
-            arcticTable.name()));
+            mixedTable.name()));
     Preconditions.checkNotNull(tableFactory, "kvTableFactory cannot be null");
     this.kvTableFactory = tableFactory;
     this.joinKeys = joinKeys;
@@ -126,19 +126,19 @@ public class BasicLookupFunction<T> implements Serializable {
   public void init(FunctionContext context) {
     LOG.info("lookup function row data predicate: {}.", predicate);
     MetricGroup metricGroup = context.getMetricGroup().addGroup(LookupMetrics.GROUP_NAME_LOOKUP);
-    if (arcticTable == null) {
-      arcticTable = loadArcticTable(loader).asKeyedTable();
+    if (mixedTable == null) {
+      mixedTable = loadArcticTable(loader).asKeyedTable();
     }
-    arcticTable.refresh();
+    mixedTable.refresh();
 
     lookupLoadingTimeMs = new AtomicLong();
     metricGroup.gauge(LookupMetrics.LOADING_TIME_MS, () -> lookupLoadingTimeMs.get());
 
-    LOG.info("projected schema {}.\n table schema {}.", projectSchema, arcticTable.schema());
+    LOG.info("projected schema {}.\n table schema {}.", projectSchema, mixedTable.schema());
     kvTable =
         kvTableFactory.create(
-            new RowDataStateFactory(generateRocksDBPath(context, arcticTable.name()), metricGroup),
-            arcticTable.asKeyedTable().primaryKeySpec().fieldNames(),
+            new RowDataStateFactory(generateRocksDBPath(context, mixedTable.name()), metricGroup),
+            mixedTable.asKeyedTable().primaryKeySpec().fieldNames(),
             joinKeys,
             projectSchema,
             config,
@@ -198,7 +198,7 @@ public class BasicLookupFunction<T> implements Serializable {
     long batchStart = System.currentTimeMillis();
     while (incrementalLoader.hasNext()) {
       long start = System.currentTimeMillis();
-      arcticTable
+      mixedTable
           .io()
           .doAs(
               () -> {
@@ -207,8 +207,7 @@ public class BasicLookupFunction<T> implements Serializable {
                     kvTable.upsert(iterator);
                   } else {
                     LOG.info(
-                        "This table {} is still under initialization progress.",
-                        arcticTable.name());
+                        "This table {} is still under initialization progress.", mixedTable.name());
                     kvTable.initialize(iterator);
                   }
                 }
@@ -223,7 +222,7 @@ public class BasicLookupFunction<T> implements Serializable {
 
     LOG.info(
         "{} table lookup loading, these batch tasks completed, cost {}ms.",
-        arcticTable.name(),
+        mixedTable.name(),
         lookupLoadingTimeMs.get());
   }
 

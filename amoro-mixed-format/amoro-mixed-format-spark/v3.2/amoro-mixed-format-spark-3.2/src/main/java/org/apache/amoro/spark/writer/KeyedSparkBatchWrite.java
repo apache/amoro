@@ -30,8 +30,8 @@ import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFA
 
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.OperationConflictException;
-import org.apache.amoro.catalog.ArcticCatalog;
 import org.apache.amoro.hive.utils.HiveTableUtil;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.op.OverwriteBaseFiles;
 import org.apache.amoro.op.RewritePartitions;
 import org.apache.amoro.spark.io.TaskWriters;
@@ -72,9 +72,9 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   private final String hiveSubdirectory;
 
   private final boolean orderedWriter;
-  private final ArcticCatalog catalog;
+  private final MixedFormatCatalog catalog;
 
-  KeyedSparkBatchWrite(KeyedTable table, LogicalWriteInfo info, ArcticCatalog catalog) {
+  KeyedSparkBatchWrite(KeyedTable table, LogicalWriteInfo info, MixedFormatCatalog catalog) {
     this.table = table;
     this.dsSchema = info.schema();
     this.txId = table.beginTransaction(null);

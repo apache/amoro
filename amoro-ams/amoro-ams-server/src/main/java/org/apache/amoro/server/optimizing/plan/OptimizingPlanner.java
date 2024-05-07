@@ -25,9 +25,9 @@ import org.apache.amoro.server.ArcticServiceConstants;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.table.ArcticTable;
-import org.apache.amoro.utils.ArcticTableUtil;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.ExpressionUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
@@ -61,7 +61,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
   public OptimizingPlanner(
       TableRuntime tableRuntime,
-      ArcticTable table,
+      MixedTable table,
       double availableCore,
       long maxInputSizePerThread) {
     super(tableRuntime, table);
@@ -78,7 +78,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     this.availableCore = availableCore;
     this.planTime = System.currentTimeMillis();
     this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, planTime);
-    this.partitionPlannerFactory = new PartitionPlannerFactory(arcticTable, tableRuntime, planTime);
+    this.partitionPlannerFactory = new PartitionPlannerFactory(mixedTable, tableRuntime, planTime);
     this.maxInputSizePerThread = maxInputSizePerThread;
   }
 
@@ -95,8 +95,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
                 partitionPlan -> {
                   Pair<Integer, StructLike> partition = partitionPlan.getPartition();
                   PartitionSpec spec =
-                      ArcticTableUtil.getArcticTablePartitionSpecById(
-                          arcticTable, partition.first());
+                      MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, partition.first());
                   return spec.partitionToPath(partition.second());
                 },
                 AbstractPartitionPlan::getFromSequence));
@@ -110,8 +109,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
                 partitionPlan -> {
                   Pair<Integer, StructLike> partition = partitionPlan.getPartition();
                   PartitionSpec spec =
-                      ArcticTableUtil.getArcticTablePartitionSpecById(
-                          arcticTable, partition.first());
+                      MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, partition.first());
                   return spec.partitionToPath(partition.second());
                 },
                 AbstractPartitionPlan::getToSequence));
@@ -217,32 +215,32 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   }
 
   private static class PartitionPlannerFactory {
-    private final ArcticTable arcticTable;
+    private final MixedTable mixedTable;
     private final TableRuntime tableRuntime;
     private final String hiveLocation;
     private final long planTime;
 
     public PartitionPlannerFactory(
-        ArcticTable arcticTable, TableRuntime tableRuntime, long planTime) {
-      this.arcticTable = arcticTable;
+        MixedTable mixedTable, TableRuntime tableRuntime, long planTime) {
+      this.mixedTable = mixedTable;
       this.tableRuntime = tableRuntime;
       this.planTime = planTime;
-      if (TableTypeUtil.isHive(arcticTable)) {
-        this.hiveLocation = (((SupportHive) arcticTable).hiveLocation());
+      if (TableTypeUtil.isHive(mixedTable)) {
+        this.hiveLocation = (((SupportHive) mixedTable).hiveLocation());
       } else {
         this.hiveLocation = null;
       }
     }
 
     public PartitionEvaluator buildPartitionPlanner(Pair<Integer, StructLike> partition) {
-      if (TableFormat.ICEBERG == arcticTable.format()) {
-        return new IcebergPartitionPlan(tableRuntime, arcticTable, partition, planTime);
+      if (TableFormat.ICEBERG == mixedTable.format()) {
+        return new IcebergPartitionPlan(tableRuntime, mixedTable, partition, planTime);
       } else {
-        if (TableTypeUtil.isHive(arcticTable)) {
+        if (TableTypeUtil.isHive(mixedTable)) {
           return new MixedHivePartitionPlan(
-              tableRuntime, arcticTable, partition, hiveLocation, planTime);
+              tableRuntime, mixedTable, partition, hiveLocation, planTime);
         } else {
-          return new MixedIcebergPartitionPlan(tableRuntime, arcticTable, partition, planTime);
+          return new MixedIcebergPartitionPlan(tableRuntime, mixedTable, partition, planTime);
         }
       }
     }

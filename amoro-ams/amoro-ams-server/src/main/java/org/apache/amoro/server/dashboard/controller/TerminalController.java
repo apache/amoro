@@ -29,6 +29,7 @@ import org.apache.amoro.server.terminal.TerminalManager;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /** The controller that handles terminal requests. */
@@ -66,6 +67,9 @@ public class TerminalController {
     Map<String, String> bodyParams = ctx.bodyAsClass(Map.class);
     String sql = bodyParams.get("sql");
     String terminalId = ctx.cookie("JSESSIONID");
+    if (terminalId == null) {
+      terminalId = UUID.randomUUID().toString();
+    }
     String sessionId = terminalManager.executeScript(terminalId, catalog, sql);
 
     ctx.json(OkResponse.of(new SessionInfo(sessionId)));

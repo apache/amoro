@@ -29,9 +29,9 @@ SPARK_VERSION=3.3.3
 HADOOP_VERSION=2.10.2
 DEBIAN_MIRROR=http://deb.debian.org
 APACHE_ARCHIVE=https://archive.apache.org/dist
-FLINK_OPTIMIZER_JOB_PATH=ams/optimizer/flink-optimizer/target/flink-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
+FLINK_OPTIMIZER_JOB_PATH=amoro-ams/amoro-ams-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${AMORO_VERSION}-jar-with-dependencies.jar
 FLINK_OPTIMIZER_JOB=${PROJECT_HOME}/${FLINK_OPTIMIZER_JOB_PATH}
-SPARK_OPTIMIZER_JOB_PATH=ams/optimizer/spark-optimizer/target/spark-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
+SPARK_OPTIMIZER_JOB_PATH=amoro-ams/amoro-ams-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${AMORO_VERSION}-jar-with-dependencies.jar
 SPARK_OPTIMIZER_JOB=${PROJECT_HOME}/${SPARK_OPTIMIZER_JOB_PATH}
 AMORO_TAG=$AMORO_VERSION
 ALSO_MAKE=true
@@ -210,7 +210,7 @@ function build_optimizer_flink() {
     OPTIMIZER_JOB=${FLINK_OPTIMIZER_JOB}
 
     if [ ! -f "${OPTIMIZER_JOB}" ]; then
-      BUILD_CMD="mvn clean package -pl ams/optimizer/flink-optimizer -am -e -DskipTests"
+      BUILD_CMD="mvn clean package -pl amoro-ams/amoro-ams-optimizer/amoro-optimizer-flink -am -e -DskipTests"
       echo "flink optimizer job not exists in ${OPTIMIZER_JOB}"
       echo "please check the file or run '${BUILD_CMD}' first. "
       exit  1
@@ -233,7 +233,7 @@ function build_optimizer_spark() {
     OPTIMIZER_JOB=${SPARK_OPTIMIZER_JOB}
 
     if [ ! -f "${OPTIMIZER_JOB}" ]; then
-      BUILD_CMD="mvn clean package -pl ams/optimizer/spark-optimizer -am -e -DskipTests"
+      BUILD_CMD="mvn clean package -pl amoro-ams/amoro-ams-optimizer/amoro-optimizer-spark -am -e -DskipTests"
       echo "spark optimizer job not exists in ${OPTIMIZER_JOB}"
       echo "please check the file or run '${BUILD_CMD}' first. "
       exit  1
@@ -253,7 +253,7 @@ function build_amoro() {
   local IMAGE_TAG=$AMORO_TAG
   print_image $IMAGE_REF $IMAGE_TAG
 
-  local DIST_FILE=${PROJECT_HOME}/ams/dist/target/amoro-${AMORO_VERSION}-bin.zip
+  local DIST_FILE=${PROJECT_HOME}/amoro-ams/dist/target/amoro-${AMORO_VERSION}-bin.zip
 
   if [ ! -f "${DIST_FILE}" ]; then
     local BUILD_CMD="mvn clean package -am -e -pl ams/dist -DskipTests "
@@ -272,8 +272,8 @@ function build_quickdemo() {
     local IMAGE_REF=arctic163/quickdemo
     local IMAGE_TAG=$AMORO_TAG
 
-    local FLINK_CONNECTOR_BINARY=${PROJECT_HOME}/mixed/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-mixed-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
-    local SPARK_CONNECTOR_BINARY=${PROJECT_HOME}/mixed/spark/v${SPARK_MAJOR_VERSION}/spark-runtime/target/amoro-mixed-spark-runtime-${SPARK_MAJOR_VERSION}-${AMORO_VERSION}.jar
+    local FLINK_CONNECTOR_BINARY=${PROJECT_HOME}/amoro-mixed-format/amoro-mixed-format-flink/v${FLINK_MAJOR_VERSION}/amoro-mixed-format-flink-runtime-${FLINK_MAJOR_VERSION}/target/amoro-mixed-format-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
+    local SPARK_CONNECTOR_BINARY=${PROJECT_HOME}/amoro-mixed-format/amoro-mixed-format-spark/v${SPARK_MAJOR_VERSION}/amoro-mixed-format-spark-${SPARK_MAJOR_VERSION}-runtime/target/amoro-mixed-format-spark-${SPARK_MAJOR_VERSION}-runtime-${AMORO_VERSION}.jar
 
     if [ ! -f "${FLINK_CONNECTOR_BINARY}" ]; then
         echo "amoro-mixed-flink-connector not exists in ${FLINK_CONNECTOR_BINARY}, run 'mvn clean package -pl !mixed/trino' first. "

@@ -72,17 +72,17 @@ public class TestOrphanFileCleanHive extends TestOrphanFileClean {
   @Test
   public void hiveLocationOrphanDataFileClean() throws IOException {
     String hiveOrphanFilePath =
-        ((SupportHive) getArcticTable()).hiveLocation()
+        ((SupportHive) getMixedTable()).hiveLocation()
             + File.separator
             + DATA_FOLDER_NAME
             + File.separator
             + "orphan.parquet";
-    OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(hiveOrphanFilePath);
+    OutputFile changeOrphanDataFile = getMixedTable().io().newOutputFile(hiveOrphanFilePath);
     changeOrphanDataFile.createOrOverwrite().close();
-    Assert.assertTrue(getArcticTable().io().exists(hiveOrphanFilePath));
+    Assert.assertTrue(getMixedTable().io().exists(hiveOrphanFilePath));
 
-    MixedTableMaintainer maintainer = new MixedTableMaintainer(getArcticTable());
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable());
     maintainer.cleanContentFiles(System.currentTimeMillis());
-    Assert.assertTrue(getArcticTable().io().exists(hiveOrphanFilePath));
+    Assert.assertTrue(getMixedTable().io().exists(hiveOrphanFilePath));
   }
 }

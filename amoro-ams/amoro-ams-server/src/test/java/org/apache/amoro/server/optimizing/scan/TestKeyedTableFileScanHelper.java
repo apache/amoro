@@ -68,11 +68,11 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
 
   @Test
   public void testScanEmptySnapshot() {
-    long transactionId = getArcticTable().beginTransaction("");
+    long transactionId = getMixedTable().beginTransaction("");
     OptimizingTestHelpers.appendBase(
-        getArcticTable(),
+        getMixedTable(),
         tableTestHelper()
-            .writeBaseStore(getArcticTable(), transactionId, Collections.emptyList(), false));
+            .writeBaseStore(getMixedTable(), transactionId, Collections.emptyList(), false));
 
     List<TableFileScanHelper.FileScanResult> scan = scanFiles();
     assertScanResult(scan, 0);
@@ -86,10 +86,10 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
             tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
             tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
             tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00"));
-    long transactionId = getArcticTable().beginTransaction("");
+    long transactionId = getMixedTable().beginTransaction("");
     OptimizingTestHelpers.appendBase(
-        getArcticTable(),
-        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+        getMixedTable(),
+        tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false));
 
     List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
@@ -104,12 +104,12 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
             tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
             tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
             tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00"));
-    long transactionId = getArcticTable().beginTransaction("");
+    long transactionId = getMixedTable().beginTransaction("");
     appendChange(
         tableTestHelper()
             .writeChangeStore(
-                getArcticTable(), transactionId, ChangeAction.INSERT, newRecords, false));
-    long sequenceNumber = getArcticTable().changeTable().currentSnapshot().sequenceNumber();
+                getMixedTable(), transactionId, ChangeAction.INSERT, newRecords, false));
+    long sequenceNumber = getMixedTable().changeTable().currentSnapshot().sequenceNumber();
 
     List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
@@ -125,19 +125,19 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
             tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-02T12:00:00"),
             tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-02T12:00:00"));
 
-    long transactionId = getArcticTable().beginTransaction("");
+    long transactionId = getMixedTable().beginTransaction("");
     List<DataFile> dataFiles =
         OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false));
     // partition field = "2022-01-01T12:00:00"
     DataFile sampleFile = dataFiles.get(0);
 
-    transactionId = getArcticTable().beginTransaction("");
+    transactionId = getMixedTable().beginTransaction("");
     List<DataFile> dataFiles1 =
         tableTestHelper()
             .writeChangeStore(
-                getArcticTable(), transactionId, ChangeAction.DELETE, newRecords, false);
+                getMixedTable(), transactionId, ChangeAction.DELETE, newRecords, false);
     appendChange(dataFiles1);
 
     newRecords =
@@ -147,11 +147,11 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
             tableTestHelper().generateTestRecord(3, "3333", 0, "2022-01-02T12:00:00"),
             tableTestHelper().generateTestRecord(4, "4444", 0, "2022-01-02T12:00:00"));
 
-    transactionId = getArcticTable().beginTransaction("");
+    transactionId = getMixedTable().beginTransaction("");
     appendChange(
         tableTestHelper()
             .writeChangeStore(
-                getArcticTable(), transactionId, ChangeAction.INSERT, newRecords, false));
+                getMixedTable(), transactionId, ChangeAction.INSERT, newRecords, false));
 
     List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
@@ -163,7 +163,7 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
             buildFileScanHelper()
                 .withPartitionFilter(
                     ExpressionUtil.convertPartitionDataToDataFilter(
-                        getArcticTable(), sampleFile.specId(), sampleFile.partition())));
+                        getMixedTable(), sampleFile.specId(), sampleFile.partition())));
     if (isPartitionedTable()) {
       assertScanResult(scan, 4, 1);
     } else {
@@ -179,18 +179,18 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
             tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
             tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
             tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00"));
-    long transactionId = getArcticTable().beginTransaction("");
+    long transactionId = getMixedTable().beginTransaction("");
     List<DataFile> dataFiles =
         OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false));
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
           MixedDataTestHelpers.writeBaseStorePosDelete(
-              getArcticTable(), transactionId, dataFile, Collections.singletonList(0L)));
+              getMixedTable(), transactionId, dataFile, Collections.singletonList(0L)));
     }
-    OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
+    OptimizingTestHelpers.appendBasePosDelete(getMixedTable(), posDeleteFiles);
 
     List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
@@ -208,16 +208,16 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
 
     appendChange(
         tableTestHelper()
-            .writeChangeStore(getArcticTable(), null, ChangeAction.INSERT, newRecords, false));
-    long sequenceNumber = getArcticTable().changeTable().currentSnapshot().sequenceNumber();
+            .writeChangeStore(getMixedTable(), null, ChangeAction.INSERT, newRecords, false));
+    long sequenceNumber = getMixedTable().changeTable().currentSnapshot().sequenceNumber();
 
     appendChange(
         tableTestHelper()
-            .writeChangeStore(getArcticTable(), null, ChangeAction.INSERT, newRecords, false));
+            .writeChangeStore(getMixedTable(), null, ChangeAction.INSERT, newRecords, false));
 
     appendChange(
         tableTestHelper()
-            .writeChangeStore(getArcticTable(), null, ChangeAction.INSERT, newRecords, false));
+            .writeChangeStore(getMixedTable(), null, ChangeAction.INSERT, newRecords, false));
 
     // check all files
     List<TableFileScanHelper.FileScanResult> scan = scanFiles();
@@ -225,7 +225,7 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     assertScanResult(scan, 12, 0);
 
     // keep at most 5 files, actually 4 files
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "5")
         .commit();
@@ -235,7 +235,7 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     assertScanResult(scan, 4, sequenceNumber, 0);
 
     // keep at most 3 files, actually 0 files
-    getArcticTable()
+    getMixedTable()
         .updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "3")
         .commit();
@@ -246,21 +246,21 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
   }
 
   protected KeyedTableFileScanHelper buildFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().baseTable(), true);
-    long changeSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().changeTable(), true);
+    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getMixedTable().baseTable(), true);
+    long changeSnapshotId = IcebergTableUtil.getSnapshotId(getMixedTable().changeTable(), true);
     return new KeyedTableFileScanHelper(
-        getArcticTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId));
+        getMixedTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId));
   }
 
   private void appendChange(List<DataFile> dataFiles) {
-    AppendFiles appendFiles = getArcticTable().changeTable().newAppend();
+    AppendFiles appendFiles = getMixedTable().changeTable().newAppend();
     dataFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
   }
 
   @Override
-  protected KeyedTable getArcticTable() {
-    return super.getArcticTable().asKeyedTable();
+  protected KeyedTable getMixedTable() {
+    return super.getMixedTable().asKeyedTable();
   }
 
   @Test

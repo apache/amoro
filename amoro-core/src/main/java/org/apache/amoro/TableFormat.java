@@ -19,7 +19,7 @@
 package org.apache.amoro;
 
 /**
- * Table formats Arctic supported
+ * Table formats Amoro supported
  *
  * @since 0.4.0
  */

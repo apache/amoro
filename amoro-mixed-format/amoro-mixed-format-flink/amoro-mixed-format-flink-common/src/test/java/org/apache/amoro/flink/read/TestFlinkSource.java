@@ -120,7 +120,7 @@ public class TestFlinkSource extends FlinkTestBase {
     data.add(new Object[] {1000015, "e", timestamp, localDateTime});
 
     Collection<RowData> expectedRecords = DataUtil.toRowData(data);
-    write(data, getArcticTable().asUnkeyedTable(), FLINK_ROW_TYPE);
+    write(data, getMixedTable().asUnkeyedTable(), FLINK_ROW_TYPE);
 
     final CloseableIterator<RowData> resultIterator =
         FlinkSource.forRowData()
@@ -170,7 +170,7 @@ public class TestFlinkSource extends FlinkTestBase {
     data.add(new Object[] {1000015, "e", timestamp, localDateTime});
 
     Collection<RowData> expectedRecords = DataUtil.toRowData(data);
-    write(data, getArcticTable().asUnkeyedTable(), FLINK_ROW_TYPE);
+    write(data, getMixedTable().asUnkeyedTable(), FLINK_ROW_TYPE);
 
     DataStream<RowData> ds =
         FlinkSource.forRowData()
@@ -204,7 +204,7 @@ public class TestFlinkSource extends FlinkTestBase {
   @Test
   public void testUnkeyedSnapshotRead() throws Exception {
     Configuration conf = new Configuration();
-    final Table testTable = getArcticTable().asUnkeyedTable();
+    final Table testTable = getMixedTable().asUnkeyedTable();
     final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(conf);
 
     env.enableCheckpointing(2000, CheckpointingMode.EXACTLY_ONCE);

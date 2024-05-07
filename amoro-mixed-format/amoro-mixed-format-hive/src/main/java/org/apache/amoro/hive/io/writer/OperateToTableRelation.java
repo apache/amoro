@@ -18,13 +18,13 @@
 
 package org.apache.amoro.hive.io.writer;
 
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.LocationKind;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.WriteOperationKind;
 
 /** Resolve the relation between {@link WriteOperationKind} and {@link LocationKind} */
 public interface OperateToTableRelation {
 
   LocationKind getLocationKindsFromOperateKind(
-      ArcticTable arcticTable, WriteOperationKind writeOperationKind);
+      MixedTable mixedTable, WriteOperationKind writeOperationKind);
 }

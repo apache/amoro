@@ -64,7 +64,7 @@ import org.apache.amoro.server.dashboard.utils.DesensitizationUtil;
 import org.apache.amoro.server.dashboard.utils.PropertiesUtil;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.table.TableProperties;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.AwsClientProperties;
@@ -83,6 +83,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /** The controller that handles catalog requests. */
 public class CatalogController {
@@ -234,12 +235,12 @@ public class CatalogController {
             AUTH_CONFIGS_KEY_PRINCIPAL, serverAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
         break;
       case AUTH_CONFIGS_VALUE_TYPE_AK_SK:
-        ArcticCatalogUtil.copyProperty(
+        MixedCatalogUtil.copyProperty(
             serverAuthConfig,
             catalogMeta.getCatalogProperties(),
             AUTH_CONFIGS_KEY_ACCESS_KEY,
             S3FileIOProperties.ACCESS_KEY_ID);
-        ArcticCatalogUtil.copyProperty(
+        MixedCatalogUtil.copyProperty(
             serverAuthConfig,
             catalogMeta.getCatalogProperties(),
             AUTH_CONFIGS_KEY_SECRET_KEY,
@@ -280,12 +281,12 @@ public class CatalogController {
                     catalogName, CONFIG_TYPE_AUTH, AUTH_CONFIGS_KEY_KRB5.replace("\\.", "-"))));
         break;
       case AUTH_CONFIGS_VALUE_TYPE_AK_SK:
-        ArcticCatalogUtil.copyProperty(
+        MixedCatalogUtil.copyProperty(
             catalogMeta.getCatalogProperties(),
             serverAuthConfig,
             S3FileIOProperties.ACCESS_KEY_ID,
             AUTH_CONFIGS_KEY_ACCESS_KEY);
-        ArcticCatalogUtil.copyProperty(
+        MixedCatalogUtil.copyProperty(
             catalogMeta.getCatalogProperties(),
             serverAuthConfig,
             S3FileIOProperties.SECRET_ACCESS_KEY,
@@ -300,7 +301,7 @@ public class CatalogController {
       String catalogName, CatalogMeta catalogMeta) {
     Map<String, Object> storageConfig = new HashMap<>();
     Map<String, String> config = catalogMeta.getStorageConfigs();
-    String storageType = ArcticCatalogUtil.getCompatibleStorageType(config);
+    String storageType = MixedCatalogUtil.getCompatibleStorageType(config);
     storageConfig.put(STORAGE_CONFIGS_KEY_TYPE, storageType);
     if (STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equals(storageType)) {
       storageConfig.put(
@@ -330,12 +331,12 @@ public class CatalogController {
                   CONFIG_TYPE_STORAGE,
                   STORAGE_CONFIGS_KEY_HIVE_SITE.replace("\\.", "-"))));
     } else if (STORAGE_CONFIGS_VALUE_TYPE_S3.equals(storageType)) {
-      ArcticCatalogUtil.copyProperty(
+      MixedCatalogUtil.copyProperty(
           catalogMeta.getCatalogProperties(),
           storageConfig,
           AwsClientProperties.CLIENT_REGION,
           STORAGE_CONFIGS_KEY_REGION);
-      ArcticCatalogUtil.copyProperty(
+      MixedCatalogUtil.copyProperty(
           catalogMeta.getCatalogProperties(),
           storageConfig,
           S3FileIOProperties.ENDPOINT,
@@ -357,18 +358,18 @@ public class CatalogController {
         .put(
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
             info.getOptimizerGroup());
-    StringBuilder tableFormats = new StringBuilder();
+    String tableFormats;
     try {
       // validate table format
-      info.getTableFormatList()
-          .forEach(item -> tableFormats.append(TableFormat.valueOf(item).name()));
+      tableFormats =
+          info.getTableFormatList().stream()
+              .map(item -> TableFormat.valueOf(item).name())
+              .collect(Collectors.joining(","));
     } catch (Exception e) {
       throw new RuntimeException(
           "Invalid table format list, " + String.join(",", info.getTableFormatList()));
     }
-    catalogMeta
-        .getCatalogProperties()
-        .put(CatalogMetaProperties.TABLE_FORMATS, tableFormats.toString());
+    catalogMeta.getCatalogProperties().put(CatalogMetaProperties.TABLE_FORMATS, tableFormats);
     fillAuthConfigs2CatalogMeta(catalogMeta, info.getAuthConfig(), oldCatalogMeta);
     // change fileId to base64Code
     Map<String, String> metaStorageConfig = new HashMap<>();
@@ -403,12 +404,12 @@ public class CatalogController {
         }
       }
     } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_S3)) {
-      ArcticCatalogUtil.copyProperty(
+      MixedCatalogUtil.copyProperty(
           info.getStorageConfig(),
           catalogMeta.getCatalogProperties(),
           STORAGE_CONFIGS_KEY_REGION,
           AwsClientProperties.CLIENT_REGION);
-      ArcticCatalogUtil.copyProperty(
+      MixedCatalogUtil.copyProperty(
           info.getStorageConfig(),
           catalogMeta.getCatalogProperties(),
           STORAGE_CONFIGS_KEY_ENDPOINT,

@@ -30,6 +30,34 @@ containers:
       export.JAVA_HOME: "/opt/java"   # JDK environment
 ```
 
+### Kubernetes container
+
+Kubernetes Optimizer Container is a way to start Optimizer On K8s with standalone Optimizer.
+To use flink container, you need to add a new container configuration. 
+with container-impl as `org.apache.amoro.server.manager.KubernetesOptimizerContainer`
+
+KubernetesOptimizerContainer support the following properties:
+
+
+| Property Name             | Required | Default Value | Description                                                                                                   |
+|---------------------------|----------|---------------|---------------------------------------------------------------------------------------------------------------|
+| kube-config-path          | true     | N/A           | Kubernetes config location.                                                                                   |
+| image                     | true     | N/A           | Optimizer Image name                                                                                          |
+| namespace                 | false    | "default"     | The namespace of optimizer to deploy                                                                          |
+| ams-optimizing-uri        | false    | N/A           | uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available |
+| cpu.factor                | false    | "1.0"         | Cpu factor when request kubernetes resource. Default 1 Cpu pre thread                                         |
+| memory                    | true     | N/A           | Memory usage for pre thread                                                                                   |
+
+
+```yaml
+containers:
+  - name: KubernetesContainer
+    container-impl: org.apache.amoro.server.manager.KubernetesOptimizerContainer
+    properties:
+      kube-config-path: ～/.kube/config
+      image: apache/amoro:0.6
+```
+
 ### Flink container
 Flink container is a way to start Optimizer through Flink jobs. With Flink, you can easily deploy Optimizer
 on yarn clusters or kubernetes clusters to support large-scale data scenarios. To use flink container, 

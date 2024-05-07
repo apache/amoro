@@ -19,22 +19,22 @@
 package org.apache.amoro.trino;
 
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.catalog.CatalogLoader;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.ArcticCatalogUtil;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 
 import javax.inject.Inject;
 
 import java.util.Collections;
 
-/** A factory to generate {@link ArcticCatalog} */
+/** A factory to generate {@link MixedFormatCatalog} */
 public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
 
   private final ArcticConfig arcticConfig;
 
-  private volatile ArcticCatalog arcticCatalog;
+  private volatile MixedFormatCatalog arcticCatalog;
   private volatile TableMetaStore tableMetaStore;
 
   @Inject
@@ -42,7 +42,7 @@ public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
     this.arcticConfig = arcticConfig;
   }
 
-  public ArcticCatalog getArcticCatalog() {
+  public MixedFormatCatalog getArcticCatalog() {
     if (arcticCatalog == null) {
       synchronized (this) {
         if (arcticCatalog == null) {
@@ -66,7 +66,7 @@ public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
           try (ThreadContextClassLoader ignored =
               new ThreadContextClassLoader(this.getClass().getClassLoader())) {
             CatalogMeta meta = CatalogLoader.loadMeta(arcticConfig.getCatalogUrl());
-            this.tableMetaStore = ArcticCatalogUtil.buildMetaStore(meta);
+            this.tableMetaStore = MixedCatalogUtil.buildMetaStore(meta);
           }
         }
       }

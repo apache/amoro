@@ -19,8 +19,8 @@
 package org.apache.amoro.server.optimizing;
 
 import org.apache.amoro.server.AmsEnvironment;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableBuilder;
 import org.apache.amoro.table.TableIdentifier;
@@ -94,55 +94,55 @@ public class TestOptimizingIntegration {
 
   @Test
   public void testPkTableOptimizing() {
-    ArcticTable arcticTable =
+    MixedTable mixedTable =
         createArcticTable(MIXED_ICEBERG_TB_1, PRIMARY_KEY, PartitionSpec.unpartitioned());
     assertTableExist(MIXED_ICEBERG_TB_1);
-    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(arcticTable);
+    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(mixedTable);
     testCase.testKeyedTableContinueOptimizing();
   }
 
   @Test
   public void testPkPartitionTableOptimizing() {
-    ArcticTable arcticTable = createArcticTable(MIXED_ICEBERG_TB_2, PRIMARY_KEY, SPEC);
+    MixedTable mixedTable = createArcticTable(MIXED_ICEBERG_TB_2, PRIMARY_KEY, SPEC);
     assertTableExist(MIXED_ICEBERG_TB_2);
-    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(arcticTable);
+    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(mixedTable);
     testCase.testKeyedTableContinueOptimizing();
   }
 
   @Test
   public void testPkTableMajorOptimizeLeftPosDelete() {
-    ArcticTable arcticTable =
+    MixedTable mixedTable =
         createArcticTable(MIXED_ICEBERG_TB_3, PRIMARY_KEY, PartitionSpec.unpartitioned());
     assertTableExist(MIXED_ICEBERG_TB_3);
-    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(arcticTable);
+    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(mixedTable);
     testCase.testPkTableMajorOptimizeLeftPosDelete();
   }
 
   @Test
   public void testNoPkTableOptimizing() {
-    ArcticTable arcticTable =
+    MixedTable mixedTable =
         createArcticTable(
             MIXED_ICEBERG_TB_4, PrimaryKeySpec.noPrimaryKey(), PartitionSpec.unpartitioned());
     assertTableExist(MIXED_ICEBERG_TB_4);
-    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(arcticTable);
+    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(mixedTable);
     testCase.testNoPkTableOptimizing();
   }
 
   @Test
   public void testNoPkPartitionTableOptimizing() {
-    ArcticTable arcticTable =
+    MixedTable mixedTable =
         createArcticTable(MIXED_ICEBERG_TB_5, PrimaryKeySpec.noPrimaryKey(), SPEC);
     assertTableExist(MIXED_ICEBERG_TB_5);
-    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(arcticTable);
+    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(mixedTable);
     testCase.testNoPkPartitionTableOptimizing();
   }
 
   @Test
   public void testKeyedTableTxIdNotInOrder() {
-    ArcticTable arcticTable =
+    MixedTable mixedTable =
         createArcticTable(MIXED_ICEBERG_TB_6, PRIMARY_KEY, PartitionSpec.unpartitioned());
     assertTableExist(MIXED_ICEBERG_TB_6);
-    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(arcticTable);
+    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(mixedTable);
     testCase.testKeyedTableTxIdNotInOrder();
   }
 
@@ -168,7 +168,7 @@ public class TestOptimizingIntegration {
     testCase.testHiveKeyedTableMajorOptimizeAndMove();
   }
 
-  private ArcticTable createArcticTable(
+  private MixedTable createArcticTable(
       TableIdentifier tableIdentifier, PrimaryKeySpec primaryKeySpec, PartitionSpec partitionSpec) {
 
     TableBuilder tableBuilder =

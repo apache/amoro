@@ -24,7 +24,7 @@ import static org.apache.amoro.data.ChangeAction.UPDATE_AFTER;
 import static org.apache.amoro.data.ChangeAction.UPDATE_BEFORE;
 
 import org.apache.amoro.data.ChangeAction;
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -47,8 +47,8 @@ public class ChangeLogDataIterator<T> extends DataIterator<T> {
 
   public ChangeLogDataIterator(
       FileScanTaskReader<T> fileScanTaskReader,
-      Collection<ArcticFileScanTask> insertTasks,
-      Collection<ArcticFileScanTask> deleteTasks,
+      Collection<MixedFileScanTask> insertTasks,
+      Collection<MixedFileScanTask> deleteTasks,
       Function<T, Long> arcticFileOffsetGetter,
       Function<T, T> arcticMetaColumnRemover,
       Function<ChangeActionTrans<T>, T> changeActionTransformer) {

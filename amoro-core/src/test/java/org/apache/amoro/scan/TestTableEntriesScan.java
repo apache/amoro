@@ -49,7 +49,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
   @Test
   public void testScanEntriesForDataFile() {
     // change table commit 2 insert files, then commit 1 delete file
-    Table changeTable = getArcticTable().asKeyedTable().changeTable();
+    Table changeTable = getMixedTable().asKeyedTable().changeTable();
     Map<String, Entry> expectedEntries = getExpectedCurrentEntries(changeTable);
     TableEntriesScan dataFileScan =
         TableEntriesScan.builder(changeTable).includeFileContent(FileContent.DATA).build();
@@ -64,7 +64,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
   @Test
   public void testScanEntriesForPosDeleteFiles() {
     // base table commit 4 insert files, then commit 1 pos-delete file
-    Table baseTable = getArcticTable().asKeyedTable().baseTable();
+    Table baseTable = getMixedTable().asKeyedTable().baseTable();
     TableEntriesScan deleteFileScan =
         TableEntriesScan.builder(baseTable)
             .includeFileContent(FileContent.POSITION_DELETES)
@@ -81,7 +81,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
   @Test
   public void testScanAllEntries() throws IOException {
     // base table commit 4 insert files, then commit 1 pos-delete file
-    Table baseTable = getArcticTable().asKeyedTable().baseTable();
+    Table baseTable = getMixedTable().asKeyedTable().baseTable();
     Snapshot snapshot1 = baseTable.currentSnapshot();
     Map<String, Entry> expectedEntries1 = getExpectedCurrentEntries(baseTable);
 
@@ -136,7 +136,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
   @Test
   public void testScanEntriesWithFilter() {
     // change table commit 2 insert files, then commit 1 delete file
-    Table changeTable = getArcticTable().asKeyedTable().changeTable();
+    Table changeTable = getMixedTable().asKeyedTable().changeTable();
     TableEntriesScan dataFileScan =
         TableEntriesScan.builder(changeTable)
             .includeFileContent(FileContent.DATA)
@@ -154,7 +154,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
   @Test
   public void testScanEntriesFromSequence() throws IOException {
     // change table commit 2 insert files, then commit 1 delete file
-    Table changeTable = getArcticTable().asKeyedTable().changeTable();
+    Table changeTable = getMixedTable().asKeyedTable().changeTable();
     TableEntriesScan.Builder builder =
         TableEntriesScan.builder(changeTable).includeFileContent(FileContent.DATA).fromSequence(2L);
     Map<String, Entry> expectedEntries = getExpectedCurrentEntries(changeTable);
@@ -169,7 +169,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
     Assert.assertEquals(1, cnt);
 
     // base table commit 4 insert files, then commit 1 pos-delete file
-    Table baseTable = getArcticTable().asKeyedTable().baseTable();
+    Table baseTable = getMixedTable().asKeyedTable().baseTable();
     builder =
         TableEntriesScan.builder(baseTable)
             .includeFileContent(FileContent.POSITION_DELETES)
@@ -187,9 +187,9 @@ public class TestTableEntriesScan extends TableDataTestBase {
   }
 
   private List<DataFile> writeIntoBase() throws IOException {
-    long transactionId = getArcticTable().asKeyedTable().beginTransaction("");
+    long transactionId = getMixedTable().asKeyedTable().beginTransaction("");
     GenericBaseTaskWriter writer =
-        GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+        GenericTaskWriters.builderFor(getMixedTable().asKeyedTable())
             .withTransactionId(transactionId)
             .buildBaseWriter();
 
@@ -197,7 +197,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
       writer.write(record);
     }
     WriteResult result = writer.complete();
-    AppendFiles baseAppend = getArcticTable().asKeyedTable().baseTable().newAppend();
+    AppendFiles baseAppend = getMixedTable().asKeyedTable().baseTable().newAppend();
     Arrays.stream(result.dataFiles()).forEach(baseAppend::appendFile);
     baseAppend.commit();
     return Arrays.asList(result.dataFiles());

@@ -74,8 +74,8 @@ public class CompatibleHivePropertyUtil {
       return null;
     }
     switch (property) {
-      case HiveTableProperties.ARCTIC_TABLE_FLAG:
-        return HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY;
+      case HiveTableProperties.MIXED_TABLE_FLAG:
+        return HiveTableProperties.AMORO_TABLE_FLAG_LEGACY;
       default:
         return null;
     }

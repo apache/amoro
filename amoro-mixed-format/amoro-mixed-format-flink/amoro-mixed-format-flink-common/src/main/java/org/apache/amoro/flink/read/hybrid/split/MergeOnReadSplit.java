@@ -62,7 +62,7 @@ public class MergeOnReadSplit extends ArcticSplit {
         .add("baseTasks", FileScanTaskUtil.toString(keyedTableScanTask.baseTasks()))
         .add(
             "arcticEquityDeletes",
-            FileScanTaskUtil.toString(keyedTableScanTask.arcticEquityDeletes()))
+            FileScanTaskUtil.toString(keyedTableScanTask.mixedEquityDeletes()))
         .toString();
   }
 
@@ -88,7 +88,7 @@ public class MergeOnReadSplit extends ArcticSplit {
         .add("\nbaseTasks", FileScanTaskUtil.toString(keyedTableScanTask.baseTasks()))
         .add(
             "\narcticEquityDeletes",
-            FileScanTaskUtil.toString(keyedTableScanTask.arcticEquityDeletes()))
+            FileScanTaskUtil.toString(keyedTableScanTask.mixedEquityDeletes()))
         .add("\ncost", keyedTableScanTask.cost() / 1024 + " KB")
         .add("\nrecordCount", keyedTableScanTask.recordCount())
         .toString();

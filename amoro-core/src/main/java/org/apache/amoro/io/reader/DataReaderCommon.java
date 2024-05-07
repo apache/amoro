@@ -20,7 +20,7 @@ package org.apache.amoro.io.reader;
 
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.data.DataFileType;
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.table.MetadataColumns;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
@@ -52,26 +52,26 @@ public class DataReaderCommon {
         org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId(),
         convertConstant.apply(Types.StringType.get(), task.file().path().toString()));
 
-    if (task instanceof ArcticFileScanTask) {
-      ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask) task;
+    if (task instanceof MixedFileScanTask) {
+      MixedFileScanTask mixedFileScanTask = (MixedFileScanTask) task;
       idToConstant.put(
           MetadataColumns.TRANSACTION_ID_FILED_ID,
-          convertConstant.apply(Types.LongType.get(), arcticFileScanTask.file().transactionId()));
+          convertConstant.apply(Types.LongType.get(), mixedFileScanTask.file().transactionId()));
 
       idToConstant.put(
           MetadataColumns.TREE_NODE_ID,
-          convertConstant.apply(Types.LongType.get(), arcticFileScanTask.file().node().getId()));
+          convertConstant.apply(Types.LongType.get(), mixedFileScanTask.file().node().getId()));
 
-      if (arcticFileScanTask.fileType() == DataFileType.BASE_FILE) {
+      if (mixedFileScanTask.fileType() == DataFileType.BASE_FILE) {
         idToConstant.put(
             MetadataColumns.FILE_OFFSET_FILED_ID,
             convertConstant.apply(Types.LongType.get(), Long.MAX_VALUE));
       }
-      if (arcticFileScanTask.fileType() == DataFileType.EQ_DELETE_FILE) {
+      if (mixedFileScanTask.fileType() == DataFileType.EQ_DELETE_FILE) {
         idToConstant.put(
             MetadataColumns.CHANGE_ACTION_ID,
             convertConstant.apply(Types.StringType.get(), ChangeAction.DELETE.toString()));
-      } else if (arcticFileScanTask.fileType() == DataFileType.INSERT_FILE) {
+      } else if (mixedFileScanTask.fileType() == DataFileType.INSERT_FILE) {
         idToConstant.put(
             MetadataColumns.CHANGE_ACTION_ID,
             convertConstant.apply(Types.StringType.get(), ChangeAction.INSERT.toString()));

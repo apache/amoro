@@ -45,8 +45,8 @@ public class TestIcebergTableFileScanHelper extends TestUnkeyedTableFileScanHelp
 
   @Override
   protected TableFileScanHelper buildFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable(), true);
-    return new IcebergTableFileScanHelper(getArcticTable(), baseSnapshotId);
+    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getMixedTable(), true);
+    return new IcebergTableFileScanHelper(getMixedTable(), baseSnapshotId);
   }
 
   @Override

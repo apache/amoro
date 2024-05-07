@@ -73,7 +73,7 @@ public class LogDataToJsonConverters implements Serializable {
 
   private static <T> LogDataToJsonConverter<T> createNotNullConverter(
       Type type, LogData.FieldGetterFactory<T> fieldGetterFactory) {
-    // 以下 switch case 来源于 org.apache.iceberg.types.TypeUtil
+    // The following switch case originates from org.apache.iceberg.types.TypeUtil
     // and org.apache.iceberg.flink.TypeToFlinkType
     switch (type.typeId()) {
       case BOOLEAN:

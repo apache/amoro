@@ -30,8 +30,8 @@ import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableLi
 import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap.toImmutableMap;
 import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet.toImmutableSet;
 
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.trino.ArcticSessionProperties;
@@ -91,17 +91,17 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
 
   private static final Logger log = LoggerFactory.getLogger(KeyedConnectorMetadata.class);
 
-  private final ArcticCatalog arcticCatalog;
+  private final MixedFormatCatalog arcticCatalog;
 
   private final TypeManager typeManager;
 
-  private final ConcurrentHashMap<SchemaTableName, ArcticTable> concurrentHashMap =
+  private final ConcurrentHashMap<SchemaTableName, MixedTable> concurrentHashMap =
       new ConcurrentHashMap<>();
 
   private final Map<IcebergTableHandle, TableStatistics> tableStatisticsCache =
       new ConcurrentHashMap<>();
 
-  public KeyedConnectorMetadata(ArcticCatalog arcticCatalog, TypeManager typeManager) {
+  public KeyedConnectorMetadata(MixedFormatCatalog arcticCatalog, TypeManager typeManager) {
     this.arcticCatalog = arcticCatalog;
     this.typeManager = typeManager;
   }
@@ -154,14 +154,14 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
     IcebergTableHandle icebergTableHandle = keyedTableHandle.getIcebergTableHandle();
     SchemaTableName schemaTableName =
         new SchemaTableName(icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName());
-    ArcticTable arcticTable =
+    MixedTable mixedTable =
         getArcticTable(
             new SchemaTableName(
                 icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()));
-    if (arcticTable == null) {
+    if (mixedTable == null) {
       throw new TableNotFoundException(schemaTableName);
     }
-    List<ColumnMetadata> columnMetadata = getColumnMetadata(arcticTable);
+    List<ColumnMetadata> columnMetadata = getColumnMetadata(mixedTable);
     return new ConnectorTableMetadata(schemaTableName, columnMetadata);
   }
 
@@ -172,16 +172,16 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
     IcebergTableHandle icebergTableHandle = keyedTableHandle.getIcebergTableHandle();
     SchemaTableName schemaTableName =
         new SchemaTableName(icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName());
-    ArcticTable arcticTable =
+    MixedTable mixedTable =
         getArcticTable(
             new SchemaTableName(
                 icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()));
-    if (arcticTable == null) {
+    if (mixedTable == null) {
       throw new TableNotFoundException(schemaTableName);
     }
 
     ImmutableMap.Builder<String, ColumnHandle> columnHandles = ImmutableMap.builder();
-    for (IcebergColumnHandle columnHandle : getColumns(arcticTable.schema(), typeManager)) {
+    for (IcebergColumnHandle columnHandle : getColumns(mixedTable.schema(), typeManager)) {
       columnHandles.put(columnHandle.getName(), columnHandle);
     }
     // columnHandles.put(FILE_PATH.getColumnName(), pathColumnHandle());
@@ -195,9 +195,9 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
     return ColumnMetadata.builder().setName(column.getName()).setType(column.getType()).build();
   }
 
-  private List<ColumnMetadata> getColumnMetadata(ArcticTable arcticTable) {
+  private List<ColumnMetadata> getColumnMetadata(MixedTable mixedTable) {
     ImmutableList.Builder<ColumnMetadata> columnsMetadata = ImmutableList.builder();
-    Schema schema = arcticTable.schema();
+    Schema schema = mixedTable.schema();
     List<Types.NestedField> schemaWithPartition = schema.columns();
     for (Types.NestedField column : schemaWithPartition) {
       columnsMetadata.add(
@@ -222,8 +222,8 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
     ImmutableMap.Builder<SchemaTableName, List<ColumnMetadata>> columns = ImmutableMap.builder();
     for (SchemaTableName schemaTableName : schemaTableNames) {
       try {
-        ArcticTable arcticTable = getArcticTable(schemaTableName);
-        List<ColumnMetadata> columnMetadata = getColumnMetadata(arcticTable);
+        MixedTable mixedTable = getArcticTable(schemaTableName);
+        List<ColumnMetadata> columnMetadata = getColumnMetadata(mixedTable);
         columns.put(schemaTableName, columnMetadata);
       } catch (TableNotFoundException | NotFoundException e) {
         return Collections.EMPTY_MAP;
@@ -247,12 +247,12 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
       ConnectorSession session, ConnectorTableHandle handle, Constraint constraint) {
     KeyedTableHandle table = (KeyedTableHandle) handle;
     IcebergTableHandle icebergTableHandle = table.getIcebergTableHandle();
-    ArcticTable arcticTable =
+    MixedTable mixedTable =
         getArcticTable(
             new SchemaTableName(
                 icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()));
 
-    Set<Integer> partitionSourceIds = identityPartitionColumnsInAllSpecs(arcticTable);
+    Set<Integer> partitionSourceIds = identityPartitionColumnsInAllSpecs(mixedTable);
     BiPredicate<IcebergColumnHandle, Domain> isIdentityPartition =
         (column, domain) -> partitionSourceIds.contains(column.getId());
 
@@ -439,7 +439,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
             originalHandle.isRecordScannedFiles(),
             originalHandle.getMaxScannedFileSize()),
         handle -> {
-          ArcticTable arcticTable =
+          MixedTable mixedTable =
               getArcticTable(
                   new SchemaTableName(
                       originalHandle.getSchemaName(), originalHandle.getTableName()));
@@ -449,8 +449,8 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
                   session,
                   withSnapshotId(
                       handle,
-                      arcticTable.asKeyedTable().baseTable().currentSnapshot().snapshotId()),
-                  arcticTable.asKeyedTable().baseTable());
+                      mixedTable.asKeyedTable().baseTable().currentSnapshot().snapshotId()),
+                  mixedTable.asKeyedTable().baseTable());
           return baseTableStatistics;
         });
   }
@@ -476,7 +476,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
         handle.getMaxScannedFileSize());
   }
 
-  private static Set<Integer> identityPartitionColumnsInAllSpecs(ArcticTable table) {
+  private static Set<Integer> identityPartitionColumnsInAllSpecs(MixedTable table) {
     // Extract identity partition column source ids common to ALL specs
     return table.spec().partitionType().fields().stream()
         .map(s -> s.fieldId())
@@ -508,7 +508,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
         Optional.empty());
   }
 
-  public ArcticTable getArcticTable(SchemaTableName schemaTableName) {
+  public MixedTable getArcticTable(SchemaTableName schemaTableName) {
     concurrentHashMap.computeIfAbsent(
         schemaTableName,
         ignore ->

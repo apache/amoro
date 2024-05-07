@@ -21,10 +21,10 @@ package org.apache.amoro.hive.catalog;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TestAms;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.catalog.CatalogLoader;
 import org.apache.amoro.catalog.CatalogTestHelpers;
 import org.apache.amoro.hive.TestHMS;
+import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Assert;
@@ -48,7 +48,7 @@ public class TestHiveCatalogLoader {
             properties,
             TableFormat.MIXED_HIVE);
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
-    ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
+    MixedFormatCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
     Assert.assertTrue(loadCatalog instanceof ArcticHiveCatalog);
     TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
@@ -61,7 +61,7 @@ public class TestHiveCatalogLoader {
         CatalogTestHelpers.buildCatalogMeta(
             TEST_CATALOG_NAME, CatalogMetaProperties.CATALOG_TYPE_HIVE, properties);
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
-    ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
+    MixedFormatCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
     Assert.assertTrue(loadCatalog instanceof ArcticHiveCatalog);
     TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);

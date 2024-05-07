@@ -24,8 +24,8 @@ import org.apache.amoro.io.writer.ChangeTaskWriter;
 import org.apache.amoro.io.writer.CommonOutputFileFactory;
 import org.apache.amoro.io.writer.OutputFileFactory;
 import org.apache.amoro.properties.HiveTableProperties;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
@@ -45,7 +45,7 @@ import org.apache.spark.sql.types.StructType;
 import java.util.Locale;
 
 public class TaskWriters {
-  private final ArcticTable table;
+  private final MixedTable table;
   private Long transactionId;
   private int partitionId = 0;
   private long taskId = 0;
@@ -58,7 +58,7 @@ public class TaskWriters {
   private final long fileSize;
   private final long mask;
 
-  protected TaskWriters(ArcticTable table) {
+  protected TaskWriters(MixedTable table) {
     this.table = table;
     this.isHiveTable = table instanceof SupportHive;
 
@@ -82,7 +82,7 @@ public class TaskWriters {
             - 1;
   }
 
-  public static TaskWriters of(ArcticTable table) {
+  public static TaskWriters of(MixedTable table) {
     return new TaskWriters(table);
   }
 

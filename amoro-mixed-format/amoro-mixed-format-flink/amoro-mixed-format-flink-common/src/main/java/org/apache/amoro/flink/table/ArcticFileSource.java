@@ -25,7 +25,7 @@ import org.apache.amoro.flink.table.descriptors.ArcticValidator;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.amoro.flink.util.FilterUtil;
 import org.apache.amoro.flink.util.IcebergAndFlinkFilters;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
@@ -69,7 +69,7 @@ public class ArcticFileSource
   private int[] projectedFields;
   private long limit;
   private List<Expression> filters;
-  private final ArcticTable table;
+  private final MixedTable table;
   @Nullable protected WatermarkStrategy<RowData> watermarkStrategy;
 
   private final ArcticTableLoader loader;
@@ -93,7 +93,7 @@ public class ArcticFileSource
       ArcticTableLoader loader,
       TableSchema tableSchema,
       int[] projectedFields,
-      ArcticTable table,
+      MixedTable table,
       long limit,
       List<Expression> filters,
       ReadableConfig readableConfig,
@@ -111,7 +111,7 @@ public class ArcticFileSource
   public ArcticFileSource(
       ArcticTableLoader loader,
       TableSchema tableSchema,
-      ArcticTable table,
+      MixedTable table,
       ReadableConfig readableConfig,
       boolean batchMode) {
     this(loader, tableSchema, null, table, -1, ImmutableList.of(), readableConfig, batchMode);

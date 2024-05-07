@@ -22,7 +22,7 @@ import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyData;
 import org.apache.amoro.io.writer.TaskWriterKey;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.data.Record;
@@ -106,7 +106,7 @@ public class ExpectResultUtil {
   }
 
   public static int expectOptimizeWriteFileCount(
-      List<Record> sources, ArcticTable table, int bucket) {
+      List<Record> sources, MixedTable table, int bucket) {
     PartitionKey partitionKey = new PartitionKey(table.spec(), table.schema());
     PrimaryKeyData primaryKey = null;
     if (table.isKeyedTable()) {

@@ -20,7 +20,7 @@ package org.apache.amoro.server.utils;
 
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.TableTypeUtil;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -36,7 +36,7 @@ public class HiveLocationUtil {
    * @param table target table
    * @return hive table/partition location
    */
-  public static Set<String> getHiveLocation(ArcticTable table) {
+  public static Set<String> getHiveLocation(MixedTable table) {
     Set<String> hiveLocations = new HashSet<>();
     if (TableTypeUtil.isHive(table)) {
       if (table.spec().isUnpartitioned()) {

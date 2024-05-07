@@ -18,14 +18,14 @@
 
 package org.apache.amoro.hive.catalog;
 
-import static org.apache.amoro.properties.HiveTableProperties.ARCTIC_TABLE_FLAG;
-import static org.apache.amoro.properties.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
+import static org.apache.amoro.properties.HiveTableProperties.MIXED_TABLE_FLAG;
+import static org.apache.amoro.properties.HiveTableProperties.MIXED_TABLE_ROOT_LOCATION;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.TestMixedCatalog;
 import org.apache.amoro.hive.TestHMS;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Table;
@@ -65,13 +65,13 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
     Map<String, String> tableParameter =
         TEST_HMS.getHiveClient().getTable(dbName, tbl).getParameters();
 
-    Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_ROOT_LOCATION));
-    Assert.assertTrue(tableParameter.get(ARCTIC_TABLE_ROOT_LOCATION).endsWith(tbl));
-    Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_FLAG));
+    Assert.assertTrue(tableParameter.containsKey(MIXED_TABLE_ROOT_LOCATION));
+    Assert.assertTrue(tableParameter.get(MIXED_TABLE_ROOT_LOCATION).endsWith(tbl));
+    Assert.assertTrue(tableParameter.containsKey(MIXED_TABLE_FLAG));
   }
 
   @Override
-  protected void validateCreatedTable(ArcticTable table, boolean withKey) throws TException {
+  protected void validateCreatedTable(MixedTable table, boolean withKey) throws TException {
     super.validateCreatedTable(table, withKey);
     validateTableArcticProperties(table.id());
   }

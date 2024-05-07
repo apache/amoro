@@ -22,6 +22,8 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TestAms;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.mixed.BasicMixedIcebergCatalog;
+import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Assert;
@@ -46,7 +48,7 @@ public class TestCatalogLoader {
             properties,
             TableFormat.MIXED_ICEBERG);
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
-    ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
+    MixedFormatCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
     Assert.assertEquals(BasicMixedIcebergCatalog.class.getName(), loadCatalog.getClass().getName());
     TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);

@@ -24,7 +24,7 @@ import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.optimizing.MixFormatRewriteExecutorFactory;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.ContentFile;
@@ -50,7 +50,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
 
   public MixedIcebergPartitionPlan(
       TableRuntime tableRuntime,
-      ArcticTable table,
+      MixedTable table,
       Pair<Integer, StructLike> partition,
       long planTime) {
     super(tableRuntime, table, partition, planTime);

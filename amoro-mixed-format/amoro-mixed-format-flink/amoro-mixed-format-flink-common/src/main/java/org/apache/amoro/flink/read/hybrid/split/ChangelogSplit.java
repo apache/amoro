@@ -20,7 +20,7 @@ package org.apache.amoro.flink.read.hybrid.split;
 
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyedFile;
-import org.apache.amoro.scan.ArcticFileScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.utils.FileScanTaskUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -32,8 +32,8 @@ import java.util.Optional;
 public class ChangelogSplit extends ArcticSplit {
   private static final long serialVersionUID = 1L;
   private final int taskIndex;
-  private final Collection<ArcticFileScanTask> insertScanTasks;
-  private final Collection<ArcticFileScanTask> deleteScanTasks;
+  private final Collection<MixedFileScanTask> insertScanTasks;
+  private final Collection<MixedFileScanTask> deleteScanTasks;
   private int insertFileOffset;
   private long insertRecordOffset;
   private int deleteFileOffset;
@@ -41,14 +41,14 @@ public class ChangelogSplit extends ArcticSplit {
   private DataTreeNode dataTreeNode;
 
   public ChangelogSplit(
-      Collection<ArcticFileScanTask> insertScanTasks,
-      Collection<ArcticFileScanTask> deleteScanTasks,
+      Collection<MixedFileScanTask> insertScanTasks,
+      Collection<MixedFileScanTask> deleteScanTasks,
       int taskIndex) {
     Preconditions.checkArgument(insertScanTasks.size() > 0 || deleteScanTasks.size() > 0);
     this.taskIndex = taskIndex;
     this.insertScanTasks = insertScanTasks;
     this.deleteScanTasks = deleteScanTasks;
-    Optional<ArcticFileScanTask> task = insertScanTasks.stream().findFirst();
+    Optional<MixedFileScanTask> task = insertScanTasks.stream().findFirst();
     PrimaryKeyedFile file =
         task.isPresent() ? task.get().file() : deleteScanTasks.stream().findFirst().get().file();
     this.dataTreeNode = DataTreeNode.of(file.node().mask(), file.node().index());
@@ -131,11 +131,11 @@ public class ChangelogSplit extends ArcticSplit {
     return deleteRecordOffset;
   }
 
-  public Collection<ArcticFileScanTask> insertTasks() {
+  public Collection<MixedFileScanTask> insertTasks() {
     return insertScanTasks;
   }
 
-  public Collection<ArcticFileScanTask> deleteTasks() {
+  public Collection<MixedFileScanTask> deleteTasks() {
     return deleteScanTasks;
   }
 }

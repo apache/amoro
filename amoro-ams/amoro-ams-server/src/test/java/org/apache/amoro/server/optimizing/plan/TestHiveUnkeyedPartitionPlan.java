@@ -77,11 +77,11 @@ public class TestHiveUnkeyedPartitionPlan extends TestUnkeyedPartitionPlan {
 
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
-    SupportHive hiveTable = (SupportHive) getArcticTable();
+    SupportHive hiveTable = (SupportHive) getMixedTable();
     String hiveLocation = hiveTable.hiveLocation();
     return new MixedHivePartitionPlan(
         getTableRuntime(),
-        getArcticTable(),
+        getMixedTable(),
         getPartition(),
         hiveLocation,
         System.currentTimeMillis());
@@ -100,12 +100,12 @@ public class TestHiveUnkeyedPartitionPlan extends TestUnkeyedPartitionPlan {
     transactionId = beginTransaction();
     dataFiles.addAll(
         OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
     dataFiles.addAll(
         OptimizingTestHelpers.appendBase(
-            getArcticTable(),
-            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
     StructLike partition = dataFiles.get(0).partition();
 
     // not trigger optimize

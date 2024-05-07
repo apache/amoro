@@ -29,10 +29,10 @@ import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.hive.table.HiveLocationKind;
-import org.apache.amoro.table.ArcticTable;
 import org.apache.amoro.table.BaseLocationKind;
 import org.apache.amoro.table.ChangeLocationKind;
 import org.apache.amoro.table.LocationKind;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.WriteOperationKind;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.GenericRowData;
@@ -118,7 +118,7 @@ public class TestAdaptHiveWriter extends TableTestBase {
   @Test
   public void testKeyedTableWriteTypeFromOperateKind() {
     Assume.assumeTrue(isKeyedTable());
-    ArcticTable testKeyedHiveTable = getArcticTable();
+    MixedTable testKeyedHiveTable = getMixedTable();
     FlinkTaskWriterBuilder builder =
         FlinkTaskWriterBuilder.buildFor(testKeyedHiveTable)
             .withFlinkSchema(FlinkSchemaUtil.convert(testKeyedHiveTable.schema()));
@@ -143,7 +143,7 @@ public class TestAdaptHiveWriter extends TableTestBase {
   @Test
   public void testUnKeyedTableWriteTypeFromOperateKind() {
     Assume.assumeFalse(isKeyedTable());
-    ArcticTable testHiveTable = getArcticTable();
+    MixedTable testHiveTable = getMixedTable();
     FlinkTaskWriterBuilder builder =
         FlinkTaskWriterBuilder.buildFor(testHiveTable)
             .withFlinkSchema(FlinkSchemaUtil.convert(testHiveTable.schema()));
@@ -165,42 +165,42 @@ public class TestAdaptHiveWriter extends TableTestBase {
   public void testKeyedTableChangeWriteByLocationKind() throws IOException {
     Assume.assumeTrue(isKeyedTable());
     Assume.assumeTrue(isPartitionedTable());
-    testWrite(getArcticTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
+    testWrite(getMixedTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
   }
 
   @Test
   public void testKeyedTableBaseWriteByLocationKind() throws IOException {
     Assume.assumeTrue(isKeyedTable());
     Assume.assumeTrue(isPartitionedTable());
-    testWrite(getArcticTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
+    testWrite(getMixedTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
   }
 
   @Test
   public void testKeyedTableHiveWriteByLocationKind() throws IOException {
     Assume.assumeTrue(isKeyedTable());
     Assume.assumeTrue(isPartitionedTable());
-    testWrite(getArcticTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
+    testWrite(getMixedTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
   }
 
   @Test
   public void testUnPartitionKeyedTableChangeWriteByLocationKind() throws IOException {
     Assume.assumeTrue(isKeyedTable());
     Assume.assumeFalse(isPartitionedTable());
-    testWrite(getArcticTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
+    testWrite(getMixedTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
   }
 
   @Test
   public void testUnPartitionKeyedTableBaseWriteByLocationKind() throws IOException {
     Assume.assumeTrue(isKeyedTable());
     Assume.assumeFalse(isPartitionedTable());
-    testWrite(getArcticTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
+    testWrite(getMixedTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
   }
 
   @Test
   public void testUnPartitionKeyedTableHiveWriteByLocationKind() throws IOException {
     Assume.assumeTrue(isKeyedTable());
     Assume.assumeFalse(isPartitionedTable());
-    testWrite(getArcticTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
+    testWrite(getMixedTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
   }
 
   @Test
@@ -208,7 +208,7 @@ public class TestAdaptHiveWriter extends TableTestBase {
     Assume.assumeFalse(isKeyedTable());
     Assume.assumeTrue(isPartitionedTable());
     try {
-      testWrite(getArcticTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
+      testWrite(getMixedTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
     } catch (Exception e) {
       Assert.assertTrue(e instanceof IllegalArgumentException);
     }
@@ -218,14 +218,14 @@ public class TestAdaptHiveWriter extends TableTestBase {
   public void testUnKeyedTableBaseWriteByLocationKind() throws IOException {
     Assume.assumeFalse(isKeyedTable());
     Assume.assumeTrue(isPartitionedTable());
-    testWrite(getArcticTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
+    testWrite(getMixedTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
   }
 
   @Test
   public void testUnKeyedTableHiveWriteByLocationKind() throws IOException {
     Assume.assumeFalse(isKeyedTable());
     Assume.assumeTrue(isPartitionedTable());
-    testWrite(getArcticTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
+    testWrite(getMixedTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
   }
 
   @Test
@@ -233,7 +233,7 @@ public class TestAdaptHiveWriter extends TableTestBase {
     Assume.assumeFalse(isKeyedTable());
     Assume.assumeFalse(isPartitionedTable());
     try {
-      testWrite(getArcticTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
+      testWrite(getMixedTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
     } catch (Exception e) {
       Assert.assertTrue(e instanceof IllegalArgumentException);
     }
@@ -243,18 +243,18 @@ public class TestAdaptHiveWriter extends TableTestBase {
   public void testUnPartitionUnKeyedTableBaseWriteByLocationKind() throws IOException {
     Assume.assumeFalse(isKeyedTable());
     Assume.assumeFalse(isPartitionedTable());
-    testWrite(getArcticTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
+    testWrite(getMixedTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
   }
 
   @Test
   public void testUnPartitionUnKeyedTableHiveWriteByLocationKind() throws IOException {
     Assume.assumeFalse(isKeyedTable());
     Assume.assumeFalse(isPartitionedTable());
-    testWrite(getArcticTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
+    testWrite(getMixedTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
   }
 
   public void testWrite(
-      ArcticTable table, LocationKind locationKind, List<RowData> records, String pathFeature)
+      MixedTable table, LocationKind locationKind, List<RowData> records, String pathFeature)
       throws IOException {
     FlinkTaskWriterBuilder builder =
         FlinkTaskWriterBuilder.buildFor(table)

@@ -23,10 +23,10 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.api.resource.ResourceGroup;
-import org.apache.amoro.catalog.ArcticCatalog;
-import org.apache.amoro.catalog.CatalogLoader;
 import org.apache.amoro.catalog.CatalogTestHelpers;
 import org.apache.amoro.hive.HMSMockServer;
+import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.optimizer.standalone.StandaloneOptimizer;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.resource.OptimizerManager;
@@ -71,7 +71,7 @@ public class AmsEnvironment {
   private int tableServiceBindPort;
   private int optimizingServiceBindPort;
   private final HMSMockServer testHMS;
-  private final Map<String, ArcticCatalog> catalogs = new HashMap<>();
+  private final Map<String, MixedFormatCatalog> catalogs = new HashMap<>();
 
   public static final String INTERNAL_ICEBERG_CATALOG = "internal_iceberg_catalog";
   public static final String INTERNAL_ICEBERG_CATALOG_WAREHOUSE = "/internal_iceberg/warehouse";
@@ -176,12 +176,12 @@ public class AmsEnvironment {
     MoreFiles.deleteRecursively(Paths.get(rootPath), RecursiveDeleteOption.ALLOW_INSECURE);
   }
 
-  public ArcticCatalog catalog(String name) {
+  public MixedFormatCatalog catalog(String name) {
     return catalogs.get(name);
   }
 
   public void createDatabaseIfNotExists(String catalog, String database) {
-    ArcticCatalog arcticCatalog = catalogs.get(catalog);
+    MixedFormatCatalog arcticCatalog = catalogs.get(catalog);
     if (arcticCatalog.listDatabases().contains(database)) {
       return;
     }

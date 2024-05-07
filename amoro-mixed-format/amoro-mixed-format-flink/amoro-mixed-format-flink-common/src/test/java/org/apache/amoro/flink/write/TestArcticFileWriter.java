@@ -28,7 +28,7 @@ import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.amoro.flink.table.ArcticTableLoader;
 import org.apache.amoro.flink.util.TestGlobalAggregateManager;
 import org.apache.amoro.flink.util.TestOneInputStreamOperatorIntern;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
@@ -94,14 +94,12 @@ public class TestArcticFileWriter extends FlinkTestBase {
       ArcticTableLoader tableLoader, boolean submitEmptySnapshots, Long restoredCheckpointId)
       throws Exception {
     tableLoader.open();
-    ArcticTable arcticTable = tableLoader.loadArcticTable();
-    arcticTable
-        .properties()
-        .put(SUBMIT_EMPTY_SNAPSHOTS.key(), String.valueOf(submitEmptySnapshots));
+    MixedTable mixedTable = tableLoader.loadArcticTable();
+    mixedTable.properties().put(SUBMIT_EMPTY_SNAPSHOTS.key(), String.valueOf(submitEmptySnapshots));
 
     ArcticFileWriter streamWriter =
         FlinkSink.createFileWriter(
-            arcticTable,
+            mixedTable,
             null,
             false,
             (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType(),

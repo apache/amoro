@@ -21,7 +21,7 @@ package org.apache.amoro.server.optimizing.plan;
 import org.apache.amoro.optimizing.IcebergRewriteExecutorFactory;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.util.Pair;
 
@@ -32,7 +32,7 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
   protected IcebergPartitionPlan(
       TableRuntime tableRuntime,
-      ArcticTable table,
+      MixedTable table,
       Pair<Integer, StructLike> partition,
       long planTime) {
     super(tableRuntime, table, partition, planTime);

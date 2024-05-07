@@ -112,12 +112,12 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
   public void initDataAndReader() throws IOException {
     StructLike partitionData = getPartitionData();
     OutputFileFactory outputFileFactory =
-        OutputFileFactory.builderFor(getArcticTable().asUnkeyedTable(), 0, 1)
+        OutputFileFactory.builderFor(getMixedTable().asUnkeyedTable(), 0, 1)
             .format(fileFormat)
             .build();
     DataFile dataFile =
         FileHelpers.writeDataFile(
-            getArcticTable().asUnkeyedTable(),
+            getMixedTable().asUnkeyedTable(),
             outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
             partitionData,
             Arrays.asList(
@@ -129,7 +129,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
     GenericRecord idRecord = GenericRecord.create(idSchema);
     DeleteFile eqDeleteFile =
         FileHelpers.writeDeleteFile(
-            getArcticTable().asUnkeyedTable(),
+            getMixedTable().asUnkeyedTable(),
             outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
             partitionData,
             Collections.singletonList(idRecord.copy("id", 1)),
@@ -139,7 +139,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
     deletes.add(Pair.of(dataFile.path(), 1L));
     DeleteFile posDeleteFile =
         FileHelpers.writeDeleteFile(
-                getArcticTable().asUnkeyedTable(),
+                getMixedTable().asUnkeyedTable(),
                 outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
                 partitionData,
                 deletes)
@@ -154,7 +154,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
               MixedDataTestHelpers.wrapIcebergDeleteFile(posDeleteFile, 3L)
             },
             new DeleteFile[] {},
-            getArcticTable());
+            getMixedTable());
 
     dataScanTask =
         new RewriteFilesInput(
@@ -162,13 +162,13 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
             new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
             new DeleteFile[] {},
             new DeleteFile[] {},
-            getArcticTable());
+            getMixedTable());
   }
 
   @Test
   public void readAllData() throws IOException {
     IcebergRewriteExecutor executor =
-        new IcebergRewriteExecutor(scanTask, getArcticTable(), StructLikeCollections.DEFAULT);
+        new IcebergRewriteExecutor(scanTask, getMixedTable(), StructLikeCollections.DEFAULT);
 
     RewriteFilesOutput output = executor.execute();
 
@@ -176,7 +176,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
         openFile(
             output.getDataFiles()[0].path().toString(),
             output.getDataFiles()[0].format(),
-            getArcticTable().schema(),
+            getMixedTable().schema(),
             new HashMap<>())) {
       Assert.assertEquals(1, Iterables.size(records));
       Record record = Iterables.getFirst(records, null);
@@ -199,8 +199,8 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
 
   @Test
   public void readAllDataWithPartitionEvolution() throws IOException {
-    Assume.assumeTrue(getArcticTable().spec().isPartitioned());
-    getArcticTable()
+    Assume.assumeTrue(getMixedTable().spec().isPartitioned());
+    getMixedTable()
         .asUnkeyedTable()
         .updateSpec()
         .removeField("op_time_day")
@@ -212,7 +212,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
   @Test
   public void readOnlyData() throws IOException {
     IcebergRewriteExecutor executor =
-        new IcebergRewriteExecutor(dataScanTask, getArcticTable(), StructLikeCollections.DEFAULT);
+        new IcebergRewriteExecutor(dataScanTask, getMixedTable(), StructLikeCollections.DEFAULT);
 
     RewriteFilesOutput output = executor.execute();
 
@@ -220,7 +220,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
         openFile(
             output.getDataFiles()[0].path().toString(),
             output.getDataFiles()[0].format(),
-            getArcticTable().schema(),
+            getMixedTable().schema(),
             new HashMap<>())) {
       Assert.assertEquals(3, Iterables.size(records));
     }
@@ -230,7 +230,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
 
   private CloseableIterable<Record> openFile(
       String path, FileFormat fileFormat, Schema fileProjection, Map<Integer, ?> idToConstant) {
-    InputFile input = getArcticTable().io().newInputFile(path);
+    InputFile input = getMixedTable().io().newInputFile(path);
 
     switch (fileFormat) {
       case AVRO:

@@ -93,13 +93,13 @@ public class TestKeyedExpressionUtil extends TableTestBase {
             tableTestHelper().generateTestRecord(8, "222", 11, null));
     // 4 files
     List<DataFile> baseStoreFiles =
-        MixedDataTestHelpers.writeAndCommitBaseStore(getArcticTable(), 1L, baseStoreRecords, true);
+        MixedDataTestHelpers.writeAndCommitBaseStore(getMixedTable(), 1L, baseStoreRecords, true);
     MixedDataTestHelpers.writeAndCommitChangeStore(
-        getArcticTable().asKeyedTable(), 2L, ChangeAction.INSERT, changeStoreRecords, true);
+        getMixedTable().asKeyedTable(), 2L, ChangeAction.INSERT, changeStoreRecords, true);
     for (DataFile baseStoreFile : baseStoreFiles) {
       Expression partitionFilter =
           ExpressionUtil.convertPartitionDataToDataFilter(
-              getArcticTable(), baseStoreFile.specId(), Sets.newHashSet(baseStoreFile.partition()));
+              getMixedTable(), baseStoreFile.specId(), Sets.newHashSet(baseStoreFile.partition()));
       assertPlanHalfWithPartitionFilter(partitionFilter);
     }
   }
@@ -109,7 +109,7 @@ public class TestKeyedExpressionUtil extends TableTestBase {
     Set<DataFile> baseDataFiles = Sets.newHashSet();
     Set<DataFile> insertFiles = Sets.newHashSet();
     try (CloseableIterable<CombinedScanTask> it =
-        getArcticTable().asKeyedTable().newScan().planTasks()) {
+        getMixedTable().asKeyedTable().newScan().planTasks()) {
       it.forEach(
           cst ->
               cst.tasks()
@@ -124,7 +124,7 @@ public class TestKeyedExpressionUtil extends TableTestBase {
     baseDataFiles.clear();
     insertFiles.clear();
     try (CloseableIterable<CombinedScanTask> it =
-        getArcticTable().asKeyedTable().newScan().planTasks()) {
+        getMixedTable().asKeyedTable().newScan().planTasks()) {
       it.forEach(
           cst ->
               cst.tasks()
@@ -144,7 +144,7 @@ public class TestKeyedExpressionUtil extends TableTestBase {
 
     // plan with partition filter
     try (CloseableIterable<CombinedScanTask> it =
-        getArcticTable().asKeyedTable().newScan().filter(partitionFilter).planTasks()) {
+        getMixedTable().asKeyedTable().newScan().filter(partitionFilter).planTasks()) {
       it.forEach(
           cst ->
               cst.tasks()

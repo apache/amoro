@@ -23,7 +23,7 @@ import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.mi
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.api.config.DataExpirationConfig;
 import org.apache.amoro.api.config.TableConfiguration;
-import org.apache.amoro.io.ArcticFileIO;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.PathInfo;
 import org.apache.amoro.io.SupportsFileSystemOperations;
 import org.apache.amoro.server.ArcticServiceConstants;
@@ -346,15 +346,15 @@ public class IcebergTableMaintainer implements TableMaintainer {
         IcebergTableUtil.getAllStatisticsFilePath(table));
   }
 
-  protected ArcticFileIO arcticFileIO() {
-    return (ArcticFileIO) table.io();
+  protected AuthenticatedFileIO arcticFileIO() {
+    return (AuthenticatedFileIO) table.io();
   }
 
   private void clearInternalTableContentsFiles(long lastTime, Set<String> exclude) {
     String dataLocation = table.location() + File.separator + DATA_FOLDER_NAME;
     int slated = 0, deleted = 0;
 
-    try (ArcticFileIO io = arcticFileIO()) {
+    try (AuthenticatedFileIO io = arcticFileIO()) {
       // listPrefix will not return the directory and the orphan file clean should clean the empty
       // dir.
       if (io.supportFileSystemOperations()) {
@@ -401,7 +401,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     String metadataLocation = table.location() + File.separator + METADATA_FOLDER_NAME;
     LOG.info("start orphan files clean in {}", metadataLocation);
 
-    try (ArcticFileIO io = arcticFileIO()) {
+    try (AuthenticatedFileIO io = arcticFileIO()) {
       if (io.supportPrefixOperations()) {
         SupportsPrefixOperations pio = io.asPrefixFileIO();
         Set<String> filesToDelete =

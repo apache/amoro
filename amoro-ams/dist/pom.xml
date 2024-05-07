@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-ams</artifactId>
-        <version>0.7.0-SNAPSHOT</version>
+        <version>0.7-SNAPSHOT</version>
     </parent>
 
     <artifactId>dist</artifactId>
@@ -43,18 +43,18 @@
         </dependency>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>standalone-optimizer</artifactId>
+            <artifactId>amoro-optimizer-standalone</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>flink-optimizer</artifactId>
+            <artifactId>amoro-optimizer-flink</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>spark-optimizer</artifactId>
+            <artifactId>amoro-optimizer-spark</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>

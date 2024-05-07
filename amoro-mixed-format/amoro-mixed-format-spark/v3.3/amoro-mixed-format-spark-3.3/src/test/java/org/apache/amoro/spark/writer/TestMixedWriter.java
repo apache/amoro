@@ -27,7 +27,7 @@ import org.apache.amoro.spark.reader.SparkParquetReaders;
 import org.apache.amoro.spark.test.MixedTableTestBase;
 import org.apache.amoro.spark.test.utils.RecordGenerator;
 import org.apache.amoro.spark.test.utils.TestTableUtil;
-import org.apache.amoro.table.ArcticTable;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.DataFile;
@@ -185,7 +185,7 @@ public class TestMixedWriter extends MixedTableTestBase {
       PartitionSpec ptSpec,
       FileFormat fileFormat)
       throws IOException {
-    ArcticTable table =
+    MixedTable table =
         createTarget(
             schema,
             tableBuilder ->
@@ -200,7 +200,7 @@ public class TestMixedWriter extends MixedTableTestBase {
     testWriteData(table, map);
   }
 
-  private void testWriteData(ArcticTable table, Map<String, String> map) throws IOException {
+  private void testWriteData(MixedTable table, Map<String, String> map) throws IOException {
     StructType structType = SparkSchemaUtil.convert(table.schema());
     LogicalWriteInfoImpl info =
         new LogicalWriteInfoImpl("queryId", structType, new CaseInsensitiveStringMap(map));
@@ -269,7 +269,7 @@ public class TestMixedWriter extends MixedTableTestBase {
   @ParameterizedTest
   @MethodSource
   public void testConsistentWrite(TableFormat format, boolean enableConsistentWrite) {
-    ArcticTable table =
+    MixedTable table =
         createTarget(
             SCHEMA,
             builder ->
