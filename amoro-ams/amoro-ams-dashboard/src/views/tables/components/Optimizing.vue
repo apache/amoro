@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -20,14 +19,8 @@ limitations under the License.
 <template>
   <div class="table-optimizing">
     <template v-if="!hasBreadcrumb">
-      <a-table
-        rowKey="processId"
-        :columns="columns"
-        :data-source="dataSource"
-        :pagination="pagination"
-        :loading="loading"
-        @change="change"
-      >
+      <a-table rowKey="processId" :columns="columns" :data-source="dataSource" :pagination="pagination"
+        :loading="loading" @change="change">
         <template #headerCell="{ column }">
           <template v-if="column.dataIndex === 'tasks'">
             <div class="">{{ column.title }}</div>
@@ -45,15 +38,19 @@ limitations under the License.
         <template #bodyCell="{ record, column }">
           <template v-if="column.dataIndex === 'processId'">
             <a-button type="link" @click="toggleBreadcrumb(record.processId, record.status)">
-              {{record.processId}}
+              {{ record.processId }}
             </a-button>
           </template>
           <template v-if="column.dataIndex === 'status'">
             <div class="g-flex-ac">
-              <span :style="{ 'background-color': (STATUS_CONFIG[record.status] || {}).color }" class="status-icon"></span>
+              <span :style="{ 'background-color': (STATUS_CONFIG[record.status] || {}).color }"
+                class="status-icon"></span>
               <span>{{ record.status }}</span>
-              <a-tooltip v-if="record.status === 'FAILED'" placement="topRight" class="g-ml-4" overlayClassName="table-failed-tip">
-                <template #title><div class="tip-title">{{ record.failReason }}</div></template>
+              <a-tooltip v-if="record.status === 'FAILED'" placement="topRight" class="g-ml-4"
+                overlayClassName="table-failed-tip">
+                <template #title>
+                  <div class="tip-title">{{ record.failReason }}</div>
+                </template>
                 <question-circle-outlined />
               </a-tooltip>
             </div>
@@ -68,26 +65,20 @@ limitations under the License.
       </a-table>
     </template>
     <template v-else>
-    <a-row>
-      <a-col :span="18">
-        <a-breadcrumb separator=">">
-          <a-breadcrumb-item @click="toggleBreadcrumb" class="text-active">All</a-breadcrumb-item>
-          <a-breadcrumb-item>{{ `${$t('processId')} ${processId}`}}</a-breadcrumb-item>
-        </a-breadcrumb>
-      </a-col>
-      <a-col :span="6">
-        <a-button type="primary" v-model:disabled="cancelDisabled" class="g-mb-16" @click="cancel" style="float: right">{{ t("cancelProcess") }}</a-button>
-      </a-col>
-    </a-row>
-      <a-table
-        rowKey="taskId"
-        :columns="breadcrumbColumns"
-        :data-source="breadcrumbDataSource"
-        :pagination="breadcrumbPagination"
-        :loading="loading"
-        @change="change"
-        class="g-mt-8"
-      >
+      <a-row>
+        <a-col :span="18">
+          <a-breadcrumb separator=">">
+            <a-breadcrumb-item @click="toggleBreadcrumb" class="text-active">All</a-breadcrumb-item>
+            <a-breadcrumb-item>{{ `${$t('processId')} ${processId}` }}</a-breadcrumb-item>
+          </a-breadcrumb>
+        </a-col>
+        <a-col :span="6">
+          <a-button type="primary" v-model:disabled="cancelDisabled" class="g-mb-16" @click="cancel"
+            style="float: right">{{ t("cancelProcess") }}</a-button>
+        </a-col>
+      </a-row>
+      <a-table rowKey="taskId" :columns="breadcrumbColumns" :data-source="breadcrumbDataSource"
+        :pagination="breadcrumbPagination" :loading="loading" @change="change" class="g-mt-8">
         <template #headerCell="{ column }">
           <template v-if="column.dataIndex === 'inputFilesDesc'">
             <div class="">{{ column.title }}</div>
@@ -101,16 +92,20 @@ limitations under the License.
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'partitionData'">
             <a-tooltip>
-              <template #title>{{record.partitionData}}</template>
-              <span>{{record.partitionData}}</span>
+              <template #title>{{ record.partitionData }}</template>
+              <span>{{ record.partitionData }}</span>
             </a-tooltip>
           </template>
           <template v-if="column.dataIndex === 'status'">
             <div class="g-flex-ac">
-              <span :style="{ 'background-color': (TASK_STATUS_CONFIG[record.status] || {}).color }" class="status-icon"></span>
+              <span :style="{ 'background-color': (TASK_STATUS_CONFIG[record.status] || {}).color }"
+                class="status-icon"></span>
               <span>{{ record.status }}</span>
-              <a-tooltip v-if="record.status === 'FAILED'" placement="topRight" class="g-ml-4" overlayClassName="table-failed-tip">
-                <template #title><div class="tip-title">{{ record.failReason }}</div></template>
+              <a-tooltip v-if="record.status === 'FAILED'" placement="topRight" class="g-ml-4"
+                overlayClassName="table-failed-tip">
+                <template #title>
+                  <div class="tip-title">{{ record.failReason }}</div>
+                </template>
                 <question-circle-outlined />
               </a-tooltip>
             </div>
@@ -133,10 +128,11 @@ import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
 import { IColumns, BreadcrumbOptimizingItem } from '@/types/common.type'
 import { getOptimizingProcesses, getTasksByOptimizingProcessId, cancelOptimizingProcess } from '@/services/table.service'
-import { Modal, message } from 'ant-design-vue-v3'
 import { useRoute } from 'vue-router'
 import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
+
+import { Modal, Col as ACol, Row as ARow, Button as AButton, Table as ATable, Tooltip as ATooltip, Breadcrumb as ABreadcrumb, BreadcrumbItem as ABreadcrumbItem } from 'ant-design-vue'
 
 const hasBreadcrumb = ref<boolean>(false)
 
@@ -237,7 +233,7 @@ async function cancel() {
     content: '',
     okText: '',
     cancelText: '',
-    onOk: async() => {
+    onOk: async () => {
       try {
         loading.value = true
         const result = await cancelOptimizingProcess({
@@ -328,19 +324,24 @@ onMounted(() => {
 <style lang="less" scoped>
 .table-optimizing {
   padding: 18px 24px;
+
   :deep(.ant-table-thead > tr > th:not(:last-child):not(.ant-table-selection-column):not(.ant-table-row-expand-icon-cell):not([colspan])::before) {
     height: 100% !important;
   }
+
   :deep(.ant-table-thead > tr:not(:last-child) > th[colspan]) {
     border-bottom: 1px solid #e8e8f0;
   }
+
   :deep(.ant-table-thead > tr > th) {
     padding: 4px 16px !important;
   }
+
   :deep(.ant-table-thead > tr > th) {
     padding: 4px 16px !important;
   }
 }
+
 .status-icon {
   width: 8px;
   height: 8px;
@@ -356,15 +357,18 @@ onMounted(() => {
     color: #1890ff;
     cursor: pointer;
   }
+
   .ant-btn-link {
     padding: 0;
   }
 }
+
 .table-failed-tip {
-  .ant-tooltip-content{
+  .ant-tooltip-content {
     width: 800px;
   }
-  .tip-title{
+
+  .tip-title {
     display: block;
     max-height: 700px;
     overflow: auto;

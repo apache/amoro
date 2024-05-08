@@ -71,6 +71,9 @@ limitations under the License.
 </template>
 
 <script lang="ts">
+// TODO: replace to antv-4. After all replacements are completed, switch to automatic import.
+import { Tabs, TabPane, Button as AButton } from 'ant-design-vue'
+
 import { ILableAndValue, IIOptimizeGroupItem } from '@/types/common.type'
 import {
   defineComponent,
@@ -93,7 +96,11 @@ export default defineComponent({
   components: {
     List,
     GroupModal,
-    TableList
+    TableList,
+
+    ATabs: Tabs,
+    ATabPane: TabPane,
+    AButton
   },
   setup() {
     const { t } = useI18n()
@@ -177,12 +184,6 @@ export default defineComponent({
     margin-bottom: 12px;
     padding: 0 12px;
     border: 1px solid #e5e5e5;
-  }
-  :deep(.ant-tabs-content-holder) {
-    // padding: 0 24px;
-  }
-  :deep(.ant-tabs-nav) {
-    // padding: 0 12px;
   }
   .table-name {
     color: @primary-color;

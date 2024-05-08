@@ -30,9 +30,13 @@ limitations under the License.
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { Button as AButton } from 'ant-design-vue'
 
 export default defineComponent({
-  name: 'Page404'
+  name: 'Page404',
+  components: {
+    AButton
+  }
 })
 </script>
 

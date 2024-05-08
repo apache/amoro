@@ -34,6 +34,8 @@ import { shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { DetailColumnItem } from '@/types/common.type'
 
+import { Table as ATable } from 'ant-design-vue'
+
 const { t } = useI18n()
 
 const props = defineProps<{ partitionFields: DetailColumnItem[], loading: boolean }>()

@@ -18,6 +18,7 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue'
+import { Spin as ASpin } from 'ant-design-vue'
 
 // name: 'ULoading',
 // props: {
