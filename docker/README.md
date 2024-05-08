@@ -24,9 +24,6 @@ You can control which image is built by the follow parameters :
 - amoro
 - optimizer-flink
 - optimizer-spark
-- quickdemo
-- namenode
-- datanode
 
 e.g.
 
@@ -34,8 +31,8 @@ e.g.
 ./build.sh amoro
 ```
 
-- NOTICE: The amoro image, quickdemo image and optimizer-flink image required the project had been packaged. 
-so run `mvn package -pl '!trino'` before build amoro, quickdemo or optimizer-flink image.
+- NOTICE: The amoro image, amoro-spark-optimizer image and amoro-flink-optimizer image required the project had been packaged. 
+so run `mvn package -pl '!trino'` before build amoro, amoro-spark-optimizer or amoro-flink-optimizer image.
 
 You can speed up image building via 
 

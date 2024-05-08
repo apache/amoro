@@ -35,7 +35,7 @@ nameOverride: ""
 image:
   ## @param image.repository AMS image repository
   ##
-  repository: arctic163/amoro
+  repository: apache/amoro
   ## @param image.tag for AMS image repository
   ##
   tag: ""
@@ -197,7 +197,7 @@ optimizer:
     image:
       ## @param optimizer.flink.image.repository the image repository
       ##
-      repository: arctic163/optimizer-flink
+      repository: apache/amoro-flink-optimizer
       ## @param optimizer.flink.image.tag the image tag, if not set, the default value is the same with amoro image tag
       ##
       tag: ~
@@ -222,7 +222,7 @@ optimizer:
     image:
       ## @param optimizer.spark.image.repository the image repository
       ##
-      repository: arctic163/optimizer-spark
+      repository: apache/amoro-spark-optimizer
       ## @param optimizer.spark.image.tag the image tag, if not set, the default value is the same with amoro image tag
       ##
       tag: ~
@@ -254,7 +254,7 @@ optimizer:
     properties:
       namespace: "default"
       kube-config-path: "～/.kube/config"
-      image: "arctic163/amoro:0.6"
+      image: "apache/amoro:0.6"
   extra: []
 
 ## Configure the ingress resource that allows you to access the

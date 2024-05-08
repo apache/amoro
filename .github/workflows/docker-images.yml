@@ -62,7 +62,7 @@ jobs:
           flavor: |
             latest=auto
           images: |
-            name=arctic163/amoro
+            name=apache/amoro
           tags: |
             type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=-snapshot-hadoop3
@@ -124,7 +124,7 @@ jobs:
           flavor: |
             latest=auto
           images: |
-            name=arctic163/optimizer-flink
+            name=apache/amoro-flink-optimizer
           tags: |
             type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot-flink1.14
@@ -204,7 +204,7 @@ jobs:
           flavor: |
             latest=auto
           images: |
-            name=arctic163/optimizer-spark
+            name=apache/amoro-spark-optimizer
           tags: |
             type=ref,event=branch,enable=${{ matrix.spark == '3.3.3' }},suffix=-snapshot-spark3.3
             type=semver,enable=${{ matrix.spark == '3.3.3' }},pattern={{version}}-spark3.3
@@ -249,63 +249,3 @@ jobs:
             OPTIMIZER_JOB=amoro-ams/amoro-ams-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
 
 
-  docker-quickdemo:
-    name: Push Amoro Quick-Demo Docker Image to Docker Hub
-    runs-on: ubuntu-latest
-    needs: docker-amoro
-    if: ${{ startsWith(github.repository, 'apache/') && startsWith(github.ref, 'refs/tags/' )}}
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK 8
-        uses: actions/setup-java@v3
-        with:
-          java-version: '8'
-          distribution: 'temurin'
-          cache: maven
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Set up Docker tags
-        uses: docker/metadata-action@v5
-        id: meta
-        with:
-          flavor: |
-            latest=auto
-          images: |
-            name=arctic163/quickdemo
-          tags: |
-            type=ref,event=branch,suffix=-snapshot
-            type=semver,pattern={{version}}
-
-      - name: Print tags
-        run: echo '${{ steps.meta.outputs.tags }}'
-
-      - name: Set Amoro Tag
-        id: tag
-        run: |
-          AMORO_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1) && echo "AMORO_TAG=${AMORO_TAG#*:}" >> $GITHUB_OUTPUT
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'amoro-mixed-format/amoro-mixed-format-flink/v1.17/amoro-mixed-format-flink-runtime-1.17' -am -e -DskipTests -B -ntp
-
-      - name: Build and Push Flink Optimizer Docker Image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          file: docker/quickdemo/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-          build-args: |
-            AMORO_TAG=${{ steps.tag.outputs.AMORO_TAG }}
-            FLINK_VERSION=1.18.1
-            ICEBERG_VERSION=1.3.1
