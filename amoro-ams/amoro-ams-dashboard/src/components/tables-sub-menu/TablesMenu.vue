@@ -86,6 +86,8 @@
 </template>
 
 <script lang="ts">
+import { Select as ASelect, InputSearch as AInputSearch } from 'ant-design-vue'
+
 import { defineComponent, onBeforeMount, reactive, toRefs, computed } from 'vue'
 import {
   // PlusOutlined,
@@ -117,7 +119,8 @@ export default defineComponent({
     SearchOutlined,
     CloseCircleOutlined,
     CreateDBModal,
-    virtualRecycleScroller
+    virtualRecycleScroller,
+    ASelect
   },
   emits: ['goCreatePage'],
   setup(_, { emit }) {

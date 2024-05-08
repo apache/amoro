@@ -19,3 +19,4 @@
 org.apache.amoro.server.manager.SparkOptimizerContainer
 org.apache.amoro.server.manager.FlinkOptimizerContainer
 org.apache.amoro.server.manager.LocalOptimizerContainer
+org.apache.amoro.server.manager.KubernetesOptimizerContainer

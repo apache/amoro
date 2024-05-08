@@ -23,12 +23,18 @@
 </template>
 
 <script lang="ts" setup>
-import enUS from 'ant-design-vue-v3/es/locale/en_US'
-import zhCN from 'ant-design-vue-v3/es/locale/zh_CN'
-import { ref } from 'vue'
+import { ConfigProvider as AConfigProvider } from "ant-design-vue"
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
+import enUS from 'ant-design-vue/es/locale/en_US'
+import dayjs from 'dayjs';
+import { ref, watch } from 'vue'
 
 const locale = ref(enUS.locale)
+dayjs.locale('en')
 
+watch(locale, val => {
+  dayjs.locale(val);
+});
 </script>
 
 <style>

@@ -73,7 +73,8 @@ import {
   updateResourceGroupsAPI
 } from '@/services/optimize.service'
 import Properties from '@/views/catalogs/Properties.vue'
-import { message } from 'ant-design-vue-v3'
+
+import { message, Modal as AModal, Select as ASelect, Input as AInput, Form as AForm, FormItem as AFormItem  } from 'ant-design-vue'
 
 import { useI18n } from 'vue-i18n'
 

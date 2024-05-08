@@ -58,8 +58,9 @@ import { getOptimizerTableList, getResourceGroupsListAPI, releaseResource } from
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
 import { bytesToSize, formatMS2Time, formatMS2DisplayTime } from '@/utils'
-import { Modal } from 'ant-design-vue-v3'
 import { useRouter } from 'vue-router'
+
+import { Modal, Select as ASelect, Table as ATable } from 'ant-design-vue'
 
 const { t } = useI18n()
 const router = useRouter()

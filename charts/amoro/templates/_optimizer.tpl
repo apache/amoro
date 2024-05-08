@@ -84,3 +84,11 @@ properties:
   {{- end -}}
 {{- end -}}
 
+{{- define "amoro.optimizer.container.kubernetes" -}}
+container-impl: org.apache.amoro.server.manager.KubernetesOptimizerContainer
+properties:
+  {{- with .Values.optimizer.kubernetes.properties -}}
+    {{- toYaml . | nindent 2 }}
+  {{- end -}}
+{{- end -}}
+

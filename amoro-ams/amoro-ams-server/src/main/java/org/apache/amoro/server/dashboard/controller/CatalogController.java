@@ -83,6 +83,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /** The controller that handles catalog requests. */
 public class CatalogController {
@@ -357,18 +358,18 @@ public class CatalogController {
         .put(
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
             info.getOptimizerGroup());
-    StringBuilder tableFormats = new StringBuilder();
+    String tableFormats;
     try {
       // validate table format
-      info.getTableFormatList()
-          .forEach(item -> tableFormats.append(TableFormat.valueOf(item).name()));
+      tableFormats =
+          info.getTableFormatList().stream()
+              .map(item -> TableFormat.valueOf(item).name())
+              .collect(Collectors.joining(","));
     } catch (Exception e) {
       throw new RuntimeException(
           "Invalid table format list, " + String.join(",", info.getTableFormatList()));
     }
-    catalogMeta
-        .getCatalogProperties()
-        .put(CatalogMetaProperties.TABLE_FORMATS, tableFormats.toString());
+    catalogMeta.getCatalogProperties().put(CatalogMetaProperties.TABLE_FORMATS, tableFormats);
     fillAuthConfigs2CatalogMeta(catalogMeta, info.getAuthConfig(), oldCatalogMeta);
     // change fileId to base64Code
     Map<String, String> metaStorageConfig = new HashMap<>();

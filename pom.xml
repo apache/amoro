@@ -128,6 +128,7 @@
         <bitmap.version>1.0.1</bitmap.version>
         <prometheus.version>0.16.0</prometheus.version>
         <flink.version>1.18.1</flink.version>
+        <fabric8-kubernetes-client.version.version>6.12.1</fabric8-kubernetes-client.version.version>
     </properties>
 
     <dependencies>
@@ -792,6 +793,13 @@
                 <artifactId>flink-runtime-web</artifactId>
                 <version>${flink.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-client</artifactId>
+                <version>${fabric8-kubernetes-client.version.version}</version>
+            </dependency>
+
 
             <dependency>
                 <groupId>junit</groupId>
