@@ -1,0 +1,62 @@
+version: "3"
+services:
+  minio:
+    image: minio/minio
+    container_name: minio
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=password
+      - MINIO_DOMAIN=minio
+    networks:
+      amoro_network:
+        aliases:
+          - warehouse.minio
+    ports:
+      - 9001:9001
+      - 9000:9000
+    command: [ "server", "/data", "--console-address", ":9001" ]
+  mc:
+    depends_on:
+      - minio
+    image: minio/mc
+    container_name: mc
+    networks:
+      amoro_network:
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc config host add minio http://minio:9000 admin password) do echo '...waiting...' && sleep 1; done;
+      /usr/bin/mc rm -r --force minio/warehouse;
+      /usr/bin/mc mb minio/warehouse;
+      /usr/bin/mc policy set public minio/warehouse;
+      tail -f /dev/null
+      "
+
+  amoro:
+    depends_on:
+      - minio
+      - mc
+    image: apache/amoro:0.7-SNAPSHOT
+    container_name: amoro
+    ports:
+      - 8081:8081
+      - 1630:1630
+      - 1260:1260
+    environment:
+      - JVM_XMS=1024
+    networks:
+      amoro_network:
+        aliases:
+          - warehouse.minio
+    volumes:
+      - ./amoro:/tmp/amoro
+    command: ["/entrypoint.sh", "ams"]
+    tty: true
+    stdin_open: true
+
+networks:
+  amoro_network:
+    driver: bridge
