@@ -59,7 +59,8 @@ import { getOperations } from '@/services/table.service'
 import { useRoute } from 'vue-router'
 import { dateFormat } from '@/utils'
 import useClipboard from 'vue-clipboard3'
-import { message } from 'ant-design-vue-v3'
+
+import { message, Modal as AModal, Button as AButton, Table as ATable } from 'ant-design-vue'
 
 const { toClipboard } = useClipboard()
 const { t } = useI18n()

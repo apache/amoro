@@ -66,10 +66,11 @@ import { getOptimizerResourceList, getResourceGroupsListAPI, groupDeleteCheckAPI
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
 import { mbToSize } from '@/utils'
-import { Modal, message } from 'ant-design-vue-v3'
+
+import { message, Modal, Table as ATable } from 'ant-design-vue'
+
 import { useRouter } from 'vue-router'
 import ScaleOut from '@/views/resource/components/ScaleOut.vue'
-import { dateFormat } from '@/utils/index'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -97,14 +98,11 @@ const tableColumns = shallowReactive([
   { dataIndex: 'operationGroup', title: t('operation'), key: 'operationGroup', ellipsis: true, width: 230, scopedSlots: { customRender: 'operationGroup' } }
 ])
 const optimizerColumns = shallowReactive([
-  { dataIndex: 'jobId', title: t('optimizerId'), width: '15%', ellipsis: true },
-  { dataIndex: 'token', title: t('token'), width: '10%', ellipsis: true },
+  { dataIndex: 'index', title: t('order'), width: 80, ellipsis: true },
   { dataIndex: 'groupName', title: t('optimizerGroup'), ellipsis: true },
   { dataIndex: 'container', title: t('container'), ellipsis: true },
   { dataIndex: 'jobStatus', title: t('status'), ellipsis: true },
-  { dataIndex: 'resourceAllocation', title: t('resourceAllocation'), width: '10%', ellipsis: true },
-  { dataIndex: 'startTime', title: t('startTime'), width: 172, ellipsis: true },
-  { dataIndex: 'touchTime', title: t('touchTime'), width: 172, ellipsis: true },
+  { dataIndex: 'resourceAllocation', title: t('resourceAllocation'), width: '20%', ellipsis: true },
   { dataIndex: 'operation', title: t('operation'), key: 'operation', ellipsis: true, width: 160, scopedSlots: { customRender: 'operationGroup' } }
 ])
 const pagination = reactive(usePagination())
@@ -173,8 +171,6 @@ async function getOptimizersList () {
     (list || []).forEach((p: IOptimizeResourceTableItem, index: number) => {
       p.resourceAllocation = `${p.coreNumber} ${t('core')} ${mbToSize(p.memory)}`
       p.index = (pagination.current - 1) * pagination.pageSize + index + 1
-      p.startTime = p.startTime ? dateFormat(p.startTime) : '-'
-      p.touchTime = p.touchTime ? dateFormat(p.touchTime) : '-'
       optimizersList.push(p)
     })
   } catch (error) {

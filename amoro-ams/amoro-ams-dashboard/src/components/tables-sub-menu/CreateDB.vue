@@ -17,7 +17,7 @@
  /-->
 
 <template>
-  <a-modal :visible="visible" :title="$t('createDatabase')" @ok="handleOk" @cancel="handleCancel">
+  <a-modal v-model:open="visible" :title="$t('createDatabase')" @ok="handleOk" @cancel="handleCancel">
     <a-form ref="formRef" :model="formState" class="label-120">
       <a-form-item name="catalog" :label="$t('catalog')" :rules="[{ required: true, message: `${placeholder.selectClPh}` }]">
         <a-select
@@ -33,6 +33,8 @@
   </a-modal>
 </template>
 <script lang="ts">
+import { Modal as AModal, Select as ASelect, Input as AInput, Form as AForm, FormItem as AFormItem } from 'ant-design-vue'
+
 import { defineComponent, reactive, ref } from 'vue'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 
@@ -42,6 +44,9 @@ interface FormState {
 }
 
 export default defineComponent({
+  components: {
+    ASelect
+  },
   props: {
     visible: {
       type: Boolean,
@@ -53,7 +58,7 @@ export default defineComponent({
     }
   },
   emits: ['cancel'],
-  setup(props, { emit }) {
+  setup(_, { emit }) {
     const placeholder = reactive(usePlaceholder())
 
     const formRef = ref()
