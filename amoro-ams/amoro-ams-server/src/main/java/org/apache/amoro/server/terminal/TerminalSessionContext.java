@@ -340,4 +340,8 @@ public class TerminalSessionContext {
       return new String(out.toByteArray(), Charsets.UTF_8);
     }
   }
+
+  public Configurations sessionConfiguration() {
+    return sessionConfiguration;
+  }
 }

@@ -36,8 +36,11 @@ import org.apache.amoro.server.terminal.local.LocalSessionFactory;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.CatalogUtil;
+import org.apache.iceberg.aws.glue.GlueCatalog;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,17 +124,24 @@ public class TerminalManager {
           TerminalSessionFactory.SessionConfigOptions.catalogProperty(catalog, key), value);
     }
 
-    TerminalSessionContext context;
     synchronized (sessionMapLock) {
-      sessionMap.computeIfAbsent(
+      sessionMap.compute(
           sessionId,
-          id ->
-              new TerminalSessionContext(
-                  id, metaStore, executionPool, sessionFactory, configuration));
-
-      context = sessionMap.get(sessionId);
+          (id, ctx) -> {
+            if (ctx == null) {
+              return new TerminalSessionContext(
+                  id, metaStore, executionPool, sessionFactory, configuration);
+            } else {
+              // need to re-create session context if configuration is changed
+              return ctx.sessionConfiguration().equals(configuration)
+                  ? ctx
+                  : new TerminalSessionContext(
+                      id, metaStore, executionPool, sessionFactory, configuration);
+            }
+          });
     }
 
+    TerminalSessionContext context = sessionMap.get(sessionId);
     if (!context.isReadyToExecute()) {
       throw new IllegalStateException(
           "current session is not ready to execute script. status:" + context.getStatus());
@@ -370,7 +380,16 @@ public class TerminalManager {
         catalogMeta.putToCatalogProperties(
             CatalogMetaProperties.KEY_WAREHOUSE, catalogMeta.getCatalogName());
       } else if (!catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
-        catalogMeta.putToCatalogProperties("type", catalogType);
+        if (Sets.newHashSet(
+                CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP,
+                CatalogUtil.ICEBERG_CATALOG_TYPE_HIVE,
+                CatalogUtil.ICEBERG_CATALOG_TYPE_REST)
+            .contains(catalogType)) {
+          catalogMeta.putToCatalogProperties("type", catalogType);
+        } else if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(catalogType)) {
+          catalogMeta.putToCatalogProperties(
+              CatalogProperties.CATALOG_IMPL, GlueCatalog.class.getName());
+        }
       }
     } else if (formats.contains(TableFormat.PAIMON) && "hive".equals(catalogType)) {
       catalogMeta.putToCatalogProperties("metastore", catalogType);
