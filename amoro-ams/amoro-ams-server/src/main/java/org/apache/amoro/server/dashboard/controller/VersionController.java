@@ -38,10 +38,12 @@ public class VersionController {
         VersionController.class.getClassLoader().getResourceAsStream("arctic/git.properties");
     String version = "UNKNOWN";
     String commitTime = "UNKNOWN";
+    String abbrev = "UNKNOWN";
     if (is != null) {
       try {
         prop.load(is);
         version = prop.getProperty("git.build.version");
+        abbrev = prop.getProperty("git.commit.id.abbrev");
         commitTime = prop.getProperty("git.commit.time");
       } catch (Exception e) {
         LOG.warn("Failed to find git.properties.");
@@ -49,7 +51,7 @@ public class VersionController {
     }
 
     VersionInfo versionInfo = new VersionInfo();
-    versionInfo.setVersion(version);
+    versionInfo.setVersion(String.format("%s(%s)", version, abbrev));
     versionInfo.setCommitTime(commitTime);
     ctx.json(OkResponse.of(versionInfo));
   }
