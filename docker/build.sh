@@ -42,8 +42,8 @@ Usage: $0 [options] [image]
 Build for Amoro demo docker images.
 
 Images:
-    optimizer-flink         Build official Amoro optimizer deployed with flink engine for production environments.
-    optimizer-spark         Build official Amoro optimizer deployed with spark engine for production environments.
+    amoro-flink-optimizer   Build official Amoro optimizer deployed with flink engine for production environments.
+    amoro-spark-optimizer   Build official Amoro optimizer deployed with spark engine for production environments.
     amoro                   Build official Amoro image used for production environments.
 
 Options:
@@ -65,7 +65,7 @@ i=1;
 j=$#;
 while [ $i -le $j ]; do
   case $1 in
-    optimizer-flink|optimizer-spark|amoro)
+    amoro-flink-optimizer|amoro-spark-optimizer|amoro)
     ACTION=$1;
     i=$((i+1))
     shift 1
@@ -216,11 +216,11 @@ function build_amoro() {
 }
 
 case "$ACTION" in
-  optimizer-flink)
+  amoro-flink-optimizer)
     print_env
     build_optimizer_flink
     ;;
-  optimizer-spark)
+  amoro-spark-optimizer)
     print_env
     build_optimizer_spark
     ;;

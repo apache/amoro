@@ -142,7 +142,7 @@ containers:
 #   container-impl: com.netease.arctic.server.manager.KubernetesOptimizerContainer
 #    properties:
 #     kube-config-path: ～/.kube/config
-#     image: apache/amoro:0.6
+#     image: apache/amoro:{version}
 #     namespace: default
 
 #  - name: flinkContainer

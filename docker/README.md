@@ -22,8 +22,8 @@ We provide a bash script to help you build docker image easier.
 You can control which image is built by the follow parameters :
 
 - amoro
-- optimizer-flink
-- optimizer-spark
+- amoro-flink-optimizer
+- amoro-spark-optimizer
 
 e.g.
 
@@ -31,8 +31,8 @@ e.g.
 ./build.sh amoro
 ```
 
-- NOTICE: The amoro image, amoro-spark-optimizer image and amoro-flink-optimizer image required the project had been packaged. 
-so run `mvn package -pl '!trino'` before build amoro, amoro-spark-optimizer or amoro-flink-optimizer image.
+- NOTICE: The amoro image, amoro-spark-optimizer image and amoro-flink-optimizer image required the project had been packaged.
+  So run `mvn package -pl '!amoro-mixed-fomrat/amoro-mixed-format-trino'` before building amoro, amoro-spark-optimizer, or amoro-flink-optimizer image.
 
 You can speed up image building via 
 
@@ -40,7 +40,7 @@ You can speed up image building via
 ./build.sh \
   --apache-archive https://mirrors.aliyun.com/apache \
   --debian-mirror https://mirrors.aliyun.com  \
-  optimizer-flink
+  amoro-flink-optimizer
 ```
 
 more options see `./build.sh --help`

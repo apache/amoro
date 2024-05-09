@@ -55,7 +55,7 @@ containers:
     container-impl: org.apache.amoro.server.manager.KubernetesOptimizerContainer
     properties:
       kube-config-path: ～/.kube/config
-      image: apache/amoro:0.6
+      image: apache/amoro:{version}
 ```
 
 ### Flink container
