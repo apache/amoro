@@ -375,7 +375,7 @@
                     <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
                     <generateGitPropertiesFile>true</generateGitPropertiesFile>
                     <generateGitPropertiesFilename>
-                        ${project.build.outputDirectory}/arctic/git.properties
+                        ${project.build.outputDirectory}/amoro/git.properties
                     </generateGitPropertiesFilename>
                     <includeOnlyProperties>
                         <includeOnlyProperty>^git.build.(time|version)$</includeOnlyProperty>
