@@ -206,8 +206,9 @@ jobs:
           images: |
             name=apache/amoro-spark-optimizer
           tags: |
+            type=ref,event=branch,enable=${{ matrix.spark == '3.3.3' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.spark == '3.3.3' }},suffix=-snapshot-spark3.3
-            type=semver,enable=${{ matrix.spark == '3.3.3' }},pattern={{version}}-spark3.3
+            type=semver,enable=${{ matrix.spark == '3.3.3' }},pattern={{version}}
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
