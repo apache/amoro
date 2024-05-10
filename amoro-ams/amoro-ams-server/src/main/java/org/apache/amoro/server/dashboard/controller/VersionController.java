@@ -35,7 +35,7 @@ public class VersionController {
   public void getVersionInfo(Context ctx) {
     Properties prop = new Properties();
     InputStream is =
-        VersionController.class.getClassLoader().getResourceAsStream("arctic/git.properties");
+        VersionController.class.getClassLoader().getResourceAsStream("amoro/git.properties");
     String version = "UNKNOWN";
     String commitTime = "UNKNOWN";
     String abbrev = "UNKNOWN";
