@@ -36,10 +36,7 @@ services:
       "
 
   amoro:
-    depends_on:
-      - minio
-      - mc
-    image: apache/amoro:0.7-SNAPSHOT
+    image: apache/amoro
     container_name: amoro
     ports:
       - 8081:8081
