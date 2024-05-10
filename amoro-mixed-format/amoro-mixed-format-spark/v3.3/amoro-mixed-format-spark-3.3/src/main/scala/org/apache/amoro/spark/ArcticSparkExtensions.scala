@@ -27,7 +27,7 @@ import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.catalyst.analysis.{AlignedRowLevelIcebergCommandCheck, AlignRowLevelCommandAssignments, CheckMergeIntoTableConditions, MergeIntoIcebergTableResolutionCheck, ProcedureArgumentCoercion, ResolveMergeIntoTableReferences, ResolveProcedures, RewriteDeleteFromIcebergTable, RewriteMergeIntoTable, RewriteUpdateTable}
 import org.apache.spark.sql.catalyst.optimizer._
 import org.apache.spark.sql.catalyst.parser.extensions.IcebergSparkSqlExtensionsParser
-import org.apache.spark.sql.execution.datasources.v2.{ExtendedDataSourceV2Strategy, ExtendedV2Writes, OptimizeMetadataOnlyDeleteFromIcebergTable, ReplaceRewrittenRowLevelCommand, RowLevelCommandScanRelationPushDown}
+import org.apache.spark.sql.execution.datasources.v2.{AmoroExtendedDataSourceV2Strategy, ExtendedDataSourceV2Strategy, ExtendedV2Writes, OptimizeMetadataOnlyDeleteFromIcebergTable, ReplaceRewrittenRowLevelCommand, RowLevelCommandScanRelationPushDown}
 import org.apache.spark.sql.execution.dynamicpruning.RowLevelCommandDynamicPruning
 
 class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
@@ -74,7 +74,7 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     extensions.injectPreCBORule { _ => ReplaceRewrittenRowLevelCommand }
 
     // planner extensions
-    extensions.injectPlannerStrategy { spark => ExtendedDataSourceV2Strategy(spark) }
+    extensions.injectPlannerStrategy { spark => AmoroExtendedDataSourceV2Strategy(spark) }
     // arctic optimizer rules
     extensions.injectPreCBORule(OptimizeWriteRule)
 

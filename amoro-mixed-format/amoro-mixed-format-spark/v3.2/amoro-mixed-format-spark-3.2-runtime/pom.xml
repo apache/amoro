@@ -313,6 +313,9 @@
                                             org.apache.spark.sql.execution.datasources.v2.ExtendedDataSourceV2Strategy*
                                         </include>
                                         <include>
+                                            org.apache.spark.sql.execution.datasources.v2.AmoroExtendedDataSourceV2Strategy*
+                                        </include>
+                                        <include>
                                             org.apache.spark.sql.execution.datasources.v2.MergeIntoExec*
                                         </include>
                                         <include>

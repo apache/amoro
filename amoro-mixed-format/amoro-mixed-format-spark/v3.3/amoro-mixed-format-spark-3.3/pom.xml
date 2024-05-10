@@ -37,6 +37,7 @@
         <hive.version>2.3.9</hive.version>
         <spark.version>3.3.2</spark.version>
         <scala.version>2.12.15</scala.version>
+        <scala.collection.compat>2.11.0</scala.collection.compat>
     </properties>
 
     <dependencies>
@@ -99,6 +100,13 @@
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-compiler</artifactId>
             <version>${scala.version}</version>
+        </dependency>
+
+        <!-- for AmoroExtendedDataSourceV2Strategy.scala -->
+        <dependency>
+            <groupId>org.scala-lang.modules</groupId>
+            <artifactId>scala-collection-compat_${scala.binary.version}</artifactId>
+            <version>${scala.collection.compat}</version>
         </dependency>
 
         <dependency>
