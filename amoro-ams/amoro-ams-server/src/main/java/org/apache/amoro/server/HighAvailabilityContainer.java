@@ -46,7 +46,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
   private final String optimizingServiceMasterPath;
   private final AmsServerInfo tableServiceServerInfo;
   private final AmsServerInfo optimizingServiceServerInfo;
-  private transient CountDownLatch followerLath;
+  private volatile CountDownLatch followerLath;
 
   public HighAvailabilityContainer(Configurations serviceConfig) throws Exception {
     if (serviceConfig.getBoolean(ArcticManagementConf.HA_ENABLE)) {

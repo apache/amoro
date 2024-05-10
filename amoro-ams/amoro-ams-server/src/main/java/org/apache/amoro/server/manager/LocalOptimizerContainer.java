@@ -19,6 +19,7 @@
 package org.apache.amoro.server.manager;
 
 import org.apache.amoro.api.resource.Resource;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,10 +53,14 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
 
   @Override
   protected String buildOptimizerStartupArgsString(Resource resource) {
-    long memoryPerThread = Long.parseLong(resource.getRequiredProperty(JOB_MEMORY_PROPERTY));
+    String jobMemoryStr = resource.getRequiredProperty(JOB_MEMORY_PROPERTY);
+    Preconditions.checkArgument(
+        jobMemoryStr.matches("\\d+"), "Invalid memory value: %s, must be a number.", jobMemoryStr);
+
+    long memoryPerThread = Long.parseLong(jobMemoryStr);
     long memory = memoryPerThread * resource.getThreadCount();
     return String.format(
-        "%s/bin/optimizer.sh %s %s",
+        "%s/bin/optimizer.sh start %s %s",
         amsHome, memory, super.buildOptimizerStartupArgsString(resource));
   }
 

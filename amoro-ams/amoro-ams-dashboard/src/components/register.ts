@@ -16,12 +16,9 @@
   * limitations under the License.
   */
 
-import AntDesign from './ant-design'
 import { App } from 'vue'
 import ULoading from './loading'
 
 export default function Register (app: App<Element>): void {
-  // Global registration ant-design-vue components
-  app.use(AntDesign)
   app.use(ULoading)
 }

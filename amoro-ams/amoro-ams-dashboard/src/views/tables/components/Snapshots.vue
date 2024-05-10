@@ -87,6 +87,8 @@ limitations under the License.
 </template>
 
 <script lang="ts" setup>
+import { Col as ACol, Row as ARow, Button as AButton, Table as ATable, Tooltip as ATooltip, Breadcrumb as ABreadcrumb, BreadcrumbItem as ABreadcrumbItem } from 'ant-design-vue'
+
 import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'

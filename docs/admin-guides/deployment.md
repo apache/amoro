@@ -59,7 +59,7 @@ amoro-mixed-format-spark-3.2-runtime-x.y.z-sources.jar
 original-amoro-mixed-format-spark-3.2-runtime-x.y.z.jar
 ```
 
-If the Flink version in the ams/optimizer/flink-optimizer module you compiled is lower than 1.15, you must add the `-Pflink-pre-1.15` parameter before mvn.
+If the Flink version in the amoro-ams/amoro-ams-optimizer/amoro-optimizer-flink module you compiled is lower than 1.15, you must add the `-Pflink-pre-1.15` parameter before mvn.
 for example `mvn clean package -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6 -DskipTests` to compile.
 
 If you need to compile the Trino module at the same time, you need to install jdk17 locally and configure `toolchains.xml` in the user's `${user.home}/.m2/` directory,
@@ -92,6 +92,7 @@ If you want to use AMS in a production environment, it is recommended to modify 
 - The `ams.thrift-server.table-service.bind-port` configuration specifies the binding port of the Thrift Server that provides the table service. The compute engines access AMS through this port, and the default value is 1260.
 - The `ams.thrift-server.optimizing-service.bind-port` configuration specifies the binding port of the Thrift Server that provides the optimizing service. The optimizers access AMS through this port, and the default value is 1261.
 - The `ams.http-server.bind-port` configuration specifies the port to which the HTTP service is bound. The Dashboard and Open API are bound to this port, and the default value is 1630.
+- The `ams.http-server.rest-auth-type` configuration specifies the REST API auth type, which could be token(default) or basic. The basic auth would reuse `ams.admin-username` and `ams.admin-password` for authentication. 
 
 ```yaml
 ams:

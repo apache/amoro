@@ -34,8 +34,8 @@ WORKDIR /workspace/amoro
 RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
     && FLINK_VERSION=${FLINK_VERSION} \
     && FLINK_MAJOR_VERSION="${FLINK_VERSION%.*}" \
-    && cp mixed/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-mixed-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar \
-      /opt/amoro-mixed-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar \
+    && cp amoro-mixed-format/amoro-mixed-format-flink/v${FLINK_MAJOR_VERSION}/amoro-mixed-format-flink-runtime-${FLINK_MAJOR_VERSION}/target/amoro-mixed-format-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar \
+      /opt/amoro-mixed-format-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar \
     && rm -rf /workspace/amoro
 
 
@@ -72,6 +72,3 @@ WORKDIR ${FLINK_HOME}
 COPY --from=builder /opt/*.jar ${FLINK_HOME}/lib/
 COPY ./docker/quickdemo/flink-conf.yaml ${FLINK_HOME}/conf/flink-conf.yaml
 RUN ln -s ${FLINK_HOME} /usr/local/flink
-
-
-

@@ -30,6 +30,34 @@ containers:
       export.JAVA_HOME: "/opt/java"   # JDK environment
 ```
 
+### Kubernetes container
+
+Kubernetes Optimizer Container is a way to start Optimizer On K8s with standalone Optimizer.
+To use flink container, you need to add a new container configuration. 
+with container-impl as `org.apache.amoro.server.manager.KubernetesOptimizerContainer`
+
+KubernetesOptimizerContainer support the following properties:
+
+
+| Property Name             | Required | Default Value | Description                                                                                                   |
+|---------------------------|----------|---------------|---------------------------------------------------------------------------------------------------------------|
+| kube-config-path          | true     | N/A           | Kubernetes config location.                                                                                   |
+| image                     | true     | N/A           | Optimizer Image name                                                                                          |
+| namespace                 | false    | "default"     | The namespace of optimizer to deploy                                                                          |
+| ams-optimizing-uri        | false    | N/A           | uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available |
+| cpu.factor                | false    | "1.0"         | Cpu factor when request kubernetes resource. Default 1 Cpu pre thread                                         |
+| memory                    | true     | N/A           | Memory usage for pre thread                                                                                   |
+
+
+```yaml
+containers:
+  - name: KubernetesContainer
+    container-impl: org.apache.amoro.server.manager.KubernetesOptimizerContainer
+    properties:
+      kube-config-path: ～/.kube/config
+      image: apache/amoro:0.6
+```
+
 ### Flink container
 Flink container is a way to start Optimizer through Flink jobs. With Flink, you can easily deploy Optimizer
 on yarn clusters or kubernetes clusters to support large-scale data scenarios. To use flink container, 
@@ -207,7 +235,7 @@ The optimizer group supports the following properties:
 | Property                       | Container type | Required | Default                                                                               | Description                                                                                                                                                                                                                                                                                                                                                                                                      |
 |--------------------------------|----------------|----------|---------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | scheduling-policy              | All            | No       | quota                                                                                 | The scheduler group scheduling policy, the default value is `quota`, it will be scheduled according to the quota resources configured for each table, the larger the table quota is, the more optimizer resources it can take. There is also a configuration `balanced` that will balance the scheduling of each table, the longer the table has not been optimized, the higher the scheduling priority will be. |
-| memory                         | Local          | Yes      | N/A                                                                                   | The memory size of the local optimizer Java process.                                                                                                                                                                                                                                                                                                                                                             |
+| memory                         | Local          | Yes      | N/A                                                                                   | The max memory of JVM for local optimizer, in MBs.                                                                                                                                                                                                                                                                                                                                                               |
 | max-input-file-size-per-thread | All            | No       | 536870912(512MB)                                                                      | Max input file size per optimize thread.                                                                                                                                                                                                                                                                                                                                                                         |
 | ams-optimizing-uri             | All            | No       | thrift://{ams.server-expose-host}:{ams.thrift-server.optimizing-service.binding-port} | Table optimizing service endpoint. This is used when the default service endpoint is not visitable.                                                                                                                                                                                                                                                                                                              |
 | flink-conf.\<key\>             | Flink          | No       | N/A                                                                                   | Any flink config options could be overwritten, priority is optimizing-group > optimizing-container > flink-conf.yaml.                                                                                                                                                                                                                                                                                            |

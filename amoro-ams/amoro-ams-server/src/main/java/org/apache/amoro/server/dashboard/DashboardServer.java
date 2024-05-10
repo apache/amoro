@@ -25,12 +25,14 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
 import io.javalin.apibuilder.EndpointGroup;
+import io.javalin.core.security.BasicAuthCredentials;
 import io.javalin.http.ContentType;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.http.staticfiles.StaticFileConfig;
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.server.ArcticManagementConf;
 import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.dashboard.controller.CatalogController;
@@ -77,6 +79,10 @@ public class DashboardServer {
   private final TerminalController terminalController;
   private final VersionController versionController;
 
+  private final String authType;
+  private final String basicAuthUser;
+  private final String basicAuthPassword;
+
   public DashboardServer(
       Configurations serviceConfig,
       TableService tableService,
@@ -93,6 +99,10 @@ public class DashboardServer {
     this.tableController = new TableController(tableService, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
+
+    this.authType = serviceConfig.get(ArcticManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
+    this.basicAuthUser = serviceConfig.get(ArcticManagementConf.ADMIN_USERNAME);
+    this.basicAuthPassword = serviceConfig.get(ArcticManagementConf.ADMIN_PASSWORD);
   }
 
   private String indexHtml = "";
@@ -387,12 +397,24 @@ public class DashboardServer {
   public void preHandleRequest(Context ctx) {
     String uriPath = ctx.path();
     if (needApiKeyCheck(uriPath)) {
-      checkApiToken(
-          ctx.method(),
-          ctx.url(),
-          ctx.queryParam("apiKey"),
-          ctx.queryParam("signature"),
-          ctx.queryParamMap());
+      if ("basic".equalsIgnoreCase(authType)) {
+        BasicAuthCredentials cred = ctx.basicAuthCredentials();
+        if (!(basicAuthUser.equals(cred.component1())
+            && basicAuthPassword.equals(cred.component2()))) {
+          LOG.debug(
+              String.format(
+                  "Failed to authenticate via basic authentication.  Request url: %s %s.",
+                  ctx.req.getMethod(), uriPath));
+          throw new SignatureCheckException();
+        }
+      } else {
+        checkApiToken(
+            ctx.method(),
+            ctx.url(),
+            ctx.queryParam("apiKey"),
+            ctx.queryParam("signature"),
+            ctx.queryParamMap());
+      }
     } else if (needLoginCheck(uriPath)) {
       if (null == ctx.sessionAttribute("user")) {
         LOG.info("session info: {}", JacksonUtil.toJSONString(ctx.sessionAttributeMap()));

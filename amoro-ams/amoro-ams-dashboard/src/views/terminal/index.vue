@@ -119,9 +119,10 @@ import SqlLog from './components/sql-log.vue'
 import { ICatalogItem, IDebugResult, ILableAndValue, IMap, debugResultBgcMap } from '@/types/common.type'
 import { executeSql, getExampleSqlCode, getJobDebugResult, getLogsResult, getShortcutsList, stopSql, getLastDebugInfo } from '@/services/terminal.service'
 import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@ant-design/icons-vue'
-import { message } from 'ant-design-vue-v3'
 import { getCatalogList } from '@/services/table.service'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
+
+import { message, Select as ASelect, Button as AButton, Tooltip as ATooltip } from 'ant-design-vue'
 
 interface ISessionInfo {
   sessionId: string
@@ -141,7 +142,8 @@ export default defineComponent({
     SqlLog,
     CheckCircleOutlined,
     CloseCircleOutlined,
-    LoadingOutlined
+    LoadingOutlined,
+    ASelect
   },
   setup() {
     const placeholder = reactive(usePlaceholder())
