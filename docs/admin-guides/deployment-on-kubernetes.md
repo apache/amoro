@@ -21,15 +21,15 @@ If you want to deploy AMS on Kubernetes, you’d better get a sense of the follo
 
 ## Amoro Official Docker Image
 
-You can find the official docker image at [Amoro Docker Hub](https://hub.docker.com/u/arctic163).
+You can find the official docker image at [Amoro Docker Hub](https://hub.docker.com/u/apache).
 
 The following are images that can be used in a production environment.
 
-**arctic163/amoro**
+**apache/amoro**
 
 This is an image built based on the Amoro binary distribution package for deploying AMS.
 
-**arctic163/optimizer-flink**
+**apache/amoro-flink-optimizer**
 
 This is an image built based on the official version of Flink for deploying the Flink optimizer.
 
@@ -171,7 +171,7 @@ optimizer:
     name: ~ 
     image:
       ## the image repository
-      repository: arctic163/optimizer-flink
+      repository: apache/amoro-flink-optimizer
       ## the image tag, if not set, the default value is the same with amoro image tag.
       tag: ~
       ## the location of flink optimizer jar in image.
