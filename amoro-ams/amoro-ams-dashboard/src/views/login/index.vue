@@ -94,6 +94,11 @@ interface FormState {
 export default defineComponent({
   name: 'Login',
   components: {
+    AButton,
+    AInput,
+    AInputPassword,
+    AForm,
+    AFormItem,
     UserOutlined,
     LockOutlined
   },

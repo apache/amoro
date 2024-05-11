@@ -27,6 +27,9 @@ import { defineComponent, onMounted, onBeforeUnmount, watch, ref, toRefs, reacti
 import echarts from './index'
 
 export default defineComponent({
+  components: {
+    ASpin
+  },
   props: {
     width: {
       type: String,

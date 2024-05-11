@@ -55,7 +55,9 @@ export default defineComponent ({
   name: 'Topbar',
   components: {
     QuestionCircleOutlined,
-    LogoutOutlined
+    LogoutOutlined,
+    AButton,
+    ATooltip
   },
   setup() {
     const verInfo = reactive<IVersion>({

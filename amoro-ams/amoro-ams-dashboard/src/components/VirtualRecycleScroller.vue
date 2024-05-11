@@ -59,7 +59,7 @@ export default defineComponent ({
     }
 
     return {
-      simpleImage: Empty.PRESENTED_IMAGE_SIMPLE,
+      simpleImage: AEmpty.PRESENTED_IMAGE_SIMPLE,
       tableTypeIconMap: tableTypeIconMap,
       handleMouseEnter,
       handleClickTable

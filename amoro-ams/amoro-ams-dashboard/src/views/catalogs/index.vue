@@ -53,7 +53,7 @@ const curCatalog = reactive<ICatalogItem>({})
 const isEdit = ref<boolean>(false)
 const NEW_CATALOG = 'new catalog'
 const loading = ref<boolean>(false)
-const simpleImage = Empty.PRESENTED_IMAGE_SIMPLE
+const simpleImage = AEmpty.PRESENTED_IMAGE_SIMPLE
 
 async function getCatalogs() {
   try {
