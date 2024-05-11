@@ -51,12 +51,12 @@ amoro-mixed-format-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
 original-amoro-mixed-format-flink-runtime-1.15-x.y.z.jar
 maven-archiver/
 
-cd ${base_dir}/amoro-mixed-format/amoro-mixed-format-spark/v3.2/amoro-mixed-format-spark-3.2-runtime/target
+cd ${base_dir}/amoro-mixed-format/amoro-mixed-format-spark/v3.2/amoro-mixed-format-spark-runtime-3.2/target
 ls
-amoro-mixed-format-spark-3.2-runtime-x.y.z.jar # Spark v3.2 runtime package)
-amoro-mixed-format-spark-3.2-runtime-x.y.z-tests.jar
-amoro-mixed-format-spark-3.2-runtime-x.y.z-sources.jar
-original-amoro-mixed-format-spark-3.2-runtime-x.y.z.jar
+amoro-mixed-format-spark-runtime-3.2-x.y.z.jar # Spark v3.2 runtime package)
+amoro-mixed-format-spark-runtime-3.2-x.y.z-tests.jar
+amoro-mixed-format-spark-runtime-3.2-x.y.z-sources.jar
+original-amoro-mixed-format-spark-runtime-3.2-x.y.z.jar
 ```
 
 If the Flink version in the amoro-ams/amoro-ams-optimizer/amoro-optimizer-flink module you compiled is lower than 1.15, you must add the `-Pflink-pre-1.15` parameter before mvn.

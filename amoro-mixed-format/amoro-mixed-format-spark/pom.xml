@@ -34,8 +34,8 @@
     <modules>
         <module>amoro-mixed-format-spark-3-common</module>
         <module>v3.2/amoro-mixed-format-spark-3.2</module>
-        <module>v3.2/amoro-mixed-format-spark-3.2-runtime</module>
+        <module>v3.2/amoro-mixed-format-spark-runtime-3.2</module>
         <module>v3.3/amoro-mixed-format-spark-3.3</module>
-        <module>v3.3/amoro-mixed-format-spark-3.3-runtime</module>
+        <module>v3.3/amoro-mixed-format-spark-runtime-3.3</module>
     </modules>
 </project>
