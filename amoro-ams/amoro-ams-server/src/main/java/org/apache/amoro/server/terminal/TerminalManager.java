@@ -121,17 +121,24 @@ public class TerminalManager {
           TerminalSessionFactory.SessionConfigOptions.catalogProperty(catalog, key), value);
     }
 
-    TerminalSessionContext context;
     synchronized (sessionMapLock) {
-      sessionMap.computeIfAbsent(
+      sessionMap.compute(
           sessionId,
-          id ->
-              new TerminalSessionContext(
-                  id, metaStore, executionPool, sessionFactory, configuration));
-
-      context = sessionMap.get(sessionId);
+          (id, ctx) -> {
+            if (ctx == null) {
+              return new TerminalSessionContext(
+                  id, metaStore, executionPool, sessionFactory, configuration);
+            } else {
+              // need to re-create session context if configuration is changed
+              return ctx.sessionConfiguration().equals(configuration)
+                  ? ctx
+                  : new TerminalSessionContext(
+                      id, metaStore, executionPool, sessionFactory, configuration);
+            }
+          });
     }
 
+    TerminalSessionContext context = sessionMap.get(sessionId);
     if (!context.isReadyToExecute()) {
       throw new IllegalStateException(
           "current session is not ready to execute script. status:" + context.getStatus());
