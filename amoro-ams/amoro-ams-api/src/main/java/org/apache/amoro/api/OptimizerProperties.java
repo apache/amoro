@@ -30,7 +30,6 @@ public class OptimizerProperties {
 
   // Resource group properties
   public static final String OPTIMIZER_EXECUTION_PARALLEL = "execution-parallel";
-  public static final String OPTIMIZER_MEMORY_SIZE = "memory-size";
   public static final String OPTIMIZER_GROUP_NAME = "group-name";
   public static final String OPTIMIZER_HEART_BEAT_INTERVAL = "heart-beat-interval";
   public static final String OPTIMIZER_EXTEND_DISK_STORAGE = "extend-disk-storage";
