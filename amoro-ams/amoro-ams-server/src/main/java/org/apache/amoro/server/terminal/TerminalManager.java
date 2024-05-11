@@ -36,11 +36,8 @@ import org.apache.amoro.server.terminal.local.LocalSessionFactory;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.CatalogProperties;
-import org.apache.iceberg.CatalogUtil;
-import org.apache.iceberg.aws.glue.GlueCatalog;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -380,16 +377,7 @@ public class TerminalManager {
         catalogMeta.putToCatalogProperties(
             CatalogMetaProperties.KEY_WAREHOUSE, catalogMeta.getCatalogName());
       } else if (!catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
-        if (Sets.newHashSet(
-                CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP,
-                CatalogUtil.ICEBERG_CATALOG_TYPE_HIVE,
-                CatalogUtil.ICEBERG_CATALOG_TYPE_REST)
-            .contains(catalogType)) {
-          catalogMeta.putToCatalogProperties("type", catalogType);
-        } else if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(catalogType)) {
-          catalogMeta.putToCatalogProperties(
-              CatalogProperties.CATALOG_IMPL, GlueCatalog.class.getName());
-        }
+        catalogMeta.putToCatalogProperties("type", catalogType);
       }
     } else if (formats.contains(TableFormat.PAIMON) && "hive".equals(catalogType)) {
       catalogMeta.putToCatalogProperties("metastore", catalogType);
