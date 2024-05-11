@@ -86,12 +86,5 @@ public class FlinkOptimizer extends Optimizer {
     if (parallelism % numberOfTaskSlots != 0) {
       memorySize += taskMemorySize.getMebiBytes();
     }
-    if (memorySize != config.getMemorySize()) {
-      LOG.info(
-          "Reset the memory allocation of the optimizer to {}, before set is {}",
-          memorySize,
-          config.getMemorySize());
-      config.setMemorySize(memorySize);
-    }
   }
 }

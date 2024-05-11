@@ -78,7 +78,6 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
                       String.valueOf(getConfig().getHeartBeat()));
                   OptimizerRegisterInfo registerInfo = new OptimizerRegisterInfo();
                   registerInfo.setThreadCount(getConfig().getExecutionParallel());
-                  registerInfo.setMemoryMb(getConfig().getMemorySize());
                   registerInfo.setGroupName(getConfig().getGroupName());
                   registerInfo.setProperties(registerProperties);
                   registerInfo.setResourceId(getConfig().getResourceId());

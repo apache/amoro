@@ -43,14 +43,6 @@ public class OptimizerConfig implements Serializable {
       required = true)
   private int executionParallel;
 
-  /** @deprecated This parameter is deprecated and will be removed in version 0.7.0. */
-  @Deprecated
-  @Option(
-      name = "-m",
-      aliases = "--" + OptimizerProperties.OPTIMIZER_MEMORY_SIZE,
-      usage = "Optimizer memory size(MB)")
-  private int memorySize;
-
   @Option(
       name = "-g",
       aliases = "--" + OptimizerProperties.OPTIMIZER_GROUP_NAME,
@@ -116,14 +108,6 @@ public class OptimizerConfig implements Serializable {
     this.executionParallel = executionParallel;
   }
 
-  public int getMemorySize() {
-    return memorySize;
-  }
-
-  public void setMemorySize(int memorySize) {
-    this.memorySize = memorySize;
-  }
-
   public String getGroupName() {
     return groupName;
   }
@@ -169,7 +153,6 @@ public class OptimizerConfig implements Serializable {
     return MoreObjects.toStringHelper(this)
         .add("amsUrl", amsUrl)
         .add("executionParallel", executionParallel)
-        .add("memorySize", memorySize)
         .add("groupName", groupName)
         .add("heartBeat", heartBeat)
         .add("extendDiskStorage", extendDiskStorage)

@@ -71,7 +71,6 @@ public class TestOptimizerToucher extends OptimizerTestBase {
     OptimizerRegisterInfo registerInfo = registeredOptimizerMap.get(token);
     Assert.assertEquals(registerConfig.getResourceId(), registerInfo.getResourceId());
     Assert.assertEquals(registerConfig.getGroupName(), registerInfo.getGroupName());
-    Assert.assertEquals(registerConfig.getMemorySize(), registerInfo.getMemoryMb());
     Assert.assertEquals(registerConfig.getExecutionParallel(), registerInfo.getThreadCount());
     Assert.assertEquals(optimizerProperties, registerInfo.getProperties());
   }

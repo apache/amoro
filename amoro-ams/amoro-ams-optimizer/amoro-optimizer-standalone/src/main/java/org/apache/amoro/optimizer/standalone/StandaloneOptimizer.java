@@ -31,10 +31,6 @@ public class StandaloneOptimizer {
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
     Optimizer optimizer = new Optimizer(optimizerConfig);
 
-    // calculate optimizer memory allocation
-    long memorySize = Runtime.getRuntime().maxMemory() / 1024 / 1024;
-    optimizerConfig.setMemorySize((int) memorySize);
-
     RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
     String processId = runtimeMXBean.getName().split("@")[0];
     optimizer.getToucher().withRegisterProperty(Resource.PROPERTY_JOB_ID, processId);
