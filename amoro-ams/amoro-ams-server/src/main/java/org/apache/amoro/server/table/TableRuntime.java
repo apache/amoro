@@ -101,7 +101,8 @@ public class TableRuntime extends StatedPersistentBase {
       ServerTableIdentifier tableIdentifier,
       TableRuntimeHandler tableHandler,
       Map<String, String> properties) {
-    Preconditions.checkNotNull(tableIdentifier, tableHandler);
+    Preconditions.checkNotNull(tableIdentifier, "ServerTableIdentifier must not be null.");
+    Preconditions.checkNotNull(tableHandler, "TableRuntimeHandler must not be null.");
     this.tableHandler = tableHandler;
     this.tableIdentifier = tableIdentifier;
     this.tableConfiguration = TableConfiguration.parseConfig(properties);
@@ -111,7 +112,8 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
-    Preconditions.checkNotNull(tableRuntimeMeta, tableHandler);
+    Preconditions.checkNotNull(tableRuntimeMeta, "TableRuntimeMeta must not be null.");
+    Preconditions.checkNotNull(tableHandler, "TableRuntimeHandler must not be null.");
     this.tableHandler = tableHandler;
     this.tableIdentifier =
         ServerTableIdentifier.of(
