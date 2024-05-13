@@ -216,10 +216,6 @@ public class DataExpirationConfig {
     }
   }
 
-  public boolean isPositive() {
-    return retentionTime > INVALID_RETENTION_TIME;
-  }
-
   public boolean isEnabled() {
     return enabled;
   }
@@ -315,7 +311,7 @@ public class DataExpirationConfig {
 
   public boolean isValid(Types.NestedField field, String name) {
     return isEnabled()
-        && isPositive()
+        && getRetentionTime() > INVALID_RETENTION_TIME
         && validateExpirationField(field, name, getExpirationField());
   }
 

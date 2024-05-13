@@ -270,7 +270,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
    */
   @VisibleForTesting
   protected void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
-    if (instant.equals(Instant.MIN) || !expirationConfig.isPositive()) {
+    if (instant.equals(Instant.MIN) || expirationConfig.getRetentionTime() <= 0) {
       return;
     }
 
