@@ -40,6 +40,8 @@ import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { IGroupItem } from '@/types/common.type'
 import { getOptimizerGroups, scaleoutResource } from '@/services/optimize.service'
 
+import { Modal as AModal, Select as ASelect, Input as AInput, Form as AForm, FormItem as AFormItem } from 'ant-design-vue'
+
 interface FormState {
   resourceGroup: undefined | string
   parallelism: number

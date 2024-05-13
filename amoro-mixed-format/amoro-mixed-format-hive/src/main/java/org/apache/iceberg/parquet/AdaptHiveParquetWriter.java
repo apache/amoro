@@ -228,7 +228,12 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
       this.closed = true;
       flushRowGroup(true);
       writeStore.close();
-      writer.end(metadata);
+      if (writer != null) {
+        writer.end(metadata);
+      }
+      if (compressor != null) {
+        compressor.release();
+      }
     }
   }
 }

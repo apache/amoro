@@ -222,6 +222,12 @@ public class ArcticManagementConf {
           .defaultValue(19090)
           .withDescription("Port that the Http server is bound to.");
 
+  public static final ConfigOption<String> HTTP_SERVER_REST_AUTH_TYPE =
+      ConfigOptions.key("http-server.rest-auth-type")
+          .stringType()
+          .defaultValue("token")
+          .withDescription("The authentication used by REST APIs, token (default) or basic.");
+
   public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_COUNT =
       ConfigOptions.key("self-optimizing.commit-thread-count")
           .intType()

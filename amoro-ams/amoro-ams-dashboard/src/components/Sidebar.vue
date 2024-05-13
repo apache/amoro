@@ -54,6 +54,8 @@ import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { getQueryString } from '@/utils'
 
+import { Menu as AMenu, MenuItem as AMenuItem, Button as AButton } from 'ant-design-vue'
+
 interface MenuItem {
   key: string
   title: string
@@ -65,7 +67,11 @@ export default defineComponent({
   components: {
     MenuFoldOutlined,
     MenuUnfoldOutlined,
-    TableMenu
+    TableMenu,
+
+    AMenu,
+    AMenuItem,
+    AButton
   },
   setup () {
     const { t } = useI18n()
