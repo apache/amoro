@@ -20,7 +20,7 @@
 #   Run the docker command below under project dir.
 #      docker build \
 #        --file docker/amoro/Dockerfile \
-#        --tag arctic163/amoro:tagname
+#        --tag apache/amoro:tagname
 #        .
 
 FROM eclipse-temurin:8-jdk-jammy as builder

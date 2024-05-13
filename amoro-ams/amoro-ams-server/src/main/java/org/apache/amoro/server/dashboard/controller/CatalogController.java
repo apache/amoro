@@ -68,6 +68,7 @@ import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.AwsClientProperties;
+import org.apache.iceberg.aws.glue.GlueCatalog;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.relocated.com.google.common.base.Objects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -353,11 +354,14 @@ public class CatalogController {
     catalogMeta.setCatalogType(info.getType());
     catalogMeta.setCatalogProperties(
         PropertiesUtil.unionCatalogProperties(info.getTableProperties(), info.getProperties()));
-    catalogMeta
-        .getCatalogProperties()
-        .put(
-            CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
-            info.getOptimizerGroup());
+    // fill catalog impl when catalog type is glue
+    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(info.getType())) {
+      catalogMeta.putToCatalogProperties(
+          CatalogProperties.CATALOG_IMPL, GlueCatalog.class.getName());
+    }
+    catalogMeta.putToCatalogProperties(
+        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
+        info.getOptimizerGroup());
     String tableFormats;
     try {
       // validate table format

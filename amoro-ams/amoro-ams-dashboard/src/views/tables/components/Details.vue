@@ -86,6 +86,8 @@ import { DetailColumnItem, IBaseDetailInfo, IColumns, IMap, PartitionColumnItem 
 import { getTableDetail } from '@/services/table.service'
 import { dateFormat } from '@/utils'
 
+import { Table as ATable } from 'ant-design-vue'
+
 const { t } = useI18n()
 const emit = defineEmits<{
  (e: 'setBaseDetailInfo', data: IBaseDetailInfo): void

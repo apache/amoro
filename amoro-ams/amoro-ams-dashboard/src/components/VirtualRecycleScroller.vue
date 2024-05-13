@@ -41,7 +41,8 @@ import { defineComponent } from 'vue'
 import { RecycleScroller } from 'vue-virtual-scroller'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import { IMap, tableTypeIconMap } from '@/types/common.type'
-import { Empty } from 'ant-design-vue-v3'
+
+import { Empty as AEmpty } from 'ant-design-vue'
 
 export default defineComponent ({
   components: {
@@ -58,7 +59,7 @@ export default defineComponent ({
     }
 
     return {
-      simpleImage: Empty.PRESENTED_IMAGE_SIMPLE,
+      simpleImage: AEmpty.PRESENTED_IMAGE_SIMPLE,
       tableTypeIconMap: tableTypeIconMap,
       handleMouseEnter,
       handleClickTable

@@ -19,7 +19,7 @@ limitations under the License.
 
 <template>
   <a-modal
-    :visible="true"
+    v-model:open="open"
     :width="560"
     :title="`${$t('errorMessage')}`"
     :footer="null"
@@ -30,7 +30,10 @@ limitations under the License.
   </a-modal>
 </template>
 <script lang="ts" setup>
+import { Modal as AModal } from "ant-design-vue";
+import { ref } from "vue";
 
+const open = ref(true)
 const props = defineProps<{ msg: string }>()
 const emit = defineEmits<{
  (e: 'cancle'): void

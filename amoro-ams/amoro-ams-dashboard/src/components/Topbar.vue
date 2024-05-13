@@ -39,11 +39,12 @@
 
 import { defineComponent, onMounted, reactive } from 'vue'
 import { QuestionCircleOutlined, LogoutOutlined } from '@ant-design/icons-vue'
-import { Modal } from 'ant-design-vue-v3'
 import { useI18n } from 'vue-i18n'
 import useStore from '@/store'
 import { getVersionInfo } from '@/services/global.service'
 import loginService from '@/services/login.service'
+
+import { Modal, Button as AButton, Tooltip as ATooltip } from 'ant-design-vue'
 
 interface IVersion {
   version: string
@@ -54,7 +55,9 @@ export default defineComponent ({
   name: 'Topbar',
   components: {
     QuestionCircleOutlined,
-    LogoutOutlined
+    LogoutOutlined,
+    AButton,
+    ATooltip
   },
   setup() {
     const verInfo = reactive<IVersion>({

@@ -40,9 +40,10 @@ import { onMounted, reactive, ref } from 'vue'
 import { ICatalogItem } from '@/types/common.type'
 import { getCatalogList } from '@/services/table.service'
 import Detail from './Detail.vue'
-import { Modal, Empty } from 'ant-design-vue-v3'
 import { useI18n } from 'vue-i18n'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+
+import { Modal, Button as AButton, Empty as AEmpty } from 'ant-design-vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -52,7 +53,7 @@ const curCatalog = reactive<ICatalogItem>({})
 const isEdit = ref<boolean>(false)
 const NEW_CATALOG = 'new catalog'
 const loading = ref<boolean>(false)
-const simpleImage = Empty.PRESENTED_IMAGE_SIMPLE
+const simpleImage = AEmpty.PRESENTED_IMAGE_SIMPLE
 
 async function getCatalogs() {
   try {

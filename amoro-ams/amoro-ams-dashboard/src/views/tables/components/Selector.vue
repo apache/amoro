@@ -84,13 +84,13 @@ limitations under the License.
 </template>
 
 <script lang="ts" setup>
+// TODO: replace to antv-4. After all replacements are completed, switch to automatic import.
+import { Dropdown as ADropdown, Tabs as ATabs, TabPane as ATabPane, Select as ASelect, SelectOption as ASelectOption, Button as AButton, Input as AInput } from 'ant-design-vue'
+
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { CheckOutlined, DownOutlined } from '@ant-design/icons-vue'
 import { branchTypeMap, IBranchItem, IServiceBranchItem, operationMap } from '@/types/common.type'
 import { getBranches, getTags } from '@/services/table.service'
-
-const { t } = useI18n()
 
 const props = defineProps({ catalog: String, db: String, table: String, disabled: Boolean })
 const disabled = computed(() => props.disabled)
