@@ -18,7 +18,7 @@
 
 namespace java org.apache.amoro.api
 
-include "arctic_commons.thrift"
+include "amoro_commons.thrift"
 
 struct OptimizingTask {
     1: OptimizingTaskId taskId;
@@ -52,17 +52,17 @@ service OptimizingService {
 
     void ping()
 
-    void touch(1: string authToken) throws(1: arctic_commons.ArcticException e1)
+    void touch(1: string authToken) throws(1: amoro_commons.AmoroException e1)
 
     OptimizingTask pollTask(1: string authToken, 2: i32 threadId)
-            throws (1: arctic_commons.ArcticException e1)
+            throws (1: amoro_commons.AmoroException e1)
 
     void ackTask(1: string authToken, 2: i32 threadId, 3: OptimizingTaskId taskId)
-            throws(1: arctic_commons.ArcticException e1)
+            throws(1: amoro_commons.AmoroException e1)
 
     void completeTask(1: string authToken, 2: OptimizingTaskResult taskResult)
-            throws (1: arctic_commons.ArcticException e1)
+            throws (1: amoro_commons.AmoroException e1)
 
     string authenticate(1: OptimizerRegisterInfo registerInfo)
-            throws (1: arctic_commons.ArcticException e1)
+            throws (1: amoro_commons.AmoroException e1)
 }

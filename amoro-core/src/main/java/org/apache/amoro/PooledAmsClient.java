@@ -18,7 +18,7 @@
 
 package org.apache.amoro;
 
-import org.apache.amoro.api.ArcticTableMetastore;
+import org.apache.amoro.api.AmoroTableMetastore;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.Blocker;
 import org.apache.amoro.api.CatalogMeta;
@@ -39,7 +39,7 @@ public class PooledAmsClient implements AmsClient {
     this.metastoreUrl = metastoreUrl;
   }
 
-  private ArcticTableMetastore.Iface getIface() {
+  private AmoroTableMetastore.Iface getIface() {
     return AmsClientPools.getClientPool(metastoreUrl).iface();
   }
 

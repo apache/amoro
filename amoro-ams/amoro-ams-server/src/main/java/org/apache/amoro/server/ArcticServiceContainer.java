@@ -21,7 +21,7 @@ package org.apache.amoro.server;
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import org.apache.amoro.Constants;
-import org.apache.amoro.api.ArcticTableMetastore;
+import org.apache.amoro.api.AmoroTableMetastore;
 import org.apache.amoro.api.OptimizerProperties;
 import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.api.config.ConfigHelpers;
@@ -286,10 +286,10 @@ public class ArcticServiceContainer {
         serviceConfig.getInteger(ArcticManagementConf.THRIFT_QUEUE_SIZE_PER_THREAD);
     String bindHost = serviceConfig.getString(ArcticManagementConf.SERVER_BIND_HOST);
 
-    ArcticTableMetastore.Processor<ArcticTableMetastore.Iface> tableManagementProcessor =
-        new ArcticTableMetastore.Processor<>(
+    AmoroTableMetastore.Processor<AmoroTableMetastore.Iface> tableManagementProcessor =
+        new AmoroTableMetastore.Processor<>(
             ThriftServiceProxy.createProxy(
-                ArcticTableMetastore.Iface.class,
+                AmoroTableMetastore.Iface.class,
                 new TableManagementService(tableService),
                 ArcticRuntimeException::normalizeCompatibly));
     tableManagementServer =

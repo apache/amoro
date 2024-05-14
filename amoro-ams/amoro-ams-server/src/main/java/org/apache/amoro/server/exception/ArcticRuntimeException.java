@@ -19,7 +19,7 @@
 package org.apache.amoro.server.exception;
 
 import org.apache.amoro.ErrorCodes;
-import org.apache.amoro.api.ArcticException;
+import org.apache.amoro.api.AmoroException;
 import org.apache.amoro.api.InvalidObjectException;
 import org.apache.amoro.api.MetaException;
 import org.apache.amoro.api.NoSuchObjectException;
@@ -91,8 +91,8 @@ public class ArcticRuntimeException extends RuntimeException {
     return errorName;
   }
 
-  private ArcticException transform() {
-    return new ArcticException(errorCode, errorName, getMessage());
+  private AmoroException transform() {
+    return new AmoroException(errorCode, errorName, getMessage());
   }
 
   protected static String getObjectName(TableIdentifier tableIdentifier) {
@@ -113,7 +113,7 @@ public class ArcticRuntimeException extends RuntimeException {
         + tableIdentifier.getTableName();
   }
 
-  public static ArcticException normalize(Throwable throwable) {
+  public static AmoroException normalize(Throwable throwable) {
     return wrap(throwable).transform();
   }
 

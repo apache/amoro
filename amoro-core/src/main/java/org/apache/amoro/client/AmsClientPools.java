@@ -21,7 +21,7 @@ package org.apache.amoro.client;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.apache.amoro.Constants;
-import org.apache.amoro.api.ArcticTableMetastore;
+import org.apache.amoro.api.AmoroTableMetastore;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TMultiplexedProtocol;
@@ -34,10 +34,10 @@ public class AmsClientPools {
   private static final int CLIENT_POOL_MAX_IDLE = 5;
   private static final int CLIENT_POOL_MAX_WAIT_MS = 5000;
 
-  private static final LoadingCache<String, ThriftClientPool<ArcticTableMetastore.Client>>
+  private static final LoadingCache<String, ThriftClientPool<AmoroTableMetastore.Client>>
       CLIENT_POOLS = Caffeine.newBuilder().build(AmsClientPools::buildClientPool);
 
-  public static ThriftClientPool<ArcticTableMetastore.Client> getClientPool(String metastoreUrl) {
+  public static ThriftClientPool<AmoroTableMetastore.Client> getClientPool(String metastoreUrl) {
     return CLIENT_POOLS.get(metastoreUrl);
   }
 
@@ -45,7 +45,7 @@ public class AmsClientPools {
     CLIENT_POOLS.cleanUp();
   }
 
-  private static ThriftClientPool<ArcticTableMetastore.Client> buildClientPool(String url) {
+  private static ThriftClientPool<AmoroTableMetastore.Client> buildClientPool(String url) {
     PoolConfig poolConfig = new PoolConfig();
     poolConfig.setFailover(true);
     poolConfig.setMinIdle(CLIENT_POOL_MIN_IDLE);
@@ -55,14 +55,14 @@ public class AmsClientPools {
         url,
         s -> {
           TProtocol protocol = new TBinaryProtocol(s);
-          ArcticTableMetastore.Client tableMetastore =
-              new ArcticTableMetastore.Client(
+          AmoroTableMetastore.Client tableMetastore =
+              new AmoroTableMetastore.Client(
                   new TMultiplexedProtocol(protocol, Constants.THRIFT_TABLE_SERVICE_NAME));
           return tableMetastore;
         },
         c -> {
           try {
-            ((ArcticTableMetastore.Client) c).ping();
+            ((AmoroTableMetastore.Client) c).ping();
           } catch (TException e) {
             return false;
           }
