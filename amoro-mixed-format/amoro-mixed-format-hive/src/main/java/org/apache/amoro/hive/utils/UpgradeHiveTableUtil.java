@@ -25,7 +25,7 @@ import static org.apache.amoro.table.TableProperties.FILE_FORMAT_ORC;
 import static org.apache.amoro.table.TableProperties.FILE_FORMAT_PARQUET;
 
 import org.apache.amoro.hive.HMSClientPool;
-import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
+import org.apache.amoro.hive.catalog.MixedHiveCatalog;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.table.UnkeyedHiveTable;
 import org.apache.amoro.io.AuthenticatedHadoopFileIO;
@@ -60,26 +60,26 @@ public class UpgradeHiveTableUtil {
   private static final long DEFAULT_TXID = 0L;
 
   /**
-   * Upgrade a hive table to an Arctic table.
+   * Upgrade a hive table to an mixed-hive table.
    *
-   * @param arcticHiveCatalog A arctic catalog adapt hive
+   * @param mixedHiveCatalog A mixed-hive catalog
    * @param tableIdentifier A table identifier
    * @param pkList The name of the columns that needs to be set as the primary key
    * @param properties Properties to be added to the target table
    */
   public static void upgradeHiveTable(
-      ArcticHiveCatalog arcticHiveCatalog,
+      MixedHiveCatalog mixedHiveCatalog,
       TableIdentifier tableIdentifier,
       List<String> pkList,
       Map<String, String> properties)
       throws Exception {
-    if (!formatCheck(arcticHiveCatalog.getHMSClient(), tableIdentifier, properties)) {
+    if (!formatCheck(mixedHiveCatalog.getHMSClient(), tableIdentifier, properties)) {
       throw new IllegalArgumentException("The storage format is not support");
     }
     boolean upgradeHive = false;
     try {
       Table hiveTable =
-          HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
+          HiveTableUtil.loadHmsTable(mixedHiveCatalog.getHMSClient(), tableIdentifier);
 
       Schema schema = HiveSchemaUtil.convertHiveSchemaToIcebergSchema(hiveTable, pkList);
 
@@ -92,7 +92,7 @@ public class UpgradeHiveTableUtil {
       pkList.stream().forEach(p -> primaryKeyBuilder.addColumn(p));
 
       MixedTable mixedTable =
-          arcticHiveCatalog
+          mixedHiveCatalog
               .newTableBuilder(tableIdentifier, schema)
               .withProperties(properties)
               .withPartitionSpec(partitionBuilder.build())
@@ -101,21 +101,23 @@ public class UpgradeHiveTableUtil {
               .create();
       upgradeHive = true;
       UpgradeHiveTableUtil.hiveDataMigration(
-          (SupportHive) mixedTable, arcticHiveCatalog, tableIdentifier);
+          (SupportHive) mixedTable, mixedHiveCatalog, tableIdentifier);
     } catch (Throwable t) {
       if (upgradeHive) {
-        arcticHiveCatalog.dropTable(tableIdentifier, false);
+        mixedHiveCatalog.dropTable(tableIdentifier, false);
       }
       throw t;
     }
   }
 
   private static void hiveDataMigration(
-      SupportHive arcticTable, ArcticHiveCatalog arcticHiveCatalog, TableIdentifier tableIdentifier)
+      SupportHive mixedHiveTable,
+      MixedHiveCatalog mixedHiveCatalog,
+      TableIdentifier tableIdentifier)
       throws Exception {
-    Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
+    Table hiveTable = HiveTableUtil.loadHmsTable(mixedHiveCatalog.getHMSClient(), tableIdentifier);
     String hiveDataLocation = HiveTableUtil.hiveRootLocation(hiveTable.getSd().getLocation());
-    AuthenticatedHadoopFileIO io = arcticTable.io();
+    AuthenticatedHadoopFileIO io = mixedHiveTable.io();
     io.makeDirectories(hiveDataLocation);
     String newPath;
     if (hiveTable.getPartitionKeys().isEmpty()) {
@@ -131,19 +133,18 @@ public class UpgradeHiveTableUtil {
 
       try {
         HiveTableUtil.alterTableLocation(
-            arcticHiveCatalog.getHMSClient(), arcticTable.id(), newPath);
-        LOG.info("Table {} alter hive table location {}", arcticTable.name(), hiveDataLocation);
+            mixedHiveCatalog.getHMSClient(), mixedHiveTable.id(), newPath);
+        LOG.info("Table {} alter hive table location {}", mixedHiveTable.name(), hiveDataLocation);
       } catch (IOException e) {
-        LOG.warn("Table {} alter hive table location failed", arcticTable.name(), e);
+        LOG.warn("Table {} alter hive table location failed", mixedHiveTable.name(), e);
         throw new RuntimeException(e);
       }
     } else {
       List<String> partitions =
-          HivePartitionUtil.getHivePartitionNames(
-              arcticHiveCatalog.getHMSClient(), tableIdentifier);
+          HivePartitionUtil.getHivePartitionNames(mixedHiveCatalog.getHMSClient(), tableIdentifier);
       List<String> partitionLocations =
           HivePartitionUtil.getHivePartitionLocations(
-              arcticHiveCatalog.getHMSClient(), tableIdentifier);
+              mixedHiveCatalog.getHMSClient(), tableIdentifier);
       for (int i = 0; i < partitionLocations.size(); i++) {
         String partition = partitions.get(i);
         String oldLocation = partitionLocations.get(i);
@@ -163,18 +164,18 @@ public class UpgradeHiveTableUtil {
                   }
                 });
         HivePartitionUtil.alterPartition(
-            arcticHiveCatalog.getHMSClient(), tableIdentifier, partition, newLocation);
+            mixedHiveCatalog.getHMSClient(), tableIdentifier, partition, newLocation);
       }
     }
-    HiveMetaSynchronizer.syncHiveDataToArctic(arcticTable, arcticHiveCatalog.getHMSClient());
-    hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
-    fillPartitionProperties(arcticTable, arcticHiveCatalog, hiveTable);
+    HiveMetaSynchronizer.syncHiveDataToMixedTable(mixedHiveTable, mixedHiveCatalog.getHMSClient());
+    hiveTable = HiveTableUtil.loadHmsTable(mixedHiveCatalog.getHMSClient(), tableIdentifier);
+    fillPartitionProperties(mixedHiveTable, mixedHiveCatalog, hiveTable);
   }
 
   /**
-   * Check whether Arctic supports the hive table storage formats.
+   * Check whether the storage format is supported.
    *
-   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param hiveClient Hive client from MixedHiveClient
    * @param tableIdentifier A table identifier
    * @return Support or not
    */
@@ -235,7 +236,7 @@ public class UpgradeHiveTableUtil {
 
   @VisibleForTesting
   static void fillPartitionProperties(
-      MixedTable table, ArcticHiveCatalog arcticHiveCatalog, Table hiveTable) {
+      MixedTable table, MixedHiveCatalog mixedHiveCatalog, Table hiveTable) {
     UnkeyedHiveTable baseTable;
     if (table.isKeyedTable()) {
       baseTable = (UnkeyedHiveTable) table.asKeyedTable().baseTable();
@@ -257,7 +258,7 @@ public class UpgradeHiveTableUtil {
           hiveTable.getParameters().get("transient_lastDdlTime"));
     } else {
       List<Partition> partitions =
-          HivePartitionUtil.getHiveAllPartitions(arcticHiveCatalog.getHMSClient(), table.id());
+          HivePartitionUtil.getHiveAllPartitions(mixedHiveCatalog.getHMSClient(), table.id());
       partitions.forEach(
           partition -> {
             StructLike partitionData =

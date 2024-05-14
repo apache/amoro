@@ -96,7 +96,7 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
               .setAll(config)
               .overwrite()
               .build();
-          // Change For Arctic ⬇
+          // Change for mixed-hive table ⬇
         case PARQUET:
           return AdaptHiveParquet.write(outputFile)
               .schema(schema)
@@ -105,7 +105,7 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
               .metricsConfig(metricsConfig)
               .overwrite()
               .build();
-          // Change For Arctic ⬆
+          // Change for mixed-hive table ⬆
         case ORC:
           return ORC.write(outputFile)
               .schema(schema)

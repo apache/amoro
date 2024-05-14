@@ -28,7 +28,7 @@ import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClientPool;
-import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
+import org.apache.amoro.hive.catalog.MixedHiveCatalog;
 import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.hive.utils.UpgradeHiveTableUtil;
 import org.apache.amoro.mixed.CatalogLoader;
@@ -211,8 +211,8 @@ public class TableController {
     Map<String, String> catalogProperties = new HashMap<>(originCatalogProperties);
     catalogProperties.put(CatalogMetaProperties.TABLE_FORMATS, TableFormat.MIXED_HIVE.name());
 
-    ArcticHiveCatalog arcticHiveCatalog =
-        (ArcticHiveCatalog)
+    MixedHiveCatalog mixedHiveCatalog =
+        (MixedHiveCatalog)
             CatalogLoader.createCatalog(
                 catalog, catalogMeta.getCatalogType(), catalogProperties, tableMetaStore);
 
@@ -222,7 +222,7 @@ public class TableController {
           upgradeRunningInfo.put(tableIdentifier, new UpgradeRunningInfo());
           try {
             UpgradeHiveTableUtil.upgradeHiveTable(
-                arcticHiveCatalog,
+                mixedHiveCatalog,
                 TableIdentifier.of(catalog, db, table),
                 upgradeHiveMeta.getPkList().stream()
                     .map(UpgradeHiveMeta.PrimaryKeyField::getFieldName)

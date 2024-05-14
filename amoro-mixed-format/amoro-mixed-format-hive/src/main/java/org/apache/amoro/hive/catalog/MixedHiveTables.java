@@ -442,7 +442,7 @@ public class MixedHiveTables {
       return;
     }
     // Drop hive table operation will only delete hive table metadata
-    // Delete data files operation will use BasicArcticCatalog
+    // Delete data files operation will use MixedHiveCatalog
     if (purge) {
       try {
         hiveClientPool.run(
@@ -458,7 +458,8 @@ public class MixedHiveTables {
         throw new RuntimeException("Failed to drop table:" + tableMeta.getTableIdentifier(), e);
       }
     } else {
-      // If purge is not true, we will not drop the hive table and need to remove the arctic table
+      // If purge is not true, we will not drop the hive table and need to remove the mixed-hive
+      // table
       // flag
       try {
         hiveClientPool.run(

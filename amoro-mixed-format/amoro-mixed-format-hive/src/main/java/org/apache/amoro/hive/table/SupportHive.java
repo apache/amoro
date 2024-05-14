@@ -41,11 +41,11 @@ public interface SupportHive extends MixedTable {
    */
   HMSClientPool getHMSClient();
 
-  boolean enableSyncHiveDataToArctic();
+  boolean enableSyncHiveDataToMixedTable();
 
-  boolean enableSyncHiveSchemaToArctic();
+  boolean enableSyncHiveSchemaToMixedTable();
 
-  void syncHiveDataToArctic(boolean force);
+  void syncHiveDataToMixedTable(boolean force);
 
-  void syncHiveSchemaToArctic();
+  void syncHiveSchemaToMixedTable();
 }

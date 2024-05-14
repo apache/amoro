@@ -35,11 +35,11 @@ import org.slf4j.LoggerFactory;
  * Extended implementation of {@link ClientPoolImpl} with {@link TableMetaStore} to support
  * authenticated hive cluster.
  */
-public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> {
+public class AuthenticatedHiveClientPool extends ClientPoolImpl<HMSClient, TException> {
   private final TableMetaStore metaStore;
 
   private final HiveConf hiveConf;
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticHiveClientPool.class);
+  private static final Logger LOG = LoggerFactory.getLogger(AuthenticatedHiveClientPool.class);
 
   private static final DynConstructors.Ctor<HiveMetaStoreClient> CLIENT_CTOR =
       DynConstructors.builder()
@@ -47,9 +47,10 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> 
           .impl(HiveMetaStoreClient.class, Configuration.class)
           .build();
 
-  public ArcticHiveClientPool(TableMetaStore tableMetaStore, int poolSize) {
+  public AuthenticatedHiveClientPool(TableMetaStore tableMetaStore, int poolSize) {
     super(poolSize, TTransportException.class, true);
-    this.hiveConf = new HiveConf(tableMetaStore.getConfiguration(), ArcticHiveClientPool.class);
+    this.hiveConf =
+        new HiveConf(tableMetaStore.getConfiguration(), AuthenticatedHiveClientPool.class);
     this.hiveConf.addResource(tableMetaStore.getConfiguration());
     this.hiveConf.addResource(tableMetaStore.getHiveSiteLocation().orElse(null));
     this.metaStore = tableMetaStore;

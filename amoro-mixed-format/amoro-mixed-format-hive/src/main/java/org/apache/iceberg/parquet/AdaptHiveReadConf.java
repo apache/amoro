@@ -101,7 +101,8 @@ class AdaptHiveReadConf<T> {
     // Fetch all row groups starting positions to compute the row offsets of the filtered row groups
     Map<Long, Long> offsetToStartPos = generateOffsetToStartPos(expectedSchema);
 
-    // Change For Arctic: use arctic filter
+    // Change for mixed-hive table ⬇
+    // Use mixed-hive format filter
     AdaptHiveParquetMetricsRowGroupFilter statsFilter = null;
     AdaptHiveParquetDictionaryRowGroupFilter dictFilter = null;
     if (filter != null) {
@@ -110,7 +111,7 @@ class AdaptHiveReadConf<T> {
       dictFilter =
           new AdaptHiveParquetDictionaryRowGroupFilter(expectedSchema, filter, caseSensitive);
     }
-    // Change For Arctic
+    // Change for mixed-hive table ⬆
 
     long computedTotalValues = 0L;
     for (int i = 0; i < shouldSkip.length; i += 1) {

@@ -36,10 +36,10 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-/** Cache {@link ArcticHiveClientPool} with {@link TableMetaStore} key. */
+/** Cache {@link AuthenticatedHiveClientPool} with {@link TableMetaStore} key. */
 public class CachedHiveClientPool implements HMSClientPool, Serializable {
 
-  private static Cache<TableMetaStore, ArcticHiveClientPool> clientPoolCache;
+  private static Cache<TableMetaStore, AuthenticatedHiveClientPool> clientPoolCache;
 
   private final TableMetaStore tableMetaStore;
   private final int clientPoolSize;
@@ -60,9 +60,9 @@ public class CachedHiveClientPool implements HMSClientPool, Serializable {
     init();
   }
 
-  private ArcticHiveClientPool clientPool() {
+  private AuthenticatedHiveClientPool clientPool() {
     return clientPoolCache.get(
-        tableMetaStore, k -> new ArcticHiveClientPool(tableMetaStore, clientPoolSize));
+        tableMetaStore, k -> new AuthenticatedHiveClientPool(tableMetaStore, clientPoolSize));
   }
 
   private synchronized void init() {
@@ -70,7 +70,7 @@ public class CachedHiveClientPool implements HMSClientPool, Serializable {
       clientPoolCache =
           Caffeine.newBuilder()
               .expireAfterAccess(evictionInterval, TimeUnit.MILLISECONDS)
-              .removalListener((key, value, cause) -> ((ArcticHiveClientPool) value).close())
+              .removalListener((key, value, cause) -> ((AuthenticatedHiveClientPool) value).close())
               .build();
     }
   }

@@ -101,10 +101,10 @@ public class AdaptHiveParquetMetricsRowGroupFilter {
           Type icebergType = schema.findType(id);
           stats.put(id, col.getStatistics());
           valueCounts.put(id, col.getValueCount());
-          // Change For Arctic
+          // Change for mixed-hive table ⬇
           conversions.put(
               id, AdaptHiveParquetConversions.converterFromParquet(colType, icebergType));
-          // Change For Arctic
+          // Change for mixed-hive table ⬆
         }
       }
 

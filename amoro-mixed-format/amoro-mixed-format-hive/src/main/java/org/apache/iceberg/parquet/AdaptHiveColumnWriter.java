@@ -50,7 +50,7 @@ public abstract class AdaptHiveColumnWriter<T> implements TripleWriter<T> {
                 writeLong(rl, value);
               }
             };
-        // Change For Arctic
+        // Change for mixed-hive table ⬇
       case INT96:
         return (AdaptHiveColumnWriter<T>)
             new AdaptHiveColumnWriter<Binary>(desc) {
@@ -59,7 +59,7 @@ public abstract class AdaptHiveColumnWriter<T> implements TripleWriter<T> {
                 writeBinary(rl, value);
               }
             };
-        // Change For Arctic
+        // Change for mixed-hive table ⬆
       case FLOAT:
         return (AdaptHiveColumnWriter<T>)
             new AdaptHiveColumnWriter<Float>(desc) {

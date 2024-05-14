@@ -87,9 +87,9 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /** Implementation of {@link MixedFormatCatalog} to support Hive table as base store. */
-public class ArcticHiveCatalog implements MixedFormatCatalog {
+public class MixedHiveCatalog implements MixedFormatCatalog {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticHiveCatalog.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MixedHiveCatalog.class);
 
   protected AmsClient client;
   private CachedHiveClientPool hiveClientPool;
@@ -171,7 +171,7 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
   }
 
   /** HMS is case-insensitive for table name and database */
-  protected TableMeta getArcticTableMeta(TableIdentifier identifier) {
+  protected TableMeta getMixedTableMeta(TableIdentifier identifier) {
     org.apache.hadoop.hive.metastore.api.Table hiveTable = null;
     identifier = identifier.toLowCaseIdentifier();
     try {
@@ -185,24 +185,24 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
 
     Map<String, String> hiveParameters = hiveTable.getParameters();
 
-    String arcticRootLocation = hiveParameters.get(MIXED_TABLE_ROOT_LOCATION);
-    if (arcticRootLocation == null) {
+    String mixedTableRootLocation = hiveParameters.get(MIXED_TABLE_ROOT_LOCATION);
+    if (mixedTableRootLocation == null) {
       // if hive location ends with /hive, then it's a mixed-hive table. we need to remove /hive to
       // get root location.
       // if hive location doesn't end with /hive, then it's a pure-hive table. we can use the
       // location as root location.
       String hiveRootLocation = hiveTable.getSd().getLocation();
       if (hiveRootLocation.endsWith("/hive")) {
-        arcticRootLocation = hiveRootLocation.substring(0, hiveRootLocation.length() - 5);
+        mixedTableRootLocation = hiveRootLocation.substring(0, hiveRootLocation.length() - 5);
       } else {
-        arcticRootLocation = hiveRootLocation;
+        mixedTableRootLocation = hiveRootLocation;
       }
     }
 
     // full path of base, change and root location
-    String baseLocation = arcticRootLocation + "/base";
-    String changeLocation = arcticRootLocation + "/change";
-    // load base table for get arctic table properties
+    String baseLocation = mixedTableRootLocation + "/base";
+    String changeLocation = mixedTableRootLocation + "/change";
+    // load base table for get table properties
     Table baseIcebergTable = getTables().loadHadoopTableByLocation(baseLocation);
     if (baseIcebergTable == null) {
       throw new NoSuchTableException("load table failed %s, base table not found.", identifier);
@@ -213,7 +213,7 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
     tableMeta.setTableIdentifier(identifier.buildTableIdentifier());
 
     Map<String, String> locations = new HashMap<>();
-    putNotNullProperties(locations, MetaTableProperties.LOCATION_KEY_TABLE, arcticRootLocation);
+    putNotNullProperties(locations, MetaTableProperties.LOCATION_KEY_TABLE, mixedTableRootLocation);
     putNotNullProperties(locations, MetaTableProperties.LOCATION_KEY_CHANGE, changeLocation);
     putNotNullProperties(locations, MetaTableProperties.LOCATION_KEY_BASE, baseLocation);
     // set table location
@@ -267,7 +267,7 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
 
   @Override
   public void renameTable(TableIdentifier from, String newTableName) {
-    throw new UnsupportedOperationException("unsupported rename arctic table for now.");
+    throw new UnsupportedOperationException("unsupported rename mixed-hive table for now.");
   }
 
   public HMSClientPool getHMSClient() {
@@ -279,11 +279,11 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
    *
    * <ul>
    *   <li>1、call getTableObjectsByName to get all Table objects of database
-   *   <li>2、filter hive tables whose properties don't have arctic table flag
+   *   <li>2、filter hive tables whose properties don't have mixed-hive table flag
    * </ul>
    *
    * we don't do cache here because we create/drop table through engine (like spark) connector, they
-   * have another ArcticHiveCatalog instance。 we can't find a easy way to update cache.
+   * have another MixedHiveCatalog instance。 we can't find a easy way to update cache.
    *
    * @param database
    * @return
@@ -299,7 +299,7 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
             List<org.apache.hadoop.hive.metastore.api.Table> hiveTables =
                 client.getTableObjectsByName(database, tableNames);
             LOG.info("call getTableObjectsByName cost {} ms", System.currentTimeMillis() - start);
-            // filter hive tables whose properties don't have arctic table flag
+            // filter hive tables whose properties don't have mixed-hive table flag
             if (hiveTables != null && !hiveTables.isEmpty()) {
               List<TableIdentifier> loadResult =
                   hiveTables.stream()
@@ -344,7 +344,7 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
   @Override
   public MixedTable loadTable(TableIdentifier identifier) {
     validate(identifier);
-    TableMeta meta = getArcticTableMeta(identifier);
+    TableMeta meta = getMixedTableMeta(identifier);
     if (meta.getLocations() == null) {
       throw new IllegalStateException("load table failed, lack locations info");
     }
@@ -356,7 +356,7 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
     validate(identifier);
     TableMeta meta;
     try {
-      meta = getArcticTableMeta(identifier);
+      meta = getMixedTableMeta(identifier);
     } catch (NoSuchTableException e) {
       return false;
     }

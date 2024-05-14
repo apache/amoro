@@ -18,7 +18,7 @@
 
 package org.apache.amoro.hive.utils;
 
-import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
+import org.apache.amoro.hive.catalog.MixedHiveCatalog;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,12 +27,12 @@ public class CatalogUtil {
   private static final Logger LOG = LoggerFactory.getLogger(CatalogUtil.class);
 
   /**
-   * check arctic catalog is hive catalog
+   * check if the catalog is mixed-hive catalog
    *
-   * @param arcticCatalog target arctic catalog
-   * @return Whether hive catalog. true is hive catalog, false isn't hive catalog.
+   * @param mixedCatalog target mixed catalog
+   * @return Whether mixed-hive catalog.
    */
-  public static boolean isHiveCatalog(MixedFormatCatalog arcticCatalog) {
-    return arcticCatalog instanceof ArcticHiveCatalog;
+  public static boolean isMixedHiveCatalog(MixedFormatCatalog mixedCatalog) {
+    return mixedCatalog instanceof MixedHiveCatalog;
   }
 }

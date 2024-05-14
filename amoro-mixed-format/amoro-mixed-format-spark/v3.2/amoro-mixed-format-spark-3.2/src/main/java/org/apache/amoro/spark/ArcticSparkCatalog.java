@@ -137,7 +137,7 @@ public class ArcticSparkCatalog extends MixedSparkCatalogBase {
     Schema convertSchema;
     boolean useTimestampWithoutZoneInNewTables;
     SparkSession sparkSession = SparkSession.active();
-    if (CatalogUtil.isHiveCatalog(catalog)) {
+    if (CatalogUtil.isMixedHiveCatalog(catalog)) {
       useTimestampWithoutZoneInNewTables = true;
     } else {
       useTimestampWithoutZoneInNewTables =

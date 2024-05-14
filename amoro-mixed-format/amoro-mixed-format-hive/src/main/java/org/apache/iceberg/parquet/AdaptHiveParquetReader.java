@@ -73,7 +73,7 @@ public class AdaptHiveParquetReader<T> extends CloseableGroup implements Closeab
 
   private AdaptHiveReadConf<T> init() {
     if (conf == null) {
-      // Change For Arctic
+      // Change for mixed-hive table ⬇
       AdaptHiveReadConf<T> adaptHiveReadConf =
           new AdaptHiveReadConf<>(
               input,
@@ -86,7 +86,7 @@ public class AdaptHiveParquetReader<T> extends CloseableGroup implements Closeab
               reuseContainers,
               caseSensitive,
               null);
-      // Change For Arctic
+      // Change for mixed-hive table ⬆
       this.conf = adaptHiveReadConf.copy();
       return adaptHiveReadConf;
     }

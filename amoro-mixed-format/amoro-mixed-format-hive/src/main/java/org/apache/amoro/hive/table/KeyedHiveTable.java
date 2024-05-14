@@ -55,11 +55,11 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
       ChangeTable changeTable) {
     super(tableLocation, primaryKeySpec, baseTable, changeTable);
     this.hiveClient = hiveClient;
-    if (enableSyncHiveSchemaToArctic()) {
-      syncHiveSchemaToArctic();
+    if (enableSyncHiveSchemaToMixedTable()) {
+      syncHiveSchemaToMixedTable();
     }
-    if (enableSyncHiveDataToArctic()) {
-      syncHiveDataToArctic(false);
+    if (enableSyncHiveDataToMixedTable()) {
+      syncHiveDataToMixedTable(false);
     }
   }
 
@@ -76,11 +76,11 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
   @Override
   public void refresh() {
     super.refresh();
-    if (enableSyncHiveSchemaToArctic()) {
-      syncHiveSchemaToArctic();
+    if (enableSyncHiveSchemaToMixedTable()) {
+      syncHiveSchemaToMixedTable();
     }
-    if (enableSyncHiveDataToArctic()) {
-      syncHiveDataToArctic(false);
+    if (enableSyncHiveDataToMixedTable()) {
+      syncHiveDataToMixedTable(false);
     }
   }
 
@@ -90,7 +90,7 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
   }
 
   @Override
-  public boolean enableSyncHiveSchemaToArctic() {
+  public boolean enableSyncHiveSchemaToMixedTable() {
     return PropertyUtil.propertyAsBoolean(
         properties(),
         HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
@@ -98,12 +98,12 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
   }
 
   @Override
-  public void syncHiveSchemaToArctic() {
-    HiveMetaSynchronizer.syncHiveSchemaToArctic(this, hiveClient);
+  public void syncHiveSchemaToMixedTable() {
+    HiveMetaSynchronizer.syncHiveSchemaToMixedTable(this, hiveClient);
   }
 
   @Override
-  public boolean enableSyncHiveDataToArctic() {
+  public boolean enableSyncHiveDataToMixedTable() {
     return PropertyUtil.propertyAsBoolean(
         properties(),
         HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
@@ -111,8 +111,8 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
   }
 
   @Override
-  public void syncHiveDataToArctic(boolean force) {
-    HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient, force);
+  public void syncHiveDataToMixedTable(boolean force) {
+    HiveMetaSynchronizer.syncHiveDataToMixedTable(this, hiveClient, force);
   }
 
   @Override
@@ -151,7 +151,7 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     public HiveBaseInternalTable(
         TableIdentifier tableIdentifier,
         Table icebergTable,
-        AuthenticatedHadoopFileIO arcticFileIO,
+        AuthenticatedHadoopFileIO fileIO,
         String tableLocation,
         HMSClientPool hiveClient,
         Map<String, String> catalogProperties,
@@ -159,7 +159,7 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
       super(
           tableIdentifier,
           icebergTable,
-          arcticFileIO,
+          fileIO,
           tableLocation,
           hiveClient,
           catalogProperties,

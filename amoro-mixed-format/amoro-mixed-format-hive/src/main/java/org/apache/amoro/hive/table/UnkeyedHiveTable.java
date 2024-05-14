@@ -56,38 +56,31 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
   public UnkeyedHiveTable(
       TableIdentifier tableIdentifier,
       Table icebergTable,
-      AuthenticatedHadoopFileIO arcticFileIO,
+      AuthenticatedHadoopFileIO fileIO,
       String tableLocation,
       HMSClientPool hiveClient,
       Map<String, String> catalogProperties) {
-    this(
-        tableIdentifier,
-        icebergTable,
-        arcticFileIO,
-        tableLocation,
-        hiveClient,
-        catalogProperties,
-        true);
+    this(tableIdentifier, icebergTable, fileIO, tableLocation, hiveClient, catalogProperties, true);
   }
 
   public UnkeyedHiveTable(
       TableIdentifier tableIdentifier,
       Table icebergTable,
-      AuthenticatedHadoopFileIO arcticFileIO,
+      AuthenticatedHadoopFileIO fileIO,
       String tableLocation,
       HMSClientPool hiveClient,
       Map<String, String> catalogProperties,
       boolean syncHiveChange) {
-    super(tableIdentifier, icebergTable, arcticFileIO, catalogProperties);
-    this.fileIO = arcticFileIO;
+    super(tableIdentifier, icebergTable, fileIO, catalogProperties);
+    this.fileIO = fileIO;
     this.hiveClient = hiveClient;
     this.tableLocation = tableLocation;
     this.syncHiveChange = syncHiveChange;
-    if (enableSyncHiveSchemaToArctic()) {
-      syncHiveSchemaToArctic();
+    if (enableSyncHiveSchemaToMixedTable()) {
+      syncHiveSchemaToMixedTable();
     }
-    if (enableSyncHiveDataToArctic()) {
-      syncHiveDataToArctic(false);
+    if (enableSyncHiveDataToMixedTable()) {
+      syncHiveDataToMixedTable(false);
     }
   }
 
@@ -104,11 +97,11 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
   @Override
   public void refresh() {
     super.refresh();
-    if (enableSyncHiveSchemaToArctic()) {
-      syncHiveSchemaToArctic();
+    if (enableSyncHiveSchemaToMixedTable()) {
+      syncHiveSchemaToMixedTable();
     }
-    if (enableSyncHiveDataToArctic()) {
-      syncHiveDataToArctic(false);
+    if (enableSyncHiveDataToMixedTable()) {
+      syncHiveDataToMixedTable(false);
     }
   }
 
@@ -161,7 +154,7 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
   }
 
   @Override
-  public boolean enableSyncHiveSchemaToArctic() {
+  public boolean enableSyncHiveSchemaToMixedTable() {
     return syncHiveChange
         && PropertyUtil.propertyAsBoolean(
             properties(),
@@ -170,12 +163,12 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
   }
 
   @Override
-  public void syncHiveSchemaToArctic() {
-    HiveMetaSynchronizer.syncHiveSchemaToArctic(this, hiveClient);
+  public void syncHiveSchemaToMixedTable() {
+    HiveMetaSynchronizer.syncHiveSchemaToMixedTable(this, hiveClient);
   }
 
   @Override
-  public boolean enableSyncHiveDataToArctic() {
+  public boolean enableSyncHiveDataToMixedTable() {
     return syncHiveChange
         && PropertyUtil.propertyAsBoolean(
             properties(),
@@ -184,7 +177,7 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
   }
 
   @Override
-  public void syncHiveDataToArctic(boolean force) {
-    HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient, force);
+  public void syncHiveDataToMixedTable(boolean force) {
+    HiveMetaSynchronizer.syncHiveDataToMixedTable(this, hiveClient, force);
   }
 }

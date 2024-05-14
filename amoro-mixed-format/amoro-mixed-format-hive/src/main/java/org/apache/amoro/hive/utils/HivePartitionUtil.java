@@ -131,7 +131,7 @@ public class HivePartitionUtil {
   /**
    * Gets all partitions object of the Hive table.
    *
-   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param hiveClient Hive client from MixedHiveCatalog
    * @param tableIdentifier A table identifier
    * @return A List of Hive partition objects
    */
@@ -156,7 +156,7 @@ public class HivePartitionUtil {
   /**
    * Gets all partition names of the Hive table.
    *
-   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param hiveClient Hive client from MixedHiveCatalog
    * @param tableIdentifier A table identifier
    * @return A List of Hive partition names
    */
@@ -186,7 +186,7 @@ public class HivePartitionUtil {
   /**
    * Gets all partitions location of the Hive table.
    *
-   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param hiveClient Hive client from MixedHiveCatalog
    * @param tableIdentifier A table identifier
    * @return A List of Hive partition locations
    */
@@ -217,7 +217,7 @@ public class HivePartitionUtil {
   /**
    * Change the Hive partition location.
    *
-   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param hiveClient Hive client from MixedHiveCatalog
    * @param tableIdentifier A table identifier
    * @param partition A Hive partition name
    * @param newPath Target partition location

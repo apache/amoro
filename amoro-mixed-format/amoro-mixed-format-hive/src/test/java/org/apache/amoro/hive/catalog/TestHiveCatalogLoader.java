@@ -50,7 +50,7 @@ public class TestHiveCatalogLoader {
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     MixedFormatCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
-    Assert.assertTrue(loadCatalog instanceof ArcticHiveCatalog);
+    Assert.assertTrue(loadCatalog instanceof MixedHiveCatalog);
     TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
   }
 
@@ -63,7 +63,7 @@ public class TestHiveCatalogLoader {
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     MixedFormatCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
-    Assert.assertTrue(loadCatalog instanceof ArcticHiveCatalog);
+    Assert.assertTrue(loadCatalog instanceof MixedHiveCatalog);
     TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
   }
 

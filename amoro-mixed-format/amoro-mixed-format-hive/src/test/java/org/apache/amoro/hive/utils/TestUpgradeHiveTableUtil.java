@@ -22,9 +22,9 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.CatalogTestBase;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.TestHMS;
-import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
+import org.apache.amoro.hive.catalog.MixedHiveCatalog;
 import org.apache.amoro.hive.table.UnkeyedHiveTable;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.table.MixedTable;
@@ -135,10 +135,7 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
   @Test
   public void upgradeHiveTable() throws Exception {
     UpgradeHiveTableUtil.upgradeHiveTable(
-        (ArcticHiveCatalog) getMixedFormatCatalog(),
-        identifier,
-        new ArrayList<>(),
-        new HashMap<>());
+        (MixedHiveCatalog) getMixedFormatCatalog(), identifier, new ArrayList<>(), new HashMap<>());
     MixedTable table = getMixedFormatCatalog().loadTable(identifier);
     UnkeyedHiveTable baseTable =
         table.isKeyedTable()
@@ -147,7 +144,7 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
     if (table.spec().isPartitioned()) {
       List<Partition> partitions =
           HivePartitionUtil.getHiveAllPartitions(
-              ((ArcticHiveCatalog) getMixedFormatCatalog()).getHMSClient(), table.id());
+              ((MixedHiveCatalog) getMixedFormatCatalog()).getHMSClient(), table.id());
       for (Partition partition : partitions) {
         StructLike partitionData =
             HivePartitionUtil.buildPartitionData(partition.getValues(), table.spec());

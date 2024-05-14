@@ -37,7 +37,7 @@ import java.util.HashMap;
 
 /**
  * Impala may write string type column with binary value in parquet file, which is okay for Hive
- * readers, Arctic need to support it too for mixed-hive format tables.
+ * readers, We need to support it too for mixed-hive format tables.
  */
 public class TestImpalaParquet {
 

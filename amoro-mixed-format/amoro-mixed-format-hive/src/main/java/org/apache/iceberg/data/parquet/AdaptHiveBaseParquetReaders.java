@@ -295,13 +295,13 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
         case FIXED_LEN_BYTE_ARRAY:
           return new FixedReader(desc);
         case BINARY:
-          // Change For Arctic ⬇
+          // Change for mixed-hive table ⬇
           if (expected == Types.StringType.get()) {
             return new ParquetValueReaders.StringReader(desc);
           } else {
             return new ParquetValueReaders.BytesReader(desc);
           }
-          // Change For Arctic ⬆
+          // Change for mixed-hive table ⬆
         case INT32:
           if (expected.typeId() == org.apache.iceberg.types.Type.TypeID.LONG) {
             return new ParquetValueReaders.IntAsLongReader(desc);
@@ -318,7 +318,7 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
         case INT64:
         case DOUBLE:
           return new ParquetValueReaders.UnboxedReader<>(desc);
-          // Change For Arctic ⬇
+          // Change for mixed-hive table ⬇
         case INT96:
           // Impala & Spark used to write timestamps as INT96 without a logical type. For backwards
           // compatibility we try to read INT96 as timestamps.
@@ -328,7 +328,7 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
           } else {
             return new TimestampIntWithOutTZ96Reader(desc);
           }
-          // Change For Arctic ⬆
+          // Change for mixed-hive table ⬆
         default:
           throw new UnsupportedOperationException("Unsupported type: " + primitive);
       }
@@ -376,7 +376,7 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
     }
   }
 
-  // Change For Arctic ⬇
+  // Change for mixed-hive table ⬇
   private static class TimestampIntWithOutTZ96Reader
       extends ParquetValueReaders.PrimitiveReader<LocalDateTime> {
     private static final long UNIX_EPOCH_JULIAN = 2_440_588L;
@@ -419,7 +419,7 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
           .atOffset(ZoneOffset.UTC);
     }
   }
-  // Change For Arctic ⬆
+  // Change for mixed-hive table ⬆
 
   private static class TimestamptzReader
       extends ParquetValueReaders.PrimitiveReader<OffsetDateTime> {

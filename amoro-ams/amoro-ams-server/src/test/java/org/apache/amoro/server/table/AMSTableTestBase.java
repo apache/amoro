@@ -28,7 +28,7 @@ import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.catalog.MixedTables;
 import org.apache.amoro.hive.TestHMS;
-import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
+import org.apache.amoro.hive.catalog.MixedHiveCatalog;
 import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
@@ -195,8 +195,8 @@ public class AMSTableTestBase extends TableServiceTestBase {
     // only create mixed hive table here !
     catalogMeta.putToCatalogProperties(
         CatalogMetaProperties.TABLE_FORMATS, TableFormat.MIXED_HIVE.name());
-    ArcticHiveCatalog catalog =
-        (ArcticHiveCatalog)
+    MixedHiveCatalog catalog =
+        (MixedHiveCatalog)
             CatalogLoader.createCatalog(
                 catalogMeta.getCatalogName(),
                 catalogMeta.getCatalogType(),
