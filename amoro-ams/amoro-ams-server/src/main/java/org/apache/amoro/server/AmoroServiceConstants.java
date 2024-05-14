@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server;
 
-public class ArcticServiceConstants {
+public class AmoroServiceConstants {
 
   public static final long INVALID_TIME = 0;
 

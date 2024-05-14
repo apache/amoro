@@ -20,7 +20,7 @@ package org.apache.amoro.server.table;
 
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.api.resource.ResourceGroup;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
@@ -38,7 +38,7 @@ public abstract class TableServiceTestBase {
   @BeforeClass
   public static void initTableService() {
     Configurations configurations = new Configurations();
-    configurations.set(ArcticManagementConf.OPTIMIZER_HB_TIMEOUT, 800L);
+    configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, 800L);
     TABLE_SERVICE = new DefaultTableService(new Configurations());
     OPTIMIZING_SERVICE = new DefaultOptimizingService(configurations, TABLE_SERVICE);
     TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());

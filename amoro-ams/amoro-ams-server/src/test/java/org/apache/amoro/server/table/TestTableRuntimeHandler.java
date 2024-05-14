@@ -78,7 +78,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     createTable();
     ServerTableIdentifier createTableId = tableService().listManagedTables().get(0);
     Assert.assertEquals(1, handler.getAddedTables().size());
-    validateArcticTable(handler.getAddedTables().get(0).first());
+    validateMixedTable(handler.getAddedTables().get(0).first());
     validateTableRuntime(handler.getAddedTables().get(0).second());
     tableService.dispose();
     MetricManager.dispose();

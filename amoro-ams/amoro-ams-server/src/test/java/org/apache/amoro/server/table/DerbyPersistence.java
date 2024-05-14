@@ -19,7 +19,7 @@
 package org.apache.amoro.server.table;
 
 import org.apache.amoro.api.config.Configurations;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -48,10 +48,10 @@ public class DerbyPersistence extends ExternalResource {
       String derbyFilePath = SINGLETON_FOLDER.newFolder("derby").getPath();
       String derbyUrl = String.format("jdbc:derby:%s/derby;create=true", derbyFilePath);
       Configurations configurations = new Configurations();
-      configurations.set(ArcticManagementConf.DB_CONNECTION_URL, derbyUrl);
-      configurations.set(ArcticManagementConf.DB_TYPE, ArcticManagementConf.DB_TYPE_DERBY);
+      configurations.set(AmoroManagementConf.DB_CONNECTION_URL, derbyUrl);
+      configurations.set(AmoroManagementConf.DB_TYPE, AmoroManagementConf.DB_TYPE_DERBY);
       configurations.set(
-          ArcticManagementConf.DB_DRIVER_CLASS_NAME, "org.apache.derby.jdbc.EmbeddedDriver");
+          AmoroManagementConf.DB_DRIVER_CLASS_NAME, "org.apache.derby.jdbc.EmbeddedDriver");
       SqlSessionFactoryProvider.getInstance().init(configurations);
       LOG.info("Initialized derby persistent with url: {}", derbyUrl);
       Runtime.getRuntime()

@@ -28,7 +28,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -55,8 +55,8 @@ public class CatalogBuilder {
           CATALOG_TYPE_AMS, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
 
   private static String getAmsURI(Configurations serviceConfig) {
-    String host = serviceConfig.getString(ArcticManagementConf.SERVER_EXPOSE_HOST);
-    Integer port = serviceConfig.getInteger(ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT);
+    String host = serviceConfig.getString(AmoroManagementConf.SERVER_EXPOSE_HOST);
+    Integer port = serviceConfig.getInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT);
     return String.format("thrift://%s:%d", host, port);
   }
 

@@ -19,7 +19,7 @@
 package org.apache.amoro.server.persistence;
 
 import org.apache.amoro.api.config.Configurations;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.persistence.mapper.ApiTokensMapper;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
@@ -71,19 +71,19 @@ public class SqlSessionFactoryProvider {
 
   public void init(Configurations config) {
     BasicDataSource dataSource = new BasicDataSource();
-    dataSource.setUrl(config.getString(ArcticManagementConf.DB_CONNECTION_URL));
-    dataSource.setDriverClassName(config.getString(ArcticManagementConf.DB_DRIVER_CLASS_NAME));
-    dbType = config.getString(ArcticManagementConf.DB_TYPE);
-    if (ArcticManagementConf.DB_TYPE_MYSQL.equals(dbType)
-        || ArcticManagementConf.DB_TYPE_POSTGRES.equals(dbType)) {
-      dataSource.setUsername(config.getString(ArcticManagementConf.DB_USER_NAME));
-      dataSource.setPassword(config.getString(ArcticManagementConf.DB_PASSWORD));
+    dataSource.setUrl(config.getString(AmoroManagementConf.DB_CONNECTION_URL));
+    dataSource.setDriverClassName(config.getString(AmoroManagementConf.DB_DRIVER_CLASS_NAME));
+    dbType = config.getString(AmoroManagementConf.DB_TYPE);
+    if (AmoroManagementConf.DB_TYPE_MYSQL.equals(dbType)
+        || AmoroManagementConf.DB_TYPE_POSTGRES.equals(dbType)) {
+      dataSource.setUsername(config.getString(AmoroManagementConf.DB_USER_NAME));
+      dataSource.setPassword(config.getString(AmoroManagementConf.DB_PASSWORD));
     }
     dataSource.setDefaultAutoCommit(false);
-    dataSource.setMaxTotal(config.getInteger(ArcticManagementConf.DB_CONNECT_MAX_TOTAL));
-    dataSource.setMaxIdle(config.getInteger(ArcticManagementConf.DB_CONNECT_MAX_IDLE));
+    dataSource.setMaxTotal(config.getInteger(AmoroManagementConf.DB_CONNECT_MAX_TOTAL));
+    dataSource.setMaxIdle(config.getInteger(AmoroManagementConf.DB_CONNECT_MAX_IDLE));
     dataSource.setMinIdle(0);
-    dataSource.setMaxWaitMillis(config.getLong(ArcticManagementConf.DB_CONNECT_MAX_WAIT_MILLIS));
+    dataSource.setMaxWaitMillis(config.getLong(AmoroManagementConf.DB_CONNECT_MAX_WAIT_MILLIS));
     dataSource.setLogAbandoned(true);
     dataSource.setRemoveAbandonedOnBorrow(true);
     dataSource.setRemoveAbandonedTimeout(60);
@@ -123,20 +123,20 @@ public class SqlSessionFactoryProvider {
    * @param config
    */
   private void createTablesIfNeed(Configurations config) {
-    String dbTypeConfig = config.getString(ArcticManagementConf.DB_TYPE);
+    String dbTypeConfig = config.getString(AmoroManagementConf.DB_TYPE);
     String query = "";
 
     try (SqlSession sqlSession = get().openSession(true);
         Connection connection = sqlSession.getConnection();
         Statement statement = connection.createStatement()) {
-      if (ArcticManagementConf.DB_TYPE_DERBY.equals(dbTypeConfig)) {
+      if (AmoroManagementConf.DB_TYPE_DERBY.equals(dbTypeConfig)) {
         query = "SELECT 1 FROM SYS.SYSTABLES WHERE TABLENAME = 'CATALOG_METADATA'";
-      } else if (ArcticManagementConf.DB_TYPE_MYSQL.equals(dbTypeConfig)) {
+      } else if (AmoroManagementConf.DB_TYPE_MYSQL.equals(dbTypeConfig)) {
         query =
             String.format(
                 "SELECT 1 FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'",
                 connection.getCatalog(), "catalog_metadata");
-      } else if (ArcticManagementConf.DB_TYPE_POSTGRES.equals(dbTypeConfig)) {
+      } else if (AmoroManagementConf.DB_TYPE_POSTGRES.equals(dbTypeConfig)) {
         query =
             String.format(
                 "SELECT 1 FROM information_schema.tables WHERE table_schema = %s AND table_name = '%s'",
@@ -158,11 +158,11 @@ public class SqlSessionFactoryProvider {
 
   private URI getInitSqlScriptPath(String type) throws URISyntaxException {
     String scriptPath = null;
-    if (type.equals(ArcticManagementConf.DB_TYPE_MYSQL)) {
+    if (type.equals(AmoroManagementConf.DB_TYPE_MYSQL)) {
       scriptPath = MYSQL_INIT_SQL_SCRIPT;
-    } else if (type.equals(ArcticManagementConf.DB_TYPE_DERBY)) {
+    } else if (type.equals(AmoroManagementConf.DB_TYPE_DERBY)) {
       scriptPath = DERBY_INIT_SQL_SCRIPT;
-    } else if (type.equals(ArcticManagementConf.DB_TYPE_POSTGRES)) {
+    } else if (type.equals(AmoroManagementConf.DB_TYPE_POSTGRES)) {
       scriptPath = POSTGRES_INIT_SQL_SCRIPT;
     }
     URL scriptUrl = ClassLoader.getSystemResource(scriptPath);

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.exception;
 
-public class UndefinedException extends ArcticRuntimeException {
+public class UndefinedException extends AmoroRuntimeException {
   public UndefinedException(Throwable throwable) {
     super(throwable);
   }

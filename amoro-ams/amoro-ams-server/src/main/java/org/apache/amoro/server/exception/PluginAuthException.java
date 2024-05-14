@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.exception;
 
-public class PluginAuthException extends ArcticRuntimeException {
+public class PluginAuthException extends AmoroRuntimeException {
 
   public PluginAuthException(String message) {
     super(message);

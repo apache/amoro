@@ -21,7 +21,7 @@ package org.apache.amoro.server.exception;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 
-public class IllegalTaskStateException extends ArcticRuntimeException {
+public class IllegalTaskStateException extends AmoroRuntimeException {
 
   private final TaskRuntime.Status preStatus;
   private final TaskRuntime.Status targetStatus;

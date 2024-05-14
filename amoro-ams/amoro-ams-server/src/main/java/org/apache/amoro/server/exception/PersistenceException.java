@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.exception;
 
-public class PersistenceException extends ArcticRuntimeException {
+public class PersistenceException extends AmoroRuntimeException {
   public PersistenceException(String message, Throwable cause) {
     super(message, cause);
   }

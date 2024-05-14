@@ -20,7 +20,7 @@ package org.apache.amoro.server.dashboard.controller;
 
 import io.javalin.http.Context;
 import org.apache.amoro.api.config.Configurations;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 
 import java.io.Serializable;
@@ -33,8 +33,8 @@ public class LoginController {
   private final String adminPassword;
 
   public LoginController(Configurations serviceConfig) {
-    adminUser = serviceConfig.get(ArcticManagementConf.ADMIN_USERNAME);
-    adminPassword = serviceConfig.get(ArcticManagementConf.ADMIN_PASSWORD);
+    adminUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
+    adminPassword = serviceConfig.get(AmoroManagementConf.ADMIN_PASSWORD);
   }
 
   /** Get current user. */

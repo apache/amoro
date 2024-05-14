@@ -24,7 +24,7 @@ import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.resource.ResourceGroup;
 import org.apache.amoro.optimizing.RewriteFilesInput;
-import org.apache.amoro.server.ArcticServiceConstants;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.exception.OptimizingClosedException;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
@@ -118,7 +118,7 @@ public class OptimizingQueue extends PersistentBase {
 
     if (tableRuntime.isOptimizingEnabled()) {
       tableRuntime.resetTaskQuotas(
-          System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
+          System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME);
       if (!tableRuntime.getOptimizingStatus().isProcessing()) {
         scheduler.addTable(tableRuntime);
       } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
@@ -143,7 +143,7 @@ public class OptimizingQueue extends PersistentBase {
           optimizerGroup.getName(),
           tableRuntime.getTableIdentifier());
       tableRuntime.resetTaskQuotas(
-          System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
+          System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME);
       scheduler.addTable(tableRuntime);
     }
   }
@@ -349,7 +349,7 @@ public class OptimizingQueue extends PersistentBase {
     private final Lock lock = new ReentrantLock();
     private volatile Status status = OptimizingProcess.Status.RUNNING;
     private volatile String failedReason;
-    private long endTime = ArcticServiceConstants.INVALID_TIME;
+    private long endTime = AmoroServiceConstants.INVALID_TIME;
     private Map<String, Long> fromSequence = Maps.newHashMap();
     private Map<String, Long> toSequence = Maps.newHashMap();
     private boolean hasCommitted = false;
@@ -495,7 +495,7 @@ public class OptimizingQueue extends PersistentBase {
     @Override
     public long getDuration() {
       long dur =
-          endTime == ArcticServiceConstants.INVALID_TIME
+          endTime == AmoroServiceConstants.INVALID_TIME
               ? System.currentTimeMillis() - planTime
               : endTime - planTime;
       return Math.max(0, dur);

@@ -62,9 +62,9 @@ public class AmsEnvironment {
   private static final Logger LOG = LoggerFactory.getLogger(AmsEnvironment.class);
   private static AmsEnvironment integrationInstances = null;
   private final String rootPath;
-  private static final String DEFAULT_ROOT_PATH = "/tmp/arctic_integration";
+  private static final String DEFAULT_ROOT_PATH = "/tmp/amoro_integration";
   private static final String OPTIMIZE_GROUP = "default";
-  private final ArcticServiceContainer arcticService;
+  private final AmoroServiceContainer serviceContainer;
   private Configurations serviceConfig;
   private DefaultTableService tableService;
   private final AtomicBoolean amsExit;
@@ -119,7 +119,7 @@ public class AmsEnvironment {
     System.setProperty(Environments.AMORO_HOME, rootPath);
     System.setProperty("derby.init.sql.dir", path + "../classes/sql/derby/");
     amsExit = new AtomicBoolean(false);
-    arcticService = new ArcticServiceContainer();
+    serviceContainer = new AmoroServiceContainer();
     TemporaryFolder hiveDir = new TemporaryFolder();
     hiveDir.create();
     testHMS = new HMSMockServer(hiveDir.newFile());
@@ -137,8 +137,8 @@ public class AmsEnvironment {
     testHMS.start();
     startAms();
     DynFields.UnboundField<DefaultTableService> amsTableServiceField =
-        DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "tableService").build();
-    tableService = amsTableServiceField.bind(arcticService).get();
+        DynFields.builder().hiddenImpl(AmoroServiceContainer.class, "tableService").build();
+    tableService = amsTableServiceField.bind(serviceContainer).get();
     DynFields.UnboundField<CompletableFuture<Boolean>> tableServiceField =
         DynFields.builder().hiddenImpl(DefaultTableService.class, "initialized").build();
     boolean tableServiceIsStart = false;
@@ -169,8 +169,8 @@ public class AmsEnvironment {
     }
 
     stopOptimizer();
-    if (this.arcticService != null) {
-      this.arcticService.dispose();
+    if (this.serviceContainer != null) {
+      this.serviceContainer.dispose();
     }
     testHMS.stop();
     MoreFiles.deleteRecursively(Paths.get(rootPath), RecursiveDeleteOption.ALLOW_INSECURE);
@@ -181,15 +181,15 @@ public class AmsEnvironment {
   }
 
   public void createDatabaseIfNotExists(String catalog, String database) {
-    MixedFormatCatalog arcticCatalog = catalogs.get(catalog);
-    if (arcticCatalog.listDatabases().contains(database)) {
+    MixedFormatCatalog mixedCatalog = catalogs.get(catalog);
+    if (mixedCatalog.listDatabases().contains(database)) {
       return;
     }
-    arcticCatalog.createDatabase(database);
+    mixedCatalog.createDatabase(database);
   }
 
-  public ArcticServiceContainer serviceContainer() {
-    return this.arcticService;
+  public AmoroServiceContainer serviceContainer() {
+    return this.serviceContainer;
   }
 
   public boolean tableExist(TableIdentifier tableIdentifier) {
@@ -276,7 +276,7 @@ public class AmsEnvironment {
     if (optimizingStarted) {
       return;
     }
-    OptimizerManager optimizerManager = arcticService.getOptimizingService();
+    OptimizerManager optimizerManager = serviceContainer.getOptimizingService();
     optimizerManager.createResourceGroup(
         new ResourceGroup.Builder("default", "localContainer")
             .addProperty("memory", "1024")
@@ -296,9 +296,9 @@ public class AmsEnvironment {
 
   public void stopOptimizer() {
     DynFields.UnboundField<DefaultOptimizingService> field =
-        DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "optimizingService").build();
+        DynFields.builder().hiddenImpl(AmoroServiceContainer.class, "optimizingService").build();
     field
-        .bind(arcticService)
+        .bind(serviceContainer)
         .get()
         .listOptimizers()
         .forEach(
@@ -331,17 +331,17 @@ public class AmsEnvironment {
                     genThriftBindPort();
                     DynFields.UnboundField<Configurations> field =
                         DynFields.builder()
-                            .hiddenImpl(ArcticServiceContainer.class, "serviceConfig")
+                            .hiddenImpl(AmoroServiceContainer.class, "serviceConfig")
                             .build();
-                    serviceConfig = field.bind(arcticService).get();
+                    serviceConfig = field.bind(serviceContainer).get();
                     serviceConfig.set(
-                        ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT, tableServiceBindPort);
+                        AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT, tableServiceBindPort);
                     serviceConfig.set(
-                        ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT,
+                        AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT,
                         optimizingServiceBindPort);
                     serviceConfig.set(
-                        ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL, 1000L);
-                    arcticService.startService();
+                        AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL, 1000L);
+                    serviceContainer.startService();
                     break;
                   } catch (TTransportException e) {
                     if (e.getCause() instanceof BindException) {
@@ -369,19 +369,19 @@ public class AmsEnvironment {
 
     DynFields.UnboundField<TServer> tableManagementServerField =
         DynFields.builder()
-            .hiddenImpl(ArcticServiceContainer.class, "tableManagementServer")
+            .hiddenImpl(AmoroServiceContainer.class, "tableManagementServer")
             .build();
     DynFields.UnboundField<TServer> optimizingServiceServerField =
         DynFields.builder()
-            .hiddenImpl(ArcticServiceContainer.class, "optimizingServiceServer")
+            .hiddenImpl(AmoroServiceContainer.class, "optimizingServiceServer")
             .build();
     while (true) {
       if (amsExit.get()) {
         LOG.error("ams exit");
         break;
       }
-      TServer tableManagementServer = tableManagementServerField.bind(arcticService).get();
-      TServer optimizingServiceServer = optimizingServiceServerField.bind(arcticService).get();
+      TServer tableManagementServer = tableManagementServerField.bind(serviceContainer).get();
+      TServer optimizingServiceServer = optimizingServiceServerField.bind(serviceContainer).get();
       if (tableManagementServer != null
           && tableManagementServer.isServing()
           && optimizingServiceServer != null

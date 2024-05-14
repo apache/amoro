@@ -30,7 +30,7 @@ import org.apache.amoro.server.dashboard.DashboardServer;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
-import org.apache.amoro.server.exception.ArcticRuntimeException;
+import org.apache.amoro.server.exception.AmoroRuntimeException;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
@@ -79,9 +79,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
-public class ArcticServiceContainer {
+public class AmoroServiceContainer {
 
-  public static final Logger LOG = LoggerFactory.getLogger(ArcticServiceContainer.class);
+  public static final Logger LOG = LoggerFactory.getLogger(AmoroServiceContainer.class);
 
   public static final String SERVER_CONFIG_FILENAME = "config.yaml";
 
@@ -94,14 +94,14 @@ public class ArcticServiceContainer {
   private TServer optimizingServiceServer;
   private Javalin httpServer;
 
-  public ArcticServiceContainer() throws Exception {
+  public AmoroServiceContainer() throws Exception {
     initConfig();
     haContainer = new HighAvailabilityContainer(serviceConfig);
   }
 
   public static void main(String[] args) {
     try {
-      ArcticServiceContainer service = new ArcticServiceContainer();
+      AmoroServiceContainer service = new AmoroServiceContainer();
       while (true) {
         try {
           service.waitLeaderShip();
@@ -261,7 +261,7 @@ public class ArcticServiceContainer {
   }
 
   private void startHttpService() {
-    int port = serviceConfig.getInteger(ArcticManagementConf.HTTP_SERVER_PORT);
+    int port = serviceConfig.getInteger(AmoroManagementConf.HTTP_SERVER_PORT);
     httpServer.start(port);
 
     LOG.info(
@@ -279,25 +279,25 @@ public class ArcticServiceContainer {
 
   private void initThriftService() throws TTransportException {
     LOG.info("Initializing thrift service...");
-    long maxMessageSize = serviceConfig.getLong(ArcticManagementConf.THRIFT_MAX_MESSAGE_SIZE);
-    int selectorThreads = serviceConfig.getInteger(ArcticManagementConf.THRIFT_SELECTOR_THREADS);
-    int workerThreads = serviceConfig.getInteger(ArcticManagementConf.THRIFT_WORKER_THREADS);
+    long maxMessageSize = serviceConfig.getLong(AmoroManagementConf.THRIFT_MAX_MESSAGE_SIZE);
+    int selectorThreads = serviceConfig.getInteger(AmoroManagementConf.THRIFT_SELECTOR_THREADS);
+    int workerThreads = serviceConfig.getInteger(AmoroManagementConf.THRIFT_WORKER_THREADS);
     int queueSizePerSelector =
-        serviceConfig.getInteger(ArcticManagementConf.THRIFT_QUEUE_SIZE_PER_THREAD);
-    String bindHost = serviceConfig.getString(ArcticManagementConf.SERVER_BIND_HOST);
+        serviceConfig.getInteger(AmoroManagementConf.THRIFT_QUEUE_SIZE_PER_THREAD);
+    String bindHost = serviceConfig.getString(AmoroManagementConf.SERVER_BIND_HOST);
 
     AmoroTableMetastore.Processor<AmoroTableMetastore.Iface> tableManagementProcessor =
         new AmoroTableMetastore.Processor<>(
             ThriftServiceProxy.createProxy(
                 AmoroTableMetastore.Iface.class,
                 new TableManagementService(tableService),
-                ArcticRuntimeException::normalizeCompatibly));
+                AmoroRuntimeException::normalizeCompatibly));
     tableManagementServer =
         createThriftServer(
             tableManagementProcessor,
             Constants.THRIFT_TABLE_SERVICE_NAME,
             bindHost,
-            serviceConfig.getInteger(ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT),
+            serviceConfig.getInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT),
             Executors.newFixedThreadPool(
                 workerThreads, getThriftThreadFactory(Constants.THRIFT_TABLE_SERVICE_NAME)),
             selectorThreads,
@@ -309,13 +309,13 @@ public class ArcticServiceContainer {
             ThriftServiceProxy.createProxy(
                 OptimizingService.Iface.class,
                 optimizingService,
-                ArcticRuntimeException::normalize));
+                AmoroRuntimeException::normalize));
     optimizingServiceServer =
         createThriftServer(
             optimizingProcessor,
             Constants.THRIFT_OPTIMIZING_SERVICE_NAME,
             bindHost,
-            serviceConfig.getInteger(ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT),
+            serviceConfig.getInteger(AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT),
             Executors.newCachedThreadPool(
                 getThriftThreadFactory(Constants.THRIFT_OPTIMIZING_SERVICE_NAME)),
             selectorThreads,
@@ -394,7 +394,7 @@ public class ArcticServiceContainer {
       Map<String, Object> systemConfig =
           JacksonUtil.getMap(
               yamlConfig,
-              ArcticManagementConf.SYSTEM_CONFIG,
+              AmoroManagementConf.SYSTEM_CONFIG,
               new TypeReference<Map<String, Object>>() {});
       Map<String, Object> expandedConfigurationMap = Maps.newHashMap();
       expandConfigMap(systemConfig, "", expandedConfigurationMap);
@@ -402,13 +402,13 @@ public class ArcticServiceContainer {
       // higher priority.
       expandedConfigurationMap.putAll(envConfig);
       serviceConfig = Configurations.fromObjectMap(expandedConfigurationMap);
-      ArcticManagementConfValidator.validateConfig(serviceConfig);
+      AmoroManagementConfValidator.validateConfig(serviceConfig);
       SqlSessionFactoryProvider.getInstance().init(serviceConfig);
     }
 
     private Map<String, Object> initEnvConfig() {
       LOG.info("initializing system env configuration...");
-      String prefix = ArcticManagementConf.SYSTEM_CONFIG.toUpperCase();
+      String prefix = AmoroManagementConf.SYSTEM_CONFIG.toUpperCase();
       return ConfigHelpers.convertConfigurationKeys(prefix, System.getenv());
     }
 
@@ -417,27 +417,27 @@ public class ArcticServiceContainer {
       int workerThreadPoolSize =
           Math.max(
               Runtime.getRuntime().availableProcessors(),
-              serviceConfig.getInteger(ArcticManagementConf.TABLE_MANIFEST_IO_THREAD_COUNT));
+              serviceConfig.getInteger(AmoroManagementConf.TABLE_MANIFEST_IO_THREAD_COUNT));
       System.setProperty(
           SystemProperties.WORKER_THREAD_POOL_SIZE_PROP, String.valueOf(workerThreadPoolSize));
     }
 
     private void initContainerConfig() {
       LOG.info("initializing container configuration...");
-      JsonNode containers = yamlConfig.get(ArcticManagementConf.CONTAINER_LIST);
+      JsonNode containers = yamlConfig.get(AmoroManagementConf.CONTAINER_LIST);
       List<ContainerMetadata> containerList = new ArrayList<>();
       if (containers != null && containers.isArray()) {
         for (final JsonNode containerConfig : containers) {
           ContainerMetadata container =
               new ContainerMetadata(
-                  containerConfig.get(ArcticManagementConf.CONTAINER_NAME).asText(),
-                  containerConfig.get(ArcticManagementConf.CONTAINER_IMPL).asText());
+                  containerConfig.get(AmoroManagementConf.CONTAINER_NAME).asText(),
+                  containerConfig.get(AmoroManagementConf.CONTAINER_IMPL).asText());
 
           Map<String, String> containerProperties =
               new HashMap<>(
                   JacksonUtil.getMap(
                       containerConfig,
-                      ArcticManagementConf.CONTAINER_PROPERTIES,
+                      AmoroManagementConf.CONTAINER_PROPERTIES,
                       new TypeReference<Map<String, String>>() {}));
 
           // put properties in config.yaml first.

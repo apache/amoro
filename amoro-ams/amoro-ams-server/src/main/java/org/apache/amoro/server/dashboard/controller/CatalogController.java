@@ -52,7 +52,7 @@ import io.javalin.http.Context;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.dashboard.PlatformFileManager;
@@ -188,7 +188,7 @@ public class CatalogController {
     List<ImmutableMap<String, String>> catalogTypes = new ArrayList<>();
     String valueKey = "value";
     String displayKey = "display";
-    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_AMS, displayKey, "Arctic Metastore"));
+    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_AMS, displayKey, "Amoro Metastore"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HIVE, displayKey, "Hive Metastore"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HADOOP, displayKey, "Hadoop"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_GLUE, displayKey, "Glue"));
@@ -308,7 +308,7 @@ public class CatalogController {
       storageConfig.put(
           STORAGE_CONFIGS_KEY_CORE_SITE,
           new ConfigFileItem(
-              ArcticManagementConf.CATALOG_CORE_SITE + ".xml",
+              AmoroManagementConf.CATALOG_CORE_SITE + ".xml",
               constructCatalogConfigFileUrl(
                   catalogName,
                   CONFIG_TYPE_STORAGE,
@@ -317,7 +317,7 @@ public class CatalogController {
       storageConfig.put(
           STORAGE_CONFIGS_KEY_HDFS_SITE,
           new ConfigFileItem(
-              ArcticManagementConf.CATALOG_HDFS_SITE + ".xml",
+              AmoroManagementConf.CATALOG_HDFS_SITE + ".xml",
               constructCatalogConfigFileUrl(
                   catalogName,
                   CONFIG_TYPE_STORAGE,
@@ -326,7 +326,7 @@ public class CatalogController {
       storageConfig.put(
           STORAGE_CONFIGS_KEY_HIVE_SITE,
           new ConfigFileItem(
-              ArcticManagementConf.CATALOG_HIVE_SITE + ".xml",
+              AmoroManagementConf.CATALOG_HIVE_SITE + ".xml",
               constructCatalogConfigFileUrl(
                   catalogName,
                   CONFIG_TYPE_STORAGE,

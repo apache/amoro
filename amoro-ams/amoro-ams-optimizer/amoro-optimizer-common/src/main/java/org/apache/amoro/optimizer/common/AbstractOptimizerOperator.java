@@ -67,10 +67,10 @@ public class AbstractOptimizerOperator implements Serializable {
 
   private boolean shouldRetryLater(Throwable t) {
     if (t instanceof AmoroException) {
-      AmoroException arcticException = (AmoroException) t;
+      AmoroException amoroException = (AmoroException) t;
       // Call ams again when got a persistence/undefined error
-      return ErrorCodes.PERSISTENCE_ERROR_CODE == arcticException.getErrorCode()
-          || ErrorCodes.UNDEFINED_ERROR_CODE == arcticException.getErrorCode();
+      return ErrorCodes.PERSISTENCE_ERROR_CODE == amoroException.getErrorCode()
+          || ErrorCodes.UNDEFINED_ERROR_CODE == amoroException.getErrorCode();
     } else {
       // Call ams again when got an unexpected error
       return true;

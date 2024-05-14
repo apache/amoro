@@ -19,7 +19,7 @@
 package org.apache.amoro.server.table.executor;
 
 import org.apache.amoro.api.config.Configurations;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.table.TableManager;
 
 public class AsyncTableExecutors {
@@ -41,54 +41,54 @@ public class AsyncTableExecutors {
   }
 
   public void setup(TableManager tableManager, Configurations conf) {
-    if (conf.getBoolean(ArcticManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
+    if (conf.getBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
       this.snapshotsExpiringExecutor =
           new SnapshotsExpiringExecutor(
-              tableManager, conf.getInteger(ArcticManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT));
+              tableManager, conf.getInteger(AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT));
     }
-    if (conf.getBoolean(ArcticManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
+    if (conf.getBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
       this.orphanFilesCleaningExecutor =
           new OrphanFilesCleaningExecutor(
-              tableManager, conf.getInteger(ArcticManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT));
+              tableManager, conf.getInteger(AmoroManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT));
     }
-    if (conf.getBoolean(ArcticManagementConf.CLEAN_DANGLING_DELETE_FILES_ENABLED)) {
+    if (conf.getBoolean(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_ENABLED)) {
       this.danglingDeleteFilesCleaningExecutor =
           new DanglingDeleteFilesCleaningExecutor(
               tableManager,
-              conf.getInteger(ArcticManagementConf.CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT));
+              conf.getInteger(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT));
     }
     this.optimizingCommitExecutor =
         new OptimizingCommitExecutor(
-            tableManager, conf.getInteger(ArcticManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
+            tableManager, conf.getInteger(AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
     this.optimizingExpiringExecutor =
         new OptimizingExpiringExecutor(
             tableManager,
-            conf.getInteger(ArcticManagementConf.OPTIMIZING_RUNTIME_DATA_KEEP_DAYS),
-            conf.getInteger(ArcticManagementConf.OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL_HOURS));
+            conf.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_KEEP_DAYS),
+            conf.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL_HOURS));
     this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableManager);
-    if (conf.getBoolean(ArcticManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
+    if (conf.getBoolean(AmoroManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
       this.hiveCommitSyncExecutor =
           new HiveCommitSyncExecutor(
-              tableManager, conf.getInteger(ArcticManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT));
+              tableManager, conf.getInteger(AmoroManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT));
     }
     this.tableRefreshingExecutor =
         new TableRuntimeRefreshExecutor(
             tableManager,
-            conf.getInteger(ArcticManagementConf.REFRESH_TABLES_THREAD_COUNT),
-            conf.getLong(ArcticManagementConf.REFRESH_TABLES_INTERVAL));
-    if (conf.getBoolean(ArcticManagementConf.AUTO_CREATE_TAGS_ENABLED)) {
+            conf.getInteger(AmoroManagementConf.REFRESH_TABLES_THREAD_COUNT),
+            conf.getLong(AmoroManagementConf.REFRESH_TABLES_INTERVAL));
+    if (conf.getBoolean(AmoroManagementConf.AUTO_CREATE_TAGS_ENABLED)) {
       this.tagsAutoCreatingExecutor =
           new TagsAutoCreatingExecutor(
               tableManager,
-              conf.getInteger(ArcticManagementConf.AUTO_CREATE_TAGS_THREAD_COUNT),
-              conf.getLong(ArcticManagementConf.AUTO_CREATE_TAGS_INTERVAL));
+              conf.getInteger(AmoroManagementConf.AUTO_CREATE_TAGS_THREAD_COUNT),
+              conf.getLong(AmoroManagementConf.AUTO_CREATE_TAGS_INTERVAL));
     }
-    if (conf.getBoolean(ArcticManagementConf.DATA_EXPIRATION_ENABLED)) {
+    if (conf.getBoolean(AmoroManagementConf.DATA_EXPIRATION_ENABLED)) {
       this.dataExpiringExecutor =
           new DataExpiringExecutor(
               tableManager,
-              conf.getInteger(ArcticManagementConf.DATA_EXPIRATION_THREAD_COUNT),
-              conf.get(ArcticManagementConf.DATA_EXPIRATION_INTERVAL));
+              conf.getInteger(AmoroManagementConf.DATA_EXPIRATION_THREAD_COUNT),
+              conf.get(AmoroManagementConf.DATA_EXPIRATION_INTERVAL));
     }
   }
 

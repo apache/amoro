@@ -32,7 +32,7 @@ import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.BlockerConflictException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
@@ -288,7 +288,7 @@ public class TestTableService extends AMSTableTestBase {
     Assert.assertEquals(getProperties().size() + 3, block.getProperties().size());
     getProperties()
         .forEach((key, value) -> Assert.assertEquals(block.getProperties().get(key), value));
-    long timeout = ArcticManagementConf.BLOCKER_TIMEOUT.defaultValue();
+    long timeout = AmoroManagementConf.BLOCKER_TIMEOUT.defaultValue();
     Assert.assertEquals(timeout + "", block.getProperties().get(RenewableBlocker.BLOCKER_TIMEOUT));
 
     Assert.assertEquals(
@@ -298,7 +298,7 @@ public class TestTableService extends AMSTableTestBase {
   }
 
   private void assertBlockerRenewed(Blocker block) {
-    long timeout = ArcticManagementConf.BLOCKER_TIMEOUT.defaultValue();
+    long timeout = AmoroManagementConf.BLOCKER_TIMEOUT.defaultValue();
     long actualTimeout =
         Long.parseLong(block.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY))
             - Long.parseLong(block.getProperties().get(RenewableBlocker.CREATE_TIME_PROPERTY));

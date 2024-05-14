@@ -26,7 +26,7 @@ import org.apache.amoro.api.config.TableConfiguration;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.PathInfo;
 import org.apache.amoro.io.SupportsFileSystemOperations;
-import org.apache.amoro.server.ArcticServiceConstants;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.utils.TableFileUtil;
@@ -202,13 +202,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
     // try to batch delete files
     int deletedFiles =
-        TableFileUtil.parallelDeleteFiles(
-            arcticFileIO(), expiredFiles, ThreadPools.getWorkerPool());
+        TableFileUtil.parallelDeleteFiles(fileIO(), expiredFiles, ThreadPools.getWorkerPool());
 
     parentDirectories.forEach(
         parent -> {
           try {
-            TableFileUtil.deleteEmptyDirectory(arcticFileIO(), parent, exclude);
+            TableFileUtil.deleteEmptyDirectory(fileIO(), parent, exclude);
           } catch (Exception e) {
             // Ignore exceptions to remove as many directories as possible
             LOG.warn("Fail to delete empty directory " + parent, e);
@@ -346,7 +345,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
         IcebergTableUtil.getAllStatisticsFilePath(table));
   }
 
-  protected AuthenticatedFileIO arcticFileIO() {
+  protected AuthenticatedFileIO fileIO() {
     return (AuthenticatedFileIO) table.io();
   }
 
@@ -354,7 +353,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     String dataLocation = table.location() + File.separator + DATA_FOLDER_NAME;
     int slated = 0, deleted = 0;
 
-    try (AuthenticatedFileIO io = arcticFileIO()) {
+    try (AuthenticatedFileIO io = fileIO()) {
       // listPrefix will not return the directory and the orphan file clean should clean the empty
       // dir.
       if (io.supportFileSystemOperations()) {
@@ -401,7 +400,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     String metadataLocation = table.location() + File.separator + METADATA_FOLDER_NAME;
     LOG.info("start orphan files clean in {}", metadataLocation);
 
-    try (AuthenticatedFileIO io = arcticFileIO()) {
+    try (AuthenticatedFileIO io = fileIO()) {
       if (io.supportPrefixOperations()) {
         SupportsPrefixOperations pio = io.asPrefixFileIO();
         Set<String> filesToDelete =
@@ -656,7 +655,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
       return CloseableIterable.empty();
     }
     long snapshotId = snapshot.snapshotId();
-    if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (snapshotId == AmoroServiceConstants.INVALID_SNAPSHOT_ID) {
       tasks = tableScan.planFiles();
     } else {
       tasks = tableScan.useSnapshot(snapshotId).planFiles();

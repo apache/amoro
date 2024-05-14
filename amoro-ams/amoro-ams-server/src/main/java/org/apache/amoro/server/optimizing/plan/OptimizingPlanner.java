@@ -21,7 +21,7 @@ package org.apache.amoro.server.optimizing.plan;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.TableTypeUtil;
-import org.apache.amoro.server.ArcticServiceConstants;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.TableRuntime;
@@ -128,7 +128,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     if (currentSnapshot instanceof KeyedTableSnapshot) {
       return ((KeyedTableSnapshot) currentSnapshot).changeSnapshotId();
     } else {
-      return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+      return AmoroServiceConstants.INVALID_SNAPSHOT_ID;
     }
   }
 
