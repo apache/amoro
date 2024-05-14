@@ -21,7 +21,7 @@ package org.apache.amoro.server.dashboard.utils;
 import org.apache.amoro.Constants;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.api.config.Configurations;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * AMSUtil provides utility methods for working with AMS (Arctic Management Service) related
+ * AMSUtil provides utility methods for working with AMS (Amoro Management Service) related
  * operations.
  */
 public class AmsUtil {
@@ -115,7 +115,7 @@ public class AmsUtil {
   public static InetAddress lookForBindHost(String prefix) {
     if (prefix.startsWith("0")) {
       throw new RuntimeException(
-          "config " + ArcticManagementConf.SERVER_EXPOSE_HOST.key() + " can't start with 0");
+          "config " + AmoroManagementConf.SERVER_EXPOSE_HOST.key() + " can't start with 0");
     }
     try {
       Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
@@ -136,22 +136,22 @@ public class AmsUtil {
   }
 
   public static String getAMSThriftAddress(Configurations conf, String serviceName) {
-    if (conf.getBoolean(ArcticManagementConf.HA_ENABLE)) {
+    if (conf.getBoolean(AmoroManagementConf.HA_ENABLE)) {
       return String.format(
           ZOOKEEPER_ADDRESS_FORMAT,
-          conf.getString(ArcticManagementConf.HA_ZOOKEEPER_ADDRESS),
-          conf.getString(ArcticManagementConf.HA_CLUSTER_NAME));
+          conf.getString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS),
+          conf.getString(AmoroManagementConf.HA_CLUSTER_NAME));
     } else {
       if (Constants.THRIFT_TABLE_SERVICE_NAME.equals(serviceName)) {
         return String.format(
             THRIFT_ADDRESS_FORMAT,
-            conf.getString(ArcticManagementConf.SERVER_EXPOSE_HOST),
-            conf.getInteger(ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT));
+            conf.getString(AmoroManagementConf.SERVER_EXPOSE_HOST),
+            conf.getInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT));
       } else if (Constants.THRIFT_OPTIMIZING_SERVICE_NAME.equals(serviceName)) {
         return String.format(
             THRIFT_ADDRESS_FORMAT,
-            conf.getString(ArcticManagementConf.SERVER_EXPOSE_HOST),
-            conf.getInteger(ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT));
+            conf.getString(AmoroManagementConf.SERVER_EXPOSE_HOST),
+            conf.getInteger(AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT));
       } else {
         throw new IllegalArgumentException(String.format("Unknown service name %s", serviceName));
       }

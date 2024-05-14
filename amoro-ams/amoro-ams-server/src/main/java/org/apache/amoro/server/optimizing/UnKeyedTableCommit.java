@@ -32,12 +32,13 @@ import org.apache.amoro.op.SnapshotSummary;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.properties.HiveTableProperties;
-import org.apache.amoro.server.ArcticServiceConstants;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.exception.OptimizingCommitException;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.ContentFiles;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -259,7 +260,7 @@ public class UnKeyedTableCommit {
     }
 
     RewriteFiles rewriteFiles = transaction.newRewrite();
-    if (targetSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (targetSnapshotId != AmoroServiceConstants.INVALID_SNAPSHOT_ID) {
       long sequenceNumber = table.asUnkeyedTable().snapshot(targetSnapshotId).sequenceNumber();
       rewriteFiles.validateFromSnapshot(targetSnapshotId).dataSequenceNumber(sequenceNumber);
     }
@@ -292,12 +293,7 @@ public class UnKeyedTableCommit {
   protected void correctHiveData(Set<DataFile> addedDataFiles, Set<DeleteFile> addedDeleteFiles)
       throws OptimizingCommitException {
     try {
-      UnkeyedTable baseArcticTable;
-      if (table.isKeyedTable()) {
-        baseArcticTable = table.asKeyedTable().baseTable();
-      } else {
-        baseArcticTable = table.asUnkeyedTable();
-      }
+      UnkeyedTable baseStore = MixedTableUtil.baseStore(table);
       LOG.warn(
           "Optimize commit table {} failed, give up commit and clear files in location.",
           table.id());
@@ -306,7 +302,7 @@ public class UnKeyedTableCommit {
       // and produce redundant data files in hive location.(don't produce DeleteFile)
       // minor produced files will be clean by orphan file clean
       Set<String> committedFilePath =
-          getCommittedDataFilesFromSnapshotId(baseArcticTable, targetSnapshotId);
+          getCommittedDataFilesFromSnapshotId(baseStore, targetSnapshotId);
       for (ContentFile<?> addedDataFile : addedDataFiles) {
         deleteUncommittedFile(committedFilePath, addedDataFile);
       }
@@ -351,11 +347,11 @@ public class UnKeyedTableCommit {
   private static Set<String> getCommittedDataFilesFromSnapshotId(
       UnkeyedTable table, Long snapshotId) {
     long currentSnapshotId = IcebergTableUtil.getSnapshotId(table, true);
-    if (currentSnapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (currentSnapshotId == AmoroServiceConstants.INVALID_SNAPSHOT_ID) {
       return Collections.emptySet();
     }
 
-    if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (snapshotId == AmoroServiceConstants.INVALID_SNAPSHOT_ID) {
       snapshotId = null;
     }
 

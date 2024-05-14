@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.optimizing.scan;
 
-import org.apache.amoro.server.ArcticServiceConstants;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.expressions.Expression;
@@ -38,7 +38,7 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
 
   @Override
   public CloseableIterable<FileScanResult> scan() {
-    if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (snapshotId == AmoroServiceConstants.INVALID_SNAPSHOT_ID) {
       return CloseableIterable.empty();
     }
     return CloseableIterable.transform(

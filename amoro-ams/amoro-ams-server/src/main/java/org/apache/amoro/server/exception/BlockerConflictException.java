@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.exception;
 
-public class BlockerConflictException extends ArcticRuntimeException {
+public class BlockerConflictException extends AmoroRuntimeException {
 
   public BlockerConflictException(String message) {
     super(message);

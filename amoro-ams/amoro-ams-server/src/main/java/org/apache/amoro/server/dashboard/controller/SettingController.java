@@ -21,7 +21,7 @@ package org.apache.amoro.server.dashboard.controller;
 import io.javalin.http.Context;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.api.resource.ResourceGroup;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.OptimizerManager;
@@ -42,8 +42,8 @@ public class SettingController {
   private static final Set<String> MASK_CONFIGURATION_SET = Sets.newHashSet();
 
   static {
-    MASK_CONFIGURATION_SET.add(ArcticManagementConf.DB_PASSWORD.key());
-    MASK_CONFIGURATION_SET.add(ArcticManagementConf.ADMIN_PASSWORD.key());
+    MASK_CONFIGURATION_SET.add(AmoroManagementConf.DB_PASSWORD.key());
+    MASK_CONFIGURATION_SET.add(AmoroManagementConf.ADMIN_PASSWORD.key());
   }
 
   private final OptimizerManager optimizerManager;

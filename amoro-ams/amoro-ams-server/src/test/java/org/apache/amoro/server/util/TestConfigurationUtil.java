@@ -18,14 +18,14 @@
 
 package org.apache.amoro.server.util;
 
-import static org.apache.amoro.server.ArcticManagementConf.ADMIN_PASSWORD;
-import static org.apache.amoro.server.ArcticManagementConf.ADMIN_USERNAME;
-import static org.apache.amoro.server.ArcticManagementConf.DB_PASSWORD;
-import static org.apache.amoro.server.ArcticManagementConf.DB_USER_NAME;
-import static org.apache.amoro.server.ArcticManagementConf.SERVER_EXPOSE_HOST;
+import static org.apache.amoro.server.AmoroManagementConf.ADMIN_PASSWORD;
+import static org.apache.amoro.server.AmoroManagementConf.ADMIN_USERNAME;
+import static org.apache.amoro.server.AmoroManagementConf.DB_PASSWORD;
+import static org.apache.amoro.server.AmoroManagementConf.DB_USER_NAME;
+import static org.apache.amoro.server.AmoroManagementConf.SERVER_EXPOSE_HOST;
 
 import org.apache.amoro.api.config.ConfigHelpers;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -37,7 +37,7 @@ public class TestConfigurationUtil {
   @Test
   public void testConvertConfigurationKeys() {
     HashMap<String, String> dummyEnv = new HashMap<>(2);
-    String prefix = ArcticManagementConf.SYSTEM_CONFIG.toUpperCase();
+    String prefix = AmoroManagementConf.SYSTEM_CONFIG.toUpperCase();
     dummyEnv.put("AMS_DATABASE_USERNAME", "amoro");
     dummyEnv.put("AMS_DATABASE_PASSWORD", "1234567");
     dummyEnv.put("AMS_SERVER__EXPOSE__HOST", "127.0.0.1");

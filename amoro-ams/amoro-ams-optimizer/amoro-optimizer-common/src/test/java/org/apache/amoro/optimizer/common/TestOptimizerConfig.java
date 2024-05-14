@@ -28,7 +28,7 @@ public class TestOptimizerConfig {
 
   @Test
   public void testParseArguments() throws CmdLineException {
-    String cmd = "-a thrift://127.0.0.1:1260 -p 11 -g g1 -hb 2000 -eds -dsp /tmp/arctic -msz 512";
+    String cmd = "-a thrift://127.0.0.1:1260 -p 11 -g g1 -hb 2000 -eds -dsp /tmp/amoro -msz 512";
     String[] args = cmd.split(" ");
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
     Assert.assertEquals("thrift://127.0.0.1:1260", optimizerConfig.getAmsUrl());
@@ -36,7 +36,7 @@ public class TestOptimizerConfig {
     Assert.assertEquals("g1", optimizerConfig.getGroupName());
     Assert.assertEquals(2000, optimizerConfig.getHeartBeat());
     Assert.assertTrue(optimizerConfig.isExtendDiskStorage());
-    Assert.assertEquals("/tmp/arctic", optimizerConfig.getDiskStoragePath());
+    Assert.assertEquals("/tmp/amoro", optimizerConfig.getDiskStoragePath());
     Assert.assertEquals(512, optimizerConfig.getMemoryStorageSize());
   }
 

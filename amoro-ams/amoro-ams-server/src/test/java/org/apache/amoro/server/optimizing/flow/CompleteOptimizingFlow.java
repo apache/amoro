@@ -33,7 +33,7 @@ import org.apache.amoro.optimizing.IcebergRewriteExecutor;
 import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
-import org.apache.amoro.server.ArcticServiceConstants;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.KeyedTableCommit;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
@@ -238,7 +238,7 @@ public class CompleteOptimizingFlow {
     if (table.isKeyedTable()) {
       return IcebergTableUtil.getSnapshotId(table.asKeyedTable().changeTable(), false);
     } else {
-      return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+      return AmoroServiceConstants.INVALID_SNAPSHOT_ID;
     }
   }
 

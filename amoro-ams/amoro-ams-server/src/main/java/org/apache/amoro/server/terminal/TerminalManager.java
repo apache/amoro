@@ -24,7 +24,7 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.config.ConfigOptions;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.catalog.CatalogType;
 import org.apache.amoro.server.dashboard.model.LatestSessionInfo;
 import org.apache.amoro.server.dashboard.model.LogInfo;
@@ -83,9 +83,9 @@ public class TerminalManager {
   public TerminalManager(Configurations conf, TableService tableService) {
     this.serviceConfig = conf;
     this.tableService = tableService;
-    this.resultLimits = conf.getInteger(ArcticManagementConf.TERMINAL_RESULT_LIMIT);
-    this.stopOnError = conf.getBoolean(ArcticManagementConf.TERMINAL_STOP_ON_ERROR);
-    this.sessionTimeout = conf.getInteger(ArcticManagementConf.TERMINAL_SESSION_TIMEOUT);
+    this.resultLimits = conf.getInteger(AmoroManagementConf.TERMINAL_RESULT_LIMIT);
+    this.stopOnError = conf.getBoolean(AmoroManagementConf.TERMINAL_STOP_ON_ERROR);
+    this.sessionTimeout = conf.getInteger(AmoroManagementConf.TERMINAL_SESSION_TIMEOUT);
     this.sessionFactory = loadTerminalSessionFactory(conf);
     gcThread = new Thread(new SessionCleanTask());
     gcThread.setName("terminal-session-gc");
@@ -320,7 +320,7 @@ public class TerminalManager {
   }
 
   private TerminalSessionFactory loadTerminalSessionFactory(Configurations conf) {
-    String backend = conf.get(ArcticManagementConf.TERMINAL_BACKEND);
+    String backend = conf.get(AmoroManagementConf.TERMINAL_BACKEND);
     if (backend == null) {
       throw new IllegalArgumentException("lack terminal implement config.");
     }
@@ -334,7 +334,7 @@ public class TerminalManager {
         break;
       case "custom":
         Optional<String> customFactoryClz =
-            conf.getOptional(ArcticManagementConf.TERMINAL_SESSION_FACTORY);
+            conf.getOptional(AmoroManagementConf.TERMINAL_SESSION_FACTORY);
         if (!customFactoryClz.isPresent()) {
           throw new IllegalArgumentException(
               "terminal backend type is custom, but terminal session factory is not "
@@ -353,11 +353,11 @@ public class TerminalManager {
       throw new RuntimeException("failed to init session factory", e);
     }
 
-    String factoryPropertiesPrefix = ArcticManagementConf.TERMINAL_PREFIX + backend + ".";
+    String factoryPropertiesPrefix = AmoroManagementConf.TERMINAL_PREFIX + backend + ".";
     Configurations configuration = new Configurations();
 
     for (String key : conf.keySet()) {
-      if (!key.startsWith(ArcticManagementConf.TERMINAL_PREFIX)) {
+      if (!key.startsWith(AmoroManagementConf.TERMINAL_PREFIX)) {
         continue;
       }
       String value = conf.getValue(ConfigOptions.key(key).stringType().noDefaultValue());

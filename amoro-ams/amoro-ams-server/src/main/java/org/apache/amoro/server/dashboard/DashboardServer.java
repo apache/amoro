@@ -32,7 +32,7 @@ import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.http.staticfiles.StaticFileConfig;
 import org.apache.amoro.api.config.Configurations;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.dashboard.controller.CatalogController;
@@ -100,9 +100,9 @@ public class DashboardServer {
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
 
-    this.authType = serviceConfig.get(ArcticManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
-    this.basicAuthUser = serviceConfig.get(ArcticManagementConf.ADMIN_USERNAME);
-    this.basicAuthPassword = serviceConfig.get(ArcticManagementConf.ADMIN_PASSWORD);
+    this.authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
+    this.basicAuthUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
+    this.basicAuthPassword = serviceConfig.get(AmoroManagementConf.ADMIN_PASSWORD);
   }
 
   private String indexHtml = "";

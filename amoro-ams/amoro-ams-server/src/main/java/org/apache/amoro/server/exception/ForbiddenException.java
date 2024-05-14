@@ -19,7 +19,7 @@
 package org.apache.amoro.server.exception;
 
 /** forbiddenException */
-public class ForbiddenException extends ArcticRuntimeException {
+public class ForbiddenException extends AmoroRuntimeException {
   public ForbiddenException() {}
 
   public ForbiddenException(String message) {

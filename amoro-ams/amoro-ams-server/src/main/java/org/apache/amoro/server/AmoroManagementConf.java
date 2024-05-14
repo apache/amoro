@@ -25,7 +25,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
-public class ArcticManagementConf {
+public class AmoroManagementConf {
 
   public static final ConfigOption<String> SERVER_BIND_HOST =
       ConfigOptions.key("server-bind-host")
@@ -172,7 +172,7 @@ public class ArcticManagementConf {
       ConfigOptions.key("ha.cluster-name")
           .stringType()
           .defaultValue("default")
-          .withDescription("Arctic cluster name.");
+          .withDescription("Amoro management service cluster name.");
 
   public static final ConfigOption<String> HA_ZOOKEEPER_ADDRESS =
       ConfigOptions.key("ha.zookeeper-address")

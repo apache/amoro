@@ -29,7 +29,7 @@ import org.apache.amoro.op.OverwriteBaseFiles;
 import org.apache.amoro.op.SnapshotSummary;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
-import org.apache.amoro.server.ArcticServiceConstants;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.exception.OptimizingCommitException;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.ContentFiles;
@@ -76,7 +76,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
     this.table = table;
     this.tasks = tasks;
     this.fromSnapshotId =
-        fromSnapshotId == null ? ArcticServiceConstants.INVALID_SNAPSHOT_ID : fromSnapshotId;
+        fromSnapshotId == null ? AmoroServiceConstants.INVALID_SNAPSHOT_ID : fromSnapshotId;
     this.fromSequenceOfPartitions = fromSequenceOfPartitions;
     this.toSequenceOfPartitions = toSequenceOfPartitions;
   }

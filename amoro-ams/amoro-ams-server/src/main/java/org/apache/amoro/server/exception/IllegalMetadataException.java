@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.exception;
 
-public class IllegalMetadataException extends ArcticRuntimeException {
+public class IllegalMetadataException extends AmoroRuntimeException {
 
   public IllegalMetadataException(String message) {
     super(message);

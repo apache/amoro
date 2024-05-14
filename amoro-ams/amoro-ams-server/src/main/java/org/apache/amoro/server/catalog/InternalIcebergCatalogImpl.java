@@ -24,7 +24,7 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.formats.iceberg.IcebergTable;
 import org.apache.amoro.io.AuthenticatedFileIO;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
 import org.apache.amoro.server.table.TableMetadata;
@@ -52,8 +52,8 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
 
   protected InternalIcebergCatalogImpl(CatalogMeta metadata, Configurations serverConfiguration) {
     super(metadata);
-    this.httpPort = serverConfiguration.getInteger(ArcticManagementConf.HTTP_SERVER_PORT);
-    this.exposedHost = serverConfiguration.getString(ArcticManagementConf.SERVER_EXPOSE_HOST);
+    this.httpPort = serverConfiguration.getInteger(AmoroManagementConf.HTTP_SERVER_PORT);
+    this.exposedHost = serverConfiguration.getString(AmoroManagementConf.SERVER_EXPOSE_HOST);
   }
 
   @Override

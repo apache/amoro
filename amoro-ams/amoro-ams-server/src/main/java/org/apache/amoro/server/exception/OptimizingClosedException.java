@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.exception;
 
-public class OptimizingClosedException extends ArcticRuntimeException {
+public class OptimizingClosedException extends AmoroRuntimeException {
 
   private final long processId;
 

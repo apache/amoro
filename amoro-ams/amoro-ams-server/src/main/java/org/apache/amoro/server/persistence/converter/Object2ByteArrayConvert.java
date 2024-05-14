@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.persistence.converter;
 
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.utils.CompressUtil;
 import org.apache.amoro.utils.SerializationUtil;
@@ -38,7 +38,7 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
   public void setParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType)
       throws SQLException {
     if (parameter == null) {
-      if (SqlSessionFactoryProvider.getDbType().equals(ArcticManagementConf.DB_TYPE_POSTGRES)) {
+      if (SqlSessionFactoryProvider.getDbType().equals(AmoroManagementConf.DB_TYPE_POSTGRES)) {
         ps.setNull(i, Types.BINARY);
       } else {
         ps.setNull(i, Types.BLOB);

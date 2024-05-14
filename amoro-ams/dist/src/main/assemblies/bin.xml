@@ -59,20 +59,20 @@
             <fileMode>0644</fileMode>
         </file>
         <file>
-            <source>src/main/arctic-bin/conf/config.yaml</source>
+            <source>src/main/amoro-bin/conf/config.yaml</source>
             <outputDirectory>conf</outputDirectory>
             <fileMode>0644</fileMode>
         </file>
     </files>
     <fileSets>
         <fileSet>
-            <directory>src/main/arctic-bin/bin</directory>
+            <directory>src/main/amoro-bin/bin</directory>
             <outputDirectory>bin</outputDirectory>
             <fileMode>0755</fileMode>
             <lineEnding>unix</lineEnding>
         </fileSet>
         <fileSet>
-            <directory>src/main/arctic-bin/conf</directory>
+            <directory>src/main/amoro-bin/conf</directory>
             <outputDirectory>conf</outputDirectory>
             <fileMode>0644</fileMode>
         </fileSet>
