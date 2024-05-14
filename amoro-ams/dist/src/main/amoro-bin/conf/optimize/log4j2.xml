@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<Configuration monitorInterval="10">
+    <properties>
+        <property name="LOG_DIR">${sys:log.home}</property>
+        <property name="CONSOLE_LEVEL">${env:CONSOLE_LOG_LEVEL:-off}</property>
+    </properties>
+
+    <Appenders>
+        <!--*********************Console Log***********************-->
+        <Console name="consoleAppender" target="SYSTEM_OUT">
+            <!--Set log format and color-->
+            <PatternLayout
+                    pattern="%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n"/>
+        </Console>
+        <!--*********************File Log***********************-->
+        <!--Logs with a grade of debug-->
+        <RollingFile name="debugFileAppender"
+                     fileName="${LOG_DIR}/optimizer-debug.log"
+                     filePattern="${LOG_DIR}/history/optimizer-debug-%i.log">
+            <!--Set log format-->
+            <PatternLayout>
+                <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
+            </PatternLayout>
+            <Policies>
+                <!--Set log file slice parameters-->
+                <!--<OnStartupTriggeringPolicy/>-->
+                <!--Set the log base file size to trigger rolling log file updates if the size is exceeded-->
+                <SizeBasedTriggeringPolicy size="2048MB"/>
+            </Policies>
+            <!--Set the maximum number of files in the log, the default is 7 if not set, it will be overwritten when
+             it exceeds the size; depends on %i in filePattern-->
+            <DefaultRolloverStrategy max="25"/>
+        </RollingFile>
+
+        <!--Logs with a grade of info-->
+        <RollingFile name="infoFileAppender"
+                     fileName="${LOG_DIR}/optimizer-info.log"
+                     filePattern="${LOG_DIR}/history/optimizer-info-%d{yyyy-MM-dd}-%i.log.gz">
+            <!--Set log format-->
+            <PatternLayout>
+                <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
+            </PatternLayout>
+            <Policies>
+                <!--Set the time for rolling updates of log files, depending on the file naming filePattern setting-->
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <!--Set the maximum number of files in the log, the default is 7 if not set, it will be overwritten when
+             it exceeds the size; depends on %i in filePattern-->
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="${LOG_DIR}/history" maxDepth="1">
+                    <IfFileName glob="*.log"/>
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!--Logs with a grade of warn and higher level-->
+        <RollingFile name="errorFileAppender"
+                     fileName="${LOG_DIR}/optimizer-error.log"
+                     filePattern="${LOG_DIR}/history/optimizer-error-%i.log.gz">
+            <!--Set log format-->
+            <PatternLayout>
+                <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
+            </PatternLayout>
+            <Policies>
+                <!--Set log file slice parameters-->
+                <!--<OnStartupTriggeringPolicy/>-->
+                <!--Set the log base file size to trigger rolling log file updates if the size is exceeded-->
+                <SizeBasedTriggeringPolicy size="64MB"/>
+            </Policies>
+            <!--Set the maximum number of files in the log, the default is 7 if not set, it will be overwritten when
+             it exceeds the size; depends on %i in filePattern-->
+            <DefaultRolloverStrategy max="7"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <Root level="debug">
+            <!--By default, debug logs are not printed-->
+<!--            <AppenderRef ref="debugFileAppender" level="debug"/>-->
+            <AppenderRef ref="infoFileAppender" level="info"/>
+            <AppenderRef ref="errorFileAppender" level="error"/>
+            <!-- SET CONSOLE_LOG_LEVEL=info to print console logger in docker -->
+            <AppenderRef ref="consoleAppender" level="${CONSOLE_LEVEL}" />
+        </Root>
+    </Loggers>
+
+</Configuration>
