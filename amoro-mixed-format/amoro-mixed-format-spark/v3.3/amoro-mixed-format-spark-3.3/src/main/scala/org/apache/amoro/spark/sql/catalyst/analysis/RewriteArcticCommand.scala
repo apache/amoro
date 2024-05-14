@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.sql.catalyst.analysis
 
-import org.apache.amoro.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
+import org.apache.amoro.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog, SparkUnifiedSessionCatalog}
 import org.apache.amoro.spark.mixed.MixedSessionCatalogBase
 import org.apache.amoro.spark.sql.ArcticExtensionUtils.buildCatalogAndIdentifier
 import org.apache.amoro.spark.sql.catalyst.plans.{AlterArcticTableDropPartition, TruncateArcticTable}
@@ -48,6 +48,9 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
     catalog match {
       case _: ArcticSparkCatalog => true
       case _: ArcticSparkSessionCatalog[_] =>
+        provider.isDefined && MixedSessionCatalogBase.SUPPORTED_PROVIDERS.contains(
+          provider.get.toLowerCase)
+      case _: SparkUnifiedSessionCatalog[_] =>
         provider.isDefined && MixedSessionCatalogBase.SUPPORTED_PROVIDERS.contains(
           provider.get.toLowerCase)
       case _ => false
@@ -87,7 +90,7 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
         val (targetCatalog, targetIdentifier) = buildCatalogAndIdentifier(sparkSession, targetTable)
         val table = sourceCatalog.loadTable(sourceIdentifier)
         var targetProperties = properties
-        targetProperties += ("provider" -> "arctic")
+        targetProperties += ("provider" -> provider.getOrElse("mixed_hive"))
         table match {
           case keyedTable: ArcticSparkTable =>
             keyedTable.table() match {
@@ -107,7 +110,9 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
           comment = None,
           serde = None,
           external = false)
-        val seq: Seq[String] = Seq(targetTable.database.get, targetTable.identifier)
+        val seq: Seq[String] = Seq(
+          targetTable.database.getOrElse(sparkSession.catalog.currentDatabase),
+          targetTable.identifier)
         val name = ResolvedDBObjectName(targetCatalog, seq)
         CreateTable(name, table.schema(), table.partitioning(), tableSpec, ifNotExists)
       case _ => plan
