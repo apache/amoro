@@ -64,7 +64,6 @@ public class UnKeyedTableDataView extends AbstractTableDataView {
             mixedTable.schema(), mixedTable.spec(), null, partitionCount, null, seed);
 
     this.view = StructLikeMap.create(schema.asStruct());
-    // addRecords2Map(view, new DataReader(arcticTable).allData());
   }
 
   public WriteResult append(int count) throws IOException {

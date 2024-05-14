@@ -20,7 +20,7 @@ package org.apache.amoro.server.exception;
 
 import org.apache.amoro.api.OptimizingTaskId;
 
-public class TaskNotFoundException extends ArcticRuntimeException {
+public class TaskNotFoundException extends AmoroRuntimeException {
   private final OptimizingTaskId taskId;
 
   public TaskNotFoundException(OptimizingTaskId taskId) {

@@ -24,7 +24,7 @@ import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.api.StateField;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
-import org.apache.amoro.server.ArcticServiceConstants;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.dashboard.utils.OptimizingUtil;
 import org.apache.amoro.server.exception.IllegalTaskStateException;
 import org.apache.amoro.server.exception.OptimizingClosedException;
@@ -49,9 +49,9 @@ public class TaskRuntime extends StatedPersistentBase {
   @StateField private Status status = Status.PLANNED;
   private final TaskStatusMachine statusMachine = new TaskStatusMachine();
   @StateField private int runTimes = 0;
-  @StateField private long startTime = ArcticServiceConstants.INVALID_TIME;
-  @StateField private long endTime = ArcticServiceConstants.INVALID_TIME;
-  @StateField private long costTime = ArcticServiceConstants.INVALID_TIME;
+  @StateField private long startTime = AmoroServiceConstants.INVALID_TIME;
+  @StateField private long endTime = AmoroServiceConstants.INVALID_TIME;
+  @StateField private long costTime = AmoroServiceConstants.INVALID_TIME;
   @StateField private String token;
   @StateField private int threadId = -1;
   @StateField private String failReason;
@@ -112,8 +112,8 @@ public class TaskRuntime extends StatedPersistentBase {
     invokeConsistency(
         () -> {
           statusMachine.accept(Status.PLANNED);
-          startTime = ArcticServiceConstants.INVALID_TIME;
-          endTime = ArcticServiceConstants.INVALID_TIME;
+          startTime = AmoroServiceConstants.INVALID_TIME;
+          endTime = AmoroServiceConstants.INVALID_TIME;
           token = null;
           threadId = -1;
           failReason = null;
@@ -149,7 +149,7 @@ public class TaskRuntime extends StatedPersistentBase {
         () -> {
           if (statusMachine.tryAccepting(Status.CANCELED)) {
             endTime = System.currentTimeMillis();
-            if (startTime != ArcticServiceConstants.INVALID_TIME) {
+            if (startTime != AmoroServiceConstants.INVALID_TIME) {
               costTime += endTime - startTime;
             }
             persistTaskRuntime(this);
@@ -255,12 +255,12 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public long getQuotaTime(long calculatingStartTime, long calculatingEndTime) {
-    if (startTime == ArcticServiceConstants.INVALID_TIME) {
+    if (startTime == AmoroServiceConstants.INVALID_TIME) {
       return 0;
     }
     calculatingStartTime = Math.max(startTime, calculatingStartTime);
     calculatingEndTime =
-        costTime == ArcticServiceConstants.INVALID_TIME ? calculatingEndTime : costTime + startTime;
+        costTime == AmoroServiceConstants.INVALID_TIME ? calculatingEndTime : costTime + startTime;
     long lastingTime = calculatingEndTime - calculatingStartTime;
     return Math.max(0, lastingTime);
   }
@@ -315,8 +315,8 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public TaskQuota getCurrentQuota() {
-    if (startTime == ArcticServiceConstants.INVALID_TIME
-        || endTime == ArcticServiceConstants.INVALID_TIME) {
+    if (startTime == AmoroServiceConstants.INVALID_TIME
+        || endTime == AmoroServiceConstants.INVALID_TIME) {
       throw new IllegalStateException("start time or end time is not correctly set");
     }
     return new TaskQuota(this);

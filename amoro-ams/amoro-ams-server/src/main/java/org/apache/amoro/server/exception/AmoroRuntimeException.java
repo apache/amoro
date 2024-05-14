@@ -33,9 +33,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-public class ArcticRuntimeException extends RuntimeException {
+public class AmoroRuntimeException extends RuntimeException {
 
-  private static final Map<Class<? extends ArcticRuntimeException>, Integer> CODE_MAP =
+  private static final Map<Class<? extends AmoroRuntimeException>, Integer> CODE_MAP =
       new HashMap<>();
 
   static {
@@ -60,24 +60,24 @@ public class ArcticRuntimeException extends RuntimeException {
   private final int errorCode;
   private final String errorName;
 
-  protected ArcticRuntimeException() {
+  protected AmoroRuntimeException() {
     this.errorCode = Optional.ofNullable(CODE_MAP.get(getClass())).orElse(UNDEFINED);
     this.errorName = getClass().getSimpleName();
   }
 
-  protected ArcticRuntimeException(String message) {
+  protected AmoroRuntimeException(String message) {
     super(message);
     this.errorCode = Optional.ofNullable(CODE_MAP.get(getClass())).orElse(UNDEFINED);
     this.errorName = getClass().getSimpleName();
   }
 
-  protected ArcticRuntimeException(Throwable throwable) {
+  protected AmoroRuntimeException(Throwable throwable) {
     super(throwable);
     this.errorCode = Optional.ofNullable(CODE_MAP.get(getClass())).orElse(UNDEFINED);
     this.errorName = getClass().getSimpleName();
   }
 
-  protected ArcticRuntimeException(String message, Throwable throwable) {
+  protected AmoroRuntimeException(String message, Throwable throwable) {
     super(message, throwable);
     this.errorCode = Optional.ofNullable(CODE_MAP.get(getClass())).orElse(UNDEFINED);
     this.errorName = getClass().getSimpleName();
@@ -133,16 +133,16 @@ public class ArcticRuntimeException extends RuntimeException {
     return new TException(throwable.getMessage());
   }
 
-  public static ArcticRuntimeException wrap(
-      Throwable throwable, Function<Throwable, ArcticRuntimeException> exceptionTransform) {
-    if (throwable instanceof ArcticRuntimeException) {
-      return (ArcticRuntimeException) throwable;
+  public static AmoroRuntimeException wrap(
+      Throwable throwable, Function<Throwable, AmoroRuntimeException> exceptionTransform) {
+    if (throwable instanceof AmoroRuntimeException) {
+      return (AmoroRuntimeException) throwable;
     } else {
       return exceptionTransform.apply(throwable);
     }
   }
 
-  private static ArcticRuntimeException wrap(Throwable throwable) {
+  private static AmoroRuntimeException wrap(Throwable throwable) {
     return wrap(throwable, UndefinedException::new);
   }
 }

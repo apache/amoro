@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.exception;
 
-public class TaskRuntimeException extends ArcticRuntimeException {
+public class TaskRuntimeException extends AmoroRuntimeException {
 
   public TaskRuntimeException(String message) {
     super(message);

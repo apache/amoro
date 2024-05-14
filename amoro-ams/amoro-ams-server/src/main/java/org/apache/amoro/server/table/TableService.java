@@ -57,7 +57,7 @@ public interface TableService extends CatalogService, TableManager {
   void dropTableMetadata(TableIdentifier tableIdentifier, boolean deleteData);
 
   /**
-   * load arctic databases name
+   * load databases names
    *
    * @return databases name list
    */
@@ -93,21 +93,21 @@ public interface TableService extends CatalogService, TableManager {
    */
   ServerTableIdentifier getServerTableIdentifier(TableIdentifier id);
 
-  /** create arctic database */
+  /** create database */
   void createDatabase(String catalogName, String dbName);
 
-  /** drop arctic database */
+  /** drop database */
   void dropDatabase(String catalogName, String dbName);
 
   /**
-   * load all arctic table metadata
+   * load all table metadata
    *
    * @return table metadata list
    */
   List<TableMetadata> listTableMetas();
 
   /**
-   * load arctic table metadata
+   * load table metadata
    *
    * @return table metadata list
    */

@@ -68,10 +68,6 @@ public class OptimizingEvaluator {
     this.currentSnapshot = IcebergTableUtil.getSnapshot(table, tableRuntime);
   }
 
-  public MixedTable getArcticTable() {
-    return mixedTable;
-  }
-
   public TableRuntime getTableRuntime() {
     return tableRuntime;
   }

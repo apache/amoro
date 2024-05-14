@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.dashboard.model;
 
-import org.apache.amoro.server.ArcticServiceConstants;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 
 import java.util.Map;
@@ -72,8 +72,8 @@ public class OptimizingTaskInfo {
     this.startTime = startTime;
     this.endTime = endTime;
     if (costTime == 0
-        && startTime != ArcticServiceConstants.INVALID_TIME
-        && endTime == ArcticServiceConstants.INVALID_TIME) {
+        && startTime != AmoroServiceConstants.INVALID_TIME
+        && endTime == AmoroServiceConstants.INVALID_TIME) {
       this.costTime = System.currentTimeMillis() - startTime;
     } else {
       this.costTime = costTime;

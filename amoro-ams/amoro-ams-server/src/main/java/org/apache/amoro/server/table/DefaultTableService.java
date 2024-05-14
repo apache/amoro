@@ -29,7 +29,7 @@ import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.api.config.TableConfiguration;
-import org.apache.amoro.server.ArcticManagementConf;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.catalog.CatalogBuilder;
 import org.apache.amoro.server.catalog.ExternalCatalog;
 import org.apache.amoro.server.catalog.InternalCatalog;
@@ -96,8 +96,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
   public DefaultTableService(Configurations configuration) {
     this.externalCatalogRefreshingInterval =
-        configuration.getLong(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL);
-    this.blockerTimeout = configuration.getLong(ArcticManagementConf.BLOCKER_TIMEOUT);
+        configuration.getLong(AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL);
+    this.blockerTimeout = configuration.getLong(AmoroManagementConf.BLOCKER_TIMEOUT);
     this.serverConfiguration = configuration;
   }
 
@@ -366,9 +366,9 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     if (tableExplorerExecutors == null) {
       int threadCount =
           serverConfiguration.getInteger(
-              ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_THREAD_COUNT);
+              AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_THREAD_COUNT);
       int queueSize =
-          serverConfiguration.getInteger(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_QUEUE_SIZE);
+          serverConfiguration.getInteger(AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_QUEUE_SIZE);
       tableExplorerExecutors =
           new ThreadPoolExecutor(
               threadCount,

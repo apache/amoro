@@ -273,7 +273,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
     return serverTableIdentifier;
   }
 
-  protected void validateArcticTable(MixedTable mixedTable) {
+  protected void validateMixedTable(MixedTable mixedTable) {
     Assert.assertEquals(catalogTestHelper().tableFormat(), mixedTable.format());
     Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, mixedTable.id());
     Assert.assertEquals(tableTestHelper().tableSchema().asStruct(), mixedTable.schema().asStruct());

@@ -28,15 +28,15 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>amoro-mixed-format-spark-3.2-runtime</artifactId>
+    <artifactId>amoro-mixed-format-spark-runtime-3.3</artifactId>
     <packaging>jar</packaging>
-    <name>Amoro Project Mixed Format Spark 3.2 Runtime</name>
+    <name>Amoro Project Mixed Format Spark 3.3 Runtime</name>
     <url>https://amoro.apache.org</url>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-mixed-format-spark-3.2</artifactId>
+            <artifactId>amoro-mixed-format-spark-3.3</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>
@@ -59,7 +59,7 @@
                             <artifactSet>
                                 <includes>
                                     <include>org.apache.amoro:amoro-mixed-format-spark-3-common</include>
-                                    <include>org.apache.amoro:amoro-mixed-format-spark-3.2</include>
+                                    <include>org.apache.amoro:amoro-mixed-format-spark-3.3</include>
                                     <include>org.apache.amoro:amoro-core</include>
                                     <include>org.apache.amoro:amoro-ams-api</include>
                                     <include>org.apache.amoro:amoro-mixed-format-hive</include>
@@ -71,7 +71,7 @@
                                     <include>org.apache.zookeeper:zookeeper-jute</include>
                                     <include>org.apache.iceberg:iceberg-core</include>
                                     <include>org.apache.iceberg:iceberg-api</include>
-                                    <include>org.apache.iceberg:iceberg-spark-3.2_2.12</include>
+                                    <include>org.apache.iceberg:iceberg-spark-3.3_2.12</include>
                                     <include>org.apache.iceberg:iceberg-common</include>
                                     <include>org.apache.iceberg:iceberg-data</include>
                                     <include>org.apache.iceberg:iceberg-orc</include>
@@ -87,11 +87,9 @@
                                     <include>org.apache.iceberg:iceberg-arrow</include>
                                     <include>org.apache.iceberg:iceberg-hive-metastore</include>
                                     <include>org.apache.iceberg:iceberg-spark</include>
-                                    <include>org.apache.iceberg:iceberg-spark-extensions-3.2_2.12
-                                    </include>
+                                    <include>org.apache.iceberg:iceberg-spark-extensions-3.3_2.12</include>
                                     <include>org.apache.iceberg:iceberg-bundled-guava</include>
                                     <include>org.apache.orc:*</include>
-
                                     <include>org.apache.thrift:libthrift</include>
                                     <include>org.apache.avro:avro</include>
                                     <include>org.apache.parquet:parquet-avro</include>
@@ -433,16 +431,22 @@
                                             org.apache.spark.sql.catalyst.plans.logical.DropPartitionField
                                         </include>
                                         <include>
+                                            org.apache.spark.sql.catalyst.plans.logical.DropIdentifierFields
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.plans.logical.DeleteFromIcebergTable
+                                        </include>
+                                        <include>
                                             org.apache.spark.sql.catalyst.plans.logical.DynamicFileFilter*
                                         </include>
                                         <include>
-                                            org.apache.spark.sql.catalyst.plans.logical.MergeInto
+                                            org.apache.spark.sql.catalyst.plans.logical.MergeIntoContext
                                         </include>
                                         <include>
-                                            org.apache.spark.sql.catalyst.plans.logical.MergeInto$
+                                            org.apache.spark.sql.catalyst.plans.logical.MergeIntoIcebergTable
                                         </include>
                                         <include>
-                                            org.apache.spark.sql.catalyst.plans.logical.MergeIntoParams*
+                                            org.apache.spark.sql.catalyst.plans.logical.MergeRows
                                         </include>
                                         <include>
                                             org.apache.spark.sql.catalyst.plans.logical.NamedArgument*
@@ -451,7 +455,19 @@
                                             org.apache.spark.sql.catalyst.plans.logical.PositionalArgument*
                                         </include>
                                         <include>
-                                            org.apache.spark.sql.catalyst.plans.logical.ReplaceData*
+                                            org.apache.spark.sql.catalyst.plans.logical.NoStatsUnaryNode
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.plans.logical.ReplaceIcebergData*
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.plans.logical.RowLevelCommand
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.plans.logical.WriteDelta
                                         </include>
                                         <include>
                                             org.apache.spark.sql.catalyst.plans.logical.ReplacePartitionField*
@@ -460,10 +476,10 @@
                                             org.apache.spark.sql.catalyst.plans.logical.SetIdentifierFields*
                                         </include>
                                         <include>
-                                            org.apache.spark.sql.catalyst.plans.logical.SetWriteDistributionAndOrdering*
+                                            org.apache.spark.sql.catalyst.plans.logical.UpdateIcebergTable
                                         </include>
                                         <include>
-                                            org.apache.spark.sql.catalyst.plans.logical.SortOrderParserUtil*
+                                            org.apache.spark.sql.catalyst.plans.logical.V2WriteCommandLike
                                         </include>
                                     </includes>
                                 </relocation>

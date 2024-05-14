@@ -24,60 +24,60 @@ import org.apache.amoro.server.dashboard.utils.AmsUtil;
 
 import java.net.InetAddress;
 
-public class ArcticManagementConfValidator {
+public class AmoroManagementConfValidator {
   public static void validateConfig(Configurations configurations) {
     // SERVER_EXPOSE_HOST config
-    if ("".equals(configurations.getString(ArcticManagementConf.SERVER_EXPOSE_HOST))) {
+    if ("".equals(configurations.getString(AmoroManagementConf.SERVER_EXPOSE_HOST))) {
       throw new IllegalArgumentException(
-          "configuration " + ArcticManagementConf.SERVER_EXPOSE_HOST.key() + " must be set");
+          "configuration " + AmoroManagementConf.SERVER_EXPOSE_HOST.key() + " must be set");
     }
     InetAddress inetAddress =
-        AmsUtil.lookForBindHost(configurations.getString(ArcticManagementConf.SERVER_EXPOSE_HOST));
-    configurations.setString(ArcticManagementConf.SERVER_EXPOSE_HOST, inetAddress.getHostAddress());
+        AmsUtil.lookForBindHost(configurations.getString(AmoroManagementConf.SERVER_EXPOSE_HOST));
+    configurations.setString(AmoroManagementConf.SERVER_EXPOSE_HOST, inetAddress.getHostAddress());
 
     // mysql or postgres config
-    if (ArcticManagementConf.DB_TYPE_MYSQL.equalsIgnoreCase(
-            configurations.getString(ArcticManagementConf.DB_TYPE))
-        || ArcticManagementConf.DB_TYPE_POSTGRES.equalsIgnoreCase(
-            configurations.getString(ArcticManagementConf.DB_TYPE))) {
-      if ("".equals(configurations.getString(ArcticManagementConf.DB_PASSWORD))
-          || "".equals(configurations.getString(ArcticManagementConf.DB_USER_NAME))) {
+    if (AmoroManagementConf.DB_TYPE_MYSQL.equalsIgnoreCase(
+            configurations.getString(AmoroManagementConf.DB_TYPE))
+        || AmoroManagementConf.DB_TYPE_POSTGRES.equalsIgnoreCase(
+            configurations.getString(AmoroManagementConf.DB_TYPE))) {
+      if ("".equals(configurations.getString(AmoroManagementConf.DB_PASSWORD))
+          || "".equals(configurations.getString(AmoroManagementConf.DB_USER_NAME))) {
         throw new IllegalArgumentException(
             "username and password must be configured if the database type is mysql or postgres");
       }
     }
 
     // HA config
-    if (configurations.getBoolean(ArcticManagementConf.HA_ENABLE)) {
-      if ("".equals(configurations.getString(ArcticManagementConf.HA_ZOOKEEPER_ADDRESS))) {
+    if (configurations.getBoolean(AmoroManagementConf.HA_ENABLE)) {
+      if ("".equals(configurations.getString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS))) {
         throw new IllegalArgumentException(
-            ArcticManagementConf.HA_ZOOKEEPER_ADDRESS.key()
+            AmoroManagementConf.HA_ZOOKEEPER_ADDRESS.key()
                 + " must be configured when you enable "
                 + "the ams high availability");
       }
     }
     // terminal config
     String terminalBackend =
-        configurations.getString(ArcticManagementConf.TERMINAL_BACKEND).toLowerCase();
-    if (!ArcticManagementConf.TERMINAL_BACKEND_VALUES.contains(terminalBackend)) {
+        configurations.getString(AmoroManagementConf.TERMINAL_BACKEND).toLowerCase();
+    if (!AmoroManagementConf.TERMINAL_BACKEND_VALUES.contains(terminalBackend)) {
       throw new IllegalArgumentException(
           String.format(
               "Illegal terminal implement: %s, local, kyuubi, custom is available",
               terminalBackend));
     }
 
-    validateThreadCount(configurations, ArcticManagementConf.REFRESH_TABLES_THREAD_COUNT);
-    validateThreadCount(configurations, ArcticManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT);
+    validateThreadCount(configurations, AmoroManagementConf.REFRESH_TABLES_THREAD_COUNT);
+    validateThreadCount(configurations, AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT);
 
-    if (configurations.getBoolean(ArcticManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
-      validateThreadCount(configurations, ArcticManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT);
+    if (configurations.getBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
+      validateThreadCount(configurations, AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT);
     }
 
-    if (configurations.getBoolean(ArcticManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
-      validateThreadCount(configurations, ArcticManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT);
+    if (configurations.getBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
+      validateThreadCount(configurations, AmoroManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT);
     }
-    if (configurations.getBoolean(ArcticManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
-      validateThreadCount(configurations, ArcticManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT);
+    if (configurations.getBoolean(AmoroManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
+      validateThreadCount(configurations, AmoroManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT);
     }
   }
 

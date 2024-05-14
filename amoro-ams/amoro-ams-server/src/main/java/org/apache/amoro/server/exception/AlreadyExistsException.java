@@ -20,7 +20,7 @@ package org.apache.amoro.server.exception;
 
 import org.apache.amoro.api.TableIdentifier;
 
-public class AlreadyExistsException extends ArcticRuntimeException {
+public class AlreadyExistsException extends AmoroRuntimeException {
   public AlreadyExistsException(String object) {
     super(object + " already exists.");
   }

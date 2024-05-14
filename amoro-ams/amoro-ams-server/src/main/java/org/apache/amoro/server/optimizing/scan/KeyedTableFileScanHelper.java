@@ -23,7 +23,7 @@ import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.DefaultKeyedFile;
 import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
-import org.apache.amoro.server.ArcticServiceConstants;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.KeyedTable;
@@ -63,13 +63,13 @@ import java.util.stream.Stream;
 public class KeyedTableFileScanHelper implements TableFileScanHelper {
   private static final Logger LOG = LoggerFactory.getLogger(KeyedTableFileScanHelper.class);
 
-  private final KeyedTable arcticTable;
+  private final KeyedTable keyedTable;
   private final long changeSnapshotId;
   private final long baseSnapshotId;
   private Expression partitionFilter = Expressions.alwaysTrue();
 
-  public KeyedTableFileScanHelper(KeyedTable arcticTable, KeyedTableSnapshot snapshot) {
-    this.arcticTable = arcticTable;
+  public KeyedTableFileScanHelper(KeyedTable keyedTable, KeyedTableSnapshot snapshot) {
+    this.keyedTable = keyedTable;
     this.baseSnapshotId = snapshot.baseSnapshotId();
     this.changeSnapshotId = snapshot.changeSnapshotId();
   }
@@ -159,15 +159,15 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
   @Override
   public CloseableIterable<FileScanResult> scan() {
     CloseableIterable<FileScanResult> changeScanResult = CloseableIterable.empty();
-    ChangeFiles changeFiles = new ChangeFiles(arcticTable);
-    UnkeyedTable baseTable = arcticTable.baseTable();
-    ChangeTable changeTable = arcticTable.changeTable();
-    if (changeSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+    ChangeFiles changeFiles = new ChangeFiles(keyedTable);
+    UnkeyedTable baseTable = keyedTable.baseTable();
+    ChangeTable changeTable = keyedTable.changeTable();
+    if (changeSnapshotId != AmoroServiceConstants.INVALID_SNAPSHOT_ID) {
       StructLikeMap<Long> optimizedSequence =
-          baseSnapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID
-              ? StructLikeMap.create(arcticTable.spec().partitionType())
-              : MixedTableUtil.readOptimizedSequence(arcticTable, baseSnapshotId);
-      long maxSequence = getMaxSequenceLimit(arcticTable, changeSnapshotId, optimizedSequence);
+          baseSnapshotId == AmoroServiceConstants.INVALID_SNAPSHOT_ID
+              ? StructLikeMap.create(keyedTable.spec().partitionType())
+              : MixedTableUtil.readOptimizedSequence(keyedTable, baseSnapshotId);
+      long maxSequence = getMaxSequenceLimit(keyedTable, changeSnapshotId, optimizedSequence);
       if (maxSequence != Long.MIN_VALUE) {
         ChangeTableIncrementalScan changeTableIncrementalScan =
             changeTable
@@ -200,7 +200,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     }
 
     CloseableIterable<FileScanResult> baseScanResult = CloseableIterable.empty();
-    if (baseSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (baseSnapshotId != AmoroServiceConstants.INVALID_SNAPSHOT_ID) {
       baseScanResult =
           CloseableIterable.transform(
               baseTable.newScan().filter(partitionFilter).useSnapshot(baseSnapshotId).planFiles(),
@@ -232,17 +232,17 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
   }
 
   private long getMaxSequenceLimit(
-      KeyedTable arcticTable,
+      KeyedTable keyedTable,
       long changeSnapshotId,
       StructLikeMap<Long> partitionOptimizedSequence) {
-    ChangeTable changeTable = arcticTable.changeTable();
+    ChangeTable changeTable = keyedTable.changeTable();
     Snapshot changeSnapshot = changeTable.snapshot(changeSnapshotId);
     int totalFilesInSummary =
         PropertyUtil.propertyAsInt(
             changeSnapshot.summary(), SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
     int maxFileCntLimit =
         CompatiblePropertyUtil.propertyAsInt(
-            arcticTable.properties(),
+            keyedTable.properties(),
             TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT,
             TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT);
     // not scan files to improve performance
@@ -271,13 +271,13 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
         fileGroup.addFile();
       }
     } catch (IOException e) {
-      throw new UncheckedIOException("Failed to close table scan of " + arcticTable.name(), e);
+      throw new UncheckedIOException("Failed to close table scan of " + keyedTable.name(), e);
     }
 
     if (changeFilesGroupBySequence.isEmpty()) {
       LOG.debug(
           "{} get no change files to optimize with partitionOptimizedSequence {}",
-          arcticTable.name(),
+          keyedTable.name(),
           partitionOptimizedSequence);
       return Long.MIN_VALUE;
     }
@@ -288,12 +288,12 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     if (maxSequence == Long.MIN_VALUE) {
       LOG.warn(
           "{} get no change files with self-optimizing.max-file-count={}, change it to a bigger value",
-          arcticTable.name(),
+          keyedTable.name(),
           maxFileCntLimit);
     } else if (maxSequence != Long.MAX_VALUE) {
       LOG.warn(
           "{} not all change files optimized with self-optimizing.max-file-count={}, maxSequence={}",
-          arcticTable.name(),
+          keyedTable.name(),
           maxFileCntLimit,
           maxSequence);
     }
@@ -301,7 +301,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
   }
 
   private static class ChangeFiles {
-    private final KeyedTable arcticTable;
+    private final KeyedTable keyedTable;
     private final Map<String, Map<DataTreeNode, List<ContentFile<?>>>> cachedRelatedDeleteFiles =
         Maps.newHashMap();
 
@@ -309,12 +309,12 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
         Maps.newHashMap();
     private final Map<String, Map<DataTreeNode, Set<DataFile>>> insertFiles = Maps.newHashMap();
 
-    public ChangeFiles(KeyedTable arcticTable) {
-      this.arcticTable = arcticTable;
+    public ChangeFiles(KeyedTable keyedTable) {
+      this.keyedTable = keyedTable;
     }
 
     public void addFile(DataFile file) {
-      String partition = arcticTable.spec().partitionToPath(file.partition());
+      String partition = keyedTable.spec().partitionToPath(file.partition());
       DataTreeNode node = FileNameRules.parseFileNodeFromFileName(file.path().toString());
       DataFileType type = FileNameRules.parseFileTypeForChange(file.path().toString());
       switch (type) {
@@ -342,7 +342,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     }
 
     public List<ContentFile<?>> getRelatedDeleteFiles(DataFile file) {
-      String partition = arcticTable.spec().partitionToPath(file.partition());
+      String partition = keyedTable.spec().partitionToPath(file.partition());
       if (!equalityDeleteFiles.containsKey(partition)) {
         return Collections.emptyList();
       }

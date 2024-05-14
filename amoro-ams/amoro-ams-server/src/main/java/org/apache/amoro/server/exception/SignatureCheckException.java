@@ -19,4 +19,4 @@
 package org.apache.amoro.server.exception;
 
 /** SignatureCheckException */
-public class SignatureCheckException extends ArcticRuntimeException {}
+public class SignatureCheckException extends AmoroRuntimeException {}

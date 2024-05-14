@@ -139,7 +139,7 @@ containers:
 #containers:
 
 # - name: KubernetesContainer
-#   container-impl: com.netease.arctic.server.manager.KubernetesOptimizerContainer
+#   container-impl: org.apache.amoro.server.manager.KubernetesOptimizerContainer
 #    properties:
 #     kube-config-path: ～/.kube/config
 #     image: apache/amoro:{version}

@@ -57,7 +57,7 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
   public void testLoadTable() {
     MixedTable mixedTable =
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
-    validateArcticTable(mixedTable);
+    validateMixedTable(mixedTable);
 
     // test load not existed table
     Assert.assertThrows(

@@ -95,7 +95,7 @@ public class TestOptimizingIntegration {
   @Test
   public void testPkTableOptimizing() {
     MixedTable mixedTable =
-        createArcticTable(MIXED_ICEBERG_TB_1, PRIMARY_KEY, PartitionSpec.unpartitioned());
+        createMixedTable(MIXED_ICEBERG_TB_1, PRIMARY_KEY, PartitionSpec.unpartitioned());
     assertTableExist(MIXED_ICEBERG_TB_1);
     TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(mixedTable);
     testCase.testKeyedTableContinueOptimizing();
@@ -103,7 +103,7 @@ public class TestOptimizingIntegration {
 
   @Test
   public void testPkPartitionTableOptimizing() {
-    MixedTable mixedTable = createArcticTable(MIXED_ICEBERG_TB_2, PRIMARY_KEY, SPEC);
+    MixedTable mixedTable = createMixedTable(MIXED_ICEBERG_TB_2, PRIMARY_KEY, SPEC);
     assertTableExist(MIXED_ICEBERG_TB_2);
     TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(mixedTable);
     testCase.testKeyedTableContinueOptimizing();
@@ -112,7 +112,7 @@ public class TestOptimizingIntegration {
   @Test
   public void testPkTableMajorOptimizeLeftPosDelete() {
     MixedTable mixedTable =
-        createArcticTable(MIXED_ICEBERG_TB_3, PRIMARY_KEY, PartitionSpec.unpartitioned());
+        createMixedTable(MIXED_ICEBERG_TB_3, PRIMARY_KEY, PartitionSpec.unpartitioned());
     assertTableExist(MIXED_ICEBERG_TB_3);
     TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(mixedTable);
     testCase.testPkTableMajorOptimizeLeftPosDelete();
@@ -121,7 +121,7 @@ public class TestOptimizingIntegration {
   @Test
   public void testNoPkTableOptimizing() {
     MixedTable mixedTable =
-        createArcticTable(
+        createMixedTable(
             MIXED_ICEBERG_TB_4, PrimaryKeySpec.noPrimaryKey(), PartitionSpec.unpartitioned());
     assertTableExist(MIXED_ICEBERG_TB_4);
     TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(mixedTable);
@@ -131,7 +131,7 @@ public class TestOptimizingIntegration {
   @Test
   public void testNoPkPartitionTableOptimizing() {
     MixedTable mixedTable =
-        createArcticTable(MIXED_ICEBERG_TB_5, PrimaryKeySpec.noPrimaryKey(), SPEC);
+        createMixedTable(MIXED_ICEBERG_TB_5, PrimaryKeySpec.noPrimaryKey(), SPEC);
     assertTableExist(MIXED_ICEBERG_TB_5);
     TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(mixedTable);
     testCase.testNoPkPartitionTableOptimizing();
@@ -140,7 +140,7 @@ public class TestOptimizingIntegration {
   @Test
   public void testKeyedTableTxIdNotInOrder() {
     MixedTable mixedTable =
-        createArcticTable(MIXED_ICEBERG_TB_6, PRIMARY_KEY, PartitionSpec.unpartitioned());
+        createMixedTable(MIXED_ICEBERG_TB_6, PRIMARY_KEY, PartitionSpec.unpartitioned());
     assertTableExist(MIXED_ICEBERG_TB_6);
     TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(mixedTable);
     testCase.testKeyedTableTxIdNotInOrder();
@@ -148,7 +148,7 @@ public class TestOptimizingIntegration {
 
   @Test
   public void testHiveKeyedTableMajorOptimizeNotMove() throws TException, IOException {
-    createHiveArcticTable(MIXED_HIVE_TB_1, PRIMARY_KEY, PartitionSpec.unpartitioned());
+    createMixedHiveTable(MIXED_HIVE_TB_1, PRIMARY_KEY, PartitionSpec.unpartitioned());
     assertTableExist(MIXED_HIVE_TB_1);
     KeyedTable table =
         amsEnv.catalog(AmsEnvironment.MIXED_HIVE_CATALOG).loadTable(MIXED_HIVE_TB_1).asKeyedTable();
@@ -159,7 +159,7 @@ public class TestOptimizingIntegration {
 
   @Test
   public void testHiveKeyedTableMajorOptimizeAndMove() throws TException, IOException {
-    createHiveArcticTable(MIXED_HIVE_TB_2, PRIMARY_KEY, PartitionSpec.unpartitioned());
+    createMixedHiveTable(MIXED_HIVE_TB_2, PRIMARY_KEY, PartitionSpec.unpartitioned());
     assertTableExist(MIXED_HIVE_TB_2);
     KeyedTable table =
         amsEnv.catalog(AmsEnvironment.MIXED_HIVE_CATALOG).loadTable(MIXED_HIVE_TB_2).asKeyedTable();
@@ -168,7 +168,7 @@ public class TestOptimizingIntegration {
     testCase.testHiveKeyedTableMajorOptimizeAndMove();
   }
 
-  private MixedTable createArcticTable(
+  private MixedTable createMixedTable(
       TableIdentifier tableIdentifier, PrimaryKeySpec primaryKeySpec, PartitionSpec partitionSpec) {
 
     TableBuilder tableBuilder =
@@ -182,7 +182,7 @@ public class TestOptimizingIntegration {
     return tableBuilder.create();
   }
 
-  private void createHiveArcticTable(
+  private void createMixedHiveTable(
       TableIdentifier tableIdentifier, PrimaryKeySpec primaryKeySpec, PartitionSpec partitionSpec) {
     TableBuilder tableBuilder =
         amsEnv

@@ -179,7 +179,7 @@ public class TableController {
   }
 
   /**
-   * upgrade hive table to arctic.
+   * upgrade a hive table to mixed-hive table.
    *
    * @param ctx - context for handling the request and response
    */
@@ -230,7 +230,7 @@ public class TableController {
                 upgradeHiveMeta.getProperties());
             upgradeRunningInfo.get(tableIdentifier).setStatus(UpgradeStatus.SUCCESS.toString());
           } catch (Throwable t) {
-            LOG.error("Failed to upgrade hive table to arctic ", t);
+            LOG.error("Failed to upgrade hive table to mixed-hive table ", t);
             upgradeRunningInfo.get(tableIdentifier).setErrorMessage(AmsUtil.getStackTrace(t));
             upgradeRunningInfo.get(tableIdentifier).setStatus(UpgradeStatus.FAILED.toString());
           } finally {
@@ -255,7 +255,7 @@ public class TableController {
   }
 
   /**
-   * get table properties for upgrading hive to arctic.
+   * get table properties for upgrading hive table to mixed-hive table.
    *
    * @param ctx - context for handling the request and response
    */
@@ -517,10 +517,10 @@ public class TableController {
           new CachedHiveClientPool(tableMetaStore, catalogMeta.getCatalogProperties());
 
       List<String> hiveTables = HiveTableUtil.getAllHiveTables(hmsClientPool, db);
-      Set<String> arcticTables =
+      Set<String> mixedHiveTables =
           tables.stream().map(TableMeta::getName).collect(Collectors.toSet());
       hiveTables.stream()
-          .filter(e -> !arcticTables.contains(e))
+          .filter(e -> !mixedHiveTables.contains(e))
           .sorted(String::compareTo)
           .forEach(e -> tables.add(new TableMeta(e, TableMeta.TableType.HIVE.toString())));
     }

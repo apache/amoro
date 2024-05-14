@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.persistence;
 
-import org.apache.amoro.server.exception.ArcticRuntimeException;
+import org.apache.amoro.server.exception.AmoroRuntimeException;
 import org.apache.amoro.server.exception.PersistenceException;
 import org.apache.ibatis.session.TransactionIsolationLevel;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
@@ -50,7 +50,7 @@ public abstract class PersistentBase {
         session.commit();
       } catch (Throwable t) {
         session.rollback();
-        throw ArcticRuntimeException.wrap(t, PersistenceException::new);
+        throw AmoroRuntimeException.wrap(t, PersistenceException::new);
       }
     }
   }
@@ -62,7 +62,7 @@ public abstract class PersistentBase {
         session.commit();
       } catch (Throwable t) {
         session.rollback();
-        throw ArcticRuntimeException.wrap(t, PersistenceException::new);
+        throw AmoroRuntimeException.wrap(t, PersistenceException::new);
       }
     }
   }
@@ -73,7 +73,7 @@ public abstract class PersistentBase {
         T mapper = getMapper(session, mapperClz);
         return func.apply(mapper);
       } catch (Throwable t) {
-        throw ArcticRuntimeException.wrap(t, PersistenceException::new);
+        throw AmoroRuntimeException.wrap(t, PersistenceException::new);
       }
     }
   }
@@ -81,7 +81,7 @@ public abstract class PersistentBase {
   protected final <T> void doAsExisted(
       Class<T> mapperClz,
       Function<T, Integer> func,
-      Supplier<? extends ArcticRuntimeException> errorSupplier) {
+      Supplier<? extends AmoroRuntimeException> errorSupplier) {
     try (NestedSqlSession session = beginSession()) {
       try {
         int result = func.apply(getMapper(session, mapperClz));
@@ -91,7 +91,7 @@ public abstract class PersistentBase {
         session.commit();
       } catch (Throwable t) {
         session.rollback();
-        throw ArcticRuntimeException.wrap(t, PersistenceException::new);
+        throw AmoroRuntimeException.wrap(t, PersistenceException::new);
       }
     }
   }

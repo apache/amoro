@@ -20,7 +20,7 @@ package org.apache.amoro.server.utils;
 
 import org.apache.amoro.IcebergFileEntry;
 import org.apache.amoro.scan.TableEntriesScan;
-import org.apache.amoro.server.ArcticServiceConstants;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.table.BasicTableSnapshot;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.TableRuntime;
@@ -58,7 +58,7 @@ public class IcebergTableUtil {
   public static long getSnapshotId(Table table, boolean refresh) {
     Snapshot currentSnapshot = getSnapshot(table, refresh);
     if (currentSnapshot == null) {
-      return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+      return AmoroServiceConstants.INVALID_SNAPSHOT_ID;
     } else {
       return currentSnapshot.snapshotId();
     }

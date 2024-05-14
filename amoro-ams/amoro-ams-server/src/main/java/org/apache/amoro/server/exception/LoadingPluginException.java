@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.exception;
 
-public class LoadingPluginException extends ArcticRuntimeException {
+public class LoadingPluginException extends AmoroRuntimeException {
 
   public LoadingPluginException(String message) {
     super(message);
