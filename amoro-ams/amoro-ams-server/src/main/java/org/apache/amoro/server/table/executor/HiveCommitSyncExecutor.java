@@ -71,6 +71,6 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
   }
 
   public static void syncIcebergToHive(MixedTable mixedTable) {
-    HiveMetaSynchronizer.syncArcticDataToHive((SupportHive) mixedTable);
+    HiveMetaSynchronizer.syncMixedTableDataToHive((SupportHive) mixedTable);
   }
 }

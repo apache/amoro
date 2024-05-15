@@ -270,7 +270,7 @@ public class AdaptHiveParquet {
                 .withDictionaryPageSize(dictionaryPageSize)
                 .build();
 
-        // Change For Arctic
+        // Change for mixed-hive table ⬇
         return new org.apache.iceberg.parquet.AdaptHiveParquetWriter<>(
             conf,
             file,
@@ -282,7 +282,7 @@ public class AdaptHiveParquet {
             parquetProperties,
             metricsConfig,
             writeMode);
-        // Change For Arctic
+        // Change for mixed-hive table ⬆
       } else {
         return new ParquetWriteAdapter<>(
             new ParquetWriteBuilder<D>(ParquetIO.file(file))
@@ -878,7 +878,7 @@ public class AdaptHiveParquet {
               caseSensitive,
               maxRecordsPerBatch);
         } else {
-          // Change For Arctic
+          // Change for mixed-hive table ⬇
           return new AdaptHiveParquetReader<>(
               file,
               schema,
@@ -888,7 +888,7 @@ public class AdaptHiveParquet {
               filter,
               reuseContainers,
               caseSensitive);
-          // Change For Arctic
+          // Change for mixed-hive table ⬆
         }
       }
 

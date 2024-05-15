@@ -140,7 +140,7 @@ public class HiveTableUtil {
   /**
    * Check whether the table is in Hive.
    *
-   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param hiveClient Hive client from MixedHiveCatalog
    * @param tableIdentifier A table identifier
    * @return If table is existed in hive
    */
@@ -163,7 +163,7 @@ public class HiveTableUtil {
   /**
    * Gets all the tables in a database.
    *
-   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param hiveClient Hive client from MixedHiveCatalog
    * @param database Hive database
    * @return A List of table-names from hive database
    */
@@ -181,7 +181,7 @@ public class HiveTableUtil {
   /**
    * Change the location of the Hive table.
    *
-   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param hiveClient Hive client from MixedHiveCatalog
    * @param tableIdentifier A table identifier
    */
   public static void alterTableLocation(

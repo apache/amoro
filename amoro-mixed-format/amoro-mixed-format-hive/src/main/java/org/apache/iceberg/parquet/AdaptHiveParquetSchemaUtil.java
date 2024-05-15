@@ -37,8 +37,9 @@ public class AdaptHiveParquetSchemaUtil {
   private AdaptHiveParquetSchemaUtil() {}
 
   public static MessageType convert(Schema schema, String name) {
-    // Change For Arctic
+    // Change for mixed-hive table ⬇
     return new AdaptHiveTypeToMessageType().convert(schema, name);
+    // Change for mixed-hive table ⬆
   }
 
   /**

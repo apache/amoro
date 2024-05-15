@@ -57,10 +57,11 @@ class AdaptHiveParquetConversions {
       case LONG:
       case TIME:
       case TIMESTAMP:
-        // Change For Arctic: Add metrics for int96 type
+        // Change for mixed-hive table ⬇
+        // Add metrics for int96 type
         Function<Object, Object> timeConversion = converterFromParquet(parquetType, type);
         return (Literal<T>) Literal.of((Long) timeConversion.apply(value));
-        // Change For Arctic
+        // Change for mixed-hive table ⬇
       case FLOAT:
         return (Literal<T>) Literal.of((Float) value);
       case DOUBLE:
@@ -86,8 +87,8 @@ class AdaptHiveParquetConversions {
   static Function<Object, Object> converterFromParquet(
       PrimitiveType parquetType, Type icebergType) {
 
-    // Change For Arctic:Adapt int 96 and bytes string
-    // int96
+    // Change for mixed-hive table ⬇
+    // Adapt int 96 and bytes string
     if (parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.INT96) {
       return binary -> {
         final ByteBuffer byteBuffer =
@@ -114,7 +115,7 @@ class AdaptHiveParquetConversions {
         && parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.BINARY) {
       return binary -> StandardCharsets.UTF_8.decode(((Binary) binary).toByteBuffer());
     }
-    // Change For Arctic
+    // Change for mixed-hive table ⬆
 
     Function<Object, Object> fromParquet = converterFromParquet(parquetType);
 

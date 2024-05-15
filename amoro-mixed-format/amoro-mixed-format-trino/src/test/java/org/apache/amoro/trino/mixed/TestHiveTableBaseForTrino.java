@@ -27,7 +27,7 @@ import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableProperties;
 import io.trino.testng.services.ManageTestResources;
 import org.apache.amoro.hive.HMSMockServer;
-import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
+import org.apache.amoro.hive.catalog.MixedHiveCatalog;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.table.KeyedHiveTable;
 import org.apache.amoro.hive.table.UnkeyedHiveTable;
@@ -109,7 +109,7 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   protected static final PartitionSpec HIVE_SPEC =
       PartitionSpec.builderFor(HIVE_TABLE_SCHEMA).identity(COLUMN_NAME_NAME).build();
 
-  protected ArcticHiveCatalog hiveCatalog;
+  protected MixedHiveCatalog hiveCatalog;
   protected UnkeyedHiveTable testHiveTable;
   protected KeyedHiveTable testKeyedHiveTable;
 
@@ -141,7 +141,7 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   }
 
   protected void setupTables() throws Exception {
-    hiveCatalog = (ArcticHiveCatalog) CatalogLoader.load(AMS.getUrl(TEST_CATALOG_NAME));
+    hiveCatalog = (MixedHiveCatalog) CatalogLoader.load(AMS.getUrl(TEST_CATALOG_NAME));
 
     testHiveTable =
         (UnkeyedHiveTable)

@@ -65,7 +65,7 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
 
   @Override
   public CloseableIterable<Record> readData() {
-    AdaptHiveGenericKeyedDataReader reader = arcticDataReader(table.schema());
+    AdaptHiveGenericKeyedDataReader reader = mixedTableDataReader(table.schema());
 
     // Change returned value by readData  from Iterator to Iterable in future
     CloseableIterator<Record> closeableIterator =
@@ -80,7 +80,7 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
             MetadataColumns.FILE_PATH,
             MetadataColumns.ROW_POSITION,
             org.apache.amoro.table.MetadataColumns.TREE_NODE_FIELD);
-    AdaptHiveGenericKeyedDataReader reader = arcticDataReader(schema);
+    AdaptHiveGenericKeyedDataReader reader = mixedTableDataReader(schema);
     return wrapIterator2Iterable(
         reader.readDeletedData(nodeFileScanTask(input.rePosDeletedDataFilesForMixed())));
   }
@@ -88,7 +88,7 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
   @Override
   public void close() {}
 
-  private AdaptHiveGenericKeyedDataReader arcticDataReader(Schema requiredSchema) {
+  private AdaptHiveGenericKeyedDataReader mixedTableDataReader(Schema requiredSchema) {
 
     PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.noPrimaryKey();
     if (table.isKeyedTable()) {

@@ -51,7 +51,7 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
 
   @Override
   protected String expectCatalogImpl() {
-    return ArcticHiveCatalog.class.getName();
+    return MixedHiveCatalog.class.getName();
   }
 
   @Override
@@ -59,7 +59,7 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
     return IDENTIFY_SPEC;
   }
 
-  private void validateTableArcticProperties(TableIdentifier tableIdentifier) throws TException {
+  private void validateMixedHiveTableProperties(TableIdentifier tableIdentifier) throws TException {
     String dbName = tableIdentifier.getDatabase();
     String tbl = tableIdentifier.getTableName();
     Map<String, String> tableParameter =
@@ -73,7 +73,7 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
   @Override
   protected void validateCreatedTable(MixedTable table, boolean withKey) throws TException {
     super.validateCreatedTable(table, withKey);
-    validateTableArcticProperties(table.id());
+    validateMixedHiveTableProperties(table.id());
   }
 
   @Override

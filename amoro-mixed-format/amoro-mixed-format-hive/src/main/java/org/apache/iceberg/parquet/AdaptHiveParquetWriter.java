@@ -100,10 +100,10 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
     this.props = properties;
     this.metadata = ImmutableMap.copyOf(metadata);
     this.compressor = new CodecFactory(conf, props.getPageSizeThreshold()).getCompressor(codec);
-    // Change For Arctic
+    // Change for mixed-hive table ⬇
     this.parquetSchema = AdaptHiveParquetSchemaUtil.convert(schema, "table");
     this.schema = schema;
-    // Change For Arctic
+    // Change for mixed-hive table ⬆
     this.model = (ParquetValueWriter<T>) createWriterFunc.apply(parquetSchema);
     this.metricsConfig = metricsConfig;
     this.columnIndexTruncateLength =
@@ -136,9 +136,11 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
 
   @Override
   public Metrics metrics() {
-    // Change For Arctic: Add metrics for int96 type
+    // Change for mixed-hive table ⬇
+    // Add metrics for int96 type
     return AdaptHiveParquetUtil.footerMetrics(
         writer.getFooter(), model.metrics(), metricsConfig, schema);
+    // Change for mixed-hive table ⬆
   }
 
   /**

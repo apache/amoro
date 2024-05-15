@@ -144,7 +144,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     commitTimestamp = (int) (System.currentTimeMillis() / 1000);
     applyDeleteExpr();
     if (syncDataToHive) {
-      HiveMetaSynchronizer.syncArcticDataToHive(table);
+      HiveMetaSynchronizer.syncMixedTableDataToHive(table);
     }
     List<DataFile> committedDataFiles =
         HiveCommitUtil.commitConsistentWriteFiles(this.addFiles, table.io(), table.spec());

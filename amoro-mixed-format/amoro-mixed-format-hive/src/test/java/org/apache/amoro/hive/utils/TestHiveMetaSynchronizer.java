@@ -106,7 +106,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
                 });
     Assert.assertNotEquals(newLocation, hiveLocation);
 
-    HiveMetaSynchronizer.syncArcticDataToHive(getMixedTable());
+    HiveMetaSynchronizer.syncMixedTableDataToHive(getMixedTable());
     hiveLocation =
         (getMixedTable())
             .getHMSClient()
@@ -141,7 +141,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
                   return hiveTable.getSd().getLocation();
                 });
 
-    HiveMetaSynchronizer.syncArcticDataToHive(getMixedTable());
+    HiveMetaSynchronizer.syncMixedTableDataToHive(getMixedTable());
     String newHiveLocation =
         getMixedTable()
             .getHMSClient()
@@ -189,7 +189,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
                             getMixedTable().id().getTableName(),
                             partitionValues)));
 
-    HiveMetaSynchronizer.syncArcticDataToHive(getMixedTable());
+    HiveMetaSynchronizer.syncMixedTableDataToHive(getMixedTable());
     Partition hivePartition =
         getMixedTable()
             .getHMSClient()
@@ -203,7 +203,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
   }
 
   @Test
-  public void testSyncOnlyInHiveCreateByArctic() throws Exception {
+  public void testSyncOnlyInHiveCreateByMixedHiveTable() throws Exception {
     Assume.assumeTrue(isPartitionedTable());
     UnkeyedTable baseTable =
         isKeyedTable()
@@ -262,7 +262,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
                         partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
 
-    HiveMetaSynchronizer.syncArcticDataToHive(getMixedTable());
+    HiveMetaSynchronizer.syncMixedTableDataToHive(getMixedTable());
 
     Assert.assertThrows(
         NoSuchObjectException.class,
@@ -278,7 +278,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
   }
 
   @Test
-  public void testSyncOnlyInHiveCreateNotByArctic() throws Exception {
+  public void testSyncOnlyInHiveCreateNotByMixedHiveTable() throws Exception {
     Assume.assumeTrue(isPartitionedTable());
     UnkeyedTable baseTable =
         isKeyedTable()
@@ -336,7 +336,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
                         partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
 
-    HiveMetaSynchronizer.syncArcticDataToHive(getMixedTable());
+    HiveMetaSynchronizer.syncMixedTableDataToHive(getMixedTable());
 
     hivePartition =
         getMixedTable()
@@ -420,7 +420,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
         .commit();
     Assert.assertNotEquals(newPartitionLocation, hivePartition.getSd().getLocation());
 
-    HiveMetaSynchronizer.syncArcticDataToHive(getMixedTable());
+    HiveMetaSynchronizer.syncMixedTableDataToHive(getMixedTable());
 
     hivePartition =
         getMixedTable()

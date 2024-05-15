@@ -67,18 +67,18 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/** Utils for syncing the metadata between the hive table and the arctic table. */
+/** Utils for syncing the metadata between the hive table and the mixed-hive table. */
 public class HiveMetaSynchronizer {
 
   private static final Logger LOG = LoggerFactory.getLogger(HiveMetaSynchronizer.class);
 
   /**
-   * Synchronize the schema change of the hive table to arctic table
+   * Synchronize the schema change of the hive table to mixed-hive table
    *
-   * @param table arctic table to accept the schema change
+   * @param table mixed-hive table to accept the schema change
    * @param hiveClient hive client
    */
-  public static void syncHiveSchemaToArctic(MixedTable table, HMSClientPool hiveClient) {
+  public static void syncHiveSchemaToMixedTable(MixedTable table, HMSClientPool hiveClient) {
     try {
       if (!HiveTableUtil.checkExist(hiveClient, table.id())) {
         LOG.warn("Hive table {} does not exist, try to skip sync schema to amoro", table.id());
@@ -121,7 +121,10 @@ public class HiveMetaSynchronizer {
       if (fields.isEmpty()) {
         updateSchema.addColumn(parentName, hiveField.name(), hiveField.type(), hiveField.doc());
         update = true;
-        LOG.info("Table {} sync new hive column {} to arctic", tableIdentifier, hiveField);
+        LOG.info(
+            "Table {} sync new hive column {} to thet mixed-hive table",
+            tableIdentifier,
+            hiveField);
       } else if (fields.size() == 1) {
         Types.NestedField icebergField = fields.get(0);
         if (!icebergField.type().equals(hiveField.type())
@@ -134,10 +137,13 @@ public class HiveMetaSynchronizer {
               updateSchema.updateColumn(
                   columnName, hiveField.type().asPrimitiveType(), hiveField.doc());
               update = true;
-              LOG.info("Table {} sync hive column {} to arctic", tableIdentifier, hiveField);
+              LOG.info(
+                  "Table {} sync hive column {} to the mixed-hive table",
+                  tableIdentifier,
+                  hiveField);
             } else {
               LOG.warn(
-                  "Table {} sync hive column {} to arctic failed, because of type mismatch",
+                  "Table {} sync hive column {} to the mixed-hive table failed, because of type mismatch",
                   tableIdentifier,
                   hiveField);
             }
@@ -154,7 +160,7 @@ public class HiveMetaSynchronizer {
                         hiveField.type().asStructType());
           } else {
             LOG.warn(
-                "Table {} sync hive column {} to arctic failed, because of type mismatch",
+                "Table {} sync hive column {} to the mixed-hive table failed, because of type mismatch",
                 tableIdentifier,
                 hiveField);
           }
@@ -166,17 +172,17 @@ public class HiveMetaSynchronizer {
     return update;
   }
 
-  public static void syncHiveDataToArctic(SupportHive table, HMSClientPool hiveClient) {
-    syncHiveDataToArctic(table, hiveClient, false);
+  public static void syncHiveDataToMixedTable(SupportHive table, HMSClientPool hiveClient) {
+    syncHiveDataToMixedTable(table, hiveClient, false);
   }
 
   /**
-   * Synchronize the data change of the hive table to arctic table
+   * Synchronize the data change of the hive table to the mixed-hive table
    *
-   * @param table arctic table to accept the data change
+   * @param table mixed-hive table to accept the data change
    * @param hiveClient hive client
    */
-  public static void syncHiveDataToArctic(
+  public static void syncHiveDataToMixedTable(
       SupportHive table, HMSClientPool hiveClient, boolean force) {
     if (!HiveTableUtil.checkExist(hiveClient, table.id())) {
       LOG.warn("Hive table {} does not exist, try to skip sync data to amoro", table.id());
@@ -211,7 +217,7 @@ public class HiveMetaSynchronizer {
                 client ->
                     client.listPartitions(
                         table.id().getDatabase(), table.id().getTableName(), Short.MAX_VALUE));
-        // group arctic files by partition.
+        // group mixed-hive table files by partition.
         StructLikeMap<Collection<DataFile>> filesGroupedByPartition =
             StructLikeMap.create(table.spec().partitionType());
         TableScan tableScan = baseStore.newScan();
@@ -240,7 +246,7 @@ public class HiveMetaSynchronizer {
             if (filesGroupedByPartition.get(partitionData) != null) {
               filesToDelete.addAll(filesGroupedByPartition.get(partitionData));
               filesToAdd.addAll(hiveDataFiles);
-              // make sure new partition is not created by arctic
+              // make sure new partition is not created by mixed-hive table
             } else if (!CompatibleHivePropertyUtil.propertyAsBoolean(
                 hivePartition.getParameters(), HiveTableProperties.MIXED_TABLE_FLAG, false)) {
               filesToAdd.addAll(hiveDataFiles);
@@ -266,11 +272,11 @@ public class HiveMetaSynchronizer {
   }
 
   /**
-   * Synchronize the data change of the arctic table to hive table
+   * Synchronize the data change of the mixed-hive table to hive table
    *
    * @param table support hive table
    */
-  public static void syncArcticDataToHive(SupportHive table) {
+  public static void syncMixedTableDataToHive(SupportHive table) {
     UnkeyedTable baseStore;
     if (table.isKeyedTable()) {
       baseStore = table.asKeyedTable().baseTable();
@@ -286,13 +292,13 @@ public class HiveMetaSynchronizer {
         syncPartitionTable(table, partitionProperty);
       }
     } catch (Exception e) {
-      throw new RuntimeException("Failed to sync arctic data to hive:" + table.id(), e);
+      throw new RuntimeException("Failed to sync mixed-hive table data to hive:" + table.id(), e);
     }
   }
 
   /**
-   * once get location from iceberg property, should update hive table location, because only arctic
-   * update hive table location for unPartitioned table.
+   * once get location from iceberg property, should update hive table location, because only
+   * mixed-hive table update hive table location for unPartitioned table.
    */
   private static void syncNoPartitionTable(
       SupportHive table, StructLikeMap<Map<String, String>> partitionProperty) {
@@ -442,10 +448,10 @@ public class HiveMetaSynchronizer {
     inHiveNotInIceberg.forEach(
         partition -> {
           Partition hivePartition = hivePartitionMap.get(partition);
-          boolean isArctic =
+          boolean isMixedTable =
               CompatibleHivePropertyUtil.propertyAsBoolean(
                   hivePartition.getParameters(), HiveTableProperties.MIXED_TABLE_FLAG, false);
-          if (isArctic) {
+          if (isMixedTable) {
             HivePartitionUtil.dropPartition(
                 ((SupportHive) mixedTable).getHMSClient(), mixedTable, hivePartition);
           }
@@ -522,91 +528,93 @@ public class HiveMetaSynchronizer {
 
   @VisibleForTesting
   static boolean partitionHasModified(
-      UnkeyedTable arcticTable, Partition hivePartition, StructLike partitionData) {
+      UnkeyedTable baseStore, Partition hivePartition, StructLike partitionData) {
     String hiveTransientTime = hivePartition.getParameters().get("transient_lastDdlTime");
-    String arcticTransientTime =
-        arcticTable.partitionProperty().containsKey(partitionData)
-            ? arcticTable
+    String mixedTransientTime =
+        baseStore.partitionProperty().containsKey(partitionData)
+            ? baseStore
                 .partitionProperty()
                 .get(partitionData)
                 .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME)
             : null;
     String hiveLocation = hivePartition.getSd().getLocation();
-    String arcticPartitionLocation =
-        arcticTable.partitionProperty().containsKey(partitionData)
-            ? arcticTable
+    String mixedPartitionLocation =
+        baseStore.partitionProperty().containsKey(partitionData)
+            ? baseStore
                 .partitionProperty()
                 .get(partitionData)
                 .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION)
             : null;
 
-    // hive partition location is modified only in arctic full optimize, So if the hive partition
-    // location is
-    // different from the arctic partition location, it is not necessary to trigger synchronization
-    // from the hive
-    // side to the arctic
-    if (arcticPartitionLocation != null && !arcticPartitionLocation.equals(hiveLocation)) {
+    // hive partition location is modified only in mixed-hive table full optimizing, So if the hive
+    // partition
+    // location is different from the mixed-hive table partition location, it is not necessary to
+    // trigger
+    // synchronization from the hive side to the mixed-hive table
+    if (mixedPartitionLocation != null && !mixedPartitionLocation.equals(hiveLocation)) {
       return false;
     }
 
-    // compare hive partition parameter transient_lastDdlTime with arctic partition properties to
+    // compare hive partition parameter transient_lastDdlTime with mixed-hive table partition
+    // properties to
     // find out if the partition is changed.
-    return arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime);
+    return mixedTransientTime == null || !mixedTransientTime.equals(hiveTransientTime);
   }
 
   @VisibleForTesting
-  static boolean tableHasModified(UnkeyedTable arcticTable, Table table) {
+  static boolean tableHasModified(UnkeyedTable baseStore, Table table) {
     String hiveTransientTime = table.getParameters().get("transient_lastDdlTime");
-    StructLikeMap<Map<String, String>> structLikeMap = arcticTable.partitionProperty();
-    String arcticTransientTime = null;
+    StructLikeMap<Map<String, String>> structLikeMap = baseStore.partitionProperty();
+    String mixedTransientTime = null;
     if (structLikeMap.get(TablePropertyUtil.EMPTY_STRUCT) != null) {
-      arcticTransientTime =
+      mixedTransientTime =
           structLikeMap
               .get(TablePropertyUtil.EMPTY_STRUCT)
               .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
     }
     String hiveLocation = table.getSd().getLocation();
-    String arcticPartitionLocation =
-        arcticTable.partitionProperty().containsKey(TablePropertyUtil.EMPTY_STRUCT)
-            ? arcticTable
+    String mixedPartitionLocation =
+        baseStore.partitionProperty().containsKey(TablePropertyUtil.EMPTY_STRUCT)
+            ? baseStore
                 .partitionProperty()
                 .get(TablePropertyUtil.EMPTY_STRUCT)
                 .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION)
             : null;
 
-    // hive partition location is modified only in arctic full optimize, So if the hive partition
-    // location is
-    // different from the arctic partition location, it is not necessary to trigger synchronization
-    // from the hive
-    // side to the arctic
-    if (arcticPartitionLocation != null && !arcticPartitionLocation.equals(hiveLocation)) {
+    // hive partition location is modified only in mixed-hive table full optimizing, So if the hive
+    // partition
+    // location is different from the mixed-hive table partition location, it is not necessary to
+    // trigger
+    // synchronization from the hive side to the mixed-hive table
+    if (mixedPartitionLocation != null && !mixedPartitionLocation.equals(hiveLocation)) {
       return false;
     }
 
-    // compare hive partition parameter transient_lastDdlTime with arctic partition properties to
+    // compare hive partition parameter transient_lastDdlTime with mixed-hive table partition
+    // properties to
     // find out if the partition is changed.
-    return arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime);
+    return mixedTransientTime == null || !mixedTransientTime.equals(hiveTransientTime);
   }
 
   private static List<DataFile> listHivePartitionFiles(
-      SupportHive arcticTable, Map<String, String> partitionValueMap, String partitionLocation) {
-    return arcticTable
+      SupportHive mixedTable, Map<String, String> partitionValueMap, String partitionLocation) {
+    return mixedTable
         .io()
         .doAs(
             () ->
                 TableMigrationUtil.listPartition(
                     partitionValueMap,
                     partitionLocation,
-                    arcticTable
+                    mixedTable
                         .properties()
                         .getOrDefault(
                             TableProperties.DEFAULT_FILE_FORMAT,
                             TableProperties.DEFAULT_FILE_FORMAT_DEFAULT),
-                    arcticTable.spec(),
-                    arcticTable.io().getConf(),
-                    MetricsConfig.fromProperties(arcticTable.properties()),
+                    mixedTable.spec(),
+                    mixedTable.io().getConf(),
+                    MetricsConfig.fromProperties(mixedTable.properties()),
                     NameMappingParser.fromJson(
-                        arcticTable
+                        mixedTable
                             .properties()
                             .get(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING))));
   }
@@ -624,7 +632,7 @@ public class HiveMetaSynchronizer {
       MixedTable table, List<DataFile> filesToDelete, List<DataFile> filesToAdd) {
     if (filesToDelete.size() > 0 || filesToAdd.size() > 0) {
       LOG.info(
-          "Table {} sync hive data change to arctic, delete files: {}, add files {}",
+          "Table {} sync hive data change to the mixed-hive table, delete files: {}, add files {}",
           table.id(),
           filesToDelete.stream().map(DataFile::path).collect(Collectors.toList()),
           filesToAdd.stream().map(DataFile::path).collect(Collectors.toList()));

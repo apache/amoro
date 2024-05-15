@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Abstract implementation of ArcticDeleteFilter to adapt hive when open equality delete files.
+ * Abstract implementation of MixedDeleteFilter to adapt hive when open equality delete files.
  *
  * @param <T> to indicate the record data type.
  */
