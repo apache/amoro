@@ -28,20 +28,20 @@ import javax.inject.Inject;
 import java.net.URI;
 
 /** Factory to generate Configuration of Hadoop */
-public class ArcticHdfsConfiguration implements HdfsConfiguration {
+public class AmoroHdfsConfiguration implements HdfsConfiguration {
 
-  private final ArcticCatalogFactory arcticCatalogFactory;
+  private final AmoroCatalogFactory amoroCatalogFactory;
 
   @Inject
-  public ArcticHdfsConfiguration(ArcticCatalogFactory arcticCatalogFactory) {
-    this.arcticCatalogFactory = arcticCatalogFactory;
+  public AmoroHdfsConfiguration(AmoroCatalogFactory amoroCatalogFactory) {
+    this.amoroCatalogFactory = amoroCatalogFactory;
   }
 
   @Override
   public Configuration getConfiguration(HdfsContext context, URI uri) {
     try (ThreadContextClassLoader ignored =
         new ThreadContextClassLoader(this.getClass().getClassLoader())) {
-      return arcticCatalogFactory.getTableMetastore().getConfiguration();
+      return amoroCatalogFactory.getTableMetastore().getConfiguration();
     }
   }
 }

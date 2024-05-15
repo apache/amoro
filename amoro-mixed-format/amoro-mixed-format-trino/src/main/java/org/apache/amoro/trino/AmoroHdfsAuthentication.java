@@ -26,24 +26,24 @@ import io.trino.spi.security.ConnectorIdentity;
 
 import javax.inject.Inject;
 
-/** Arctic HDFS Authentication using TableMetaStore */
-public class ArcticHdfsAuthentication implements HdfsAuthentication {
+/** Amoro HDFS Authentication using TableMetaStore */
+public class AmoroHdfsAuthentication implements HdfsAuthentication {
 
   private final TableMetaStore tableMetaStore;
 
-  private final ArcticConfig arcticConfig;
+  private final AmoroConfig amoroConfig;
 
   @Inject
-  public ArcticHdfsAuthentication(
-      ArcticCatalogFactory arcticCatalogFactory, ArcticConfig arcticConfig) {
-    this.tableMetaStore = arcticCatalogFactory.getTableMetastore();
-    this.arcticConfig = arcticConfig;
+  public AmoroHdfsAuthentication(
+          AmoroCatalogFactory amoroCatalogFactory, AmoroConfig amoroConfig) {
+    this.tableMetaStore = amoroCatalogFactory.getTableMetastore();
+    this.amoroConfig = amoroConfig;
   }
 
   @Override
   public <R, E extends Exception> R doAs(
       ConnectorIdentity identity, GenericExceptionAction<R, E> action) throws E {
-    boolean hdfsImpersonationEnabled = arcticConfig.getHdfsImpersonationEnabled();
+    boolean hdfsImpersonationEnabled = amoroConfig.getHdfsImpersonationEnabled();
     try (ThreadContextClassLoader ignored =
         new ThreadContextClassLoader(this.getClass().getClassLoader())) {
       if (hdfsImpersonationEnabled && identity.getUser() != null) {

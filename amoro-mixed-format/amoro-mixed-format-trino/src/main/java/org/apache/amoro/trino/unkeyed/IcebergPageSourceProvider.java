@@ -304,7 +304,7 @@ public class IcebergPageSourceProvider implements ConnectorPageSourceProvider {
     PartitionData partitionData =
         PartitionData.fromJson(split.getPartitionDataJson(), partitionColumnTypes);
     Map<Integer, Optional<String>> partitionKeys = getPartitionKeys(partitionData, partitionSpec);
-    // for arctic
+    // for amoro
     if (idToConstant != null) {
       partitionKeys =
           ImmutableMap.<Integer, Optional<String>>builder()

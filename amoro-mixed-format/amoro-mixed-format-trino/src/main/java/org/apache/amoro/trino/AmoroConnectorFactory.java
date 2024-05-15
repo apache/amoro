@@ -65,13 +65,13 @@ import java.util.Optional;
 import java.util.Set;
 
 /** Factory to generate {@link Connector} */
-public class ArcticConnectorFactory implements ConnectorFactory {
+public class AmoroConnectorFactory implements ConnectorFactory {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticConnectorFactory.class);
+  private static final Logger LOG = LoggerFactory.getLogger(AmoroConnectorFactory.class);
 
   @Override
   public String getName() {
-    return "arctic";
+    return "amoro";
   }
 
   @Override
@@ -86,7 +86,7 @@ public class ArcticConnectorFactory implements ConnectorFactory {
               new ConnectorObjectNameGeneratorModule(
                   "io.trino.plugin.iceberg", "trino.plugin.iceberg"),
               new JsonModule(),
-              new ArcticModule(context.getTypeManager()),
+              new AmoroModule(context.getTypeManager()),
               new IcebergSecurityModule(),
               new MBeanServerModule(),
               binder -> {
@@ -108,8 +108,8 @@ public class ArcticConnectorFactory implements ConnectorFactory {
           app.doNotInitializeLogging().setRequiredConfigurationProperties(config).initialize();
 
       LifeCycleManager lifeCycleManager = injector.getInstance(LifeCycleManager.class);
-      ArcticTransactionManager transactionManager =
-          injector.getInstance(ArcticTransactionManager.class);
+      AmoroTransactionManager transactionManager =
+          injector.getInstance(AmoroTransactionManager.class);
       ConnectorSplitManager splitManager = injector.getInstance(ConnectorSplitManager.class);
       ConnectorPageSourceProvider connectorPageSource =
           injector.getInstance(ConnectorPageSourceProvider.class);
@@ -128,7 +128,7 @@ public class ArcticConnectorFactory implements ConnectorFactory {
       Optional<ConnectorAccessControl> accessControl =
           injector.getInstance(Key.get(new TypeLiteral<Optional<ConnectorAccessControl>>() {}));
 
-      return new ArcticConnector(
+      return new AmoroConnector(
           lifeCycleManager,
           transactionManager,
           new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader),

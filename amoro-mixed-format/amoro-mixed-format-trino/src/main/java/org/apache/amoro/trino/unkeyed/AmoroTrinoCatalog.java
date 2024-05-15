@@ -47,13 +47,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/** A TrinoCatalog for Arctic, this is in order to reuse iceberg code */
-public class ArcticTrinoCatalog implements TrinoCatalog {
+/** A TrinoCatalog for Amoro, this is in order to reuse iceberg code */
+public class AmoroTrinoCatalog implements TrinoCatalog {
 
-  private final MixedFormatCatalog arcticCatalog;
+  private final MixedFormatCatalog amoroCatalog;
 
-  public ArcticTrinoCatalog(MixedFormatCatalog arcticCatalog) {
-    this.arcticCatalog = arcticCatalog;
+  public AmoroTrinoCatalog(MixedFormatCatalog amoroCatalog) {
+    this.amoroCatalog = amoroCatalog;
   }
 
   @Override
@@ -71,7 +71,7 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   @Override
   public List<String> listNamespaces(ConnectorSession session) {
-    return arcticCatalog.listDatabases();
+    return amoroCatalog.listDatabases();
   }
 
   private List<String> listNamespaces(ConnectorSession session, Optional<String> namespace) {
@@ -123,7 +123,7 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
   @Override
   public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> namespace) {
     return listNamespaces(session, namespace).stream()
-        .flatMap(s -> arcticCatalog.listTables(s).stream())
+        .flatMap(s -> amoroCatalog.listTables(s).stream())
         .map(s -> new SchemaTableName(s.getDatabase(), s.getTableName()))
         .collect(Collectors.toList());
   }
@@ -136,7 +136,7 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
       PartitionSpec partitionSpec,
       String location,
       Map<String, String> properties) {
-    return arcticCatalog
+    return amoroCatalog
         .newTableBuilder(getTableIdentifier(schemaTableName), schema)
         .withPartitionSpec(partitionSpec)
         .withProperties(properties)
@@ -154,9 +154,9 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   @Override
   public void dropTable(ConnectorSession session, SchemaTableName schemaTableName) {
-    arcticCatalog.dropTable(
+    amoroCatalog.dropTable(
         TableIdentifier.of(
-            arcticCatalog.name(), schemaTableName.getSchemaName(), schemaTableName.getTableName()),
+            amoroCatalog.name(), schemaTableName.getSchemaName(), schemaTableName.getTableName()),
         true);
   }
 
@@ -167,7 +167,7 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   @Override
   public Table loadTable(ConnectorSession session, SchemaTableName schemaTableName) {
-    MixedTable mixedTable = arcticCatalog.loadTable(getTableIdentifier(schemaTableName));
+    MixedTable mixedTable = amoroCatalog.loadTable(getTableIdentifier(schemaTableName));
     if (mixedTable instanceof Table) {
       return (Table) mixedTable;
     }
@@ -298,6 +298,6 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   private TableIdentifier getTableIdentifier(SchemaTableName schemaTableName) {
     return TableIdentifier.of(
-        arcticCatalog.name(), schemaTableName.getSchemaName(), schemaTableName.getTableName());
+        amoroCatalog.name(), schemaTableName.getSchemaName(), schemaTableName.getTableName());
   }
 }

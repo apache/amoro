@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.ToLongFunction;
 
-/** Copy from trino-iceberg TrinoDeleteFile and do some change to adapt Arctic */
+/** Copy from trino-iceberg TrinoDeleteFile and do some change to adapt Amoro */
 public class TrinoDeleteFile implements DeleteFile {
   private static final long INSTANCE_SIZE =
       ClassLayout.parseClass(TrinoDeleteFile.class).instanceSize();

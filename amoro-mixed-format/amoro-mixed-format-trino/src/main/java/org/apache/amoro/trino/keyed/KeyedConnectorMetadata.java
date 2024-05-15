@@ -34,7 +34,7 @@ import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.TableIdentifier;
-import org.apache.amoro.trino.ArcticSessionProperties;
+import org.apache.amoro.trino.AmoroSessionProperties;
 import org.apache.amoro.trino.util.ObjectSerializerUtil;
 import io.trino.plugin.hive.HiveApplyProjectionUtil;
 import io.trino.plugin.iceberg.ColumnIdentity;
@@ -91,7 +91,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
 
   private static final Logger log = LoggerFactory.getLogger(KeyedConnectorMetadata.class);
 
-  private final MixedFormatCatalog arcticCatalog;
+  private final MixedFormatCatalog amoroCatalog;
 
   private final TypeManager typeManager;
 
@@ -101,14 +101,14 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
   private final Map<IcebergTableHandle, TableStatistics> tableStatisticsCache =
       new ConcurrentHashMap<>();
 
-  public KeyedConnectorMetadata(MixedFormatCatalog arcticCatalog, TypeManager typeManager) {
-    this.arcticCatalog = arcticCatalog;
+  public KeyedConnectorMetadata(MixedFormatCatalog amoroCatalog, TypeManager typeManager) {
+    this.amoroCatalog = amoroCatalog;
     this.typeManager = typeManager;
   }
 
   @Override
   public List<String> listSchemaNames(ConnectorSession session) {
-    return arcticCatalog.listDatabases().stream()
+    return amoroCatalog.listDatabases().stream()
         .map(s -> s.toLowerCase(Locale.ROOT))
         .collect(Collectors.toList());
   }
@@ -116,12 +116,12 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
   @Override
   public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName) {
 
-    KeyedTable arcticTable = getArcticTable(tableName).asKeyedTable();
-    if (arcticTable == null) {
+    KeyedTable amoroTable = getAmoroTable(tableName).asKeyedTable();
+    if (amoroTable == null) {
       return null;
     }
-    TableIdentifier tableIdentifier = arcticTable.id();
-    Map<String, String> tableProperties = arcticTable.properties();
+    TableIdentifier tableIdentifier = amoroTable.id();
+    Map<String, String> tableProperties = amoroTable.properties();
     String nameMappingJson = tableProperties.get(TableProperties.DEFAULT_NAME_MAPPING);
     IcebergTableHandle icebergTableHandle =
         new IcebergTableHandle(
@@ -129,14 +129,14 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
             tableIdentifier.getTableName(),
             TableType.DATA,
             Optional.empty(),
-            SchemaParser.toJson(arcticTable.schema()),
-            Optional.of(arcticTable.spec()).map(PartitionSpecParser::toJson),
+            SchemaParser.toJson(amoroTable.schema()),
+            Optional.of(amoroTable.spec()).map(PartitionSpecParser::toJson),
             2,
             TupleDomain.all(),
             TupleDomain.all(),
             ImmutableSet.of(),
             Optional.ofNullable(nameMappingJson),
-            arcticTable.location(),
+            amoroTable.location(),
             tableProperties,
             NO_RETRIES,
             ImmutableList.of(),
@@ -144,7 +144,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
             Optional.empty());
 
     return new KeyedTableHandle(
-        icebergTableHandle, ObjectSerializerUtil.write(arcticTable.primaryKeySpec()));
+        icebergTableHandle, ObjectSerializerUtil.write(amoroTable.primaryKeySpec()));
   }
 
   @Override
@@ -155,7 +155,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
     SchemaTableName schemaTableName =
         new SchemaTableName(icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName());
     MixedTable mixedTable =
-        getArcticTable(
+        getAmoroTable(
             new SchemaTableName(
                 icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()));
     if (mixedTable == null) {
@@ -173,7 +173,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
     SchemaTableName schemaTableName =
         new SchemaTableName(icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName());
     MixedTable mixedTable =
-        getArcticTable(
+        getAmoroTable(
             new SchemaTableName(
                 icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()));
     if (mixedTable == null) {
@@ -222,7 +222,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
     ImmutableMap.Builder<SchemaTableName, List<ColumnMetadata>> columns = ImmutableMap.builder();
     for (SchemaTableName schemaTableName : schemaTableNames) {
       try {
-        MixedTable mixedTable = getArcticTable(schemaTableName);
+        MixedTable mixedTable = getAmoroTable(schemaTableName);
         List<ColumnMetadata> columnMetadata = getColumnMetadata(mixedTable);
         columns.put(schemaTableName, columnMetadata);
       } catch (TableNotFoundException | NotFoundException e) {
@@ -237,7 +237,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
   @Override
   public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> schemaName) {
     return listNamespaces(session, schemaName).stream()
-        .flatMap(s -> arcticCatalog.listTables(s).stream())
+        .flatMap(s -> amoroCatalog.listTables(s).stream())
         .map(s -> new SchemaTableName(s.getDatabase(), s.getTableName()))
         .collect(Collectors.toList());
   }
@@ -248,7 +248,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
     KeyedTableHandle table = (KeyedTableHandle) handle;
     IcebergTableHandle icebergTableHandle = table.getIcebergTableHandle();
     MixedTable mixedTable =
-        getArcticTable(
+        getAmoroTable(
             new SchemaTableName(
                 icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()));
 
@@ -406,7 +406,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
   @Override
   public TableStatistics getTableStatistics(
       ConnectorSession session, ConnectorTableHandle tableHandle) {
-    if (!ArcticSessionProperties.isArcticStatisticsEnabled(session)) {
+    if (!AmoroSessionProperties.isAmoroStatisticsEnabled(session)) {
       return TableStatistics.empty();
     }
 
@@ -440,7 +440,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
             originalHandle.getMaxScannedFileSize()),
         handle -> {
           MixedTable mixedTable =
-              getArcticTable(
+              getAmoroTable(
                   new SchemaTableName(
                       originalHandle.getSchemaName(), originalHandle.getTableName()));
           TableStatistics baseTableStatistics =
@@ -508,13 +508,13 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
         Optional.empty());
   }
 
-  public MixedTable getArcticTable(SchemaTableName schemaTableName) {
+  public MixedTable getAmoroTable(SchemaTableName schemaTableName) {
     concurrentHashMap.computeIfAbsent(
         schemaTableName,
         ignore ->
-            arcticCatalog.loadTable(
+            amoroCatalog.loadTable(
                 TableIdentifier.of(
-                    arcticCatalog.name(),
+                    amoroCatalog.name(),
                     schemaTableName.getSchemaName(),
                     schemaTableName.getTableName())));
     return concurrentHashMap.get(schemaTableName);

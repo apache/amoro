@@ -32,18 +32,18 @@ import io.trino.spi.connector.DynamicFilter;
 import javax.inject.Inject;
 
 /**
- * {@link ArcticConnectorSplitManager} is a Union {@link ConnectorSplitManager} contain {@link
+ * {@link AmoroConnectorSplitManager} is a Union {@link ConnectorSplitManager} contain {@link
  * KeyedConnectorSplitManager} and {@link IcebergSplitManager}. This is final {@link
  * ConnectorSplitManager} provided to Trino
  */
-public class ArcticConnectorSplitManager implements ConnectorSplitManager {
+public class AmoroConnectorSplitManager implements ConnectorSplitManager {
 
   private final KeyedConnectorSplitManager keyedConnectorSplitManager;
 
   private final IcebergSplitManager icebergSplitManager;
 
   @Inject
-  public ArcticConnectorSplitManager(
+  public AmoroConnectorSplitManager(
       KeyedConnectorSplitManager keyedConnectorSplitManager,
       IcebergSplitManager icebergSplitManager) {
     this.keyedConnectorSplitManager = keyedConnectorSplitManager;

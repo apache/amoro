@@ -18,15 +18,24 @@
 
 package org.apache.amoro.trino;
 
-import io.trino.spi.Plugin;
-import io.trino.spi.connector.ConnectorFactory;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import static io.trino.spi.ErrorType.EXTERNAL;
 
-/** Arctic Plugin Impl of {@link Plugin} */
-public class ArcticPlugin implements Plugin {
+import io.trino.spi.ErrorCode;
+import io.trino.spi.ErrorCodeSupplier;
+import io.trino.spi.ErrorType;
+
+/** Error code */
+public enum AmoroErrorCode implements ErrorCodeSupplier {
+  AMORO_BAD_DATA(4, EXTERNAL);
+
+  private final ErrorCode errorCode;
+
+  AmoroErrorCode(int code, ErrorType type) {
+    errorCode = new ErrorCode(code + 0x0504_0000, name(), type);
+  }
 
   @Override
-  public Iterable<ConnectorFactory> getConnectorFactories() {
-    return ImmutableList.of(new ArcticConnectorFactory());
+  public ErrorCode toErrorCode() {
+    return errorCode;
   }
 }

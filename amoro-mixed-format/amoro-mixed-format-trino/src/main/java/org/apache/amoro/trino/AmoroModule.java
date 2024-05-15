@@ -27,7 +27,7 @@ import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
 import com.google.inject.multibindings.Multibinder;
-import org.apache.amoro.trino.unkeyed.ArcticTrinoCatalogFactory;
+import org.apache.amoro.trino.unkeyed.AmoroTrinoCatalogFactory;
 import org.apache.amoro.trino.unkeyed.IcebergPageSourceProvider;
 import org.apache.amoro.trino.unkeyed.IcebergSplitManager;
 import org.apache.amoro.trino.keyed.KeyedConnectorSplitManager;
@@ -67,12 +67,12 @@ import io.trino.spi.procedure.Procedure;
 import io.trino.spi.type.TypeManager;
 import org.weakref.jmx.guice.ExportBinder;
 
-/** Arctic module of Trino */
-public class ArcticModule implements Module {
+/** Amoro module of Trino */
+public class AmoroModule implements Module {
 
   private final TypeManager typeManager;
 
-  public ArcticModule(TypeManager typeManager) {
+  public AmoroModule(TypeManager typeManager) {
     this.typeManager = typeManager;
   }
 
@@ -80,25 +80,25 @@ public class ArcticModule implements Module {
   public void configure(Binder binder) {
     binder.bind(TypeManager.class).toInstance(typeManager);
 
-    configBinder(binder).bindConfig(ArcticConfig.class);
+    configBinder(binder).bindConfig(AmoroConfig.class);
     binder.bind(IcebergSessionProperties.class).in(Scopes.SINGLETON);
     binder.bind(KeyedConnectorSplitManager.class).in(Scopes.SINGLETON);
     binder.bind(KeyedPageSourceProvider.class).in(Scopes.SINGLETON);
     binder
-        .bind(ArcticCatalogFactory.class)
-        .to(DefaultArcticCatalogFactory.class)
+        .bind(AmoroCatalogFactory.class)
+        .to(DefaultAmoroCatalogFactory.class)
         .in(Scopes.SINGLETON);
-    binder.bind(TrinoCatalogFactory.class).to(ArcticTrinoCatalogFactory.class).in(Scopes.SINGLETON);
-    binder.bind(ArcticTransactionManager.class).in(Scopes.SINGLETON);
-    binder.bind(ArcticMetadataFactory.class).in(Scopes.SINGLETON);
+    binder.bind(TrinoCatalogFactory.class).to(AmoroTrinoCatalogFactory.class).in(Scopes.SINGLETON);
+    binder.bind(AmoroTransactionManager.class).in(Scopes.SINGLETON);
+    binder.bind(AmoroMetadataFactory.class).in(Scopes.SINGLETON);
     binder.bind(TableStatisticsWriter.class).in(Scopes.SINGLETON);
     binder
         .bind(ConnectorSplitManager.class)
-        .to(ArcticConnectorSplitManager.class)
+        .to(AmoroConnectorSplitManager.class)
         .in(Scopes.SINGLETON);
     binder
         .bind(ConnectorPageSourceProvider.class)
-        .to(ArcticPageSourceProvider.class)
+        .to(AmoroPageSourceProvider.class)
         .in(Scopes.SINGLETON);
 
     configBinder(binder).bindConfig(HiveMetastoreConfig.class);
@@ -106,7 +106,7 @@ public class ArcticModule implements Module {
 
     newSetBinder(binder, SessionPropertiesProvider.class)
         .addBinding()
-        .to(ArcticSessionProperties.class)
+        .to(AmoroSessionProperties.class)
         .in(Scopes.SINGLETON);
     binder.bind(IcebergTableProperties.class).in(Scopes.SINGLETON);
 
@@ -155,8 +155,8 @@ public class ArcticModule implements Module {
 
     // hdfs
     ConfigBinder.configBinder(binder).bindConfig(HdfsConfig.class);
-    binder.bind(HdfsConfiguration.class).to(ArcticHdfsConfiguration.class).in(Scopes.SINGLETON);
-    binder.bind(HdfsAuthentication.class).to(ArcticHdfsAuthentication.class).in(Scopes.SINGLETON);
+    binder.bind(HdfsConfiguration.class).to(AmoroHdfsConfiguration.class).in(Scopes.SINGLETON);
+    binder.bind(HdfsAuthentication.class).to(AmoroHdfsAuthentication.class).in(Scopes.SINGLETON);
     binder.bind(HdfsEnvironment.class).in(Scopes.SINGLETON);
     binder.bind(NamenodeStats.class).in(Scopes.SINGLETON);
     ExportBinder.newExporter(binder).export(NamenodeStats.class).withGeneratedName();

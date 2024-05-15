@@ -18,24 +18,14 @@
 
 package org.apache.amoro.trino;
 
-import static io.trino.spi.ErrorType.EXTERNAL;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.table.TableMetaStore;
 
-import io.trino.spi.ErrorCode;
-import io.trino.spi.ErrorCodeSupplier;
-import io.trino.spi.ErrorType;
+/** A interface of factory to generate AmoroCatalog */
+public interface AmoroCatalogFactory {
 
-/** Error code */
-public enum ArcticErrorCode implements ErrorCodeSupplier {
-  ARCTIC_BAD_DATA(4, EXTERNAL);
+  /** generate AmoroCatalog */
+  MixedFormatCatalog getAmoroCatalog();
 
-  private final ErrorCode errorCode;
-
-  ArcticErrorCode(int code, ErrorType type) {
-    errorCode = new ErrorCode(code + 0x0504_0000, name(), type);
-  }
-
-  @Override
-  public ErrorCode toErrorCode() {
-    return errorCode;
-  }
+  TableMetaStore getTableMetastore();
 }

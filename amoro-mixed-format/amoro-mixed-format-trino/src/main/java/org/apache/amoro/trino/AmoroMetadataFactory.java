@@ -31,43 +31,43 @@ import io.trino.spi.type.TypeManager;
 
 import javax.inject.Inject;
 
-/** A factory to generate {@link ArcticConnectorMetadata} */
-public class ArcticMetadataFactory {
+/** A factory to generate {@link AmoroConnectorMetadata} */
+public class AmoroMetadataFactory {
   private final TypeManager typeManager;
   private final JsonCodec<CommitTaskData> commitTaskCodec;
   private final TrinoFileSystemFactory fileSystemFactory;
   private final TableStatisticsWriter tableStatisticsWriter;
-  private final ArcticCatalogFactory arcticCatalogFactory;
-  private final TrinoCatalogFactory arcticTrinoCatalogFactory;
+  private final AmoroCatalogFactory amoroCatalogFactory;
+  private final TrinoCatalogFactory amoroTrinoCatalogFactory;
 
   @Inject
-  public ArcticMetadataFactory(
+  public AmoroMetadataFactory(
       TypeManager typeManager,
       JsonCodec<CommitTaskData> commitTaskCodec,
       TrinoFileSystemFactory fileSystemFactory,
       TableStatisticsWriter tableStatisticsWriter,
-      ArcticCatalogFactory arcticCatalogFactory,
-      TrinoCatalogFactory arcticTrinoCatalogFactory) {
+      AmoroCatalogFactory amoroCatalogFactory,
+      TrinoCatalogFactory amoroTrinoCatalogFactory) {
     this.typeManager = requireNonNull(typeManager, "typeManager is null");
     this.commitTaskCodec = requireNonNull(commitTaskCodec, "commitTaskCodec is null");
     this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
     this.tableStatisticsWriter =
         requireNonNull(tableStatisticsWriter, "tableStatisticsWriter is null");
-    this.arcticCatalogFactory = arcticCatalogFactory;
-    this.arcticTrinoCatalogFactory = arcticTrinoCatalogFactory;
+    this.amoroCatalogFactory = amoroCatalogFactory;
+    this.amoroTrinoCatalogFactory = amoroTrinoCatalogFactory;
   }
 
-  public ArcticConnectorMetadata create() {
+  public AmoroConnectorMetadata create() {
     IcebergMetadata icebergMetadata =
         new IcebergMetadata(
             typeManager,
             commitTaskCodec,
-            arcticTrinoCatalogFactory.create(null),
+            amoroTrinoCatalogFactory.create(null),
             fileSystemFactory,
             tableStatisticsWriter);
-    KeyedConnectorMetadata arcticConnectorMetadata =
-        new KeyedConnectorMetadata(arcticCatalogFactory.getArcticCatalog(), typeManager);
-    return new ArcticConnectorMetadata(
-        arcticConnectorMetadata, icebergMetadata, arcticCatalogFactory.getArcticCatalog());
+    KeyedConnectorMetadata amoroConnectorMetadata =
+        new KeyedConnectorMetadata(amoroCatalogFactory.getAmoroCatalog(), typeManager);
+    return new AmoroConnectorMetadata(
+        amoroConnectorMetadata, icebergMetadata, amoroCatalogFactory.getAmoroCatalog());
   }
 }

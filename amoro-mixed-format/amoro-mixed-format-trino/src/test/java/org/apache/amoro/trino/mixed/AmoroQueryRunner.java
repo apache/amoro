@@ -25,7 +25,7 @@ import static java.util.Objects.requireNonNull;
 import io.airlift.log.Logger;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.DistributedQueryRunner;
-import org.apache.amoro.trino.ArcticPlugin;
+import org.apache.amoro.trino.AmoroPlugin;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 
 import java.io.File;
@@ -33,12 +33,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public final class ArcticQueryRunner {
-  private static final Logger log = Logger.get(ArcticQueryRunner.class);
+public final class AmoroQueryRunner {
+  private static final Logger log = Logger.get(AmoroQueryRunner.class);
 
-  public static final String ARCTIC_CATALOG = "arctic";
+  public static final String AMORO_CATALOG = "amoro";
 
-  private ArcticQueryRunner() {}
+  private AmoroQueryRunner() {}
 
   public static Builder builder() {
     return new Builder();
@@ -49,7 +49,7 @@ public final class ArcticQueryRunner {
     private ImmutableMap.Builder<String, String> icebergProperties = ImmutableMap.builder();
 
     protected Builder() {
-      super(testSessionBuilder().setCatalog(ARCTIC_CATALOG).setSchema("tpch").build());
+      super(testSessionBuilder().setCatalog(AMORO_CATALOG).setSchema("tpch").build());
     }
 
     public Builder setMetastoreDirectory(File metastoreDirectory) {
@@ -76,10 +76,10 @@ public final class ArcticQueryRunner {
         queryRunner.installPlugin(new TpchPlugin());
         queryRunner.createCatalog("tpch", "tpch");
 
-        queryRunner.installPlugin(new ArcticPlugin());
+        queryRunner.installPlugin(new AmoroPlugin());
         Map<String, String> icebergProperties =
             new HashMap<>(this.icebergProperties.buildOrThrow());
-        queryRunner.createCatalog(ARCTIC_CATALOG, "arctic", icebergProperties);
+        queryRunner.createCatalog(AMORO_CATALOG, "amoro", icebergProperties);
         return queryRunner;
       } catch (Exception e) {
         closeAllSuppress(e, queryRunner);
@@ -91,11 +91,11 @@ public final class ArcticQueryRunner {
   public static void main(String[] args) throws Exception {
     DistributedQueryRunner queryRunner = null;
     queryRunner =
-        ArcticQueryRunner.builder()
+        AmoroQueryRunner.builder()
             .setExtraProperties(ImmutableMap.of("http-server.http.port", "8080"))
             .build();
     Thread.sleep(10);
-    Logger log = Logger.get(ArcticQueryRunner.class);
+    Logger log = Logger.get(AmoroQueryRunner.class);
     log.info("======== SERVER STARTED ========");
     log.info("\n====\n%s\n====", queryRunner.getCoordinator().getBaseUrl());
   }

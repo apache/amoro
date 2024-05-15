@@ -29,9 +29,9 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
-public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrino {
+public class TestBaseAmoroPrimaryTable extends TableTestBaseWithInitDataForTrino {
 
-  public static final String PK_TABLE_FULL_NAME = "arctic.test_db.test_pk_table";
+  public static final String PK_TABLE_FULL_NAME = "amoro.test_db.test_pk_table";
 
   @Override
   protected QueryRunner createQueryRunner() throws Exception {
@@ -41,12 +41,12 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
     // setupAMS();
     setupTables();
     initData();
-    return ArcticQueryRunner.builder()
+    return AmoroQueryRunner.builder()
         .setIcebergProperties(
             ImmutableMap.of(
-                "arctic.url",
+                "amoro.url",
                 String.format("thrift://localhost:%s/%s", AMS.port(), TEST_CATALOG_NAME),
-                "arctic.enable-split-task-by-delete-ratio",
+                "amoro.enable-split-task-by-delete-ratio",
                 "true"))
         .build();
   }
@@ -80,26 +80,26 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
 
   @Test
   public void baseQuery() {
-    assertQuery("select id from " + "arctic.test_db.\"test_pk_table#base\"", "VALUES 1, 2, 3");
+    assertQuery("select id from " + "amoro.test_db.\"test_pk_table#base\"", "VALUES 1, 2, 3");
   }
 
   @Test
   public void baseQueryWhenTableNameContainCatalogAndDataBase() {
     assertQuery(
-        "select id from " + "arctic.test_db.\"arctic.test_db.test_pk_table#base\"",
+        "select id from " + "amoro.test_db.\"amoro.test_db.test_pk_table#base\"",
         "VALUES 1, 2, 3");
   }
 
   @Test
   public void baseQueryWhenTableNameContainDataBase() {
     assertQuery(
-        "select id from " + "arctic.test_db.\"test_db.test_pk_table#base\"", "VALUES 1, 2, 3");
+        "select id from " + "amoro.test_db.\"test_db.test_pk_table#base\"", "VALUES 1, 2, 3");
   }
 
   @Test
   public void changeQuery() {
     assertQuery(
-        "select * from " + "arctic.test_db.\"test_pk_table#change\"",
+        "select * from " + "amoro.test_db.\"test_pk_table#change\"",
         "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT'),"
             + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT'),"
             + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
@@ -108,7 +108,7 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
   @Test
   public void changeQueryWhenTableNameContainCatalogAndDataBase() {
     assertQuery(
-        "select * from " + "arctic.test_db.\"arctic.test_db.test_pk_table#change\"",
+        "select * from " + "amoro.test_db.\"amoro.test_db.test_pk_table#change\"",
         "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT'),"
             + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT'),"
             + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
@@ -117,7 +117,7 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
   @Test
   public void changeQueryWhenTableNameContainDataBase() {
     assertQuery(
-        "select * from " + "arctic.test_db.\"test_db.test_pk_table#change\"",
+        "select * from " + "amoro.test_db.\"test_db.test_pk_table#change\"",
         "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT'),"
             + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT'),"
             + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");

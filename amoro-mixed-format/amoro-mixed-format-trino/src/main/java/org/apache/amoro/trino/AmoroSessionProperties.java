@@ -31,40 +31,40 @@ import javax.inject.Inject;
 
 import java.util.List;
 
-/** Arctic supporting session properties */
-public final class ArcticSessionProperties implements SessionPropertiesProvider {
+/** Amoro supporting session properties */
+public final class AmoroSessionProperties implements SessionPropertiesProvider {
 
-  private static final String ARCTIC_STATISTICS_ENABLED = "arctic_table_statistics_enabled";
+  private static final String AMORO_STATISTICS_ENABLED = "amoro_table_statistics_enabled";
 
-  private static final String ARCTIC_SPLIT_TASK_BY_DELETE_RATIO =
-      "arctic_split_task_by_delete_ratio";
-  private static final String ARCTIC_ENABLE_SPLIT_TASK_BY_DELETE_RATIO =
-      "arctic_enable_split_task_by_delete_ratio";
+  private static final String AMORO_SPLIT_TASK_BY_DELETE_RATIO =
+      "amoro_split_task_by_delete_ratio";
+  private static final String AMORO_ENABLE_SPLIT_TASK_BY_DELETE_RATIO =
+      "amoro_enable_split_task_by_delete_ratio";
   private final List<PropertyMetadata<?>> sessionProperties;
 
   @Inject
-  public ArcticSessionProperties(
-      ArcticConfig arcticConfig, IcebergSessionProperties icebergSessionProperties) {
+  public AmoroSessionProperties(
+          AmoroConfig amoroConfig, IcebergSessionProperties icebergSessionProperties) {
     sessionProperties =
         ImmutableList.<PropertyMetadata<?>>builder()
             .addAll(icebergSessionProperties.getSessionProperties())
             .add(
                 booleanProperty(
-                    ARCTIC_STATISTICS_ENABLED,
-                    "Expose table statistics for Arctic table",
-                    arcticConfig.isTableStatisticsEnabled(),
+                        AMORO_STATISTICS_ENABLED,
+                    "Expose table statistics for Amoro table",
+                    amoroConfig.isTableStatisticsEnabled(),
                     false))
             .add(
                 doubleProperty(
-                    ARCTIC_SPLIT_TASK_BY_DELETE_RATIO,
+                        AMORO_SPLIT_TASK_BY_DELETE_RATIO,
                     "If task delete ratio less than this value will be split to more task",
-                    arcticConfig.getSplitTaskByDeleteRatio(),
+                    amoroConfig.getSplitTaskByDeleteRatio(),
                     false))
             .add(
                 booleanProperty(
-                    ARCTIC_ENABLE_SPLIT_TASK_BY_DELETE_RATIO,
+                        AMORO_ENABLE_SPLIT_TASK_BY_DELETE_RATIO,
                     "Enable task split by ratio",
-                    arcticConfig.isEnableSplitTaskByDeleteRatio(),
+                    amoroConfig.isEnableSplitTaskByDeleteRatio(),
                     false))
             .build();
   }
@@ -74,15 +74,15 @@ public final class ArcticSessionProperties implements SessionPropertiesProvider 
     return sessionProperties;
   }
 
-  public static boolean isArcticStatisticsEnabled(ConnectorSession session) {
-    return session.getProperty(ARCTIC_STATISTICS_ENABLED, Boolean.class);
+  public static boolean isAmoroStatisticsEnabled(ConnectorSession session) {
+    return session.getProperty(AMORO_STATISTICS_ENABLED, Boolean.class);
   }
 
   public static boolean enableSplitTaskByDeleteRatio(ConnectorSession session) {
-    return session.getProperty(ARCTIC_ENABLE_SPLIT_TASK_BY_DELETE_RATIO, Boolean.class);
+    return session.getProperty(AMORO_ENABLE_SPLIT_TASK_BY_DELETE_RATIO, Boolean.class);
   }
 
   public static double splitTaskByDeleteRatio(ConnectorSession session) {
-    return session.getProperty(ARCTIC_SPLIT_TASK_BY_DELETE_RATIO, Double.class);
+    return session.getProperty(AMORO_SPLIT_TASK_BY_DELETE_RATIO, Double.class);
   }
 }

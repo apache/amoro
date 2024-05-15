@@ -274,7 +274,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * Iceberg original metadata has some problems for arctic, such as iceberg version, table type. So
+ * Iceberg original metadata has some problems for amoro, such as iceberg version, table type. So
  * copy from IcebergMetadata and made some change
  */
 public class IcebergMetadata implements ConnectorMetadata {

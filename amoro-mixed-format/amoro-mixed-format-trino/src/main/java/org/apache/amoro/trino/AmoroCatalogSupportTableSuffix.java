@@ -69,42 +69,42 @@ import java.util.stream.Collectors;
  * A wrapper of {@link MixedFormatCatalog} to resolve sub table, such as
  * "tableName#change","tableName#base"
  */
-public class ArcticCatalogSupportTableSuffix implements MixedFormatCatalog {
+public class AmoroCatalogSupportTableSuffix implements MixedFormatCatalog {
 
-  private final MixedFormatCatalog arcticCatalog;
+  private final MixedFormatCatalog amoroCatalog;
 
-  public ArcticCatalogSupportTableSuffix(MixedFormatCatalog arcticCatalog) {
-    this.arcticCatalog = arcticCatalog;
+  public AmoroCatalogSupportTableSuffix(MixedFormatCatalog amoroCatalog) {
+    this.amoroCatalog = amoroCatalog;
   }
 
   @Override
   public String name() {
-    return arcticCatalog.name();
+    return amoroCatalog.name();
   }
 
   @Override
   public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
-    arcticCatalog.initialize(name, properties, metaStore);
+    amoroCatalog.initialize(name, properties, metaStore);
   }
 
   @Override
   public List<String> listDatabases() {
-    return arcticCatalog.listDatabases();
+    return amoroCatalog.listDatabases();
   }
 
   @Override
   public void createDatabase(String databaseName) {
-    arcticCatalog.createDatabase(databaseName);
+    amoroCatalog.createDatabase(databaseName);
   }
 
   @Override
   public void dropDatabase(String databaseName) {
-    arcticCatalog.dropDatabase(databaseName);
+    amoroCatalog.dropDatabase(databaseName);
   }
 
   @Override
   public List<TableIdentifier> listTables(String database) {
-    return arcticCatalog.listTables(database);
+    return amoroCatalog.listTables(database);
   }
 
   @Override
@@ -116,7 +116,7 @@ public class ArcticCatalogSupportTableSuffix implements MixedFormatCatalog {
               tableIdentifier.getCatalog(),
               tableIdentifier.getDatabase(),
               tableNameResolve.getTableName());
-      MixedTable mixedTable = arcticCatalog.loadTable(newTableIdentifier);
+      MixedTable mixedTable = amoroCatalog.loadTable(newTableIdentifier);
       if (mixedTable.isUnkeyedTable()) {
         throw new IllegalArgumentException(
             "table "
@@ -131,32 +131,32 @@ public class ArcticCatalogSupportTableSuffix implements MixedFormatCatalog {
         return new ChangeTableWithExternalSchemas((BasicUnkeyedTable) keyedTable.changeTable());
       }
     }
-    return arcticCatalog.loadTable(tableIdentifier);
+    return amoroCatalog.loadTable(tableIdentifier);
   }
 
   @Override
   public void renameTable(TableIdentifier from, String newTableName) {
-    arcticCatalog.renameTable(from, newTableName);
+    amoroCatalog.renameTable(from, newTableName);
   }
 
   @Override
   public boolean dropTable(TableIdentifier tableIdentifier, boolean purge) {
-    return arcticCatalog.dropTable(tableIdentifier, purge);
+    return amoroCatalog.dropTable(tableIdentifier, purge);
   }
 
   @Override
   public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema) {
-    return arcticCatalog.newTableBuilder(identifier, schema);
+    return amoroCatalog.newTableBuilder(identifier, schema);
   }
 
   @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
-    return arcticCatalog.getTableBlockerManager(tableIdentifier);
+    return amoroCatalog.getTableBlockerManager(tableIdentifier);
   }
 
   @Override
   public Map<String, String> properties() {
-    return arcticCatalog.properties();
+    return amoroCatalog.properties();
   }
 
   private static class ChangeTableWithExternalSchemas implements ChangeTable, HasTableOperations {

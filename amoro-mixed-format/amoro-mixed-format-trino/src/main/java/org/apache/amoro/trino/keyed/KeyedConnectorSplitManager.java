@@ -25,8 +25,8 @@ import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScan;
 import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.table.KeyedTable;
-import org.apache.amoro.trino.ArcticSessionProperties;
-import org.apache.amoro.trino.ArcticTransactionManager;
+import org.apache.amoro.trino.AmoroSessionProperties;
+import org.apache.amoro.trino.AmoroTransactionManager;
 import org.apache.amoro.trino.util.MetricUtil;
 import org.apache.amoro.trino.util.ObjectSerializerUtil;
 import io.trino.plugin.iceberg.IcebergTableHandle;
@@ -56,15 +56,15 @@ import java.util.stream.Collectors;
 /** ConnectorSplitManager for Keyed Table */
 public class KeyedConnectorSplitManager implements ConnectorSplitManager {
 
-  public static final int ARCTIC_DOMAIN_COMPACTION_THRESHOLD = 1000;
+  public static final int AMORO_DOMAIN_COMPACTION_THRESHOLD = 1000;
 
   private static final Logger LOG = LoggerFactory.getLogger(KeyedConnectorSplitManager.class);
 
-  private final ArcticTransactionManager arcticTransactionManager;
+  private final AmoroTransactionManager amoroTransactionManager;
 
   @Inject
-  public KeyedConnectorSplitManager(ArcticTransactionManager arcticTransactionManager) {
-    this.arcticTransactionManager = arcticTransactionManager;
+  public KeyedConnectorSplitManager(AmoroTransactionManager amoroTransactionManager) {
+    this.amoroTransactionManager = amoroTransactionManager;
   }
 
   @Override
@@ -76,20 +76,20 @@ public class KeyedConnectorSplitManager implements ConnectorSplitManager {
       Constraint constraint) {
     KeyedTableHandle keyedTableHandle = (KeyedTableHandle) handle;
     IcebergTableHandle icebergTableHandle = keyedTableHandle.getIcebergTableHandle();
-    KeyedTable arcticTable =
-        (arcticTransactionManager.get(transaction))
-            .getArcticTable(
+    KeyedTable amoroTable =
+        (amoroTransactionManager.get(transaction))
+            .getAmoroTable(
                 new SchemaTableName(
                     icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()))
             .asKeyedTable();
-    if (arcticTable == null) {
+    if (amoroTable == null) {
       throw new TableNotFoundException(
           new SchemaTableName(
               icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()));
     }
 
     KeyedTableScan tableScan =
-        arcticTable
+        amoroTable
             .newScan()
             .filter(
                 toIcebergExpression(
@@ -97,12 +97,12 @@ public class KeyedConnectorSplitManager implements ConnectorSplitManager {
                         .getEnforcedPredicate()
                         .intersect(icebergTableHandle.getUnenforcedPredicate())));
 
-    if (ArcticSessionProperties.enableSplitTaskByDeleteRatio(session)) {
+    if (AmoroSessionProperties.enableSplitTaskByDeleteRatio(session)) {
       tableScan.enableSplitTaskByDeleteRatio(
-          ArcticSessionProperties.splitTaskByDeleteRatio(session));
+          AmoroSessionProperties.splitTaskByDeleteRatio(session));
     }
 
-    ClassLoader pluginClassloader = arcticTable.getClass().getClassLoader();
+    ClassLoader pluginClassloader = amoroTable.getClass().getClassLoader();
 
     try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(pluginClassloader)) {
       // Optimization

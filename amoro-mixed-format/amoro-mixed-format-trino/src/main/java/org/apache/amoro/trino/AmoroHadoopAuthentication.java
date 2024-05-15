@@ -16,27 +16,26 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.trino.unkeyed;
+package org.apache.amoro.trino;
 
-import org.apache.amoro.trino.ArcticCatalogFactory;
-import io.trino.plugin.iceberg.catalog.TrinoCatalog;
-import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
-import io.trino.spi.security.ConnectorIdentity;
+import com.google.inject.Inject;
+import org.apache.amoro.table.TableMetaStore;
+import io.trino.hdfs.authentication.HadoopAuthentication;
+import org.apache.hadoop.security.UserGroupInformation;
 
-import javax.inject.Inject;
+/** Amoro Hadoop Authentication using TableMetaStore */
+public class AmoroHadoopAuthentication implements HadoopAuthentication {
 
-/** Factory to generate TrinoCatalog */
-public class ArcticTrinoCatalogFactory implements TrinoCatalogFactory {
-
-  private final ArcticCatalogFactory arcticCatalogFactory;
+  private final AmoroCatalogFactory amoroCatalogFactory;
 
   @Inject
-  public ArcticTrinoCatalogFactory(ArcticCatalogFactory arcticCatalogFactory) {
-    this.arcticCatalogFactory = arcticCatalogFactory;
+  public AmoroHadoopAuthentication(AmoroCatalogFactory amoroCatalogFactory) {
+    this.amoroCatalogFactory = amoroCatalogFactory;
   }
 
   @Override
-  public TrinoCatalog create(ConnectorIdentity identity) {
-    return new ArcticTrinoCatalog(arcticCatalogFactory.getArcticCatalog());
+  public UserGroupInformation getUserGroupInformation() {
+    TableMetaStore tableMetaStore = amoroCatalogFactory.getTableMetastore();
+    return tableMetaStore.getUGI();
   }
 }

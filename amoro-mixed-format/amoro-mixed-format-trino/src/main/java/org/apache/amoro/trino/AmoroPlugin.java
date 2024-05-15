@@ -18,24 +18,15 @@
 
 package org.apache.amoro.trino;
 
-import com.google.inject.Inject;
-import org.apache.amoro.table.TableMetaStore;
-import io.trino.hdfs.authentication.HadoopAuthentication;
-import org.apache.hadoop.security.UserGroupInformation;
+import io.trino.spi.Plugin;
+import io.trino.spi.connector.ConnectorFactory;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
-/** Arctic Hadoop Authentication using TableMetaStore */
-public class ArcticHadoopAuthentication implements HadoopAuthentication {
-
-  private final ArcticCatalogFactory arcticCatalogFactory;
-
-  @Inject
-  public ArcticHadoopAuthentication(ArcticCatalogFactory arcticCatalogFactory) {
-    this.arcticCatalogFactory = arcticCatalogFactory;
-  }
+/** Amoro Plugin Impl of {@link Plugin} */
+public class AmoroPlugin implements Plugin {
 
   @Override
-  public UserGroupInformation getUserGroupInformation() {
-    TableMetaStore tableMetaStore = arcticCatalogFactory.getTableMetastore();
-    return tableMetaStore.getUGI();
+  public Iterable<ConnectorFactory> getConnectorFactories() {
+    return ImmutableList.of(new AmoroConnectorFactory());
   }
 }

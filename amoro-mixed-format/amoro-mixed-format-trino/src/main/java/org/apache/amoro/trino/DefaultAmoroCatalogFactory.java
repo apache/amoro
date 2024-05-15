@@ -30,32 +30,32 @@ import javax.inject.Inject;
 import java.util.Collections;
 
 /** A factory to generate {@link MixedFormatCatalog} */
-public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
+public class DefaultAmoroCatalogFactory implements AmoroCatalogFactory {
 
-  private final ArcticConfig arcticConfig;
+  private final AmoroConfig amoroConfig;
 
-  private volatile MixedFormatCatalog arcticCatalog;
+  private volatile MixedFormatCatalog amoroCatalog;
   private volatile TableMetaStore tableMetaStore;
 
   @Inject
-  public DefaultArcticCatalogFactory(ArcticConfig arcticConfig) {
-    this.arcticConfig = arcticConfig;
+  public DefaultAmoroCatalogFactory(AmoroConfig amoroConfig) {
+    this.amoroConfig = amoroConfig;
   }
 
-  public MixedFormatCatalog getArcticCatalog() {
-    if (arcticCatalog == null) {
+  public MixedFormatCatalog getAmoroCatalog() {
+    if (amoroCatalog == null) {
       synchronized (this) {
-        if (arcticCatalog == null) {
+        if (amoroCatalog == null) {
           try (ThreadContextClassLoader ignored =
               new ThreadContextClassLoader(this.getClass().getClassLoader())) {
-            this.arcticCatalog =
-                new ArcticCatalogSupportTableSuffix(
-                    CatalogLoader.load(arcticConfig.getCatalogUrl(), Collections.emptyMap()));
+            this.amoroCatalog =
+                new AmoroCatalogSupportTableSuffix(
+                    CatalogLoader.load(amoroConfig.getCatalogUrl(), Collections.emptyMap()));
           }
         }
       }
     }
-    return arcticCatalog;
+    return amoroCatalog;
   }
 
   @Override
@@ -65,7 +65,7 @@ public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
         if (this.tableMetaStore == null) {
           try (ThreadContextClassLoader ignored =
               new ThreadContextClassLoader(this.getClass().getClassLoader())) {
-            CatalogMeta meta = CatalogLoader.loadMeta(arcticConfig.getCatalogUrl());
+            CatalogMeta meta = CatalogLoader.loadMeta(amoroConfig.getCatalogUrl());
             this.tableMetaStore = MixedCatalogUtil.buildMetaStore(meta);
           }
         }

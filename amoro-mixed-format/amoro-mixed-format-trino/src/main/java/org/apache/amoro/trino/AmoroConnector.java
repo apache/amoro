@@ -54,13 +54,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-/** A Connector of arctic to Trino */
-public class ArcticConnector implements Connector {
+/** A Connector of Amoro to Trino */
+public class AmoroConnector implements Connector {
 
-  private static final Logger log = LoggerFactory.getLogger(ArcticConnector.class);
+  private static final Logger log = LoggerFactory.getLogger(AmoroConnector.class);
 
   private final LifeCycleManager lifeCycleManager;
-  private final ArcticTransactionManager transactionManager;
+  private final AmoroTransactionManager transactionManager;
   private final ConnectorSplitManager splitManager;
   private final ConnectorPageSourceProvider pageSourceProvider;
   private final ConnectorPageSinkProvider pageSinkProvider;
@@ -73,9 +73,9 @@ public class ArcticConnector implements Connector {
   private final Set<TableProcedureMetadata> tableProcedures;
 
   @Inject
-  public ArcticConnector(
+  public AmoroConnector(
       LifeCycleManager lifeCycleManager,
-      ArcticTransactionManager transactionManager,
+      AmoroTransactionManager transactionManager,
       ConnectorSplitManager splitManager,
       ConnectorPageSourceProvider pageSourceProvider,
       ConnectorPageSinkProvider pageSinkProvider,

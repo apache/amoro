@@ -34,4 +34,4 @@
 #  limitations under the License.
 #
 
-org.apache.amoro.trino.ArcticPlugin
+org.apache.amoro.trino.AmoroPlugin

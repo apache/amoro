@@ -66,13 +66,13 @@ import java.util.stream.Collectors;
 public class TestHiveTable extends TestHiveTableBaseForTrino {
 
   private final String TEST_HIVE_TABLE_FULL_NAME =
-      "arctic." + HIVE_TABLE_ID.getDatabase() + "." + HIVE_TABLE_ID.getTableName();
+      "amoro." + HIVE_TABLE_ID.getDatabase() + "." + HIVE_TABLE_ID.getTableName();
 
   private final String TEST_HIVE_PK_TABLE_FULL_NAME =
-      "arctic." + HIVE_PK_TABLE_ID.getDatabase() + "." + HIVE_PK_TABLE_ID.getTableName();
+      "amoro." + HIVE_PK_TABLE_ID.getDatabase() + "." + HIVE_PK_TABLE_ID.getTableName();
 
   private final String TEST_HIVE_PK_TABLE_FULL_NAME_BASE =
-      "arctic."
+      "amoro."
           + HIVE_PK_TABLE_ID.getDatabase()
           + "."
           + "\""
@@ -80,19 +80,19 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
           + "#base\"";
 
   private final String TEST_UN_PARTITION_HIVE_TABLE_FULL_NAME =
-      "arctic."
+      "amoro."
           + UN_PARTITION_HIVE_TABLE_ID.getDatabase()
           + "."
           + UN_PARTITION_HIVE_TABLE_ID.getTableName();
 
   private final String TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME =
-      "arctic."
+      "amoro."
           + UN_PARTITION_HIVE_PK_TABLE_ID.getDatabase()
           + "."
           + UN_PARTITION_HIVE_PK_TABLE_ID.getTableName();
 
   private final String TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME_BASE =
-      "arctic."
+      "amoro."
           + UN_PARTITION_HIVE_PK_TABLE_ID.getDatabase()
           + "."
           + "\""
@@ -106,10 +106,10 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
       TableIdentifier.of(TEST_CATALOG_NAME, HIVE_DB_NAME, "test_pk_hive_table_parquet");
 
   private final String TEST_HIVE_PK_TABLE_ORC_FULL_NAME =
-      "arctic." + HIVE_PK_TABLE_ID.getDatabase() + "." + HIVE_PK_TABLE_ORC_ID.getTableName();
+      "amoro." + HIVE_PK_TABLE_ID.getDatabase() + "." + HIVE_PK_TABLE_ORC_ID.getTableName();
 
   private final String TEST_HIVE_PK_TABLE_PARQUET_FULL_NAME =
-      "arctic." + HIVE_PK_TABLE_ID.getDatabase() + "." + HIVE_PK_TABLE_PARQUET_ID.getTableName();
+      "amoro." + HIVE_PK_TABLE_ID.getDatabase() + "." + HIVE_PK_TABLE_PARQUET_ID.getTableName();
 
   private KeyedHiveTable testKeyedHiveTableOrc;
   private KeyedHiveTable testKeyedHiveTableParquet;
@@ -147,11 +147,11 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
     startMetastore();
     setupTables();
     initData();
-    return ArcticQueryRunner.builder()
+    return AmoroQueryRunner.builder()
         .setExtraProperties(ImmutableMap.of("http-server.http.port", "8080"))
         .setIcebergProperties(
             ImmutableMap.of(
-                "arctic.url",
+                "amoro.url",
                 String.format("thrift://localhost:%s/%s", AMS.port(), TEST_CATALOG_NAME)))
         .build();
   }

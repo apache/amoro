@@ -45,7 +45,7 @@ import java.util.OptionalLong;
 import java.util.function.Supplier;
 
 /**
- * Iceberg original IcebergPageSource has some problems for arctic, such as iceberg version, table
+ * Iceberg original IcebergPageSource has some problems for amoro, such as iceberg version, table
  * type.
  */
 public class IcebergPageSource implements ConnectorPageSource {

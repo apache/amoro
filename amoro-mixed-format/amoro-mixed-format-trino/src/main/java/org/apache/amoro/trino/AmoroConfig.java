@@ -21,8 +21,8 @@ package org.apache.amoro.trino;
 import io.airlift.configuration.Config;
 import io.airlift.configuration.ConfigDescription;
 
-/** Arctic config */
-public class ArcticConfig {
+/** Amoro config */
+public class AmoroConfig {
   private String catalogUrl;
   private boolean hdfsImpersonationEnabled;
   private boolean tableStatisticsEnabled = true;
@@ -51,28 +51,28 @@ public class ArcticConfig {
     return enableSplitTaskByDeleteRatio;
   }
 
-  @Config("arctic.url")
+  @Config("amoro.url")
   public void setCatalogUrl(String catalogUrl) {
     this.catalogUrl = catalogUrl;
   }
 
-  @Config("arctic.hdfs.impersonation.enabled")
+  @Config("amoro.hdfs.impersonation.enabled")
   public void setHdfsImpersonationEnabled(boolean enabled) {
     this.hdfsImpersonationEnabled = enabled;
   }
 
-  @Config("arctic.table-statistics-enable")
-  @ConfigDescription("Enable use of table statistics to Arctic table")
+  @Config("amoro.table-statistics-enable")
+  @ConfigDescription("Enable use of table statistics to Amoro table")
   public void setTableStatisticsEnabled(boolean tableStatisticsEnabled) {
     this.tableStatisticsEnabled = tableStatisticsEnabled;
   }
 
-  @Config("arctic.enable-split-task-by-delete-ratio")
+  @Config("amoro.enable-split-task-by-delete-ratio")
   public void setEnableSplitTaskByDeleteRatio(boolean enableSplitTaskByDeleteRatio) {
     this.enableSplitTaskByDeleteRatio = enableSplitTaskByDeleteRatio;
   }
 
-  @Config("arctic.split-task-by-delete-ratio")
+  @Config("amoro.split-task-by-delete-ratio")
   public void setSplitTaskByDeleteRatio(double splitTaskByDeleteRatio) {
     this.splitTaskByDeleteRatio = splitTaskByDeleteRatio;
   }

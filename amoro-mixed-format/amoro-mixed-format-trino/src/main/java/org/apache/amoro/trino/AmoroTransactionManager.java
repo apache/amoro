@@ -32,19 +32,19 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/** This is used to guarantee one transaction to one {@link ArcticConnectorMetadata} */
-public class ArcticTransactionManager {
-  private final ArcticMetadataFactory metadataFactory;
+/** This is used to guarantee one transaction to one {@link AmoroConnectorMetadata} */
+public class AmoroTransactionManager {
+  private final AmoroMetadataFactory metadataFactory;
   private final ClassLoader classLoader;
   private final ConcurrentMap<ConnectorTransactionHandle, MemoizedMetadata> transactions =
       new ConcurrentHashMap<>();
 
   @Inject
-  public ArcticTransactionManager(ArcticMetadataFactory metadataFactory) {
+  public AmoroTransactionManager(AmoroMetadataFactory metadataFactory) {
     this(metadataFactory, Thread.currentThread().getContextClassLoader());
   }
 
-  public ArcticTransactionManager(ArcticMetadataFactory metadataFactory, ClassLoader classLoader) {
+  public AmoroTransactionManager(AmoroMetadataFactory metadataFactory, ClassLoader classLoader) {
     this.metadataFactory = requireNonNull(metadataFactory, "metadataFactory is null");
     this.classLoader = requireNonNull(classLoader, "classLoader is null");
   }
@@ -55,7 +55,7 @@ public class ArcticTransactionManager {
     checkState(previousValue == null);
   }
 
-  public ArcticConnectorMetadata get(ConnectorTransactionHandle transactionHandle) {
+  public AmoroConnectorMetadata get(ConnectorTransactionHandle transactionHandle) {
     return transactions.get(transactionHandle).get();
   }
 
@@ -79,13 +79,13 @@ public class ArcticTransactionManager {
 
   private class MemoizedMetadata {
     @GuardedBy("this")
-    private ArcticConnectorMetadata metadata;
+    private AmoroConnectorMetadata metadata;
 
-    public synchronized Optional<ArcticConnectorMetadata> optionalGet() {
+    public synchronized Optional<AmoroConnectorMetadata> optionalGet() {
       return Optional.ofNullable(metadata);
     }
 
-    public synchronized ArcticConnectorMetadata get() {
+    public synchronized AmoroConnectorMetadata get() {
       if (metadata == null) {
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
           metadata = metadataFactory.create();
