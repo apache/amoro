@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.metrics.reporter.promethues;
+package org.apache.amoro.metrics.promethues;
 
 import io.prometheus.client.Collector;
 import org.apache.amoro.api.metrics.Counter;
@@ -37,14 +37,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /** Metric type converter for prometheus api */
-public class MetricCollector extends Collector {
-  private static final Logger LOGGER = LoggerFactory.getLogger(MetricCollector.class);
+public class MetricsCollector extends Collector {
+  private static final Logger LOGGER = LoggerFactory.getLogger(MetricsCollector.class);
   private static final String PREFIX = "amoro_";
   private static final Pattern NAME_PATTERN = Pattern.compile("[a-zA-Z_:][a-zA-Z0-9_:]*");
   private static final Pattern LABEL_PATTERN = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
   MetricSet metrics;
 
-  public MetricCollector(MetricSet metrics) {
+  public MetricsCollector(MetricSet metrics) {
     this.metrics = metrics;
   }
 
