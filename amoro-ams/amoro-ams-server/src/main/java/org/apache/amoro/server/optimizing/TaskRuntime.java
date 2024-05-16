@@ -111,18 +111,16 @@ public class TaskRuntime extends StatedPersistentBase {
   void reset() {
     invokeConsistency(
         () -> {
-          if (status != Status.PLANNED) {
-            statusMachine.accept(Status.PLANNED);
-            startTime = AmoroServiceConstants.INVALID_TIME;
-            endTime = AmoroServiceConstants.INVALID_TIME;
-            token = null;
-            threadId = -1;
-            failReason = null;
-            output = null;
-            summary = new MetricsSummary(input);
-            // The cost time should not be reset since it is the total cost time of all runs.
-            persistTaskRuntime(this);
-          }
+          statusMachine.accept(Status.PLANNED);
+          startTime = AmoroServiceConstants.INVALID_TIME;
+          endTime = AmoroServiceConstants.INVALID_TIME;
+          token = null;
+          threadId = -1;
+          failReason = null;
+          output = null;
+          summary = new MetricsSummary(input);
+          // The cost time should not be reset since it is the total cost time of all runs.
+          persistTaskRuntime(this);
         });
   }
 
