@@ -31,43 +31,43 @@ import io.trino.spi.type.TypeManager;
 
 import javax.inject.Inject;
 
-/** A factory to generate {@link ArcticConnectorMetadata} */
-public class ArcticMetadataFactory {
+/** A factory to generate {@link MixedFormatConnectorMetadata} */
+public class MixedFormatMetadataFactory {
   private final TypeManager typeManager;
   private final JsonCodec<CommitTaskData> commitTaskCodec;
   private final TrinoFileSystemFactory fileSystemFactory;
   private final TableStatisticsWriter tableStatisticsWriter;
-  private final ArcticCatalogFactory arcticCatalogFactory;
-  private final TrinoCatalogFactory arcticTrinoCatalogFactory;
+  private final MixedFormatCatalogFactory mixedFormatCatalogFactory;
+  private final TrinoCatalogFactory trinoCatalogFactory;
 
   @Inject
-  public ArcticMetadataFactory(
+  public MixedFormatMetadataFactory(
       TypeManager typeManager,
       JsonCodec<CommitTaskData> commitTaskCodec,
       TrinoFileSystemFactory fileSystemFactory,
       TableStatisticsWriter tableStatisticsWriter,
-      ArcticCatalogFactory arcticCatalogFactory,
-      TrinoCatalogFactory arcticTrinoCatalogFactory) {
+      MixedFormatCatalogFactory mixedFormatCatalogFactory,
+      TrinoCatalogFactory trinoCatalogFactory) {
     this.typeManager = requireNonNull(typeManager, "typeManager is null");
     this.commitTaskCodec = requireNonNull(commitTaskCodec, "commitTaskCodec is null");
     this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
     this.tableStatisticsWriter =
         requireNonNull(tableStatisticsWriter, "tableStatisticsWriter is null");
-    this.arcticCatalogFactory = arcticCatalogFactory;
-    this.arcticTrinoCatalogFactory = arcticTrinoCatalogFactory;
+    this.mixedFormatCatalogFactory = mixedFormatCatalogFactory;
+    this.trinoCatalogFactory = trinoCatalogFactory;
   }
 
-  public ArcticConnectorMetadata create() {
+  public MixedFormatConnectorMetadata create() {
     IcebergMetadata icebergMetadata =
         new IcebergMetadata(
             typeManager,
             commitTaskCodec,
-            arcticTrinoCatalogFactory.create(null),
+            trinoCatalogFactory.create(null),
             fileSystemFactory,
             tableStatisticsWriter);
-    KeyedConnectorMetadata arcticConnectorMetadata =
-        new KeyedConnectorMetadata(arcticCatalogFactory.getArcticCatalog(), typeManager);
-    return new ArcticConnectorMetadata(
-        arcticConnectorMetadata, icebergMetadata, arcticCatalogFactory.getArcticCatalog());
+    KeyedConnectorMetadata keyedConnectorMetadata =
+        new KeyedConnectorMetadata(mixedFormatCatalogFactory.getMixedFormatCatalog(), typeManager);
+    return new MixedFormatConnectorMetadata(
+        keyedConnectorMetadata, icebergMetadata, mixedFormatCatalogFactory.getMixedFormatCatalog());
   }
 }

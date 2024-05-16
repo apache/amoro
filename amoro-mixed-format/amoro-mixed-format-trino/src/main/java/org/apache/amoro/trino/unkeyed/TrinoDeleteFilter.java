@@ -38,7 +38,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Iceberg original TrinoDeleteFilter has some problems for arctic, such as iceberg version, table
+ * Iceberg original TrinoDeleteFilter has some problems for mixed-format table, such as iceberg version, table
  * type.
  */
 public class TrinoDeleteFilter extends DeleteFilter<TrinoRow> {

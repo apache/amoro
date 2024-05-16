@@ -16,27 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.trino.unkeyed;
+package org.apache.amoro.trino;
 
-import org.apache.amoro.trino.ArcticCatalogFactory;
-import io.trino.plugin.iceberg.catalog.TrinoCatalog;
-import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
-import io.trino.spi.security.ConnectorIdentity;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.table.TableMetaStore;
 
-import javax.inject.Inject;
+/** Interface of factory to generate {@link MixedFormatCatalog} */
+public interface MixedFormatCatalogFactory {
 
-/** Factory to generate TrinoCatalog */
-public class ArcticTrinoCatalogFactory implements TrinoCatalogFactory {
+  /** generate {@link MixedFormatCatalog} */
+  MixedFormatCatalog getMixedFormatCatalog();
 
-  private final ArcticCatalogFactory arcticCatalogFactory;
-
-  @Inject
-  public ArcticTrinoCatalogFactory(ArcticCatalogFactory arcticCatalogFactory) {
-    this.arcticCatalogFactory = arcticCatalogFactory;
-  }
-
-  @Override
-  public TrinoCatalog create(ConnectorIdentity identity) {
-    return new ArcticTrinoCatalog(arcticCatalogFactory.getArcticCatalog());
-  }
+  TableMetaStore getTableMetastore();
 }

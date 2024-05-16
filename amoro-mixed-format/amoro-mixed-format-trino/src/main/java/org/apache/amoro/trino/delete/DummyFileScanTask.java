@@ -35,7 +35,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
-/** Copy from trino-iceberg DummyFileScanTask and do some change to adapt Arctic */
+/** Copy from trino-iceberg DummyFileScanTask and do some change to adapt mixed-format table */
 public class DummyFileScanTask implements FileScanTask {
   private final DataFile file;
   private final List<DeleteFile> deletes;

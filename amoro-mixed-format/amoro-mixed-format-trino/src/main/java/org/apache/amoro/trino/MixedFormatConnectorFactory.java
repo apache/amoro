@@ -56,8 +56,6 @@ import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.procedure.Procedure;
 import io.trino.spi.type.TypeManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.weakref.jmx.guice.MBeanModule;
 
 import java.util.Map;
@@ -65,13 +63,10 @@ import java.util.Optional;
 import java.util.Set;
 
 /** Factory to generate {@link Connector} */
-public class ArcticConnectorFactory implements ConnectorFactory {
-
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticConnectorFactory.class);
-
+public class MixedFormatConnectorFactory implements ConnectorFactory {
   @Override
   public String getName() {
-    return "arctic";
+    return "mixed-format";
   }
 
   @Override
@@ -86,7 +81,7 @@ public class ArcticConnectorFactory implements ConnectorFactory {
               new ConnectorObjectNameGeneratorModule(
                   "io.trino.plugin.iceberg", "trino.plugin.iceberg"),
               new JsonModule(),
-              new ArcticModule(context.getTypeManager()),
+              new MixedFormatModule(context.getTypeManager()),
               new IcebergSecurityModule(),
               new MBeanServerModule(),
               binder -> {
@@ -108,8 +103,8 @@ public class ArcticConnectorFactory implements ConnectorFactory {
           app.doNotInitializeLogging().setRequiredConfigurationProperties(config).initialize();
 
       LifeCycleManager lifeCycleManager = injector.getInstance(LifeCycleManager.class);
-      ArcticTransactionManager transactionManager =
-          injector.getInstance(ArcticTransactionManager.class);
+      MixedFormatTransactionManager transactionManager =
+          injector.getInstance(MixedFormatTransactionManager.class);
       ConnectorSplitManager splitManager = injector.getInstance(ConnectorSplitManager.class);
       ConnectorPageSourceProvider connectorPageSource =
           injector.getInstance(ConnectorPageSourceProvider.class);
@@ -128,7 +123,7 @@ public class ArcticConnectorFactory implements ConnectorFactory {
       Optional<ConnectorAccessControl> accessControl =
           injector.getInstance(Key.get(new TypeLiteral<Optional<ConnectorAccessControl>>() {}));
 
-      return new ArcticConnector(
+      return new MixedFormatConnector(
           lifeCycleManager,
           transactionManager,
           new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader),

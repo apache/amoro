@@ -31,40 +31,40 @@ import javax.inject.Inject;
 
 import java.util.List;
 
-/** Arctic supporting session properties */
-public final class ArcticSessionProperties implements SessionPropertiesProvider {
+/** Session properties provider for mixed-format table.  */
+public final class MixedFormatSessionProperties implements SessionPropertiesProvider {
 
-  private static final String ARCTIC_STATISTICS_ENABLED = "arctic_table_statistics_enabled";
+  private static final String MIXED_STATISTICS_ENABLED = "mixed_table_statistics_enabled";
 
-  private static final String ARCTIC_SPLIT_TASK_BY_DELETE_RATIO =
-      "arctic_split_task_by_delete_ratio";
-  private static final String ARCTIC_ENABLE_SPLIT_TASK_BY_DELETE_RATIO =
-      "arctic_enable_split_task_by_delete_ratio";
+  private static final String MIXED_SPLIT_TASK_BY_DELETE_RATIO =
+      "mixed_split_task_by_delete_ratio";
+  private static final String MIXED_ENABLE_SPLIT_TASK_BY_DELETE_RATIO =
+      "mixed_enable_split_task_by_delete_ratio";
   private final List<PropertyMetadata<?>> sessionProperties;
 
   @Inject
-  public ArcticSessionProperties(
-      ArcticConfig arcticConfig, IcebergSessionProperties icebergSessionProperties) {
+  public MixedFormatSessionProperties(
+          MixedFormatConfig mixedFormatConfig, IcebergSessionProperties icebergSessionProperties) {
     sessionProperties =
         ImmutableList.<PropertyMetadata<?>>builder()
             .addAll(icebergSessionProperties.getSessionProperties())
             .add(
                 booleanProperty(
-                    ARCTIC_STATISTICS_ENABLED,
-                    "Expose table statistics for Arctic table",
-                    arcticConfig.isTableStatisticsEnabled(),
+                        MIXED_STATISTICS_ENABLED,
+                    "Expose table statistics for mixed-format table",
+                    mixedFormatConfig.isTableStatisticsEnabled(),
                     false))
             .add(
                 doubleProperty(
-                    ARCTIC_SPLIT_TASK_BY_DELETE_RATIO,
+                        MIXED_SPLIT_TASK_BY_DELETE_RATIO,
                     "If task delete ratio less than this value will be split to more task",
-                    arcticConfig.getSplitTaskByDeleteRatio(),
+                    mixedFormatConfig.getSplitTaskByDeleteRatio(),
                     false))
             .add(
                 booleanProperty(
-                    ARCTIC_ENABLE_SPLIT_TASK_BY_DELETE_RATIO,
+                        MIXED_ENABLE_SPLIT_TASK_BY_DELETE_RATIO,
                     "Enable task split by ratio",
-                    arcticConfig.isEnableSplitTaskByDeleteRatio(),
+                    mixedFormatConfig.isEnableSplitTaskByDeleteRatio(),
                     false))
             .build();
   }
@@ -74,15 +74,15 @@ public final class ArcticSessionProperties implements SessionPropertiesProvider 
     return sessionProperties;
   }
 
-  public static boolean isArcticStatisticsEnabled(ConnectorSession session) {
-    return session.getProperty(ARCTIC_STATISTICS_ENABLED, Boolean.class);
+  public static boolean isMixedTableStatisticsEnabled(ConnectorSession session) {
+    return session.getProperty(MIXED_STATISTICS_ENABLED, Boolean.class);
   }
 
   public static boolean enableSplitTaskByDeleteRatio(ConnectorSession session) {
-    return session.getProperty(ARCTIC_ENABLE_SPLIT_TASK_BY_DELETE_RATIO, Boolean.class);
+    return session.getProperty(MIXED_ENABLE_SPLIT_TASK_BY_DELETE_RATIO, Boolean.class);
   }
 
   public static double splitTaskByDeleteRatio(ConnectorSession session) {
-    return session.getProperty(ARCTIC_SPLIT_TASK_BY_DELETE_RATIO, Double.class);
+    return session.getProperty(MIXED_SPLIT_TASK_BY_DELETE_RATIO, Double.class);
   }
 }

@@ -30,32 +30,31 @@ import javax.inject.Inject;
 import java.util.Collections;
 
 /** A factory to generate {@link MixedFormatCatalog} */
-public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
+public class DefaultMixedFormatCatalogFactory implements MixedFormatCatalogFactory {
 
-  private final ArcticConfig arcticConfig;
-
-  private volatile MixedFormatCatalog arcticCatalog;
+  private final MixedFormatConfig mixedFormatConfig;
+  private volatile MixedFormatCatalog mixedFormatCatalog;
   private volatile TableMetaStore tableMetaStore;
 
   @Inject
-  public DefaultArcticCatalogFactory(ArcticConfig arcticConfig) {
-    this.arcticConfig = arcticConfig;
+  public DefaultMixedFormatCatalogFactory(MixedFormatConfig mixedFormatConfig) {
+    this.mixedFormatConfig = mixedFormatConfig;
   }
 
-  public MixedFormatCatalog getArcticCatalog() {
-    if (arcticCatalog == null) {
+  public MixedFormatCatalog getMixedFormatCatalog() {
+    if (mixedFormatCatalog == null) {
       synchronized (this) {
-        if (arcticCatalog == null) {
+        if (mixedFormatCatalog == null) {
           try (ThreadContextClassLoader ignored =
               new ThreadContextClassLoader(this.getClass().getClassLoader())) {
-            this.arcticCatalog =
-                new ArcticCatalogSupportTableSuffix(
-                    CatalogLoader.load(arcticConfig.getCatalogUrl(), Collections.emptyMap()));
+            this.mixedFormatCatalog =
+                new MixedFormatCatalogSupportTableSuffix(
+                    CatalogLoader.load(mixedFormatConfig.getCatalogUrl(), Collections.emptyMap()));
           }
         }
       }
     }
-    return arcticCatalog;
+    return mixedFormatCatalog;
   }
 
   @Override
@@ -65,7 +64,7 @@ public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
         if (this.tableMetaStore == null) {
           try (ThreadContextClassLoader ignored =
               new ThreadContextClassLoader(this.getClass().getClassLoader())) {
-            CatalogMeta meta = CatalogLoader.loadMeta(arcticConfig.getCatalogUrl());
+            CatalogMeta meta = CatalogLoader.loadMeta(mixedFormatConfig.getCatalogUrl());
             this.tableMetaStore = MixedCatalogUtil.buildMetaStore(meta);
           }
         }

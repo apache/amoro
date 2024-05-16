@@ -45,8 +45,6 @@ import io.trino.spi.session.PropertyMetadata;
 import io.trino.spi.transaction.IsolationLevel;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 
@@ -54,13 +52,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-/** A Connector of arctic to Trino */
-public class ArcticConnector implements Connector {
-
-  private static final Logger log = LoggerFactory.getLogger(ArcticConnector.class);
-
+/** A Connector of mixed-format table to Trino */
+public class MixedFormatConnector implements Connector {
   private final LifeCycleManager lifeCycleManager;
-  private final ArcticTransactionManager transactionManager;
+  private final MixedFormatTransactionManager transactionManager;
   private final ConnectorSplitManager splitManager;
   private final ConnectorPageSourceProvider pageSourceProvider;
   private final ConnectorPageSinkProvider pageSinkProvider;
@@ -73,9 +68,9 @@ public class ArcticConnector implements Connector {
   private final Set<TableProcedureMetadata> tableProcedures;
 
   @Inject
-  public ArcticConnector(
+  public MixedFormatConnector(
       LifeCycleManager lifeCycleManager,
-      ArcticTransactionManager transactionManager,
+      MixedFormatTransactionManager transactionManager,
       ConnectorSplitManager splitManager,
       ConnectorPageSourceProvider pageSourceProvider,
       ConnectorPageSinkProvider pageSinkProvider,
