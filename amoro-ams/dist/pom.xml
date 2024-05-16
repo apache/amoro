@@ -60,7 +60,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>prometheus-reporter</artifactId>
+            <artifactId>amoro-metrics-prometheus</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
