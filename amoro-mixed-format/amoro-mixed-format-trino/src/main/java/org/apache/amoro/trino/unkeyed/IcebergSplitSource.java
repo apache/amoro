@@ -102,7 +102,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 /**
- * Iceberg original IcebergSplitSource has some problems for arctic, such as iceberg version, table
+ * Iceberg original IcebergSplitSource has some problems for mixed-format table, such as iceberg version, table
  * type.
  */
 public class IcebergSplitSource implements ConnectorSplitSource {

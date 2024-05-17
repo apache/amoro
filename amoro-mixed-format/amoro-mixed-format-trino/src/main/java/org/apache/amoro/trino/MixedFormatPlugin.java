@@ -18,14 +18,15 @@
 
 package org.apache.amoro.trino;
 
-import org.apache.amoro.mixed.MixedFormatCatalog;
-import org.apache.amoro.table.TableMetaStore;
+import io.trino.spi.Plugin;
+import io.trino.spi.connector.ConnectorFactory;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
-/** A interface of factory to generate ArcticCatalog */
-public interface ArcticCatalogFactory {
+/** Mixed-format implementation of {@link Plugin} */
+public class MixedFormatPlugin implements Plugin {
 
-  /** generate ArcticCatalog */
-  MixedFormatCatalog getArcticCatalog();
-
-  TableMetaStore getTableMetastore();
+  @Override
+  public Iterable<ConnectorFactory> getConnectorFactories() {
+    return ImmutableList.of(new MixedFormatConnectorFactory());
+  }
 }

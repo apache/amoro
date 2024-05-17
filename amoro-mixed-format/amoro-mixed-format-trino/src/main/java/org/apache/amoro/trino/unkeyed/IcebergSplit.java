@@ -37,7 +37,7 @@ import org.openjdk.jol.info.ClassLayout;
 import java.util.List;
 
 /**
- * Iceberg original IcebergSplit has some problems for arctic, such as iceberg version, table type.
+ * Iceberg original IcebergSplit has some problems for mixed-format table, such as iceberg version, table type.
  */
 public class IcebergSplit implements ConnectorSplit {
   private static final int INSTANCE_SIZE =

@@ -25,8 +25,8 @@ import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScan;
 import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.table.KeyedTable;
-import org.apache.amoro.trino.ArcticSessionProperties;
-import org.apache.amoro.trino.ArcticTransactionManager;
+import org.apache.amoro.trino.MixedFormatSessionProperties;
+import org.apache.amoro.trino.MixedFormatTransactionManager;
 import org.apache.amoro.trino.util.MetricUtil;
 import org.apache.amoro.trino.util.ObjectSerializerUtil;
 import io.trino.plugin.iceberg.IcebergTableHandle;
@@ -44,8 +44,6 @@ import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.connector.TableNotFoundException;
 import org.apache.iceberg.PartitionSpecParser;
 import org.apache.iceberg.io.CloseableIterable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 
@@ -55,16 +53,11 @@ import java.util.stream.Collectors;
 
 /** ConnectorSplitManager for Keyed Table */
 public class KeyedConnectorSplitManager implements ConnectorSplitManager {
-
-  public static final int ARCTIC_DOMAIN_COMPACTION_THRESHOLD = 1000;
-
-  private static final Logger LOG = LoggerFactory.getLogger(KeyedConnectorSplitManager.class);
-
-  private final ArcticTransactionManager arcticTransactionManager;
+  private final MixedFormatTransactionManager mixedFormatTransactionManager;
 
   @Inject
-  public KeyedConnectorSplitManager(ArcticTransactionManager arcticTransactionManager) {
-    this.arcticTransactionManager = arcticTransactionManager;
+  public KeyedConnectorSplitManager(MixedFormatTransactionManager mixedFormatTransactionManager) {
+    this.mixedFormatTransactionManager = mixedFormatTransactionManager;
   }
 
   @Override
@@ -76,20 +69,20 @@ public class KeyedConnectorSplitManager implements ConnectorSplitManager {
       Constraint constraint) {
     KeyedTableHandle keyedTableHandle = (KeyedTableHandle) handle;
     IcebergTableHandle icebergTableHandle = keyedTableHandle.getIcebergTableHandle();
-    KeyedTable arcticTable =
-        (arcticTransactionManager.get(transaction))
-            .getArcticTable(
+    KeyedTable keyedTable =
+        (mixedFormatTransactionManager.get(transaction))
+            .getMixedTable(
                 new SchemaTableName(
                     icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()))
             .asKeyedTable();
-    if (arcticTable == null) {
+    if (keyedTable == null) {
       throw new TableNotFoundException(
           new SchemaTableName(
               icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()));
     }
 
     KeyedTableScan tableScan =
-        arcticTable
+        keyedTable
             .newScan()
             .filter(
                 toIcebergExpression(
@@ -97,12 +90,12 @@ public class KeyedConnectorSplitManager implements ConnectorSplitManager {
                         .getEnforcedPredicate()
                         .intersect(icebergTableHandle.getUnenforcedPredicate())));
 
-    if (ArcticSessionProperties.enableSplitTaskByDeleteRatio(session)) {
+    if (MixedFormatSessionProperties.enableSplitTaskByDeleteRatio(session)) {
       tableScan.enableSplitTaskByDeleteRatio(
-          ArcticSessionProperties.splitTaskByDeleteRatio(session));
+          MixedFormatSessionProperties.splitTaskByDeleteRatio(session));
     }
 
-    ClassLoader pluginClassloader = arcticTable.getClass().getClassLoader();
+    ClassLoader pluginClassloader = keyedTable.getClass().getClassLoader();
 
     try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(pluginClassloader)) {
       // Optimization

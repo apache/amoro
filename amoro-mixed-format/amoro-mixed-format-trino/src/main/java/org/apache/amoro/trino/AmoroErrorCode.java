@@ -18,24 +18,24 @@
 
 package org.apache.amoro.trino;
 
-import com.google.inject.Inject;
-import org.apache.amoro.table.TableMetaStore;
-import io.trino.hdfs.authentication.HadoopAuthentication;
-import org.apache.hadoop.security.UserGroupInformation;
+import static io.trino.spi.ErrorType.EXTERNAL;
 
-/** Arctic Hadoop Authentication using TableMetaStore */
-public class ArcticHadoopAuthentication implements HadoopAuthentication {
+import io.trino.spi.ErrorCode;
+import io.trino.spi.ErrorCodeSupplier;
+import io.trino.spi.ErrorType;
 
-  private final ArcticCatalogFactory arcticCatalogFactory;
+/** Error code */
+public enum AmoroErrorCode implements ErrorCodeSupplier {
+  AMORO_BAD_DATA(4, EXTERNAL);
 
-  @Inject
-  public ArcticHadoopAuthentication(ArcticCatalogFactory arcticCatalogFactory) {
-    this.arcticCatalogFactory = arcticCatalogFactory;
+  private final ErrorCode errorCode;
+
+  AmoroErrorCode(int code, ErrorType type) {
+    errorCode = new ErrorCode(code + 0x0504_0000, name(), type);
   }
 
   @Override
-  public UserGroupInformation getUserGroupInformation() {
-    TableMetaStore tableMetaStore = arcticCatalogFactory.getTableMetastore();
-    return tableMetaStore.getUGI();
+  public ErrorCode toErrorCode() {
+    return errorCode;
   }
 }

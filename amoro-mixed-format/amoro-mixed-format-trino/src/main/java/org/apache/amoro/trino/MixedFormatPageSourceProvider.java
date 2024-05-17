@@ -35,18 +35,18 @@ import javax.inject.Inject;
 import java.util.List;
 
 /**
- * {@link ArcticPageSourceProvider} is a Union {@link ConnectorPageSourceProvider} contain {@link
+ * {@link MixedFormatPageSourceProvider} is a Union {@link ConnectorPageSourceProvider} contain {@link
  * KeyedPageSourceProvider} and {@link IcebergPageSourceProvider}. This is final {@link
  * ConnectorPageSourceProvider} provided to Trino
  */
-public class ArcticPageSourceProvider implements ConnectorPageSourceProvider {
+public class MixedFormatPageSourceProvider implements ConnectorPageSourceProvider {
 
   private final KeyedPageSourceProvider keyedPageSourceProvider;
 
   private final IcebergPageSourceProvider icebergPageSourceProvider;
 
   @Inject
-  public ArcticPageSourceProvider(
+  public MixedFormatPageSourceProvider(
       KeyedPageSourceProvider keyedPageSourceProvider,
       IcebergPageSourceProvider icebergPageSourceProvider) {
     this.keyedPageSourceProvider = keyedPageSourceProvider;

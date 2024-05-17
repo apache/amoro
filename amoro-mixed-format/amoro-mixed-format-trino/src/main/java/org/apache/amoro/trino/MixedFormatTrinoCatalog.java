@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.trino.unkeyed;
+package org.apache.amoro.trino;
 
 import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
@@ -47,13 +47,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/** A TrinoCatalog for Arctic, this is in order to reuse iceberg code */
-public class ArcticTrinoCatalog implements TrinoCatalog {
+/** A trino catalog for mixed-format table. */
+public class MixedFormatTrinoCatalog implements TrinoCatalog {
 
-  private final MixedFormatCatalog arcticCatalog;
+  private final MixedFormatCatalog mixedFormatCatalog;
 
-  public ArcticTrinoCatalog(MixedFormatCatalog arcticCatalog) {
-    this.arcticCatalog = arcticCatalog;
+  public MixedFormatTrinoCatalog(MixedFormatCatalog mixedFormatCatalog) {
+    this.mixedFormatCatalog = mixedFormatCatalog;
   }
 
   @Override
@@ -71,7 +71,7 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   @Override
   public List<String> listNamespaces(ConnectorSession session) {
-    return arcticCatalog.listDatabases();
+    return mixedFormatCatalog.listDatabases();
   }
 
   private List<String> listNamespaces(ConnectorSession session, Optional<String> namespace) {
@@ -123,7 +123,7 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
   @Override
   public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> namespace) {
     return listNamespaces(session, namespace).stream()
-        .flatMap(s -> arcticCatalog.listTables(s).stream())
+        .flatMap(s -> mixedFormatCatalog.listTables(s).stream())
         .map(s -> new SchemaTableName(s.getDatabase(), s.getTableName()))
         .collect(Collectors.toList());
   }
@@ -136,7 +136,7 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
       PartitionSpec partitionSpec,
       String location,
       Map<String, String> properties) {
-    return arcticCatalog
+    return mixedFormatCatalog
         .newTableBuilder(getTableIdentifier(schemaTableName), schema)
         .withPartitionSpec(partitionSpec)
         .withProperties(properties)
@@ -154,9 +154,9 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   @Override
   public void dropTable(ConnectorSession session, SchemaTableName schemaTableName) {
-    arcticCatalog.dropTable(
+    mixedFormatCatalog.dropTable(
         TableIdentifier.of(
-            arcticCatalog.name(), schemaTableName.getSchemaName(), schemaTableName.getTableName()),
+            mixedFormatCatalog.name(), schemaTableName.getSchemaName(), schemaTableName.getTableName()),
         true);
   }
 
@@ -167,7 +167,7 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   @Override
   public Table loadTable(ConnectorSession session, SchemaTableName schemaTableName) {
-    MixedTable mixedTable = arcticCatalog.loadTable(getTableIdentifier(schemaTableName));
+    MixedTable mixedTable = mixedFormatCatalog.loadTable(getTableIdentifier(schemaTableName));
     if (mixedTable instanceof Table) {
       return (Table) mixedTable;
     }
@@ -298,6 +298,6 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   private TableIdentifier getTableIdentifier(SchemaTableName schemaTableName) {
     return TableIdentifier.of(
-        arcticCatalog.name(), schemaTableName.getSchemaName(), schemaTableName.getTableName());
+        mixedFormatCatalog.name(), schemaTableName.getSchemaName(), schemaTableName.getTableName());
   }
 }

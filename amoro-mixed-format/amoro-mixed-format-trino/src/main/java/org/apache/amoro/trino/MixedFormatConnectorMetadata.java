@@ -70,32 +70,32 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * {@link ArcticConnectorMetadata} is a Union {@link ConnectorMetadata} contain {@link
+ * {@link MixedFormatConnectorMetadata} is a Union {@link ConnectorMetadata} contain {@link
  * KeyedConnectorMetadata} and {@link IcebergMetadata}. This is final {@link ConnectorMetadata}
  * provided to Trino
  */
-public class ArcticConnectorMetadata implements ConnectorMetadata {
+public class MixedFormatConnectorMetadata implements ConnectorMetadata {
 
   private final KeyedConnectorMetadata keyedConnectorMetadata;
 
   private final IcebergMetadata icebergMetadata;
 
-  private final MixedFormatCatalog arcticCatalog;
+  private final MixedFormatCatalog mixedFormatCatalog;
 
   private final Map<SchemaTableName, MixedTable> tableCache = new ConcurrentHashMap<>();
 
-  public ArcticConnectorMetadata(
+  public MixedFormatConnectorMetadata(
       KeyedConnectorMetadata keyedConnectorMetadata,
       IcebergMetadata icebergMetadata,
-      MixedFormatCatalog arcticCatalog) {
+      MixedFormatCatalog mixedFormatCatalog) {
     this.keyedConnectorMetadata = keyedConnectorMetadata;
     this.icebergMetadata = icebergMetadata;
-    this.arcticCatalog = arcticCatalog;
+    this.mixedFormatCatalog = mixedFormatCatalog;
   }
 
   @Override
   public List<String> listSchemaNames(ConnectorSession session) {
-    return arcticCatalog.listDatabases().stream()
+    return mixedFormatCatalog.listDatabases().stream()
         .map(s -> s.toLowerCase(Locale.ROOT))
         .collect(Collectors.toList());
   }
@@ -104,7 +104,7 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName) {
     MixedTable mixedTable;
     try {
-      mixedTable = getArcticTable(tableName);
+      mixedTable = getMixedTable(tableName);
     } catch (NoSuchTableException e) {
       return null;
     }
@@ -142,7 +142,7 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   @Override
   public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> schemaName) {
     return listNamespaces(session, schemaName).stream()
-        .flatMap(s -> arcticCatalog.listTables(s).stream())
+        .flatMap(s -> mixedFormatCatalog.listTables(s).stream())
         .map(s -> new SchemaTableName(s.getDatabase(), s.getTableName()))
         .collect(Collectors.toList());
   }
@@ -174,7 +174,7 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
       MixedTable mixedTable;
       try {
         mixedTable =
-            getArcticTable(new SchemaTableName(prefix.getSchema().get(), prefix.getTable().get()));
+            getMixedTable(new SchemaTableName(prefix.getSchema().get(), prefix.getTable().get()));
       } catch (NoSuchTableException e) {
         List<TableColumnsMetadata> schemaTableNames = ImmutableList.of();
         return schemaTableNames.iterator();
@@ -453,14 +453,14 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
     // TODO: cleanup open transaction
   }
 
-  public MixedTable getArcticTable(SchemaTableName schemaTableName) {
+  public MixedTable getMixedTable(SchemaTableName schemaTableName) {
     return tableCache.computeIfAbsent(
-        schemaTableName, ignore -> arcticCatalog.loadTable(getTableIdentifier(schemaTableName)));
+        schemaTableName, ignore -> mixedFormatCatalog.loadTable(getTableIdentifier(schemaTableName)));
   }
 
   private TableIdentifier getTableIdentifier(SchemaTableName schemaTableName) {
     return TableIdentifier.of(
-        arcticCatalog.name(), schemaTableName.getSchemaName(), schemaTableName.getTableName());
+        mixedFormatCatalog.name(), schemaTableName.getSchemaName(), schemaTableName.getTableName());
   }
 
   private List<String> listNamespaces(ConnectorSession session, Optional<String> namespace) {

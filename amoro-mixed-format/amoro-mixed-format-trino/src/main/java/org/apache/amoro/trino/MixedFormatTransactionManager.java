@@ -32,19 +32,19 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/** This is used to guarantee one transaction to one {@link ArcticConnectorMetadata} */
-public class ArcticTransactionManager {
-  private final ArcticMetadataFactory metadataFactory;
+/** This is used to guarantee one transaction to one {@link MixedFormatConnectorMetadata} */
+public class MixedFormatTransactionManager {
+  private final MixedFormatMetadataFactory metadataFactory;
   private final ClassLoader classLoader;
   private final ConcurrentMap<ConnectorTransactionHandle, MemoizedMetadata> transactions =
       new ConcurrentHashMap<>();
 
   @Inject
-  public ArcticTransactionManager(ArcticMetadataFactory metadataFactory) {
+  public MixedFormatTransactionManager(MixedFormatMetadataFactory metadataFactory) {
     this(metadataFactory, Thread.currentThread().getContextClassLoader());
   }
 
-  public ArcticTransactionManager(ArcticMetadataFactory metadataFactory, ClassLoader classLoader) {
+  public MixedFormatTransactionManager(MixedFormatMetadataFactory metadataFactory, ClassLoader classLoader) {
     this.metadataFactory = requireNonNull(metadataFactory, "metadataFactory is null");
     this.classLoader = requireNonNull(classLoader, "classLoader is null");
   }
@@ -55,7 +55,7 @@ public class ArcticTransactionManager {
     checkState(previousValue == null);
   }
 
-  public ArcticConnectorMetadata get(ConnectorTransactionHandle transactionHandle) {
+  public MixedFormatConnectorMetadata get(ConnectorTransactionHandle transactionHandle) {
     return transactions.get(transactionHandle).get();
   }
 
@@ -79,13 +79,13 @@ public class ArcticTransactionManager {
 
   private class MemoizedMetadata {
     @GuardedBy("this")
-    private ArcticConnectorMetadata metadata;
+    private MixedFormatConnectorMetadata metadata;
 
-    public synchronized Optional<ArcticConnectorMetadata> optionalGet() {
+    public synchronized Optional<MixedFormatConnectorMetadata> optionalGet() {
       return Optional.ofNullable(metadata);
     }
 
-    public synchronized ArcticConnectorMetadata get() {
+    public synchronized MixedFormatConnectorMetadata get() {
       if (metadata == null) {
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
           metadata = metadataFactory.create();

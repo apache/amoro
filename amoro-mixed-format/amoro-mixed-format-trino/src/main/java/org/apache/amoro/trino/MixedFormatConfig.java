@@ -21,8 +21,8 @@ package org.apache.amoro.trino;
 import io.airlift.configuration.Config;
 import io.airlift.configuration.ConfigDescription;
 
-/** Arctic config */
-public class ArcticConfig {
+/** Mixed-format configurations */
+public class MixedFormatConfig {
   private String catalogUrl;
   private boolean hdfsImpersonationEnabled;
   private boolean tableStatisticsEnabled = true;
@@ -51,28 +51,28 @@ public class ArcticConfig {
     return enableSplitTaskByDeleteRatio;
   }
 
-  @Config("arctic.url")
+  @Config("amoro.url")
   public void setCatalogUrl(String catalogUrl) {
     this.catalogUrl = catalogUrl;
   }
 
-  @Config("arctic.hdfs.impersonation.enabled")
+  @Config("mixed-format.hdfs.impersonation.enabled")
   public void setHdfsImpersonationEnabled(boolean enabled) {
     this.hdfsImpersonationEnabled = enabled;
   }
 
-  @Config("arctic.table-statistics-enable")
-  @ConfigDescription("Enable use of table statistics to Arctic table")
+  @Config("mixed-format.table-statistics-enable")
+  @ConfigDescription("Enable use of table statistics to mixed-format table")
   public void setTableStatisticsEnabled(boolean tableStatisticsEnabled) {
     this.tableStatisticsEnabled = tableStatisticsEnabled;
   }
 
-  @Config("arctic.enable-split-task-by-delete-ratio")
+  @Config("mixed-format.enable-split-task-by-delete-ratio")
   public void setEnableSplitTaskByDeleteRatio(boolean enableSplitTaskByDeleteRatio) {
     this.enableSplitTaskByDeleteRatio = enableSplitTaskByDeleteRatio;
   }
 
-  @Config("arctic.split-task-by-delete-ratio")
+  @Config("mixed-format.split-task-by-delete-ratio")
   public void setSplitTaskByDeleteRatio(double splitTaskByDeleteRatio) {
     this.splitTaskByDeleteRatio = splitTaskByDeleteRatio;
   }
