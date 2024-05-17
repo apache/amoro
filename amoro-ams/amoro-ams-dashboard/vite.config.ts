@@ -22,6 +22,7 @@ import { vitePluginFakeServer } from 'vite-plugin-fake-server'
 import path from 'node:path'
 import {createSvgIconsPlugin} from 'vite-plugin-svg-icons'
 import ViteComponents from 'unplugin-vue-components/vite'
+import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers'
 
 const css = {
   preprocessorOptions: {
@@ -63,7 +64,14 @@ export default defineConfig({
     createSvgIconsPlugin({
       iconDirs: [path.resolve(process.cwd(), 'src/assets/icons/svg')],
     }),
-    ViteComponents()
+    ViteComponents({
+      resolvers: [
+        AntDesignVueResolver({
+          importStyle: false,
+          resolveIcons: true
+        })
+      ]
+    })
   ],
   server: {
     port: 8080,

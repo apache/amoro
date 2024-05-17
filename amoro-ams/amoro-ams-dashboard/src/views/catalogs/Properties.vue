@@ -71,12 +71,9 @@ limitations under the License.
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, shallowReactive, watch } from 'vue'
 import { IMap } from '@/types/common.type'
-import { CloseOutlined } from '@ant-design/icons-vue'
 import { getUUid } from '@/utils/index'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { useI18n } from 'vue-i18n'
-
-import { Button as AButton, Table as ATable, Input as AInput, Form as AForm, FormItem as AFormItem } from 'ant-design-vue'
 
 const { t } = useI18n()
 const props = defineProps<{ propertiesObj: IMap<string>, isEdit: boolean }>()

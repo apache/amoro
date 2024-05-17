@@ -78,13 +78,10 @@ limitations under the License.
 
 <script lang="ts">
 import { computed, defineComponent, onMounted, reactive } from 'vue'
-import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
 import loginService from '@/services/login.service'
 import { useRouter } from 'vue-router'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import useStore from '@/store'
-
-import { message, Button as AButton, Input as AInput, InputPassword as AInputPassword, Form as AForm, FormItem as AFormItem } from 'ant-design-vue'
 
 interface FormState {
   username: string;
@@ -93,15 +90,6 @@ interface FormState {
 
 export default defineComponent({
   name: 'Login',
-  components: {
-    AButton,
-    AInput,
-    AInputPassword,
-    AForm,
-    AFormItem,
-    UserOutlined,
-    LockOutlined
-  },
   setup() {
     const router = useRouter()
     const formState = reactive<FormState>({

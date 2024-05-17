@@ -60,14 +60,11 @@ limitations under the License.
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { LeftOutlined } from '@ant-design/icons-vue'
 import schemaField from './components/Field.vue'
 import partitionField from './components/Partition.vue'
 import otherProperties from './components/Properties.vue'
 import { DetailColumnItem, IMap } from '@/types/common.type'
 import { getHiveTableDetail, upgradeHiveTable } from '@/services/table.service'
-
-import { Button as AButton, Form as AForm, FormItem as AFormItem } from 'ant-design-vue'
 
 const loading = ref<boolean>(false)
 const field = reactive<DetailColumnItem[]>([])
@@ -80,7 +77,6 @@ const emit = defineEmits<{
  (e: 'refresh'): void
 }>()
 
-const router = useRouter()
 const route = useRoute()
 
 const params = computed(() => {
