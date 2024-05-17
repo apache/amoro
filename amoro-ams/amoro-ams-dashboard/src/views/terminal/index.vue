@@ -143,7 +143,8 @@ export default defineComponent({
     CheckCircleOutlined,
     CloseCircleOutlined,
     LoadingOutlined,
-    ASelect
+    ASelect,
+    AButton
   },
   setup() {
     const placeholder = reactive(usePlaceholder())
