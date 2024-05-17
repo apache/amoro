@@ -29,24 +29,26 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
-public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrino {
+public class TestKeyedTable extends TableTestBaseWithInitDataForTrino {
 
-  public static final String PK_TABLE_FULL_NAME = "arctic.test_db.test_pk_table";
+  private static final String CATALOG_DATABASE_NAME = MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX + "test_db.";
+  private static final String PK_TABLE_FULL_NAME = CATALOG_DATABASE_NAME + "test_pk_table";
+  private static final String PK_TABLE_BASE_NAME = CATALOG_DATABASE_NAME + "\"test_pk_table#base\"";
+  private static final String PK_TABLE_CHANGE_NAME = CATALOG_DATABASE_NAME + "\"test_pk_table#change\"";
 
   @Override
   protected QueryRunner createQueryRunner() throws Exception {
     CatalogTestHelper testCatalog = TestedCatalogs.hadoopCatalog(TableFormat.MIXED_ICEBERG);
     setupCatalog(testCatalog);
 
-    // setupAMS();
     setupTables();
     initData();
-    return ArcticQueryRunner.builder()
+    return MixedFormatQueryRunner.builder()
         .setIcebergProperties(
             ImmutableMap.of(
-                "arctic.url",
+                "amoro.url",
                 String.format("thrift://localhost:%s/%s", AMS.port(), TEST_CATALOG_NAME),
-                "arctic.enable-split-task-by-delete-ratio",
+                "mixed-format.enable-split-task-by-delete-ratio",
                 "true"))
         .build();
   }
@@ -80,26 +82,27 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
 
   @Test
   public void baseQuery() {
-    assertQuery("select id from " + "arctic.test_db.\"test_pk_table#base\"", "VALUES 1, 2, 3");
+    assertQuery("select id from " + PK_TABLE_BASE_NAME, "VALUES 1, 2, 3");
   }
 
   @Test
   public void baseQueryWhenTableNameContainCatalogAndDataBase() {
     assertQuery(
-        "select id from " + "arctic.test_db.\"arctic.test_db.test_pk_table#base\"",
+        "select id from " + CATALOG_DATABASE_NAME + "\"test_mixed_format_catalog.test_db.test_pk_table#base\"",
         "VALUES 1, 2, 3");
   }
 
   @Test
   public void baseQueryWhenTableNameContainDataBase() {
     assertQuery(
-        "select id from " + "arctic.test_db.\"test_db.test_pk_table#base\"", "VALUES 1, 2, 3");
+        "select id from " + CATALOG_DATABASE_NAME + "\"test_db.test_pk_table#base\"",
+            "VALUES 1, 2, 3");
   }
 
   @Test
   public void changeQuery() {
     assertQuery(
-        "select * from " + "arctic.test_db.\"test_pk_table#change\"",
+        "select * from " + PK_TABLE_CHANGE_NAME,
         "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT'),"
             + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT'),"
             + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
@@ -108,7 +111,7 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
   @Test
   public void changeQueryWhenTableNameContainCatalogAndDataBase() {
     assertQuery(
-        "select * from " + "arctic.test_db.\"arctic.test_db.test_pk_table#change\"",
+        "select * from " + CATALOG_DATABASE_NAME + "\"test_mixed_format_catalog.test_db.test_pk_table#change\"",
         "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT'),"
             + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT'),"
             + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
@@ -117,7 +120,7 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
   @Test
   public void changeQueryWhenTableNameContainDataBase() {
     assertQuery(
-        "select * from " + "arctic.test_db.\"test_db.test_pk_table#change\"",
+        "select * from " + CATALOG_DATABASE_NAME + "\"test_db.test_pk_table#change\"",
         "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT'),"
             + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT'),"
             + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");

@@ -18,24 +18,24 @@
 
 package org.apache.amoro.trino;
 
-import static io.trino.spi.ErrorType.EXTERNAL;
+import io.trino.plugin.iceberg.catalog.TrinoCatalog;
+import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
+import io.trino.spi.security.ConnectorIdentity;
 
-import io.trino.spi.ErrorCode;
-import io.trino.spi.ErrorCodeSupplier;
-import io.trino.spi.ErrorType;
+import javax.inject.Inject;
 
-/** Error code */
-public enum ArcticErrorCode implements ErrorCodeSupplier {
-  ARCTIC_BAD_DATA(4, EXTERNAL);
+/** Factory to generate TrinoCatalog */
+public class MixedFormatTrinoCatalogFactory implements TrinoCatalogFactory {
 
-  private final ErrorCode errorCode;
+  private final MixedFormatCatalogFactory mixedFormatCatalogFactory;
 
-  ArcticErrorCode(int code, ErrorType type) {
-    errorCode = new ErrorCode(code + 0x0504_0000, name(), type);
+  @Inject
+  public MixedFormatTrinoCatalogFactory(MixedFormatCatalogFactory mixedFormatCatalogFactory) {
+    this.mixedFormatCatalogFactory = mixedFormatCatalogFactory;
   }
 
   @Override
-  public ErrorCode toErrorCode() {
-    return errorCode;
+  public TrinoCatalog create(ConnectorIdentity identity) {
+    return new MixedFormatTrinoCatalog(mixedFormatCatalogFactory.getMixedFormatCatalog());
   }
 }

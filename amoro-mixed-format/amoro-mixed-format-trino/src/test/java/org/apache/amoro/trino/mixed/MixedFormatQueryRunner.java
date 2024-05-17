@@ -25,7 +25,7 @@ import static java.util.Objects.requireNonNull;
 import io.airlift.log.Logger;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.DistributedQueryRunner;
-import org.apache.amoro.trino.ArcticPlugin;
+import org.apache.amoro.trino.MixedFormatPlugin;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 
 import java.io.File;
@@ -33,12 +33,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public final class ArcticQueryRunner {
-  private static final Logger log = Logger.get(ArcticQueryRunner.class);
+public final class MixedFormatQueryRunner {
+  public static final String MIXED_FORMAT_CATALOG = "test_mixed_format_catalog";
 
-  public static final String ARCTIC_CATALOG = "arctic";
+  public static final String MIXED_FORMAT_CATALOG_PREFIX = MIXED_FORMAT_CATALOG + ".";
 
-  private ArcticQueryRunner() {}
+  private MixedFormatQueryRunner() {}
 
   public static Builder builder() {
     return new Builder();
@@ -49,7 +49,7 @@ public final class ArcticQueryRunner {
     private ImmutableMap.Builder<String, String> icebergProperties = ImmutableMap.builder();
 
     protected Builder() {
-      super(testSessionBuilder().setCatalog(ARCTIC_CATALOG).setSchema("tpch").build());
+      super(testSessionBuilder().setCatalog(MIXED_FORMAT_CATALOG).setSchema("tpch").build());
     }
 
     public Builder setMetastoreDirectory(File metastoreDirectory) {
@@ -76,10 +76,10 @@ public final class ArcticQueryRunner {
         queryRunner.installPlugin(new TpchPlugin());
         queryRunner.createCatalog("tpch", "tpch");
 
-        queryRunner.installPlugin(new ArcticPlugin());
+        queryRunner.installPlugin(new MixedFormatPlugin());
         Map<String, String> icebergProperties =
             new HashMap<>(this.icebergProperties.buildOrThrow());
-        queryRunner.createCatalog(ARCTIC_CATALOG, "arctic", icebergProperties);
+        queryRunner.createCatalog(MIXED_FORMAT_CATALOG, "mixed-format", icebergProperties);
         return queryRunner;
       } catch (Exception e) {
         closeAllSuppress(e, queryRunner);
@@ -91,11 +91,11 @@ public final class ArcticQueryRunner {
   public static void main(String[] args) throws Exception {
     DistributedQueryRunner queryRunner = null;
     queryRunner =
-        ArcticQueryRunner.builder()
+        MixedFormatQueryRunner.builder()
             .setExtraProperties(ImmutableMap.of("http-server.http.port", "8080"))
             .build();
     Thread.sleep(10);
-    Logger log = Logger.get(ArcticQueryRunner.class);
+    Logger log = Logger.get(MixedFormatQueryRunner.class);
     log.info("======== SERVER STARTED ========");
     log.info("\n====\n%s\n====", queryRunner.getCoordinator().getBaseUrl());
   }

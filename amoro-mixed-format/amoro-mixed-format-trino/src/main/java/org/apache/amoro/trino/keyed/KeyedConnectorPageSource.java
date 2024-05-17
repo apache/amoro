@@ -46,7 +46,7 @@ import org.apache.amoro.hive.io.reader.AdaptHiveMixedDeleteFilter;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.joda.time.DateTimeZone;
-import org.apache.amoro.trino.ArcticErrorCode;
+import org.apache.amoro.trino.AmoroErrorCode;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -70,7 +70,7 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
   private final List<IcebergColumnHandle> requiredColumns;
   private final DynamicFilter dynamicFilter;
   private final TypeManager typeManager;
-  private final AdaptHiveMixedDeleteFilter<TrinoRow> arcticDeleteFilter;
+  private final AdaptHiveMixedDeleteFilter<TrinoRow> mixedDeleteFilter;
 
   private final List<ColumnHandle> requireColumnsDummy;
   private final Type[] requireColumnTypes;
@@ -92,7 +92,7 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
       KeyedTableHandle table,
       DynamicFilter dynamicFilter,
       TypeManager typeManager,
-      AdaptHiveMixedDeleteFilter<TrinoRow> arcticDeleteFilter) {
+      AdaptHiveMixedDeleteFilter<TrinoRow> mixedDeleteFilter) {
     this.expectedColumns = expectedColumns;
     this.icebergPageSourceProvider = icebergPageSourceProvider;
     this.transaction = transaction;
@@ -102,7 +102,7 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
     this.requiredColumns = requiredColumns;
     this.dynamicFilter = dynamicFilter;
     this.typeManager = typeManager;
-    this.arcticDeleteFilter = arcticDeleteFilter;
+    this.mixedDeleteFilter = mixedDeleteFilter;
 
     this.requireColumnsDummy =
         requiredColumns.stream().map(ColumnHandle.class::cast).collect(Collectors.toList());
@@ -164,11 +164,11 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
         return null;
       }
 
-      if (arcticDeleteFilter != null) {
+      if (mixedDeleteFilter != null) {
         int positionCount = page.getPositionCount();
         int[] positionsToKeep = new int[positionCount];
         try (CloseableIterable<TrinoRow> filteredRows =
-            arcticDeleteFilter.filter(
+            mixedDeleteFilter.filter(
                 CloseableIterable.withNoopClose(
                     TrinoRow.fromPage(requireColumnTypes, page, positionCount)))) {
           int positionsToKeepCount = 0;
@@ -189,7 +189,7 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
     } catch (Exception e) {
       closeWithSuppression(e);
       throwIfInstanceOf(e, TrinoException.class);
-      throw new TrinoException(ArcticErrorCode.ARCTIC_BAD_DATA, e);
+      throw new TrinoException(AmoroErrorCode.AMORO_BAD_DATA, e);
     }
   }
 
@@ -258,7 +258,7 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
       idToConstant.put(MetadataColumns.FILE_OFFSET_FILED_ID, Optional.of(Long.MAX_VALUE + ""));
     }
 
-    arcticDeleteFilter.setCurrentDataPath(mixedFileScanTask.file().path().toString());
+    mixedDeleteFilter.setCurrentDataPath(mixedFileScanTask.file().path().toString());
 
     return icebergPageSourceProvider.createPageSource(
         transaction,

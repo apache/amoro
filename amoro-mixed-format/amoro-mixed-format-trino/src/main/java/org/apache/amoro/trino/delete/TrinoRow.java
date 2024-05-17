@@ -29,7 +29,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.AbstractIterator;
 
 import javax.annotation.Nullable;
 
-/** Copy from trino-iceberg TrinoRow and do some change to adapt Arctic */
+/** Copy from trino-iceberg TrinoRow and do some change to adapt mixed-format table */
 public class TrinoRow implements StructLike {
   private final Type[] types;
   private final Page page;

@@ -29,7 +29,7 @@ import io.trino.spi.type.TimestampWithTimeZoneType;
 import io.trino.spi.type.Type;
 import org.joda.time.DateTimeZone;
 
-/** Copy from trino-parquet TimestampColumnReader and do some change to adapt Arctic */
+/** Copy from trino-parquet TimestampColumnReader and do some change to adapt mixed-format table */
 public class TimestampColumnReader extends PrimitiveColumnReader {
   private final DateTimeZone timeZone;
 

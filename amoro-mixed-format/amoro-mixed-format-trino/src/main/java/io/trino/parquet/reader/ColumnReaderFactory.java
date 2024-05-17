@@ -81,7 +81,7 @@ import org.joda.time.DateTimeZone;
 
 import java.util.Optional;
 
-/** Copy from trino-parquet ColumnReaderFactory and do some change to adapt Arctic */
+/** Copy from trino-parquet ColumnReaderFactory and do some change to adapt mixed-format table */
 public final class ColumnReaderFactory {
   private ColumnReaderFactory() {}
 

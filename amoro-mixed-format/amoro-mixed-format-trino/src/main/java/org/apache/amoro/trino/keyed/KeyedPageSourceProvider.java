@@ -96,7 +96,7 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         .filter(column -> !columns.contains(column))
         .forEach(requiredColumnsBuilder::add);
     List<IcebergColumnHandle> requiredColumns = requiredColumnsBuilder.build();
-    AdaptHiveMixedDeleteFilter<TrinoRow> arcticDeleteFilter =
+    AdaptHiveMixedDeleteFilter<TrinoRow> mixedDeleteFilter =
         new KeyedDeleteFilter(
             keyedTableScanTask,
             tableSchema,
@@ -114,6 +114,6 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         keyedTableHandle,
         dynamicFilter,
         typeManager,
-        arcticDeleteFilter);
+        mixedDeleteFilter);
   }
 }
