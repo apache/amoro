@@ -190,13 +190,134 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/optimizing-processes',
+    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/operations',
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": { "list": [], "total": 0 } }),
   },
   {
+    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/partitions/:filter/files',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": {
+        "list": [
+          {
+            "commitId": "3015968602476930240",
+            "fileType": "BASE_FILE",
+            "commitTime": 1715861982880,
+            "size": "883.00B",
+            "partition": "ts_day=2022-07-01",
+            "specId": 0,
+            "path": "/tmp/local_iceberg/db/user/data/ts_day=2022-07-01/00042-1-179d061d-6fe9-4945-b6a6-f8c088595412-00001.parquet",
+            "file": "00042-1-179d061d-6fe9-4945-b6a6-f8c088595412-00001.parquet",
+            "fileSize": 883,
+            "operation": null
+          }
+        ],
+        "total": 1
+      }
+    }),
+  },
+  {
+    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/snapshots/:snapshotId/detail',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": {
+        "list": [
+          {
+            "commitId": "3015968602476930240",
+            "fileType": "BASE_FILE",
+            "commitTime": 1715861982880,
+            "size": "883.00B",
+            "partition": "ts_day=2022-07-01",
+            "specId": 0,
+            "path": "/tmp/local_iceberg/db/user/data/ts_day=2022-07-01/00042-1-179d061d-6fe9-4945-b6a6-f8c088595412-00001.parquet",
+            "file": "00042-1-179d061d-6fe9-4945-b6a6-f8c088595412-00001.parquet",
+            "fileSize": 883,
+            "operation": "add"
+          },
+          {
+            "commitId": "3015968602476930240",
+            "fileType": "BASE_FILE",
+            "commitTime": 1715861982880,
+            "size": "891.00B",
+            "partition": "ts_day=2022-07-02",
+            "specId": 0,
+            "path": "/tmp/local_iceberg/db/user/data/ts_day=2022-07-02/00082-2-179d061d-6fe9-4945-b6a6-f8c088595412-00001.parquet",
+            "file": "00082-2-179d061d-6fe9-4945-b6a6-f8c088595412-00001.parquet",
+            "fileSize": 891,
+            "operation": "add"
+          }
+        ],
+        "total": 2
+      }
+    }),
+  },
+  {
+    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/optimizing-processes',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": {
+        "list": [
+          {
+            "tableId": 1,
+            "catalogName": "local_iceberg",
+            "dbName": "db",
+            "tableName": "user",
+            "processId": 1715862413340,
+            "startTime": 1715862413340,
+            "optimizingType": "MINOR",
+            "status": "SUCCESS",
+            "failReason": null,
+            "duration": 1531,
+            "successTasks": 2,
+            "totalTasks": 2,
+            "runningTasks": 0,
+            "finishTime": 1715862414871,
+            "inputFiles": {
+              "fileCnt": 16,
+              "totalSize": 14192,
+              "averageSize": 887
+            },
+            "outputFiles": {
+              "fileCnt": 2,
+              "totalSize": 2064,
+              "averageSize": 1032
+            },
+            "summary": {
+              "input-data-files(rewrite)": "16",
+              "input-data-size(rewrite)": "13.86KB",
+              "input-data-records(rewrite)": "24",
+              "output-data-files": "2",
+              "output-data-size": "2.02KB",
+              "output-data-records": "24"
+            }
+          }
+        ],
+        "total": 1
+      }
+    }),
+  },
+  {
     url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/operations',
     method: 'get',
-    response: () => ({ "message": "success", "code": 200, "result": { "list": [], "total": 0 } }),
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": {
+        "list": [
+          {
+            "ts": 1715862487163,
+            "operation": "ALTER TABLE user ADD COLUMNS (age bigint)"
+          }
+        ],
+        "total": 1
+      }
+    }),
   },
 ]
