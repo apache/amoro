@@ -26,7 +26,6 @@ import scala.util.Try
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
-import org.apache.amoro.spark.sql.catalyst.parser.ArcticCommandAstParser
 import org.apache.amoro.spark.sql.catalyst.plans.UnresolvedMergeIntoArcticTable
 import org.apache.amoro.spark.sql.parser._
 import org.apache.amoro.spark.table.ArcticSparkTable
@@ -48,7 +47,6 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
   with SQLConfHelper {
 
   private lazy val createTableAstBuilder = new ArcticSqlExtendAstBuilder()
-  private lazy val arcticCommandAstVisitor = new ArcticCommandAstParser()
 
   /**
    * Parse a string to a DataType.
@@ -98,11 +96,6 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
     delegate.parseTableSchema(sqlText)
   }
 
-  def isArcticCommand(sqlText: String): Boolean = {
-    val normalized = sqlText.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ")
-    (normalized.contains("migrate") && normalized.contains("to arctic"))
-  }
-
   private val arcticExtendSqlFilters: Seq[String => Boolean] = Seq(
     s => s.contains("create table") && s.contains("primary key"),
     s => s.contains("create temporary table") && s.contains("primary key"))
@@ -112,37 +105,30 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
     arcticExtendSqlFilters.exists(f => f(normalized))
   }
 
-  def buildLexer(sql: String): Option[Lexer] = {
+  private def buildLexer(sql: String): Option[Lexer] = {
     lazy val charStream = new UpperCaseCharStream(CharStreams.fromString(sql))
     if (isArcticExtendSql(sql)) {
       Some(new ArcticSqlExtendLexer(charStream))
-    } else if (isArcticCommand(sql)) {
-      Some(new ArcticSqlCommandLexer(charStream))
     } else {
       Option.empty
     }
   }
 
-  def buildAntlrParser(stream: TokenStream, lexer: Lexer): Parser = {
+  private def buildAntlrParser(stream: TokenStream, lexer: Lexer): Parser = {
     lexer match {
       case _: ArcticSqlExtendLexer =>
         val parser = new ArcticSqlExtendParser(stream)
         parser.legacy_exponent_literal_as_decimal_enabled = conf.exponentLiteralAsDecimalEnabled
         parser.SQL_standard_keyword_behavior = conf.ansiEnabled
         parser
-      case _: ArcticSqlCommandLexer =>
-        val parser = new ArcticSqlCommandParser(stream)
-        parser
       case _ =>
         throw new IllegalStateException("no suitable parser found")
     }
   }
 
-  def toLogicalResult(parser: Parser): LogicalPlan = parser match {
+  private def toLogicalResult(parser: Parser): LogicalPlan = parser match {
     case p: ArcticSqlExtendParser =>
       createTableAstBuilder.visitExtendStatement(p.extendStatement())
-    case p: ArcticSqlCommandParser =>
-      arcticCommandAstVisitor.visitArcticCommand(p.arcticCommand())
   }
 
   /**
