@@ -34,6 +34,7 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestBase;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
+import org.apache.amoro.flink.table.DynamicTableFactory;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
@@ -397,7 +398,7 @@ public class TestMixedCatalog extends CatalogTestBase {
               + " PRIMARY KEY (id) NOT ENFORCED "
               + ") PARTITIONED BY(t) "
               + " WITH ("
-              + " 'connector' = 'arctic'"
+              + " 'connector' = 'mixed-format'"
               + ")");
 
       // insert values into mixed-format table
@@ -405,11 +406,11 @@ public class TestMixedCatalog extends CatalogTestBase {
 
       // create Table with compute columns under default catalog
       props = Maps.newHashMap();
-      props.put("connector", CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER);
+      props.put("connector", DynamicTableFactory.IDENTIFIER);
       props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
-      props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".catalog", catalogName);
-      props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".database", DB);
-      props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".table", TABLE);
+      props.put(DynamicTableFactory.IDENTIFIER + ".catalog", catalogName);
+      props.put(DynamicTableFactory.IDENTIFIER + ".database", DB);
+      props.put(DynamicTableFactory.IDENTIFIER + ".table", TABLE);
 
       sql(
           "CREATE TABLE default_catalog.default_database."
