@@ -16,14 +16,21 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.spark.sql.catalyst.plans
+package org.apache.amoro.spark.command;
 
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ParsedStatement}
+import org.apache.spark.sql.AnalysisException;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.types.StructType;
 
-case class MigrateToMixedFormatStatement(source: Seq[String], target: Seq[String])
-  extends ParsedStatement {
-  override def children: Seq[LogicalPlan] = Nil
+public interface MixedFormatSparkCommand {
 
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
-      : LogicalPlan = null
+  String name();
+
+  StructType outputType();
+
+  Row[] execute() throws AnalysisException;
+
+  default String execInfo() {
+    return "";
+  }
 }

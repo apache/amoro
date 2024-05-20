@@ -18,11 +18,10 @@
 
 package org.apache.amoro.spark.sql.execution
 
+import org.apache.amoro.spark.table.MixedSparkTable
 import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 import scala.collection.mutable.ArrayBuffer
-
-import org.apache.amoro.spark.table.ArcticSparkTable
 import org.apache.amoro.table.KeyedTable
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
@@ -62,7 +61,7 @@ case class DescribeKeyedTableExec(
 
   private def addPrimaryColumns(
       rows: ArrayBuffer[InternalRow],
-      keyedTable: ArcticSparkTable): Unit = {
+      keyedTable: MixedSparkTable): Unit = {
     keyedTable.table() match {
       case table: KeyedTable =>
         rows += emptyRow()
@@ -89,7 +88,7 @@ case class DescribeKeyedTableExec(
     }
 
     table match {
-      case keyedTable: ArcticSparkTable =>
+      case keyedTable: MixedSparkTable =>
         addPrimaryColumns(rows, keyedTable)
       case _ =>
         Nil

@@ -38,7 +38,7 @@ spark-shell --packages org.apache.amoro:amoro-mixed-spark-3.3-runtime:0.7.0
 ```
 ${SPARK_HOME}/bin/spark-sql \
     --conf spark.sql.extensions=org.apache.amoro.spark.ArcticSparkExtensions \
-    --conf spark.sql.catalog.local_catalog=org.apache.amoro.spark.ArcticSparkCatalog \
+    --conf spark.sql.catalog.local_catalog=org.apache.amoro.spark.MixedFormatSparkCatalog \
     --conf spark.sql.catalog.local_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}
 ```
 

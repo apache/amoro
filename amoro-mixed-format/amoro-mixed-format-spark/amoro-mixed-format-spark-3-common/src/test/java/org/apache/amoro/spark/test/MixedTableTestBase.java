@@ -73,7 +73,7 @@ public class MixedTableTestBase extends SparkTestBase {
     return "arctic";
   }
 
-  public MixedTable createArcticSource(Schema schema, Consumer<TableBuilder> consumer) {
+  public MixedTable createMixedFormatSource(Schema schema, Consumer<TableBuilder> consumer) {
     TestIdentifier identifier =
         TestIdentifier.ofDataLake(currentCatalog, catalog().name(), database(), sourceTable, true);
     TableBuilder builder = catalog().newTableBuilder(identifier.toArcticIdentifier(), schema);

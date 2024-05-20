@@ -18,12 +18,24 @@
 
 package org.apache.amoro.spark.sql.catalyst.plans
 
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ParsedStatement}
+import org.apache.amoro.spark.sql.utils.WriteQueryProjections
+import org.apache.spark.sql.catalyst.analysis.NamedRelation
+import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan, V2WriteCommandLike}
+import org.apache.spark.sql.connector.write.Write
 
-case class MigrateToMixedFormatStatement(source: Seq[String], target: Seq[String])
-  extends ParsedStatement {
-  override def children: Seq[LogicalPlan] = Nil
+case class MixedFormatRowLevelWrite(
+    table: NamedRelation,
+    query: LogicalPlan,
+    options: Map[String, String],
+    projections: WriteQueryProjections,
+    write: Option[Write] = None) extends V2WriteCommandLike with Command {
 
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
-      : LogicalPlan = null
+  def isByName: Boolean = false
+
+  override def outputResolved: Boolean = true
+
+  override protected def withNewChildInternal(newChild: LogicalPlan): MixedFormatRowLevelWrite = {
+    copy(query = newChild)
+  }
+
 }

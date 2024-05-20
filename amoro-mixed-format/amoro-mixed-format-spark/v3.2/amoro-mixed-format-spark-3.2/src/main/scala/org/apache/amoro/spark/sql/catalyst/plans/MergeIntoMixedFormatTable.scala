@@ -18,12 +18,26 @@
 
 package org.apache.amoro.spark.sql.catalyst.plans
 
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ParsedStatement}
+import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.plans.logical._
 
-case class MigrateToMixedFormatStatement(source: Seq[String], target: Seq[String])
-  extends ParsedStatement {
-  override def children: Seq[LogicalPlan] = Nil
+case class MergeIntoMixedFormatTable(
+    targetTable: LogicalPlan,
+    sourceTable: LogicalPlan,
+    mergeCondition: Expression,
+    matchedActions: Seq[MergeAction],
+    notMatchedActions: Seq[MergeAction],
+    rewritePlan: Option[LogicalPlan] = None) extends BinaryCommand {
 
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
-      : LogicalPlan = null
+  def condition: Option[Expression] = Some(mergeCondition)
+
+  override def left: LogicalPlan = targetTable
+
+  override def right: LogicalPlan = sourceTable
+
+  override protected def withNewChildrenInternal(
+      newLeft: LogicalPlan,
+      newRight: LogicalPlan): LogicalPlan = {
+    copy(targetTable = newLeft, sourceTable = newRight)
+  }
 }
