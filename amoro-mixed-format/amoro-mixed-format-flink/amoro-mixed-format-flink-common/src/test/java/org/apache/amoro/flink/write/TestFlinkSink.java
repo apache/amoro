@@ -23,7 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
-import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.flink.table.MixedFormatTableLoader;
 import org.apache.amoro.flink.util.DataUtil;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.table.KeyedTable;
@@ -125,7 +125,7 @@ public class TestFlinkSink extends FlinkTestBase {
     FlinkSink.forRowData(input)
         .context(Optional::of)
         .table(testKeyedTable)
-        .tableLoader(ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
+        .tableLoader(MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
         .flinkSchema(FLINK_SCHEMA)
         .build();
 
@@ -169,7 +169,7 @@ public class TestFlinkSink extends FlinkTestBase {
     FlinkSink.forRowData(input)
         .context(Optional::of)
         .table(testTable)
-        .tableLoader(ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
+        .tableLoader(MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
         .flinkSchema(FLINK_SCHEMA)
         .build();
 
@@ -212,7 +212,7 @@ public class TestFlinkSink extends FlinkTestBase {
     FlinkSink.forRowData(input)
         .context(Optional::of)
         .table(testTable)
-        .tableLoader(ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
+        .tableLoader(MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
         .flinkSchema(FLINK_SCHEMA)
         .build();
     env.execute();
@@ -231,7 +231,7 @@ public class TestFlinkSink extends FlinkTestBase {
     FlinkSink.forRowData(overwrite)
         .context(Optional::of)
         .table(testTable)
-        .tableLoader(ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
+        .tableLoader(MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
         .overwrite(true)
         .flinkSchema(FLINK_SCHEMA)
         .build();

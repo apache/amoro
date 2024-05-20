@@ -41,8 +41,6 @@ import java.util.Set;
 /** Factory for {@link MixedCatalog} */
 public class MixedCatalogFactory implements CatalogFactory {
 
-  private static final Logger LOG = LoggerFactory.getLogger(MixedCatalogFactory.class);
-
   @Override
   public String factoryIdentifier() {
     return CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER;
@@ -57,8 +55,8 @@ public class MixedCatalogFactory implements CatalogFactory {
 
     final String defaultDatabase = helper.getOptions().get(CatalogFactoryOptions.DEFAULT_DATABASE);
     String metastoreUrl = helper.getOptions().get(CatalogFactoryOptions.METASTORE_URL);
-    final Map<String, String> arcticCatalogProperties = getKafkaParams(context.getOptions());
-    final Map<String, String> catalogProperties = Maps.newHashMap(arcticCatalogProperties);
+    final Map<String, String> mixedCatalogProperties = getKafkaParams(context.getOptions());
+    final Map<String, String> catalogProperties = Maps.newHashMap(mixedCatalogProperties);
 
     Optional<String> tableFormatsOptional =
         helper.getOptions().getOptional(CatalogFactoryOptions.FLINK_TABLE_FORMATS);

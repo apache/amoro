@@ -37,12 +37,12 @@ public class MergeOnReadDataIterator extends DataIterator<RowData> {
   private final CloseableIterator<RowData> iterator;
 
   public MergeOnReadDataIterator(
-      FlinkArcticMORDataReader flinkArcticMORDataReader,
+      FlinkKeyedMORDataReader flinkKeyedMORDataReader,
       KeyedTableScanTask keyedTableScanTask,
       AuthenticatedFileIO io) {
     super();
     this.iterator =
-        IteratorWithIO.of(io, io.doAs(() -> flinkArcticMORDataReader.readData(keyedTableScanTask)));
+        IteratorWithIO.of(io, io.doAs(() -> flinkKeyedMORDataReader.readData(keyedTableScanTask)));
   }
 
   @Override

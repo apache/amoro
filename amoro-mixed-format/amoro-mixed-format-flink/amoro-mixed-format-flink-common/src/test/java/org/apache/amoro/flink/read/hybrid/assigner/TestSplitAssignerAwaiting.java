@@ -19,8 +19,8 @@
 package org.apache.amoro.flink.read.hybrid.assigner;
 
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplitState;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplitState;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -43,7 +43,7 @@ public class TestSplitAssignerAwaiting extends TestShuffleSplitAssigner {
   @Test
   public void testStaticAssign() {
     ShuffleSplitAssigner splitAssigner = instanceSplitAssigner(1);
-    List<ArcticSplit> splitList =
+    List<MixedFormatSplit> splitList =
         FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
 
     splitAssigner.onDiscoveredSplits(splitList);
@@ -60,11 +60,11 @@ public class TestSplitAssignerAwaiting extends TestShuffleSplitAssigner {
     ShuffleSplitAssigner assigner = instanceSplitAssigner(1);
     assertGetNext(assigner, Split.Status.UNAVAILABLE);
 
-    List<ArcticSplit> splitList =
+    List<MixedFormatSplit> splitList =
         FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
-    List<ArcticSplit> splits1 = splitList.subList(0, 1);
+    List<MixedFormatSplit> splits1 = splitList.subList(0, 1);
     assertAvailableFuture(assigner, () -> assigner.onDiscoveredSplits(splits1));
-    List<ArcticSplit> splits2 = splitList.subList(1, 2);
+    List<MixedFormatSplit> splits2 = splitList.subList(1, 2);
     assertAvailableFuture(assigner, () -> assigner.onUnassignedSplits(splits2));
 
     assigner.onDiscoveredSplits(splitList.subList(2, 4));
@@ -120,7 +120,7 @@ public class TestSplitAssignerAwaiting extends TestShuffleSplitAssigner {
   }
 
   private void assertSnapshot(ShuffleSplitAssigner assigner, int splitCount) {
-    Collection<ArcticSplitState> stateBeforeGet = assigner.state();
+    Collection<MixedFormatSplitState> stateBeforeGet = assigner.state();
     Assert.assertEquals(splitCount, stateBeforeGet.size());
   }
 }

@@ -22,11 +22,11 @@ package org.apache.amoro.flink.metric;
 public class MetricConstant {
 
   /**
-   * The start time of arctic table's initialization when it used as build table in temporal join.
+   * The start time of mixed-format table's initialization when it used as build table in temporal join.
    */
   public static final String TEMPORAL_TABLE_INITIALIZATION_START_TIMESTAMP =
       "temporalTableInitializationStartTimestamp";
-  /** The end time of arctic table's initialization when it used as build table in temporal join. */
+  /** The end time of mixed-format table's initialization when it used as build table in temporal join. */
   public static final String TEMPORAL_TABLE_INITIALIZATION_END_TIMESTAMP =
       "temporalTableInitializationEndTimestamp";
 }

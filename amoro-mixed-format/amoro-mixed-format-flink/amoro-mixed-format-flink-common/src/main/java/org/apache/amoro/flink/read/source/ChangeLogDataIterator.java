@@ -32,14 +32,14 @@ import java.util.Collections;
 import java.util.function.Function;
 
 /**
- * This is a change log data iterator that replays the change log data appended to arctic change
+ * This is a change log data iterator that replays the change log data appended to mixed-format change
  * table with ordered.
  */
 public class ChangeLogDataIterator<T> extends DataIterator<T> {
   private final DataIterator<T> insertDataIterator;
   private DataIterator<T> deleteDataIterator = empty();
 
-  private final Function<T, T> arcticMetaColumnRemover;
+  private final Function<T, T> mixedFormatMetaColumnRemover;
   private final Function<ChangeActionTrans<T>, T> changeActionTransformer;
 
   private final QueueHolder<T> insertHolder = new QueueHolder<>();
@@ -49,23 +49,23 @@ public class ChangeLogDataIterator<T> extends DataIterator<T> {
       FileScanTaskReader<T> fileScanTaskReader,
       Collection<MixedFileScanTask> insertTasks,
       Collection<MixedFileScanTask> deleteTasks,
-      Function<T, Long> arcticFileOffsetGetter,
-      Function<T, T> arcticMetaColumnRemover,
+      Function<T, Long> mixedFormatFileOffsetGetter,
+      Function<T, T> mixedFormatMetaColumnRemover,
       Function<ChangeActionTrans<T>, T> changeActionTransformer) {
     super(
         fileScanTaskReader,
         Collections.emptyList(),
-        arcticFileOffsetGetter,
-        arcticMetaColumnRemover);
+        mixedFormatFileOffsetGetter,
+        mixedFormatMetaColumnRemover);
     this.insertDataIterator =
         new DataIterator<>(
-            fileScanTaskReader, insertTasks, arcticFileOffsetGetter, arcticMetaColumnRemover);
+            fileScanTaskReader, insertTasks, mixedFormatFileOffsetGetter, mixedFormatMetaColumnRemover);
     if (deleteTasks != null && !deleteTasks.isEmpty()) {
       this.deleteDataIterator =
           new DataIterator<>(
-              fileScanTaskReader, deleteTasks, arcticFileOffsetGetter, arcticMetaColumnRemover);
+              fileScanTaskReader, deleteTasks, mixedFormatFileOffsetGetter, mixedFormatMetaColumnRemover);
     }
-    this.arcticMetaColumnRemover = arcticMetaColumnRemover;
+    this.mixedFormatMetaColumnRemover = mixedFormatMetaColumnRemover;
     this.changeActionTransformer = changeActionTransformer;
   }
 
@@ -89,7 +89,7 @@ public class ChangeLogDataIterator<T> extends DataIterator<T> {
     QueueHolder<T> holder = insert ? insertHolder : deleteHolder;
     if (dataIterator.hasNext() && holder.isEmpty()) {
       T next = dataIterator.next();
-      long nextOffset = dataIterator.currentArcticFileOffset();
+      long nextOffset = dataIterator.currentMixedFormatFileOffset();
       ChangeAction changeAction = insert ? INSERT : DELETE;
       holder.put(next, changeAction, nextOffset);
     }
@@ -141,7 +141,7 @@ public class ChangeLogDataIterator<T> extends DataIterator<T> {
       insertHolder.clean();
     }
 
-    return arcticMetaColumnRemover.apply(row);
+    return mixedFormatMetaColumnRemover.apply(row);
   }
 
   @Override

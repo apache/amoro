@@ -25,7 +25,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.util.DataUtil;
 import org.apache.amoro.flink.util.TestUtil;
 import org.apache.amoro.table.KeyedTable;
@@ -113,9 +113,9 @@ public class TestJoin extends FlinkTestBase {
             + "' "
             + " )");
 
-    sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
+    sql(String.format("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
+    String table = String.format("mixed_catalog.%s.%s", DB, TABLE);
 
     String sql =
         String.format(
@@ -178,9 +178,9 @@ public class TestJoin extends FlinkTestBase {
             + "' "
             + " )");
 
-    sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
+    sql(String.format("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
+    String table = String.format("mixed_catalog.%s.%s", DB, TABLE);
 
     String sql =
         String.format(
@@ -198,7 +198,7 @@ public class TestJoin extends FlinkTestBase {
             .build();
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
     KeyedTable keyedTable =
-        (KeyedTable) ArcticUtils.loadArcticTable(ArcticTableLoader.of(TABLE_ID, catalogBuilder));
+        (KeyedTable) MixedFormatUtils.loadMixedTable(MixedFormatTableLoader.of(TABLE_ID, catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
     List<RowData> baseData =
         new ArrayList<RowData>() {
@@ -272,9 +272,9 @@ public class TestJoin extends FlinkTestBase {
             + "' "
             + " )");
 
-    sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
+    sql(String.format("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
+    String table = String.format("mixed_catalog.%s.%s", DB, TABLE);
 
     String sql =
         String.format(
@@ -292,7 +292,7 @@ public class TestJoin extends FlinkTestBase {
             .build();
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
     KeyedTable keyedTable =
-        (KeyedTable) ArcticUtils.loadArcticTable(ArcticTableLoader.of(TABLE_ID, catalogBuilder));
+        (KeyedTable) MixedFormatUtils.loadMixedTable(MixedFormatTableLoader.of(TABLE_ID, catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
     List<RowData> baseData =
         new ArrayList<RowData>() {

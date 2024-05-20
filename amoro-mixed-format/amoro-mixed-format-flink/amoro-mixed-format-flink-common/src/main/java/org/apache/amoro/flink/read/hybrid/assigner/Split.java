@@ -18,11 +18,11 @@
 
 package org.apache.amoro.flink.read.hybrid.assigner;
 
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.util.Preconditions;
 
-/** This is a wrapper Split of {@link ArcticSplit} with split status. */
+/** This is a wrapper Split of {@link MixedFormatSplit} with split status. */
 public class Split {
 
   public enum Status {
@@ -36,14 +36,14 @@ public class Split {
   }
 
   private final Status status;
-  private final ArcticSplit split;
+  private final MixedFormatSplit split;
 
   private Split(Status status) {
     this.status = status;
     this.split = null;
   }
 
-  private Split(ArcticSplit split) {
+  private Split(MixedFormatSplit split) {
     Preconditions.checkNotNull(split, "Split cannot be null");
     this.status = Status.AVAILABLE;
     this.split = split;
@@ -62,7 +62,7 @@ public class Split {
     return status == Status.UNAVAILABLE;
   }
 
-  public ArcticSplit split() {
+  public MixedFormatSplit split() {
     return split;
   }
 
@@ -77,7 +77,7 @@ public class Split {
     return SUBTASK_UNAVAILABLE;
   }
 
-  public static Split of(ArcticSplit arcticSplit) {
-    return new Split(arcticSplit);
+  public static Split of(MixedFormatSplit mixedFormatSplit) {
+    return new Split(mixedFormatSplit);
   }
 }

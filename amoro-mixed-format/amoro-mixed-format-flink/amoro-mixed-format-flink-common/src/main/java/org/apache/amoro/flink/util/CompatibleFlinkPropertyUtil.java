@@ -20,7 +20,7 @@ package org.apache.amoro.flink.util;
 
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.TOPIC;
 
-import org.apache.amoro.flink.table.descriptors.ArcticValidator;
+import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
 import org.apache.amoro.table.TableProperties;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
@@ -93,16 +93,16 @@ public class CompatibleFlinkPropertyUtil {
     if (property == null) {
       return null;
     }
-    if (ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key().equals(property)) {
-      return ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY.key();
-    } else if (ArcticValidator.DIM_TABLE_ENABLE.key().equals(property)) {
-      return ArcticValidator.DIM_TABLE_ENABLE_LEGACY.key();
+    if (MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE.key().equals(property)) {
+      return MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY.key();
+    } else if (MixedFormatValidator.DIM_TABLE_ENABLE.key().equals(property)) {
+      return MixedFormatValidator.DIM_TABLE_ENABLE_LEGACY.key();
     }
     switch (property) {
-      case ArcticValidator.ARCTIC_LATENCY_METRIC_ENABLE:
-        return ArcticValidator.ARCTIC_LATENCY_METRIC_ENABLE_LEGACY;
-      case ArcticValidator.ARCTIC_THROUGHPUT_METRIC_ENABLE:
-        return ArcticValidator.ARCTIC_THROUGHPUT_METRIC_ENABLE_LEGACY;
+      case MixedFormatValidator.MIXED_FORMAT_LATENCY_METRIC_ENABLE:
+        return MixedFormatValidator.MIXED_FORMAT_LATENCY_METRIC_ENABLE_LEGACY;
+      case MixedFormatValidator.MIXED_FORMAT_THROUGHPUT_METRIC_ENABLE:
+        return MixedFormatValidator.MIXED_FORMAT_THROUGHPUT_METRIC_ENABLE_LEGACY;
       default:
         return null;
     }
@@ -112,10 +112,10 @@ public class CompatibleFlinkPropertyUtil {
     if (configOption == null) {
       return null;
     }
-    if (ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key().equals(configOption.key())) {
-      return ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY;
-    } else if (ArcticValidator.DIM_TABLE_ENABLE.key().equals(configOption.key())) {
-      return ArcticValidator.DIM_TABLE_ENABLE_LEGACY;
+    if (MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE.key().equals(configOption.key())) {
+      return MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY;
+    } else if (MixedFormatValidator.DIM_TABLE_ENABLE.key().equals(configOption.key())) {
+      return MixedFormatValidator.DIM_TABLE_ENABLE_LEGACY;
     }
     return null;
   }

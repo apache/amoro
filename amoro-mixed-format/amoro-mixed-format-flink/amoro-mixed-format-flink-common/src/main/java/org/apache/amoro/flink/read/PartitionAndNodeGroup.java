@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read;
 
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.scan.MixedFileScanTask;
 
@@ -31,8 +31,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * This is a group of the partitions and nodes of the arctic table, it can plan different nodes and
- * different partitions into different {@link ArcticSplit}.
+ * This is a group of the partitions and nodes of the mixed-format table, it can plan different nodes and
+ * different partitions into different {@link MixedFormatSplit}.
  */
 public class PartitionAndNodeGroup {
   AtomicInteger splitCount = new AtomicInteger();
@@ -54,12 +54,12 @@ public class PartitionAndNodeGroup {
     return this;
   }
 
-  List<ArcticSplit> planSplits() {
+  List<MixedFormatSplit> planSplits() {
     Map<String, Map<Long, Node>> nodes = new HashMap<>();
     plan(true, nodes);
     plan(false, nodes);
 
-    List<ArcticSplit> splits = new ArrayList<>();
+    List<MixedFormatSplit> splits = new ArrayList<>();
 
     nodes
         .values()
@@ -80,7 +80,7 @@ public class PartitionAndNodeGroup {
    *
    * @param insert if plan insert files or not
    * @param nodes the key of nodes is partition info which the file located, the value of nodes is
-   *     hashmap of arctic tree node id and {@link Node}
+   *     hashmap of mixed-format tree node id and {@link Node}
    */
   private void plan(boolean insert, Map<String, Map<Long, Node>> nodes) {
     Collection<MixedFileScanTask> tasks = insert ? insertTasks : deleteTasks;

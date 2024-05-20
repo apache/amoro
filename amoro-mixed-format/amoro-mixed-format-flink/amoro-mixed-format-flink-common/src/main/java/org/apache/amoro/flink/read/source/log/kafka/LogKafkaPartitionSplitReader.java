@@ -19,12 +19,12 @@
 package org.apache.amoro.flink.read.source.log.kafka;
 
 import static org.apache.amoro.flink.read.source.log.LogSourceHelper.checkMagicNum;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
 
 import org.apache.amoro.flink.read.internals.KafkaPartitionSplitReader;
 import org.apache.amoro.flink.read.source.log.LogSourceHelper;
 import org.apache.amoro.flink.shuffle.LogRecordV1;
-import org.apache.amoro.flink.table.descriptors.ArcticValidator;
+import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
 import org.apache.amoro.log.LogData;
 import org.apache.amoro.log.LogDataJsonDeserialization;
 import org.apache.flink.api.connector.source.SourceReaderContext;
@@ -54,7 +54,7 @@ import java.util.Set;
 
 /**
  * This reader supports read log data in log-store. If {@link
- * ArcticValidator#ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE} values true, reader would read data
+ * MixedFormatValidator#MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE} values true, reader would read data
  * consistently with file-store. Some data would be written into log-store repeatedly if upstream
  * job failovers several times, so it's necessary to retract these data to guarantee the consistency
  * with file-store.
@@ -202,7 +202,7 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
         boolean magicFormat = checkMagicNum(value);
         if (!magicFormat) {
           throw new UnsupportedOperationException(
-              "Can't deserialize arctic log queue message due to it does not contain magic number.");
+              "Can't deserialize mixed-format log queue message due to it does not contain magic number.");
         }
 
         LogData<RowData> logData = logDataJsonDeserialization.deserialize(value);
@@ -428,9 +428,9 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
 
   /**
    * filter the rowData only works during {@link
-   * ArcticValidator#ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE} is false and {@link
-   * ArcticValidator#ARCTIC_LOG_CONSUMER_CHANGELOG_MODE} is {@link
-   * ArcticValidator#LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY} and rowData.rowKind != INSERT
+   * MixedFormatValidator#MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE} is false and {@link
+   * MixedFormatValidator#MIXED_FORMAT_CONSUMER_CHANGELOG_MODE} is {@link
+   * MixedFormatValidator#LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY} and rowData.rowKind != INSERT
    *
    * @param rowData the judged data
    * @return true means should be filtered.

@@ -22,14 +22,14 @@ import static org.apache.amoro.flink.shuffle.RowKindUtil.convertToFlinkRowKind;
 import static org.apache.amoro.utils.SchemaUtil.changeWriteSchema;
 import static org.apache.amoro.utils.SchemaUtil.fillUpIdentifierFields;
 
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.source.ChangeLogDataIterator;
 import org.apache.amoro.flink.read.source.DataIterator;
 import org.apache.amoro.flink.read.source.FileScanTaskReader;
-import org.apache.amoro.flink.read.source.FlinkArcticDataReader;
-import org.apache.amoro.flink.read.source.FlinkArcticMORDataReader;
+import org.apache.amoro.flink.read.source.FlinkUnkyedDataReader;
+import org.apache.amoro.flink.read.source.FlinkKeyedMORDataReader;
 import org.apache.amoro.flink.read.source.MergeOnReadDataIterator;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.NodeFilter;
@@ -43,7 +43,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import java.util.Collections;
 
 /**
- * This Function accept a {@link ArcticSplit} and produces an {@link DataIterator} of {@link
+ * This Function accept a {@link MixedFormatSplit} and produces an {@link DataIterator} of {@link
  * RowData}.
  */
 public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
@@ -54,13 +54,13 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
   private final boolean caseSensitive;
   private final AuthenticatedFileIO io;
   private final PrimaryKeySpec primaryKeySpec;
-  /** The accurate selected columns size if the arctic source projected */
+  /** The accurate selected columns size if the mixed-format source projected */
   private final int columnSize;
   /**
-   * The index of the arctic file offset field in the read schema Refer to {@link
-   * this#wrapArcticFileOffsetColumnMeta}
+   * The index of the mixed-format file offset field in the read schema Refer to {@link
+   * this#wrapFileOffsetColumnMeta}
    */
-  private final int arcticFileOffsetIndex;
+  private final int fileOffsetIndex;
 
   private final boolean reuse;
 
@@ -104,17 +104,17 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
     this.caseSensitive = caseSensitive;
     this.io = io;
     // Add file offset column after readSchema.
-    this.arcticFileOffsetIndex = readSchema.columns().size();
+    this.fileOffsetIndex = readSchema.columns().size();
     this.columnSize =
         projectedSchema == null ? readSchema.columns().size() : projectedSchema.columns().size();
     this.reuse = reuse;
   }
 
   @Override
-  public DataIterator<RowData> createDataIterator(ArcticSplit split) {
+  public DataIterator<RowData> createDataIterator(MixedFormatSplit split) {
     if (split.isMergeOnReadSplit()) {
-      FlinkArcticMORDataReader morDataReader =
-          new FlinkArcticMORDataReader(
+      FlinkKeyedMORDataReader morDataReader =
+          new FlinkKeyedMORDataReader(
               io,
               tableSchema,
               readSchema,
@@ -127,7 +127,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
           morDataReader, split.asMergeOnReadSplit().keyedTableScanTask(), io);
     } else if (split.isSnapshotSplit()) {
       FileScanTaskReader<RowData> rowDataReader =
-          new FlinkArcticDataReader(
+          new FlinkUnkyedDataReader(
               io,
               tableSchema,
               readSchema,
@@ -141,13 +141,13 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
           rowDataReader,
           split.asSnapshotSplit().insertTasks(),
           rowData -> Long.MIN_VALUE,
-          this::removeArcticMetaColumn);
+          this::removeMixedFormatMetaColumn);
     } else if (split.isChangelogSplit()) {
       FileScanTaskReader<RowData> rowDataReader =
-          new FlinkArcticDataReader(
+          new FlinkUnkyedDataReader(
               io,
-              wrapArcticFileOffsetColumnMeta(tableSchema),
-              wrapArcticFileOffsetColumnMeta(readSchema),
+              wrapFileOffsetColumnMeta(tableSchema),
+              wrapFileOffsetColumnMeta(readSchema),
               primaryKeySpec,
               nameMapping,
               caseSensitive,
@@ -158,8 +158,8 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
           rowDataReader,
           split.asChangelogSplit().insertTasks(),
           split.asChangelogSplit().deleteTasks(),
-          this::arcticFileOffset,
-          this::removeArcticMetaColumn,
+          this::mixedFormatFileOffset,
+          this::removeMixedFormatMetaColumn,
           this::transformRowKind);
     } else {
       throw new IllegalArgumentException(
@@ -168,20 +168,20 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
     }
   }
 
-  private Schema wrapArcticFileOffsetColumnMeta(Schema schema) {
+  private Schema wrapFileOffsetColumnMeta(Schema schema) {
     return changeWriteSchema(schema);
   }
 
-  long arcticFileOffset(RowData rowData) {
-    return rowData.getLong(arcticFileOffsetIndex);
+  long mixedFormatFileOffset(RowData rowData) {
+    return rowData.getLong(fileOffsetIndex);
   }
 
   /**
    * @param rowData It may have more columns than readSchema. Refer to {@link
-   *     FlinkArcticDataReader}'s annotation.
+   *     FlinkUnkyedDataReader}'s annotation.
    */
-  RowData removeArcticMetaColumn(RowData rowData) {
-    return ArcticUtils.removeArcticMetaColumn(rowData, columnSize);
+  RowData removeMixedFormatMetaColumn(RowData rowData) {
+    return MixedFormatUtils.removeMixedFormatMetaColumn(rowData, columnSize);
   }
 
   RowData transformRowKind(ChangeLogDataIterator.ChangeActionTrans<RowData> trans) {
@@ -195,7 +195,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
    * the tableSchema and the projected schema.
    *
    * <p>projectedSchema may not include the primary keys, but the {@link NodeFilter} must filter the
-   * record with the value of the primary keys. So the Arctic reader function schema must include
+   * record with the value of the primary keys. So the mixed-format reader function schema must include
    * the primary keys.
    *
    * @param tableSchema table schema

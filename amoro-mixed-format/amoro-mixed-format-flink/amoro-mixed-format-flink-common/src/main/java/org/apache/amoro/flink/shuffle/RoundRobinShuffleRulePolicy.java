@@ -209,14 +209,14 @@ public class RoundRobinShuffleRulePolicy implements ShuffleRulePolicy<RowData, S
       checkArgument(
           numPartitions == this.downStreamOperatorParallelism,
           String.format(
-              "shuffle arctic record numPartition:%s is diff with writer parallelism:%s.",
+              "shuffle mixed-format record numPartition:%s is diff with writer parallelism:%s.",
               numPartitions, this.downStreamOperatorParallelism));
       Integer factorIndex = null;
       if (distributionHashMode.isSupportPrimaryKey()) {
         long pkHashCode = helper.hashKeyValue(row);
         factorIndex = (int) (pkHashCode % this.factor);
       }
-      // shuffle by arctic tree node and partition for partitioned table
+      // shuffle by mixed-format tree node and partition for partitioned table
       Integer partitionHashCode = null;
       if (distributionHashMode.isSupportPartition()) {
         partitionHashCode = helper.hashPartitionValue(row);

@@ -22,7 +22,7 @@ import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.KAFKA_CO
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.getPropertiesByTopic;
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
 import static org.apache.amoro.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE;
 import static org.junit.Assert.assertEquals;
 
 import org.apache.amoro.flink.kafka.testutils.KafkaContainerTest;
@@ -183,7 +183,7 @@ public class TestKafkaSourceReader {
     properties.put("auto.offset.reset", "earliest");
 
     Map<String, String> configuration = new HashMap<>();
-    configuration.put(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), String.valueOf(retract));
+    configuration.put(MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), String.valueOf(retract));
 
     return LogKafkaSource.builder(TestBaseLog.USER_SCHEMA, configuration)
         .setTopics(topics)

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.hybrid.reader;
 
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.flink.read.source.ChangeLogDataIterator;
 import org.apache.amoro.flink.read.source.DataIterator;
@@ -34,11 +34,11 @@ public abstract class DataIteratorReaderFunction<T> implements ReaderFunction<T>
     this.batcher = batcher;
   }
 
-  public abstract DataIterator<T> createDataIterator(ArcticSplit split);
+  public abstract DataIterator<T> createDataIterator(MixedFormatSplit split);
 
   @Override
-  public CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> apply(
-      ArcticSplit split) {
+  public CloseableIterator<RecordsWithSplitIds<MixedFormatRecordWithOffset<T>>> apply(
+      MixedFormatSplit split) {
     DataIterator<T> inputIterator = createDataIterator(split);
     if (inputIterator instanceof MergeOnReadDataIterator) {
       inputIterator.seek(0, split.asMergeOnReadSplit().recordOffset());

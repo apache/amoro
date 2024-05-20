@@ -18,11 +18,11 @@
 
 package org.apache.amoro.flink.read;
 
-import org.apache.amoro.flink.read.hybrid.enumerator.ArcticEnumeratorOffset;
+import org.apache.amoro.flink.read.hybrid.enumerator.MixedFormatEnumeratorOffset;
 import org.apache.amoro.flink.read.hybrid.enumerator.ContinuousEnumerationResult;
 import org.apache.amoro.flink.read.hybrid.enumerator.ContinuousSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.DataIteratorReaderFunction;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterator;
@@ -50,18 +50,18 @@ public class MixedIncrementalLoader<T> implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(MixedIncrementalLoader.class);
   private final ContinuousSplitPlanner continuousSplitPlanner;
   private final DataIteratorReaderFunction<T> readerFunction;
-  private AbstractAdaptHiveKeyedDataReader<T> flinkArcticMORDataReader;
+  private AbstractAdaptHiveKeyedDataReader<T> flinkMORDataReader;
   private final List<Expression> filters;
-  private final AtomicReference<ArcticEnumeratorOffset> enumeratorPosition;
-  private final Queue<ArcticSplit> splitQueue;
+  private final AtomicReference<MixedFormatEnumeratorOffset> enumeratorPosition;
+  private final Queue<MixedFormatSplit> splitQueue;
 
   public MixedIncrementalLoader(
       ContinuousSplitPlanner continuousSplitPlanner,
-      AbstractAdaptHiveKeyedDataReader<T> flinkArcticMORDataReader,
+      AbstractAdaptHiveKeyedDataReader<T> flinkMORDataReader,
       DataIteratorReaderFunction<T> readerFunction,
       List<Expression> filters) {
     this.continuousSplitPlanner = continuousSplitPlanner;
-    this.flinkArcticMORDataReader = flinkArcticMORDataReader;
+    this.flinkMORDataReader = flinkMORDataReader;
     this.readerFunction = readerFunction;
     this.filters = filters;
     this.enumeratorPosition = new AtomicReference<>();
@@ -100,14 +100,14 @@ public class MixedIncrementalLoader<T> implements AutoCloseable {
   }
 
   public CloseableIterator<T> next() {
-    ArcticSplit split = splitQueue.poll();
+    MixedFormatSplit split = splitQueue.poll();
     if (split == null) {
       throw new IllegalStateException("next() called, but no more valid splits");
     }
 
     LOG.info("Fetching data by this split:{}.", split);
     if (split.isMergeOnReadSplit()) {
-      return flinkArcticMORDataReader.readData(split.asMergeOnReadSplit().keyedTableScanTask());
+      return flinkMORDataReader.readData(split.asMergeOnReadSplit().keyedTableScanTask());
     }
     return readerFunction.createDataIterator(split);
   }

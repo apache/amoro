@@ -25,7 +25,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.util.DataUtil;
 import org.apache.amoro.flink.util.TestUtil;
 import org.apache.amoro.table.KeyedTable;
@@ -93,14 +93,14 @@ public class TestWatermark extends FlinkTestBase {
 
   @After
   public void after() {
-    sql("DROP TABLE IF EXISTS arcticCatalog." + DB + "." + TABLE);
+    sql("DROP TABLE IF EXISTS mixed_catalog." + DB + "." + TABLE);
   }
 
   @Test
   public void testWatermark() throws Exception {
-    sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
+    sql(String.format("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
+    String table = String.format("mixed_catalog.%s.%s", DB, TABLE);
 
     sql(
         "CREATE TABLE IF NOT EXISTS %s ("
@@ -120,8 +120,8 @@ public class TestWatermark extends FlinkTestBase {
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
     KeyedTable keyedTable =
         (KeyedTable)
-            ArcticUtils.loadArcticTable(
-                ArcticTableLoader.of(
+            MixedFormatUtils.loadMixedTable(
+                MixedFormatTableLoader.of(
                     TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
     List<RowData> baseData =
@@ -162,9 +162,9 @@ public class TestWatermark extends FlinkTestBase {
 
   @Test
   public void testSelectWatermarkField() throws Exception {
-    sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
+    sql(String.format("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
+    String table = String.format("mixed_catalog.%s.%s", DB, TABLE);
 
     sql(
         "CREATE TABLE IF NOT EXISTS %s ("
@@ -184,8 +184,8 @@ public class TestWatermark extends FlinkTestBase {
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
     KeyedTable keyedTable =
         (KeyedTable)
-            ArcticUtils.loadArcticTable(
-                ArcticTableLoader.of(
+            MixedFormatUtils.loadMixedTable(
+                MixedFormatTableLoader.of(
                     TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
     List<RowData> baseData =

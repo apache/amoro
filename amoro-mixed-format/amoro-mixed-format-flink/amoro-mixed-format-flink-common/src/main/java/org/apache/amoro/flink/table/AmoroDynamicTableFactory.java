@@ -20,7 +20,7 @@ package org.apache.amoro.flink.table;
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
-import org.apache.amoro.flink.table.descriptors.ArcticValidator;
+import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.catalog.AbstractCatalog;
@@ -57,7 +57,7 @@ public class AmoroDynamicTableFactory
     ObjectIdentifier identifier = context.getObjectIdentifier();
     FactoryUtil.TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
     Configuration options = (Configuration) helper.getOptions();
-    TableFormat tableFormat = options.get(ArcticValidator.TABLE_FORMAT);
+    TableFormat tableFormat = options.get(MixedFormatValidator.TABLE_FORMAT);
 
     return getOriginalCatalog(tableFormat)
         .flatMap(AbstractCatalog::getFactory)
@@ -76,7 +76,7 @@ public class AmoroDynamicTableFactory
     ObjectIdentifier identifier = context.getObjectIdentifier();
     FactoryUtil.TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
     Configuration options = (Configuration) helper.getOptions();
-    TableFormat tableFormat = options.get(ArcticValidator.TABLE_FORMAT);
+    TableFormat tableFormat = options.get(MixedFormatValidator.TABLE_FORMAT);
 
     return getOriginalCatalog(tableFormat)
         .flatMap(AbstractCatalog::getFactory)
@@ -107,7 +107,7 @@ public class AmoroDynamicTableFactory
           Optional<Factory> factory = catalog.getFactory();
           factory.ifPresent(value -> requiredOptions.addAll(value.requiredOptions()));
         });
-    requiredOptions.add(ArcticValidator.TABLE_FORMAT);
+    requiredOptions.add(MixedFormatValidator.TABLE_FORMAT);
     return requiredOptions;
   }
 

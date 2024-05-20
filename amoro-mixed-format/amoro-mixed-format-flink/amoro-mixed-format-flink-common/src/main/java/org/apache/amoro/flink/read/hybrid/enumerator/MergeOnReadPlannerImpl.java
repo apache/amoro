@@ -18,12 +18,12 @@
 
 package org.apache.amoro.flink.read.hybrid.enumerator;
 
-import static org.apache.amoro.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
-import static org.apache.amoro.flink.util.ArcticUtils.loadArcticTable;
+import static org.apache.amoro.flink.read.hybrid.enumerator.MixedFormatEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
+import static org.apache.amoro.flink.util.MixedFormatUtils.loadMixedTable;
 
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
-import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
+import org.apache.amoro.flink.table.MixedFormatTableLoader;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.Snapshot;
@@ -40,19 +40,19 @@ public class MergeOnReadPlannerImpl implements ContinuousSplitPlanner {
   private static final Logger LOG = LoggerFactory.getLogger(MergeOnReadPlannerImpl.class);
 
   protected transient KeyedTable table;
-  protected final ArcticTableLoader loader;
+  protected final MixedFormatTableLoader loader;
   protected static final AtomicInteger SPLIT_COUNT = new AtomicInteger();
 
-  public MergeOnReadPlannerImpl(ArcticTableLoader loader) {
+  public MergeOnReadPlannerImpl(MixedFormatTableLoader loader) {
     this.loader = loader;
   }
 
   @Override
   public ContinuousEnumerationResult planSplits(
-      ArcticEnumeratorOffset ignored, List<Expression> filters) {
+          MixedFormatEnumeratorOffset ignored, List<Expression> filters) {
     // todo support mor the table from the specific offset in the future
     if (table == null) {
-      table = loadArcticTable(loader).asKeyedTable();
+      table = loadMixedTable(loader).asKeyedTable();
     }
     table.refresh();
     return discoverInitialSplits(filters);
@@ -60,17 +60,17 @@ public class MergeOnReadPlannerImpl implements ContinuousSplitPlanner {
 
   protected ContinuousEnumerationResult discoverInitialSplits(List<Expression> filters) {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.mergeOnReadPlan(table, filters, SPLIT_COUNT);
+    List<MixedFormatSplit> mixedFormatSplits = FlinkSplitPlanner.mergeOnReadPlan(table, filters, SPLIT_COUNT);
 
     long changeStartSnapshotId =
         changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
-    if (changeSnapshot == null && CollectionUtils.isEmpty(arcticSplits)) {
+    if (changeSnapshot == null && CollectionUtils.isEmpty(mixedFormatSplits)) {
       LOG.info("There have no change snapshot, and no base splits in table: {}.", table);
       return ContinuousEnumerationResult.EMPTY;
     }
 
     return new ContinuousEnumerationResult(
-        arcticSplits, null, ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
+            mixedFormatSplits, null, MixedFormatEnumeratorOffset.of(changeStartSnapshotId, null));
   }
 
   @Override

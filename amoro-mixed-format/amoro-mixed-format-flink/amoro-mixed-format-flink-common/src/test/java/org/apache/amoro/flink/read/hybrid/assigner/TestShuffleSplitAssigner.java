@@ -22,7 +22,7 @@ import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
 import org.apache.amoro.flink.read.hybrid.reader.TestRowDataReaderFunction;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.source.DataIterator;
 import org.apache.flink.api.connector.source.ReaderInfo;
 import org.apache.flink.api.connector.source.SourceEvent;
@@ -53,10 +53,10 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
   public void testSingleParallelism() {
     ShuffleSplitAssigner shuffleSplitAssigner = instanceSplitAssigner(1);
 
-    List<ArcticSplit> splitList =
+    List<MixedFormatSplit> splitList =
         FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
     shuffleSplitAssigner.onDiscoveredSplits(splitList);
-    List<ArcticSplit> actual = new ArrayList<>();
+    List<MixedFormatSplit> actual = new ArrayList<>();
 
     while (true) {
       Split splitOpt = shuffleSplitAssigner.getNext(0);
@@ -74,10 +74,10 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
   public void testMultiParallelism() {
     ShuffleSplitAssigner shuffleSplitAssigner = instanceSplitAssigner(3);
 
-    List<ArcticSplit> splitList =
+    List<MixedFormatSplit> splitList =
         FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
     shuffleSplitAssigner.onDiscoveredSplits(splitList);
-    List<ArcticSplit> actual = new ArrayList<>();
+    List<MixedFormatSplit> actual = new ArrayList<>();
 
     int subtaskId = 2;
     while (subtaskId >= 0) {
@@ -110,8 +110,8 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
     List<DataTreeNode> actualNodes = new ArrayList<>();
 
     for (long[] node : treeNodes) {
-      ArcticSplit arcticSplit =
-          new ArcticSplit() {
+      MixedFormatSplit mixedFormatSplit =
+          new MixedFormatSplit() {
             DataTreeNode dataTreeNode = DataTreeNode.of(node[0], node[1]);
 
             @Override
@@ -123,7 +123,7 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
             public void updateOffset(Object[] recordOffsets) {}
 
             @Override
-            public ArcticSplit copy() {
+            public MixedFormatSplit copy() {
               return null;
             }
 
@@ -147,7 +147,7 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
               return dataTreeNode.toString();
             }
           };
-      List<DataTreeNode> exactTreeNodes = shuffleSplitAssigner.getExactlyTreeNodes(arcticSplit);
+      List<DataTreeNode> exactTreeNodes = shuffleSplitAssigner.getExactlyTreeNodes(mixedFormatSplit);
       actualNodes.addAll(exactTreeNodes);
     }
     long[][] result =
@@ -161,11 +161,11 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
   @Test
   public void testNodeUpMoved() throws IOException {
     writeUpdateWithSpecifiedMaskOne();
-    List<ArcticSplit> arcticSplits =
+    List<MixedFormatSplit> mixedFormatSplits =
         FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
     int totalParallelism = 3;
     ShuffleSplitAssigner assigner = instanceSplitAssigner(totalParallelism);
-    assigner.onDiscoveredSplits(arcticSplits);
+    assigner.onDiscoveredSplits(mixedFormatSplits);
     RowDataReaderFunction rowDataReaderFunction =
         new RowDataReaderFunction(
             new Configuration(),
@@ -206,13 +206,13 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
   }
 
   protected ShuffleSplitAssigner instanceSplitAssigner(int parallelism) {
-    SplitEnumeratorContext<ArcticSplit> splitEnumeratorContext =
+    SplitEnumeratorContext<MixedFormatSplit> splitEnumeratorContext =
         new InternalSplitEnumeratorContext(parallelism);
     return new ShuffleSplitAssigner(splitEnumeratorContext);
   }
 
   protected static class InternalSplitEnumeratorContext
-      implements SplitEnumeratorContext<ArcticSplit> {
+      implements SplitEnumeratorContext<MixedFormatSplit> {
     private final int parallelism;
 
     public InternalSplitEnumeratorContext(int parallelism) {
@@ -238,7 +238,7 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
     }
 
     @Override
-    public void assignSplits(SplitsAssignment<ArcticSplit> newSplitAssignments) {}
+    public void assignSplits(SplitsAssignment<MixedFormatSplit> newSplitAssignments) {}
 
     @Override
     public void signalNoMoreSplits(int subtask) {}

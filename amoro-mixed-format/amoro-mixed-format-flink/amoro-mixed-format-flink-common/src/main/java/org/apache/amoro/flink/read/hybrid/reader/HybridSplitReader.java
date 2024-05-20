@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.hybrid.reader;
 
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.flink.read.hybrid.split.MergeOnReadSplit;
 import org.apache.amoro.flink.read.hybrid.split.SnapshotSplit;
@@ -41,14 +41,14 @@ import java.util.Queue;
 /**
  * A hybrid source split reader that could read {@link SnapshotSplit} and {@link ChangelogSplit}.
  */
-public class HybridSplitReader<T> implements SplitReader<ArcticRecordWithOffset<T>, ArcticSplit> {
+public class HybridSplitReader<T> implements SplitReader<MixedFormatRecordWithOffset<T>, MixedFormatSplit> {
   private static final Logger LOG = LoggerFactory.getLogger(HybridSplitReader.class);
 
   private final ReaderFunction<T> openSplitFunction;
   private final int indexOfSubtask;
-  private final Queue<ArcticSplit> splits;
+  private final Queue<MixedFormatSplit> splits;
 
-  private CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> currentReader;
+  private CloseableIterator<RecordsWithSplitIds<MixedFormatRecordWithOffset<T>>> currentReader;
   private String currentSplitId;
 
   public HybridSplitReader(ReaderFunction<T> openSplitFunction, SourceReaderContext context) {
@@ -58,14 +58,14 @@ public class HybridSplitReader<T> implements SplitReader<ArcticRecordWithOffset<
   }
 
   @Override
-  public RecordsWithSplitIds<ArcticRecordWithOffset<T>> fetch() throws IOException {
+  public RecordsWithSplitIds<MixedFormatRecordWithOffset<T>> fetch() throws IOException {
     if (currentReader == null) {
       if (splits.isEmpty()) {
         return new RecordsBySplits<>(Collections.emptyMap(), Collections.emptySet());
       }
-      ArcticSplit arcticSplit = splits.poll();
-      currentReader = openSplitFunction.apply(arcticSplit);
-      currentSplitId = arcticSplit.splitId();
+      MixedFormatSplit mixedFormatSplit = splits.poll();
+      currentReader = openSplitFunction.apply(mixedFormatSplit);
+      currentSplitId = mixedFormatSplit.splitId();
     }
     if (currentReader.hasNext()) {
       // Because Iterator#next() doesn't support checked exception,
@@ -81,7 +81,7 @@ public class HybridSplitReader<T> implements SplitReader<ArcticRecordWithOffset<
   }
 
   @Override
-  public void handleSplitsChanges(SplitsChange<ArcticSplit> splitsChange) {
+  public void handleSplitsChanges(SplitsChange<MixedFormatSplit> splitsChange) {
     if (!(splitsChange instanceof SplitsAddition)) {
       throw new UnsupportedOperationException(
           String.format("The SplitChange type of %s is not supported.", splitsChange.getClass()));
@@ -91,16 +91,16 @@ public class HybridSplitReader<T> implements SplitReader<ArcticRecordWithOffset<
     splitsChange
         .splits()
         .forEach(
-            arcticSplit -> {
-              if (arcticSplit instanceof SnapshotSplit
-                  || arcticSplit instanceof ChangelogSplit
-                  || arcticSplit instanceof MergeOnReadSplit) {
-                splits.add(arcticSplit);
+            mixedFormatSplit -> {
+              if (mixedFormatSplit instanceof SnapshotSplit
+                  || mixedFormatSplit instanceof ChangelogSplit
+                  || mixedFormatSplit instanceof MergeOnReadSplit) {
+                splits.add(mixedFormatSplit);
               } else {
                 throw new IllegalArgumentException(
                     String.format(
                         "As of now, The %s of SourceSplit type is unsupported, available source splits are %s, %s.",
-                        arcticSplit.getClass().getSimpleName(),
+                        mixedFormatSplit.getClass().getSimpleName(),
                         SnapshotSplit.class.getSimpleName(),
                         ChangelogSplit.class.getSimpleName()));
               }
@@ -118,7 +118,7 @@ public class HybridSplitReader<T> implements SplitReader<ArcticRecordWithOffset<
     }
   }
 
-  private RecordsWithSplitIds<ArcticRecordWithOffset<T>> finishSplit() throws IOException {
+  private RecordsWithSplitIds<MixedFormatRecordWithOffset<T>> finishSplit() throws IOException {
     if (currentReader != null) {
       currentReader.close();
       currentReader = null;

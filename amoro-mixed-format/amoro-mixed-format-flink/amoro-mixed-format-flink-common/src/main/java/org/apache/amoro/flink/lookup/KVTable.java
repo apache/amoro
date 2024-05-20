@@ -27,7 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * The KVTable interface is used for lookup join in Arctic on Flink. It includes methods for
+ * The KVTable interface is used for lookup join in mixed-format table on Flink. It includes methods for
  * initializing and updating the lookup table, as well as getting results by key and cleaning up the
  * cache.
  */

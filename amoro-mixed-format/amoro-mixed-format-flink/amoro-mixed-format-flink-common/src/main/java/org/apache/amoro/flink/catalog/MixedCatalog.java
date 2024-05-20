@@ -28,8 +28,8 @@ import org.apache.amoro.NoSuchDatabaseException;
 import org.apache.amoro.flink.InternalCatalogBuilder;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.amoro.flink.table.DynamicTableFactory;
-import org.apache.amoro.flink.table.descriptors.ArcticValidator;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
+import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScanTask;
@@ -199,23 +199,23 @@ public class MixedCatalog extends AbstractCatalog {
       throw new TableNotExistException(this.getName(), tablePath);
     }
     MixedTable table = internalCatalog.loadTable(tableIdentifier);
-    Schema arcticSchema = table.schema();
+    Schema mixedTableSchema = table.schema();
 
-    Map<String, String> arcticProperties = Maps.newHashMap(table.properties());
-    fillTableProperties(arcticProperties);
-    fillTableMetaPropertiesIfLookupLike(arcticProperties, tableIdentifier);
+    Map<String, String> mixedTableProperties = Maps.newHashMap(table.properties());
+    fillTableProperties(mixedTableProperties);
+    fillTableMetaPropertiesIfLookupLike(mixedTableProperties, tableIdentifier);
 
     List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
     return CatalogTable.of(
-        toSchema(arcticSchema, ArcticUtils.getPrimaryKeys(table), arcticProperties).toSchema(),
+        toSchema(mixedTableSchema, MixedFormatUtils.getPrimaryKeys(table), mixedTableProperties).toSchema(),
         null,
         partitionKeys,
-        arcticProperties);
+        mixedTableProperties);
   }
 
   /**
    * For now, 'CREATE TABLE LIKE' would be treated as the case which users want to add watermark in
-   * temporal join, as an alternative of lookup join, and use Arctic table as build table, i.e.
+   * temporal join, as an alternative of lookup join, and use mixed-format table as build table, i.e.
    * right table. So the properties those required in temporal join will be put automatically.
    *
    * <p>If you don't want the properties, 'EXCLUDING ALL' is what you need. More details @see <a
@@ -237,9 +237,9 @@ public class MixedCatalog extends AbstractCatalog {
     }
 
     properties.put(CONNECTOR.key(), DynamicTableFactory.IDENTIFIER);
-    properties.put(ArcticValidator.ARCTIC_CATALOG.key(), tableIdentifier.getCatalog());
-    properties.put(ArcticValidator.ARCTIC_TABLE.key(), tableIdentifier.getTableName());
-    properties.put(ArcticValidator.ARCTIC_DATABASE.key(), tableIdentifier.getDatabase());
+    properties.put(MixedFormatValidator.MIXED_FORMAT_CATALOG.key(), tableIdentifier.getCatalog());
+    properties.put(MixedFormatValidator.MIXED_FORMAT_TABLE.key(), tableIdentifier.getTableName());
+    properties.put(MixedFormatValidator.MIXED_FORMAT_DATABASE.key(), tableIdentifier.getDatabase());
     properties.put(CatalogFactoryOptions.METASTORE_URL.key(), catalogBuilder.getMetastoreUrl());
   }
 
@@ -440,9 +440,9 @@ public class MixedCatalog extends AbstractCatalog {
                                   keyedTableScanTask.mixedEquityDeletes())
                               .flatMap(List::stream))
               .forEach(
-                  arcticFileScanTask -> {
+                  mixedFileScanTask -> {
                     Map<String, String> map = Maps.newHashMap();
-                    StructLike structLike = arcticFileScanTask.partition();
+                    StructLike structLike = mixedFileScanTask.partition();
                     PartitionSpec spec = table.spec();
                     for (int i = 0; i < structLike.size(); i++) {
                       map.put(
@@ -625,16 +625,16 @@ public class MixedCatalog extends AbstractCatalog {
    * Check whether a list of partition values are valid based on the given list of partition keys.
    *
    * @param partitionSpec a partition spec.
-   * @param arcticPartitionSpec arcticPartitionSpec
+   * @param mixedTablePartitionSpec mixedTablePartitionSpec
    * @param tablePath tablePath
    * @throws PartitionSpecInvalidException thrown if any key in partitionSpec doesn't exist in
    *     partitionKeys.
    */
   private void checkValidPartitionSpec(
-      CatalogPartitionSpec partitionSpec, PartitionSpec arcticPartitionSpec, ObjectPath tablePath)
+      CatalogPartitionSpec partitionSpec, PartitionSpec mixedTablePartitionSpec, ObjectPath tablePath)
       throws PartitionSpecInvalidException {
     List<String> partitionKeys =
-        arcticPartitionSpec.fields().stream()
+            mixedTablePartitionSpec.fields().stream()
             .map(PartitionField::name)
             .collect(Collectors.toList());
     for (String key : partitionSpec.getPartitionSpec().keySet()) {
@@ -732,17 +732,17 @@ public class MixedCatalog extends AbstractCatalog {
   }
 
   private CatalogTable toCatalogTable(MixedTable table, TableIdentifier tableIdentifier) {
-    Schema arcticSchema = table.schema();
+    Schema mixedTableSchema = table.schema();
 
-    Map<String, String> arcticProperties = Maps.newHashMap(table.properties());
-    fillTableProperties(arcticProperties);
-    fillTableMetaPropertiesIfLookupLike(arcticProperties, tableIdentifier);
+    Map<String, String> mixedTableProperties = Maps.newHashMap(table.properties());
+    fillTableProperties(mixedTableProperties);
+    fillTableMetaPropertiesIfLookupLike(mixedTableProperties, tableIdentifier);
 
     List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
     return new CatalogTableImpl(
-        toSchema(arcticSchema, ArcticUtils.getPrimaryKeys(table), arcticProperties),
+        toSchema(mixedTableSchema, MixedFormatUtils.getPrimaryKeys(table), mixedTableProperties),
         partitionKeys,
-        arcticProperties,
+        mixedTableProperties,
         null);
   }
 

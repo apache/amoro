@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.hybrid.enumerator;
 
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.TemporalJoinSplits;
 import org.junit.Assert;
 import org.junit.Test;
@@ -41,16 +41,16 @@ public class TestTemporalJoinSplitsThreadSafe {
       allSplit.add(UUID.randomUUID().toString());
     }
 
-    Collection<ArcticSplit> arcticSplits =
-        allSplit.stream().map(TestArcticSplit::of).collect(Collectors.toList());
+    Collection<MixedFormatSplit> mixedFormatSplits =
+        allSplit.stream().map(TestMixedFormatSplit::of).collect(Collectors.toList());
 
     for (int i = 0; i < 2; i++) {
-      round(allSplit, arcticSplits);
+      round(allSplit, mixedFormatSplits);
     }
   }
 
-  public void round(List<String> allSplit, Collection<ArcticSplit> arcticSplits) {
-    TemporalJoinSplits temporalJoinSplits = new TemporalJoinSplits(arcticSplits, null);
+  public void round(List<String> allSplit, Collection<MixedFormatSplit> mixedFormatSplits) {
+    TemporalJoinSplits temporalJoinSplits = new TemporalJoinSplits(mixedFormatSplits, null);
     int n = allSplit.size();
 
     List<String> s1 = new ArrayList<>(allSplit.subList(0, (int) (2.0 / 3 * n))),
@@ -58,11 +58,11 @@ public class TestTemporalJoinSplitsThreadSafe {
     Collections.shuffle(s1);
     Collections.shuffle(s2);
 
-    List<ArcticSplit> as = new ArrayList<>(arcticSplits);
+    List<MixedFormatSplit> as = new ArrayList<>(mixedFormatSplits);
     Collections.shuffle(as);
     int an = as.size();
-    List<ArcticSplit> as1 = new ArrayList<>(as.subList(0, (int) (2.0 / 3 * an)));
-    List<ArcticSplit> as2 = new ArrayList<>(as.subList((int) (1.0 / 3 * an), an));
+    List<MixedFormatSplit> as1 = new ArrayList<>(as.subList(0, (int) (2.0 / 3 * an)));
+    List<MixedFormatSplit> as2 = new ArrayList<>(as.subList((int) (1.0 / 3 * an), an));
     CompletableFuture<Void> f1 =
         CompletableFuture.runAsync(() -> temporalJoinSplits.removeAndReturnIfAllFinished(s1));
     CompletableFuture<Void> f2 =
@@ -75,15 +75,15 @@ public class TestTemporalJoinSplitsThreadSafe {
     Assert.assertTrue(temporalJoinSplits.removeAndReturnIfAllFinished(allSplit));
   }
 
-  static class TestArcticSplit extends ArcticSplit {
+  static class TestMixedFormatSplit extends MixedFormatSplit {
     private final String splitId;
 
-    public TestArcticSplit(String splitId) {
+    public TestMixedFormatSplit(String splitId) {
       this.splitId = splitId;
     }
 
-    public static TestArcticSplit of(String splitId) {
-      return new TestArcticSplit(splitId);
+    public static TestMixedFormatSplit of(String splitId) {
+      return new TestMixedFormatSplit(splitId);
     }
 
     @Override
@@ -95,8 +95,8 @@ public class TestTemporalJoinSplitsThreadSafe {
     public void updateOffset(Object[] recordOffsets) {}
 
     @Override
-    public ArcticSplit copy() {
-      return new TestArcticSplit(splitId);
+    public MixedFormatSplit copy() {
+      return new TestMixedFormatSplit(splitId);
     }
 
     @Override

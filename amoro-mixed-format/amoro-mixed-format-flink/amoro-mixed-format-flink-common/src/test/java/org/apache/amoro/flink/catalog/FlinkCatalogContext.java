@@ -19,7 +19,7 @@
 package org.apache.amoro.flink.catalog;
 
 import static org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions.METASTORE_URL;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.TABLE_FORMAT;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.TABLE_FORMAT;
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TestAms;

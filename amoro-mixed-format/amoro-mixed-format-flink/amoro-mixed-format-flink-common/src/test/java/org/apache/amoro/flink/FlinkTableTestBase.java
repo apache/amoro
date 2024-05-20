@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink;
 
-import org.apache.amoro.flink.table.ArcticTableLoader;
-import org.apache.amoro.flink.write.ArcticRowDataTaskWriterFactory;
+import org.apache.amoro.flink.table.MixedFormatTableLoader;
+import org.apache.amoro.flink.write.MixedFormatRowDataTaskWriterFactory;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
@@ -64,8 +64,8 @@ public interface FlinkTableTestBase {
 
   default TaskWriter<RowData> createTaskWriter(
       MixedTable mixedTable, RowType rowType, boolean overwrite, long mask) {
-    ArcticRowDataTaskWriterFactory taskWriterFactory =
-        new ArcticRowDataTaskWriterFactory(mixedTable, rowType, overwrite);
+    MixedFormatRowDataTaskWriterFactory taskWriterFactory =
+        new MixedFormatRowDataTaskWriterFactory(mixedTable, rowType, overwrite);
     taskWriterFactory.setMask(mask);
     taskWriterFactory.initialize(0, 0);
     return taskWriterFactory.create();
@@ -87,7 +87,7 @@ public interface FlinkTableTestBase {
       if (!base) {
         throw new IllegalArgumentException(
             String.format(
-                "arctic table %s is a unkeyed table, can't commit to change table",
+                "mixed-format table %s is a unkeyed table, can't commit to change table",
                 mixedTable.name()));
       }
       UnkeyedTable unkeyedTable = mixedTable.asUnkeyedTable();
@@ -97,13 +97,13 @@ public interface FlinkTableTestBase {
     }
   }
 
-  default ArcticTableLoader getTableLoader(
+  default MixedFormatTableLoader getTableLoader(
       String catalogName, String metastoreUrl, MixedTable mixedTable) {
     TableIdentifier identifier =
         TableIdentifier.of(
             catalogName, mixedTable.id().getDatabase(), mixedTable.id().getTableName());
     InternalCatalogBuilder internalCatalogBuilder =
         InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl);
-    return ArcticTableLoader.of(identifier, internalCatalogBuilder, mixedTable.properties());
+    return MixedFormatTableLoader.of(identifier, internalCatalogBuilder, mixedTable.properties());
   }
 }

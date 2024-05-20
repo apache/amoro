@@ -19,7 +19,7 @@
 package org.apache.amoro.flink.read;
 
 import org.apache.amoro.data.DataFileType;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.flink.read.hybrid.split.MergeOnReadSplit;
 import org.apache.amoro.flink.read.hybrid.split.SnapshotSplit;
@@ -51,15 +51,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
- * An util class that plans arctic table(base and change) or just plans change table. invoked by
- * arctic enumerator.
+ * An util class that plans mixed-format table(base and change) or just plans change table. invoked by
+ * mixed-format enumerator.
  */
 public class FlinkSplitPlanner {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkSplitPlanner.class);
 
   private FlinkSplitPlanner() {}
 
-  public static List<ArcticSplit> planFullTable(KeyedTable keyedTable, AtomicInteger splitCount) {
+  public static List<MixedFormatSplit> planFullTable(KeyedTable keyedTable, AtomicInteger splitCount) {
     CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTable.newScan().planTasks();
     BaseAndChangeTask baseAndChangeTask = BaseAndChangeTask.of(combinedScanTasks);
     return planFullTable(baseAndChangeTask, splitCount);
@@ -72,10 +72,10 @@ public class FlinkSplitPlanner {
    * @param keyedTable The {@link KeyedTable} to scan.
    * @param filters Optional list of filters to apply to the scan.
    * @param splitCount The atomic integer to track the split count.
-   * @return The list of planned {@link ArcticSplit} included {@link SnapshotSplit}, {@link
+   * @return The list of planned {@link MixedFormatSplit} included {@link SnapshotSplit}, {@link
    *     ChangelogSplit}.
    */
-  public static List<ArcticSplit> planFullTable(
+  public static List<MixedFormatSplit> planFullTable(
       KeyedTable keyedTable, List<Expression> filters, AtomicInteger splitCount) {
     KeyedTableScan keyedTableScan = keyedTable.newScan();
     if (filters != null) {
@@ -86,19 +86,19 @@ public class FlinkSplitPlanner {
     return planFullTable(baseAndChangeTask, splitCount);
   }
 
-  private static List<ArcticSplit> planFullTable(
+  private static List<MixedFormatSplit> planFullTable(
       BaseAndChangeTask baseAndChangeTask, AtomicInteger splitCount) {
     Collection<MixedFileScanTask> baseTasks = baseAndChangeTask.allBaseTasks();
-    List<ArcticSplit> allSplits =
+    List<MixedFormatSplit> allSplits =
         baseTasks.stream()
             .map(
-                arcticFileScanTask ->
+                mixedFileScanTask ->
                     new SnapshotSplit(
-                        Collections.singleton(arcticFileScanTask), splitCount.incrementAndGet()))
+                        Collections.singleton(mixedFileScanTask), splitCount.incrementAndGet()))
             .collect(Collectors.toList());
 
     Collection<TransactionTask> changeTasks = baseAndChangeTask.transactionTasks();
-    List<ArcticSplit> changeSplits = planChangeTable(changeTasks, splitCount);
+    List<MixedFormatSplit> changeSplits = planChangeTable(changeTasks, splitCount);
     allSplits.addAll(changeSplits);
 
     return allSplits;
@@ -111,16 +111,16 @@ public class FlinkSplitPlanner {
    * @param keyedTable The {@link KeyedTable} to scan.
    * @param filters Optional list of filters to apply to the scan.
    * @param splitCount The atomic integer to track the split count.
-   * @return The list of planned {@link ArcticSplit} included {@link MergeOnReadSplit}.
+   * @return The list of planned {@link MixedFormatSplit} included {@link MergeOnReadSplit}.
    */
-  public static List<ArcticSplit> mergeOnReadPlan(
+  public static List<MixedFormatSplit> mergeOnReadPlan(
       KeyedTable keyedTable, List<Expression> filters, AtomicInteger splitCount) {
     KeyedTableScan keyedTableScan = keyedTable.newScan();
     if (filters != null) {
       filters.forEach(keyedTableScan::filter);
     }
     CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTableScan.planTasks();
-    List<ArcticSplit> morSplits = Lists.newArrayList();
+    List<MixedFormatSplit> morSplits = Lists.newArrayList();
     try (CloseableIterator<CombinedScanTask> initTasks = combinedScanTasks.iterator()) {
 
       while (initTasks.hasNext()) {
@@ -137,16 +137,16 @@ public class FlinkSplitPlanner {
     return morSplits;
   }
 
-  public static List<ArcticSplit> planChangeTable(
+  public static List<MixedFormatSplit> planChangeTable(
       ChangeTableIncrementalScan tableIncrementalScan, AtomicInteger splitCount) {
     CloseableIterable<FileScanTask> tasks = tableIncrementalScan.planFiles();
     BaseAndChangeTask baseAndChangeTask = BaseAndChangeTask.ofIceberg(tasks);
     return planChangeTable(baseAndChangeTask.transactionTasks(), splitCount);
   }
 
-  private static List<ArcticSplit> planChangeTable(
+  private static List<MixedFormatSplit> planChangeTable(
       Collection<TransactionTask> transactionTasks, AtomicInteger splitCount) {
-    List<ArcticSplit> changeTasks = new ArrayList<>(transactionTasks.size());
+    List<MixedFormatSplit> changeTasks = new ArrayList<>(transactionTasks.size());
     transactionTasks.forEach(
         transactionTask -> {
           PartitionAndNodeGroup partitionAndNodeGroup =

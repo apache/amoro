@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.read.source.log.kafka;
 
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.MIXED_FORMAT_LOG_CONSUMER_CHANGELOG_MODE;
 
 import org.apache.amoro.flink.read.internals.KafkaSource;
 import org.apache.amoro.flink.read.internals.KafkaSourceFetcherManager;
@@ -54,7 +54,7 @@ import java.util.function.Supplier;
  * The Source implementation of LogKafka.
  *
  * <pre>{@code
- * LogKafkaSource source = LogKafkaSource.builder(arcticSchema, configuration)
+ * LogKafkaSource source = LogKafkaSource.builder(mixedFormatSchema, configuration)
  *    .setTopics(Arrays.asList(TOPIC1))
  *    .setStartingOffsets(OffsetsInitializer.earliest())
  *    .setProperties(properties)
@@ -92,13 +92,13 @@ public class LogKafkaSource extends KafkaSource<RowData> {
     logRetractionEnable =
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
             tableProperties,
-            ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(),
-            ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue());
+            MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(),
+                MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue());
     logConsumerChangelogMode =
         CompatibleFlinkPropertyUtil.propertyAsString(
             tableProperties,
-            ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.key(),
-            ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.defaultValue());
+                MIXED_FORMAT_LOG_CONSUMER_CHANGELOG_MODE.key(),
+                MIXED_FORMAT_LOG_CONSUMER_CHANGELOG_MODE.defaultValue());
   }
 
   /**
