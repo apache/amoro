@@ -343,6 +343,30 @@
                                         <include>
                                             org.apache.spark.sql.execution.datasources.v2.ArcticTableWriteExec*
                                         </include>
+                                        <inlucde>
+                                            org.apache.spark.sql.execution.datasources.v2.MergeRowsExec*
+                                        </inlucde>
+                                        <inlucde>
+                                            org.apache.spark.sql.execution.datasources.v2.CreateOrReplaceBranchExec*
+                                        </inlucde>
+                                        <inlucde>
+                                            org.apache.spark.sql.execution.datasources.v2.CreateOrReplaceTagExec*
+                                        </inlucde>
+                                        <inlucde>
+                                            org.apache.spark.sql.execution.datasources.v2.DropBranchExec*
+                                        </inlucde>
+                                        <inlucde>
+                                            org.apache.spark.sql.execution.datasources.v2.DropTagExec*
+                                        </inlucde>
+                                        <inlucde>
+                                            org.apache.spark.sql.execution.datasources.v2.DropIdentifierFieldsExec*
+                                        </inlucde>
+                                        <inlucde>
+                                            org.apache.spark.sql.execution.datasources.v2.WriteDeltaExec*
+                                        </inlucde>
+                                        <inlucde>
+                                            org.apache.spark.sql.execution.datasources.v2.DeleteFromTableExec*
+                                        </inlucde>
                                     </includes>
                                 </relocation>
                                 <relocation>
