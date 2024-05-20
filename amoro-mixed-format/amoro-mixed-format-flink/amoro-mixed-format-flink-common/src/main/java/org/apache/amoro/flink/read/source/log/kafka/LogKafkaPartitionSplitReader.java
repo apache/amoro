@@ -54,10 +54,10 @@ import java.util.Set;
 
 /**
  * This reader supports read log data in log-store. If {@link
- * MixedFormatValidator#MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE} values true, reader would read data
- * consistently with file-store. Some data would be written into log-store repeatedly if upstream
- * job failovers several times, so it's necessary to retract these data to guarantee the consistency
- * with file-store.
+ * MixedFormatValidator#MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE} values true, reader would
+ * read data consistently with file-store. Some data would be written into log-store repeatedly if
+ * upstream job failovers several times, so it's necessary to retract these data to guarantee the
+ * consistency with file-store.
  *
  * <pre>
  * The data in log-store with Flip like: 1 2 3 4 5   6 7 8 9  Flip  6 7 8 9 10 11 12   13 14

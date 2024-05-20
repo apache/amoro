@@ -49,7 +49,7 @@ public class MergeOnReadPlannerImpl implements ContinuousSplitPlanner {
 
   @Override
   public ContinuousEnumerationResult planSplits(
-          MixedFormatEnumeratorOffset ignored, List<Expression> filters) {
+      MixedFormatEnumeratorOffset ignored, List<Expression> filters) {
     // todo support mor the table from the specific offset in the future
     if (table == null) {
       table = loadMixedTable(loader).asKeyedTable();
@@ -60,7 +60,8 @@ public class MergeOnReadPlannerImpl implements ContinuousSplitPlanner {
 
   protected ContinuousEnumerationResult discoverInitialSplits(List<Expression> filters) {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
-    List<MixedFormatSplit> mixedFormatSplits = FlinkSplitPlanner.mergeOnReadPlan(table, filters, SPLIT_COUNT);
+    List<MixedFormatSplit> mixedFormatSplits =
+        FlinkSplitPlanner.mergeOnReadPlan(table, filters, SPLIT_COUNT);
 
     long changeStartSnapshotId =
         changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
@@ -70,7 +71,7 @@ public class MergeOnReadPlannerImpl implements ContinuousSplitPlanner {
     }
 
     return new ContinuousEnumerationResult(
-            mixedFormatSplits, null, MixedFormatEnumeratorOffset.of(changeStartSnapshotId, null));
+        mixedFormatSplits, null, MixedFormatEnumeratorOffset.of(changeStartSnapshotId, null));
   }
 
   @Override

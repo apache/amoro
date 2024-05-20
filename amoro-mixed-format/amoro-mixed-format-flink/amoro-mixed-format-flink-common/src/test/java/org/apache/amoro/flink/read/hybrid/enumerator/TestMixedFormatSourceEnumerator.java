@@ -150,7 +150,8 @@ public class TestMixedFormatSourceEnumerator extends FlinkTestBase {
             null,
             false);
 
-    Collection<MixedFormatSplitState> pendingSplitsEmpty = enumerator.snapshotState(1).pendingSplits();
+    Collection<MixedFormatSplitState> pendingSplitsEmpty =
+        enumerator.snapshotState(1).pendingSplits();
     Assert.assertEquals(splitCount, pendingSplitsEmpty.size());
 
     // register readers, and let them request a split

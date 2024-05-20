@@ -53,7 +53,9 @@ public class TestMixedFormatFileCommitter extends FlinkTestBase {
   }
 
   public OneInputStreamOperatorTestHarness<WriteResult, Void> createMixedFormatFileCommitter(
-          MixedFormatTableLoader tableLoader, MixedTable table, OperatorSubtaskState operatorSubtaskState)
+      MixedFormatTableLoader tableLoader,
+      MixedTable table,
+      OperatorSubtaskState operatorSubtaskState)
       throws Exception {
     OneInputStreamOperator<WriteResult, Void> committer =
         FlinkSink.createFileCommitter(

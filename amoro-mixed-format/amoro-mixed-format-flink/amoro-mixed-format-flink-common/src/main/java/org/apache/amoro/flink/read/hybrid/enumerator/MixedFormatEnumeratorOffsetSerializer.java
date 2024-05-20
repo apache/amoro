@@ -24,7 +24,10 @@ import org.apache.flink.core.memory.DataOutputSerializer;
 
 import java.io.IOException;
 
-/** Serializer that serializes and deserializes mixed-format enumerator {@link MixedFormatEnumeratorOffset}. */
+/**
+ * Serializer that serializes and deserializes mixed-format enumerator {@link
+ * MixedFormatEnumeratorOffset}.
+ */
 class MixedFormatEnumeratorOffsetSerializer
     implements SimpleVersionedSerializer<MixedFormatEnumeratorOffset> {
   public static final MixedFormatEnumeratorOffsetSerializer INSTANCE =
@@ -46,7 +49,8 @@ class MixedFormatEnumeratorOffsetSerializer
   }
 
   @Override
-  public MixedFormatEnumeratorOffset deserialize(int version, byte[] serialized) throws IOException {
+  public MixedFormatEnumeratorOffset deserialize(int version, byte[] serialized)
+      throws IOException {
     switch (version) {
       case 1:
         return deserializeV1(serialized);

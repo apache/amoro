@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.read.hybrid.reader;
 
-import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.source.ChangeLogDataIterator;
 import org.apache.amoro.flink.read.source.DataIterator;
 import org.apache.amoro.flink.read.source.MergeOnReadDataIterator;

@@ -50,7 +50,7 @@ public abstract class AbstractMixedFormatEnumerator
   private final AtomicReference<CompletableFuture<Void>> availableFuture;
 
   AbstractMixedFormatEnumerator(
-          SplitEnumeratorContext<MixedFormatSplit> enumeratorContext, SplitAssigner assigner) {
+      SplitEnumeratorContext<MixedFormatSplit> enumeratorContext, SplitAssigner assigner) {
     this.enumeratorContext = enumeratorContext;
     this.assigner = assigner;
     this.readersAwaitingSplit = new ConcurrentHashMap<>();
@@ -135,7 +135,7 @@ public abstract class AbstractMixedFormatEnumerator
             "assign a mixed-format split to subtaskId {}, taskIndex {}, mixed-format split {}.",
             awaitingSubtask,
             mixedFormatSplit.taskIndex(),
-                mixedFormatSplit);
+            mixedFormatSplit);
         enumeratorContext.assignSplit(mixedFormatSplit, awaitingSubtask);
         awaitingReader.remove();
       } else if (nextSplit.isUnavailable()) {

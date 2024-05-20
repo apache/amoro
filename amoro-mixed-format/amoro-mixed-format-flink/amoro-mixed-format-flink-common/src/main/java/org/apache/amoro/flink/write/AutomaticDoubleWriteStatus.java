@@ -43,7 +43,7 @@ public class AutomaticDoubleWriteStatus implements Serializable {
   private int subtaskId;
 
   public AutomaticDoubleWriteStatus(
-          MixedFormatTableLoader tableLoader, Duration writeLogstoreWatermarkGap) {
+      MixedFormatTableLoader tableLoader, Duration writeLogstoreWatermarkGap) {
     this.tableLoader = tableLoader;
     this.specification = new AutomaticWriteSpecification(writeLogstoreWatermarkGap);
   }
@@ -70,7 +70,8 @@ public class AutomaticDoubleWriteStatus implements Serializable {
       LOG.info(
           "processWatermark {}, subTaskId is {}, should double write is true.", mark, subtaskId);
       LOG.info(
-          "begin update mixed-format table, set {} to true", MixedFormatValidator.LOG_STORE_CATCH_UP.key());
+          "begin update mixed-format table, set {} to true",
+          MixedFormatValidator.LOG_STORE_CATCH_UP.key());
       UpdateProperties updateProperties = table.updateProperties();
       updateProperties.set(MixedFormatValidator.LOG_STORE_CATCH_UP.key(), String.valueOf(true));
       updateProperties.set(

@@ -57,17 +57,21 @@ public class MixedFormatValidator extends ConnectorDescriptorValidator {
   public static final boolean MIXED_FORMAT_LATENCY_METRIC_ENABLE_DEFAULT = false;
 
   @Deprecated
-  public static final String MIXED_FORMAT_LATENCY_METRIC_ENABLE_LEGACY = "metrics.event-latency.enable";
+  public static final String MIXED_FORMAT_LATENCY_METRIC_ENABLE_LEGACY =
+      "metrics.event-latency.enable";
 
   public static final String MIXED_FORMAT_THROUGHPUT_METRIC_ENABLE = "metrics.enabled";
   public static final boolean MIXED_FORMAT_THROUGHPUT_METRIC_ENABLE_DEFAULT = false;
-  @Deprecated public static final String MIXED_FORMAT_THROUGHPUT_METRIC_ENABLE_LEGACY = "metrics.enable";
+
+  @Deprecated
+  public static final String MIXED_FORMAT_THROUGHPUT_METRIC_ENABLE_LEGACY = "metrics.enable";
 
   public static final String BASE_WRITE_LOCATION = "base.write.location";
   public static final String BASE_WRITE_LOCATION_SUFFIX = "/init";
 
   public static final String MIXED_FORMAT_WRITE_MAX_OPEN_FILE_SIZE = "write.open-files.size.max";
-  public static final long MIXED_FORMAT_WRITE_MAX_OPEN_FILE_SIZE_DEFAULT = 671088640L; // 640M = 5 * 128M
+  public static final long MIXED_FORMAT_WRITE_MAX_OPEN_FILE_SIZE_DEFAULT =
+      671088640L; // 640M = 5 * 128M
 
   // log.consumer.changelog.mode
   public static final String LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY = "append-only";
@@ -126,7 +130,10 @@ public class MixedFormatValidator extends ConnectorDescriptorValidator {
                       + " If %s values %s, \"earliest\": start from the earliest offset possible."
                       + " \"latest\": start from the latest offset,"
                       + " \"timestamp\": start from user-supplied timestamp for each partition.",
-                      MIXED_FORMAT_READ_MODE, MIXED_FORMAT_READ_FILE, MIXED_FORMAT_READ_MODE, MIXED_FORMAT_READ_LOG));
+                  MIXED_FORMAT_READ_MODE,
+                  MIXED_FORMAT_READ_FILE,
+                  MIXED_FORMAT_READ_MODE,
+                  MIXED_FORMAT_READ_LOG));
 
   public static final ConfigOption<Long> SCAN_STARTUP_TIMESTAMP_MILLIS =
       ConfigOptions.key("scan.startup.timestamp-millis")
@@ -306,7 +313,8 @@ public class MixedFormatValidator extends ConnectorDescriptorValidator {
     }
 
     String[] actualEmitModes = emitMode.split(",");
-    List<String> modeList = Arrays.asList(MIXED_FORMAT_EMIT_FILE, MIXED_FORMAT_EMIT_LOG, MIXED_FORMAT_EMIT_AUTO);
+    List<String> modeList =
+        Arrays.asList(MIXED_FORMAT_EMIT_FILE, MIXED_FORMAT_EMIT_LOG, MIXED_FORMAT_EMIT_AUTO);
     for (String mode : actualEmitModes) {
       if (!modeList.contains(mode)) {
         throw new ValidationException(

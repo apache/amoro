@@ -112,7 +112,9 @@ public class CompatibleFlinkPropertyUtil {
     if (configOption == null) {
       return null;
     }
-    if (MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE.key().equals(configOption.key())) {
+    if (MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE
+        .key()
+        .equals(configOption.key())) {
       return MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY;
     } else if (MixedFormatValidator.DIM_TABLE_ENABLE.key().equals(configOption.key())) {
       return MixedFormatValidator.DIM_TABLE_ENABLE_LEGACY;

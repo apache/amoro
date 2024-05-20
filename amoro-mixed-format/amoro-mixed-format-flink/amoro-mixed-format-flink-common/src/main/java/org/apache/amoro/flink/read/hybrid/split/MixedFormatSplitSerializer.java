@@ -59,7 +59,8 @@ public class MixedFormatSplitSerializer implements SimpleVersionedSerializer<Mix
     } else {
       throw new IllegalArgumentException(
           String.format(
-              "This mixed-format split is not supported, class %s.", split.getClass().getSimpleName()));
+              "This mixed-format split is not supported, class %s.",
+              split.getClass().getSimpleName()));
     }
   }
 

@@ -37,7 +37,8 @@ public class TestCompatibleFlinkPropertyUtil {
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
             config, MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE));
 
-    config.setBoolean(MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY, false);
+    config.setBoolean(
+        MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY, false);
     Assert.assertTrue(
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
             config, MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE));
@@ -46,7 +47,8 @@ public class TestCompatibleFlinkPropertyUtil {
   @Test
   public void testGetLegacyProperty() {
     Configuration config = new Configuration();
-    config.setBoolean(MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY, true);
+    config.setBoolean(
+        MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY, true);
     Assert.assertTrue(
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
             config, MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE));

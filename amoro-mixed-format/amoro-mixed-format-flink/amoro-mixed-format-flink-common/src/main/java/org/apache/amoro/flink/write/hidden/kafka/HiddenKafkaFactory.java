@@ -21,8 +21,8 @@ package org.apache.amoro.flink.write.hidden.kafka;
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
-import org.apache.amoro.flink.write.hidden.MixedFormatLogPartitioner;
 import org.apache.amoro.flink.write.hidden.LogMsgFactory;
+import org.apache.amoro.flink.write.hidden.MixedFormatLogPartitioner;
 import org.apache.amoro.log.LogDataJsonSerialization;
 
 import java.util.Properties;

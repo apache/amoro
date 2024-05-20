@@ -93,12 +93,12 @@ public class LogKafkaSource extends KafkaSource<RowData> {
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
             tableProperties,
             MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(),
-                MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue());
+            MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue());
     logConsumerChangelogMode =
         CompatibleFlinkPropertyUtil.propertyAsString(
             tableProperties,
-                MIXED_FORMAT_LOG_CONSUMER_CHANGELOG_MODE.key(),
-                MIXED_FORMAT_LOG_CONSUMER_CHANGELOG_MODE.defaultValue());
+            MIXED_FORMAT_LOG_CONSUMER_CHANGELOG_MODE.key(),
+            MIXED_FORMAT_LOG_CONSUMER_CHANGELOG_MODE.defaultValue());
   }
 
   /**

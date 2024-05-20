@@ -38,8 +38,8 @@ import org.apache.amoro.flink.metric.MetricsGenerator;
 import org.apache.amoro.flink.shuffle.LogRecordV1;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
 import org.apache.amoro.flink.table.MixedFormatTableLoader;
-import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.util.DataUtil;
+import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.util.TestGlobalAggregateManager;
 import org.apache.amoro.flink.util.TestOneInputStreamOperatorIntern;
 import org.apache.amoro.flink.write.hidden.kafka.HiddenKafkaFactory;
@@ -407,7 +407,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
 
     TestOneInputStreamOperatorIntern<RowData, WriteResult> harness =
         new TestOneInputStreamOperatorIntern<>(
-                mixedFormatWriter,
+            mixedFormatWriter,
             maxParallelism,
             parallelism,
             subTaskId,

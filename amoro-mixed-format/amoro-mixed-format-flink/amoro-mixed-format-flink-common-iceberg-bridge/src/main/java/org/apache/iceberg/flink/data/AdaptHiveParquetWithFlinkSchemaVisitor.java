@@ -34,7 +34,9 @@ import org.apache.parquet.schema.Type;
 import java.util.Deque;
 import java.util.List;
 
-/** Copy from iceberg {@link ParquetWithFlinkSchemaVisitor}. see annotation "Change For mixed-format" */
+/**
+ * Copy from iceberg {@link ParquetWithFlinkSchemaVisitor}. see annotation "Change For mixed-format"
+ */
 public class AdaptHiveParquetWithFlinkSchemaVisitor<T> {
   private final Deque<String> fieldNames = Lists.newLinkedList();
 

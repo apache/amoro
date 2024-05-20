@@ -34,7 +34,10 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Objects;
 
-/** Serializer that serializes and deserializes mixed-format enumerator {@link MixedFormatSourceEnumState}. */
+/**
+ * Serializer that serializes and deserializes mixed-format enumerator {@link
+ * MixedFormatSourceEnumState}.
+ */
 public class MixedFormatSourceEnumStateSerializer
     implements SimpleVersionedSerializer<MixedFormatSourceEnumState> {
 
@@ -54,7 +57,8 @@ public class MixedFormatSourceEnumStateSerializer
   }
 
   @Override
-  public byte[] serialize(MixedFormatSourceEnumState mixedFormatSourceEnumState) throws IOException {
+  public byte[] serialize(MixedFormatSourceEnumState mixedFormatSourceEnumState)
+      throws IOException {
     return serializeV1(mixedFormatSourceEnumState);
   }
 

@@ -47,7 +47,9 @@ public class MixedFormatRecordEmitter<T>
 
   @Override
   public void emitRecord(
-          MixedFormatRecordWithOffset<T> element, SourceOutput<T> sourceOutput, MixedFormatSplitState split)
+      MixedFormatRecordWithOffset<T> element,
+      SourceOutput<T> sourceOutput,
+      MixedFormatSplitState split)
       throws Exception {
     T record = element.record();
     if (!populateRowTime) {

@@ -147,10 +147,7 @@ public class BasicLookupFunction<T> implements Serializable {
 
     this.incrementalLoader =
         new MixedIncrementalLoader<>(
-            new MergeOnReadIncrementalPlanner(loader),
-                flinkMORDataReader,
-            readerFunction,
-            filters);
+            new MergeOnReadIncrementalPlanner(loader), flinkMORDataReader, readerFunction, filters);
   }
 
   public void start() {

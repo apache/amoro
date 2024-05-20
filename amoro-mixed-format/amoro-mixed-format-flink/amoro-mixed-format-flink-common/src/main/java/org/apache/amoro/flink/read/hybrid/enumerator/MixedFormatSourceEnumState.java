@@ -26,8 +26,8 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 
 /**
- * State that contains pending mixed-format splits and last enumerator offset in mixed-format source enumerator
- * {@link MixedFormatSourceEnumerator}.
+ * State that contains pending mixed-format splits and last enumerator offset in mixed-format source
+ * enumerator {@link MixedFormatSourceEnumerator}.
  */
 public class MixedFormatSourceEnumState {
   @Nullable private final MixedFormatEnumeratorOffset lastEnumeratedOffset;

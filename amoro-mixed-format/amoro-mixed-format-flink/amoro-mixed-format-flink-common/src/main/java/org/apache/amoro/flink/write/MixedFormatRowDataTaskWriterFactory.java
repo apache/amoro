@@ -39,7 +39,8 @@ public class MixedFormatRowDataTaskWriterFactory implements TaskWriterFactory<Ro
   private transient Integer taskId = null;
   private transient Integer attemptId = null;
 
-  public MixedFormatRowDataTaskWriterFactory(MixedTable table, RowType flinkSchema, boolean overwrite) {
+  public MixedFormatRowDataTaskWriterFactory(
+      MixedTable table, RowType flinkSchema, boolean overwrite) {
     this.table = table;
     this.flinkSchema = flinkSchema;
     this.overwrite = overwrite;

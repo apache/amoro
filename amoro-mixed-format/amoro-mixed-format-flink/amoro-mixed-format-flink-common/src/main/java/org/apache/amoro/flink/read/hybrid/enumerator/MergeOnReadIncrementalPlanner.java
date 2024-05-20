@@ -21,9 +21,9 @@ package org.apache.amoro.flink.read.hybrid.enumerator;
 import static org.apache.amoro.flink.read.hybrid.enumerator.MixedFormatEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
 
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
-import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.flink.read.hybrid.split.MergeOnReadSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.table.MixedFormatTableLoader;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.Snapshot;
@@ -51,7 +51,8 @@ public class MergeOnReadIncrementalPlanner extends ContinuousSplitPlannerImpl {
   protected ContinuousEnumerationResult discoverInitialSplits(List<Expression> filters) {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
 
-    List<MixedFormatSplit> mixedFormatSplits = FlinkSplitPlanner.mergeOnReadPlan(table, filters, SPLIT_COUNT);
+    List<MixedFormatSplit> mixedFormatSplits =
+        FlinkSplitPlanner.mergeOnReadPlan(table, filters, SPLIT_COUNT);
 
     long changeStartSnapshotId =
         changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
@@ -61,6 +62,6 @@ public class MergeOnReadIncrementalPlanner extends ContinuousSplitPlannerImpl {
     }
 
     return new ContinuousEnumerationResult(
-            mixedFormatSplits, null, MixedFormatEnumeratorOffset.of(changeStartSnapshotId, null));
+        mixedFormatSplits, null, MixedFormatEnumeratorOffset.of(changeStartSnapshotId, null));
   }
 }

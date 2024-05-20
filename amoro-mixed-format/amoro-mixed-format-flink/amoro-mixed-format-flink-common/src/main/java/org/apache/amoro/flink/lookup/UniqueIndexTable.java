@@ -37,8 +37,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * Use a unique index to lookup. Working for the situation where the join keys include the mixed-format
- * table's primary keys.
+ * Use a unique index to lookup. Working for the situation where the join keys include the
+ * mixed-format table's primary keys.
  */
 public class UniqueIndexTable implements KVTable<RowData> {
   private static final Logger LOG = LoggerFactory.getLogger(UniqueIndexTable.class);

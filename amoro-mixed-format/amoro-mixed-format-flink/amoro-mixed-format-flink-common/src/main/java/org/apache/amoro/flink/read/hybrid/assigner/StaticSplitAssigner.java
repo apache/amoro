@@ -73,14 +73,15 @@ public class StaticSplitAssigner implements SplitAssigner {
       LOG.warn("Interrupted when polling splits from the split queue", e);
     }
     if (mixedFormatSplit == null) {
-      LOG.debug("Couldn't retrieve mixed-format source split from the queue, as the queue is empty.");
+      LOG.debug(
+          "Couldn't retrieve mixed-format source split from the queue, as the queue is empty.");
       return Optional.empty();
     } else {
       LOG.info(
           "Assigning the mixed-format split, task index is {}, total number of splits is {}, mixed-format split is {}.",
           mixedFormatSplit.taskIndex(),
           totalSplitNum,
-              mixedFormatSplit);
+          mixedFormatSplit);
       return Optional.of(mixedFormatSplit);
     }
   }

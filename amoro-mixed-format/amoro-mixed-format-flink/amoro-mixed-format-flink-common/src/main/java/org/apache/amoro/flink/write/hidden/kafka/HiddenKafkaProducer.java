@@ -20,8 +20,8 @@ package org.apache.amoro.flink.write.hidden.kafka;
 
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 
-import org.apache.amoro.flink.write.hidden.MixedFormatLogPartitioner;
 import org.apache.amoro.flink.write.hidden.LogMsgFactory;
+import org.apache.amoro.flink.write.hidden.MixedFormatLogPartitioner;
 import org.apache.amoro.log.LogData;
 import org.apache.amoro.log.LogDataJsonSerialization;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaErrorCode;

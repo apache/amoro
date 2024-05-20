@@ -25,8 +25,8 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
-import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.util.DataUtil;
+import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.util.TestUtil;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.TableIdentifier;
@@ -198,7 +198,8 @@ public class TestJoin extends FlinkTestBase {
             .build();
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
     KeyedTable keyedTable =
-        (KeyedTable) MixedFormatUtils.loadMixedTable(MixedFormatTableLoader.of(TABLE_ID, catalogBuilder));
+        (KeyedTable)
+            MixedFormatUtils.loadMixedTable(MixedFormatTableLoader.of(TABLE_ID, catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
     List<RowData> baseData =
         new ArrayList<RowData>() {
@@ -292,7 +293,8 @@ public class TestJoin extends FlinkTestBase {
             .build();
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
     KeyedTable keyedTable =
-        (KeyedTable) MixedFormatUtils.loadMixedTable(MixedFormatTableLoader.of(TABLE_ID, catalogBuilder));
+        (KeyedTable)
+            MixedFormatUtils.loadMixedTable(MixedFormatTableLoader.of(TABLE_ID, catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
     List<RowData> baseData =
         new ArrayList<RowData>() {

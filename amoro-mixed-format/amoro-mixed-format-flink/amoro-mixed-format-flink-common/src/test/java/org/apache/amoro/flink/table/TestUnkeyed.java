@@ -159,7 +159,8 @@ public class TestUnkeyed extends FlinkTestBase {
             + "("
             + " id INT, name STRING, age SMALLINT, sex TINYINT, score BIGINT, height FLOAT, speed DOUBLE, ts TIMESTAMP)");
 
-    MixedTable table = mixedFormatCatalog.loadTable(TableIdentifier.of(catalog, db, TestUnkeyed.TABLE));
+    MixedTable table =
+        mixedFormatCatalog.loadTable(TableIdentifier.of(catalog, db, TestUnkeyed.TABLE));
 
     Schema required =
         new Schema(

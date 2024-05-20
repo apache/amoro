@@ -45,7 +45,8 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * Mixed-format source reader that is created by a {@link MixedFormatSource#createReader(SourceReaderContext)}.
+ * Mixed-format source reader that is created by a {@link
+ * MixedFormatSource#createReader(SourceReaderContext)}.
  */
 public class MixedFormatSourceReader<T>
     extends SingleThreadMultiplexSourceReaderBase<

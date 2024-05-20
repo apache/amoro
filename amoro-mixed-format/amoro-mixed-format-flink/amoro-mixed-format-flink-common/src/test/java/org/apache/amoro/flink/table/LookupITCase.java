@@ -63,7 +63,9 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
     } else {
       db = dbs.get(0);
     }
-    exec("create catalog mixed_catalog with ('type'='arctic', 'metastore.url'='%s')", getCatalogUrl());
+    exec(
+        "create catalog mixed_catalog with ('type'='arctic', 'metastore.url'='%s')",
+        getCatalogUrl());
     exec(
         "create table mixed_catalog.%s.L (id int) "
             + "with ('scan.startup.mode'='earliest', 'monitor-interval'='1 s','streaming'='true')",

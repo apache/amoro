@@ -44,9 +44,10 @@ import org.apache.flink.core.io.SimpleVersionedSerializer;
 /**
  * Mixed-format Source based of FLIP-27.
  *
- * <p>If MixedFormatSource is used as a build table in lookup join, it will be implemented by temporal
- * join. Two source should use processing time as watermark. MixedFormatSource will generate watermark
- * after first splits planned by MixedFormatSourceEnumerator having been finished.
+ * <p>If MixedFormatSource is used as a build table in lookup join, it will be implemented by
+ * temporal join. Two source should use processing time as watermark. MixedFormatSource will
+ * generate watermark after first splits planned by MixedFormatSourceEnumerator having been
+ * finished.
  */
 public class MixedFormatSource<T>
     implements Source<T, MixedFormatSplit, MixedFormatSourceEnumState>, ResultTypeQueryable<T> {
@@ -57,8 +58,8 @@ public class MixedFormatSource<T>
   private final MixedFormatTableLoader loader;
   private final String tableName;
   /**
-   * generate mixed-format watermark. This is only for lookup join mixed-format table, and mixed-format table is used
-   * as build table, i.e. right table.
+   * generate mixed-format watermark. This is only for lookup join mixed-format table, and
+   * mixed-format table is used as build table, i.e. right table.
    */
   private final boolean dimTable;
 
@@ -95,7 +96,7 @@ public class MixedFormatSource<T>
   }
 
   private SplitEnumerator<MixedFormatSplit, MixedFormatSourceEnumState> createEnumerator(
-          SplitEnumeratorContext<MixedFormatSplit> enumContext, MixedFormatSourceEnumState enumState) {
+      SplitEnumeratorContext<MixedFormatSplit> enumContext, MixedFormatSourceEnumState enumState) {
     SplitAssigner splitAssigner;
     if (scanContext.isStreaming()) {
       splitAssigner = new ShuffleSplitAssigner(enumContext, tableName, enumState);
@@ -110,7 +111,7 @@ public class MixedFormatSource<T>
 
   @Override
   public SplitEnumerator<MixedFormatSplit, MixedFormatSourceEnumState> restoreEnumerator(
-          SplitEnumeratorContext<MixedFormatSplit> enumContext, MixedFormatSourceEnumState checkpoint) {
+      SplitEnumeratorContext<MixedFormatSplit> enumContext, MixedFormatSourceEnumState checkpoint) {
     return createEnumerator(enumContext, checkpoint);
   }
 

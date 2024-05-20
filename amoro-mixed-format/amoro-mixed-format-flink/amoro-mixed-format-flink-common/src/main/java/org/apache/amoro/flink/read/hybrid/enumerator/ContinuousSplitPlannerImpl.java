@@ -23,8 +23,8 @@ import static org.apache.amoro.flink.read.hybrid.enumerator.MixedFormatEnumerato
 import static org.apache.amoro.flink.util.MixedFormatUtils.loadMixedTable;
 
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
-import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.SnapshotSplit;
 import org.apache.amoro.flink.table.MixedFormatTableLoader;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
@@ -41,8 +41,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Continuous planning {@link KeyedTable} by {@link MixedFormatEnumeratorOffset} and generate a {@link
- * ContinuousEnumerationResult}.
+ * Continuous planning {@link KeyedTable} by {@link MixedFormatEnumeratorOffset} and generate a
+ * {@link ContinuousEnumerationResult}.
  *
  * <p>{@link ContinuousEnumerationResult#splits()} includes the {@link SnapshotSplit}s and {@link
  * ChangelogSplit}s.
@@ -68,7 +68,7 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
 
   @Override
   public ContinuousEnumerationResult planSplits(
-          MixedFormatEnumeratorOffset lastOffset, List<Expression> filters) {
+      MixedFormatEnumeratorOffset lastOffset, List<Expression> filters) {
     if (table == null) {
       table = loadMixedTable(loader).asKeyedTable();
     }
@@ -81,7 +81,7 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
   }
 
   protected ContinuousEnumerationResult discoverIncrementalSplits(
-          MixedFormatEnumeratorOffset lastPosition, List<Expression> filters) {
+      MixedFormatEnumeratorOffset lastPosition, List<Expression> filters) {
     long fromChangeSnapshotId = lastPosition.changeSnapshotId();
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
     if (changeSnapshot != null && changeSnapshot.snapshotId() != fromChangeSnapshotId) {
@@ -111,7 +111,8 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
     // todo ShuffleSplitAssigner doesn't support MergeOnReadSplit right now,
     //  because it doesn't implement the dataTreeNode() method
     //  fix AMORO-1950 in the future.
-    List<MixedFormatSplit> mixedFormatSplits = FlinkSplitPlanner.planFullTable(table, filters, SPLIT_COUNT);
+    List<MixedFormatSplit> mixedFormatSplits =
+        FlinkSplitPlanner.planFullTable(table, filters, SPLIT_COUNT);
 
     long changeStartSnapshotId =
         changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
@@ -121,6 +122,6 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
     }
 
     return new ContinuousEnumerationResult(
-            mixedFormatSplits, null, MixedFormatEnumeratorOffset.of(changeStartSnapshotId, null));
+        mixedFormatSplits, null, MixedFormatEnumeratorOffset.of(changeStartSnapshotId, null));
   }
 }

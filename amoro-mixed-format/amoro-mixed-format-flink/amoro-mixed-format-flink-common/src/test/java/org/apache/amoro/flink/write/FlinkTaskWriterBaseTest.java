@@ -138,7 +138,8 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
 
   default List<RowData> recordsOfKeyedTable(
       KeyedTable table, Schema tableSchema, Schema projectedSchema, AuthenticatedFileIO io) {
-    List<MixedFormatSplit> mixedFormatSplits = FlinkSplitPlanner.planFullTable(table, new AtomicInteger(0));
+    List<MixedFormatSplit> mixedFormatSplits =
+        FlinkSplitPlanner.planFullTable(table, new AtomicInteger(0));
 
     RowDataReaderFunction rowDataReaderFunction =
         new RowDataReaderFunction(

@@ -32,4 +32,6 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface ReaderFunction<T>
     extends Serializable,
-        Function<MixedFormatSplit, CloseableIterator<RecordsWithSplitIds<MixedFormatRecordWithOffset<T>>>> {}
+        Function<
+            MixedFormatSplit,
+            CloseableIterator<RecordsWithSplitIds<MixedFormatRecordWithOffset<T>>>> {}

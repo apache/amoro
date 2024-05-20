@@ -220,7 +220,7 @@ public class MixedFormatFileWriterITCase extends FlinkTestBase {
   }
 
   protected JobGraph createJobGraph(
-          MixedFormatTableLoader tableLoader, TableSchema tableSchema, boolean triggerFailover) {
+      MixedFormatTableLoader tableLoader, TableSchema tableSchema, boolean triggerFailover) {
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     Configuration config = new Configuration();
     config.set(ExecutionOptions.RUNTIME_MODE, RuntimeExecutionMode.STREAMING);

@@ -73,14 +73,17 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
     this.submitEmptySnapshots = submitEmptySnapshots;
   }
 
-  public static OneInputStreamOperatorTestHarness<RowData, WriteResult> createMixedFormatStreamWriter(
-      MixedFormatTableLoader tableLoader) throws Exception {
+  public static OneInputStreamOperatorTestHarness<RowData, WriteResult>
+      createMixedFormatStreamWriter(MixedFormatTableLoader tableLoader) throws Exception {
     return createMixedFormatStreamWriter(tableLoader, true, null);
   }
 
-  public static OneInputStreamOperatorTestHarness<RowData, WriteResult> createMixedFormatStreamWriter(
-          MixedFormatTableLoader tableLoader, boolean submitEmptySnapshots, Long restoredCheckpointId)
-      throws Exception {
+  public static OneInputStreamOperatorTestHarness<RowData, WriteResult>
+      createMixedFormatStreamWriter(
+          MixedFormatTableLoader tableLoader,
+          boolean submitEmptySnapshots,
+          Long restoredCheckpointId)
+          throws Exception {
     OneInputStreamOperatorTestHarness<RowData, WriteResult> harness =
         doCreateMixedFormatStreamWriter(tableLoader, submitEmptySnapshots, restoredCheckpointId);
 
@@ -90,9 +93,12 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
     return harness;
   }
 
-  public static OneInputStreamOperatorTestHarness<RowData, WriteResult> doCreateMixedFormatStreamWriter(
-          MixedFormatTableLoader tableLoader, boolean submitEmptySnapshots, Long restoredCheckpointId)
-      throws Exception {
+  public static OneInputStreamOperatorTestHarness<RowData, WriteResult>
+      doCreateMixedFormatStreamWriter(
+          MixedFormatTableLoader tableLoader,
+          boolean submitEmptySnapshots,
+          Long restoredCheckpointId)
+          throws Exception {
     tableLoader.open();
     MixedTable mixedTable = tableLoader.loadMixedFormatTable();
     mixedTable.properties().put(SUBMIT_EMPTY_SNAPSHOTS.key(), String.valueOf(submitEmptySnapshots));

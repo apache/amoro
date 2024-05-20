@@ -149,7 +149,8 @@ public class LogDynamicSource
         throw new UnsupportedOperationException(
             String.format(
                 "As of now, %s can't support this option %s.",
-                MixedFormatValidator.MIXED_FORMAT_LOG_CONSUMER_CHANGELOG_MODE.key(), consumerChangelogMode));
+                MixedFormatValidator.MIXED_FORMAT_LOG_CONSUMER_CHANGELOG_MODE.key(),
+                consumerChangelogMode));
     }
   }
 

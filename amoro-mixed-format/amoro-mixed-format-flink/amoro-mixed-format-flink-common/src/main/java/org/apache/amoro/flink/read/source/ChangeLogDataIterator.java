@@ -32,8 +32,8 @@ import java.util.Collections;
 import java.util.function.Function;
 
 /**
- * This is a change log data iterator that replays the change log data appended to mixed-format change
- * table with ordered.
+ * This is a change log data iterator that replays the change log data appended to mixed-format
+ * change table with ordered.
  */
 public class ChangeLogDataIterator<T> extends DataIterator<T> {
   private final DataIterator<T> insertDataIterator;
@@ -59,11 +59,17 @@ public class ChangeLogDataIterator<T> extends DataIterator<T> {
         mixedFormatMetaColumnRemover);
     this.insertDataIterator =
         new DataIterator<>(
-            fileScanTaskReader, insertTasks, mixedFormatFileOffsetGetter, mixedFormatMetaColumnRemover);
+            fileScanTaskReader,
+            insertTasks,
+            mixedFormatFileOffsetGetter,
+            mixedFormatMetaColumnRemover);
     if (deleteTasks != null && !deleteTasks.isEmpty()) {
       this.deleteDataIterator =
           new DataIterator<>(
-              fileScanTaskReader, deleteTasks, mixedFormatFileOffsetGetter, mixedFormatMetaColumnRemover);
+              fileScanTaskReader,
+              deleteTasks,
+              mixedFormatFileOffsetGetter,
+              mixedFormatMetaColumnRemover);
     }
     this.mixedFormatMetaColumnRemover = mixedFormatMetaColumnRemover;
     this.changeActionTransformer = changeActionTransformer;

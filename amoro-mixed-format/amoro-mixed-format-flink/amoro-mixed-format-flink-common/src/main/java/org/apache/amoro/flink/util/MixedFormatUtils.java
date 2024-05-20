@@ -33,8 +33,8 @@ import org.apache.amoro.flink.shuffle.LogRecordV1;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
 import org.apache.amoro.flink.table.MixedFormatTableLoader;
 import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
-import org.apache.amoro.flink.write.MixedFormatLogWriter;
 import org.apache.amoro.flink.write.AutomaticLogWriter;
+import org.apache.amoro.flink.write.MixedFormatLogWriter;
 import org.apache.amoro.flink.write.hidden.HiddenLogWriter;
 import org.apache.amoro.flink.write.hidden.kafka.HiddenKafkaFactory;
 import org.apache.amoro.table.MixedTable;
@@ -132,8 +132,9 @@ public class MixedFormatUtils {
 
   /**
    * only when {@link MixedFormatValidator#MIXED_FORMAT_EMIT_MODE} contains {@link
-   * MixedFormatValidator#MIXED_FORMAT_EMIT_FILE} and enable {@link TableProperties#ENABLE_LOG_STORE} create
-   * logWriter according to {@link TableProperties#LOG_STORE_DATA_VERSION}
+   * MixedFormatValidator#MIXED_FORMAT_EMIT_FILE} and enable {@link
+   * TableProperties#ENABLE_LOG_STORE} create logWriter according to {@link
+   * TableProperties#LOG_STORE_DATA_VERSION}
    *
    * @param properties mixed-format table properties
    * @param producerConfig

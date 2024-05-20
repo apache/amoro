@@ -147,7 +147,8 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
               return dataTreeNode.toString();
             }
           };
-      List<DataTreeNode> exactTreeNodes = shuffleSplitAssigner.getExactlyTreeNodes(mixedFormatSplit);
+      List<DataTreeNode> exactTreeNodes =
+          shuffleSplitAssigner.getExactlyTreeNodes(mixedFormatSplit);
       actualNodes.addAll(exactTreeNodes);
     }
     long[][] result =

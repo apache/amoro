@@ -35,11 +35,12 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 
 /**
- * This is a static mixed-format source enumerator, used for bounded source scan. Working enabled only
- * just {@link ScanContext#STREAMING} is equal to false.
+ * This is a static mixed-format source enumerator, used for bounded source scan. Working enabled
+ * only just {@link ScanContext#STREAMING} is equal to false.
  */
 public class StaticMixedFormatSourceEnumerator extends AbstractMixedFormatEnumerator {
-  private static final Logger LOG = LoggerFactory.getLogger(StaticMixedFormatSourceEnumerator.class);
+  private static final Logger LOG =
+      LoggerFactory.getLogger(StaticMixedFormatSourceEnumerator.class);
   private final SplitAssigner assigner;
   private final MixedFormatTableLoader loader;
   private transient KeyedTable keyedTable;

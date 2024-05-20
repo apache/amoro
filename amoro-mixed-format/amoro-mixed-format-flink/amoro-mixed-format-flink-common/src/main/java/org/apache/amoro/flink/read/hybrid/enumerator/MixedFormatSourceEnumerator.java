@@ -25,8 +25,8 @@ import static org.apache.amoro.flink.util.MixedFormatUtils.loadMixedTable;
 
 import org.apache.amoro.flink.read.hybrid.assigner.ShuffleSplitAssigner;
 import org.apache.amoro.flink.read.hybrid.assigner.SplitAssigner;
-import org.apache.amoro.flink.read.hybrid.reader.MixedFormatSourceReader;
 import org.apache.amoro.flink.read.hybrid.reader.HybridSplitReader;
+import org.apache.amoro.flink.read.hybrid.reader.MixedFormatSourceReader;
 import org.apache.amoro.flink.read.hybrid.reader.ReaderStartedEvent;
 import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.SplitRequestEvent;
@@ -51,8 +51,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
 /**
- * Enumerator for mixed-format source, assign {@link MixedFormatSplit} to mixed-format source reader {@link
- * HybridSplitReader}
+ * Enumerator for mixed-format source, assign {@link MixedFormatSplit} to mixed-format source reader
+ * {@link HybridSplitReader}
  */
 public class MixedFormatSourceEnumerator extends AbstractMixedFormatEnumerator {
   private static final Logger LOG = LoggerFactory.getLogger(MixedFormatSourceEnumerator.class);
@@ -71,12 +71,12 @@ public class MixedFormatSourceEnumerator extends AbstractMixedFormatEnumerator {
   private final MixedFormatScanContext scanContext;
   private final long snapshotDiscoveryIntervalMs;
   /**
-   * If true, using mixed-format table as build table. {@link MixedFormatSourceEnumerator} will notify {@link
-   * MixedFormatSourceReader} after MixedFormatReaders have finished reading all {@link TemporalJoinSplits}.
-   * Then {@link MixedFormatSourceReader} will emit a Watermark values Long.MAX_VALUE. Advancing
-   * TemporalJoinOperator's watermark can trigger the join operation and push the results to
-   * downstream. The watermark of Long.MAX_VALUE avoids affecting the watermark defined by user
-   * arbitrary probe side
+   * If true, using mixed-format table as build table. {@link MixedFormatSourceEnumerator} will
+   * notify {@link MixedFormatSourceReader} after MixedFormatReaders have finished reading all
+   * {@link TemporalJoinSplits}. Then {@link MixedFormatSourceReader} will emit a Watermark values
+   * Long.MAX_VALUE. Advancing TemporalJoinOperator's watermark can trigger the join operation and
+   * push the results to downstream. The watermark of Long.MAX_VALUE avoids affecting the watermark
+   * defined by user arbitrary probe side
    */
   private final boolean dimTable;
 
@@ -164,7 +164,8 @@ public class MixedFormatSourceEnumerator extends AbstractMixedFormatEnumerator {
             filters ->
                 filters.forEach(
                     expression ->
-                        LOG.info("mixed-format source filter expression: {}.", expression.toString())));
+                        LOG.info(
+                            "mixed-format source filter expression: {}.", expression.toString())));
     return continuousSplitPlanner.planSplits(enumeratorPosition.get(), scanContext.filters());
   }
 

@@ -471,7 +471,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
         new RowDataStateFactory(dbPath, new UnregisteredMetricsGroup()),
         isDisorderPK ? primaryKeysDisorder : primaryKeys,
         joinKeys,
-            mixedTableSchema,
+        mixedTableSchema,
         config,
         rowDataPredicate.orElse(null));
   }

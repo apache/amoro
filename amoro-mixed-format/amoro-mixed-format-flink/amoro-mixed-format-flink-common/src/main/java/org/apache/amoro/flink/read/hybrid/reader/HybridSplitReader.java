@@ -18,9 +18,9 @@
 
 package org.apache.amoro.flink.read.hybrid.reader;
 
-import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.flink.read.hybrid.split.MergeOnReadSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.SnapshotSplit;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.connector.base.source.reader.RecordsBySplits;
@@ -41,7 +41,8 @@ import java.util.Queue;
 /**
  * A hybrid source split reader that could read {@link SnapshotSplit} and {@link ChangelogSplit}.
  */
-public class HybridSplitReader<T> implements SplitReader<MixedFormatRecordWithOffset<T>, MixedFormatSplit> {
+public class HybridSplitReader<T>
+    implements SplitReader<MixedFormatRecordWithOffset<T>, MixedFormatSplit> {
   private static final Logger LOG = LoggerFactory.getLogger(HybridSplitReader.class);
 
   private final ReaderFunction<T> openSplitFunction;

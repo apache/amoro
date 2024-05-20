@@ -24,7 +24,8 @@ import org.apache.flink.api.connector.source.SourceSplit;
 import java.io.Serializable;
 
 /** An abstract mixed-format source split. */
-public abstract class MixedFormatSplit implements SourceSplit, Serializable, Comparable<MixedFormatSplit> {
+public abstract class MixedFormatSplit
+    implements SourceSplit, Serializable, Comparable<MixedFormatSplit> {
   private static final long serialVersionUID = 1L;
 
   public abstract Integer taskIndex();

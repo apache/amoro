@@ -26,8 +26,8 @@ import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.source.ChangeLogDataIterator;
 import org.apache.amoro.flink.read.source.DataIterator;
 import org.apache.amoro.flink.read.source.FileScanTaskReader;
-import org.apache.amoro.flink.read.source.FlinkUnkyedDataReader;
 import org.apache.amoro.flink.read.source.FlinkKeyedMORDataReader;
+import org.apache.amoro.flink.read.source.FlinkUnkyedDataReader;
 import org.apache.amoro.flink.read.source.MergeOnReadDataIterator;
 import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.io.AuthenticatedFileIO;
@@ -195,8 +195,8 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
    * the tableSchema and the projected schema.
    *
    * <p>projectedSchema may not include the primary keys, but the {@link NodeFilter} must filter the
-   * record with the value of the primary keys. So the mixed-format reader function schema must include
-   * the primary keys.
+   * record with the value of the primary keys. So the mixed-format reader function schema must
+   * include the primary keys.
    *
    * @param tableSchema table schema
    * @param projectedSchema projected schema

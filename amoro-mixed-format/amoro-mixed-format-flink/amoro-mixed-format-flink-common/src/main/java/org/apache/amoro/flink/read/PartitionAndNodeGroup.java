@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.read;
 
-import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.scan.MixedFileScanTask;
 
 import java.util.ArrayList;
@@ -31,8 +31,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * This is a group of the partitions and nodes of the mixed-format table, it can plan different nodes and
- * different partitions into different {@link MixedFormatSplit}.
+ * This is a group of the partitions and nodes of the mixed-format table, it can plan different
+ * nodes and different partitions into different {@link MixedFormatSplit}.
  */
 public class PartitionAndNodeGroup {
   AtomicInteger splitCount = new AtomicInteger();

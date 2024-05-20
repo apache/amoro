@@ -50,7 +50,7 @@ public class MixedFormatDynamicSink
   private boolean overwrite = false;
 
   MixedFormatDynamicSink(
-          CatalogTable flinkTable, MixedFormatTableLoader tableLoader, boolean primaryKeyExisted) {
+      CatalogTable flinkTable, MixedFormatTableLoader tableLoader, boolean primaryKeyExisted) {
     this.tableLoader = tableLoader;
     this.flinkTable = flinkTable;
     this.primaryKeyExisted = primaryKeyExisted;

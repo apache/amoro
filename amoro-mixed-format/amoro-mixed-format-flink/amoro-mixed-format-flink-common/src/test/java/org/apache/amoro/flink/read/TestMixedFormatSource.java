@@ -31,8 +31,8 @@ import org.apache.amoro.flink.read.hybrid.reader.ReaderFunction;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
 import org.apache.amoro.flink.read.hybrid.reader.TestRowDataReaderFunction;
 import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
-import org.apache.amoro.flink.read.source.MixedFormatScanContext;
 import org.apache.amoro.flink.read.source.DataIterator;
+import org.apache.amoro.flink.read.source.MixedFormatScanContext;
 import org.apache.amoro.flink.table.MixedFormatTableLoader;
 import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.write.FlinkSink;
@@ -162,7 +162,8 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     env.enableCheckpointing(3000);
     // set the source parallelism to 4
     final CloseableIterator<RowData> resultIterator =
-        env.fromSource(mixedFormatSource, WatermarkStrategy.noWatermarks(), "MixedFormatParallelSource")
+        env.fromSource(
+                mixedFormatSource, WatermarkStrategy.noWatermarks(), "MixedFormatParallelSource")
             .setParallelism(PARALLELISM)
             .executeAndCollect();
 
@@ -203,7 +204,8 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     env.setRestartStrategy(RestartStrategies.fixedDelayRestart(1, 0));
 
     DataStream<RowData> input =
-        env.fromSource(mixedFormatSource, WatermarkStrategy.noWatermarks(), "MixedFormatParallelSource")
+        env.fromSource(
+                mixedFormatSource, WatermarkStrategy.noWatermarks(), "MixedFormatParallelSource")
             .setParallelism(PARALLELISM);
 
     List<RowData> expectedAfterMoR = new ArrayList<>(mor(expected));
@@ -244,7 +246,8 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     env.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, 0));
 
     DataStream<RowData> input =
-        env.fromSource(mixedFormatSource, WatermarkStrategy.noWatermarks(), "MixedFormatParallelSource")
+        env.fromSource(
+                mixedFormatSource, WatermarkStrategy.noWatermarks(), "MixedFormatParallelSource")
             .setParallelism(PARALLELISM);
 
     WatermarkAwareFailWrapper.wrapWithFailureAfter(input);
@@ -272,7 +275,8 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     // enable checkpoint
     env.enableCheckpointing(1000);
-    ClientAndIterator<RowData> clientAndIterator = executeAndCollectWithClient(env, mixedFormatSource);
+    ClientAndIterator<RowData> clientAndIterator =
+        executeAndCollectWithClient(env, mixedFormatSource);
 
     JobClient jobClient = clientAndIterator.client;
 
@@ -347,7 +351,8 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     // enable checkpoint
     env.enableCheckpointing(1000);
-    ClientAndIterator<RowData> clientAndIterator = executeAndCollectWithClient(env, mixedFormatSource);
+    ClientAndIterator<RowData> clientAndIterator =
+        executeAndCollectWithClient(env, mixedFormatSource);
 
     JobClient jobClient = clientAndIterator.client;
 
@@ -434,7 +439,8 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     // enable checkpoint
     env.enableCheckpointing(1000);
-    ClientAndIterator<RowData> clientAndIterator = executeAndCollectWithClient(env, mixedFormatSource);
+    ClientAndIterator<RowData> clientAndIterator =
+        executeAndCollectWithClient(env, mixedFormatSource);
 
     JobClient jobClient = clientAndIterator.client;
 
@@ -536,7 +542,8 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     // enable checkpoint
     env.enableCheckpointing(1000);
-    ClientAndIterator<RowData> clientAndIterator = executeAndCollectWithClient(env, mixedFormatSource);
+    ClientAndIterator<RowData> clientAndIterator =
+        executeAndCollectWithClient(env, mixedFormatSource);
 
     JobClient jobClient = clientAndIterator.client;
 
@@ -579,7 +586,8 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     // enable checkpoint
     env.enableCheckpointing(1000);
 
-    ClientAndIterator<RowData> clientAndIterator = executeAndCollectWithClient(env, mixedFormatSource);
+    ClientAndIterator<RowData> clientAndIterator =
+        executeAndCollectWithClient(env, mixedFormatSource);
 
     JobClient jobClient = clientAndIterator.client;
 
@@ -623,7 +631,8 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     //    env.setRestartStrategy(RestartStrategies.fixedDelayRestart(1, 0));
 
     DataStream<RowData> input =
-        env.fromSource(mixedFormatSource, WatermarkStrategy.noWatermarks(), "MixedFormatParallelSource")
+        env.fromSource(
+                mixedFormatSource, WatermarkStrategy.noWatermarks(), "MixedFormatParallelSource")
             .setParallelism(PARALLELISM);
 
     FlinkSink.forRowData(input)
@@ -840,9 +849,11 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
   }
 
   private ClientAndIterator<RowData> executeAndCollectWithClient(
-      StreamExecutionEnvironment env, MixedFormatSource<RowData> mixedFormatSource) throws Exception {
+      StreamExecutionEnvironment env, MixedFormatSource<RowData> mixedFormatSource)
+      throws Exception {
     final DataStreamSource<RowData> source =
-        env.fromSource(mixedFormatSource, WatermarkStrategy.noWatermarks(), "MixedFormatParallelSource")
+        env.fromSource(
+                mixedFormatSource, WatermarkStrategy.noWatermarks(), "MixedFormatParallelSource")
             .setParallelism(PARALLELISM);
     return DataStreamUtils.collectWithClient(source, "job_" + name.getMethodName());
   }
@@ -896,16 +907,18 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     return initMixedFormatSource(true, SCAN_STARTUP_MODE_LATEST);
   }
 
-  private MixedFormatSource<RowData> initMixedFormatSource(boolean isStreaming, String scanStartupMode) {
+  private MixedFormatSource<RowData> initMixedFormatSource(
+      boolean isStreaming, String scanStartupMode) {
     MixedFormatTableLoader tableLoader = initLoader();
-    MixedFormatScanContext mixedFormatScanContext = initMixedFormatScanContext(isStreaming, scanStartupMode);
+    MixedFormatScanContext mixedFormatScanContext =
+        initMixedFormatScanContext(isStreaming, scanStartupMode);
     ReaderFunction<RowData> rowDataReaderFunction = initRowDataReadFunction();
     TypeInformation<RowData> typeInformation =
         InternalTypeInfo.of(FlinkSchemaUtil.convert(testKeyedTable.schema()));
 
     return new MixedFormatSource<>(
         tableLoader,
-            mixedFormatScanContext,
+        mixedFormatScanContext,
         rowDataReaderFunction,
         typeInformation,
         testKeyedTable.name(),
@@ -927,7 +940,7 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
 
     return new MixedFormatSource<>(
         tableLoader,
-            mixedFormatScanContext,
+        mixedFormatScanContext,
         rowDataReaderFunction,
         typeInformation,
         table.name(),
@@ -955,7 +968,7 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
 
     return new MixedFormatSource<>(
         tableLoader,
-            mixedFormatScanContext,
+        mixedFormatScanContext,
         rowDataReaderFunction,
         typeInformation,
         testKeyedTable.name(),
@@ -986,7 +999,8 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
         .build();
   }
 
-  private MixedFormatScanContext initMixedFormatScanContext(boolean isStreaming, String scanStartupMode) {
+  private MixedFormatScanContext initMixedFormatScanContext(
+      boolean isStreaming, String scanStartupMode) {
     return MixedFormatScanContext.contextBuilder()
         .streaming(isStreaming)
         .scanStartupMode(scanStartupMode)

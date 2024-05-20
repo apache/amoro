@@ -207,7 +207,8 @@ public class MixedCatalog extends AbstractCatalog {
 
     List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
     return CatalogTable.of(
-        toSchema(mixedTableSchema, MixedFormatUtils.getPrimaryKeys(table), mixedTableProperties).toSchema(),
+        toSchema(mixedTableSchema, MixedFormatUtils.getPrimaryKeys(table), mixedTableProperties)
+            .toSchema(),
         null,
         partitionKeys,
         mixedTableProperties);
@@ -215,8 +216,8 @@ public class MixedCatalog extends AbstractCatalog {
 
   /**
    * For now, 'CREATE TABLE LIKE' would be treated as the case which users want to add watermark in
-   * temporal join, as an alternative of lookup join, and use mixed-format table as build table, i.e.
-   * right table. So the properties those required in temporal join will be put automatically.
+   * temporal join, as an alternative of lookup join, and use mixed-format table as build table,
+   * i.e. right table. So the properties those required in temporal join will be put automatically.
    *
    * <p>If you don't want the properties, 'EXCLUDING ALL' is what you need. More details @see <a
    * href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/create/#like">LIKE</a>
@@ -631,10 +632,12 @@ public class MixedCatalog extends AbstractCatalog {
    *     partitionKeys.
    */
   private void checkValidPartitionSpec(
-      CatalogPartitionSpec partitionSpec, PartitionSpec mixedTablePartitionSpec, ObjectPath tablePath)
+      CatalogPartitionSpec partitionSpec,
+      PartitionSpec mixedTablePartitionSpec,
+      ObjectPath tablePath)
       throws PartitionSpecInvalidException {
     List<String> partitionKeys =
-            mixedTablePartitionSpec.fields().stream()
+        mixedTablePartitionSpec.fields().stream()
             .map(PartitionField::name)
             .collect(Collectors.toList());
     for (String key : partitionSpec.getPartitionSpec().keySet()) {

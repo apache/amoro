@@ -39,5 +39,5 @@ public interface ContinuousSplitPlanner extends Closeable {
    * data with expressions.
    */
   ContinuousEnumerationResult planSplits(
-          MixedFormatEnumeratorOffset lastPosition, List<Expression> filters);
+      MixedFormatEnumeratorOffset lastPosition, List<Expression> filters);
 }

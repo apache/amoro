@@ -36,8 +36,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * If using mixed-format table as build-table, TemporalJoinSplits can record the first splits planned by
- * Enumerator.
+ * If using mixed-format table as build-table, TemporalJoinSplits can record the first splits
+ * planned by Enumerator.
  */
 public class TemporalJoinSplits implements Serializable {
 

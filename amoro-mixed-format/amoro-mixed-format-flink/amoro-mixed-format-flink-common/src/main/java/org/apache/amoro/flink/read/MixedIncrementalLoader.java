@@ -18,9 +18,9 @@
 
 package org.apache.amoro.flink.read;
 
-import org.apache.amoro.flink.read.hybrid.enumerator.MixedFormatEnumeratorOffset;
 import org.apache.amoro.flink.read.hybrid.enumerator.ContinuousEnumerationResult;
 import org.apache.amoro.flink.read.hybrid.enumerator.ContinuousSplitPlanner;
+import org.apache.amoro.flink.read.hybrid.enumerator.MixedFormatEnumeratorOffset;
 import org.apache.amoro.flink.read.hybrid.reader.DataIteratorReaderFunction;
 import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;

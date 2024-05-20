@@ -19,13 +19,13 @@
 package org.apache.amoro.flink.write;
 
 import static org.apache.amoro.flink.FlinkSchemaUtil.getPhysicalSchema;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
 import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.MIXED_FORMAT_EMIT_FILE;
 import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.MIXED_FORMAT_EMIT_MODE;
 import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.MIXED_FORMAT_THROUGHPUT_METRIC_ENABLE;
 import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.MIXED_FORMAT_THROUGHPUT_METRIC_ENABLE_DEFAULT;
 import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.MIXED_FORMAT_WRITE_MAX_OPEN_FILE_SIZE;
 import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.MIXED_FORMAT_WRITE_MAX_OPEN_FILE_SIZE_DEFAULT;
-import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
 import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SUBMIT_EMPTY_SNAPSHOTS;
 import static org.apache.amoro.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE;
 import static org.apache.amoro.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE_DEFAULT;
@@ -40,9 +40,9 @@ import org.apache.amoro.flink.shuffle.ShuffleKey;
 import org.apache.amoro.flink.shuffle.ShuffleRulePolicy;
 import org.apache.amoro.flink.table.MixedFormatTableLoader;
 import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
-import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.amoro.flink.util.IcebergClassUtil;
+import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.util.ProxyUtil;
 import org.apache.amoro.table.DistributionHashMode;
 import org.apache.amoro.table.MixedTable;
@@ -212,7 +212,9 @@ public class FlinkSink {
           shufflePolicy == null ? DistributionMode.NONE : distributionMode.getDesc());
 
       String emitMode =
-          table.properties().getOrDefault(MIXED_FORMAT_EMIT_MODE.key(), MIXED_FORMAT_EMIT_MODE.defaultValue());
+          table
+              .properties()
+              .getOrDefault(MIXED_FORMAT_EMIT_MODE.key(), MIXED_FORMAT_EMIT_MODE.defaultValue());
       final boolean metricsEventLatency =
           CompatibleFlinkPropertyUtil.propertyAsBoolean(
               table.properties(),
@@ -222,8 +224,8 @@ public class FlinkSink {
       final boolean metricsEnable =
           CompatibleFlinkPropertyUtil.propertyAsBoolean(
               table.properties(),
-                  MIXED_FORMAT_THROUGHPUT_METRIC_ENABLE,
-                  MIXED_FORMAT_THROUGHPUT_METRIC_ENABLE_DEFAULT);
+              MIXED_FORMAT_THROUGHPUT_METRIC_ENABLE,
+              MIXED_FORMAT_THROUGHPUT_METRIC_ENABLE_DEFAULT);
 
       final Duration watermarkWriteGap = config.get(AUTO_EMIT_LOGSTORE_WATERMARK_GAP);
 
@@ -374,8 +376,8 @@ public class FlinkSink {
     long maxOpenFilesSizeBytes =
         PropertyUtil.propertyAsLong(
             mixedTable.properties(),
-                MIXED_FORMAT_WRITE_MAX_OPEN_FILE_SIZE,
-                MIXED_FORMAT_WRITE_MAX_OPEN_FILE_SIZE_DEFAULT);
+            MIXED_FORMAT_WRITE_MAX_OPEN_FILE_SIZE,
+            MIXED_FORMAT_WRITE_MAX_OPEN_FILE_SIZE_DEFAULT);
     LOG.info(
         "with maxOpenFilesSizeBytes = {}MB, close biggest/earliest file to avoid OOM",
         maxOpenFilesSizeBytes >> 20);
@@ -418,7 +420,8 @@ public class FlinkSink {
       boolean overwrite,
       String branch,
       PartitionSpec spec) {
-    return createFileCommitter(mixedTable, tableLoader, overwrite, branch, spec, MIXED_FORMAT_EMIT_FILE);
+    return createFileCommitter(
+        mixedTable, tableLoader, overwrite, branch, spec, MIXED_FORMAT_EMIT_FILE);
   }
 
   public static OneInputStreamOperator<WriteResult, Void> createFileCommitter(

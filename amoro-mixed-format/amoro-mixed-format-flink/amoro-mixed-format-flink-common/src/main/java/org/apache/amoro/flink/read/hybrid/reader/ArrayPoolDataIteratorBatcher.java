@@ -95,7 +95,8 @@ class ArrayPoolDataIteratorBatcher<T> implements DataIteratorBatcher<T> {
 
       RecordPosition[] positions = initPositionArray();
       while (inputIterator.hasNext() && recordCount < batchSize) {
-        // The record produced by inputIterator can be reused like for the MixedFormatRecordWithOffset
+        // The record produced by inputIterator can be reused like for the
+        // MixedFormatRecordWithOffset
         // case.
         // inputIterator.next() can't be called again until the copy is made
         // since the record is not consumed immediately.

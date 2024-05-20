@@ -23,9 +23,9 @@ import org.apache.amoro.flink.read.MixedFormatSource;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
 import org.apache.amoro.flink.read.source.MixedFormatScanContext;
 import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
-import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.amoro.flink.util.IcebergClassUtil;
+import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.util.ProxyUtil;
 import org.apache.amoro.table.MixedTable;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -77,7 +77,8 @@ public class FlinkSource {
     private final Map<String, String> properties = new HashMap<>();
     private long limit = -1L;
     private WatermarkStrategy<RowData> watermarkStrategy = WatermarkStrategy.noWatermarks();
-    private final MixedFormatScanContext.Builder contextBuilder = MixedFormatScanContext.contextBuilder();
+    private final MixedFormatScanContext.Builder contextBuilder =
+        MixedFormatScanContext.contextBuilder();
     private boolean batchMode = false;
 
     private Builder() {}
@@ -232,7 +233,9 @@ public class FlinkSource {
       IcebergClassUtil.clean(env);
       Transformation origin = ds.getTransformation();
       int scanParallelism =
-          flinkConf.getOptional(MixedFormatValidator.SCAN_PARALLELISM).orElse(origin.getParallelism());
+          flinkConf
+              .getOptional(MixedFormatValidator.SCAN_PARALLELISM)
+              .orElse(origin.getParallelism());
 
       if (origin instanceof OneInputTransformation) {
         OneInputTransformation<RowData, RowData> tf =

@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.table;
 
-import org.apache.amoro.flink.lookup.MixedFormatRowDataLookupFunction;
 import org.apache.amoro.flink.lookup.KVTableFactory;
+import org.apache.amoro.flink.lookup.MixedFormatRowDataLookupFunction;
 import org.apache.amoro.flink.lookup.filter.RowDataPredicate;
 import org.apache.amoro.flink.lookup.filter.RowDataPredicateExpressionVisitor;
 import org.apache.amoro.flink.read.hybrid.reader.DataIteratorReaderFunction;
@@ -155,7 +155,7 @@ public class MixedFormatDynamicSource
   public DynamicTableSource copy() {
     return new MixedFormatDynamicSource(
         tableName,
-            mixedFormatDynamicSource,
+        mixedFormatDynamicSource,
         mixedTable,
         properties,
         tableLoader,

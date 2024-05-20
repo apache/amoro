@@ -138,14 +138,15 @@ public class ShuffleSplitAssigner implements SplitAssigner {
         LOG.warn("interruptedException", e);
       }
       if (mixedFormatSplit == null) {
-        LOG.debug("Subtask {}, couldn't retrieve mixed-format source split in the queue.", subTaskId);
+        LOG.debug(
+            "Subtask {}, couldn't retrieve mixed-format source split in the queue.", subTaskId);
         return Optional.empty();
       } else {
         LOG.info(
             "get next mixed-format split taskIndex {}, totalSplitNum {}, mixed-format split {}.",
             mixedFormatSplit.taskIndex(),
             totalSplitNum,
-                mixedFormatSplit);
+            mixedFormatSplit);
         return Optional.of(mixedFormatSplit);
       }
     } else {
@@ -261,9 +262,9 @@ public class ShuffleSplitAssigner implements SplitAssigner {
 
   /**
    * Different data files may locate in different layers when multi snapshots are committed, so
-   * mixed-format source reading should consider emitting the records and keeping ordering. According to
-   * the dataTreeNode of the mixed-format split and the currentMaskOfTreeNode, return the exact tree node
-   * list which may move up or go down layers in the mixed-format tree.
+   * mixed-format source reading should consider emitting the records and keeping ordering.
+   * According to the dataTreeNode of the mixed-format split and the currentMaskOfTreeNode, return
+   * the exact tree node list which may move up or go down layers in the mixed-format tree.
    *
    * <pre>
    * |mask=0          o

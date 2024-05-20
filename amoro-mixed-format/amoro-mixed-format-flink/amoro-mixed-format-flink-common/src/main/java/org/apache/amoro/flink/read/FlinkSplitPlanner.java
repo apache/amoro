@@ -19,9 +19,9 @@
 package org.apache.amoro.flink.read;
 
 import org.apache.amoro.data.DataFileType;
-import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.flink.read.hybrid.split.MergeOnReadSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.SnapshotSplit;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
 import org.apache.amoro.scan.CombinedScanTask;
@@ -51,15 +51,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
- * An util class that plans mixed-format table(base and change) or just plans change table. invoked by
- * mixed-format enumerator.
+ * An util class that plans mixed-format table(base and change) or just plans change table. invoked
+ * by mixed-format enumerator.
  */
 public class FlinkSplitPlanner {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkSplitPlanner.class);
 
   private FlinkSplitPlanner() {}
 
-  public static List<MixedFormatSplit> planFullTable(KeyedTable keyedTable, AtomicInteger splitCount) {
+  public static List<MixedFormatSplit> planFullTable(
+      KeyedTable keyedTable, AtomicInteger splitCount) {
     CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTable.newScan().planTasks();
     BaseAndChangeTask baseAndChangeTask = BaseAndChangeTask.of(combinedScanTasks);
     return planFullTable(baseAndChangeTask, splitCount);
