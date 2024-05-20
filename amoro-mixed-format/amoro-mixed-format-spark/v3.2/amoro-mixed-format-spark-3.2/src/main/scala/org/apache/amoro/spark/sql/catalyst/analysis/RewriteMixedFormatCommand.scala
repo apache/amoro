@@ -89,7 +89,9 @@ case class RewriteMixedFormatCommand(sparkSession: SparkSession) extends Rule[Lo
         table match {
           case mixedSparkTable: MixedSparkTable if mixedSparkTable.table().isKeyedTable =>
             targetProperties += ("primary.keys" ->
-              String.join(",", mixedSparkTable.table().asKeyedTable().primaryKeySpec().fieldNames()))
+              String.join(
+                ",",
+                mixedSparkTable.table().asKeyedTable().primaryKeySpec().fieldNames()))
           case _ =>
         }
         targetProperties += ("provider" -> "arctic")

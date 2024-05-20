@@ -20,9 +20,9 @@ package org.apache.amoro.spark.sql.catalyst.optimize
 
 import org.apache.amoro.spark.SupportSparkAdapter
 import org.apache.amoro.spark.mixed.SparkSQLProperties
-import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.{isUnkeyedTableRelation, isMixedFormatRelation}
+import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.{isMixedFormatRelation, isUnkeyedTableRelation}
 import org.apache.amoro.spark.sql.catalyst.plans.MixedFormatRowLevelWrite
-import org.apache.amoro.spark.table.{UnkeyedSparkTable, MixedSparkTable}
+import org.apache.amoro.spark.table.{MixedSparkTable, UnkeyedSparkTable}
 import org.apache.amoro.spark.util.DistributionAndOrderingUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Expression, SortOrder}

@@ -30,7 +30,8 @@ import org.apache.spark.sql.catalyst.trees.CurrentOrigin.withOrigin
 import org.apache.spark.sql.catalyst.util.toPrettySQL
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 
-case class ResolveMergeIntoMixedFormatTableReferences(spark: SparkSession) extends Rule[LogicalPlan] {
+case class ResolveMergeIntoMixedFormatTableReferences(spark: SparkSession)
+  extends Rule[LogicalPlan] {
 
   def checkConditionIsPrimaryKey(aliasedTable: LogicalPlan, cond: Expression): Unit = {
     EliminateSubqueryAliases(aliasedTable) match {
@@ -242,9 +243,9 @@ case class ResolveMergeIntoMixedFormatTableReferences(spark: SparkSession) exten
 
   // copied from ResolveReferences in Spark
   private def resolveAssignments(
-                                  assignments: Seq[Assignment],
-                                  mergeInto: UnresolvedMergeIntoMixedFormatTable,
-                                  resolveValuesWithSourceOnly: Boolean): Seq[Assignment] = {
+      assignments: Seq[Assignment],
+      mergeInto: UnresolvedMergeIntoMixedFormatTable,
+      resolveValuesWithSourceOnly: Boolean): Seq[Assignment] = {
     assignments.map { assign =>
       val resolvedKey = assign.key match {
         case c if !c.resolved =>

@@ -21,7 +21,7 @@ package org.apache.amoro.spark.sql.execution
 import java.util
 
 import org.apache.amoro.op.OverwriteBaseFiles
-import org.apache.amoro.spark.table.{UnkeyedSparkTable, MixedSparkTable}
+import org.apache.amoro.spark.table.{MixedSparkTable, UnkeyedSparkTable}
 import org.apache.iceberg.spark.SparkFilters
 import org.apache.spark.sql.amoro.catalyst.ExpressionHelper
 import org.apache.spark.sql.catalyst.InternalRow

@@ -1,4 +1,4 @@
-// Generated from org\apache\amoro\spark\sql\parser\ArcticSqlExtend.g4 by ANTLR 4.8
+// Generated from org/apache/amoro/spark/sql/parser/MixedFormatSqlExtend.g4 by ANTLR 4.8
 package org.apache.amoro.spark.sql.parser;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
@@ -10,7 +10,7 @@ import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.misc.*;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
-public class ArcticSqlExtendLexer extends Lexer {
+public class MixedFormatSqlExtendLexer extends Lexer {
 	static { RuntimeMetaData.checkVersion("4.8", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
@@ -309,13 +309,13 @@ public class ArcticSqlExtendLexer extends Lexer {
 	  }
 
 
-	public ArcticSqlExtendLexer(CharStream input) {
+	public MixedFormatSqlExtendLexer(CharStream input) {
 		super(input);
 		_interp = new LexerATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
 
 	@Override
-	public String getGrammarFileName() { return "ArcticSqlExtend.g4"; }
+	public String getGrammarFileName() { return "MixedFormatSqlExtend.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }

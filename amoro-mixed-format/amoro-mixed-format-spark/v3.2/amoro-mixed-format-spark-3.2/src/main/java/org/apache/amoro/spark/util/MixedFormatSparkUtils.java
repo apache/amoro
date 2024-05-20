@@ -94,9 +94,7 @@ public class MixedFormatSparkUtils {
     // Fallback to use distribution mode parsed from table properties .
     String modeName =
         PropertyUtil.propertyAsString(
-            mixedSparkTable.properties(),
-            WRITE_DISTRIBUTION_MODE,
-            WRITE_DISTRIBUTION_MODE_DEFAULT);
+            mixedSparkTable.properties(), WRITE_DISTRIBUTION_MODE, WRITE_DISTRIBUTION_MODE_DEFAULT);
     DistributionMode writeMode = DistributionMode.fromName(modeName);
     switch (writeMode) {
       case NONE:
@@ -120,7 +118,7 @@ public class MixedFormatSparkUtils {
         if (distributionHashMode.isSupportPrimaryKey()) {
           Transform transform =
               toTransformsFromPrimary(
-                      mixedSparkTable, mixedSparkTable.table().asKeyedTable().primaryKeySpec());
+                  mixedSparkTable, mixedSparkTable.table().asKeyedTable().primaryKeySpec());
           transforms.add(transform);
           if (distributionHashMode.isSupportPartition()) {
             transforms.addAll(Arrays.asList(toTransforms(mixedSparkTable.table().spec())));
@@ -148,7 +146,7 @@ public class MixedFormatSparkUtils {
   }
 
   private static Transform toTransformsFromPrimary(
-          MixedSparkTable mixedSparkTable, PrimaryKeySpec primaryKeySpec) {
+      MixedSparkTable mixedSparkTable, PrimaryKeySpec primaryKeySpec) {
     int numBucket =
         PropertyUtil.propertyAsInt(
             mixedSparkTable.properties(),

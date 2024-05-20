@@ -108,7 +108,7 @@ class MixedFormatSqlExtensionsParser(delegate: ParserInterface) extends ParserIn
   private def buildLexer(sql: String): Option[Lexer] = {
     lazy val charStream = new UpperCaseCharStream(CharStreams.fromString(sql))
     if (isMixedFormatExtendSql(sql)) {
-      Some(new ArcticSqlExtendLexer(charStream))
+      Some(new MixedFormatSqlExtendLexer(charStream))
     } else {
       Option.empty
     }
@@ -116,8 +116,8 @@ class MixedFormatSqlExtensionsParser(delegate: ParserInterface) extends ParserIn
 
   private def buildAntlrParser(stream: TokenStream, lexer: Lexer): Parser = {
     lexer match {
-      case _: ArcticSqlExtendLexer =>
-        val parser = new ArcticSqlExtendParser(stream)
+      case _: MixedFormatSqlExtendLexer =>
+        val parser = new MixedFormatSqlExtendParser(stream)
         parser.legacy_exponent_literal_as_decimal_enabled = conf.exponentLiteralAsDecimalEnabled
         parser.SQL_standard_keyword_behavior = conf.ansiEnabled
         parser
@@ -127,7 +127,7 @@ class MixedFormatSqlExtensionsParser(delegate: ParserInterface) extends ParserIn
   }
 
   private def toLogicalResult(parser: Parser): LogicalPlan = parser match {
-    case p: ArcticSqlExtendParser =>
+    case p: MixedFormatSqlExtendParser =>
       createTableAstBuilder.visitExtendStatement(p.extendStatement())
   }
 
@@ -183,7 +183,12 @@ class MixedFormatSqlExtensionsParser(delegate: ParserInterface) extends ParserIn
           cond,
           matchedActions,
           notMatchedActions) =>
-      UnresolvedMergeIntoMixedFormatTable(aliasedTable, source, cond, matchedActions, notMatchedActions)
+      UnresolvedMergeIntoMixedFormatTable(
+        aliasedTable,
+        source,
+        cond,
+        matchedActions,
+        notMatchedActions)
 
     case DeleteFromTable(UnresolvedIcebergTable(aliasedTable), condition) =>
       DeleteFromIcebergTable(aliasedTable, condition)

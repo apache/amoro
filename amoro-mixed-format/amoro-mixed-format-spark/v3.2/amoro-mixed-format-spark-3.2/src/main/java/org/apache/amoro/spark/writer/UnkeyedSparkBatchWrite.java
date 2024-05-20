@@ -66,7 +66,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class UnkeyedSparkBatchWrite implements MixedFormatSparkWriteBuilder.MixedFormatWrite, Write {
+public class UnkeyedSparkBatchWrite
+    implements MixedFormatSparkWriteBuilder.MixedFormatWrite, Write {
 
   private final UnkeyedTable table;
   private final StructType dsSchema;

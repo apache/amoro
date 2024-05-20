@@ -25,8 +25,8 @@ import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHO
 import org.apache.amoro.hive.utils.CatalogUtil;
 import org.apache.amoro.spark.mixed.MixedSparkCatalogBase;
 import org.apache.amoro.spark.mixed.MixedTableStoreType;
-import org.apache.amoro.spark.table.SparkChangeTable;
 import org.apache.amoro.spark.table.MixedSparkTable;
+import org.apache.amoro.spark.table.SparkChangeTable;
 import org.apache.amoro.table.BasicUnkeyedTable;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
