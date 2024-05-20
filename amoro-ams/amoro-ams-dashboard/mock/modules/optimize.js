@@ -76,11 +76,6 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/optimize/optimizerGroups/all/optimizers',
-    method: 'get',
-    response: () => ({ "message": "success", "code": 200, "result": { "list": [], "total": 0 } }),
-  },
-  {
     url: '/mock/ams/v1/optimize/optimizerGroups/local/optimizers',
     method: 'post',
     response: () => ({ "message": "success", "code": 200, "result": "success to scaleOut optimizer" }),
@@ -160,6 +155,28 @@ export default [
       "result": "The optimizer group has been successfully deleted."
     }),
   },
-
-
+  {
+    url: '/mock/ams/v1/optimize/optimizerGroups/all/optimizers',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": {
+        "list": [
+          {
+            "token": "183c4ce4-a006-4d18-b8b3-4f9bee3e7527",
+            "startTime": 1715862320085,
+            "touchTime": 1715862530475,
+            "jobId": null,
+            "groupName": "local",
+            "coreNumber": 1,
+            "memory": 8192,
+            "jobStatus": "RUNNING",
+            "container": "localContainer"
+          }
+        ],
+        "total": 1
+      }
+    }),
+  },
 ]

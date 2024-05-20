@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -19,14 +18,8 @@ limitations under the License.
 
 <template>
   <div class="list-wrap">
-    <a-table
-      class="ant-table-common"
-      :columns="columns"
-      :data-source="dataSource"
-      :pagination="pagination"
-      :loading="loading"
-      @change="changeTable"
-      >
+    <a-table class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"
+      :loading="loading" @change="changeTable">
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'durationDisplay'">
           <span :title="record.durationDesc">
@@ -34,16 +27,19 @@ limitations under the License.
           </span>
         </template>
         <template v-if="column.dataIndex === 'optimizeStatus'">
-          <span :style="{'background-color': (STATUS_CONFIG[record.optimizeStatus] || {}).color}" class="status-icon"></span>
+          <span :style="{ 'background-color': (STATUS_CONFIG[record.optimizeStatus] || {}).color }"
+            class="status-icon"></span>
           <span>{{ record.optimizeStatus }}</span>
         </template>
         <template v-if="column.dataIndex === 'operation'">
-          <span class="primary-link" :class="{'disabled': record.container === 'external'}" @click="releaseModal(record)">
+          <span class="primary-link" :class="{ 'disabled': record.container === 'external' }"
+            @click="releaseModal(record)">
             {{ t('release') }}
           </span>
         </template>
         <template v-if="column.dataIndex === 'operationGroup'">
-          <span class="primary-link g-mr-12" :class="{'disabled': record.container === 'external'}" @click="scaleOutGroup(record)">
+          <span class="primary-link g-mr-12" :class="{ 'disabled': record.container === 'external' }"
+            @click="scaleOutGroup(record)">
             {{ t('scaleOut') }}
           </span>
           <span class="primary-link g-mr-12" @click="editGroup(record)">
@@ -65,7 +61,7 @@ import { IOptimizeResourceTableItem, IIOptimizeGroupItem } from '@/types/common.
 import { getOptimizerResourceList, getResourceGroupsListAPI, groupDeleteCheckAPI, groupDeleteAPI, releaseResource } from '@/services/optimize.service'
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
-import { mbToSize } from '@/utils'
+import { mbToSize, dateFormat } from '@/utils'
 
 import { message, Modal, Table as ATable } from 'ant-design-vue'
 
@@ -77,7 +73,7 @@ const router = useRouter()
 
 const props = defineProps<{ curGroupName: string, type: string }>()
 
-const emit = defineEmits<{(e: 'editGroup', record: IIOptimizeGroupItem): void; (e: 'refresh'): void}>()
+const emit = defineEmits<{ (e: 'editGroup', record: IIOptimizeGroupItem): void; (e: 'refresh'): void }>()
 
 const STATUS_CONFIG = shallowReactive({
   pending: { title: 'pending', color: '#ffcc00' },
@@ -98,11 +94,14 @@ const tableColumns = shallowReactive([
   { dataIndex: 'operationGroup', title: t('operation'), key: 'operationGroup', ellipsis: true, width: 230, scopedSlots: { customRender: 'operationGroup' } }
 ])
 const optimizerColumns = shallowReactive([
-  { dataIndex: 'index', title: t('order'), width: 80, ellipsis: true },
+  { dataIndex: 'jobId', title: t('optimizerId'), width: '15%', ellipsis: true },
+  { dataIndex: 'token', title: t('token'), width: '10%', ellipsis: true },
   { dataIndex: 'groupName', title: t('optimizerGroup'), ellipsis: true },
   { dataIndex: 'container', title: t('container'), ellipsis: true },
   { dataIndex: 'jobStatus', title: t('status'), ellipsis: true },
-  { dataIndex: 'resourceAllocation', title: t('resourceAllocation'), width: '20%', ellipsis: true },
+  { dataIndex: 'resourceAllocation', title: t('resourceAllocation'), width: '10%', ellipsis: true },
+  { dataIndex: 'startTime', title: t('startTime'), width: 172, ellipsis: true },
+  { dataIndex: 'touchTime', title: t('touchTime'), width: 172, ellipsis: true },
   { dataIndex: 'operation', title: t('operation'), key: 'operation', ellipsis: true, width: 160, scopedSlots: { customRender: 'operationGroup' } }
 ])
 const pagination = reactive(usePagination())
@@ -128,7 +127,7 @@ function refresh(resetPage?: boolean) {
   }
 }
 
-function releaseModal (record: IOptimizeResourceTableItem) {
+function releaseModal(record: IOptimizeResourceTableItem) {
   if (record.container === 'external') {
     return
   }
@@ -142,12 +141,12 @@ function releaseModal (record: IOptimizeResourceTableItem) {
     }
   })
 }
-async function releaseJob (record: IOptimizeResourceTableItem) {
+async function releaseJob(record: IOptimizeResourceTableItem) {
   try {
     releaseLoading.value = true
     await releaseResource({
       optimizerGroup: record.groupName,
-      jobId: record.jobId
+      jobId: (record.jobId) as unknown as string
     })
     refresh(true)
     emit('refreshCurGroupInfo')
@@ -156,7 +155,7 @@ async function releaseJob (record: IOptimizeResourceTableItem) {
   }
 }
 
-async function getOptimizersList () {
+async function getOptimizersList() {
   try {
     optimizersList.length = 0
     loading.value = true
@@ -171,6 +170,8 @@ async function getOptimizersList () {
     (list || []).forEach((p: IOptimizeResourceTableItem, index: number) => {
       p.resourceAllocation = `${p.coreNumber} ${t('core')} ${mbToSize(p.memory)}`
       p.index = (pagination.current - 1) * pagination.pageSize + index + 1
+      p.startTime = p.startTime ? dateFormat(p.startTime) : '-'
+      p.touchTime = p.touchTime ? dateFormat(p.touchTime) : '-'
       optimizersList.push(p)
     })
   } catch (error) {
@@ -179,7 +180,7 @@ async function getOptimizersList () {
   }
 }
 
-async function getResourceGroupsList () {
+async function getResourceGroupsList() {
   try {
     groupList.length = 0
     loading.value = true
@@ -200,12 +201,12 @@ async function getResourceGroupsList () {
 const editGroup = (record: IIOptimizeGroupItem) => {
   emit('editGroup', record)
 }
-const removeGroup = async(record: IIOptimizeGroupItem) => {
+const removeGroup = async (record: IIOptimizeGroupItem) => {
   const res = await groupDeleteCheckAPI({ name: record.name })
   if (res) {
     Modal.confirm({
       title: t('deleteGroupModalTitle'),
-      onOk: async() => {
+      onOk: async () => {
         await groupDeleteAPI({ name: record.name })
         message.success(`${t('remove')} ${t('success')}`)
         refresh()
@@ -229,7 +230,7 @@ const scaleOutGroup = (record: IIOptimizeGroupItem) => {
   scaleOutViseble.value = true
 }
 
-function changeTable ({ current = pagination.current, pageSize = pagination.pageSize }) {
+function changeTable({ current = pagination.current, pageSize = pagination.pageSize }) {
   pagination.current = current
   const resetPage = pageSize !== pagination.pageSize
   pagination.pageSize = pageSize
@@ -244,16 +245,20 @@ onMounted(() => {
 .list-wrap {
   .primary-link {
     color: @primary-color;
+
     &:hover {
       cursor: pointer;
     }
+
     &.disabled {
       color: #999;
+
       &:hover {
         cursor: not-allowed;
       }
     }
   }
+
   .status-icon {
     width: 8px;
     height: 8px;

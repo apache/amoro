@@ -203,7 +203,7 @@ function build_amoro() {
   local DIST_FILE=${PROJECT_HOME}/amoro-ams/dist/target/amoro-${AMORO_VERSION}-bin.zip
 
   if [ ! -f "${DIST_FILE}" ]; then
-    local BUILD_CMD="mvn clean package -am -e -pl ams/dist -DskipTests "
+    local BUILD_CMD="mvn clean package -am -e -pl amoro-ams/dist -DskipTests "
     echo "Amoro dist package is not exists in ${DIST_FILE}"
     echo "please check file or run '$BUILD_CMD' first"
   fi

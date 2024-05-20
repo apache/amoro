@@ -260,6 +260,8 @@ export interface IIOptimizeGroupItem {
 }
 
 export interface IOptimizeResourceTableItem {
+  touchTime: string;
+  startTime: string;
   index: number
   jobId: number
   jobStatus: string
