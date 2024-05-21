@@ -35,6 +35,7 @@ public class SparkSQLProperties {
 
   public static final String CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT = "false";
 
-  public static final String OPTIMIZE_WRITE_ENABLED = "spark.sql.mixed-format.optimize-write-enabled";
+  public static final String OPTIMIZE_WRITE_ENABLED =
+      "spark.sql.mixed-format.optimize-write-enabled";
   public static final String OPTIMIZE_WRITE_ENABLED_DEFAULT = "true";
 }
