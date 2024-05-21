@@ -18,15 +18,15 @@
 
 package org.apache.amoro.flink.write;
 
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.LOG_STORE_CATCH_UP;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
-import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.flink.table.MixedFormatTableLoader;
 import org.apache.amoro.table.MixedTable;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.iceberg.UpdateProperties;
@@ -36,7 +36,7 @@ import org.junit.Test;
 import java.time.Duration;
 
 public class TestAutomaticDoubleWriteStatus extends FlinkTestBase {
-  public ArcticTableLoader tableLoader;
+  public MixedFormatTableLoader tableLoader;
 
   public TestAutomaticDoubleWriteStatus() {
     super(
@@ -46,9 +46,9 @@ public class TestAutomaticDoubleWriteStatus extends FlinkTestBase {
 
   @Test
   public void testTableProperties() {
-    tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
+    tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     tableLoader.open();
-    MixedTable mixedTable = tableLoader.loadArcticTable();
+    MixedTable mixedTable = tableLoader.loadMixedFormatTable();
     UpdateProperties up = mixedTable.updateProperties();
     up.set(AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key(), "10");
     up.commit();

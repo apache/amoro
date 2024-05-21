@@ -63,16 +63,18 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
     } else {
       db = dbs.get(0);
     }
-    exec("create catalog arctic with ('type'='arctic', 'metastore.url'='%s')", getCatalogUrl());
     exec(
-        "create table arctic.%s.L (id int) "
+        "create catalog mixed_catalog with ('type'='arctic', 'metastore.url'='%s')",
+        getCatalogUrl());
+    exec(
+        "create table mixed_catalog.%s.L (id int) "
             + "with ('scan.startup.mode'='earliest', 'monitor-interval'='1 s','streaming'='true')",
         db);
     exec(
-        "create table arctic.%s.DIM (id int, name string, primary key(id) not enforced) "
+        "create table mixed_catalog.%s.DIM (id int, name string, primary key(id) not enforced) "
             + "with ('write.upsert.enabled'='true', 'lookup.reloading.interval'='1 s')",
         db);
-    exec("create view vi as select *, PROCTIME() as proc from arctic.%s.L", db);
+    exec("create view vi as select *, PROCTIME() as proc from mixed_catalog.%s.L", db);
 
     writeAndCommit(
         TableIdentifier.of(getCatalogName(), db, "DIM"),
@@ -83,15 +85,15 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
 
   @After
   public void drop() {
-    exec("drop table arctic.%s.L", db);
-    exec("drop table arctic.%s.DIM", db);
+    exec("drop table mixed_catalog.%s.L", db);
+    exec("drop table mixed_catalog.%s.DIM", db);
   }
 
   @Test()
   public void testLookup() throws Exception {
     TableResult tableResult =
         exec(
-            "select L.id, D.name from vi L LEFT JOIN arctic.%s.DIM "
+            "select L.id, D.name from vi L LEFT JOIN mixed_catalog.%s.DIM "
                 + "for system_time as of L.proc AS D ON L.id = D.id",
             db);
 

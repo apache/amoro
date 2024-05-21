@@ -24,8 +24,8 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.enumerator.TestContinuousSplitPlannerImpl;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.source.DataIterator;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
 import org.apache.amoro.scan.MixedFileScanTask;
@@ -71,7 +71,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   @Test
   public void testReadChangelog() throws IOException {
 
-    List<ArcticSplit> arcticSplits =
+    List<MixedFormatSplit> mixedFormatSplits =
         FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
 
     RowDataReaderFunction rowDataReaderFunction =
@@ -85,9 +85,9 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
             testKeyedTable.io());
 
     List<RowData> actual = new ArrayList<>();
-    arcticSplits.forEach(
+    mixedFormatSplits.forEach(
         split -> {
-          LOG.info("ArcticSplit {}.", split);
+          LOG.info("Mixed format split: {}.", split);
           DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
           while (dataIterator.hasNext()) {
             RowData rowData = dataIterator.next();
@@ -143,7 +143,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   @Test
   public void testReadNodesUpMoved() throws IOException {
     writeUpdateWithSpecifiedMaskOne();
-    List<ArcticSplit> arcticSplits =
+    List<MixedFormatSplit> mixedFormatSplits =
         FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
 
     RowDataReaderFunction rowDataReaderFunction =
@@ -157,9 +157,9 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
             testKeyedTable.io());
 
     List<RowData> actual = new ArrayList<>();
-    arcticSplits.forEach(
+    mixedFormatSplits.forEach(
         split -> {
-          LOG.info("ArcticSplit {}.", split);
+          LOG.info("Mixed format split: {}.", split);
           DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
           while (dataIterator.hasNext()) {
             RowData rowData = dataIterator.next();

@@ -19,18 +19,18 @@
 package org.apache.amoro.flink.util;
 
 import org.apache.amoro.flink.lookup.LookupOptions;
-import org.apache.amoro.flink.table.descriptors.ArcticValidator;
+import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
 import org.apache.flink.configuration.Configuration;
 
 public class LookupUtil {
 
   public static LookupOptions convertLookupOptions(Configuration config) {
     return new LookupOptions.Builder()
-        .lruMaximumSize(config.get(ArcticValidator.LOOKUP_CACHE_MAX_ROWS))
-        .writeRecordThreadNum(config.get(ArcticValidator.ROCKSDB_WRITING_THREADS))
-        .ttlAfterWrite(config.get(ArcticValidator.LOOKUP_CACHE_TTL_AFTER_WRITE))
-        .blockCacheCapacity(config.get(ArcticValidator.ROCKSDB_BLOCK_CACHE_CAPACITY))
-        .blockCacheNumShardBits(config.get(ArcticValidator.ROCKSDB_BLOCK_CACHE_NUM_SHARD_BITS))
+        .lruMaximumSize(config.get(MixedFormatValidator.LOOKUP_CACHE_MAX_ROWS))
+        .writeRecordThreadNum(config.get(MixedFormatValidator.ROCKSDB_WRITING_THREADS))
+        .ttlAfterWrite(config.get(MixedFormatValidator.LOOKUP_CACHE_TTL_AFTER_WRITE))
+        .blockCacheCapacity(config.get(MixedFormatValidator.ROCKSDB_BLOCK_CACHE_CAPACITY))
+        .blockCacheNumShardBits(config.get(MixedFormatValidator.ROCKSDB_BLOCK_CACHE_NUM_SHARD_BITS))
         .build();
   }
 }

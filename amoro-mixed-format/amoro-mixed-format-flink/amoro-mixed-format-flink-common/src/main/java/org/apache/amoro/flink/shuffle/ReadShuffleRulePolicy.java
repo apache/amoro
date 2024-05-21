@@ -101,7 +101,7 @@ public class ReadShuffleRulePolicy implements ShuffleRulePolicy<RowData, Shuffle
       if (distributionHashMode.isSupportPrimaryKey()) {
         pkHashCode = helper.hashKeyValue(row);
       }
-      // shuffle by arctic partition for partitioned table
+      // shuffle by mixed-format partition for partitioned table
       Integer partitionHashCode = null;
       if (distributionHashMode.isSupportPartition()) {
         partitionHashCode = helper.hashPartitionValue(row);

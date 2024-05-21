@@ -21,7 +21,7 @@ package org.apache.amoro.flink.write.hidden.kafka;
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.getPropertiesByTopic;
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE;
 import static org.apache.amoro.flink.write.hidden.kafka.TestBaseLog.USER_SCHEMA;
 import static org.apache.amoro.flink.write.hidden.kafka.TestBaseLog.createLogDataDeserialization;
 
@@ -378,7 +378,7 @@ public class TestHiddenLogOperators {
     properties.put("auto.offset.reset", "earliest");
 
     Map<String, String> configuration = new HashMap<>();
-    configuration.put(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), String.valueOf(retract));
+    configuration.put(MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), String.valueOf(retract));
 
     DataStream<RowData> streamWithTimestamps =
         env.fromSource(

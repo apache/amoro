@@ -20,7 +20,7 @@ package org.apache.amoro.flink.read.hybrid.reader;
 
 import org.apache.flink.api.connector.source.SourceEvent;
 
-/** It denotes {@link ArcticSourceReader} is starting. */
+/** It denotes {@link MixedFormatSourceReader} is starting. */
 public class ReaderStartedEvent implements SourceEvent {
   private static final long serialVersionUID = 1L;
 

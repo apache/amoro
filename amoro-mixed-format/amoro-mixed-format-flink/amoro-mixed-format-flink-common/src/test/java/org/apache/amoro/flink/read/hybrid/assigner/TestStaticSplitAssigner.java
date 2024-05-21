@@ -20,7 +20,7 @@ package org.apache.amoro.flink.read.hybrid.assigner;
 
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.TestRowDataReaderFunction;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -38,11 +38,11 @@ public class TestStaticSplitAssigner extends TestRowDataReaderFunction {
   @Test
   public void testSingleParallelism() throws IOException {
     try (StaticSplitAssigner staticSplitAssigner = instanceStaticSplitAssigner()) {
-      List<ArcticSplit> splitList =
+      List<MixedFormatSplit> splitList =
           FlinkSplitPlanner.mergeOnReadPlan(
               testKeyedTable, Collections.emptyList(), new AtomicInteger());
       staticSplitAssigner.onDiscoveredSplits(splitList);
-      List<ArcticSplit> actual = new ArrayList<>();
+      List<MixedFormatSplit> actual = new ArrayList<>();
 
       while (true) {
         Split splitOpt = staticSplitAssigner.getNext(0);
@@ -60,11 +60,11 @@ public class TestStaticSplitAssigner extends TestRowDataReaderFunction {
   @Test
   public void testMultiParallelism() throws IOException {
     try (StaticSplitAssigner staticSplitAssigner = instanceStaticSplitAssigner()) {
-      List<ArcticSplit> splitList =
+      List<MixedFormatSplit> splitList =
           FlinkSplitPlanner.mergeOnReadPlan(
               testKeyedTable, Collections.emptyList(), new AtomicInteger());
       staticSplitAssigner.onDiscoveredSplits(splitList);
-      List<ArcticSplit> actual = new ArrayList<>();
+      List<MixedFormatSplit> actual = new ArrayList<>();
 
       int subtaskId = 2;
       while (subtaskId >= 0) {

@@ -19,7 +19,7 @@
 package org.apache.amoro.flink.catalog;
 
 import static org.apache.amoro.Constants.THRIFT_TABLE_SERVICE_NAME;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.TABLE_FORMAT;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.TABLE_FORMAT;
 
 import org.apache.amoro.AlreadyExistsException;
 import org.apache.amoro.AmoroTable;

@@ -18,15 +18,15 @@
 
 package org.apache.amoro.flink.read.hybrid.assigner;
 
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplitState;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplitState;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
-/** An interface SplitAssigner for {@link ArcticSplit} */
+/** An interface SplitAssigner for {@link MixedFormatSplit} */
 public interface SplitAssigner extends Closeable {
 
   default void open() {}
@@ -36,10 +36,10 @@ public interface SplitAssigner extends Closeable {
   Split getNext(int subtaskId);
 
   /** Add new splits discovered by enumerator */
-  void onDiscoveredSplits(Collection<ArcticSplit> splits);
+  void onDiscoveredSplits(Collection<MixedFormatSplit> splits);
 
   /** Forward addSplitsBack event (for failed reader) to assigner */
-  void onUnassignedSplits(Collection<ArcticSplit> splits);
+  void onUnassignedSplits(Collection<MixedFormatSplit> splits);
 
   /**
    * Some assigner (like event time alignment) may rack in-progress splits to advance watermark upon
@@ -47,7 +47,7 @@ public interface SplitAssigner extends Closeable {
    */
   default void onCompletedSplits(Collection<String> completedSplitIds) {}
 
-  Collection<ArcticSplitState> state();
+  Collection<MixedFormatSplitState> state();
 
   /**
    * Enumerator can get a notification via CompletableFuture when the assigner has more splits

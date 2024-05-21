@@ -29,8 +29,6 @@ import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,8 +38,6 @@ import java.util.Set;
 
 /** Factory for {@link MixedCatalog} */
 public class MixedCatalogFactory implements CatalogFactory {
-
-  private static final Logger LOG = LoggerFactory.getLogger(MixedCatalogFactory.class);
 
   @Override
   public String factoryIdentifier() {
@@ -57,8 +53,8 @@ public class MixedCatalogFactory implements CatalogFactory {
 
     final String defaultDatabase = helper.getOptions().get(CatalogFactoryOptions.DEFAULT_DATABASE);
     String metastoreUrl = helper.getOptions().get(CatalogFactoryOptions.METASTORE_URL);
-    final Map<String, String> arcticCatalogProperties = getKafkaParams(context.getOptions());
-    final Map<String, String> catalogProperties = Maps.newHashMap(arcticCatalogProperties);
+    final Map<String, String> mixedCatalogProperties = getKafkaParams(context.getOptions());
+    final Map<String, String> catalogProperties = Maps.newHashMap(mixedCatalogProperties);
 
     Optional<String> tableFormatsOptional =
         helper.getOptions().getOptional(CatalogFactoryOptions.FLINK_TABLE_FORMATS);

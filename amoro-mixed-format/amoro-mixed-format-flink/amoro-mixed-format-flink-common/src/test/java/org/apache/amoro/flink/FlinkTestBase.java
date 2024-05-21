@@ -27,7 +27,7 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
-import org.apache.amoro.flink.write.ArcticRowDataTaskWriterFactory;
+import org.apache.amoro.flink.write.MixedFormatRowDataTaskWriterFactory;
 import org.apache.amoro.io.reader.GenericKeyedDataReader;
 import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScanTask;
@@ -214,7 +214,7 @@ public class FlinkTestBase extends TableTestBase {
   public static List<Record> read(KeyedTable table) {
     CloseableIterable<CombinedScanTask> combinedScanTasks = table.newScan().planTasks();
     Schema schema = table.schema();
-    GenericKeyedDataReader genericArcticDataReader =
+    GenericKeyedDataReader genericKeyedDataReader =
         new GenericKeyedDataReader(
             table.io(),
             schema,
@@ -226,7 +226,7 @@ public class FlinkTestBase extends TableTestBase {
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     for (CombinedScanTask combinedScanTask : combinedScanTasks) {
       for (KeyedTableScanTask keyedTableScanTask : combinedScanTask.tasks()) {
-        builder.addAll(genericArcticDataReader.readData(keyedTableScanTask));
+        builder.addAll(genericKeyedDataReader.readData(keyedTableScanTask));
       }
     }
     return builder.build();
@@ -315,8 +315,8 @@ public class FlinkTestBase extends TableTestBase {
 
   protected static TaskWriter<RowData> createKeyedTaskWriter(
       KeyedTable keyedTable, RowType rowType, boolean base, long mask) {
-    ArcticRowDataTaskWriterFactory taskWriterFactory =
-        new ArcticRowDataTaskWriterFactory(keyedTable, rowType, base);
+    MixedFormatRowDataTaskWriterFactory taskWriterFactory =
+        new MixedFormatRowDataTaskWriterFactory(keyedTable, rowType, base);
     taskWriterFactory.setMask(mask);
     taskWriterFactory.initialize(0, 0);
     return taskWriterFactory.create();
