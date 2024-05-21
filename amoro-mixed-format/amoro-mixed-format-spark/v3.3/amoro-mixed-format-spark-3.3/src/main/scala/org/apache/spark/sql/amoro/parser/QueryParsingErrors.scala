@@ -19,7 +19,7 @@
 package org.apache.spark.sql.amoro.parser
 
 import org.antlr.v4.runtime.ParserRuleContext
-import org.apache.amoro.spark.sql.parser.ArcticSqlExtendParser._
+import org.apache.amoro.spark.sql.parser.MixedFormatSqlExtendParser._
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.connector.catalog.CatalogV2Implicits._

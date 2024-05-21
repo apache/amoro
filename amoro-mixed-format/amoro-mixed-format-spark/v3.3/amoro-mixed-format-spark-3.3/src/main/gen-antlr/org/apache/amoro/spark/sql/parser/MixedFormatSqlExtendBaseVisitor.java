@@ -1,1253 +1,1253 @@
-// Generated from org\apache\amoro\spark\sql\parser\ArcticSqlExtend.g4 by ANTLR 4.8
+// Generated from org/apache/amoro/spark/sql/parser/MixedFormatSqlExtend.g4 by ANTLR 4.8
 package org.apache.amoro.spark.sql.parser;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
 /**
- * This class provides an empty implementation of {@link ArcticSqlExtendVisitor},
+ * This class provides an empty implementation of {@link MixedFormatSqlExtendVisitor},
  * which can be extended to create a visitor which only needs to handle a subset
  * of the available methods.
  *
  * @param <T> The return type of the visit operation. Use {@link Void} for
  * operations with no return type.
  */
-public class ArcticSqlExtendBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements ArcticSqlExtendVisitor<T> {
+public class MixedFormatSqlExtendBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements MixedFormatSqlExtendVisitor<T> {
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitExtendStatement(ArcticSqlExtendParser.ExtendStatementContext ctx) { return visitChildren(ctx); }
+	@Override public T visitExtendStatement(MixedFormatSqlExtendParser.ExtendStatementContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitCreateTableWithPk(ArcticSqlExtendParser.CreateTableWithPkContext ctx) { return visitChildren(ctx); }
+	@Override public T visitCreateTableWithPk(MixedFormatSqlExtendParser.CreateTableWithPkContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitExplain(ArcticSqlExtendParser.ExplainContext ctx) { return visitChildren(ctx); }
+	@Override public T visitExplain(MixedFormatSqlExtendParser.ExplainContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitCreateTableHeader(ArcticSqlExtendParser.CreateTableHeaderContext ctx) { return visitChildren(ctx); }
+	@Override public T visitCreateTableHeader(MixedFormatSqlExtendParser.CreateTableHeaderContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitColListWithPk(ArcticSqlExtendParser.ColListWithPkContext ctx) { return visitChildren(ctx); }
+	@Override public T visitColListWithPk(MixedFormatSqlExtendParser.ColListWithPkContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitColListOnlyPk(ArcticSqlExtendParser.ColListOnlyPkContext ctx) { return visitChildren(ctx); }
+	@Override public T visitColListOnlyPk(MixedFormatSqlExtendParser.ColListOnlyPkContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPrimarySpec(ArcticSqlExtendParser.PrimarySpecContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPrimarySpec(MixedFormatSqlExtendParser.PrimarySpecContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitBucketSpec(ArcticSqlExtendParser.BucketSpecContext ctx) { return visitChildren(ctx); }
+	@Override public T visitBucketSpec(MixedFormatSqlExtendParser.BucketSpecContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSkewSpec(ArcticSqlExtendParser.SkewSpecContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSkewSpec(MixedFormatSqlExtendParser.SkewSpecContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitLocationSpec(ArcticSqlExtendParser.LocationSpecContext ctx) { return visitChildren(ctx); }
+	@Override public T visitLocationSpec(MixedFormatSqlExtendParser.LocationSpecContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitCommentSpec(ArcticSqlExtendParser.CommentSpecContext ctx) { return visitChildren(ctx); }
+	@Override public T visitCommentSpec(MixedFormatSqlExtendParser.CommentSpecContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitQuery(ArcticSqlExtendParser.QueryContext ctx) { return visitChildren(ctx); }
+	@Override public T visitQuery(MixedFormatSqlExtendParser.QueryContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitCtes(ArcticSqlExtendParser.CtesContext ctx) { return visitChildren(ctx); }
+	@Override public T visitCtes(MixedFormatSqlExtendParser.CtesContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitNamedQuery(ArcticSqlExtendParser.NamedQueryContext ctx) { return visitChildren(ctx); }
+	@Override public T visitNamedQuery(MixedFormatSqlExtendParser.NamedQueryContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTableProvider(ArcticSqlExtendParser.TableProviderContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTableProvider(MixedFormatSqlExtendParser.TableProviderContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitCreateTableClauses(ArcticSqlExtendParser.CreateTableClausesContext ctx) { return visitChildren(ctx); }
+	@Override public T visitCreateTableClauses(MixedFormatSqlExtendParser.CreateTableClausesContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPropertyList(ArcticSqlExtendParser.PropertyListContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPropertyList(MixedFormatSqlExtendParser.PropertyListContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitProperty(ArcticSqlExtendParser.PropertyContext ctx) { return visitChildren(ctx); }
+	@Override public T visitProperty(MixedFormatSqlExtendParser.PropertyContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPropertyKey(ArcticSqlExtendParser.PropertyKeyContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPropertyKey(MixedFormatSqlExtendParser.PropertyKeyContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPropertyValue(ArcticSqlExtendParser.PropertyValueContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPropertyValue(MixedFormatSqlExtendParser.PropertyValueContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitConstantList(ArcticSqlExtendParser.ConstantListContext ctx) { return visitChildren(ctx); }
+	@Override public T visitConstantList(MixedFormatSqlExtendParser.ConstantListContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitNestedConstantList(ArcticSqlExtendParser.NestedConstantListContext ctx) { return visitChildren(ctx); }
+	@Override public T visitNestedConstantList(MixedFormatSqlExtendParser.NestedConstantListContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitCreateFileFormat(ArcticSqlExtendParser.CreateFileFormatContext ctx) { return visitChildren(ctx); }
+	@Override public T visitCreateFileFormat(MixedFormatSqlExtendParser.CreateFileFormatContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTableFileFormat(ArcticSqlExtendParser.TableFileFormatContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTableFileFormat(MixedFormatSqlExtendParser.TableFileFormatContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitGenericFileFormat(ArcticSqlExtendParser.GenericFileFormatContext ctx) { return visitChildren(ctx); }
+	@Override public T visitGenericFileFormat(MixedFormatSqlExtendParser.GenericFileFormatContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitStorageHandler(ArcticSqlExtendParser.StorageHandlerContext ctx) { return visitChildren(ctx); }
+	@Override public T visitStorageHandler(MixedFormatSqlExtendParser.StorageHandlerContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitQueryOrganization(ArcticSqlExtendParser.QueryOrganizationContext ctx) { return visitChildren(ctx); }
+	@Override public T visitQueryOrganization(MixedFormatSqlExtendParser.QueryOrganizationContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitQueryTermDefault(ArcticSqlExtendParser.QueryTermDefaultContext ctx) { return visitChildren(ctx); }
+	@Override public T visitQueryTermDefault(MixedFormatSqlExtendParser.QueryTermDefaultContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSetOperation(ArcticSqlExtendParser.SetOperationContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSetOperation(MixedFormatSqlExtendParser.SetOperationContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitQueryPrimaryDefault(ArcticSqlExtendParser.QueryPrimaryDefaultContext ctx) { return visitChildren(ctx); }
+	@Override public T visitQueryPrimaryDefault(MixedFormatSqlExtendParser.QueryPrimaryDefaultContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitFromStmt(ArcticSqlExtendParser.FromStmtContext ctx) { return visitChildren(ctx); }
+	@Override public T visitFromStmt(MixedFormatSqlExtendParser.FromStmtContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTable(ArcticSqlExtendParser.TableContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTable(MixedFormatSqlExtendParser.TableContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitInlineTableDefault1(ArcticSqlExtendParser.InlineTableDefault1Context ctx) { return visitChildren(ctx); }
+	@Override public T visitInlineTableDefault1(MixedFormatSqlExtendParser.InlineTableDefault1Context ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSubquery(ArcticSqlExtendParser.SubqueryContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSubquery(MixedFormatSqlExtendParser.SubqueryContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSortItem(ArcticSqlExtendParser.SortItemContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSortItem(MixedFormatSqlExtendParser.SortItemContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitFromStatement(ArcticSqlExtendParser.FromStatementContext ctx) { return visitChildren(ctx); }
+	@Override public T visitFromStatement(MixedFormatSqlExtendParser.FromStatementContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitFromStatementBody(ArcticSqlExtendParser.FromStatementBodyContext ctx) { return visitChildren(ctx); }
+	@Override public T visitFromStatementBody(MixedFormatSqlExtendParser.FromStatementBodyContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTransformQuerySpecification(ArcticSqlExtendParser.TransformQuerySpecificationContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTransformQuerySpecification(MixedFormatSqlExtendParser.TransformQuerySpecificationContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitRegularQuerySpecification(ArcticSqlExtendParser.RegularQuerySpecificationContext ctx) { return visitChildren(ctx); }
+	@Override public T visitRegularQuerySpecification(MixedFormatSqlExtendParser.RegularQuerySpecificationContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTransformClause(ArcticSqlExtendParser.TransformClauseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTransformClause(MixedFormatSqlExtendParser.TransformClauseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSelectClause(ArcticSqlExtendParser.SelectClauseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSelectClause(MixedFormatSqlExtendParser.SelectClauseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitWhereClause(ArcticSqlExtendParser.WhereClauseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitWhereClause(MixedFormatSqlExtendParser.WhereClauseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitHavingClause(ArcticSqlExtendParser.HavingClauseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitHavingClause(MixedFormatSqlExtendParser.HavingClauseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitHint(ArcticSqlExtendParser.HintContext ctx) { return visitChildren(ctx); }
+	@Override public T visitHint(MixedFormatSqlExtendParser.HintContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitHintStatement(ArcticSqlExtendParser.HintStatementContext ctx) { return visitChildren(ctx); }
+	@Override public T visitHintStatement(MixedFormatSqlExtendParser.HintStatementContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitFromClause(ArcticSqlExtendParser.FromClauseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitFromClause(MixedFormatSqlExtendParser.FromClauseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTemporalClause(ArcticSqlExtendParser.TemporalClauseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTemporalClause(MixedFormatSqlExtendParser.TemporalClauseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitAggregationClause(ArcticSqlExtendParser.AggregationClauseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitAggregationClause(MixedFormatSqlExtendParser.AggregationClauseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitGroupByClause(ArcticSqlExtendParser.GroupByClauseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitGroupByClause(MixedFormatSqlExtendParser.GroupByClauseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitGroupingAnalytics(ArcticSqlExtendParser.GroupingAnalyticsContext ctx) { return visitChildren(ctx); }
+	@Override public T visitGroupingAnalytics(MixedFormatSqlExtendParser.GroupingAnalyticsContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitGroupingElement(ArcticSqlExtendParser.GroupingElementContext ctx) { return visitChildren(ctx); }
+	@Override public T visitGroupingElement(MixedFormatSqlExtendParser.GroupingElementContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitGroupingSet(ArcticSqlExtendParser.GroupingSetContext ctx) { return visitChildren(ctx); }
+	@Override public T visitGroupingSet(MixedFormatSqlExtendParser.GroupingSetContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPivotClause(ArcticSqlExtendParser.PivotClauseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPivotClause(MixedFormatSqlExtendParser.PivotClauseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPivotColumn(ArcticSqlExtendParser.PivotColumnContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPivotColumn(MixedFormatSqlExtendParser.PivotColumnContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPivotValue(ArcticSqlExtendParser.PivotValueContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPivotValue(MixedFormatSqlExtendParser.PivotValueContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitLateralView(ArcticSqlExtendParser.LateralViewContext ctx) { return visitChildren(ctx); }
+	@Override public T visitLateralView(MixedFormatSqlExtendParser.LateralViewContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSetQuantifier(ArcticSqlExtendParser.SetQuantifierContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSetQuantifier(MixedFormatSqlExtendParser.SetQuantifierContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitRelation(ArcticSqlExtendParser.RelationContext ctx) { return visitChildren(ctx); }
+	@Override public T visitRelation(MixedFormatSqlExtendParser.RelationContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitJoinRelation(ArcticSqlExtendParser.JoinRelationContext ctx) { return visitChildren(ctx); }
+	@Override public T visitJoinRelation(MixedFormatSqlExtendParser.JoinRelationContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitJoinType(ArcticSqlExtendParser.JoinTypeContext ctx) { return visitChildren(ctx); }
+	@Override public T visitJoinType(MixedFormatSqlExtendParser.JoinTypeContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitJoinCriteria(ArcticSqlExtendParser.JoinCriteriaContext ctx) { return visitChildren(ctx); }
+	@Override public T visitJoinCriteria(MixedFormatSqlExtendParser.JoinCriteriaContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSample(ArcticSqlExtendParser.SampleContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSample(MixedFormatSqlExtendParser.SampleContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSampleByPercentile(ArcticSqlExtendParser.SampleByPercentileContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSampleByPercentile(MixedFormatSqlExtendParser.SampleByPercentileContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSampleByRows(ArcticSqlExtendParser.SampleByRowsContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSampleByRows(MixedFormatSqlExtendParser.SampleByRowsContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSampleByBucket(ArcticSqlExtendParser.SampleByBucketContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSampleByBucket(MixedFormatSqlExtendParser.SampleByBucketContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSampleByBytes(ArcticSqlExtendParser.SampleByBytesContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSampleByBytes(MixedFormatSqlExtendParser.SampleByBytesContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitIdentifierList(ArcticSqlExtendParser.IdentifierListContext ctx) { return visitChildren(ctx); }
+	@Override public T visitIdentifierList(MixedFormatSqlExtendParser.IdentifierListContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitIdentifierSeq(ArcticSqlExtendParser.IdentifierSeqContext ctx) { return visitChildren(ctx); }
+	@Override public T visitIdentifierSeq(MixedFormatSqlExtendParser.IdentifierSeqContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitOrderedIdentifierList(ArcticSqlExtendParser.OrderedIdentifierListContext ctx) { return visitChildren(ctx); }
+	@Override public T visitOrderedIdentifierList(MixedFormatSqlExtendParser.OrderedIdentifierListContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitOrderedIdentifier(ArcticSqlExtendParser.OrderedIdentifierContext ctx) { return visitChildren(ctx); }
+	@Override public T visitOrderedIdentifier(MixedFormatSqlExtendParser.OrderedIdentifierContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTableName(ArcticSqlExtendParser.TableNameContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTableName(MixedFormatSqlExtendParser.TableNameContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitAliasedQuery(ArcticSqlExtendParser.AliasedQueryContext ctx) { return visitChildren(ctx); }
+	@Override public T visitAliasedQuery(MixedFormatSqlExtendParser.AliasedQueryContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitAliasedRelation(ArcticSqlExtendParser.AliasedRelationContext ctx) { return visitChildren(ctx); }
+	@Override public T visitAliasedRelation(MixedFormatSqlExtendParser.AliasedRelationContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitInlineTableDefault2(ArcticSqlExtendParser.InlineTableDefault2Context ctx) { return visitChildren(ctx); }
+	@Override public T visitInlineTableDefault2(MixedFormatSqlExtendParser.InlineTableDefault2Context ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTableValuedFunction(ArcticSqlExtendParser.TableValuedFunctionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTableValuedFunction(MixedFormatSqlExtendParser.TableValuedFunctionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitInlineTable(ArcticSqlExtendParser.InlineTableContext ctx) { return visitChildren(ctx); }
+	@Override public T visitInlineTable(MixedFormatSqlExtendParser.InlineTableContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitFunctionTable(ArcticSqlExtendParser.FunctionTableContext ctx) { return visitChildren(ctx); }
+	@Override public T visitFunctionTable(MixedFormatSqlExtendParser.FunctionTableContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTableAlias(ArcticSqlExtendParser.TableAliasContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTableAlias(MixedFormatSqlExtendParser.TableAliasContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitRowFormatSerde(ArcticSqlExtendParser.RowFormatSerdeContext ctx) { return visitChildren(ctx); }
+	@Override public T visitRowFormatSerde(MixedFormatSqlExtendParser.RowFormatSerdeContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitRowFormatDelimited(ArcticSqlExtendParser.RowFormatDelimitedContext ctx) { return visitChildren(ctx); }
+	@Override public T visitRowFormatDelimited(MixedFormatSqlExtendParser.RowFormatDelimitedContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitMultipartIdentifier(ArcticSqlExtendParser.MultipartIdentifierContext ctx) { return visitChildren(ctx); }
+	@Override public T visitMultipartIdentifier(MixedFormatSqlExtendParser.MultipartIdentifierContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitNamedExpression(ArcticSqlExtendParser.NamedExpressionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitNamedExpression(MixedFormatSqlExtendParser.NamedExpressionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitNamedExpressionSeq(ArcticSqlExtendParser.NamedExpressionSeqContext ctx) { return visitChildren(ctx); }
+	@Override public T visitNamedExpressionSeq(MixedFormatSqlExtendParser.NamedExpressionSeqContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPartitionFieldList(ArcticSqlExtendParser.PartitionFieldListContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPartitionFieldList(MixedFormatSqlExtendParser.PartitionFieldListContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPartitionTransform(ArcticSqlExtendParser.PartitionTransformContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPartitionTransform(MixedFormatSqlExtendParser.PartitionTransformContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPartitionColumn(ArcticSqlExtendParser.PartitionColumnContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPartitionColumn(MixedFormatSqlExtendParser.PartitionColumnContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitIdentityTransform(ArcticSqlExtendParser.IdentityTransformContext ctx) { return visitChildren(ctx); }
+	@Override public T visitIdentityTransform(MixedFormatSqlExtendParser.IdentityTransformContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitApplyTransform(ArcticSqlExtendParser.ApplyTransformContext ctx) { return visitChildren(ctx); }
+	@Override public T visitApplyTransform(MixedFormatSqlExtendParser.ApplyTransformContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTransformArgument(ArcticSqlExtendParser.TransformArgumentContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTransformArgument(MixedFormatSqlExtendParser.TransformArgumentContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitExpression(ArcticSqlExtendParser.ExpressionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitExpression(MixedFormatSqlExtendParser.ExpressionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitExpressionSeq(ArcticSqlExtendParser.ExpressionSeqContext ctx) { return visitChildren(ctx); }
+	@Override public T visitExpressionSeq(MixedFormatSqlExtendParser.ExpressionSeqContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitLogicalNot(ArcticSqlExtendParser.LogicalNotContext ctx) { return visitChildren(ctx); }
+	@Override public T visitLogicalNot(MixedFormatSqlExtendParser.LogicalNotContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPredicated(ArcticSqlExtendParser.PredicatedContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPredicated(MixedFormatSqlExtendParser.PredicatedContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitExists(ArcticSqlExtendParser.ExistsContext ctx) { return visitChildren(ctx); }
+	@Override public T visitExists(MixedFormatSqlExtendParser.ExistsContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitLogicalBinary(ArcticSqlExtendParser.LogicalBinaryContext ctx) { return visitChildren(ctx); }
+	@Override public T visitLogicalBinary(MixedFormatSqlExtendParser.LogicalBinaryContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPredicate(ArcticSqlExtendParser.PredicateContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPredicate(MixedFormatSqlExtendParser.PredicateContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitValueExpressionDefault(ArcticSqlExtendParser.ValueExpressionDefaultContext ctx) { return visitChildren(ctx); }
+	@Override public T visitValueExpressionDefault(MixedFormatSqlExtendParser.ValueExpressionDefaultContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitComparison(ArcticSqlExtendParser.ComparisonContext ctx) { return visitChildren(ctx); }
+	@Override public T visitComparison(MixedFormatSqlExtendParser.ComparisonContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitArithmeticBinary(ArcticSqlExtendParser.ArithmeticBinaryContext ctx) { return visitChildren(ctx); }
+	@Override public T visitArithmeticBinary(MixedFormatSqlExtendParser.ArithmeticBinaryContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitArithmeticUnary(ArcticSqlExtendParser.ArithmeticUnaryContext ctx) { return visitChildren(ctx); }
+	@Override public T visitArithmeticUnary(MixedFormatSqlExtendParser.ArithmeticUnaryContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitDatetimeUnit(ArcticSqlExtendParser.DatetimeUnitContext ctx) { return visitChildren(ctx); }
+	@Override public T visitDatetimeUnit(MixedFormatSqlExtendParser.DatetimeUnitContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitStruct(ArcticSqlExtendParser.StructContext ctx) { return visitChildren(ctx); }
+	@Override public T visitStruct(MixedFormatSqlExtendParser.StructContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitDereference(ArcticSqlExtendParser.DereferenceContext ctx) { return visitChildren(ctx); }
+	@Override public T visitDereference(MixedFormatSqlExtendParser.DereferenceContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTimestampadd(ArcticSqlExtendParser.TimestampaddContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTimestampadd(MixedFormatSqlExtendParser.TimestampaddContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSubstring(ArcticSqlExtendParser.SubstringContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSubstring(MixedFormatSqlExtendParser.SubstringContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitCast(ArcticSqlExtendParser.CastContext ctx) { return visitChildren(ctx); }
+	@Override public T visitCast(MixedFormatSqlExtendParser.CastContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitLambda(ArcticSqlExtendParser.LambdaContext ctx) { return visitChildren(ctx); }
+	@Override public T visitLambda(MixedFormatSqlExtendParser.LambdaContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitParenthesizedExpression(ArcticSqlExtendParser.ParenthesizedExpressionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitParenthesizedExpression(MixedFormatSqlExtendParser.ParenthesizedExpressionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTrim(ArcticSqlExtendParser.TrimContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTrim(MixedFormatSqlExtendParser.TrimContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSimpleCase(ArcticSqlExtendParser.SimpleCaseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSimpleCase(MixedFormatSqlExtendParser.SimpleCaseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitCurrentLike(ArcticSqlExtendParser.CurrentLikeContext ctx) { return visitChildren(ctx); }
+	@Override public T visitCurrentLike(MixedFormatSqlExtendParser.CurrentLikeContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitColumnReference(ArcticSqlExtendParser.ColumnReferenceContext ctx) { return visitChildren(ctx); }
+	@Override public T visitColumnReference(MixedFormatSqlExtendParser.ColumnReferenceContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitRowConstructor(ArcticSqlExtendParser.RowConstructorContext ctx) { return visitChildren(ctx); }
+	@Override public T visitRowConstructor(MixedFormatSqlExtendParser.RowConstructorContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitLast(ArcticSqlExtendParser.LastContext ctx) { return visitChildren(ctx); }
+	@Override public T visitLast(MixedFormatSqlExtendParser.LastContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitStar(ArcticSqlExtendParser.StarContext ctx) { return visitChildren(ctx); }
+	@Override public T visitStar(MixedFormatSqlExtendParser.StarContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitOverlay(ArcticSqlExtendParser.OverlayContext ctx) { return visitChildren(ctx); }
+	@Override public T visitOverlay(MixedFormatSqlExtendParser.OverlayContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSubscript(ArcticSqlExtendParser.SubscriptContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSubscript(MixedFormatSqlExtendParser.SubscriptContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTimestampdiff(ArcticSqlExtendParser.TimestampdiffContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTimestampdiff(MixedFormatSqlExtendParser.TimestampdiffContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSubqueryExpression(ArcticSqlExtendParser.SubqueryExpressionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSubqueryExpression(MixedFormatSqlExtendParser.SubqueryExpressionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitConstantDefault(ArcticSqlExtendParser.ConstantDefaultContext ctx) { return visitChildren(ctx); }
+	@Override public T visitConstantDefault(MixedFormatSqlExtendParser.ConstantDefaultContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitExtract(ArcticSqlExtendParser.ExtractContext ctx) { return visitChildren(ctx); }
+	@Override public T visitExtract(MixedFormatSqlExtendParser.ExtractContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPercentile(ArcticSqlExtendParser.PercentileContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPercentile(MixedFormatSqlExtendParser.PercentileContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitFunctionCall(ArcticSqlExtendParser.FunctionCallContext ctx) { return visitChildren(ctx); }
+	@Override public T visitFunctionCall(MixedFormatSqlExtendParser.FunctionCallContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSearchedCase(ArcticSqlExtendParser.SearchedCaseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSearchedCase(MixedFormatSqlExtendParser.SearchedCaseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPosition(ArcticSqlExtendParser.PositionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPosition(MixedFormatSqlExtendParser.PositionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitFirst(ArcticSqlExtendParser.FirstContext ctx) { return visitChildren(ctx); }
+	@Override public T visitFirst(MixedFormatSqlExtendParser.FirstContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitNullLiteral(ArcticSqlExtendParser.NullLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitNullLiteral(MixedFormatSqlExtendParser.NullLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitIntervalLiteral(ArcticSqlExtendParser.IntervalLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitIntervalLiteral(MixedFormatSqlExtendParser.IntervalLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTypeConstructor(ArcticSqlExtendParser.TypeConstructorContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTypeConstructor(MixedFormatSqlExtendParser.TypeConstructorContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitNumericLiteral(ArcticSqlExtendParser.NumericLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitNumericLiteral(MixedFormatSqlExtendParser.NumericLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitBooleanLiteral(ArcticSqlExtendParser.BooleanLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitBooleanLiteral(MixedFormatSqlExtendParser.BooleanLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitStringLiteral(ArcticSqlExtendParser.StringLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitStringLiteral(MixedFormatSqlExtendParser.StringLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitComparisonOperator(ArcticSqlExtendParser.ComparisonOperatorContext ctx) { return visitChildren(ctx); }
+	@Override public T visitComparisonOperator(MixedFormatSqlExtendParser.ComparisonOperatorContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitBooleanValue(ArcticSqlExtendParser.BooleanValueContext ctx) { return visitChildren(ctx); }
+	@Override public T visitBooleanValue(MixedFormatSqlExtendParser.BooleanValueContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitInterval(ArcticSqlExtendParser.IntervalContext ctx) { return visitChildren(ctx); }
+	@Override public T visitInterval(MixedFormatSqlExtendParser.IntervalContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitErrorCapturingMultiUnitsInterval(ArcticSqlExtendParser.ErrorCapturingMultiUnitsIntervalContext ctx) { return visitChildren(ctx); }
+	@Override public T visitErrorCapturingMultiUnitsInterval(MixedFormatSqlExtendParser.ErrorCapturingMultiUnitsIntervalContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitMultiUnitsInterval(ArcticSqlExtendParser.MultiUnitsIntervalContext ctx) { return visitChildren(ctx); }
+	@Override public T visitMultiUnitsInterval(MixedFormatSqlExtendParser.MultiUnitsIntervalContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitErrorCapturingUnitToUnitInterval(ArcticSqlExtendParser.ErrorCapturingUnitToUnitIntervalContext ctx) { return visitChildren(ctx); }
+	@Override public T visitErrorCapturingUnitToUnitInterval(MixedFormatSqlExtendParser.ErrorCapturingUnitToUnitIntervalContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitUnitToUnitInterval(ArcticSqlExtendParser.UnitToUnitIntervalContext ctx) { return visitChildren(ctx); }
+	@Override public T visitUnitToUnitInterval(MixedFormatSqlExtendParser.UnitToUnitIntervalContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitIntervalValue(ArcticSqlExtendParser.IntervalValueContext ctx) { return visitChildren(ctx); }
+	@Override public T visitIntervalValue(MixedFormatSqlExtendParser.IntervalValueContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitComplexDataType(ArcticSqlExtendParser.ComplexDataTypeContext ctx) { return visitChildren(ctx); }
+	@Override public T visitComplexDataType(MixedFormatSqlExtendParser.ComplexDataTypeContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitYearMonthIntervalDataType(ArcticSqlExtendParser.YearMonthIntervalDataTypeContext ctx) { return visitChildren(ctx); }
+	@Override public T visitYearMonthIntervalDataType(MixedFormatSqlExtendParser.YearMonthIntervalDataTypeContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitDayTimeIntervalDataType(ArcticSqlExtendParser.DayTimeIntervalDataTypeContext ctx) { return visitChildren(ctx); }
+	@Override public T visitDayTimeIntervalDataType(MixedFormatSqlExtendParser.DayTimeIntervalDataTypeContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPrimitiveDataType(ArcticSqlExtendParser.PrimitiveDataTypeContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPrimitiveDataType(MixedFormatSqlExtendParser.PrimitiveDataTypeContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitColTypeList(ArcticSqlExtendParser.ColTypeListContext ctx) { return visitChildren(ctx); }
+	@Override public T visitColTypeList(MixedFormatSqlExtendParser.ColTypeListContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitColType(ArcticSqlExtendParser.ColTypeContext ctx) { return visitChildren(ctx); }
+	@Override public T visitColType(MixedFormatSqlExtendParser.ColTypeContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitComplexColTypeList(ArcticSqlExtendParser.ComplexColTypeListContext ctx) { return visitChildren(ctx); }
+	@Override public T visitComplexColTypeList(MixedFormatSqlExtendParser.ComplexColTypeListContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitComplexColType(ArcticSqlExtendParser.ComplexColTypeContext ctx) { return visitChildren(ctx); }
+	@Override public T visitComplexColType(MixedFormatSqlExtendParser.ComplexColTypeContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitWhenClause(ArcticSqlExtendParser.WhenClauseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitWhenClause(MixedFormatSqlExtendParser.WhenClauseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitWindowClause(ArcticSqlExtendParser.WindowClauseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitWindowClause(MixedFormatSqlExtendParser.WindowClauseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitNamedWindow(ArcticSqlExtendParser.NamedWindowContext ctx) { return visitChildren(ctx); }
+	@Override public T visitNamedWindow(MixedFormatSqlExtendParser.NamedWindowContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitWindowRef(ArcticSqlExtendParser.WindowRefContext ctx) { return visitChildren(ctx); }
+	@Override public T visitWindowRef(MixedFormatSqlExtendParser.WindowRefContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitWindowDef(ArcticSqlExtendParser.WindowDefContext ctx) { return visitChildren(ctx); }
+	@Override public T visitWindowDef(MixedFormatSqlExtendParser.WindowDefContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitWindowFrame(ArcticSqlExtendParser.WindowFrameContext ctx) { return visitChildren(ctx); }
+	@Override public T visitWindowFrame(MixedFormatSqlExtendParser.WindowFrameContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitFrameBound(ArcticSqlExtendParser.FrameBoundContext ctx) { return visitChildren(ctx); }
+	@Override public T visitFrameBound(MixedFormatSqlExtendParser.FrameBoundContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitFunctionName(ArcticSqlExtendParser.FunctionNameContext ctx) { return visitChildren(ctx); }
+	@Override public T visitFunctionName(MixedFormatSqlExtendParser.FunctionNameContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitQualifiedName(ArcticSqlExtendParser.QualifiedNameContext ctx) { return visitChildren(ctx); }
+	@Override public T visitQualifiedName(MixedFormatSqlExtendParser.QualifiedNameContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitErrorCapturingIdentifier(ArcticSqlExtendParser.ErrorCapturingIdentifierContext ctx) { return visitChildren(ctx); }
+	@Override public T visitErrorCapturingIdentifier(MixedFormatSqlExtendParser.ErrorCapturingIdentifierContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitErrorIdent(ArcticSqlExtendParser.ErrorIdentContext ctx) { return visitChildren(ctx); }
+	@Override public T visitErrorIdent(MixedFormatSqlExtendParser.ErrorIdentContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitRealIdent(ArcticSqlExtendParser.RealIdentContext ctx) { return visitChildren(ctx); }
+	@Override public T visitRealIdent(MixedFormatSqlExtendParser.RealIdentContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitIdentifier(ArcticSqlExtendParser.IdentifierContext ctx) { return visitChildren(ctx); }
+	@Override public T visitIdentifier(MixedFormatSqlExtendParser.IdentifierContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitUnquotedIdentifier(ArcticSqlExtendParser.UnquotedIdentifierContext ctx) { return visitChildren(ctx); }
+	@Override public T visitUnquotedIdentifier(MixedFormatSqlExtendParser.UnquotedIdentifierContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitQuotedIdentifierAlternative(ArcticSqlExtendParser.QuotedIdentifierAlternativeContext ctx) { return visitChildren(ctx); }
+	@Override public T visitQuotedIdentifierAlternative(MixedFormatSqlExtendParser.QuotedIdentifierAlternativeContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitQuotedIdentifier(ArcticSqlExtendParser.QuotedIdentifierContext ctx) { return visitChildren(ctx); }
+	@Override public T visitQuotedIdentifier(MixedFormatSqlExtendParser.QuotedIdentifierContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitExponentLiteral(ArcticSqlExtendParser.ExponentLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitExponentLiteral(MixedFormatSqlExtendParser.ExponentLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitDecimalLiteral(ArcticSqlExtendParser.DecimalLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitDecimalLiteral(MixedFormatSqlExtendParser.DecimalLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitLegacyDecimalLiteral(ArcticSqlExtendParser.LegacyDecimalLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitLegacyDecimalLiteral(MixedFormatSqlExtendParser.LegacyDecimalLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitIntegerLiteral(ArcticSqlExtendParser.IntegerLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitIntegerLiteral(MixedFormatSqlExtendParser.IntegerLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitBigIntLiteral(ArcticSqlExtendParser.BigIntLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitBigIntLiteral(MixedFormatSqlExtendParser.BigIntLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSmallIntLiteral(ArcticSqlExtendParser.SmallIntLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSmallIntLiteral(MixedFormatSqlExtendParser.SmallIntLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTinyIntLiteral(ArcticSqlExtendParser.TinyIntLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTinyIntLiteral(MixedFormatSqlExtendParser.TinyIntLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitDoubleLiteral(ArcticSqlExtendParser.DoubleLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitDoubleLiteral(MixedFormatSqlExtendParser.DoubleLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitFloatLiteral(ArcticSqlExtendParser.FloatLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitFloatLiteral(MixedFormatSqlExtendParser.FloatLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitBigDecimalLiteral(ArcticSqlExtendParser.BigDecimalLiteralContext ctx) { return visitChildren(ctx); }
+	@Override public T visitBigDecimalLiteral(MixedFormatSqlExtendParser.BigDecimalLiteralContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitAnsiNonReserved(ArcticSqlExtendParser.AnsiNonReservedContext ctx) { return visitChildren(ctx); }
+	@Override public T visitAnsiNonReserved(MixedFormatSqlExtendParser.AnsiNonReservedContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitStrictNonReserved(ArcticSqlExtendParser.StrictNonReservedContext ctx) { return visitChildren(ctx); }
+	@Override public T visitStrictNonReserved(MixedFormatSqlExtendParser.StrictNonReservedContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitNonReserved(ArcticSqlExtendParser.NonReservedContext ctx) { return visitChildren(ctx); }
+	@Override public T visitNonReserved(MixedFormatSqlExtendParser.NonReservedContext ctx) { return visitChildren(ctx); }
 }

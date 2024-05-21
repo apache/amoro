@@ -33,7 +33,7 @@ import org.apache.amoro.spark.util.ArcticSparkUtils
 import org.apache.iceberg.spark.Spark3Util
 import org.apache.iceberg.spark.source.SparkTable
 import org.apache.spark.sql.{AnalysisException, SparkSession}
-import org.apache.spark.sql.amoro.parser.ArcticSqlExtendAstBuilder
+import org.apache.spark.sql.amoro.parser.MixedFormatSqlExtendAstBuilder
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.expressions.Expression
@@ -46,7 +46,7 @@ import org.apache.spark.sql.types.{DataType, StructType}
 class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterface
   with SQLConfHelper {
 
-  private lazy val createTableAstBuilder = new ArcticSqlExtendAstBuilder()
+  private lazy val createTableAstBuilder = new MixedFormatSqlExtendAstBuilder()
 
   /**
    * Parse a string to a DataType.
@@ -103,7 +103,7 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
   private def buildLexer(sql: String): Option[Lexer] = {
     lazy val charStream = new UpperCaseCharStream(CharStreams.fromString(sql))
     if (isArcticExtendSql(sql)) {
-      Some(new ArcticSqlExtendLexer(charStream))
+      Some(new MixedFormatSqlExtendLexer(charStream))
     } else {
       Option.empty
     }
@@ -111,8 +111,8 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
 
   private def buildAntlrParser(stream: TokenStream, lexer: Lexer): Parser = {
     lexer match {
-      case _: ArcticSqlExtendLexer =>
-        val parser = new ArcticSqlExtendParser(stream)
+      case _: MixedFormatSqlExtendLexer =>
+        val parser = new MixedFormatSqlExtendParser(stream)
         parser.legacy_exponent_literal_as_decimal_enabled = conf.exponentLiteralAsDecimalEnabled
         parser.SQL_standard_keyword_behavior = conf.ansiEnabled
         parser
@@ -122,7 +122,7 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
   }
 
   private def toLogicalResult(parser: Parser): LogicalPlan = parser match {
-    case p: ArcticSqlExtendParser =>
+    case p: MixedFormatSqlExtendParser =>
       createTableAstBuilder.visitExtendStatement(p.extendStatement())
   }
 

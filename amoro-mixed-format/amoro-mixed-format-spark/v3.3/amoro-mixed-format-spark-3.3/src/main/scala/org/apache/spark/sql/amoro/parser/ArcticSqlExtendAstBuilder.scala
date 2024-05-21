@@ -26,8 +26,8 @@ import scala.collection.mutable.{ArrayBuffer, Set}
 
 import org.antlr.v4.runtime.{ParserRuleContext, Token}
 import org.antlr.v4.runtime.tree.{ParseTree, RuleNode, TerminalNode}
-import org.apache.amoro.spark.sql.parser.{ArcticSqlExtendBaseVisitor, ArcticSqlExtendParser}
-import org.apache.amoro.spark.sql.parser.ArcticSqlExtendParser._
+import org.apache.amoro.spark.sql.parser.{MixedFormatSqlExtendBaseVisitor, MixedFormatSqlExtendParser}
+import org.apache.amoro.spark.sql.parser.MixedFormatSqlExtendParser._
 import org.apache.commons.codec.DecoderException
 import org.apache.commons.codec.binary.Hex
 import org.apache.spark.internal.Logging
@@ -50,8 +50,8 @@ import org.apache.spark.unsafe.types.{CalendarInterval, UTF8String}
 import org.apache.spark.util.Utils.isTesting
 import org.apache.spark.util.random.RandomSampler
 
-class ArcticSqlExtendAstBuilder()
-  extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHelper with Logging {
+class MixedFormatSqlExtendAstBuilder()
+  extends MixedFormatSqlExtendBaseVisitor[AnyRef] with SQLConfHelper with Logging {
   import org.apache.spark.sql.catalyst.parser.ParserUtils._
 
   def setPrimaryKeyNotNull(columns: Seq[StructField], primary: Seq[String]): Seq[StructField] = {
@@ -69,7 +69,7 @@ class ArcticSqlExtendAstBuilder()
 
   type colListAndPk = (Seq[StructField], Seq[String])
 
-  private def visitColListAndPk(ctx: ArcticSqlExtendParser.ColListAndPkContext): colListAndPk = {
+  private def visitColListAndPk(ctx: MixedFormatSqlExtendParser.ColListAndPkContext): colListAndPk = {
     ctx match {
       case colWithPk: ColListWithPkContext =>
         (visitColTypeList(colWithPk.colTypeList()), visitPrimarySpec(colWithPk.primarySpec()))
@@ -80,13 +80,13 @@ class ArcticSqlExtendAstBuilder()
     }
   }
 
-  override def visitExtendStatement(ctx: ArcticSqlExtendParser.ExtendStatementContext)
+  override def visitExtendStatement(ctx: MixedFormatSqlExtendParser.ExtendStatementContext)
       : LogicalPlan = withOrigin(ctx) {
     visit(ctx.statement()).asInstanceOf[LogicalPlan]
   }
 
   override def visitCreateTableWithPk(
-      ctx: ArcticSqlExtendParser.CreateTableWithPkContext): LogicalPlan = withOrigin(ctx) {
+      ctx: MixedFormatSqlExtendParser.CreateTableWithPkContext): LogicalPlan = withOrigin(ctx) {
     val (table, temp, ifNotExists, external) = visitCreateTableHeader(ctx.createTableHeader)
 
     val colListAndPk = visitColListAndPk(ctx.colListAndPk())
@@ -195,12 +195,12 @@ class ArcticSqlExtendAstBuilder()
   /**
    * Create a comment string.
    */
-  override def visitPrimarySpec(ctx: ArcticSqlExtendParser.PrimarySpecContext): Seq[String] =
+  override def visitPrimarySpec(ctx: MixedFormatSqlExtendParser.PrimarySpecContext): Seq[String] =
     withOrigin(ctx) {
       visitIdentifierList(ctx.identifierList())
     }
 
-  override def visitCreateTableClauses(ctx: ArcticSqlExtendParser.CreateTableClausesContext)
+  override def visitCreateTableClauses(ctx: MixedFormatSqlExtendParser.CreateTableClausesContext)
       : TableClauses = {
     checkDuplicateClauses(ctx.TBLPROPERTIES, "TBLPROPERTIES", ctx)
     checkDuplicateClauses(ctx.OPTIONS, "OPTIONS", ctx)
@@ -757,21 +757,21 @@ class ArcticSqlExtendAstBuilder()
     val right = plan(ctx.right)
     val all = Option(ctx.setQuantifier()).exists(_.ALL != null)
     ctx.operator.getType match {
-      case ArcticSqlExtendParser.UNION if all =>
+      case MixedFormatSqlExtendParser.UNION if all =>
         Union(left, right)
-      case ArcticSqlExtendParser.UNION =>
+      case MixedFormatSqlExtendParser.UNION =>
         Distinct(Union(left, right))
-      case ArcticSqlExtendParser.INTERSECT if all =>
+      case MixedFormatSqlExtendParser.INTERSECT if all =>
         Intersect(left, right, isAll = true)
-      case ArcticSqlExtendParser.INTERSECT =>
+      case MixedFormatSqlExtendParser.INTERSECT =>
         Intersect(left, right, isAll = false)
-      case ArcticSqlExtendParser.EXCEPT if all =>
+      case MixedFormatSqlExtendParser.EXCEPT if all =>
         Except(left, right, isAll = true)
-      case ArcticSqlExtendParser.EXCEPT =>
+      case MixedFormatSqlExtendParser.EXCEPT =>
         Except(left, right, isAll = false)
-      case ArcticSqlExtendParser.SETMINUS if all =>
+      case MixedFormatSqlExtendParser.SETMINUS if all =>
         Except(left, right, isAll = true)
-      case ArcticSqlExtendParser.SETMINUS =>
+      case MixedFormatSqlExtendParser.SETMINUS =>
         Except(left, right, isAll = false)
     }
   }
@@ -1297,8 +1297,8 @@ class ArcticSqlExtendAstBuilder()
   override def visitLogicalBinary(ctx: LogicalBinaryContext): Expression = withOrigin(ctx) {
     val expressionType = ctx.operator.getType
     val expressionCombiner = expressionType match {
-      case ArcticSqlExtendParser.AND => And.apply _
-      case ArcticSqlExtendParser.OR => Or.apply _
+      case MixedFormatSqlExtendParser.AND => And.apply _
+      case MixedFormatSqlExtendParser.OR => Or.apply _
     }
 
     // Collect all similar left hand contexts.
@@ -1369,19 +1369,19 @@ class ArcticSqlExtendAstBuilder()
     val right = expression(ctx.right)
     val operator = ctx.comparisonOperator().getChild(0).asInstanceOf[TerminalNode]
     operator.getSymbol.getType match {
-      case ArcticSqlExtendParser.EQ =>
+      case MixedFormatSqlExtendParser.EQ =>
         EqualTo(left, right)
-      case ArcticSqlExtendParser.NSEQ =>
+      case MixedFormatSqlExtendParser.NSEQ =>
         EqualNullSafe(left, right)
-      case ArcticSqlExtendParser.NEQ | ArcticSqlExtendParser.NEQJ =>
+      case MixedFormatSqlExtendParser.NEQ | MixedFormatSqlExtendParser.NEQJ =>
         Not(EqualTo(left, right))
-      case ArcticSqlExtendParser.LT =>
+      case MixedFormatSqlExtendParser.LT =>
         LessThan(left, right)
-      case ArcticSqlExtendParser.LTE =>
+      case MixedFormatSqlExtendParser.LTE =>
         LessThanOrEqual(left, right)
-      case ArcticSqlExtendParser.GT =>
+      case MixedFormatSqlExtendParser.GT =>
         GreaterThan(left, right)
-      case ArcticSqlExtendParser.GTE =>
+      case MixedFormatSqlExtendParser.GTE =>
         GreaterThanOrEqual(left, right)
     }
   }
@@ -1428,30 +1428,30 @@ class ArcticSqlExtendAstBuilder()
         expr: Expression,
         patterns: Seq[UTF8String]): (Expression, Seq[UTF8String]) = ctx.kind.getType match {
       // scalastyle:off caselocale
-      case ArcticSqlExtendParser.ILIKE => (Lower(expr), patterns.map(_.toLowerCase))
+      case MixedFormatSqlExtendParser.ILIKE => (Lower(expr), patterns.map(_.toLowerCase))
       // scalastyle:on caselocale
       case _ => (expr, patterns)
     }
 
     def getLike(expr: Expression, pattern: Expression): Expression = ctx.kind.getType match {
-      case ArcticSqlExtendParser.ILIKE => new ILike(expr, pattern)
+      case MixedFormatSqlExtendParser.ILIKE => new ILike(expr, pattern)
       case _ => new Like(expr, pattern)
     }
 
     // Create the predicate.
     ctx.kind.getType match {
-      case ArcticSqlExtendParser.BETWEEN =>
+      case MixedFormatSqlExtendParser.BETWEEN =>
         // BETWEEN is translated to lower <= e && e <= upper
         invertIfNotDefined(And(
           GreaterThanOrEqual(e, expression(ctx.lower)),
           LessThanOrEqual(e, expression(ctx.upper))))
-      case ArcticSqlExtendParser.IN if ctx.query != null =>
+      case MixedFormatSqlExtendParser.IN if ctx.query != null =>
         invertIfNotDefined(InSubquery(getValueExpressions(e), ListQuery(plan(ctx.query))))
-      case ArcticSqlExtendParser.IN =>
+      case MixedFormatSqlExtendParser.IN =>
         invertIfNotDefined(In(e, ctx.expression.asScala.map(expression).toSeq))
-      case ArcticSqlExtendParser.LIKE | ArcticSqlExtendParser.ILIKE =>
+      case MixedFormatSqlExtendParser.LIKE | MixedFormatSqlExtendParser.ILIKE =>
         Option(ctx.quantifier).map(_.getType) match {
-          case Some(ArcticSqlExtendParser.ANY) | Some(ArcticSqlExtendParser.SOME) =>
+          case Some(MixedFormatSqlExtendParser.ANY) | Some(MixedFormatSqlExtendParser.SOME) =>
             validate(!ctx.expression.isEmpty, "Expected something between '(' and ')'.", ctx)
             val expressions = expressionList(ctx.expression)
             if (expressions.forall(_.foldable) && expressions.forall(_.dataType == StringType)) {
@@ -1467,7 +1467,7 @@ class ArcticSqlExtendAstBuilder()
               ctx.expression.asScala.map(expression)
                 .map(p => invertIfNotDefined(getLike(e, p))).toSeq.reduceLeft(Or)
             }
-          case Some(ArcticSqlExtendParser.ALL) =>
+          case Some(MixedFormatSqlExtendParser.ALL) =>
             validate(!ctx.expression.isEmpty, "Expected something between '(' and ')'.", ctx)
             val expressions = expressionList(ctx.expression)
             if (expressions.forall(_.foldable) && expressions.forall(_.dataType == StringType)) {
@@ -1491,32 +1491,32 @@ class ArcticSqlExtendAstBuilder()
               str.charAt(0)
             }.getOrElse('\\')
             val likeExpr = ctx.kind.getType match {
-              case ArcticSqlExtendParser.ILIKE => ILike(e, expression(ctx.pattern), escapeChar)
+              case MixedFormatSqlExtendParser.ILIKE => ILike(e, expression(ctx.pattern), escapeChar)
               case _ => Like(e, expression(ctx.pattern), escapeChar)
             }
             invertIfNotDefined(likeExpr)
         }
-      case ArcticSqlExtendParser.RLIKE =>
+      case MixedFormatSqlExtendParser.RLIKE =>
         invertIfNotDefined(RLike(e, expression(ctx.pattern)))
-      case ArcticSqlExtendParser.NULL if ctx.NOT != null =>
+      case MixedFormatSqlExtendParser.NULL if ctx.NOT != null =>
         IsNotNull(e)
-      case ArcticSqlExtendParser.NULL =>
+      case MixedFormatSqlExtendParser.NULL =>
         IsNull(e)
-      case ArcticSqlExtendParser.TRUE => ctx.NOT match {
+      case MixedFormatSqlExtendParser.TRUE => ctx.NOT match {
           case null => EqualNullSafe(e, Literal(true))
           case _ => Not(EqualNullSafe(e, Literal(true)))
         }
-      case ArcticSqlExtendParser.FALSE => ctx.NOT match {
+      case MixedFormatSqlExtendParser.FALSE => ctx.NOT match {
           case null => EqualNullSafe(e, Literal(false))
           case _ => Not(EqualNullSafe(e, Literal(false)))
         }
-      case ArcticSqlExtendParser.UNKNOWN => ctx.NOT match {
+      case MixedFormatSqlExtendParser.UNKNOWN => ctx.NOT match {
           case null => IsUnknown(e)
           case _ => IsNotUnknown(e)
         }
-      case ArcticSqlExtendParser.DISTINCT if ctx.NOT != null =>
+      case MixedFormatSqlExtendParser.DISTINCT if ctx.NOT != null =>
         EqualNullSafe(e, expression(ctx.right))
-      case ArcticSqlExtendParser.DISTINCT =>
+      case MixedFormatSqlExtendParser.DISTINCT =>
         Not(EqualNullSafe(e, expression(ctx.right)))
     }
   }
@@ -1537,25 +1537,25 @@ class ArcticSqlExtendAstBuilder()
     val left = expression(ctx.left)
     val right = expression(ctx.right)
     ctx.operator.getType match {
-      case ArcticSqlExtendParser.ASTERISK =>
+      case MixedFormatSqlExtendParser.ASTERISK =>
         Multiply(left, right)
-      case ArcticSqlExtendParser.SLASH =>
+      case MixedFormatSqlExtendParser.SLASH =>
         Divide(left, right)
-      case ArcticSqlExtendParser.PERCENT =>
+      case MixedFormatSqlExtendParser.PERCENT =>
         Remainder(left, right)
-      case ArcticSqlExtendParser.DIV =>
+      case MixedFormatSqlExtendParser.DIV =>
         IntegralDivide(left, right)
-      case ArcticSqlExtendParser.PLUS =>
+      case MixedFormatSqlExtendParser.PLUS =>
         Add(left, right)
-      case ArcticSqlExtendParser.MINUS =>
+      case MixedFormatSqlExtendParser.MINUS =>
         Subtract(left, right)
-      case ArcticSqlExtendParser.CONCAT_PIPE =>
+      case MixedFormatSqlExtendParser.CONCAT_PIPE =>
         Concat(left :: right :: Nil)
-      case ArcticSqlExtendParser.AMPERSAND =>
+      case MixedFormatSqlExtendParser.AMPERSAND =>
         BitwiseAnd(left, right)
-      case ArcticSqlExtendParser.HAT =>
+      case MixedFormatSqlExtendParser.HAT =>
         BitwiseXor(left, right)
-      case ArcticSqlExtendParser.PIPE =>
+      case MixedFormatSqlExtendParser.PIPE =>
         BitwiseOr(left, right)
     }
   }
@@ -1569,11 +1569,11 @@ class ArcticSqlExtendAstBuilder()
   override def visitArithmeticUnary(ctx: ArithmeticUnaryContext): Expression = withOrigin(ctx) {
     val value = expression(ctx.valueExpression)
     ctx.operator.getType match {
-      case ArcticSqlExtendParser.PLUS =>
+      case MixedFormatSqlExtendParser.PLUS =>
         UnaryPositive(value)
-      case ArcticSqlExtendParser.MINUS =>
+      case MixedFormatSqlExtendParser.MINUS =>
         UnaryMinus(value)
-      case ArcticSqlExtendParser.TILDE =>
+      case MixedFormatSqlExtendParser.TILDE =>
         BitwiseNot(value)
     }
   }
@@ -1581,11 +1581,11 @@ class ArcticSqlExtendAstBuilder()
   override def visitCurrentLike(ctx: CurrentLikeContext): Expression = withOrigin(ctx) {
     if (conf.enforceReservedKeywords) {
       ctx.name.getType match {
-        case ArcticSqlExtendParser.CURRENT_DATE =>
+        case MixedFormatSqlExtendParser.CURRENT_DATE =>
           CurrentDate()
-        case ArcticSqlExtendParser.CURRENT_TIMESTAMP =>
+        case MixedFormatSqlExtendParser.CURRENT_TIMESTAMP =>
           CurrentTimestamp()
-        case ArcticSqlExtendParser.CURRENT_USER =>
+        case MixedFormatSqlExtendParser.CURRENT_USER =>
           CurrentUser()
       }
     } else {
@@ -1602,10 +1602,10 @@ class ArcticSqlExtendAstBuilder()
     val rawDataType = typedVisit[DataType](ctx.dataType())
     val dataType = CharVarcharUtils.replaceCharVarcharWithStringForCast(rawDataType)
     val cast = ctx.name.getType match {
-      case ArcticSqlExtendParser.CAST =>
+      case MixedFormatSqlExtendParser.CAST =>
         Cast(expression(ctx.expression), dataType)
 
-      case ArcticSqlExtendParser.TRY_CAST =>
+      case MixedFormatSqlExtendParser.TRY_CAST =>
         TryCast(expression(ctx.expression), dataType)
     }
     cast.setTagValue(Cast.USER_SPECIFIED_CAST, true)
@@ -1657,12 +1657,12 @@ class ArcticSqlExtendAstBuilder()
     val percentage = expression(ctx.percentage)
     val sortOrder = visitSortItem(ctx.sortItem)
     val percentile = ctx.name.getType match {
-      case ArcticSqlExtendParser.PERCENTILE_CONT =>
+      case MixedFormatSqlExtendParser.PERCENTILE_CONT =>
         sortOrder.direction match {
           case Ascending => PercentileCont(sortOrder.child, percentage)
           case Descending => PercentileCont(sortOrder.child, percentage, true)
         }
-      case ArcticSqlExtendParser.PERCENTILE_DISC =>
+      case MixedFormatSqlExtendParser.PERCENTILE_DISC =>
         sortOrder.direction match {
           case Ascending => PercentileDisc(sortOrder.child, percentage)
           case Descending => PercentileDisc(sortOrder.child, percentage, true)
@@ -1695,12 +1695,12 @@ class ArcticSqlExtendAstBuilder()
   override def visitTrim(ctx: TrimContext): Expression = withOrigin(ctx) {
     val srcStr = expression(ctx.srcStr)
     val trimStr = Option(ctx.trimStr).map(expression)
-    Option(ctx.trimOption).map(_.getType).getOrElse(ArcticSqlExtendParser.BOTH) match {
-      case ArcticSqlExtendParser.BOTH =>
+    Option(ctx.trimOption).map(_.getType).getOrElse(MixedFormatSqlExtendParser.BOTH) match {
+      case MixedFormatSqlExtendParser.BOTH =>
         StringTrim(srcStr, trimStr)
-      case ArcticSqlExtendParser.LEADING =>
+      case MixedFormatSqlExtendParser.LEADING =>
         StringTrimLeft(srcStr, trimStr)
-      case ArcticSqlExtendParser.TRAILING =>
+      case MixedFormatSqlExtendParser.TRAILING =>
         StringTrimRight(srcStr, trimStr)
       case other =>
         throw QueryParsingErrors.trimOptionUnsupportedError(other, ctx)
@@ -1739,7 +1739,7 @@ class ArcticSqlExtendAstBuilder()
     }
     val filter = Option(ctx.where).map(expression(_))
     val ignoreNulls =
-      Option(ctx.nullsOption).map(_.getType == ArcticSqlExtendParser.IGNORE).getOrElse(false)
+      Option(ctx.nullsOption).map(_.getType == MixedFormatSqlExtendParser.IGNORE).getOrElse(false)
     val function = UnresolvedFunction(
       getFunctionMultiparts(ctx.functionName),
       arguments,
@@ -1815,8 +1815,8 @@ class ArcticSqlExtendAstBuilder()
     // RANGE/ROWS BETWEEN ...
     val frameSpecOption = Option(ctx.windowFrame).map { frame =>
       val frameType = frame.frameType.getType match {
-        case ArcticSqlExtendParser.RANGE => RangeFrame
-        case ArcticSqlExtendParser.ROWS => RowFrame
+        case MixedFormatSqlExtendParser.RANGE => RangeFrame
+        case MixedFormatSqlExtendParser.ROWS => RowFrame
       }
 
       SpecifiedWindowFrame(
@@ -1842,15 +1842,15 @@ class ArcticSqlExtendAstBuilder()
     }
 
     ctx.boundType.getType match {
-      case ArcticSqlExtendParser.PRECEDING if ctx.UNBOUNDED != null =>
+      case MixedFormatSqlExtendParser.PRECEDING if ctx.UNBOUNDED != null =>
         UnboundedPreceding
-      case ArcticSqlExtendParser.PRECEDING =>
+      case MixedFormatSqlExtendParser.PRECEDING =>
         UnaryMinus(value)
-      case ArcticSqlExtendParser.CURRENT =>
+      case MixedFormatSqlExtendParser.CURRENT =>
         CurrentRow
-      case ArcticSqlExtendParser.FOLLOWING if ctx.UNBOUNDED != null =>
+      case MixedFormatSqlExtendParser.FOLLOWING if ctx.UNBOUNDED != null =>
         UnboundedFollowing
-      case ArcticSqlExtendParser.FOLLOWING =>
+      case MixedFormatSqlExtendParser.FOLLOWING =>
         value
     }
   }
@@ -2565,11 +2565,11 @@ class ArcticSqlExtendAstBuilder()
    */
   override def visitComplexDataType(ctx: ComplexDataTypeContext): DataType = withOrigin(ctx) {
     ctx.complex.getType match {
-      case ArcticSqlExtendParser.ARRAY =>
+      case MixedFormatSqlExtendParser.ARRAY =>
         ArrayType(typedVisit(ctx.dataType(0)))
-      case ArcticSqlExtendParser.MAP =>
+      case MixedFormatSqlExtendParser.MAP =>
         MapType(typedVisit(ctx.dataType(0)), typedVisit(ctx.dataType(1)))
-      case ArcticSqlExtendParser.STRUCT =>
+      case MixedFormatSqlExtendParser.STRUCT =>
         StructType(Option(ctx.complexColTypeList).toSeq.flatMap(visitComplexColTypeList))
     }
   }
