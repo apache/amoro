@@ -26,8 +26,8 @@ import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_
 import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_STRATEGY_EXPR;
 import static org.apache.flink.table.descriptors.Schema.SCHEMA_PROCTIME;
 
-import org.apache.amoro.flink.table.ArcticDynamicSource;
 import org.apache.amoro.flink.table.FlinkSource;
+import org.apache.amoro.flink.table.MixedFormatDynamicSource;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.commons.collections.CollectionUtils;
@@ -116,8 +116,8 @@ public class FlinkSchemaUtil {
   }
 
   /**
-   * Add watermark info to help {@link FlinkSource} and {@link ArcticDynamicSource} distinguish the
-   * watermark field. For now, it only be used in the case of Arctic as dim-table.
+   * Add watermark info to help {@link FlinkSource} and {@link MixedFormatDynamicSource} distinguish
+   * the watermark field. For now, it only be used in the case of mixed-format table as dim-table.
    */
   public static TableSchema getPhysicalSchemaForDimTable(TableSchema tableSchema) {
     TableSchema.Builder builder = filter(tableSchema, TableColumn::isPhysical);
@@ -125,7 +125,10 @@ public class FlinkSchemaUtil {
     return builder.build();
   }
 
-  /** filter watermark due to watermark is a virtual field for now, not in arctic physical table. */
+  /**
+   * filter watermark due to watermark is a virtual field for now, not in mixed-format physical
+   * table.
+   */
   public static TableSchema filterWatermark(TableSchema tableSchema) {
     List<WatermarkSpec> watermarkSpecs = tableSchema.getWatermarkSpecs();
     if (watermarkSpecs.isEmpty()) {
@@ -241,7 +244,7 @@ public class FlinkSchemaUtil {
                   .orElseThrow(
                       () ->
                           new ValidationException(
-                              "Arctic primary key should be declared in table")));
+                              "Mixed-format table primary key should be declared in table")));
         });
   }
 

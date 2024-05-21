@@ -27,7 +27,7 @@ InternalCatalogBuilder catalogBuilder =
         .metastoreUrl("thrift://<url>:<port>/<catalog_name>");
 
 TableIdentifier tableId = TableIdentifier.of("catalog_name", "database_name", "test_table");
-AmoroTableLoader tableLoader = AmoroTableLoader.of(tableId, catalogBuilder);
+MixedFormatTableLoader tableLoader = MixedFormatTableLoader.of(tableId, catalogBuilder);
 
 Map<String, String> properties = new HashMap<>();
 //  Default is true.
@@ -45,7 +45,7 @@ DataStream<RowData> batch =
 batch.print();
 
 // Submit and execute the task
-env.execute("Test Amoro Batch Read");
+env.execute("Test Mixed-format Batch Read");
 ``` 
 
 The map properties contain below keys, **currently only valid for non-primary key tables**:
@@ -70,9 +70,9 @@ InternalCatalogBuilder catalogBuilder =
         .metastoreUrl("thrift://<url>:<port>/<catalog_name>");
 
 TableIdentifier tableId = TableIdentifier.of("catalog_name", "database_name", "test_table");
-AmoroTableLoader tableLoader = AmoroTableLoader.of(tableId, catalogBuilder);
+MixedFormatTableLoader tableLoader = MixedFormatTableLoader.of(tableId, catalogBuilder);
 
-AmoroTable table = AmoroUtils.load(tableLoader);
+AmoroTable table = MixedFormatUtils.loadMixedTable(tableLoader);
 // Read table All fields. If you only read some fields, you can construct the schema yourself, for example: 
 // Schema userSchema = new Schema(new ArrayList<Types.NestedField>() {{
 //   add(Types.NestedField.optional(0, "f_boolean", Types.BooleanType.get()));
@@ -94,7 +94,7 @@ DataStream<RowData> stream = env.fromSource(source, WatermarkStrategy.noWatermar
 stream.print();
 
 // Submit and execute the task
-env.execute("Test Amoro Stream Read");
+env.execute("Test Mixed-format Stream Read");
 ```
 
 ### Streaming mode (FileStore)
@@ -102,7 +102,7 @@ env.execute("Test Amoro Stream Read");
 StreamExecutionEnvironment env = ...;
 InternalCatalogBuilder catalogBuilder = ...;
 TableIdentifier tableId = ...;
-AmoroTableLoader tableLoader = ...;
+MixedFormatTableLoader tableLoader = ...;
 
 Map<String, String> properties = new HashMap<>();
 // default is true 
@@ -120,12 +120,12 @@ DataStream<RowData> stream =
 stream.print();
 
 // Submit and execute the task
-env.execute("Test Amoro Stream Read");
+env.execute("Test Mixed-format Stream Read");
 
 StreamExecutionEnvironment env = ...; 
 InternalCatalogBuilder catalogBuilder = ...; 
-TableIdentifier tableId = ...; 
-AmoroTableLoader tableLoader = ...; 
+TableIdentifier tableId = ...;
+MixedFormatTableLoader tableLoader = ...; 
 Map properties = new HashMap<>(); 
 // default is true properties.put("streaming", "true"); 
 DataStream stream = 
@@ -140,7 +140,7 @@ DataStream stream =
 stream.print(); 
 
 // Submit and execute the task 
-env.execute("Test Amoro Stream Read"); 
+env.execute("Test Mixed-format Stream Read"); 
 ``` 
 DataStream API supports reading primary key tables and non-primary key tables. The configuration items supported by properties can refer to Querying With SQL [chapter Hint Option](../flink-dml/)
 
@@ -154,7 +154,7 @@ Amoro table currently Only supports the existing data in the dynamic Overwrite t
 DataStream<RowData> input = ...;
 InternalCatalogBuilder catalogBuilder = ...;
 TableIdentifier tableId = ...;
-AmoroTableLoader tableLoader = ...;
+MixedFormatTableLoader tableLoader = ...;
 
 TableSchema FLINK_SCHEMA = TableSchema.builder()
     .field("id", DataTypes.INT())
@@ -170,7 +170,7 @@ FlinkSink
     .build();
 
 // Submit and execute the task
-env.execute("Test Amoro Overwrite");
+env.execute("Test Mixed-format Overwrite");
 DataStream input = ...; InternalCatalogBuilder catalogBuilder = ...; TableIdentifier tableId = ...; AmoroTableLoader tableLoader = ...; TableSchema FLINK_SCHEMA = TableSchema.builder() .field("id", DataTypes.INT()) .field ("name", DataTypes.STRING()) .field("op_time", DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE()) .build(); FlinkSink .forRowData(input) .tableLoader(tableLoader) .overwrite(true) .flinkSchema(FLINK_SCHEMA) .build(); // Submit and execute the task env.execute(“Test Amoro Overwrite”); 
 ```
 
@@ -181,7 +181,7 @@ For the Amoro table, it supports specifying to write data to FileStore or LogSto
 DataStream<RowData> input = ...;
 InternalCatalogBuilder catalogBuilder = ...;
 TableIdentifier tableId = ...;
-AmoroTableLoader tableLoader = ...;
+MixedFormatTableLoader tableLoader = ...;
 
 TableSchema FLINK_SCHEMA = TableSchema.builder()
     .field("id", DataTypes.INT())
@@ -189,9 +189,9 @@ TableSchema FLINK_SCHEMA = TableSchema.builder()
     .field("op_time", DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE())
     .build();
 
-AmoroTable table = AmoroUtils.loadAmoroTable(tableLoader);
+MixedTable table = MixedFormatUtils.loadMixedTable(tableLoader);
 
-table.properties().put("arctic.emit.mode", "log,file");
+table.properties().put("mixed-format.emit.mode", "log,file");
 
 FlinkSink
     .forRowData(input)
@@ -200,12 +200,12 @@ FlinkSink
     .flinkSchema(FLINK_SCHEMA)
     .build();
 
-env.execute("Test Amoro Append");
+env.execute("Test Mixed-format Append");
 ```
 The DataStream API supports writing to primary key tables and non-primary key tables. The configuration items supported by properties can refer to Writing With SQL [chapter Hint Options](../flink-dml/)
 
 > **TIPS**
 >
-> arctic.emit.mode contains log, you need to configure log-store.enabled = true [Enable Log Configuration](../flink-dml/)
+> mixed-format.emit.mode contains log, you need to configure log-store.enabled = true [Enable Log Configuration](../flink-dml/)
 >
-> arctic.emit.mode When file is included, the primary key table will only be written to ChangeStore, and the non-primary key table will be directly written to BaseStore.
+> mixed-format.emit.mode When file is included, the primary key table will only be written to ChangeStore, and the non-primary key table will be directly written to BaseStore.

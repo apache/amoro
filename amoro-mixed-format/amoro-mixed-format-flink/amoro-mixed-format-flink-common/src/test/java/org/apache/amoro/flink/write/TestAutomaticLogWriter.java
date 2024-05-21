@@ -20,8 +20,8 @@ package org.apache.amoro.flink.write;
 
 import static org.apache.amoro.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.LOG_STORE_CATCH_UP;
 import static org.apache.amoro.table.TableProperties.ENABLE_LOG_STORE;
 import static org.apache.amoro.table.TableProperties.LOG_STORE_ADDRESS;
 import static org.apache.amoro.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
@@ -37,9 +37,9 @@ import org.apache.amoro.flink.kafka.testutils.KafkaContainerTest;
 import org.apache.amoro.flink.metric.MetricsGenerator;
 import org.apache.amoro.flink.shuffle.LogRecordV1;
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
-import org.apache.amoro.flink.table.ArcticTableLoader;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.table.MixedFormatTableLoader;
 import org.apache.amoro.flink.util.DataUtil;
+import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.util.TestGlobalAggregateManager;
 import org.apache.amoro.flink.util.TestOneInputStreamOperatorIntern;
 import org.apache.amoro.flink.write.hidden.kafka.HiddenKafkaFactory;
@@ -94,7 +94,7 @@ import java.util.stream.Collectors;
 @RunWith(Parameterized.class)
 public class TestAutomaticLogWriter extends FlinkTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestAutomaticLogWriter.class);
-  public ArcticTableLoader tableLoader;
+  public MixedFormatTableLoader tableLoader;
   public static final TestGlobalAggregateManager GLOBAL_AGGREGATE_MANGER =
       new TestGlobalAggregateManager();
 
@@ -131,7 +131,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
 
   @Before
   public void init() {
-    tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
+    tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     tableLoader.open();
   }
 
@@ -213,7 +213,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     FlinkSink.forRowData(input)
         .context(Optional::of)
         .table(testKeyedTable)
-        .tableLoader(ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
+        .tableLoader(MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
         .flinkSchema(FLINK_SCHEMA)
         .producerConfig(getPropertiesByTopic(topic))
         .topic(topic)
@@ -391,10 +391,10 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     Schema writeSchema =
         TypeUtil.reassignIds(FlinkSchemaUtil.convert(FLINK_SCHEMA), testKeyedTable.schema());
     MetricsGenerator metricsGenerator =
-        ArcticUtils.getMetricsGenerator(
+        MixedFormatUtils.getMetricsGenerator(
             false, false, testKeyedTable, flinkSchemaRowType, writeSchema);
 
-    ArcticFileWriter streamWriter =
+    MixedFormatFileWriter streamWriter =
         FlinkSink.createFileWriter(
             testKeyedTable,
             null,
@@ -402,12 +402,12 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
             (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType(),
             tableLoader);
 
-    ArcticWriter<WriteResult> arcticWriter =
-        new ArcticWriter<>(automaticLogWriter, streamWriter, metricsGenerator);
+    MixedFormatWriter<WriteResult> mixedFormatWriter =
+        new MixedFormatWriter<>(automaticLogWriter, streamWriter, metricsGenerator);
 
     TestOneInputStreamOperatorIntern<RowData, WriteResult> harness =
         new TestOneInputStreamOperatorIntern<>(
-            arcticWriter,
+            mixedFormatWriter,
             maxParallelism,
             parallelism,
             subTaskId,

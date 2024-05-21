@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.write;
 
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

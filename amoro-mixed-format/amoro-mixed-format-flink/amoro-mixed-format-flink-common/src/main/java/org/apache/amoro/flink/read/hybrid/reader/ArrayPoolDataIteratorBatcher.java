@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.read.hybrid.reader;
 
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SOURCE_READER_FETCH_BATCH_RECORD_COUNT;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SOURCE_READER_FETCH_BATCH_RECORD_COUNT;
 
 import org.apache.amoro.flink.read.source.DataIterator;
 import org.apache.flink.configuration.ReadableConfig;
@@ -46,7 +46,7 @@ class ArrayPoolDataIteratorBatcher<T> implements DataIteratorBatcher<T> {
   }
 
   @Override
-  public CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> batch(
+  public CloseableIterator<RecordsWithSplitIds<MixedFormatRecordWithOffset<T>>> batch(
       String splitId, DataIterator<T> inputIterator) {
     Preconditions.checkArgument(inputIterator != null, "Input data iterator can't be null");
     // lazily create pool as it is not serializable
@@ -67,7 +67,7 @@ class ArrayPoolDataIteratorBatcher<T> implements DataIteratorBatcher<T> {
   }
 
   private class ArrayPoolBatchIterator
-      implements CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> {
+      implements CloseableIterator<RecordsWithSplitIds<MixedFormatRecordWithOffset<T>>> {
 
     private final String splitId;
     private final DataIterator<T> inputIterator;
@@ -85,7 +85,7 @@ class ArrayPoolDataIteratorBatcher<T> implements DataIteratorBatcher<T> {
     }
 
     @Override
-    public RecordsWithSplitIds<ArcticRecordWithOffset<T>> next() {
+    public RecordsWithSplitIds<MixedFormatRecordWithOffset<T>> next() {
       if (!inputIterator.hasNext()) {
         throw new NoSuchElementException();
       }
@@ -95,7 +95,8 @@ class ArrayPoolDataIteratorBatcher<T> implements DataIteratorBatcher<T> {
 
       RecordPosition[] positions = initPositionArray();
       while (inputIterator.hasNext() && recordCount < batchSize) {
-        // The record produced by inputIterator can be reused like for the ArcticRecordWithOffset
+        // The record produced by inputIterator can be reused like for the
+        // MixedFormatRecordWithOffset
         // case.
         // inputIterator.next() can't be called again until the copy is made
         // since the record is not consumed immediately.

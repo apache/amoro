@@ -18,13 +18,13 @@
 
 package org.apache.amoro.flink.read.hybrid.enumerator;
 
-import static org.apache.amoro.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
+import static org.apache.amoro.flink.read.hybrid.enumerator.MixedFormatEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
 
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
 import org.apache.amoro.flink.read.hybrid.split.ChangelogSplit;
 import org.apache.amoro.flink.read.hybrid.split.MergeOnReadSplit;
-import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
+import org.apache.amoro.flink.table.MixedFormatTableLoader;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.expressions.Expression;
@@ -35,7 +35,7 @@ import java.util.List;
 
 /**
  * A planner for merge-on-read scanning by {@link this#discoverInitialSplits} and incremental
- * scanning by {@link this#discoverIncrementalSplits(ArcticEnumeratorOffset, List)}.
+ * scanning by {@link this#discoverIncrementalSplits(MixedFormatEnumeratorOffset, List)}.
  *
  * <p>{@link ContinuousEnumerationResult#splits()} includes the {@link MergeOnReadSplit}s and {@link
  * ChangelogSplit}s.
@@ -43,7 +43,7 @@ import java.util.List;
 public class MergeOnReadIncrementalPlanner extends ContinuousSplitPlannerImpl {
   private static final Logger LOG = LoggerFactory.getLogger(MergeOnReadIncrementalPlanner.class);
 
-  public MergeOnReadIncrementalPlanner(ArcticTableLoader loader) {
+  public MergeOnReadIncrementalPlanner(MixedFormatTableLoader loader) {
     super(loader);
   }
 
@@ -51,16 +51,17 @@ public class MergeOnReadIncrementalPlanner extends ContinuousSplitPlannerImpl {
   protected ContinuousEnumerationResult discoverInitialSplits(List<Expression> filters) {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
 
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.mergeOnReadPlan(table, filters, SPLIT_COUNT);
+    List<MixedFormatSplit> mixedFormatSplits =
+        FlinkSplitPlanner.mergeOnReadPlan(table, filters, SPLIT_COUNT);
 
     long changeStartSnapshotId =
         changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
-    if (changeSnapshot == null && CollectionUtils.isEmpty(arcticSplits)) {
+    if (changeSnapshot == null && CollectionUtils.isEmpty(mixedFormatSplits)) {
       LOG.info("There have no change snapshot, and no base splits in table: {}.", table);
       return ContinuousEnumerationResult.EMPTY;
     }
 
     return new ContinuousEnumerationResult(
-        arcticSplits, null, ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
+        mixedFormatSplits, null, MixedFormatEnumeratorOffset.of(changeStartSnapshotId, null));
   }
 }

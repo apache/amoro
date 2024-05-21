@@ -34,7 +34,9 @@ import org.apache.parquet.schema.Type;
 import java.util.Deque;
 import java.util.List;
 
-/** Copy from iceberg {@link ParquetWithFlinkSchemaVisitor}. see annotation "Change For Arctic" */
+/**
+ * Copy from iceberg {@link ParquetWithFlinkSchemaVisitor}. see annotation "Change For mixed-format"
+ */
 public class AdaptHiveParquetWithFlinkSchemaVisitor<T> {
   private final Deque<String> fieldNames = Lists.newLinkedList();
 
@@ -181,7 +183,7 @@ public class AdaptHiveParquetWithFlinkSchemaVisitor<T> {
       Type field = group.getFields().get(i);
       RowField sField = sFields.get(i);
 
-      // Change For Arctic ⬇
+      // Change for mixed-format table ⬇
       // Preconditions.checkArgument(field.getName().equals(AvroSchemaUtil.makeCompatibleName(sField.getName())),
       //     "Structs do not match: field %s != %s", field.getName(), sField.getName());
       Preconditions.checkArgument(
@@ -189,7 +191,7 @@ public class AdaptHiveParquetWithFlinkSchemaVisitor<T> {
           "Structs do not match: field %s != %s",
           field.getName(),
           sField.getName());
-      // Change For Arctic ⬆
+      // Change for mixed-format table ⬆
 
       results.add(visitField(sField, field, visitor));
     }

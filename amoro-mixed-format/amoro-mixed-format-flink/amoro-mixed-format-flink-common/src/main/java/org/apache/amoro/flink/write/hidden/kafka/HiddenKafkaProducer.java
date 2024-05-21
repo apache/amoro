@@ -20,8 +20,8 @@ package org.apache.amoro.flink.write.hidden.kafka;
 
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 
-import org.apache.amoro.flink.write.hidden.ArcticLogPartitioner;
 import org.apache.amoro.flink.write.hidden.LogMsgFactory;
+import org.apache.amoro.flink.write.hidden.MixedFormatLogPartitioner;
 import org.apache.amoro.log.LogData;
 import org.apache.amoro.log.LogDataJsonSerialization;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaErrorCode;
@@ -67,18 +67,18 @@ public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
   private transient FlinkKafkaInternalProducer<byte[], byte[]> producer;
   private transient FlinkKafkaInternalProducer<byte[], byte[]> transactionalProducer;
 
-  private final ArcticLogPartitioner<T> arcticLogPartitioner;
+  private final MixedFormatLogPartitioner<T> mixedFormatLogPartitioner;
   private int[] partitions;
 
   public HiddenKafkaProducer(
       Properties producerConfig,
       String topic,
       LogDataJsonSerialization<T> logDataJsonSerialization,
-      ArcticLogPartitioner<T> arcticLogPartitioner) {
+      MixedFormatLogPartitioner<T> mixedFormatLogPartitioner) {
     this.producerConfig = producerConfig;
     this.topic = topic;
     this.logDataJsonSerialization = logDataJsonSerialization;
-    this.arcticLogPartitioner = arcticLogPartitioner;
+    this.mixedFormatLogPartitioner = mixedFormatLogPartitioner;
   }
 
   @Override
@@ -101,7 +101,7 @@ public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
   public void send(LogData<T> logData) throws Exception {
     checkErroneous();
     byte[] message = logDataJsonSerialization.serialize(logData);
-    int partition = arcticLogPartitioner.partition(logData, partitions);
+    int partition = mixedFormatLogPartitioner.partition(logData, partitions);
     ProducerRecord<byte[], byte[]> producerRecord =
         new ProducerRecord<>(topic, partition, null, null, message);
     producer.send(producerRecord, callback);

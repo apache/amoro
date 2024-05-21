@@ -19,13 +19,13 @@
 package org.apache.amoro.flink.table;
 
 import org.apache.amoro.flink.interceptor.ProxyFactory;
-import org.apache.amoro.flink.read.ArcticSource;
+import org.apache.amoro.flink.read.MixedFormatSource;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
-import org.apache.amoro.flink.read.source.ArcticScanContext;
-import org.apache.amoro.flink.table.descriptors.ArcticValidator;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.read.source.MixedFormatScanContext;
+import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.amoro.flink.util.IcebergClassUtil;
+import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.util.ProxyUtil;
 import org.apache.amoro.table.MixedTable;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -56,7 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** An util class create arctic source data stream. */
+/** An util class create mixed-format source data stream. */
 public class FlinkSource {
   private FlinkSource() {}
 
@@ -66,18 +66,19 @@ public class FlinkSource {
 
   public static final class Builder {
 
-    private static final String ARCTIC_FILE_TRANSFORMATION = "arctic-file";
+    private static final String MIXED_FORMAT_FILE_TRANSFORMATION = "mixed-format-file";
     private ProviderContext context;
     private StreamExecutionEnvironment env;
     private MixedTable mixedTable;
-    private ArcticTableLoader tableLoader;
+    private MixedFormatTableLoader tableLoader;
     private TableSchema projectedSchema;
     private List<Expression> filters;
     private ReadableConfig flinkConf = new Configuration();
     private final Map<String, String> properties = new HashMap<>();
     private long limit = -1L;
     private WatermarkStrategy<RowData> watermarkStrategy = WatermarkStrategy.noWatermarks();
-    private final ArcticScanContext.Builder contextBuilder = ArcticScanContext.arcticBuilder();
+    private final MixedFormatScanContext.Builder contextBuilder =
+        MixedFormatScanContext.contextBuilder();
     private boolean batchMode = false;
 
     private Builder() {}
@@ -92,13 +93,13 @@ public class FlinkSource {
       return this;
     }
 
-    public Builder arcticTable(MixedTable mixedTable) {
+    public Builder mixedFormatTable(MixedTable mixedTable) {
       this.mixedTable = mixedTable;
       properties.putAll(mixedTable.properties());
       return this;
     }
 
-    public Builder tableLoader(ArcticTableLoader tableLoader) {
+    public Builder tableLoader(MixedFormatTableLoader tableLoader) {
       this.tableLoader = tableLoader;
       return this;
     }
@@ -153,8 +154,8 @@ public class FlinkSource {
       boolean dimTable =
           CompatibleFlinkPropertyUtil.propertyAsBoolean(
               properties,
-              ArcticValidator.DIM_TABLE_ENABLE.key(),
-              ArcticValidator.DIM_TABLE_ENABLE.defaultValue());
+              MixedFormatValidator.DIM_TABLE_ENABLE.key(),
+              MixedFormatValidator.DIM_TABLE_ENABLE.defaultValue());
       RowType rowType;
 
       if (projectedSchema == null) {
@@ -174,7 +175,7 @@ public class FlinkSource {
                   org.apache.amoro.flink.FlinkSchemaUtil.filterWatermark(projectedSchema));
         }
       }
-      ArcticScanContext scanContext =
+      MixedFormatScanContext scanContext =
           contextBuilder.fromProperties(properties).batchMode(batchMode).build();
 
       RowDataReaderFunction rowDataReaderFunction =
@@ -188,10 +189,10 @@ public class FlinkSource {
               mixedTable.io());
 
       int scanParallelism =
-          flinkConf.getOptional(ArcticValidator.SCAN_PARALLELISM).orElse(env.getParallelism());
+          flinkConf.getOptional(MixedFormatValidator.SCAN_PARALLELISM).orElse(env.getParallelism());
       DataStreamSource<RowData> sourceStream =
           env.fromSource(
-                  new ArcticSource<>(
+                  new MixedFormatSource<>(
                       tableLoader,
                       scanContext,
                       rowDataReaderFunction,
@@ -199,9 +200,9 @@ public class FlinkSource {
                       mixedTable.name(),
                       dimTable),
                   watermarkStrategy,
-                  ArcticSource.class.getName())
+                  MixedFormatSource.class.getName())
               .setParallelism(scanParallelism);
-      context.generateUid(ARCTIC_FILE_TRANSFORMATION).ifPresent(sourceStream::uid);
+      context.generateUid(MIXED_FORMAT_FILE_TRANSFORMATION).ifPresent(sourceStream::uid);
       return sourceStream;
     }
 
@@ -209,7 +210,7 @@ public class FlinkSource {
       if (tableLoader == null || mixedTable != null) {
         return;
       }
-      mixedTable = ArcticUtils.loadArcticTable(tableLoader);
+      mixedTable = MixedFormatUtils.loadMixedTable(tableLoader);
       properties.putAll(mixedTable.properties());
     }
 
@@ -232,7 +233,9 @@ public class FlinkSource {
       IcebergClassUtil.clean(env);
       Transformation origin = ds.getTransformation();
       int scanParallelism =
-          flinkConf.getOptional(ArcticValidator.SCAN_PARALLELISM).orElse(origin.getParallelism());
+          flinkConf
+              .getOptional(MixedFormatValidator.SCAN_PARALLELISM)
+              .orElse(origin.getParallelism());
 
       if (origin instanceof OneInputTransformation) {
         OneInputTransformation<RowData, RowData> tf =
@@ -255,7 +258,7 @@ public class FlinkSource {
             (SourceFunction) ProxyUtil.getProxy(function, mixedTable.io());
         DataStreamSource sourceStream =
             env.addSource(functionProxy, tfSource.getName(), tfSource.getOutputType());
-        context.generateUid(ARCTIC_FILE_TRANSFORMATION).ifPresent(sourceStream::uid);
+        context.generateUid(MIXED_FORMAT_FILE_TRANSFORMATION).ifPresent(sourceStream::uid);
         return sourceStream
             .setParallelism(scanParallelism)
             .transform(
@@ -274,7 +277,7 @@ public class FlinkSource {
       DataStreamSource sourceStream =
           env.createInput(inputFormatProxy, tfSource.getOutputType())
               .setParallelism(scanParallelism);
-      context.generateUid(ARCTIC_FILE_TRANSFORMATION).ifPresent(sourceStream::uid);
+      context.generateUid(MIXED_FORMAT_FILE_TRANSFORMATION).ifPresent(sourceStream::uid);
       return sourceStream;
     }
   }

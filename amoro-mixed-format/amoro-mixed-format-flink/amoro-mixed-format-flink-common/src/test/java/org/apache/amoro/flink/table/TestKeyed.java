@@ -151,7 +151,7 @@ public class TestKeyed extends FlinkTestBase {
 
   @After
   public void after() {
-    sql("DROP TABLE IF EXISTS arcticCatalog." + db + "." + TABLE);
+    sql("DROP TABLE IF EXISTS mixed_catalog." + db + "." + TABLE);
   }
 
   private void prepareLog() {
@@ -232,9 +232,9 @@ public class TestKeyed extends FlinkTestBase {
         getTableEnv().fromDataStream(source, $("id"), $("name"), $("op_time"), $("op_time_tz"));
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
     sql(
-        "CREATE TABLE arcticCatalog."
+        "CREATE TABLE mixed_catalog."
             + db
             + "."
             + TABLE
@@ -250,22 +250,22 @@ public class TestKeyed extends FlinkTestBase {
             + ")");
 
     sql(
-        "insert into arcticCatalog."
+        "insert into mixed_catalog."
             + db
             + "."
             + TABLE
             + "/*+ OPTIONS("
-            + "'arctic.emit.mode'='file'"
+            + "'mixed-format.emit.mode'='file'"
             + ")*/ select id, name, op_time_tz, op_time from input");
 
     List<Row> actual =
         sql(
-            "select id, op_time, op_time_tz from arcticCatalog."
+            "select id, op_time, op_time_tz from mixed_catalog."
                 + db
                 + "."
                 + TABLE
                 + "/*+ OPTIONS("
-                + "'arctic.read.mode'='file'"
+                + "'mixed-format.read.mode'='file'"
                 + ", 'streaming'='false'"
                 + ", 'source.parallelism'='2'"
                 + ")*/");
@@ -317,10 +317,10 @@ public class TestKeyed extends FlinkTestBase {
                 rows);
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
 
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixed_catalog."
             + db
             + "."
             + TABLE
@@ -329,24 +329,24 @@ public class TestKeyed extends FlinkTestBase {
         toWithClause(tableProperties));
 
     sql(
-        "insert into arcticCatalog."
+        "insert into mixed_catalog."
             + db
             + "."
             + TABLE
             + " /*+ OPTIONS("
-            + "'arctic.emit.mode'='log'"
+            + "'mixed-format.emit.mode'='log'"
             + ", 'log.version'='v1'"
             + ") */"
             + " select * from input");
 
     TableResult result =
         exec(
-            "select * from arcticCatalog."
+            "select * from mixed_catalog."
                 + db
                 + "."
                 + TABLE
                 + "/*+ OPTIONS("
-                + "'arctic.read.mode'='log'"
+                + "'mixed-format.read.mode'='log'"
                 + ", 'scan.startup.mode'='earliest'"
                 + ", 'source.parallelism'='2'"
                 + ")*/");
@@ -385,10 +385,10 @@ public class TestKeyed extends FlinkTestBase {
                 rows);
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
 
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixed_catalog."
             + db
             + "."
             + TABLE
@@ -397,24 +397,24 @@ public class TestKeyed extends FlinkTestBase {
         toWithClause(tableProperties));
 
     sql(
-        "insert into arcticCatalog."
+        "insert into mixed_catalog."
             + db
             + "."
             + TABLE
             + " /*+ OPTIONS("
-            + "'arctic.emit.mode'='log'"
+            + "'mixed-format.emit.mode'='log'"
             + ", 'log.version'='v1'"
             + ") */"
             + " select * from input");
 
     TableResult result =
         exec(
-            "select id, op_time from arcticCatalog."
+            "select id, op_time from mixed_catalog."
                 + db
                 + "."
                 + TABLE
                 + "/*+ OPTIONS("
-                + "'arctic.read.mode'='log'"
+                + "'mixed-format.read.mode'='log'"
                 + ", 'scan.startup.mode'='earliest'"
                 + ")*/");
 
@@ -459,10 +459,10 @@ public class TestKeyed extends FlinkTestBase {
                     DataTypes.FIELD("name", DataTypes.STRING())),
                 rows);
     getTableEnv().createTemporaryView("input", input);
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
 
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixed_catalog."
             + db
             + "."
             + TABLE
@@ -471,12 +471,12 @@ public class TestKeyed extends FlinkTestBase {
         toWithClause(tableProperties));
 
     sql(
-        "insert into arcticCatalog."
+        "insert into mixed_catalog."
             + db
             + "."
             + TABLE
             + " /*+ OPTIONS("
-            + "'arctic.emit.mode'='file, log'"
+            + "'mixed-format.emit.mode'='file, log'"
             + ") */"
             + "select id, name from input");
 
@@ -484,7 +484,7 @@ public class TestKeyed extends FlinkTestBase {
         DataUtil.toRowSet(data),
         new HashSet<>(
             sql(
-                "select * from arcticCatalog."
+                "select * from mixed_catalog."
                     + db
                     + "."
                     + TABLE
@@ -492,11 +492,11 @@ public class TestKeyed extends FlinkTestBase {
 
     TableResult result =
         exec(
-            "select * from arcticCatalog."
+            "select * from mixed_catalog."
                 + db
                 + "."
                 + TABLE
-                + " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest') */");
+                + " /*+ OPTIONS('mixed-format.read.mode'='log', 'scan.startup.mode'='earliest') */");
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
       for (Object[] datum : data) {
@@ -530,10 +530,10 @@ public class TestKeyed extends FlinkTestBase {
                 rows);
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
 
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixed_catalog."
             + db
             + "."
             + TABLE
@@ -542,12 +542,12 @@ public class TestKeyed extends FlinkTestBase {
             + ") PARTITIONED BY(op_time) WITH ('connector' = 'arctic')");
 
     sql(
-        "insert into arcticCatalog."
+        "insert into mixed_catalog."
             + db
             + "."
             + TABLE
             + "/*+ OPTIONS("
-            + "'arctic.emit.mode'='file'"
+            + "'mixed-format.emit.mode'='file'"
             + ")*/"
             + " select * from input");
 
@@ -555,7 +555,7 @@ public class TestKeyed extends FlinkTestBase {
         DataUtil.toRowSet(data),
         new HashSet<>(
             sql(
-                "select * from arcticCatalog."
+                "select * from mixed_catalog."
                     + db
                     + "."
                     + TABLE
@@ -587,10 +587,10 @@ public class TestKeyed extends FlinkTestBase {
                 rows);
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
 
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixed_catalog."
             + db
             + "."
             + TABLE
@@ -599,18 +599,18 @@ public class TestKeyed extends FlinkTestBase {
             + ") WITH ('connector' = 'arctic')");
 
     sql(
-        "insert into arcticCatalog."
+        "insert into mixed_catalog."
             + db
             + "."
             + TABLE
             + "/*+ OPTIONS("
-            + "'arctic.emit.mode'='file'"
+            + "'mixed-format.emit.mode'='file'"
             + ")*/"
             + " select * from input");
 
     TableResult result =
         exec(
-            "select name, op_time from arcticCatalog."
+            "select name, op_time from mixed_catalog."
                 + db
                 + "."
                 + TABLE
@@ -690,12 +690,12 @@ public class TestKeyed extends FlinkTestBase {
     Table input = getTableEnv().fromDataStream(source, $("id"), $("name"), $("op_time"));
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
 
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(TableProperties.UPSERT_ENABLED, "true");
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixed_catalog."
             + db
             + "."
             + TABLE
@@ -705,12 +705,12 @@ public class TestKeyed extends FlinkTestBase {
         toWithClause(tableProperties));
 
     sql(
-        "insert into arcticCatalog."
+        "insert into mixed_catalog."
             + db
             + "."
             + TABLE
             + "/*+ OPTIONS("
-            + "'arctic.emit.mode'='file'"
+            + "'mixed-format.emit.mode'='file'"
             + ")*/"
             + " select * from input");
 
@@ -726,7 +726,7 @@ public class TestKeyed extends FlinkTestBase {
         DataUtil.toRowSet(expected),
         new HashSet<>(
             sql(
-                "select * from arcticCatalog."
+                "select * from mixed_catalog."
                     + db
                     + "."
                     + TABLE
@@ -809,11 +809,11 @@ public class TestKeyed extends FlinkTestBase {
     Table input = getTableEnv().fromDataStream(source, $("id"), $("name"), $("op_time"));
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
 
     Map<String, String> tableProperties = new HashMap<>();
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixed_catalog."
             + db
             + "."
             + TABLE
@@ -823,12 +823,12 @@ public class TestKeyed extends FlinkTestBase {
         toWithClause(tableProperties));
 
     sql(
-        "insert into arcticCatalog."
+        "insert into mixed_catalog."
             + db
             + "."
             + TABLE
             + "/*+ OPTIONS("
-            + "'arctic.emit.mode'='file'"
+            + "'mixed-format.emit.mode'='file'"
             + ")*/"
             + " select * from input");
 
@@ -850,7 +850,7 @@ public class TestKeyed extends FlinkTestBase {
         DataUtil.toRowSet(expected),
         new HashSet<>(
             sql(
-                "select * from arcticCatalog."
+                "select * from mixed_catalog."
                     + db
                     + "."
                     + TABLE
@@ -884,12 +884,12 @@ public class TestKeyed extends FlinkTestBase {
     Table input = getTableEnv().fromDataStream(source, $("id"), $("name"), $("op_time"));
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
 
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(TableProperties.UPSERT_ENABLED, "true");
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixed_catalog."
             + db
             + "."
             + TABLE
@@ -899,18 +899,18 @@ public class TestKeyed extends FlinkTestBase {
         toWithClause(tableProperties));
 
     sql(
-        "insert into arcticCatalog."
+        "insert into mixed_catalog."
             + db
             + "."
             + TABLE
             + "/*+ OPTIONS("
-            + "'arctic.emit.mode'='file'"
+            + "'mixed-format.emit.mode'='file'"
             + ")*/"
             + " select * from input");
 
     TableResult result =
         exec(
-            "select * from arcticCatalog."
+            "select * from mixed_catalog."
                 + db
                 + "."
                 + TABLE
@@ -965,10 +965,10 @@ public class TestKeyed extends FlinkTestBase {
                 rows);
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
 
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixed_catalog."
             + db
             + "."
             + TABLE
@@ -978,24 +978,24 @@ public class TestKeyed extends FlinkTestBase {
         toWithClause(tableProperties));
 
     sql(
-        "insert into arcticCatalog."
+        "insert into mixed_catalog."
             + db
             + "."
             + TABLE
             + " /*+ OPTIONS("
-            + "'arctic.emit.mode'='log'"
+            + "'mixed-format.emit.mode'='log'"
             + ", 'log.version'='v1'"
             + ") */"
             + " select * from input");
 
     TableResult result =
         exec(
-            "select * from arcticCatalog."
+            "select * from mixed_catalog."
                 + db
                 + "."
                 + TABLE
                 + "/*+ OPTIONS("
-                + "'arctic.read.mode'='log'"
+                + "'mixed-format.read.mode'='log'"
                 + ", 'scan.startup.mode'='earliest'"
                 + ")*/");
     Set<Row> actual = new HashSet<>();
@@ -1032,10 +1032,10 @@ public class TestKeyed extends FlinkTestBase {
                 rows);
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
 
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixed_catalog."
             + db
             + "."
             + TABLE
@@ -1045,24 +1045,24 @@ public class TestKeyed extends FlinkTestBase {
         toWithClause(tableProperties));
 
     sql(
-        "insert into arcticCatalog."
+        "insert into mixed_catalog."
             + db
             + "."
             + TABLE
             + " /*+ OPTIONS("
-            + "'arctic.emit.mode'='log'"
+            + "'mixed-format.emit.mode'='log'"
             + ", 'log.version'='v1'"
             + ") */"
             + " select * from input");
 
     TableResult result =
         exec(
-            "select id, op_time from arcticCatalog."
+            "select id, op_time from mixed_catalog."
                 + db
                 + "."
                 + TABLE
                 + "/*+ OPTIONS("
-                + "'arctic.read.mode'='log'"
+                + "'mixed-format.read.mode'='log'"
                 + ", 'scan.startup.mode'='earliest'"
                 + ")*/");
     Set<Row> actual = new HashSet<>();
@@ -1108,10 +1108,10 @@ public class TestKeyed extends FlinkTestBase {
                     DataTypes.FIELD("op_time", DataTypes.TIMESTAMP())),
                 rows);
     getTableEnv().createTemporaryView("input", input);
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
 
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixed_catalog."
             + db
             + "."
             + TABLE
@@ -1121,12 +1121,12 @@ public class TestKeyed extends FlinkTestBase {
         toWithClause(tableProperties));
 
     sql(
-        "insert into arcticCatalog."
+        "insert into mixed_catalog."
             + db
             + "."
             + TABLE
             + " /*+ OPTIONS("
-            + "'arctic.emit.mode'='file, log'"
+            + "'mixed-format.emit.mode'='file, log'"
             + ", 'log.version'='v1'"
             + ") */"
             + "select * from input");
@@ -1135,7 +1135,7 @@ public class TestKeyed extends FlinkTestBase {
         DataUtil.toRowSet(data),
         new HashSet<>(
             sql(
-                "select * from arcticCatalog."
+                "select * from mixed_catalog."
                     + db
                     + "."
                     + TABLE
@@ -1144,11 +1144,11 @@ public class TestKeyed extends FlinkTestBase {
                     + ") */")));
     TableResult result =
         exec(
-            "select * from arcticCatalog."
+            "select * from mixed_catalog."
                 + db
                 + "."
                 + TABLE
-                + " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest') */");
+                + " /*+ OPTIONS('mixed-format.read.mode'='log', 'scan.startup.mode'='earliest') */");
 
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
