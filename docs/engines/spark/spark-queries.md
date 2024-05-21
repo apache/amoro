@@ -16,7 +16,7 @@ menu:
 Using `Select` statement to query on Mixed-Format tables.
 
 ```sql 
-SELECT * FROM arctic_catalog.db.sample
+SELECT * FROM mixed_catalog.db.sample
 ```
 
 The Mixed-Format connector will merge the data from `BaseStore` and `ChangeStore`.
@@ -26,7 +26,7 @@ The Mixed-Format connector will merge the data from `BaseStore` and `ChangeStore
 For a Mixed-Format table with primary keys. you can query on `ChangeStore` by `.change`.
 
 ```sql
-SELECT * FROM arctic_catalog.db.sample.change
+SELECT * FROM mixed_catalog.db.sample.change
 
 +---+----+----+---------------+------------+--------------+
 | id|name|data|_transaction_id|_file_offset|_change_action|
@@ -48,13 +48,13 @@ The addition columns are:
 You can read the Mixed-Format table by Spark DataFrames:
 
 ```scala
-val df = spark.read.table("arctic_catalog.db.sample")
+val df = spark.read.table("mixed_catalog.db.sample")
 df.count
 ```
 
 And visit the `ChangeStore` by `.change`.
 
 ```scala
-val df = spark.read.table("arctic_catalog.db.sample.change")
+val df = spark.read.table("mixed_catalog.db.sample.change")
 df.count
 ```
