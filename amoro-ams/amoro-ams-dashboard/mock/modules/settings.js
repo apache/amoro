@@ -44,8 +44,10 @@ export default [
           },
           optimizeGroup: [{
             name: 'flinkOp',
-            tmMemory: '1024',
-            jmMemory: 'sdsa'
+            properties: {
+              tmMemory: '1024',
+              jmMemory: '1024'
+            }
           }]
         },
         {
@@ -56,8 +58,10 @@ export default [
           },
           optimizeGroup: [{
             name: 'flinkOp',
-            tmMemory: '1024',
-            jmMemory: 'sdsa2'
+            properties: {
+              tmMemory: '1024',
+              jmMemory: '1024'
+            }
           }]
         }
       ]
