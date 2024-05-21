@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.catalog;
 
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.TABLE_FORMAT;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.TABLE_FORMAT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;

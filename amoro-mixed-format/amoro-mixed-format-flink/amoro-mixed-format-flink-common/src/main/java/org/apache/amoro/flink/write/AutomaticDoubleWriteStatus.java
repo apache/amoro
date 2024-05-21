@@ -18,9 +18,9 @@
 
 package org.apache.amoro.flink.write;
 
-import org.apache.amoro.flink.table.ArcticTableLoader;
-import org.apache.amoro.flink.table.descriptors.ArcticValidator;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.table.MixedFormatTableLoader;
+import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
+import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.table.MixedTable;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.iceberg.UpdateProperties;
@@ -36,14 +36,14 @@ public class AutomaticDoubleWriteStatus implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(AutomaticDoubleWriteStatus.class);
 
   private static final long serialVersionUID = 1L;
-  private final ArcticTableLoader tableLoader;
+  private final MixedFormatTableLoader tableLoader;
   private final AutomaticWriteSpecification specification;
   private MixedTable table;
   private transient boolean shouldDoubleWrite = false;
   private int subtaskId;
 
   public AutomaticDoubleWriteStatus(
-      ArcticTableLoader tableLoader, Duration writeLogstoreWatermarkGap) {
+      MixedFormatTableLoader tableLoader, Duration writeLogstoreWatermarkGap) {
     this.tableLoader = tableLoader;
     this.specification = new AutomaticWriteSpecification(writeLogstoreWatermarkGap);
   }
@@ -53,7 +53,7 @@ public class AutomaticDoubleWriteStatus implements Serializable {
   }
 
   public void open() {
-    table = ArcticUtils.loadArcticTable(tableLoader);
+    table = MixedFormatUtils.loadMixedTable(tableLoader);
     sync();
   }
 
@@ -70,15 +70,16 @@ public class AutomaticDoubleWriteStatus implements Serializable {
       LOG.info(
           "processWatermark {}, subTaskId is {}, should double write is true.", mark, subtaskId);
       LOG.info(
-          "begin update arctic table, set {} to true", ArcticValidator.LOG_STORE_CATCH_UP.key());
+          "begin update mixed-format table, set {} to true",
+          MixedFormatValidator.LOG_STORE_CATCH_UP.key());
       UpdateProperties updateProperties = table.updateProperties();
-      updateProperties.set(ArcticValidator.LOG_STORE_CATCH_UP.key(), String.valueOf(true));
+      updateProperties.set(MixedFormatValidator.LOG_STORE_CATCH_UP.key(), String.valueOf(true));
       updateProperties.set(
-          ArcticValidator.LOG_STORE_CATCH_UP_TIMESTAMP.key(),
+          MixedFormatValidator.LOG_STORE_CATCH_UP_TIMESTAMP.key(),
           String.valueOf(System.currentTimeMillis()));
-      updateProperties.remove(ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key());
+      updateProperties.remove(MixedFormatValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key());
       updateProperties.commit();
-      LOG.info("end update arctic table.");
+      LOG.info("end update mixed-format table.");
     }
   }
 
@@ -86,7 +87,7 @@ public class AutomaticDoubleWriteStatus implements Serializable {
     table.refresh();
     Map<String, String> properties = table.properties();
     shouldDoubleWrite =
-        !properties.containsKey(ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key());
+        !properties.containsKey(MixedFormatValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key());
     LOG.info(
         "AutomaticDoubleWriteStatus sync, subTaskId: {}, should double write: {}",
         subtaskId,

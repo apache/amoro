@@ -23,7 +23,7 @@ import org.apache.amoro.utils.FileScanTaskUtil;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
-public class MergeOnReadSplit extends ArcticSplit {
+public class MergeOnReadSplit extends MixedFormatSplit {
   private static final long serialVersionUID = 1L;
   private final int taskIndex;
   private final KeyedTableScanTask keyedTableScanTask;
@@ -51,7 +51,7 @@ public class MergeOnReadSplit extends ArcticSplit {
   }
 
   @Override
-  public ArcticSplit copy() {
+  public MixedFormatSplit copy() {
     return new MergeOnReadSplit(taskIndex, keyedTableScanTask);
   }
 
@@ -61,7 +61,7 @@ public class MergeOnReadSplit extends ArcticSplit {
         .add("insertTasks", FileScanTaskUtil.toString(keyedTableScanTask.insertTasks()))
         .add("baseTasks", FileScanTaskUtil.toString(keyedTableScanTask.baseTasks()))
         .add(
-            "arcticEquityDeletes",
+            "mixedFormatEquityDeletes",
             FileScanTaskUtil.toString(keyedTableScanTask.mixedEquityDeletes()))
         .toString();
   }
@@ -87,7 +87,7 @@ public class MergeOnReadSplit extends ArcticSplit {
         .add("\ninsertTasks", FileScanTaskUtil.toString(keyedTableScanTask.insertTasks()))
         .add("\nbaseTasks", FileScanTaskUtil.toString(keyedTableScanTask.baseTasks()))
         .add(
-            "\narcticEquityDeletes",
+            "\nmixedFormatEquityDeletes",
             FileScanTaskUtil.toString(keyedTableScanTask.mixedEquityDeletes()))
         .add("\ncost", keyedTableScanTask.cost() / 1024 + " KB")
         .add("\nrecordCount", keyedTableScanTask.recordCount())

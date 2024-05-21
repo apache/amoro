@@ -100,7 +100,7 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
 
   @After
   public void after() {
-    sql("DROP TABLE IF EXISTS arcticCatalog." + db + "." + TABLE);
+    sql("DROP TABLE IF EXISTS mixed_catalog." + db + "." + TABLE);
   }
 
   @Test
@@ -124,21 +124,21 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
                 rows);
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixed_catalog."
             + db
             + "."
             + TABLE
             + "("
             + " id INT, name STRING)");
 
-    sql("insert overwrite arcticCatalog." + db + "." + TABLE + " select * from input");
+    sql("insert overwrite mixed_catalog." + db + "." + TABLE + " select * from input");
 
     Assert.assertEquals(
         DataUtil.toRowSet(data),
         sqlSet(
-            "select * from arcticCatalog."
+            "select * from mixed_catalog."
                 + db
                 + "."
                 + TABLE
@@ -175,19 +175,19 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
                 rows);
     getTableEnv().createTemporaryView("input", input);
 
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
 
     sql(
-        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+        "CREATE TABLE IF NOT EXISTS mixed_catalog."
             + db
             + "."
             + TABLE
             + "("
             + " id INT, name STRING, dt STRING) PARTITIONED BY (dt)");
 
-    sql("insert into arcticCatalog." + db + "." + TABLE + " select * from input");
+    sql("insert into mixed_catalog." + db + "." + TABLE + " select * from input");
     sql(
-        "insert overwrite arcticCatalog."
+        "insert overwrite mixed_catalog."
             + db
             + "."
             + TABLE
@@ -196,7 +196,7 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
     Assert.assertEquals(
         DataUtil.toRowSet(expected),
         sqlSet(
-            "select id, name, '2022-05-19' from arcticCatalog."
+            "select id, name, '2022-05-19' from mixed_catalog."
                 + db
                 + "."
                 + TABLE

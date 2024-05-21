@@ -38,13 +38,13 @@ import java.util.stream.Collectors;
 
 /**
  * Use secondary index to lookup. Working for the situation where the join keys don't match the
- * arctic table's primary keys.
+ * mixed-format table's primary keys.
  *
  * <p>Example: <code>
  * SELECT * FROM t1 JOIN t2 for system_time as of t1.pt as dim ON t1.user_name = dim.user_name
  * </code>
  *
- * <p>t2 as an arctic table with primary keys: user_name, city_name.
+ * <p>t2 as an mixed-format table with primary keys: user_name, city_name.
  */
 public class SecondaryIndexTable extends UniqueIndexTable {
   private static final Logger LOG = LoggerFactory.getLogger(SecondaryIndexTable.class);

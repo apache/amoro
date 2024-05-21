@@ -21,8 +21,8 @@ package org.apache.amoro.flink.write.hidden.kafka;
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
-import org.apache.amoro.flink.write.hidden.ArcticLogPartitioner;
 import org.apache.amoro.flink.write.hidden.LogMsgFactory;
+import org.apache.amoro.flink.write.hidden.MixedFormatLogPartitioner;
 import org.apache.amoro.log.LogDataJsonSerialization;
 
 import java.util.Properties;
@@ -39,7 +39,7 @@ public class HiddenKafkaFactory<T> implements LogMsgFactory<T> {
       ShuffleHelper helper) {
     checkNotNull(topic);
     return new HiddenKafkaProducer<>(
-        producerConfig, topic, logDataJsonSerialization, new ArcticLogPartitioner<>(helper));
+        producerConfig, topic, logDataJsonSerialization, new MixedFormatLogPartitioner<>(helper));
   }
 
   @Override

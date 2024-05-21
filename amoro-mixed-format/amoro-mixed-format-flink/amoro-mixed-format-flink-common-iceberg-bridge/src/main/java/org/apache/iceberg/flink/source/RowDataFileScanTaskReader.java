@@ -174,7 +174,7 @@ public class RowDataFileScanTaskReader implements FileScanTaskReader<RowData> {
         Parquet.read(inputFilesDecryptor.getInputFile(task))
             .split(task.start(), task.length())
             .project(schema)
-            // Change for Arctic
+            // Change for mixed-format table
             .createReaderFunc(
                 fileSchema ->
                     AdaptHiveFlinkParquetReaders.buildReader(schema, fileSchema, idToConstant))

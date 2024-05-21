@@ -61,7 +61,7 @@ public class FlinkTablePropertiesInvocationHandler implements InvocationHandler,
       return proxy;
     }
     Object result = method.invoke(mixedTable, args);
-    // rewrite the properties as of the arctic table properties may be updated.
+    // rewrite the properties as of the mixed-format table properties may be updated.
     if ("refresh".equals(method.getName())) {
       rewriteProperties();
     }
@@ -70,7 +70,7 @@ public class FlinkTablePropertiesInvocationHandler implements InvocationHandler,
 
   private void rewriteProperties() {
     Map<String, String> refreshedProperties = mixedTable.properties();
-    // iterate through the properties of the arctic table and update the properties of the
+    // iterate through the properties of the mixed-format table and update the properties of the
     // tablePropertiesCombined.
     for (Map.Entry<String, String> entry : refreshedProperties.entrySet()) {
       if (flinkTableProperties.containsKey(entry.getKey())) {

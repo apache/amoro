@@ -19,7 +19,7 @@
 package org.apache.amoro.flink.read;
 
 import org.apache.amoro.flink.read.hybrid.reader.TestRowDataReaderFunction;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
 import org.apache.iceberg.Snapshot;
 import org.junit.Assert;
@@ -35,7 +35,7 @@ public class TestFlinkSplitPlanner extends TestRowDataReaderFunction {
   public void testPlanSplitFromKeyedTable() {
     testKeyedTable.baseTable().refresh();
     testKeyedTable.changeTable().refresh();
-    List<ArcticSplit> splitList =
+    List<MixedFormatSplit> splitList =
         FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
     Assert.assertEquals(7, splitList.size());
   }
@@ -44,7 +44,7 @@ public class TestFlinkSplitPlanner extends TestRowDataReaderFunction {
   public void testIncrementalChangelog() throws IOException {
     testKeyedTable.baseTable().refresh();
     testKeyedTable.changeTable().refresh();
-    List<ArcticSplit> splitList =
+    List<MixedFormatSplit> splitList =
         FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
 
     Assert.assertEquals(7, splitList.size());
@@ -64,7 +64,7 @@ public class TestFlinkSplitPlanner extends TestRowDataReaderFunction {
             .useSnapshot(nowSnapshotId)
             .fromSequence(fromSequence);
 
-    List<ArcticSplit> changeSplits =
+    List<MixedFormatSplit> changeSplits =
         FlinkSplitPlanner.planChangeTable(changeTableScan, new AtomicInteger());
 
     Assert.assertEquals(1, changeSplits.size());

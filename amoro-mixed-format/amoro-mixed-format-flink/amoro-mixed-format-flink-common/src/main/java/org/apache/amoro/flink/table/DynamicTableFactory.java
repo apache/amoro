@@ -33,9 +33,9 @@ import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOp
 import org.apache.amoro.flink.InternalCatalogBuilder;
 import org.apache.amoro.flink.catalog.MixedCatalog;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
-import org.apache.amoro.flink.table.descriptors.ArcticValidator;
-import org.apache.amoro.flink.util.ArcticUtils;
+import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
+import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
@@ -67,10 +67,10 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
-/** A factory generates {@link ArcticDynamicSource} and {@link ArcticDynamicSink} */
+/** A factory generates {@link MixedFormatDynamicSource} and {@link MixedFormatDynamicSink} */
 public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTableSinkFactory {
   private static final Logger LOG = LoggerFactory.getLogger(DynamicTableFactory.class);
-  public static final String IDENTIFIER = "arctic";
+  public static final String IDENTIFIER = "mixed-format";
   private InternalCatalogBuilder internalCatalogBuilder;
   private String internalCatalogName;
 
@@ -93,47 +93,47 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     InternalCatalogBuilder actualBuilder = internalCatalogBuilder;
     String actualCatalogName = internalCatalogName;
 
-    // It denotes create table by ddl 'connector' option, not through arcticCatalog.db.tableName
+    // It denotes create table by ddl 'connector' option, not through catalog.db.tableName
     if (actualBuilder == null || actualCatalogName == null) {
       String metastoreUrl = options.get(CatalogFactoryOptions.METASTORE_URL);
       Preconditions.checkNotNull(
           metastoreUrl, String.format("%s should be set", CatalogFactoryOptions.METASTORE_URL));
       actualBuilder = InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl);
 
-      actualCatalogName = options.get(ArcticValidator.ARCTIC_CATALOG);
+      actualCatalogName = options.get(MixedFormatValidator.MIXED_FORMAT_CATALOG);
       Preconditions.checkNotNull(
           actualCatalogName,
-          String.format("%s should be set", ArcticValidator.ARCTIC_CATALOG.key()));
+          String.format("%s should be set", MixedFormatValidator.MIXED_FORMAT_CATALOG.key()));
     }
 
-    if (options.containsKey(ArcticValidator.ARCTIC_DATABASE.key())
-        && options.containsKey(ArcticValidator.ARCTIC_TABLE.key())) {
+    if (options.containsKey(MixedFormatValidator.MIXED_FORMAT_DATABASE.key())
+        && options.containsKey(MixedFormatValidator.MIXED_FORMAT_TABLE.key())) {
       objectPath =
           new ObjectPath(
-              options.get(ArcticValidator.ARCTIC_DATABASE),
-              options.get(ArcticValidator.ARCTIC_TABLE));
+              options.get(MixedFormatValidator.MIXED_FORMAT_DATABASE),
+              options.get(MixedFormatValidator.MIXED_FORMAT_TABLE));
     } else {
       objectPath = new ObjectPath(identifier.getDatabaseName(), identifier.getObjectName());
     }
-    ArcticTableLoader tableLoader =
+    MixedFormatTableLoader tableLoader =
         createTableLoader(objectPath, actualCatalogName, actualBuilder, options.toMap());
-    MixedTable mixedTable = ArcticUtils.loadArcticTable(tableLoader);
+    MixedTable mixedTable = MixedFormatUtils.loadMixedTable(tableLoader);
 
     Configuration confWithAll = Configuration.fromMap(mixedTable.properties());
 
-    ScanTableSource arcticDynamicSource;
+    ScanTableSource mixedFormatDynamicSource;
 
     String readMode =
         PropertyUtil.propertyAsString(
             mixedTable.properties(),
-            ArcticValidator.ARCTIC_READ_MODE,
-            ArcticValidator.ARCTIC_READ_MODE_DEFAULT);
+            MixedFormatValidator.MIXED_FORMAT_READ_MODE,
+            MixedFormatValidator.MIXED_READ_MODE_DEFAULT);
 
     boolean dimTable =
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
             mixedTable.properties(),
-            ArcticValidator.DIM_TABLE_ENABLE.key(),
-            ArcticValidator.DIM_TABLE_ENABLE.defaultValue());
+            MixedFormatValidator.DIM_TABLE_ENABLE.key(),
+            MixedFormatValidator.DIM_TABLE_ENABLE.defaultValue());
 
     TableSchema tableSchema;
     if (!dimTable) {
@@ -146,53 +146,53 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     }
 
     switch (readMode) {
-      case ArcticValidator.ARCTIC_READ_FILE:
+      case MixedFormatValidator.MIXED_FORMAT_READ_FILE:
         boolean batchMode = context.getConfiguration().get(RUNTIME_MODE).equals(BATCH);
         LOG.info("Building a file reader in {} runtime mode", batchMode ? "batch" : "streaming");
-        arcticDynamicSource =
-            new ArcticFileSource(tableLoader, tableSchema, mixedTable, confWithAll, batchMode);
+        mixedFormatDynamicSource =
+            new MixedFormatFileSource(tableLoader, tableSchema, mixedTable, confWithAll, batchMode);
         break;
-      case ArcticValidator.ARCTIC_READ_LOG:
+      case MixedFormatValidator.MIXED_FORMAT_READ_LOG:
       default:
         Preconditions.checkArgument(
             CompatiblePropertyUtil.propertyAsBoolean(
                 mixedTable.properties(), ENABLE_LOG_STORE, ENABLE_LOG_STORE_DEFAULT),
             String.format("Read log should enable %s at first", ENABLE_LOG_STORE));
-        arcticDynamicSource = createLogSource(mixedTable, context, confWithAll);
+        mixedFormatDynamicSource = createLogSource(mixedTable, context, confWithAll);
     }
 
     return generateDynamicTableSource(
-        identifier.getObjectName(), arcticDynamicSource, mixedTable, tableLoader);
+        identifier.getObjectName(), mixedFormatDynamicSource, mixedTable, tableLoader);
   }
 
   protected DynamicTableSource generateDynamicTableSource(
       String tableName,
-      ScanTableSource arcticDynamicSource,
+      ScanTableSource mixedFormatDynamicSource,
       MixedTable mixedTable,
-      ArcticTableLoader tableLoader) {
-    return new ArcticDynamicSource(
-        tableName, arcticDynamicSource, mixedTable, mixedTable.properties(), tableLoader);
+      MixedFormatTableLoader tableLoader) {
+    return new MixedFormatDynamicSource(
+        tableName, mixedFormatDynamicSource, mixedTable, mixedTable.properties(), tableLoader);
   }
 
   @Override
-  public ArcticDynamicSink createDynamicTableSink(Context context) {
+  public MixedFormatDynamicSink createDynamicTableSink(Context context) {
     CatalogTable catalogTable = context.getCatalogTable();
 
     ObjectIdentifier identifier = context.getObjectIdentifier();
     Map<String, String> options = catalogTable.getOptions();
 
-    ArcticTableLoader tableLoader =
+    MixedFormatTableLoader tableLoader =
         createTableLoader(
             new ObjectPath(identifier.getDatabaseName(), identifier.getObjectName()),
             internalCatalogName,
             internalCatalogBuilder,
             options);
 
-    MixedTable table = ArcticUtils.loadArcticTable(tableLoader);
-    return new ArcticDynamicSink(catalogTable, tableLoader, table.isKeyedTable());
+    MixedTable table = MixedFormatUtils.loadMixedTable(tableLoader);
+    return new MixedFormatDynamicSink(catalogTable, tableLoader, table.isKeyedTable());
   }
 
-  private static ArcticTableLoader createTableLoader(
+  private static MixedFormatTableLoader createTableLoader(
       ObjectPath tablePath,
       String internalCatalogName,
       InternalCatalogBuilder catalogBuilder,
@@ -201,7 +201,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         TableIdentifier.of(
             internalCatalogName, tablePath.getDatabaseName(), tablePath.getObjectName());
 
-    return ArcticTableLoader.of(identifier, catalogBuilder, flinkTableProperties);
+    return MixedFormatTableLoader.of(identifier, catalogBuilder, flinkTableProperties);
   }
 
   @Override
@@ -223,21 +223,21 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     options.add(SCAN_STARTUP_MODE);
     options.add(SCAN_STARTUP_TIMESTAMP_MILLIS);
     options.add(SINK_PARTITIONER);
-    options.add(ArcticValidator.ARCTIC_CATALOG);
-    options.add(ArcticValidator.ARCTIC_TABLE);
-    options.add(ArcticValidator.ARCTIC_DATABASE);
-    options.add(ArcticValidator.DIM_TABLE_ENABLE);
+    options.add(MixedFormatValidator.MIXED_FORMAT_CATALOG);
+    options.add(MixedFormatValidator.MIXED_FORMAT_TABLE);
+    options.add(MixedFormatValidator.MIXED_FORMAT_DATABASE);
+    options.add(MixedFormatValidator.DIM_TABLE_ENABLE);
     options.add(CatalogFactoryOptions.METASTORE_URL);
 
     // lookup
-    options.add(ArcticValidator.LOOKUP_CACHE_MAX_ROWS);
-    options.add(ArcticValidator.LOOKUP_RELOADING_INTERVAL);
-    options.add(ArcticValidator.LOOKUP_CACHE_TTL_AFTER_WRITE);
+    options.add(MixedFormatValidator.LOOKUP_CACHE_MAX_ROWS);
+    options.add(MixedFormatValidator.LOOKUP_RELOADING_INTERVAL);
+    options.add(MixedFormatValidator.LOOKUP_CACHE_TTL_AFTER_WRITE);
 
-    options.add(ArcticValidator.ROCKSDB_AUTO_COMPACTIONS);
-    options.add(ArcticValidator.ROCKSDB_WRITING_THREADS);
-    options.add(ArcticValidator.ROCKSDB_BLOCK_CACHE_CAPACITY);
-    options.add(ArcticValidator.ROCKSDB_BLOCK_CACHE_NUM_SHARD_BITS);
+    options.add(MixedFormatValidator.ROCKSDB_AUTO_COMPACTIONS);
+    options.add(MixedFormatValidator.ROCKSDB_WRITING_THREADS);
+    options.add(MixedFormatValidator.ROCKSDB_BLOCK_CACHE_CAPACITY);
+    options.add(MixedFormatValidator.ROCKSDB_BLOCK_CACHE_NUM_SHARD_BITS);
     return options;
   }
 

@@ -18,14 +18,14 @@
 
 package org.apache.amoro.flink.lookup;
 
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.LOOKUP_CACHE_TTL_AFTER_WRITE;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.ROCKSDB_WRITING_THREADS;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.LOOKUP_CACHE_TTL_AFTER_WRITE;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.ROCKSDB_WRITING_THREADS;
 import static org.junit.Assert.assertEquals;
 
 import org.apache.amoro.flink.lookup.filter.RowDataPredicate;
 import org.apache.amoro.flink.lookup.filter.RowDataPredicateExpressionVisitor;
 import org.apache.amoro.flink.lookup.filter.TestRowDataPredicateBase;
-import org.apache.amoro.flink.table.descriptors.ArcticValidator;
+import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.memory.DataInputDeserializer;
 import org.apache.flink.core.memory.DataOutputSerializer;
@@ -86,7 +86,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
 
   private final boolean guavaCacheEnabled;
 
-  private final Schema arcticSchema =
+  private final Schema mixedTableSchema =
       new Schema(
           Types.NestedField.required(1, "id", Types.IntegerType.get()),
           Types.NestedField.required(2, "grade", Types.StringType.get()),
@@ -107,7 +107,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
   public void before() throws IOException {
     dbPath = temp.newFolder().getPath();
     if (!guavaCacheEnabled) {
-      config.set(ArcticValidator.LOOKUP_CACHE_MAX_ROWS, 0L);
+      config.set(MixedFormatValidator.LOOKUP_CACHE_MAX_ROWS, 0L);
     }
   }
 
@@ -116,7 +116,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
     BinaryRowDataSerializer binaryRowDataSerializer = new BinaryRowDataSerializer(3);
 
     GenericRowData genericRowData = (GenericRowData) row(1, "2", 3);
-    RowType rowType = FlinkSchemaUtil.convert(arcticSchema);
+    RowType rowType = FlinkSchemaUtil.convert(mixedTableSchema);
     RowDataSerializer rowDataSerializer = new RowDataSerializer(rowType);
     BinaryRowData record = rowDataSerializer.toBinaryRow(genericRowData);
 
@@ -134,7 +134,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
     // test join key rowData
     binaryRowDataSerializer = new BinaryRowDataSerializer(2);
     List<String> keys = Lists.newArrayList("id", "grade");
-    Schema keySchema = arcticSchema.select(keys);
+    Schema keySchema = mixedTableSchema.select(keys);
     rowType = FlinkSchemaUtil.convert(keySchema);
     rowDataSerializer = new RowDataSerializer(rowType);
     KeyRowData keyRowData = new KeyRowData(new int[] {0, 1}, row(2, "3", 4));
@@ -434,7 +434,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
   private Optional<RowDataPredicate> generatePredicate(String filterSql) {
     Map<String, Integer> fieldIndexMap = new HashMap<>();
     Map<String, DataType> fieldTypeMap = new HashMap<>();
-    List<Types.NestedField> fields = arcticSchema.asStruct().fields();
+    List<Types.NestedField> fields = mixedTableSchema.asStruct().fields();
     List<Column> columns = new ArrayList<>(fields.size());
     for (int i = 0; i < fields.size(); i++) {
       String name = fields.get(i).name();
@@ -471,7 +471,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
         new RowDataStateFactory(dbPath, new UnregisteredMetricsGroup()),
         isDisorderPK ? primaryKeysDisorder : primaryKeys,
         joinKeys,
-        arcticSchema,
+        mixedTableSchema,
         config,
         rowDataPredicate.orElse(null));
   }

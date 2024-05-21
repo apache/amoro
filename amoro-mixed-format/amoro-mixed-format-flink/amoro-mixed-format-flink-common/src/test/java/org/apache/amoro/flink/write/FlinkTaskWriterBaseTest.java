@@ -23,7 +23,7 @@ import static org.apache.amoro.BasicTableTestHelper.PRIMARY_KEY_SPEC;
 import org.apache.amoro.flink.FlinkTableTestBase;
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.source.DataIterator;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.table.KeyedTable;
@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
   Logger LOG = LoggerFactory.getLogger(FlinkTaskWriterBaseTest.class);
 
-  default void testWriteAndReadArcticTable(
+  default void testWriteAndReadMixedFormatTable(
       MixedTable mixedTable, TableSchema flinkTableSchema, RowData expected) {
 
     // This is a partial-write schema from Flink engine view.
@@ -138,16 +138,17 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
 
   default List<RowData> recordsOfKeyedTable(
       KeyedTable table, Schema tableSchema, Schema projectedSchema, AuthenticatedFileIO io) {
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(table, new AtomicInteger(0));
+    List<MixedFormatSplit> mixedFormatSplits =
+        FlinkSplitPlanner.planFullTable(table, new AtomicInteger(0));
 
     RowDataReaderFunction rowDataReaderFunction =
         new RowDataReaderFunction(
             new Configuration(), tableSchema, projectedSchema, PRIMARY_KEY_SPEC, null, true, io);
 
     List<RowData> actual = new ArrayList<>();
-    arcticSplits.forEach(
+    mixedFormatSplits.forEach(
         split -> {
-          LOG.info("ArcticSplit {}.", split);
+          LOG.info("Mixed-format split: {}.", split);
           DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
           while (dataIterator.hasNext()) {
             RowData rowData = dataIterator.next();

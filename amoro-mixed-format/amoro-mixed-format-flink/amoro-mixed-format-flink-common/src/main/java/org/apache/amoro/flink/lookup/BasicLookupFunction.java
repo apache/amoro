@@ -18,14 +18,14 @@
 
 package org.apache.amoro.flink.lookup;
 
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.LOOKUP_RELOADING_INTERVAL;
-import static org.apache.amoro.flink.util.ArcticUtils.loadArcticTable;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.LOOKUP_RELOADING_INTERVAL;
+import static org.apache.amoro.flink.util.MixedFormatUtils.loadMixedTable;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 import org.apache.amoro.flink.read.MixedIncrementalLoader;
 import org.apache.amoro.flink.read.hybrid.enumerator.MergeOnReadIncrementalPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.DataIteratorReaderFunction;
-import org.apache.amoro.flink.table.ArcticTableLoader;
+import org.apache.amoro.flink.table.MixedFormatTableLoader;
 import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import org.apache.amoro.table.MixedTable;
 import org.apache.flink.configuration.Configuration;
@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
-/** This is a basic lookup function for an arctic table. */
+/** This is a basic lookup function for an mixed-format table. */
 public class BasicLookupFunction<T> implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(BasicLookupFunction.class);
   private static final long serialVersionUID = 1671720424494168710L;
@@ -65,7 +65,7 @@ public class BasicLookupFunction<T> implements Serializable {
   private final List<String> joinKeys;
   private final Schema projectSchema;
   private final List<Expression> filters;
-  private final ArcticTableLoader loader;
+  private final MixedFormatTableLoader loader;
   private long nextLoadTime = Long.MIN_VALUE;
   private final long reloadIntervalSeconds;
   private MixedIncrementalLoader<T> incrementalLoader;
@@ -73,7 +73,7 @@ public class BasicLookupFunction<T> implements Serializable {
   private transient AtomicLong lookupLoadingTimeMs;
   private final Predicate<T> predicate;
   private final TableFactory<T> kvTableFactory;
-  private final AbstractAdaptHiveKeyedDataReader<T> flinkArcticMORDataReader;
+  private final AbstractAdaptHiveKeyedDataReader<T> flinkMORDataReader;
   private final DataIteratorReaderFunction<T> readerFunction;
 
   private transient ScheduledExecutorService executor;
@@ -85,15 +85,15 @@ public class BasicLookupFunction<T> implements Serializable {
       List<String> joinKeys,
       Schema projectSchema,
       List<Expression> filters,
-      ArcticTableLoader tableLoader,
+      MixedFormatTableLoader tableLoader,
       Configuration config,
       Predicate<T> predicate,
-      AbstractAdaptHiveKeyedDataReader<T> flinkArcticMORDataReader,
+      AbstractAdaptHiveKeyedDataReader<T> adaptHiveKeyedDataReader,
       DataIteratorReaderFunction<T> readerFunction) {
     checkArgument(
         mixedTable.isKeyedTable(),
         String.format(
-            "Only keyed arctic table support lookup join, this table [%s] is an unkeyed table.",
+            "Only keyed mixed-format table support lookup join, this table [%s] is an unkeyed table.",
             mixedTable.name()));
     Preconditions.checkNotNull(tableFactory, "kvTableFactory cannot be null");
     this.kvTableFactory = tableFactory;
@@ -104,7 +104,7 @@ public class BasicLookupFunction<T> implements Serializable {
     this.config = config;
     this.reloadIntervalSeconds = config.get(LOOKUP_RELOADING_INTERVAL).getSeconds();
     this.predicate = predicate;
-    this.flinkArcticMORDataReader = flinkArcticMORDataReader;
+    this.flinkMORDataReader = adaptHiveKeyedDataReader;
     this.readerFunction = readerFunction;
   }
 
@@ -119,7 +119,7 @@ public class BasicLookupFunction<T> implements Serializable {
   }
 
   /**
-   * Initialize the arcticTable, kvTable and incrementalLoader.
+   * Initialize the mixed-format table, kvTable and incrementalLoader.
    *
    * @param context
    */
@@ -127,7 +127,7 @@ public class BasicLookupFunction<T> implements Serializable {
     LOG.info("lookup function row data predicate: {}.", predicate);
     MetricGroup metricGroup = context.getMetricGroup().addGroup(LookupMetrics.GROUP_NAME_LOOKUP);
     if (mixedTable == null) {
-      mixedTable = loadArcticTable(loader).asKeyedTable();
+      mixedTable = loadMixedTable(loader).asKeyedTable();
     }
     mixedTable.refresh();
 
@@ -147,10 +147,7 @@ public class BasicLookupFunction<T> implements Serializable {
 
     this.incrementalLoader =
         new MixedIncrementalLoader<>(
-            new MergeOnReadIncrementalPlanner(loader),
-            flinkArcticMORDataReader,
-            readerFunction,
-            filters);
+            new MergeOnReadIncrementalPlanner(loader), flinkMORDataReader, readerFunction, filters);
   }
 
   public void start() {
@@ -160,7 +157,7 @@ public class BasicLookupFunction<T> implements Serializable {
 
     this.executor =
         Executors.newScheduledThreadPool(
-            1, new ExecutorThreadFactory("Arctic-lookup-scheduled-loader"));
+            1, new ExecutorThreadFactory("Mixed-format-lookup-scheduled-loader"));
     this.executor.scheduleWithFixedDelay(
         () -> {
           try {
@@ -242,7 +239,7 @@ public class BasicLookupFunction<T> implements Serializable {
   private void checkErrorAndRethrow() {
     Throwable cause = failureThrowable.get();
     if (cause != null) {
-      throw new RuntimeException("An error occurred in ArcticLookupFunction.", cause);
+      throw new RuntimeException("An error occurred in MixedFormatLookupFunction.", cause);
     }
   }
 

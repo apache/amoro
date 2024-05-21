@@ -22,7 +22,7 @@ import static org.apache.flink.table.connector.ChangelogMode.insertOnly;
 
 import org.apache.amoro.flink.read.source.log.kafka.LogKafkaSource;
 import org.apache.amoro.flink.read.source.log.kafka.LogKafkaSourceBuilder;
-import org.apache.amoro.flink.table.descriptors.ArcticValidator;
+import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.amoro.table.MixedTable;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -88,12 +88,12 @@ public class LogDynamicSource
     this.schema = schema;
     this.tableOptions = tableOptions;
     this.consumerChangelogMode =
-        tableOptions.getOptional(ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE);
+        tableOptions.getOptional(MixedFormatValidator.MIXED_FORMAT_LOG_CONSUMER_CHANGELOG_MODE);
     this.logRetractionEnable =
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
             mixedTable.properties(),
-            ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(),
-            ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue());
+            MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(),
+            MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue());
     this.mixedTable = mixedTable;
     this.properties = properties;
   }
@@ -130,26 +130,27 @@ public class LogDynamicSource
     String changeLogMode =
         consumerChangelogMode.orElse(
             mixedTable.isKeyedTable()
-                ? ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_ALL_KINDS
-                : ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY);
+                ? MixedFormatValidator.LOG_CONSUMER_CHANGELOG_MODE_ALL_KINDS
+                : MixedFormatValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY);
     switch (changeLogMode) {
-      case ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY:
+      case MixedFormatValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY:
         if (logRetractionEnable) {
           throw new IllegalArgumentException(
               String.format(
                   "Only %s is false when %s is %s",
-                  ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(),
-                  ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.key(),
-                  ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY));
+                  MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(),
+                  MixedFormatValidator.MIXED_FORMAT_LOG_CONSUMER_CHANGELOG_MODE.key(),
+                  MixedFormatValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY));
         }
         return insertOnly();
-      case ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_ALL_KINDS:
+      case MixedFormatValidator.LOG_CONSUMER_CHANGELOG_MODE_ALL_KINDS:
         return ALL_KINDS;
       default:
         throw new UnsupportedOperationException(
             String.format(
                 "As of now, %s can't support this option %s.",
-                ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.key(), consumerChangelogMode));
+                MixedFormatValidator.MIXED_FORMAT_LOG_CONSUMER_CHANGELOG_MODE.key(),
+                consumerChangelogMode));
     }
   }
 
@@ -165,7 +166,7 @@ public class LogDynamicSource
         }
         int scanParallelism =
             tableOptions
-                .getOptional(ArcticValidator.SCAN_PARALLELISM)
+                .getOptional(MixedFormatValidator.SCAN_PARALLELISM)
                 .orElse(execEnv.getParallelism());
         return execEnv
             .fromSource(kafkaSource, watermarkStrategy, "LogStoreSource-" + mixedTable.name())
@@ -192,7 +193,7 @@ public class LogDynamicSource
 
   @Override
   public String asSummaryString() {
-    return "Arctic Log: " + mixedTable.name();
+    return "Mixed-format Log: " + mixedTable.name();
   }
 
   @Override

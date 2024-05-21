@@ -46,9 +46,9 @@ public class DataIterator<T> implements CloseableIterator<T> {
   private CloseableIterator<T> currentIterator;
   private int fileOffset;
   private long recordOffset;
-  private long currentArcticFileOffset;
-  private final Function<T, Long> arcticFileOffsetGetter;
-  private final Function<T, T> arcticMetaColumnRemover;
+  private long currentFileOffset;
+  private final Function<T, Long> fileOffsetGetter;
+  private final Function<T, T> metaColumnRemover;
 
   public DataIterator() {
     this(null, Collections.emptyList(), t -> Long.MIN_VALUE, t -> t);
@@ -57,13 +57,13 @@ public class DataIterator<T> implements CloseableIterator<T> {
   public DataIterator(
       FileScanTaskReader<T> fileScanTaskReader,
       Collection<MixedFileScanTask> tasks,
-      Function<T, Long> arcticFileOffsetGetter,
-      Function<T, T> arcticMetaColumnRemover) {
+      Function<T, Long> fileOffsetGetter,
+      Function<T, T> metaColumnRemover) {
     this.fileScanTaskReader = fileScanTaskReader;
     this.tasks = tasks.iterator();
     this.taskSize = tasks.size();
-    this.arcticFileOffsetGetter = arcticFileOffsetGetter;
-    this.arcticMetaColumnRemover = arcticMetaColumnRemover;
+    this.fileOffsetGetter = fileOffsetGetter;
+    this.metaColumnRemover = metaColumnRemover;
 
     this.currentIterator = CloseableIterator.empty();
 
@@ -74,7 +74,7 @@ public class DataIterator<T> implements CloseableIterator<T> {
     this.recordOffset = 0L;
     // actual record offset in data file.
     // it's incremental within inserting and deleting files in the same tree node group.
-    this.currentArcticFileOffset = 0L;
+    this.currentFileOffset = 0L;
   }
 
   /**
@@ -128,8 +128,8 @@ public class DataIterator<T> implements CloseableIterator<T> {
     updateCurrentIterator();
     recordOffset += 1;
     T row = currentIterator.next();
-    currentArcticFileOffset = arcticFileOffsetGetter.apply(row);
-    return arcticMetaColumnRemover.apply(row);
+    currentFileOffset = fileOffsetGetter.apply(row);
+    return metaColumnRemover.apply(row);
   }
 
   public boolean currentFileHasNext() {
@@ -169,8 +169,8 @@ public class DataIterator<T> implements CloseableIterator<T> {
     return recordOffset;
   }
 
-  public long currentArcticFileOffset() {
-    return currentArcticFileOffset;
+  public long currentMixedFormatFileOffset() {
+    return currentFileOffset;
   }
 
   static <T> DataIterator<T> empty() {

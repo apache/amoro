@@ -34,6 +34,7 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestBase;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
+import org.apache.amoro.flink.table.DynamicTableFactory;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
@@ -192,7 +193,7 @@ public class TestMixedCatalog extends CatalogTestBase {
 
   @Test
   public void testDDLWithVirtualColumn() throws IOException {
-    // create arctic table with compute columns and watermark under arctic catalog
+    // create mixed-format table with compute columns and watermark under arctic catalog
     // org.apache.iceberg.flink.TypeToFlinkType will convert Timestamp to Timestamp(6), so we cast
     // datatype manually
     sql(
@@ -243,7 +244,7 @@ public class TestMixedCatalog extends CatalogTestBase {
 
   @Test
   public void testDMLWithVirtualColumn() throws IOException {
-    // create arctic table with compute columns under arctic catalog
+    // create mixed-format table with compute columns under mixed-format catalog
     sql(
         "CREATE TABLE "
             + catalogName
@@ -259,10 +260,10 @@ public class TestMixedCatalog extends CatalogTestBase {
             + " PRIMARY KEY (id) NOT ENFORCED "
             + ") PARTITIONED BY(t) ");
 
-    // insert values into arctic table
+    // insert values into mixed-format table
     insertValue();
 
-    // select from arctic table with compute columns under arctic catalog
+    // select from mixed-format table with compute columns under mixed-format catalog
     List<Row> rows =
         sql(
             "SELECT * FROM "
@@ -279,7 +280,7 @@ public class TestMixedCatalog extends CatalogTestBase {
 
   @Test
   public void testReadNotMatchColumn() throws IOException {
-    // create arctic table with compute columns under arctic catalog
+    // create mixed-format table with compute columns under mixed-format catalog
     sql(
         "CREATE TABLE "
             + catalogName
@@ -383,7 +384,7 @@ public class TestMixedCatalog extends CatalogTestBase {
   public void testDefaultCatalogDDLWithVirtualColumn() {
     // this test only for LEGACY_MIXED_IDENTIFIER
     if (catalogFactoryType.equals(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER)) {
-      // create arctic table with only physical columns
+      // create mixed-format table with only physical columns
       sql(
           "CREATE TABLE "
               + catalogName
@@ -397,19 +398,19 @@ public class TestMixedCatalog extends CatalogTestBase {
               + " PRIMARY KEY (id) NOT ENFORCED "
               + ") PARTITIONED BY(t) "
               + " WITH ("
-              + " 'connector' = 'arctic'"
+              + " 'connector' = 'mixed-format'"
               + ")");
 
-      // insert values into arctic table
+      // insert values into mixed-format table
       insertValue();
 
       // create Table with compute columns under default catalog
       props = Maps.newHashMap();
-      props.put("connector", CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER);
+      props.put("connector", DynamicTableFactory.IDENTIFIER);
       props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
-      props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".catalog", catalogName);
-      props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".database", DB);
-      props.put(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER + ".table", TABLE);
+      props.put(DynamicTableFactory.IDENTIFIER + ".catalog", catalogName);
+      props.put(DynamicTableFactory.IDENTIFIER + ".database", DB);
+      props.put(DynamicTableFactory.IDENTIFIER + ".table", TABLE);
 
       sql(
           "CREATE TABLE default_catalog.default_database."
@@ -424,7 +425,7 @@ public class TestMixedCatalog extends CatalogTestBase {
               + "WITH %s",
           toWithClause(props));
 
-      // select from arctic table with compute columns under default catalog
+      // select from mixed-format table with compute columns under default catalog
       List<Row> rows =
           sql(
               "SELECT * FROM default_catalog.default_database."

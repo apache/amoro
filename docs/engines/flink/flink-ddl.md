@@ -17,18 +17,19 @@ The following statement can be executed to create a Flink catalog:
 
 ```sql
 CREATE CATALOG <catalog_name> WITH (
-  'type'='arctic',
+  'type'='mixed-iceberg',
   `<config_key>`=`<config_value>`
 ); 
 ```
 
 Where `<catalog_name>` is the user-defined name of the Flink catalog, and `<config_key>`=`<config_value>` has the following configurations:
 
-| Key                                    | Default Value | Type    | Required | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-|----------------------------------------|---------------|---------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| metastore.url                          | (none)        | String  | Yes      | The URL for Amoro Metastore is thrift://`<ip>`:`<port>`/`<catalog_name_in_metastore>`.<br>If high availability is enabled for AMS, it can also be specified in the form of zookeeper://{zookeeper-server}/{cluster-name}/{catalog-name}.                                                                                                                                                                                                                             |
-| default-database<img width=100/>       | default       | String  | No       | The default database to use                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| property-version                       | 1             | Integer | No       | Catalog properties version, this option is for future backward compatibility                                                                                                                                                                                                                                                                                                                                                                                          |
+| Key                              | Default Value | Type    | Required | Description                                                                                                                                                                                                                              |
+|----------------------------------|---------------|---------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| type                             | N/A           | String  | Yes      | Catalog type, validate values are mixed-iceberg and mixed-hive                                                                                                                                                                           |
+| metastore.url                    | (none)        | String  | Yes      | The URL for Amoro Metastore is thrift://`<ip>`:`<port>`/`<catalog_name_in_metastore>`.<br>If high availability is enabled for AMS, it can also be specified in the form of zookeeper://{zookeeper-server}/{cluster-name}/{catalog-name}. |
+| default-database<img width=100/> | default       | String  | No       | The default database to use                                                                                                                                                                                                              |
+| property-version                 | 1             | Integer | No       | Catalog properties version, this option is for future backward compatibility                                                                                                                                                             |
 
 The authentication information of AMS catalog can upload configuration files on AMS website,
 or specify the authentication information and configuration file paths when creating catalogs with Flink DDL
@@ -49,7 +50,7 @@ Modify the `conf/sql-client-defaults.yaml` file in the Flink directory.
 ```yaml
 catalogs:
 - name: <catalog_name>
-  type: arctic
+  type: mixed-iceberg
   metastore.url: ...
   ...
 ```
@@ -60,15 +61,15 @@ catalogs:
 By default, the default-database configuration (default value: default) when creating catalog is used. You can create a database using the following example:
 
 ```sql
-CREATE DATABASE [catalog_name.]arctic_db;
+CREATE DATABASE [catalog_name.]mixed_db;
 
-USE arctic_db;
+USE mixed_db;
 ```
 
 ### CREATE TABLE
 
 ```sql
-CREATE TABLE `arctic_catalog`.`arctic_db`.`test_table` (
+CREATE TABLE `mixed_catalog`.`mixed_db`.`test_table` (
     id BIGINT,
     name STRING,
     op_time TIMESTAMP,
@@ -92,7 +93,7 @@ Currently, most of the syntax supported by [Flink SQL create table](https://nigh
 #### PARTITIONED BY
 Create a partitioned table using PARTITIONED BY.
 ```sql
-CREATE TABLE `arctic_catalog`.`arctic_db`.`test_table` (
+CREATE TABLE `mixed_catalog`.`new`.`test_table` (
     id BIGINT,
     name STRING,
     op_time TIMESTAMP
@@ -111,27 +112,27 @@ CREATE TABLE `test_table` (
     proc as PROCTIME(),
     PRIMARY KEY (id) NOT ENFORCED
 ) WITH (
-    'connector' = 'arctic',
+    'connector' = 'mixed-format',
     'metastore.url' = '',
-    'arctic.catalog' = '',
-    'arctic.database' = '',
-    'arctic.table' = ''
+    'mixed_format.catalog' = '',
+    'mixed_format.database' = '',
+    'mixed_format.table' = ''
 );
 ```
-where `<metastore.url>` is the URL of the Amoro Metastore, and `arctic.catalog`, `arctic.database` and `arctic.table` are the catalog name, database name and table name of this table under the AMS, respectively.
+where `<metastore.url>` is the URL of the Amoro Metastore, and `mixed_format.catalog`, `mixed_format.database` and `mixed_format.table` are the catalog name, database name and table name of this table under the AMS, respectively.
 
 ### CREATE TABLE LIKE
 Create a table with the same table structure, partitions, and table properties as an existing table. This can be achieved using CREATE TABLE LIKE.
 
 ```sql
-CREATE TABLE `arctic_catalog`.`arctic_db`.`test_table` (
+CREATE TABLE `mixed_catalog`.`mixed_db`.`test_table` (
     id BIGINT,
     name STRING,
     op_time TIMESTAMP
 );
 
-CREATE TABLE  `arctic_catalog`.`arctic_db`.`test_table_like` 
-    LIKE `arctic_catalog`.`arctic_db`.`test_table`;
+CREATE TABLE  `mixed_catalog`.`mixed_db`.`test_table_like` 
+    LIKE `mixed_catalog`.`mixed_db`.`test_table`;
 ```
 Further details can be found in [Flink create table like](https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sql/create.html#like)
 
@@ -140,12 +141,12 @@ Further details can be found in [Flink create table like](https://nightlies.apac
 ### DROP DATABASE
 
 ```sql
-DROP DATABASE catalog_name.arctic_db
+DROP DATABASE catalog_name.mixed_db
 ```
 
 ### DROP TABLE
 ```sql
-DROP TABLE `arctic_catalog`.`arctic_db`.`test_table`;
+DROP TABLE `mixed_catalog`.`mixed_db`.`test_table`;
 ```
 
 ## SHOW statement
