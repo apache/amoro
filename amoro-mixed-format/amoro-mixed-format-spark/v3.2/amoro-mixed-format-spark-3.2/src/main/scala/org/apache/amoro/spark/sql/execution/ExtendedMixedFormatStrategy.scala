@@ -43,7 +43,12 @@ case class ExtendedMixedFormatStrategy(spark: SparkSession) extends Strategy wit
     case MigrateToMixedFormatLogicalPlan(command) =>
       MigrateToMixedFormatExec(command) :: Nil
 
-    case MixedFormatRowLevelWrite(table: DataSourceV2Relation, query, options, projs, Some(write)) =>
+    case MixedFormatRowLevelWrite(
+          table: DataSourceV2Relation,
+          query,
+          options,
+          projs,
+          Some(write)) =>
       MixedFormatRowLevelWriteExec(
         table.table.asMixedSparkTable,
         planLater(query),

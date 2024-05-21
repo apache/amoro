@@ -19,7 +19,7 @@
 package org.apache.amoro.spark.sql.execution
 
 import org.apache.amoro.op.OverwriteBaseFiles
-import org.apache.amoro.spark.table.{UnkeyedSparkTable, MixedSparkTable}
+import org.apache.amoro.spark.table.{MixedSparkTable, UnkeyedSparkTable}
 import org.apache.iceberg.expressions.Expressions
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute

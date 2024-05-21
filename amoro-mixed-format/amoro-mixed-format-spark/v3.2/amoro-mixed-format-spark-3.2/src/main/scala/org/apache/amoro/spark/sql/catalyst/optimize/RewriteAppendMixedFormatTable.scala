@@ -50,7 +50,8 @@ case class RewriteAppendMixedFormatTable(spark: SparkSession) extends Rule[Logic
         insertQuery.output.filter(_.name.contains("_arctic_before_"))
       val projections = buildInsertProjections(insertQuery, insertAttribute, isUpsert = true)
       val upsertOptions = writeOptions + (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.mode)
-      val writeBuilder = MixedFormatSpark32Helper.newWriteBuilder(r.table, query.schema, upsertOptions)
+      val writeBuilder =
+        MixedFormatSpark32Helper.newWriteBuilder(r.table, query.schema, upsertOptions)
       val write = writeBuilder.build()
       MixedFormatRowLevelWrite(r, insertQuery, upsertOptions, projections, Some(write))
   }

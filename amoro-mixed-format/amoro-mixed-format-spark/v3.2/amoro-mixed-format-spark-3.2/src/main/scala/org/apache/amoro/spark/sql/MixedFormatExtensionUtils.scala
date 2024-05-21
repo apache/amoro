@@ -21,7 +21,7 @@ package org.apache.amoro.spark.sql
 import scala.collection.JavaConverters.seqAsJavaList
 
 import org.apache.amoro.spark.{MixedFormatSparkCatalog, MixedFormatSparkSessionCatalog}
-import org.apache.amoro.spark.table.{UnkeyedSparkTable, MixedSparkTable, SupportsRowLevelOperator}
+import org.apache.amoro.spark.table.{MixedSparkTable, SupportsRowLevelOperator, UnkeyedSparkTable}
 import org.apache.iceberg.spark.Spark3Util
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier

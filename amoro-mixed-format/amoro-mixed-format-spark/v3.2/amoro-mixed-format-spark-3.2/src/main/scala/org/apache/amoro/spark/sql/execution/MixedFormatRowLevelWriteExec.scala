@@ -33,12 +33,12 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
  * Physical plan node to write a delta of rows to an existing table.
  */
 case class MixedFormatRowLevelWriteExec(
-                                    table: MixedSparkTable,
-                                    query: SparkPlan,
-                                    writeOptions: CaseInsensitiveStringMap,
-                                    projections: WriteQueryProjections,
-                                    refreshCache: () => Unit,
-                                    write: Write) extends ExtendedV2ExistingTableWriteExec[RowLevelWriter[InternalRow]] {
+    table: MixedSparkTable,
+    query: SparkPlan,
+    writeOptions: CaseInsensitiveStringMap,
+    projections: WriteQueryProjections,
+    refreshCache: () => Unit,
+    write: Write) extends ExtendedV2ExistingTableWriteExec[RowLevelWriter[InternalRow]] {
 
   override protected def run(): Seq[InternalRow] = {
     val writtenRows = writeWithV2(write.toBatch)

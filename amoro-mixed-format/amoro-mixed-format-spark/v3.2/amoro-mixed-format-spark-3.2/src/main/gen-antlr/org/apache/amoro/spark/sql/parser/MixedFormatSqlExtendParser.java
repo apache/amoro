@@ -1,4 +1,4 @@
-// Generated from org\apache\amoro\spark\sql\parser\ArcticSqlExtend.g4 by ANTLR 4.8
+// Generated from org/apache/amoro/spark/sql/parser/MixedFormatSqlExtend.g4 by ANTLR 4.8
 package org.apache.amoro.spark.sql.parser;
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
@@ -10,7 +10,7 @@ import java.util.Iterator;
 import java.util.ArrayList;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
-public class ArcticSqlExtendParser extends Parser {
+public class MixedFormatSqlExtendParser extends Parser {
 	static { RuntimeMetaData.checkVersion("4.8", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
@@ -262,7 +262,7 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	@Override
-	public String getGrammarFileName() { return "ArcticSqlExtend.g4"; }
+	public String getGrammarFileName() { return "MixedFormatSqlExtend.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }
@@ -291,7 +291,7 @@ public class ArcticSqlExtendParser extends Parser {
 	   */
 	  public boolean SQL_standard_keyword_behavior = false;
 
-	public ArcticSqlExtendParser(TokenStream input) {
+	public MixedFormatSqlExtendParser(TokenStream input) {
 		super(input);
 		_interp = new ParserATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
@@ -300,22 +300,22 @@ public class ArcticSqlExtendParser extends Parser {
 		public StatementContext statement() {
 			return getRuleContext(StatementContext.class,0);
 		}
-		public TerminalNode EOF() { return getToken(ArcticSqlExtendParser.EOF, 0); }
+		public TerminalNode EOF() { return getToken(MixedFormatSqlExtendParser.EOF, 0); }
 		public ExtendStatementContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_extendStatement; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterExtendStatement(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterExtendStatement(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitExtendStatement(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitExtendStatement(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitExtendStatement(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitExtendStatement(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -370,27 +370,27 @@ public class ArcticSqlExtendParser extends Parser {
 		}
 	}
 	public static class ExplainContext extends StatementContext {
-		public TerminalNode EXPLAIN() { return getToken(ArcticSqlExtendParser.EXPLAIN, 0); }
+		public TerminalNode EXPLAIN() { return getToken(MixedFormatSqlExtendParser.EXPLAIN, 0); }
 		public StatementContext statement() {
 			return getRuleContext(StatementContext.class,0);
 		}
-		public TerminalNode LOGICAL() { return getToken(ArcticSqlExtendParser.LOGICAL, 0); }
-		public TerminalNode FORMATTED() { return getToken(ArcticSqlExtendParser.FORMATTED, 0); }
-		public TerminalNode EXTENDED() { return getToken(ArcticSqlExtendParser.EXTENDED, 0); }
-		public TerminalNode CODEGEN() { return getToken(ArcticSqlExtendParser.CODEGEN, 0); }
-		public TerminalNode COST() { return getToken(ArcticSqlExtendParser.COST, 0); }
+		public TerminalNode LOGICAL() { return getToken(MixedFormatSqlExtendParser.LOGICAL, 0); }
+		public TerminalNode FORMATTED() { return getToken(MixedFormatSqlExtendParser.FORMATTED, 0); }
+		public TerminalNode EXTENDED() { return getToken(MixedFormatSqlExtendParser.EXTENDED, 0); }
+		public TerminalNode CODEGEN() { return getToken(MixedFormatSqlExtendParser.CODEGEN, 0); }
+		public TerminalNode COST() { return getToken(MixedFormatSqlExtendParser.COST, 0); }
 		public ExplainContext(StatementContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterExplain(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterExplain(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitExplain(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitExplain(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitExplain(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitExplain(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -410,19 +410,19 @@ public class ArcticSqlExtendParser extends Parser {
 		public QueryContext query() {
 			return getRuleContext(QueryContext.class,0);
 		}
-		public TerminalNode AS() { return getToken(ArcticSqlExtendParser.AS, 0); }
+		public TerminalNode AS() { return getToken(MixedFormatSqlExtendParser.AS, 0); }
 		public CreateTableWithPkContext(StatementContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterCreateTableWithPk(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterCreateTableWithPk(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitCreateTableWithPk(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitCreateTableWithPk(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitCreateTableWithPk(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitCreateTableWithPk(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -521,31 +521,31 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class CreateTableHeaderContext extends ParserRuleContext {
-		public TerminalNode CREATE() { return getToken(ArcticSqlExtendParser.CREATE, 0); }
-		public TerminalNode TABLE() { return getToken(ArcticSqlExtendParser.TABLE, 0); }
+		public TerminalNode CREATE() { return getToken(MixedFormatSqlExtendParser.CREATE, 0); }
+		public TerminalNode TABLE() { return getToken(MixedFormatSqlExtendParser.TABLE, 0); }
 		public MultipartIdentifierContext multipartIdentifier() {
 			return getRuleContext(MultipartIdentifierContext.class,0);
 		}
-		public TerminalNode TEMPORARY() { return getToken(ArcticSqlExtendParser.TEMPORARY, 0); }
-		public TerminalNode EXTERNAL() { return getToken(ArcticSqlExtendParser.EXTERNAL, 0); }
-		public TerminalNode IF() { return getToken(ArcticSqlExtendParser.IF, 0); }
-		public TerminalNode NOT() { return getToken(ArcticSqlExtendParser.NOT, 0); }
-		public TerminalNode EXISTS() { return getToken(ArcticSqlExtendParser.EXISTS, 0); }
+		public TerminalNode TEMPORARY() { return getToken(MixedFormatSqlExtendParser.TEMPORARY, 0); }
+		public TerminalNode EXTERNAL() { return getToken(MixedFormatSqlExtendParser.EXTERNAL, 0); }
+		public TerminalNode IF() { return getToken(MixedFormatSqlExtendParser.IF, 0); }
+		public TerminalNode NOT() { return getToken(MixedFormatSqlExtendParser.NOT, 0); }
+		public TerminalNode EXISTS() { return getToken(MixedFormatSqlExtendParser.EXISTS, 0); }
 		public CreateTableHeaderContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_createTableHeader; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterCreateTableHeader(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterCreateTableHeader(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitCreateTableHeader(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitCreateTableHeader(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitCreateTableHeader(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitCreateTableHeader(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -628,15 +628,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public ColListOnlyPkContext(ColListAndPkContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterColListOnlyPk(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterColListOnlyPk(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitColListOnlyPk(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitColListOnlyPk(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitColListOnlyPk(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitColListOnlyPk(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -650,15 +650,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public ColListWithPkContext(ColListAndPkContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterColListWithPk(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterColListWithPk(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitColListWithPk(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitColListWithPk(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitColListWithPk(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitColListWithPk(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -719,8 +719,8 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class PrimarySpecContext extends ParserRuleContext {
-		public TerminalNode PRIMARY() { return getToken(ArcticSqlExtendParser.PRIMARY, 0); }
-		public TerminalNode KEY() { return getToken(ArcticSqlExtendParser.KEY, 0); }
+		public TerminalNode PRIMARY() { return getToken(MixedFormatSqlExtendParser.PRIMARY, 0); }
+		public TerminalNode KEY() { return getToken(MixedFormatSqlExtendParser.KEY, 0); }
 		public IdentifierListContext identifierList() {
 			return getRuleContext(IdentifierListContext.class,0);
 		}
@@ -730,15 +730,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_primarySpec; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterPrimarySpec(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterPrimarySpec(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitPrimarySpec(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitPrimarySpec(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitPrimarySpec(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitPrimarySpec(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -769,18 +769,18 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class BucketSpecContext extends ParserRuleContext {
-		public TerminalNode CLUSTERED() { return getToken(ArcticSqlExtendParser.CLUSTERED, 0); }
-		public List<TerminalNode> BY() { return getTokens(ArcticSqlExtendParser.BY); }
+		public TerminalNode CLUSTERED() { return getToken(MixedFormatSqlExtendParser.CLUSTERED, 0); }
+		public List<TerminalNode> BY() { return getTokens(MixedFormatSqlExtendParser.BY); }
 		public TerminalNode BY(int i) {
-			return getToken(ArcticSqlExtendParser.BY, i);
+			return getToken(MixedFormatSqlExtendParser.BY, i);
 		}
 		public IdentifierListContext identifierList() {
 			return getRuleContext(IdentifierListContext.class,0);
 		}
-		public TerminalNode INTO() { return getToken(ArcticSqlExtendParser.INTO, 0); }
-		public TerminalNode INTEGER_VALUE() { return getToken(ArcticSqlExtendParser.INTEGER_VALUE, 0); }
-		public TerminalNode BUCKETS() { return getToken(ArcticSqlExtendParser.BUCKETS, 0); }
-		public TerminalNode SORTED() { return getToken(ArcticSqlExtendParser.SORTED, 0); }
+		public TerminalNode INTO() { return getToken(MixedFormatSqlExtendParser.INTO, 0); }
+		public TerminalNode INTEGER_VALUE() { return getToken(MixedFormatSqlExtendParser.INTEGER_VALUE, 0); }
+		public TerminalNode BUCKETS() { return getToken(MixedFormatSqlExtendParser.BUCKETS, 0); }
+		public TerminalNode SORTED() { return getToken(MixedFormatSqlExtendParser.SORTED, 0); }
 		public OrderedIdentifierListContext orderedIdentifierList() {
 			return getRuleContext(OrderedIdentifierListContext.class,0);
 		}
@@ -790,15 +790,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_bucketSpec; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterBucketSpec(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterBucketSpec(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitBucketSpec(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitBucketSpec(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitBucketSpec(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitBucketSpec(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -850,36 +850,36 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class SkewSpecContext extends ParserRuleContext {
-		public TerminalNode SKEWED() { return getToken(ArcticSqlExtendParser.SKEWED, 0); }
-		public TerminalNode BY() { return getToken(ArcticSqlExtendParser.BY, 0); }
+		public TerminalNode SKEWED() { return getToken(MixedFormatSqlExtendParser.SKEWED, 0); }
+		public TerminalNode BY() { return getToken(MixedFormatSqlExtendParser.BY, 0); }
 		public IdentifierListContext identifierList() {
 			return getRuleContext(IdentifierListContext.class,0);
 		}
-		public TerminalNode ON() { return getToken(ArcticSqlExtendParser.ON, 0); }
+		public TerminalNode ON() { return getToken(MixedFormatSqlExtendParser.ON, 0); }
 		public ConstantListContext constantList() {
 			return getRuleContext(ConstantListContext.class,0);
 		}
 		public NestedConstantListContext nestedConstantList() {
 			return getRuleContext(NestedConstantListContext.class,0);
 		}
-		public TerminalNode STORED() { return getToken(ArcticSqlExtendParser.STORED, 0); }
-		public TerminalNode AS() { return getToken(ArcticSqlExtendParser.AS, 0); }
-		public TerminalNode DIRECTORIES() { return getToken(ArcticSqlExtendParser.DIRECTORIES, 0); }
+		public TerminalNode STORED() { return getToken(MixedFormatSqlExtendParser.STORED, 0); }
+		public TerminalNode AS() { return getToken(MixedFormatSqlExtendParser.AS, 0); }
+		public TerminalNode DIRECTORIES() { return getToken(MixedFormatSqlExtendParser.DIRECTORIES, 0); }
 		public SkewSpecContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_skewSpec; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSkewSpec(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSkewSpec(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSkewSpec(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSkewSpec(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSkewSpec(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSkewSpec(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -942,23 +942,23 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class LocationSpecContext extends ParserRuleContext {
-		public TerminalNode LOCATION() { return getToken(ArcticSqlExtendParser.LOCATION, 0); }
-		public TerminalNode STRING() { return getToken(ArcticSqlExtendParser.STRING, 0); }
+		public TerminalNode LOCATION() { return getToken(MixedFormatSqlExtendParser.LOCATION, 0); }
+		public TerminalNode STRING() { return getToken(MixedFormatSqlExtendParser.STRING, 0); }
 		public LocationSpecContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_locationSpec; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterLocationSpec(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterLocationSpec(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitLocationSpec(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitLocationSpec(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitLocationSpec(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitLocationSpec(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -987,23 +987,23 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class CommentSpecContext extends ParserRuleContext {
-		public TerminalNode COMMENT() { return getToken(ArcticSqlExtendParser.COMMENT, 0); }
-		public TerminalNode STRING() { return getToken(ArcticSqlExtendParser.STRING, 0); }
+		public TerminalNode COMMENT() { return getToken(MixedFormatSqlExtendParser.COMMENT, 0); }
+		public TerminalNode STRING() { return getToken(MixedFormatSqlExtendParser.STRING, 0); }
 		public CommentSpecContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_commentSpec; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterCommentSpec(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterCommentSpec(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitCommentSpec(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitCommentSpec(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitCommentSpec(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitCommentSpec(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1047,15 +1047,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_query; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterQuery(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterQuery(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitQuery(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitQuery(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitQuery(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitQuery(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1095,7 +1095,7 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class CtesContext extends ParserRuleContext {
-		public TerminalNode WITH() { return getToken(ArcticSqlExtendParser.WITH, 0); }
+		public TerminalNode WITH() { return getToken(MixedFormatSqlExtendParser.WITH, 0); }
 		public List<NamedQueryContext> namedQuery() {
 			return getRuleContexts(NamedQueryContext.class);
 		}
@@ -1108,15 +1108,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_ctes; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterCtes(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterCtes(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitCtes(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitCtes(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitCtes(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitCtes(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1170,7 +1170,7 @@ public class ArcticSqlExtendParser extends Parser {
 		public ErrorCapturingIdentifierContext errorCapturingIdentifier() {
 			return getRuleContext(ErrorCapturingIdentifierContext.class,0);
 		}
-		public TerminalNode AS() { return getToken(ArcticSqlExtendParser.AS, 0); }
+		public TerminalNode AS() { return getToken(MixedFormatSqlExtendParser.AS, 0); }
 		public IdentifierListContext identifierList() {
 			return getRuleContext(IdentifierListContext.class,0);
 		}
@@ -1180,15 +1180,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_namedQuery; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterNamedQuery(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterNamedQuery(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitNamedQuery(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitNamedQuery(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitNamedQuery(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitNamedQuery(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1242,7 +1242,7 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class TableProviderContext extends ParserRuleContext {
-		public TerminalNode USING() { return getToken(ArcticSqlExtendParser.USING, 0); }
+		public TerminalNode USING() { return getToken(MixedFormatSqlExtendParser.USING, 0); }
 		public MultipartIdentifierContext multipartIdentifier() {
 			return getRuleContext(MultipartIdentifierContext.class,0);
 		}
@@ -1252,15 +1252,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_tableProvider; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTableProvider(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTableProvider(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTableProvider(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTableProvider(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTableProvider(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTableProvider(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1328,21 +1328,21 @@ public class ArcticSqlExtendParser extends Parser {
 		public CommentSpecContext commentSpec(int i) {
 			return getRuleContext(CommentSpecContext.class,i);
 		}
-		public List<TerminalNode> OPTIONS() { return getTokens(ArcticSqlExtendParser.OPTIONS); }
+		public List<TerminalNode> OPTIONS() { return getTokens(MixedFormatSqlExtendParser.OPTIONS); }
 		public TerminalNode OPTIONS(int i) {
-			return getToken(ArcticSqlExtendParser.OPTIONS, i);
+			return getToken(MixedFormatSqlExtendParser.OPTIONS, i);
 		}
-		public List<TerminalNode> PARTITIONED() { return getTokens(ArcticSqlExtendParser.PARTITIONED); }
+		public List<TerminalNode> PARTITIONED() { return getTokens(MixedFormatSqlExtendParser.PARTITIONED); }
 		public TerminalNode PARTITIONED(int i) {
-			return getToken(ArcticSqlExtendParser.PARTITIONED, i);
+			return getToken(MixedFormatSqlExtendParser.PARTITIONED, i);
 		}
-		public List<TerminalNode> BY() { return getTokens(ArcticSqlExtendParser.BY); }
+		public List<TerminalNode> BY() { return getTokens(MixedFormatSqlExtendParser.BY); }
 		public TerminalNode BY(int i) {
-			return getToken(ArcticSqlExtendParser.BY, i);
+			return getToken(MixedFormatSqlExtendParser.BY, i);
 		}
-		public List<TerminalNode> TBLPROPERTIES() { return getTokens(ArcticSqlExtendParser.TBLPROPERTIES); }
+		public List<TerminalNode> TBLPROPERTIES() { return getTokens(MixedFormatSqlExtendParser.TBLPROPERTIES); }
 		public TerminalNode TBLPROPERTIES(int i) {
-			return getToken(ArcticSqlExtendParser.TBLPROPERTIES, i);
+			return getToken(MixedFormatSqlExtendParser.TBLPROPERTIES, i);
 		}
 		public List<TablePropertyListContext> tablePropertyList() {
 			return getRuleContexts(TablePropertyListContext.class);
@@ -1362,15 +1362,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_createTableClauses; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterCreateTableClauses(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterCreateTableClauses(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitCreateTableClauses(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitCreateTableClauses(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitCreateTableClauses(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitCreateTableClauses(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1492,15 +1492,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_tablePropertyList; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTablePropertyList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTablePropertyList(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTablePropertyList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTablePropertyList(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTablePropertyList(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTablePropertyList(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1556,22 +1556,22 @@ public class ArcticSqlExtendParser extends Parser {
 		public TablePropertyValueContext tablePropertyValue() {
 			return getRuleContext(TablePropertyValueContext.class,0);
 		}
-		public TerminalNode EQ() { return getToken(ArcticSqlExtendParser.EQ, 0); }
+		public TerminalNode EQ() { return getToken(MixedFormatSqlExtendParser.EQ, 0); }
 		public TablePropertyContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_tableProperty; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTableProperty(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTableProperty(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTableProperty(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTableProperty(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTableProperty(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTableProperty(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1625,22 +1625,22 @@ public class ArcticSqlExtendParser extends Parser {
 		public IdentifierContext identifier(int i) {
 			return getRuleContext(IdentifierContext.class,i);
 		}
-		public TerminalNode STRING() { return getToken(ArcticSqlExtendParser.STRING, 0); }
+		public TerminalNode STRING() { return getToken(MixedFormatSqlExtendParser.STRING, 0); }
 		public TablePropertyKeyContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_tablePropertyKey; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTablePropertyKey(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTablePropertyKey(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTablePropertyKey(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTablePropertyKey(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTablePropertyKey(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTablePropertyKey(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1697,27 +1697,27 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class TablePropertyValueContext extends ParserRuleContext {
-		public TerminalNode INTEGER_VALUE() { return getToken(ArcticSqlExtendParser.INTEGER_VALUE, 0); }
-		public TerminalNode DECIMAL_VALUE() { return getToken(ArcticSqlExtendParser.DECIMAL_VALUE, 0); }
+		public TerminalNode INTEGER_VALUE() { return getToken(MixedFormatSqlExtendParser.INTEGER_VALUE, 0); }
+		public TerminalNode DECIMAL_VALUE() { return getToken(MixedFormatSqlExtendParser.DECIMAL_VALUE, 0); }
 		public BooleanValueContext booleanValue() {
 			return getRuleContext(BooleanValueContext.class,0);
 		}
-		public TerminalNode STRING() { return getToken(ArcticSqlExtendParser.STRING, 0); }
+		public TerminalNode STRING() { return getToken(MixedFormatSqlExtendParser.STRING, 0); }
 		public TablePropertyValueContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_tablePropertyValue; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTablePropertyValue(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTablePropertyValue(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTablePropertyValue(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTablePropertyValue(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTablePropertyValue(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTablePropertyValue(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1786,15 +1786,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_constantList; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterConstantList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterConstantList(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitConstantList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitConstantList(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitConstantList(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitConstantList(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1854,15 +1854,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_nestedConstantList; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterNestedConstantList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterNestedConstantList(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitNestedConstantList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitNestedConstantList(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitNestedConstantList(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitNestedConstantList(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1910,12 +1910,12 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class CreateFileFormatContext extends ParserRuleContext {
-		public TerminalNode STORED() { return getToken(ArcticSqlExtendParser.STORED, 0); }
-		public TerminalNode AS() { return getToken(ArcticSqlExtendParser.AS, 0); }
+		public TerminalNode STORED() { return getToken(MixedFormatSqlExtendParser.STORED, 0); }
+		public TerminalNode AS() { return getToken(MixedFormatSqlExtendParser.AS, 0); }
 		public FileFormatContext fileFormat() {
 			return getRuleContext(FileFormatContext.class,0);
 		}
-		public TerminalNode BY() { return getToken(ArcticSqlExtendParser.BY, 0); }
+		public TerminalNode BY() { return getToken(MixedFormatSqlExtendParser.BY, 0); }
 		public StorageHandlerContext storageHandler() {
 			return getRuleContext(StorageHandlerContext.class,0);
 		}
@@ -1925,15 +1925,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_createFileFormat; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterCreateFileFormat(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterCreateFileFormat(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitCreateFileFormat(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitCreateFileFormat(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitCreateFileFormat(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitCreateFileFormat(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1994,24 +1994,24 @@ public class ArcticSqlExtendParser extends Parser {
 	public static class TableFileFormatContext extends FileFormatContext {
 		public Token inFmt;
 		public Token outFmt;
-		public TerminalNode INPUTFORMAT() { return getToken(ArcticSqlExtendParser.INPUTFORMAT, 0); }
-		public TerminalNode OUTPUTFORMAT() { return getToken(ArcticSqlExtendParser.OUTPUTFORMAT, 0); }
-		public List<TerminalNode> STRING() { return getTokens(ArcticSqlExtendParser.STRING); }
+		public TerminalNode INPUTFORMAT() { return getToken(MixedFormatSqlExtendParser.INPUTFORMAT, 0); }
+		public TerminalNode OUTPUTFORMAT() { return getToken(MixedFormatSqlExtendParser.OUTPUTFORMAT, 0); }
+		public List<TerminalNode> STRING() { return getTokens(MixedFormatSqlExtendParser.STRING); }
 		public TerminalNode STRING(int i) {
-			return getToken(ArcticSqlExtendParser.STRING, i);
+			return getToken(MixedFormatSqlExtendParser.STRING, i);
 		}
 		public TableFileFormatContext(FileFormatContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTableFileFormat(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTableFileFormat(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTableFileFormat(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTableFileFormat(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTableFileFormat(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTableFileFormat(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2022,15 +2022,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public GenericFileFormatContext(FileFormatContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterGenericFileFormat(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterGenericFileFormat(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitGenericFileFormat(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitGenericFileFormat(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitGenericFileFormat(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitGenericFileFormat(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2078,9 +2078,9 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class StorageHandlerContext extends ParserRuleContext {
-		public TerminalNode STRING() { return getToken(ArcticSqlExtendParser.STRING, 0); }
-		public TerminalNode WITH() { return getToken(ArcticSqlExtendParser.WITH, 0); }
-		public TerminalNode SERDEPROPERTIES() { return getToken(ArcticSqlExtendParser.SERDEPROPERTIES, 0); }
+		public TerminalNode STRING() { return getToken(MixedFormatSqlExtendParser.STRING, 0); }
+		public TerminalNode WITH() { return getToken(MixedFormatSqlExtendParser.WITH, 0); }
+		public TerminalNode SERDEPROPERTIES() { return getToken(MixedFormatSqlExtendParser.SERDEPROPERTIES, 0); }
 		public TablePropertyListContext tablePropertyList() {
 			return getRuleContext(TablePropertyListContext.class,0);
 		}
@@ -2090,15 +2090,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_storageHandler; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterStorageHandler(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterStorageHandler(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitStorageHandler(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitStorageHandler(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitStorageHandler(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitStorageHandler(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2146,18 +2146,18 @@ public class ArcticSqlExtendParser extends Parser {
 		public List<ExpressionContext> distributeBy = new ArrayList<ExpressionContext>();
 		public List<SortItemContext> sort = new ArrayList<SortItemContext>();
 		public ExpressionContext limit;
-		public TerminalNode ORDER() { return getToken(ArcticSqlExtendParser.ORDER, 0); }
-		public List<TerminalNode> BY() { return getTokens(ArcticSqlExtendParser.BY); }
+		public TerminalNode ORDER() { return getToken(MixedFormatSqlExtendParser.ORDER, 0); }
+		public List<TerminalNode> BY() { return getTokens(MixedFormatSqlExtendParser.BY); }
 		public TerminalNode BY(int i) {
-			return getToken(ArcticSqlExtendParser.BY, i);
+			return getToken(MixedFormatSqlExtendParser.BY, i);
 		}
-		public TerminalNode CLUSTER() { return getToken(ArcticSqlExtendParser.CLUSTER, 0); }
-		public TerminalNode DISTRIBUTE() { return getToken(ArcticSqlExtendParser.DISTRIBUTE, 0); }
-		public TerminalNode SORT() { return getToken(ArcticSqlExtendParser.SORT, 0); }
+		public TerminalNode CLUSTER() { return getToken(MixedFormatSqlExtendParser.CLUSTER, 0); }
+		public TerminalNode DISTRIBUTE() { return getToken(MixedFormatSqlExtendParser.DISTRIBUTE, 0); }
+		public TerminalNode SORT() { return getToken(MixedFormatSqlExtendParser.SORT, 0); }
 		public WindowClauseContext windowClause() {
 			return getRuleContext(WindowClauseContext.class,0);
 		}
-		public TerminalNode LIMIT() { return getToken(ArcticSqlExtendParser.LIMIT, 0); }
+		public TerminalNode LIMIT() { return getToken(MixedFormatSqlExtendParser.LIMIT, 0); }
 		public List<SortItemContext> sortItem() {
 			return getRuleContexts(SortItemContext.class);
 		}
@@ -2170,22 +2170,22 @@ public class ArcticSqlExtendParser extends Parser {
 		public ExpressionContext expression(int i) {
 			return getRuleContext(ExpressionContext.class,i);
 		}
-		public TerminalNode ALL() { return getToken(ArcticSqlExtendParser.ALL, 0); }
+		public TerminalNode ALL() { return getToken(MixedFormatSqlExtendParser.ALL, 0); }
 		public QueryOrganizationContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_queryOrganization; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterQueryOrganization(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterQueryOrganization(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitQueryOrganization(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitQueryOrganization(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitQueryOrganization(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitQueryOrganization(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2400,15 +2400,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public QueryTermDefaultContext(QueryTermContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterQueryTermDefault(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterQueryTermDefault(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitQueryTermDefault(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitQueryTermDefault(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitQueryTermDefault(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitQueryTermDefault(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2422,25 +2422,25 @@ public class ArcticSqlExtendParser extends Parser {
 		public QueryTermContext queryTerm(int i) {
 			return getRuleContext(QueryTermContext.class,i);
 		}
-		public TerminalNode INTERSECT() { return getToken(ArcticSqlExtendParser.INTERSECT, 0); }
-		public TerminalNode UNION() { return getToken(ArcticSqlExtendParser.UNION, 0); }
-		public TerminalNode EXCEPT() { return getToken(ArcticSqlExtendParser.EXCEPT, 0); }
-		public TerminalNode SETMINUS() { return getToken(ArcticSqlExtendParser.SETMINUS, 0); }
+		public TerminalNode INTERSECT() { return getToken(MixedFormatSqlExtendParser.INTERSECT, 0); }
+		public TerminalNode UNION() { return getToken(MixedFormatSqlExtendParser.UNION, 0); }
+		public TerminalNode EXCEPT() { return getToken(MixedFormatSqlExtendParser.EXCEPT, 0); }
+		public TerminalNode SETMINUS() { return getToken(MixedFormatSqlExtendParser.SETMINUS, 0); }
 		public SetQuantifierContext setQuantifier() {
 			return getRuleContext(SetQuantifierContext.class,0);
 		}
 		public SetOperationContext(QueryTermContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSetOperation(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSetOperation(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSetOperation(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSetOperation(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSetOperation(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSetOperation(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2612,15 +2612,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public SubqueryContext(QueryPrimaryContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSubquery(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSubquery(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSubquery(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSubquery(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSubquery(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSubquery(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2631,15 +2631,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public QueryPrimaryDefaultContext(QueryPrimaryContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterQueryPrimaryDefault(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterQueryPrimaryDefault(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitQueryPrimaryDefault(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitQueryPrimaryDefault(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitQueryPrimaryDefault(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitQueryPrimaryDefault(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2650,15 +2650,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public InlineTableDefault1Context(QueryPrimaryContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterInlineTableDefault1(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterInlineTableDefault1(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitInlineTableDefault1(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitInlineTableDefault1(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitInlineTableDefault1(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitInlineTableDefault1(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2669,35 +2669,35 @@ public class ArcticSqlExtendParser extends Parser {
 		public FromStmtContext(QueryPrimaryContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterFromStmt(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterFromStmt(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitFromStmt(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitFromStmt(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitFromStmt(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitFromStmt(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class TableContext extends QueryPrimaryContext {
-		public TerminalNode TABLE() { return getToken(ArcticSqlExtendParser.TABLE, 0); }
+		public TerminalNode TABLE() { return getToken(MixedFormatSqlExtendParser.TABLE, 0); }
 		public MultipartIdentifierContext multipartIdentifier() {
 			return getRuleContext(MultipartIdentifierContext.class,0);
 		}
 		public TableContext(QueryPrimaryContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTable(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTable(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTable(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTable(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTable(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTable(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2778,26 +2778,26 @@ public class ArcticSqlExtendParser extends Parser {
 		public ExpressionContext expression() {
 			return getRuleContext(ExpressionContext.class,0);
 		}
-		public TerminalNode NULLS() { return getToken(ArcticSqlExtendParser.NULLS, 0); }
-		public TerminalNode ASC() { return getToken(ArcticSqlExtendParser.ASC, 0); }
-		public TerminalNode DESC() { return getToken(ArcticSqlExtendParser.DESC, 0); }
-		public TerminalNode LAST() { return getToken(ArcticSqlExtendParser.LAST, 0); }
-		public TerminalNode FIRST() { return getToken(ArcticSqlExtendParser.FIRST, 0); }
+		public TerminalNode NULLS() { return getToken(MixedFormatSqlExtendParser.NULLS, 0); }
+		public TerminalNode ASC() { return getToken(MixedFormatSqlExtendParser.ASC, 0); }
+		public TerminalNode DESC() { return getToken(MixedFormatSqlExtendParser.DESC, 0); }
+		public TerminalNode LAST() { return getToken(MixedFormatSqlExtendParser.LAST, 0); }
+		public TerminalNode FIRST() { return getToken(MixedFormatSqlExtendParser.FIRST, 0); }
 		public SortItemContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_sortItem; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSortItem(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSortItem(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSortItem(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSortItem(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSortItem(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSortItem(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2880,15 +2880,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_fromStatement; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterFromStatement(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterFromStatement(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitFromStatement(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitFromStatement(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitFromStatement(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitFromStatement(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2969,15 +2969,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_fromStatementBody; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterFromStatementBody(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterFromStatementBody(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitFromStatementBody(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitFromStatementBody(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitFromStatementBody(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitFromStatementBody(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -3126,15 +3126,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public RegularQuerySpecificationContext(QuerySpecificationContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterRegularQuerySpecification(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterRegularQuerySpecification(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitRegularQuerySpecification(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitRegularQuerySpecification(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitRegularQuerySpecification(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitRegularQuerySpecification(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -3166,15 +3166,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public TransformQuerySpecificationContext(QuerySpecificationContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTransformQuerySpecification(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTransformQuerySpecification(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTransformQuerySpecification(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTransformQuerySpecification(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTransformQuerySpecification(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTransformQuerySpecification(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -3355,21 +3355,21 @@ public class ArcticSqlExtendParser extends Parser {
 		public Token script;
 		public RowFormatContext outRowFormat;
 		public Token recordReader;
-		public TerminalNode USING() { return getToken(ArcticSqlExtendParser.USING, 0); }
-		public List<TerminalNode> STRING() { return getTokens(ArcticSqlExtendParser.STRING); }
+		public TerminalNode USING() { return getToken(MixedFormatSqlExtendParser.USING, 0); }
+		public List<TerminalNode> STRING() { return getTokens(MixedFormatSqlExtendParser.STRING); }
 		public TerminalNode STRING(int i) {
-			return getToken(ArcticSqlExtendParser.STRING, i);
+			return getToken(MixedFormatSqlExtendParser.STRING, i);
 		}
-		public TerminalNode SELECT() { return getToken(ArcticSqlExtendParser.SELECT, 0); }
+		public TerminalNode SELECT() { return getToken(MixedFormatSqlExtendParser.SELECT, 0); }
 		public ExpressionSeqContext expressionSeq() {
 			return getRuleContext(ExpressionSeqContext.class,0);
 		}
-		public TerminalNode TRANSFORM() { return getToken(ArcticSqlExtendParser.TRANSFORM, 0); }
-		public TerminalNode MAP() { return getToken(ArcticSqlExtendParser.MAP, 0); }
-		public TerminalNode REDUCE() { return getToken(ArcticSqlExtendParser.REDUCE, 0); }
-		public TerminalNode RECORDWRITER() { return getToken(ArcticSqlExtendParser.RECORDWRITER, 0); }
-		public TerminalNode AS() { return getToken(ArcticSqlExtendParser.AS, 0); }
-		public TerminalNode RECORDREADER() { return getToken(ArcticSqlExtendParser.RECORDREADER, 0); }
+		public TerminalNode TRANSFORM() { return getToken(MixedFormatSqlExtendParser.TRANSFORM, 0); }
+		public TerminalNode MAP() { return getToken(MixedFormatSqlExtendParser.MAP, 0); }
+		public TerminalNode REDUCE() { return getToken(MixedFormatSqlExtendParser.REDUCE, 0); }
+		public TerminalNode RECORDWRITER() { return getToken(MixedFormatSqlExtendParser.RECORDWRITER, 0); }
+		public TerminalNode AS() { return getToken(MixedFormatSqlExtendParser.AS, 0); }
+		public TerminalNode RECORDREADER() { return getToken(MixedFormatSqlExtendParser.RECORDREADER, 0); }
 		public List<RowFormatContext> rowFormat() {
 			return getRuleContexts(RowFormatContext.class);
 		}
@@ -3391,15 +3391,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_transformClause; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTransformClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTransformClause(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTransformClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTransformClause(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTransformClause(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTransformClause(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -3593,7 +3593,7 @@ public class ArcticSqlExtendParser extends Parser {
 	public static class SelectClauseContext extends ParserRuleContext {
 		public HintContext hint;
 		public List<HintContext> hints = new ArrayList<HintContext>();
-		public TerminalNode SELECT() { return getToken(ArcticSqlExtendParser.SELECT, 0); }
+		public TerminalNode SELECT() { return getToken(MixedFormatSqlExtendParser.SELECT, 0); }
 		public NamedExpressionSeqContext namedExpressionSeq() {
 			return getRuleContext(NamedExpressionSeqContext.class,0);
 		}
@@ -3612,15 +3612,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_selectClause; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSelectClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSelectClause(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSelectClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSelectClause(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSelectClause(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSelectClause(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -3677,7 +3677,7 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class WhereClauseContext extends ParserRuleContext {
-		public TerminalNode WHERE() { return getToken(ArcticSqlExtendParser.WHERE, 0); }
+		public TerminalNode WHERE() { return getToken(MixedFormatSqlExtendParser.WHERE, 0); }
 		public BooleanExpressionContext booleanExpression() {
 			return getRuleContext(BooleanExpressionContext.class,0);
 		}
@@ -3687,15 +3687,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_whereClause; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterWhereClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterWhereClause(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitWhereClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitWhereClause(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitWhereClause(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitWhereClause(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -3724,7 +3724,7 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class HavingClauseContext extends ParserRuleContext {
-		public TerminalNode HAVING() { return getToken(ArcticSqlExtendParser.HAVING, 0); }
+		public TerminalNode HAVING() { return getToken(MixedFormatSqlExtendParser.HAVING, 0); }
 		public BooleanExpressionContext booleanExpression() {
 			return getRuleContext(BooleanExpressionContext.class,0);
 		}
@@ -3734,15 +3734,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_havingClause; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterHavingClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterHavingClause(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitHavingClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitHavingClause(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitHavingClause(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitHavingClause(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -3785,15 +3785,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_hint; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterHint(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterHint(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitHint(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitHint(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitHint(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitHint(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -3871,15 +3871,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_hintStatement; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterHintStatement(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterHintStatement(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitHintStatement(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitHintStatement(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitHintStatement(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitHintStatement(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -3944,7 +3944,7 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class FromClauseContext extends ParserRuleContext {
-		public TerminalNode FROM() { return getToken(ArcticSqlExtendParser.FROM, 0); }
+		public TerminalNode FROM() { return getToken(MixedFormatSqlExtendParser.FROM, 0); }
 		public List<RelationContext> relation() {
 			return getRuleContexts(RelationContext.class);
 		}
@@ -3966,15 +3966,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_fromClause; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterFromClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterFromClause(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitFromClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitFromClause(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitFromClause(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitFromClause(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -4053,8 +4053,8 @@ public class ArcticSqlExtendParser extends Parser {
 		public ExpressionContext expression;
 		public List<ExpressionContext> groupingExpressions = new ArrayList<ExpressionContext>();
 		public Token kind;
-		public TerminalNode GROUP() { return getToken(ArcticSqlExtendParser.GROUP, 0); }
-		public TerminalNode BY() { return getToken(ArcticSqlExtendParser.BY, 0); }
+		public TerminalNode GROUP() { return getToken(MixedFormatSqlExtendParser.GROUP, 0); }
+		public TerminalNode BY() { return getToken(MixedFormatSqlExtendParser.BY, 0); }
 		public List<GroupByClauseContext> groupByClause() {
 			return getRuleContexts(GroupByClauseContext.class);
 		}
@@ -4067,32 +4067,32 @@ public class ArcticSqlExtendParser extends Parser {
 		public ExpressionContext expression(int i) {
 			return getRuleContext(ExpressionContext.class,i);
 		}
-		public TerminalNode WITH() { return getToken(ArcticSqlExtendParser.WITH, 0); }
-		public TerminalNode SETS() { return getToken(ArcticSqlExtendParser.SETS, 0); }
+		public TerminalNode WITH() { return getToken(MixedFormatSqlExtendParser.WITH, 0); }
+		public TerminalNode SETS() { return getToken(MixedFormatSqlExtendParser.SETS, 0); }
 		public List<GroupingSetContext> groupingSet() {
 			return getRuleContexts(GroupingSetContext.class);
 		}
 		public GroupingSetContext groupingSet(int i) {
 			return getRuleContext(GroupingSetContext.class,i);
 		}
-		public TerminalNode ROLLUP() { return getToken(ArcticSqlExtendParser.ROLLUP, 0); }
-		public TerminalNode CUBE() { return getToken(ArcticSqlExtendParser.CUBE, 0); }
-		public TerminalNode GROUPING() { return getToken(ArcticSqlExtendParser.GROUPING, 0); }
+		public TerminalNode ROLLUP() { return getToken(MixedFormatSqlExtendParser.ROLLUP, 0); }
+		public TerminalNode CUBE() { return getToken(MixedFormatSqlExtendParser.CUBE, 0); }
+		public TerminalNode GROUPING() { return getToken(MixedFormatSqlExtendParser.GROUPING, 0); }
 		public AggregationClauseContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_aggregationClause; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterAggregationClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterAggregationClause(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitAggregationClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitAggregationClause(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitAggregationClause(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitAggregationClause(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -4244,15 +4244,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_groupByClause; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterGroupByClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterGroupByClause(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitGroupByClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitGroupByClause(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitGroupByClause(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitGroupByClause(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -4298,10 +4298,10 @@ public class ArcticSqlExtendParser extends Parser {
 		public GroupingSetContext groupingSet(int i) {
 			return getRuleContext(GroupingSetContext.class,i);
 		}
-		public TerminalNode ROLLUP() { return getToken(ArcticSqlExtendParser.ROLLUP, 0); }
-		public TerminalNode CUBE() { return getToken(ArcticSqlExtendParser.CUBE, 0); }
-		public TerminalNode GROUPING() { return getToken(ArcticSqlExtendParser.GROUPING, 0); }
-		public TerminalNode SETS() { return getToken(ArcticSqlExtendParser.SETS, 0); }
+		public TerminalNode ROLLUP() { return getToken(MixedFormatSqlExtendParser.ROLLUP, 0); }
+		public TerminalNode CUBE() { return getToken(MixedFormatSqlExtendParser.CUBE, 0); }
+		public TerminalNode GROUPING() { return getToken(MixedFormatSqlExtendParser.GROUPING, 0); }
+		public TerminalNode SETS() { return getToken(MixedFormatSqlExtendParser.SETS, 0); }
 		public List<GroupingElementContext> groupingElement() {
 			return getRuleContexts(GroupingElementContext.class);
 		}
@@ -4314,15 +4314,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_groupingAnalytics; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterGroupingAnalytics(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterGroupingAnalytics(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitGroupingAnalytics(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitGroupingAnalytics(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitGroupingAnalytics(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitGroupingAnalytics(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -4432,15 +4432,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_groupingElement; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterGroupingElement(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterGroupingElement(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitGroupingElement(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitGroupingElement(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitGroupingElement(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitGroupingElement(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -4492,15 +4492,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_groupingSet; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterGroupingSet(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterGroupingSet(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitGroupingSet(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitGroupingSet(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitGroupingSet(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitGroupingSet(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -4572,12 +4572,12 @@ public class ArcticSqlExtendParser extends Parser {
 		public NamedExpressionSeqContext aggregates;
 		public PivotValueContext pivotValue;
 		public List<PivotValueContext> pivotValues = new ArrayList<PivotValueContext>();
-		public TerminalNode PIVOT() { return getToken(ArcticSqlExtendParser.PIVOT, 0); }
-		public TerminalNode FOR() { return getToken(ArcticSqlExtendParser.FOR, 0); }
+		public TerminalNode PIVOT() { return getToken(MixedFormatSqlExtendParser.PIVOT, 0); }
+		public TerminalNode FOR() { return getToken(MixedFormatSqlExtendParser.FOR, 0); }
 		public PivotColumnContext pivotColumn() {
 			return getRuleContext(PivotColumnContext.class,0);
 		}
-		public TerminalNode IN() { return getToken(ArcticSqlExtendParser.IN, 0); }
+		public TerminalNode IN() { return getToken(MixedFormatSqlExtendParser.IN, 0); }
 		public NamedExpressionSeqContext namedExpressionSeq() {
 			return getRuleContext(NamedExpressionSeqContext.class,0);
 		}
@@ -4593,15 +4593,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_pivotClause; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterPivotClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterPivotClause(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitPivotClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitPivotClause(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitPivotClause(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitPivotClause(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -4679,15 +4679,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_pivotColumn; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterPivotColumn(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterPivotColumn(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitPivotColumn(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitPivotColumn(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitPivotColumn(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitPivotColumn(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -4757,22 +4757,22 @@ public class ArcticSqlExtendParser extends Parser {
 		public IdentifierContext identifier() {
 			return getRuleContext(IdentifierContext.class,0);
 		}
-		public TerminalNode AS() { return getToken(ArcticSqlExtendParser.AS, 0); }
+		public TerminalNode AS() { return getToken(MixedFormatSqlExtendParser.AS, 0); }
 		public PivotValueContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_pivotValue; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterPivotValue(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterPivotValue(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitPivotValue(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitPivotValue(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitPivotValue(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitPivotValue(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -4822,8 +4822,8 @@ public class ArcticSqlExtendParser extends Parser {
 		public IdentifierContext tblName;
 		public IdentifierContext identifier;
 		public List<IdentifierContext> colName = new ArrayList<IdentifierContext>();
-		public TerminalNode LATERAL() { return getToken(ArcticSqlExtendParser.LATERAL, 0); }
-		public TerminalNode VIEW() { return getToken(ArcticSqlExtendParser.VIEW, 0); }
+		public TerminalNode LATERAL() { return getToken(MixedFormatSqlExtendParser.LATERAL, 0); }
+		public TerminalNode VIEW() { return getToken(MixedFormatSqlExtendParser.VIEW, 0); }
 		public QualifiedNameContext qualifiedName() {
 			return getRuleContext(QualifiedNameContext.class,0);
 		}
@@ -4833,29 +4833,29 @@ public class ArcticSqlExtendParser extends Parser {
 		public IdentifierContext identifier(int i) {
 			return getRuleContext(IdentifierContext.class,i);
 		}
-		public TerminalNode OUTER() { return getToken(ArcticSqlExtendParser.OUTER, 0); }
+		public TerminalNode OUTER() { return getToken(MixedFormatSqlExtendParser.OUTER, 0); }
 		public List<ExpressionContext> expression() {
 			return getRuleContexts(ExpressionContext.class);
 		}
 		public ExpressionContext expression(int i) {
 			return getRuleContext(ExpressionContext.class,i);
 		}
-		public TerminalNode AS() { return getToken(ArcticSqlExtendParser.AS, 0); }
+		public TerminalNode AS() { return getToken(MixedFormatSqlExtendParser.AS, 0); }
 		public LateralViewContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_lateralView; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterLateralView(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterLateralView(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitLateralView(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitLateralView(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitLateralView(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitLateralView(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -4970,23 +4970,23 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class SetQuantifierContext extends ParserRuleContext {
-		public TerminalNode DISTINCT() { return getToken(ArcticSqlExtendParser.DISTINCT, 0); }
-		public TerminalNode ALL() { return getToken(ArcticSqlExtendParser.ALL, 0); }
+		public TerminalNode DISTINCT() { return getToken(MixedFormatSqlExtendParser.DISTINCT, 0); }
+		public TerminalNode ALL() { return getToken(MixedFormatSqlExtendParser.ALL, 0); }
 		public SetQuantifierContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_setQuantifier; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSetQuantifier(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSetQuantifier(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSetQuantifier(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSetQuantifier(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSetQuantifier(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSetQuantifier(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -5025,7 +5025,7 @@ public class ArcticSqlExtendParser extends Parser {
 		public RelationPrimaryContext relationPrimary() {
 			return getRuleContext(RelationPrimaryContext.class,0);
 		}
-		public TerminalNode LATERAL() { return getToken(ArcticSqlExtendParser.LATERAL, 0); }
+		public TerminalNode LATERAL() { return getToken(MixedFormatSqlExtendParser.LATERAL, 0); }
 		public List<JoinRelationContext> joinRelation() {
 			return getRuleContexts(JoinRelationContext.class);
 		}
@@ -5038,15 +5038,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_relation; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterRelation(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterRelation(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitRelation(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitRelation(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitRelation(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitRelation(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -5101,33 +5101,33 @@ public class ArcticSqlExtendParser extends Parser {
 
 	public static class JoinRelationContext extends ParserRuleContext {
 		public RelationPrimaryContext right;
-		public TerminalNode JOIN() { return getToken(ArcticSqlExtendParser.JOIN, 0); }
+		public TerminalNode JOIN() { return getToken(MixedFormatSqlExtendParser.JOIN, 0); }
 		public RelationPrimaryContext relationPrimary() {
 			return getRuleContext(RelationPrimaryContext.class,0);
 		}
 		public JoinTypeContext joinType() {
 			return getRuleContext(JoinTypeContext.class,0);
 		}
-		public TerminalNode LATERAL() { return getToken(ArcticSqlExtendParser.LATERAL, 0); }
+		public TerminalNode LATERAL() { return getToken(MixedFormatSqlExtendParser.LATERAL, 0); }
 		public JoinCriteriaContext joinCriteria() {
 			return getRuleContext(JoinCriteriaContext.class,0);
 		}
-		public TerminalNode NATURAL() { return getToken(ArcticSqlExtendParser.NATURAL, 0); }
+		public TerminalNode NATURAL() { return getToken(MixedFormatSqlExtendParser.NATURAL, 0); }
 		public JoinRelationContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_joinRelation; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterJoinRelation(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterJoinRelation(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitJoinRelation(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitJoinRelation(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitJoinRelation(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitJoinRelation(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -5218,29 +5218,29 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class JoinTypeContext extends ParserRuleContext {
-		public TerminalNode INNER() { return getToken(ArcticSqlExtendParser.INNER, 0); }
-		public TerminalNode CROSS() { return getToken(ArcticSqlExtendParser.CROSS, 0); }
-		public TerminalNode LEFT() { return getToken(ArcticSqlExtendParser.LEFT, 0); }
-		public TerminalNode OUTER() { return getToken(ArcticSqlExtendParser.OUTER, 0); }
-		public TerminalNode SEMI() { return getToken(ArcticSqlExtendParser.SEMI, 0); }
-		public TerminalNode RIGHT() { return getToken(ArcticSqlExtendParser.RIGHT, 0); }
-		public TerminalNode FULL() { return getToken(ArcticSqlExtendParser.FULL, 0); }
-		public TerminalNode ANTI() { return getToken(ArcticSqlExtendParser.ANTI, 0); }
+		public TerminalNode INNER() { return getToken(MixedFormatSqlExtendParser.INNER, 0); }
+		public TerminalNode CROSS() { return getToken(MixedFormatSqlExtendParser.CROSS, 0); }
+		public TerminalNode LEFT() { return getToken(MixedFormatSqlExtendParser.LEFT, 0); }
+		public TerminalNode OUTER() { return getToken(MixedFormatSqlExtendParser.OUTER, 0); }
+		public TerminalNode SEMI() { return getToken(MixedFormatSqlExtendParser.SEMI, 0); }
+		public TerminalNode RIGHT() { return getToken(MixedFormatSqlExtendParser.RIGHT, 0); }
+		public TerminalNode FULL() { return getToken(MixedFormatSqlExtendParser.FULL, 0); }
+		public TerminalNode ANTI() { return getToken(MixedFormatSqlExtendParser.ANTI, 0); }
 		public JoinTypeContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_joinType; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterJoinType(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterJoinType(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitJoinType(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitJoinType(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitJoinType(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitJoinType(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -5374,11 +5374,11 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class JoinCriteriaContext extends ParserRuleContext {
-		public TerminalNode ON() { return getToken(ArcticSqlExtendParser.ON, 0); }
+		public TerminalNode ON() { return getToken(MixedFormatSqlExtendParser.ON, 0); }
 		public BooleanExpressionContext booleanExpression() {
 			return getRuleContext(BooleanExpressionContext.class,0);
 		}
-		public TerminalNode USING() { return getToken(ArcticSqlExtendParser.USING, 0); }
+		public TerminalNode USING() { return getToken(MixedFormatSqlExtendParser.USING, 0); }
 		public IdentifierListContext identifierList() {
 			return getRuleContext(IdentifierListContext.class,0);
 		}
@@ -5388,15 +5388,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_joinCriteria; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterJoinCriteria(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterJoinCriteria(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitJoinCriteria(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitJoinCriteria(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitJoinCriteria(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitJoinCriteria(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -5442,7 +5442,7 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class SampleContext extends ParserRuleContext {
-		public TerminalNode TABLESAMPLE() { return getToken(ArcticSqlExtendParser.TABLESAMPLE, 0); }
+		public TerminalNode TABLESAMPLE() { return getToken(MixedFormatSqlExtendParser.TABLESAMPLE, 0); }
 		public SampleMethodContext sampleMethod() {
 			return getRuleContext(SampleMethodContext.class,0);
 		}
@@ -5452,15 +5452,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_sample; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSample(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSample(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSample(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSample(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSample(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSample(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -5515,41 +5515,41 @@ public class ArcticSqlExtendParser extends Parser {
 		public ExpressionContext expression() {
 			return getRuleContext(ExpressionContext.class,0);
 		}
-		public TerminalNode ROWS() { return getToken(ArcticSqlExtendParser.ROWS, 0); }
+		public TerminalNode ROWS() { return getToken(MixedFormatSqlExtendParser.ROWS, 0); }
 		public SampleByRowsContext(SampleMethodContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSampleByRows(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSampleByRows(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSampleByRows(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSampleByRows(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSampleByRows(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSampleByRows(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class SampleByPercentileContext extends SampleMethodContext {
 		public Token negativeSign;
 		public Token percentage;
-		public TerminalNode PERCENTLIT() { return getToken(ArcticSqlExtendParser.PERCENTLIT, 0); }
-		public TerminalNode INTEGER_VALUE() { return getToken(ArcticSqlExtendParser.INTEGER_VALUE, 0); }
-		public TerminalNode DECIMAL_VALUE() { return getToken(ArcticSqlExtendParser.DECIMAL_VALUE, 0); }
-		public TerminalNode MINUS() { return getToken(ArcticSqlExtendParser.MINUS, 0); }
+		public TerminalNode PERCENTLIT() { return getToken(MixedFormatSqlExtendParser.PERCENTLIT, 0); }
+		public TerminalNode INTEGER_VALUE() { return getToken(MixedFormatSqlExtendParser.INTEGER_VALUE, 0); }
+		public TerminalNode DECIMAL_VALUE() { return getToken(MixedFormatSqlExtendParser.DECIMAL_VALUE, 0); }
+		public TerminalNode MINUS() { return getToken(MixedFormatSqlExtendParser.MINUS, 0); }
 		public SampleByPercentileContext(SampleMethodContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSampleByPercentile(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSampleByPercentile(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSampleByPercentile(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSampleByPercentile(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSampleByPercentile(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSampleByPercentile(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -5557,14 +5557,14 @@ public class ArcticSqlExtendParser extends Parser {
 		public Token sampleType;
 		public Token numerator;
 		public Token denominator;
-		public TerminalNode OUT() { return getToken(ArcticSqlExtendParser.OUT, 0); }
-		public TerminalNode OF() { return getToken(ArcticSqlExtendParser.OF, 0); }
-		public TerminalNode BUCKET() { return getToken(ArcticSqlExtendParser.BUCKET, 0); }
-		public List<TerminalNode> INTEGER_VALUE() { return getTokens(ArcticSqlExtendParser.INTEGER_VALUE); }
+		public TerminalNode OUT() { return getToken(MixedFormatSqlExtendParser.OUT, 0); }
+		public TerminalNode OF() { return getToken(MixedFormatSqlExtendParser.OF, 0); }
+		public TerminalNode BUCKET() { return getToken(MixedFormatSqlExtendParser.BUCKET, 0); }
+		public List<TerminalNode> INTEGER_VALUE() { return getTokens(MixedFormatSqlExtendParser.INTEGER_VALUE); }
 		public TerminalNode INTEGER_VALUE(int i) {
-			return getToken(ArcticSqlExtendParser.INTEGER_VALUE, i);
+			return getToken(MixedFormatSqlExtendParser.INTEGER_VALUE, i);
 		}
-		public TerminalNode ON() { return getToken(ArcticSqlExtendParser.ON, 0); }
+		public TerminalNode ON() { return getToken(MixedFormatSqlExtendParser.ON, 0); }
 		public IdentifierContext identifier() {
 			return getRuleContext(IdentifierContext.class,0);
 		}
@@ -5574,15 +5574,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public SampleByBucketContext(SampleMethodContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSampleByBucket(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSampleByBucket(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSampleByBucket(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSampleByBucket(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSampleByBucket(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSampleByBucket(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -5594,15 +5594,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public SampleByBytesContext(SampleMethodContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSampleByBytes(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSampleByBytes(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSampleByBytes(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSampleByBytes(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSampleByBytes(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSampleByBytes(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -5731,15 +5731,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_identifierList; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterIdentifierList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterIdentifierList(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitIdentifierList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitIdentifierList(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitIdentifierList(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitIdentifierList(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -5784,15 +5784,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_identifierSeq; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterIdentifierSeq(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterIdentifierSeq(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitIdentifierSeq(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitIdentifierSeq(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitIdentifierSeq(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitIdentifierSeq(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -5852,15 +5852,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_orderedIdentifierList; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterOrderedIdentifierList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterOrderedIdentifierList(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitOrderedIdentifierList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitOrderedIdentifierList(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitOrderedIdentifierList(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitOrderedIdentifierList(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -5913,23 +5913,23 @@ public class ArcticSqlExtendParser extends Parser {
 		public ErrorCapturingIdentifierContext errorCapturingIdentifier() {
 			return getRuleContext(ErrorCapturingIdentifierContext.class,0);
 		}
-		public TerminalNode ASC() { return getToken(ArcticSqlExtendParser.ASC, 0); }
-		public TerminalNode DESC() { return getToken(ArcticSqlExtendParser.DESC, 0); }
+		public TerminalNode ASC() { return getToken(MixedFormatSqlExtendParser.ASC, 0); }
+		public TerminalNode DESC() { return getToken(MixedFormatSqlExtendParser.DESC, 0); }
 		public OrderedIdentifierContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_orderedIdentifier; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterOrderedIdentifier(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterOrderedIdentifier(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitOrderedIdentifier(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitOrderedIdentifier(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitOrderedIdentifier(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitOrderedIdentifier(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -5993,15 +5993,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public TableValuedFunctionContext(RelationPrimaryContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTableValuedFunction(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTableValuedFunction(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTableValuedFunction(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTableValuedFunction(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTableValuedFunction(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTableValuedFunction(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -6012,15 +6012,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public InlineTableDefault2Context(RelationPrimaryContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterInlineTableDefault2(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterInlineTableDefault2(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitInlineTableDefault2(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitInlineTableDefault2(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitInlineTableDefault2(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitInlineTableDefault2(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -6037,15 +6037,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public AliasedRelationContext(RelationPrimaryContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterAliasedRelation(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterAliasedRelation(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitAliasedRelation(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitAliasedRelation(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitAliasedRelation(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitAliasedRelation(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -6062,15 +6062,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public AliasedQueryContext(RelationPrimaryContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterAliasedQuery(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterAliasedQuery(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitAliasedQuery(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitAliasedQuery(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitAliasedQuery(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitAliasedQuery(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -6087,15 +6087,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public TableNameContext(RelationPrimaryContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTableName(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTableName(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTableName(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTableName(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTableName(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTableName(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -6205,7 +6205,7 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class InlineTableContext extends ParserRuleContext {
-		public TerminalNode VALUES() { return getToken(ArcticSqlExtendParser.VALUES, 0); }
+		public TerminalNode VALUES() { return getToken(MixedFormatSqlExtendParser.VALUES, 0); }
 		public List<ExpressionContext> expression() {
 			return getRuleContexts(ExpressionContext.class);
 		}
@@ -6221,15 +6221,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_inlineTable; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterInlineTable(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterInlineTable(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitInlineTable(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitInlineTable(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitInlineTable(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitInlineTable(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -6298,15 +6298,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_functionTable; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterFunctionTable(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterFunctionTable(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitFunctionTable(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitFunctionTable(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitFunctionTable(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitFunctionTable(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -6369,7 +6369,7 @@ public class ArcticSqlExtendParser extends Parser {
 		public StrictIdentifierContext strictIdentifier() {
 			return getRuleContext(StrictIdentifierContext.class,0);
 		}
-		public TerminalNode AS() { return getToken(ArcticSqlExtendParser.AS, 0); }
+		public TerminalNode AS() { return getToken(MixedFormatSqlExtendParser.AS, 0); }
 		public IdentifierListContext identifierList() {
 			return getRuleContext(IdentifierListContext.class,0);
 		}
@@ -6379,15 +6379,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_tableAlias; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTableAlias(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTableAlias(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTableAlias(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTableAlias(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTableAlias(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTableAlias(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -6455,27 +6455,27 @@ public class ArcticSqlExtendParser extends Parser {
 	public static class RowFormatSerdeContext extends RowFormatContext {
 		public Token name;
 		public TablePropertyListContext props;
-		public TerminalNode ROW() { return getToken(ArcticSqlExtendParser.ROW, 0); }
-		public TerminalNode FORMAT() { return getToken(ArcticSqlExtendParser.FORMAT, 0); }
-		public TerminalNode SERDE() { return getToken(ArcticSqlExtendParser.SERDE, 0); }
-		public TerminalNode STRING() { return getToken(ArcticSqlExtendParser.STRING, 0); }
-		public TerminalNode WITH() { return getToken(ArcticSqlExtendParser.WITH, 0); }
-		public TerminalNode SERDEPROPERTIES() { return getToken(ArcticSqlExtendParser.SERDEPROPERTIES, 0); }
+		public TerminalNode ROW() { return getToken(MixedFormatSqlExtendParser.ROW, 0); }
+		public TerminalNode FORMAT() { return getToken(MixedFormatSqlExtendParser.FORMAT, 0); }
+		public TerminalNode SERDE() { return getToken(MixedFormatSqlExtendParser.SERDE, 0); }
+		public TerminalNode STRING() { return getToken(MixedFormatSqlExtendParser.STRING, 0); }
+		public TerminalNode WITH() { return getToken(MixedFormatSqlExtendParser.WITH, 0); }
+		public TerminalNode SERDEPROPERTIES() { return getToken(MixedFormatSqlExtendParser.SERDEPROPERTIES, 0); }
 		public TablePropertyListContext tablePropertyList() {
 			return getRuleContext(TablePropertyListContext.class,0);
 		}
 		public RowFormatSerdeContext(RowFormatContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterRowFormatSerde(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterRowFormatSerde(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitRowFormatSerde(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitRowFormatSerde(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitRowFormatSerde(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitRowFormatSerde(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -6486,43 +6486,43 @@ public class ArcticSqlExtendParser extends Parser {
 		public Token keysTerminatedBy;
 		public Token linesSeparatedBy;
 		public Token nullDefinedAs;
-		public TerminalNode ROW() { return getToken(ArcticSqlExtendParser.ROW, 0); }
-		public TerminalNode FORMAT() { return getToken(ArcticSqlExtendParser.FORMAT, 0); }
-		public TerminalNode DELIMITED() { return getToken(ArcticSqlExtendParser.DELIMITED, 0); }
-		public TerminalNode FIELDS() { return getToken(ArcticSqlExtendParser.FIELDS, 0); }
-		public List<TerminalNode> TERMINATED() { return getTokens(ArcticSqlExtendParser.TERMINATED); }
+		public TerminalNode ROW() { return getToken(MixedFormatSqlExtendParser.ROW, 0); }
+		public TerminalNode FORMAT() { return getToken(MixedFormatSqlExtendParser.FORMAT, 0); }
+		public TerminalNode DELIMITED() { return getToken(MixedFormatSqlExtendParser.DELIMITED, 0); }
+		public TerminalNode FIELDS() { return getToken(MixedFormatSqlExtendParser.FIELDS, 0); }
+		public List<TerminalNode> TERMINATED() { return getTokens(MixedFormatSqlExtendParser.TERMINATED); }
 		public TerminalNode TERMINATED(int i) {
-			return getToken(ArcticSqlExtendParser.TERMINATED, i);
+			return getToken(MixedFormatSqlExtendParser.TERMINATED, i);
 		}
-		public List<TerminalNode> BY() { return getTokens(ArcticSqlExtendParser.BY); }
+		public List<TerminalNode> BY() { return getTokens(MixedFormatSqlExtendParser.BY); }
 		public TerminalNode BY(int i) {
-			return getToken(ArcticSqlExtendParser.BY, i);
+			return getToken(MixedFormatSqlExtendParser.BY, i);
 		}
-		public TerminalNode COLLECTION() { return getToken(ArcticSqlExtendParser.COLLECTION, 0); }
-		public TerminalNode ITEMS() { return getToken(ArcticSqlExtendParser.ITEMS, 0); }
-		public TerminalNode MAP() { return getToken(ArcticSqlExtendParser.MAP, 0); }
-		public TerminalNode KEYS() { return getToken(ArcticSqlExtendParser.KEYS, 0); }
-		public TerminalNode LINES() { return getToken(ArcticSqlExtendParser.LINES, 0); }
-		public TerminalNode NULL() { return getToken(ArcticSqlExtendParser.NULL, 0); }
-		public TerminalNode DEFINED() { return getToken(ArcticSqlExtendParser.DEFINED, 0); }
-		public TerminalNode AS() { return getToken(ArcticSqlExtendParser.AS, 0); }
-		public List<TerminalNode> STRING() { return getTokens(ArcticSqlExtendParser.STRING); }
+		public TerminalNode COLLECTION() { return getToken(MixedFormatSqlExtendParser.COLLECTION, 0); }
+		public TerminalNode ITEMS() { return getToken(MixedFormatSqlExtendParser.ITEMS, 0); }
+		public TerminalNode MAP() { return getToken(MixedFormatSqlExtendParser.MAP, 0); }
+		public TerminalNode KEYS() { return getToken(MixedFormatSqlExtendParser.KEYS, 0); }
+		public TerminalNode LINES() { return getToken(MixedFormatSqlExtendParser.LINES, 0); }
+		public TerminalNode NULL() { return getToken(MixedFormatSqlExtendParser.NULL, 0); }
+		public TerminalNode DEFINED() { return getToken(MixedFormatSqlExtendParser.DEFINED, 0); }
+		public TerminalNode AS() { return getToken(MixedFormatSqlExtendParser.AS, 0); }
+		public List<TerminalNode> STRING() { return getTokens(MixedFormatSqlExtendParser.STRING); }
 		public TerminalNode STRING(int i) {
-			return getToken(ArcticSqlExtendParser.STRING, i);
+			return getToken(MixedFormatSqlExtendParser.STRING, i);
 		}
-		public TerminalNode ESCAPED() { return getToken(ArcticSqlExtendParser.ESCAPED, 0); }
+		public TerminalNode ESCAPED() { return getToken(MixedFormatSqlExtendParser.ESCAPED, 0); }
 		public RowFormatDelimitedContext(RowFormatContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterRowFormatDelimited(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterRowFormatDelimited(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitRowFormatDelimited(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitRowFormatDelimited(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitRowFormatDelimited(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitRowFormatDelimited(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -6700,15 +6700,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_multipartIdentifier; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterMultipartIdentifier(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterMultipartIdentifier(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitMultipartIdentifier(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitMultipartIdentifier(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitMultipartIdentifier(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitMultipartIdentifier(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -6763,7 +6763,7 @@ public class ArcticSqlExtendParser extends Parser {
 		public IdentifierListContext identifierList() {
 			return getRuleContext(IdentifierListContext.class,0);
 		}
-		public TerminalNode AS() { return getToken(ArcticSqlExtendParser.AS, 0); }
+		public TerminalNode AS() { return getToken(MixedFormatSqlExtendParser.AS, 0); }
 		public ErrorCapturingIdentifierContext errorCapturingIdentifier() {
 			return getRuleContext(ErrorCapturingIdentifierContext.class,0);
 		}
@@ -6773,15 +6773,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_namedExpression; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterNamedExpression(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterNamedExpression(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitNamedExpression(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitNamedExpression(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitNamedExpression(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitNamedExpression(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -6854,15 +6854,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_namedExpressionSeq; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterNamedExpressionSeq(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterNamedExpressionSeq(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitNamedExpressionSeq(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitNamedExpressionSeq(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitNamedExpressionSeq(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitNamedExpressionSeq(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -6922,15 +6922,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_partitionFieldList; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterPartitionFieldList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterPartitionFieldList(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitPartitionFieldList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitPartitionFieldList(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitPartitionFieldList(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitPartitionFieldList(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -6997,15 +6997,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public PartitionColumnContext(PartitionFieldContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterPartitionColumn(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterPartitionColumn(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitPartitionColumn(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitPartitionColumn(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitPartitionColumn(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitPartitionColumn(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -7016,15 +7016,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public PartitionTransformContext(PartitionFieldContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterPartitionTransform(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterPartitionTransform(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitPartitionTransform(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitPartitionTransform(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitPartitionTransform(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitPartitionTransform(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -7083,15 +7083,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public IdentityTransformContext(TransformContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterIdentityTransform(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterIdentityTransform(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitIdentityTransform(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitIdentityTransform(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitIdentityTransform(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitIdentityTransform(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -7111,15 +7111,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public ApplyTransformContext(TransformContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterApplyTransform(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterApplyTransform(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitApplyTransform(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitApplyTransform(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitApplyTransform(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitApplyTransform(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -7198,15 +7198,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_transformArgument; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTransformArgument(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTransformArgument(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTransformArgument(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTransformArgument(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTransformArgument(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTransformArgument(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -7255,15 +7255,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_expression; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterExpression(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterExpression(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitExpression(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitExpression(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitExpression(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitExpression(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -7302,15 +7302,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_expressionSeq; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterExpressionSeq(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterExpressionSeq(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitExpressionSeq(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitExpressionSeq(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitExpressionSeq(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitExpressionSeq(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -7365,22 +7365,22 @@ public class ArcticSqlExtendParser extends Parser {
 		}
 	}
 	public static class LogicalNotContext extends BooleanExpressionContext {
-		public TerminalNode NOT() { return getToken(ArcticSqlExtendParser.NOT, 0); }
+		public TerminalNode NOT() { return getToken(MixedFormatSqlExtendParser.NOT, 0); }
 		public BooleanExpressionContext booleanExpression() {
 			return getRuleContext(BooleanExpressionContext.class,0);
 		}
 		public LogicalNotContext(BooleanExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterLogicalNot(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterLogicalNot(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitLogicalNot(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitLogicalNot(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitLogicalNot(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitLogicalNot(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -7394,35 +7394,35 @@ public class ArcticSqlExtendParser extends Parser {
 		public PredicatedContext(BooleanExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterPredicated(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterPredicated(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitPredicated(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitPredicated(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitPredicated(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitPredicated(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class ExistsContext extends BooleanExpressionContext {
-		public TerminalNode EXISTS() { return getToken(ArcticSqlExtendParser.EXISTS, 0); }
+		public TerminalNode EXISTS() { return getToken(MixedFormatSqlExtendParser.EXISTS, 0); }
 		public QueryContext query() {
 			return getRuleContext(QueryContext.class,0);
 		}
 		public ExistsContext(BooleanExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterExists(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterExists(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitExists(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitExists(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitExists(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitExists(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -7436,20 +7436,20 @@ public class ArcticSqlExtendParser extends Parser {
 		public BooleanExpressionContext booleanExpression(int i) {
 			return getRuleContext(BooleanExpressionContext.class,i);
 		}
-		public TerminalNode AND() { return getToken(ArcticSqlExtendParser.AND, 0); }
-		public TerminalNode OR() { return getToken(ArcticSqlExtendParser.OR, 0); }
+		public TerminalNode AND() { return getToken(MixedFormatSqlExtendParser.AND, 0); }
+		public TerminalNode OR() { return getToken(MixedFormatSqlExtendParser.OR, 0); }
 		public LogicalBinaryContext(BooleanExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterLogicalBinary(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterLogicalBinary(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitLogicalBinary(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitLogicalBinary(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitLogicalBinary(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitLogicalBinary(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -7585,54 +7585,54 @@ public class ArcticSqlExtendParser extends Parser {
 		public Token quantifier;
 		public Token escapeChar;
 		public ValueExpressionContext right;
-		public TerminalNode AND() { return getToken(ArcticSqlExtendParser.AND, 0); }
-		public TerminalNode BETWEEN() { return getToken(ArcticSqlExtendParser.BETWEEN, 0); }
+		public TerminalNode AND() { return getToken(MixedFormatSqlExtendParser.AND, 0); }
+		public TerminalNode BETWEEN() { return getToken(MixedFormatSqlExtendParser.BETWEEN, 0); }
 		public List<ValueExpressionContext> valueExpression() {
 			return getRuleContexts(ValueExpressionContext.class);
 		}
 		public ValueExpressionContext valueExpression(int i) {
 			return getRuleContext(ValueExpressionContext.class,i);
 		}
-		public TerminalNode NOT() { return getToken(ArcticSqlExtendParser.NOT, 0); }
+		public TerminalNode NOT() { return getToken(MixedFormatSqlExtendParser.NOT, 0); }
 		public List<ExpressionContext> expression() {
 			return getRuleContexts(ExpressionContext.class);
 		}
 		public ExpressionContext expression(int i) {
 			return getRuleContext(ExpressionContext.class,i);
 		}
-		public TerminalNode IN() { return getToken(ArcticSqlExtendParser.IN, 0); }
+		public TerminalNode IN() { return getToken(MixedFormatSqlExtendParser.IN, 0); }
 		public QueryContext query() {
 			return getRuleContext(QueryContext.class,0);
 		}
-		public TerminalNode RLIKE() { return getToken(ArcticSqlExtendParser.RLIKE, 0); }
-		public TerminalNode LIKE() { return getToken(ArcticSqlExtendParser.LIKE, 0); }
-		public TerminalNode ANY() { return getToken(ArcticSqlExtendParser.ANY, 0); }
-		public TerminalNode SOME() { return getToken(ArcticSqlExtendParser.SOME, 0); }
-		public TerminalNode ALL() { return getToken(ArcticSqlExtendParser.ALL, 0); }
-		public TerminalNode ESCAPE() { return getToken(ArcticSqlExtendParser.ESCAPE, 0); }
-		public TerminalNode STRING() { return getToken(ArcticSqlExtendParser.STRING, 0); }
-		public TerminalNode IS() { return getToken(ArcticSqlExtendParser.IS, 0); }
-		public TerminalNode NULL() { return getToken(ArcticSqlExtendParser.NULL, 0); }
-		public TerminalNode TRUE() { return getToken(ArcticSqlExtendParser.TRUE, 0); }
-		public TerminalNode FALSE() { return getToken(ArcticSqlExtendParser.FALSE, 0); }
-		public TerminalNode UNKNOWN() { return getToken(ArcticSqlExtendParser.UNKNOWN, 0); }
-		public TerminalNode FROM() { return getToken(ArcticSqlExtendParser.FROM, 0); }
-		public TerminalNode DISTINCT() { return getToken(ArcticSqlExtendParser.DISTINCT, 0); }
+		public TerminalNode RLIKE() { return getToken(MixedFormatSqlExtendParser.RLIKE, 0); }
+		public TerminalNode LIKE() { return getToken(MixedFormatSqlExtendParser.LIKE, 0); }
+		public TerminalNode ANY() { return getToken(MixedFormatSqlExtendParser.ANY, 0); }
+		public TerminalNode SOME() { return getToken(MixedFormatSqlExtendParser.SOME, 0); }
+		public TerminalNode ALL() { return getToken(MixedFormatSqlExtendParser.ALL, 0); }
+		public TerminalNode ESCAPE() { return getToken(MixedFormatSqlExtendParser.ESCAPE, 0); }
+		public TerminalNode STRING() { return getToken(MixedFormatSqlExtendParser.STRING, 0); }
+		public TerminalNode IS() { return getToken(MixedFormatSqlExtendParser.IS, 0); }
+		public TerminalNode NULL() { return getToken(MixedFormatSqlExtendParser.NULL, 0); }
+		public TerminalNode TRUE() { return getToken(MixedFormatSqlExtendParser.TRUE, 0); }
+		public TerminalNode FALSE() { return getToken(MixedFormatSqlExtendParser.FALSE, 0); }
+		public TerminalNode UNKNOWN() { return getToken(MixedFormatSqlExtendParser.UNKNOWN, 0); }
+		public TerminalNode FROM() { return getToken(MixedFormatSqlExtendParser.FROM, 0); }
+		public TerminalNode DISTINCT() { return getToken(MixedFormatSqlExtendParser.DISTINCT, 0); }
 		public PredicateContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_predicate; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterPredicate(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterPredicate(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitPredicate(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitPredicate(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitPredicate(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitPredicate(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -7947,15 +7947,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public ValueExpressionDefaultContext(ValueExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterValueExpressionDefault(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterValueExpressionDefault(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitValueExpressionDefault(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitValueExpressionDefault(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitValueExpressionDefault(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitValueExpressionDefault(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -7974,15 +7974,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public ComparisonContext(ValueExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterComparison(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterComparison(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitComparison(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitComparison(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitComparison(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitComparison(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -7996,28 +7996,28 @@ public class ArcticSqlExtendParser extends Parser {
 		public ValueExpressionContext valueExpression(int i) {
 			return getRuleContext(ValueExpressionContext.class,i);
 		}
-		public TerminalNode ASTERISK() { return getToken(ArcticSqlExtendParser.ASTERISK, 0); }
-		public TerminalNode SLASH() { return getToken(ArcticSqlExtendParser.SLASH, 0); }
-		public TerminalNode PERCENT() { return getToken(ArcticSqlExtendParser.PERCENT, 0); }
-		public TerminalNode DIV() { return getToken(ArcticSqlExtendParser.DIV, 0); }
-		public TerminalNode PLUS() { return getToken(ArcticSqlExtendParser.PLUS, 0); }
-		public TerminalNode MINUS() { return getToken(ArcticSqlExtendParser.MINUS, 0); }
-		public TerminalNode CONCAT_PIPE() { return getToken(ArcticSqlExtendParser.CONCAT_PIPE, 0); }
-		public TerminalNode AMPERSAND() { return getToken(ArcticSqlExtendParser.AMPERSAND, 0); }
-		public TerminalNode HAT() { return getToken(ArcticSqlExtendParser.HAT, 0); }
-		public TerminalNode PIPE() { return getToken(ArcticSqlExtendParser.PIPE, 0); }
+		public TerminalNode ASTERISK() { return getToken(MixedFormatSqlExtendParser.ASTERISK, 0); }
+		public TerminalNode SLASH() { return getToken(MixedFormatSqlExtendParser.SLASH, 0); }
+		public TerminalNode PERCENT() { return getToken(MixedFormatSqlExtendParser.PERCENT, 0); }
+		public TerminalNode DIV() { return getToken(MixedFormatSqlExtendParser.DIV, 0); }
+		public TerminalNode PLUS() { return getToken(MixedFormatSqlExtendParser.PLUS, 0); }
+		public TerminalNode MINUS() { return getToken(MixedFormatSqlExtendParser.MINUS, 0); }
+		public TerminalNode CONCAT_PIPE() { return getToken(MixedFormatSqlExtendParser.CONCAT_PIPE, 0); }
+		public TerminalNode AMPERSAND() { return getToken(MixedFormatSqlExtendParser.AMPERSAND, 0); }
+		public TerminalNode HAT() { return getToken(MixedFormatSqlExtendParser.HAT, 0); }
+		public TerminalNode PIPE() { return getToken(MixedFormatSqlExtendParser.PIPE, 0); }
 		public ArithmeticBinaryContext(ValueExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterArithmeticBinary(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterArithmeticBinary(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitArithmeticBinary(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitArithmeticBinary(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitArithmeticBinary(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitArithmeticBinary(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8026,21 +8026,21 @@ public class ArcticSqlExtendParser extends Parser {
 		public ValueExpressionContext valueExpression() {
 			return getRuleContext(ValueExpressionContext.class,0);
 		}
-		public TerminalNode MINUS() { return getToken(ArcticSqlExtendParser.MINUS, 0); }
-		public TerminalNode PLUS() { return getToken(ArcticSqlExtendParser.PLUS, 0); }
-		public TerminalNode TILDE() { return getToken(ArcticSqlExtendParser.TILDE, 0); }
+		public TerminalNode MINUS() { return getToken(MixedFormatSqlExtendParser.MINUS, 0); }
+		public TerminalNode PLUS() { return getToken(MixedFormatSqlExtendParser.PLUS, 0); }
+		public TerminalNode TILDE() { return getToken(MixedFormatSqlExtendParser.TILDE, 0); }
 		public ArithmeticUnaryContext(ValueExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterArithmeticUnary(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterArithmeticUnary(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitArithmeticUnary(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitArithmeticUnary(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitArithmeticUnary(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitArithmeticUnary(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8237,7 +8237,7 @@ public class ArcticSqlExtendParser extends Parser {
 	public static class StructContext extends PrimaryExpressionContext {
 		public NamedExpressionContext namedExpression;
 		public List<NamedExpressionContext> argument = new ArrayList<NamedExpressionContext>();
-		public TerminalNode STRUCT() { return getToken(ArcticSqlExtendParser.STRUCT, 0); }
+		public TerminalNode STRUCT() { return getToken(MixedFormatSqlExtendParser.STRUCT, 0); }
 		public List<NamedExpressionContext> namedExpression() {
 			return getRuleContexts(NamedExpressionContext.class);
 		}
@@ -8247,15 +8247,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public StructContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterStruct(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterStruct(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitStruct(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitStruct(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitStruct(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitStruct(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8271,23 +8271,23 @@ public class ArcticSqlExtendParser extends Parser {
 		public DereferenceContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterDereference(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterDereference(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitDereference(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitDereference(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitDereference(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitDereference(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class SimpleCaseContext extends PrimaryExpressionContext {
 		public ExpressionContext value;
 		public ExpressionContext elseExpression;
-		public TerminalNode CASE() { return getToken(ArcticSqlExtendParser.CASE, 0); }
-		public TerminalNode END() { return getToken(ArcticSqlExtendParser.END, 0); }
+		public TerminalNode CASE() { return getToken(MixedFormatSqlExtendParser.CASE, 0); }
+		public TerminalNode END() { return getToken(MixedFormatSqlExtendParser.END, 0); }
 		public List<ExpressionContext> expression() {
 			return getRuleContexts(ExpressionContext.class);
 		}
@@ -8300,39 +8300,39 @@ public class ArcticSqlExtendParser extends Parser {
 		public WhenClauseContext whenClause(int i) {
 			return getRuleContext(WhenClauseContext.class,i);
 		}
-		public TerminalNode ELSE() { return getToken(ArcticSqlExtendParser.ELSE, 0); }
+		public TerminalNode ELSE() { return getToken(MixedFormatSqlExtendParser.ELSE, 0); }
 		public SimpleCaseContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSimpleCase(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSimpleCase(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSimpleCase(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSimpleCase(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSimpleCase(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSimpleCase(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class CurrentLikeContext extends PrimaryExpressionContext {
 		public Token name;
-		public TerminalNode CURRENT_DATE() { return getToken(ArcticSqlExtendParser.CURRENT_DATE, 0); }
-		public TerminalNode CURRENT_TIMESTAMP() { return getToken(ArcticSqlExtendParser.CURRENT_TIMESTAMP, 0); }
-		public TerminalNode CURRENT_USER() { return getToken(ArcticSqlExtendParser.CURRENT_USER, 0); }
+		public TerminalNode CURRENT_DATE() { return getToken(MixedFormatSqlExtendParser.CURRENT_DATE, 0); }
+		public TerminalNode CURRENT_TIMESTAMP() { return getToken(MixedFormatSqlExtendParser.CURRENT_TIMESTAMP, 0); }
+		public TerminalNode CURRENT_USER() { return getToken(MixedFormatSqlExtendParser.CURRENT_USER, 0); }
 		public CurrentLikeContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterCurrentLike(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterCurrentLike(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitCurrentLike(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitCurrentLike(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitCurrentLike(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitCurrentLike(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8343,15 +8343,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public ColumnReferenceContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterColumnReference(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterColumnReference(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitColumnReference(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitColumnReference(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitColumnReference(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitColumnReference(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8365,57 +8365,57 @@ public class ArcticSqlExtendParser extends Parser {
 		public RowConstructorContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterRowConstructor(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterRowConstructor(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitRowConstructor(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitRowConstructor(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitRowConstructor(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitRowConstructor(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class LastContext extends PrimaryExpressionContext {
-		public TerminalNode LAST() { return getToken(ArcticSqlExtendParser.LAST, 0); }
+		public TerminalNode LAST() { return getToken(MixedFormatSqlExtendParser.LAST, 0); }
 		public ExpressionContext expression() {
 			return getRuleContext(ExpressionContext.class,0);
 		}
-		public TerminalNode IGNORE() { return getToken(ArcticSqlExtendParser.IGNORE, 0); }
-		public TerminalNode NULLS() { return getToken(ArcticSqlExtendParser.NULLS, 0); }
+		public TerminalNode IGNORE() { return getToken(MixedFormatSqlExtendParser.IGNORE, 0); }
+		public TerminalNode NULLS() { return getToken(MixedFormatSqlExtendParser.NULLS, 0); }
 		public LastContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterLast(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterLast(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitLast(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitLast(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitLast(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitLast(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class StarContext extends PrimaryExpressionContext {
-		public TerminalNode ASTERISK() { return getToken(ArcticSqlExtendParser.ASTERISK, 0); }
+		public TerminalNode ASTERISK() { return getToken(MixedFormatSqlExtendParser.ASTERISK, 0); }
 		public QualifiedNameContext qualifiedName() {
 			return getRuleContext(QualifiedNameContext.class,0);
 		}
 		public StarContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterStar(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterStar(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitStar(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitStar(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitStar(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitStar(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8424,28 +8424,28 @@ public class ArcticSqlExtendParser extends Parser {
 		public ValueExpressionContext replace;
 		public ValueExpressionContext position;
 		public ValueExpressionContext length;
-		public TerminalNode OVERLAY() { return getToken(ArcticSqlExtendParser.OVERLAY, 0); }
-		public TerminalNode PLACING() { return getToken(ArcticSqlExtendParser.PLACING, 0); }
-		public TerminalNode FROM() { return getToken(ArcticSqlExtendParser.FROM, 0); }
+		public TerminalNode OVERLAY() { return getToken(MixedFormatSqlExtendParser.OVERLAY, 0); }
+		public TerminalNode PLACING() { return getToken(MixedFormatSqlExtendParser.PLACING, 0); }
+		public TerminalNode FROM() { return getToken(MixedFormatSqlExtendParser.FROM, 0); }
 		public List<ValueExpressionContext> valueExpression() {
 			return getRuleContexts(ValueExpressionContext.class);
 		}
 		public ValueExpressionContext valueExpression(int i) {
 			return getRuleContext(ValueExpressionContext.class,i);
 		}
-		public TerminalNode FOR() { return getToken(ArcticSqlExtendParser.FOR, 0); }
+		public TerminalNode FOR() { return getToken(MixedFormatSqlExtendParser.FOR, 0); }
 		public OverlayContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterOverlay(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterOverlay(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitOverlay(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitOverlay(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitOverlay(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitOverlay(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8461,15 +8461,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public SubscriptContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSubscript(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSubscript(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSubscript(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSubscript(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSubscript(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSubscript(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8480,15 +8480,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public SubqueryExpressionContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSubqueryExpression(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSubqueryExpression(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSubqueryExpression(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSubqueryExpression(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSubqueryExpression(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSubqueryExpression(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8496,28 +8496,28 @@ public class ArcticSqlExtendParser extends Parser {
 		public ValueExpressionContext str;
 		public ValueExpressionContext pos;
 		public ValueExpressionContext len;
-		public TerminalNode SUBSTR() { return getToken(ArcticSqlExtendParser.SUBSTR, 0); }
-		public TerminalNode SUBSTRING() { return getToken(ArcticSqlExtendParser.SUBSTRING, 0); }
+		public TerminalNode SUBSTR() { return getToken(MixedFormatSqlExtendParser.SUBSTR, 0); }
+		public TerminalNode SUBSTRING() { return getToken(MixedFormatSqlExtendParser.SUBSTRING, 0); }
 		public List<ValueExpressionContext> valueExpression() {
 			return getRuleContexts(ValueExpressionContext.class);
 		}
 		public ValueExpressionContext valueExpression(int i) {
 			return getRuleContext(ValueExpressionContext.class,i);
 		}
-		public TerminalNode FROM() { return getToken(ArcticSqlExtendParser.FROM, 0); }
-		public TerminalNode FOR() { return getToken(ArcticSqlExtendParser.FOR, 0); }
+		public TerminalNode FROM() { return getToken(MixedFormatSqlExtendParser.FROM, 0); }
+		public TerminalNode FOR() { return getToken(MixedFormatSqlExtendParser.FOR, 0); }
 		public SubstringContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSubstring(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSubstring(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSubstring(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSubstring(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSubstring(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSubstring(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8526,24 +8526,24 @@ public class ArcticSqlExtendParser extends Parser {
 		public ExpressionContext expression() {
 			return getRuleContext(ExpressionContext.class,0);
 		}
-		public TerminalNode AS() { return getToken(ArcticSqlExtendParser.AS, 0); }
+		public TerminalNode AS() { return getToken(MixedFormatSqlExtendParser.AS, 0); }
 		public DataTypeContext dataType() {
 			return getRuleContext(DataTypeContext.class,0);
 		}
-		public TerminalNode CAST() { return getToken(ArcticSqlExtendParser.CAST, 0); }
-		public TerminalNode TRY_CAST() { return getToken(ArcticSqlExtendParser.TRY_CAST, 0); }
+		public TerminalNode CAST() { return getToken(MixedFormatSqlExtendParser.CAST, 0); }
+		public TerminalNode TRY_CAST() { return getToken(MixedFormatSqlExtendParser.TRY_CAST, 0); }
 		public CastContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterCast(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterCast(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitCast(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitCast(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitCast(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitCast(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8554,15 +8554,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public ConstantDefaultContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterConstantDefault(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterConstantDefault(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitConstantDefault(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitConstantDefault(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitConstantDefault(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitConstantDefault(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8579,15 +8579,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public LambdaContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterLambda(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterLambda(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitLambda(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitLambda(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitLambda(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitLambda(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8598,23 +8598,23 @@ public class ArcticSqlExtendParser extends Parser {
 		public ParenthesizedExpressionContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterParenthesizedExpression(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterParenthesizedExpression(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitParenthesizedExpression(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitParenthesizedExpression(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitParenthesizedExpression(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitParenthesizedExpression(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class ExtractContext extends PrimaryExpressionContext {
 		public IdentifierContext field;
 		public ValueExpressionContext source;
-		public TerminalNode EXTRACT() { return getToken(ArcticSqlExtendParser.EXTRACT, 0); }
-		public TerminalNode FROM() { return getToken(ArcticSqlExtendParser.FROM, 0); }
+		public TerminalNode EXTRACT() { return getToken(MixedFormatSqlExtendParser.EXTRACT, 0); }
+		public TerminalNode FROM() { return getToken(MixedFormatSqlExtendParser.FROM, 0); }
 		public IdentifierContext identifier() {
 			return getRuleContext(IdentifierContext.class,0);
 		}
@@ -8624,15 +8624,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public ExtractContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterExtract(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterExtract(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitExtract(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitExtract(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitExtract(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitExtract(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8640,29 +8640,29 @@ public class ArcticSqlExtendParser extends Parser {
 		public Token trimOption;
 		public ValueExpressionContext trimStr;
 		public ValueExpressionContext srcStr;
-		public TerminalNode TRIM() { return getToken(ArcticSqlExtendParser.TRIM, 0); }
-		public TerminalNode FROM() { return getToken(ArcticSqlExtendParser.FROM, 0); }
+		public TerminalNode TRIM() { return getToken(MixedFormatSqlExtendParser.TRIM, 0); }
+		public TerminalNode FROM() { return getToken(MixedFormatSqlExtendParser.FROM, 0); }
 		public List<ValueExpressionContext> valueExpression() {
 			return getRuleContexts(ValueExpressionContext.class);
 		}
 		public ValueExpressionContext valueExpression(int i) {
 			return getRuleContext(ValueExpressionContext.class,i);
 		}
-		public TerminalNode BOTH() { return getToken(ArcticSqlExtendParser.BOTH, 0); }
-		public TerminalNode LEADING() { return getToken(ArcticSqlExtendParser.LEADING, 0); }
-		public TerminalNode TRAILING() { return getToken(ArcticSqlExtendParser.TRAILING, 0); }
+		public TerminalNode BOTH() { return getToken(MixedFormatSqlExtendParser.BOTH, 0); }
+		public TerminalNode LEADING() { return getToken(MixedFormatSqlExtendParser.LEADING, 0); }
+		public TerminalNode TRAILING() { return getToken(MixedFormatSqlExtendParser.TRAILING, 0); }
 		public TrimContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTrim(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTrim(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTrim(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTrim(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTrim(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTrim(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -8674,10 +8674,10 @@ public class ArcticSqlExtendParser extends Parser {
 		public FunctionNameContext functionName() {
 			return getRuleContext(FunctionNameContext.class,0);
 		}
-		public TerminalNode FILTER() { return getToken(ArcticSqlExtendParser.FILTER, 0); }
-		public TerminalNode WHERE() { return getToken(ArcticSqlExtendParser.WHERE, 0); }
-		public TerminalNode NULLS() { return getToken(ArcticSqlExtendParser.NULLS, 0); }
-		public TerminalNode OVER() { return getToken(ArcticSqlExtendParser.OVER, 0); }
+		public TerminalNode FILTER() { return getToken(MixedFormatSqlExtendParser.FILTER, 0); }
+		public TerminalNode WHERE() { return getToken(MixedFormatSqlExtendParser.WHERE, 0); }
+		public TerminalNode NULLS() { return getToken(MixedFormatSqlExtendParser.NULLS, 0); }
+		public TerminalNode OVER() { return getToken(MixedFormatSqlExtendParser.OVER, 0); }
 		public WindowSpecContext windowSpec() {
 			return getRuleContext(WindowSpecContext.class,0);
 		}
@@ -8690,60 +8690,60 @@ public class ArcticSqlExtendParser extends Parser {
 		public BooleanExpressionContext booleanExpression() {
 			return getRuleContext(BooleanExpressionContext.class,0);
 		}
-		public TerminalNode IGNORE() { return getToken(ArcticSqlExtendParser.IGNORE, 0); }
-		public TerminalNode RESPECT() { return getToken(ArcticSqlExtendParser.RESPECT, 0); }
+		public TerminalNode IGNORE() { return getToken(MixedFormatSqlExtendParser.IGNORE, 0); }
+		public TerminalNode RESPECT() { return getToken(MixedFormatSqlExtendParser.RESPECT, 0); }
 		public SetQuantifierContext setQuantifier() {
 			return getRuleContext(SetQuantifierContext.class,0);
 		}
 		public FunctionCallContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterFunctionCall(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterFunctionCall(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitFunctionCall(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitFunctionCall(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitFunctionCall(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitFunctionCall(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class SearchedCaseContext extends PrimaryExpressionContext {
 		public ExpressionContext elseExpression;
-		public TerminalNode CASE() { return getToken(ArcticSqlExtendParser.CASE, 0); }
-		public TerminalNode END() { return getToken(ArcticSqlExtendParser.END, 0); }
+		public TerminalNode CASE() { return getToken(MixedFormatSqlExtendParser.CASE, 0); }
+		public TerminalNode END() { return getToken(MixedFormatSqlExtendParser.END, 0); }
 		public List<WhenClauseContext> whenClause() {
 			return getRuleContexts(WhenClauseContext.class);
 		}
 		public WhenClauseContext whenClause(int i) {
 			return getRuleContext(WhenClauseContext.class,i);
 		}
-		public TerminalNode ELSE() { return getToken(ArcticSqlExtendParser.ELSE, 0); }
+		public TerminalNode ELSE() { return getToken(MixedFormatSqlExtendParser.ELSE, 0); }
 		public ExpressionContext expression() {
 			return getRuleContext(ExpressionContext.class,0);
 		}
 		public SearchedCaseContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSearchedCase(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSearchedCase(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSearchedCase(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSearchedCase(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSearchedCase(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSearchedCase(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class PositionContext extends PrimaryExpressionContext {
 		public ValueExpressionContext substr;
 		public ValueExpressionContext str;
-		public TerminalNode POSITION() { return getToken(ArcticSqlExtendParser.POSITION, 0); }
-		public TerminalNode IN() { return getToken(ArcticSqlExtendParser.IN, 0); }
+		public TerminalNode POSITION() { return getToken(MixedFormatSqlExtendParser.POSITION, 0); }
+		public TerminalNode IN() { return getToken(MixedFormatSqlExtendParser.IN, 0); }
 		public List<ValueExpressionContext> valueExpression() {
 			return getRuleContexts(ValueExpressionContext.class);
 		}
@@ -8753,37 +8753,37 @@ public class ArcticSqlExtendParser extends Parser {
 		public PositionContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterPosition(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterPosition(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitPosition(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitPosition(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitPosition(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitPosition(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class FirstContext extends PrimaryExpressionContext {
-		public TerminalNode FIRST() { return getToken(ArcticSqlExtendParser.FIRST, 0); }
+		public TerminalNode FIRST() { return getToken(MixedFormatSqlExtendParser.FIRST, 0); }
 		public ExpressionContext expression() {
 			return getRuleContext(ExpressionContext.class,0);
 		}
-		public TerminalNode IGNORE() { return getToken(ArcticSqlExtendParser.IGNORE, 0); }
-		public TerminalNode NULLS() { return getToken(ArcticSqlExtendParser.NULLS, 0); }
+		public TerminalNode IGNORE() { return getToken(MixedFormatSqlExtendParser.IGNORE, 0); }
+		public TerminalNode NULLS() { return getToken(MixedFormatSqlExtendParser.NULLS, 0); }
 		public FirstContext(PrimaryExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterFirst(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterFirst(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitFirst(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitFirst(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitFirst(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitFirst(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -9515,39 +9515,39 @@ public class ArcticSqlExtendParser extends Parser {
 		}
 	}
 	public static class NullLiteralContext extends ConstantContext {
-		public TerminalNode NULL() { return getToken(ArcticSqlExtendParser.NULL, 0); }
+		public TerminalNode NULL() { return getToken(MixedFormatSqlExtendParser.NULL, 0); }
 		public NullLiteralContext(ConstantContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterNullLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterNullLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitNullLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitNullLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitNullLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitNullLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class StringLiteralContext extends ConstantContext {
-		public List<TerminalNode> STRING() { return getTokens(ArcticSqlExtendParser.STRING); }
+		public List<TerminalNode> STRING() { return getTokens(MixedFormatSqlExtendParser.STRING); }
 		public TerminalNode STRING(int i) {
-			return getToken(ArcticSqlExtendParser.STRING, i);
+			return getToken(MixedFormatSqlExtendParser.STRING, i);
 		}
 		public StringLiteralContext(ConstantContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterStringLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterStringLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitStringLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitStringLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitStringLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitStringLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -9555,19 +9555,19 @@ public class ArcticSqlExtendParser extends Parser {
 		public IdentifierContext identifier() {
 			return getRuleContext(IdentifierContext.class,0);
 		}
-		public TerminalNode STRING() { return getToken(ArcticSqlExtendParser.STRING, 0); }
+		public TerminalNode STRING() { return getToken(MixedFormatSqlExtendParser.STRING, 0); }
 		public TypeConstructorContext(ConstantContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTypeConstructor(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTypeConstructor(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTypeConstructor(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTypeConstructor(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTypeConstructor(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTypeConstructor(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -9578,15 +9578,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public IntervalLiteralContext(ConstantContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterIntervalLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterIntervalLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitIntervalLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitIntervalLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitIntervalLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitIntervalLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -9597,15 +9597,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public NumericLiteralContext(ConstantContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterNumericLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterNumericLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitNumericLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitNumericLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitNumericLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitNumericLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -9616,15 +9616,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public BooleanLiteralContext(ConstantContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterBooleanLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterBooleanLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitBooleanLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitBooleanLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitBooleanLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitBooleanLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -9719,29 +9719,29 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class ComparisonOperatorContext extends ParserRuleContext {
-		public TerminalNode EQ() { return getToken(ArcticSqlExtendParser.EQ, 0); }
-		public TerminalNode NEQ() { return getToken(ArcticSqlExtendParser.NEQ, 0); }
-		public TerminalNode NEQJ() { return getToken(ArcticSqlExtendParser.NEQJ, 0); }
-		public TerminalNode LT() { return getToken(ArcticSqlExtendParser.LT, 0); }
-		public TerminalNode LTE() { return getToken(ArcticSqlExtendParser.LTE, 0); }
-		public TerminalNode GT() { return getToken(ArcticSqlExtendParser.GT, 0); }
-		public TerminalNode GTE() { return getToken(ArcticSqlExtendParser.GTE, 0); }
-		public TerminalNode NSEQ() { return getToken(ArcticSqlExtendParser.NSEQ, 0); }
+		public TerminalNode EQ() { return getToken(MixedFormatSqlExtendParser.EQ, 0); }
+		public TerminalNode NEQ() { return getToken(MixedFormatSqlExtendParser.NEQ, 0); }
+		public TerminalNode NEQJ() { return getToken(MixedFormatSqlExtendParser.NEQJ, 0); }
+		public TerminalNode LT() { return getToken(MixedFormatSqlExtendParser.LT, 0); }
+		public TerminalNode LTE() { return getToken(MixedFormatSqlExtendParser.LTE, 0); }
+		public TerminalNode GT() { return getToken(MixedFormatSqlExtendParser.GT, 0); }
+		public TerminalNode GTE() { return getToken(MixedFormatSqlExtendParser.GTE, 0); }
+		public TerminalNode NSEQ() { return getToken(MixedFormatSqlExtendParser.NSEQ, 0); }
 		public ComparisonOperatorContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_comparisonOperator; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterComparisonOperator(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterComparisonOperator(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitComparisonOperator(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitComparisonOperator(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitComparisonOperator(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitComparisonOperator(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -9777,23 +9777,23 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class BooleanValueContext extends ParserRuleContext {
-		public TerminalNode TRUE() { return getToken(ArcticSqlExtendParser.TRUE, 0); }
-		public TerminalNode FALSE() { return getToken(ArcticSqlExtendParser.FALSE, 0); }
+		public TerminalNode TRUE() { return getToken(MixedFormatSqlExtendParser.TRUE, 0); }
+		public TerminalNode FALSE() { return getToken(MixedFormatSqlExtendParser.FALSE, 0); }
 		public BooleanValueContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_booleanValue; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterBooleanValue(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterBooleanValue(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitBooleanValue(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitBooleanValue(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitBooleanValue(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitBooleanValue(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -9829,7 +9829,7 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class IntervalContext extends ParserRuleContext {
-		public TerminalNode INTERVAL() { return getToken(ArcticSqlExtendParser.INTERVAL, 0); }
+		public TerminalNode INTERVAL() { return getToken(MixedFormatSqlExtendParser.INTERVAL, 0); }
 		public ErrorCapturingMultiUnitsIntervalContext errorCapturingMultiUnitsInterval() {
 			return getRuleContext(ErrorCapturingMultiUnitsIntervalContext.class,0);
 		}
@@ -9842,15 +9842,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_interval; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterInterval(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterInterval(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitInterval(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitInterval(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitInterval(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitInterval(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -9906,15 +9906,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_errorCapturingMultiUnitsInterval; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterErrorCapturingMultiUnitsInterval(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterErrorCapturingMultiUnitsInterval(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitErrorCapturingMultiUnitsInterval(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitErrorCapturingMultiUnitsInterval(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitErrorCapturingMultiUnitsInterval(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitErrorCapturingMultiUnitsInterval(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -9971,15 +9971,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_multiUnitsInterval; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterMultiUnitsInterval(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterMultiUnitsInterval(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitMultiUnitsInterval(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitMultiUnitsInterval(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitMultiUnitsInterval(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitMultiUnitsInterval(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -10046,15 +10046,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_errorCapturingUnitToUnitInterval; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterErrorCapturingUnitToUnitInterval(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterErrorCapturingUnitToUnitInterval(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitErrorCapturingUnitToUnitInterval(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitErrorCapturingUnitToUnitInterval(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitErrorCapturingUnitToUnitInterval(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitErrorCapturingUnitToUnitInterval(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -10100,7 +10100,7 @@ public class ArcticSqlExtendParser extends Parser {
 		public IntervalValueContext value;
 		public IdentifierContext from;
 		public IdentifierContext to;
-		public TerminalNode TO() { return getToken(ArcticSqlExtendParser.TO, 0); }
+		public TerminalNode TO() { return getToken(MixedFormatSqlExtendParser.TO, 0); }
 		public IntervalValueContext intervalValue() {
 			return getRuleContext(IntervalValueContext.class,0);
 		}
@@ -10116,15 +10116,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_unitToUnitInterval; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterUnitToUnitInterval(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterUnitToUnitInterval(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitUnitToUnitInterval(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitUnitToUnitInterval(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitUnitToUnitInterval(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitUnitToUnitInterval(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -10157,26 +10157,26 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class IntervalValueContext extends ParserRuleContext {
-		public TerminalNode INTEGER_VALUE() { return getToken(ArcticSqlExtendParser.INTEGER_VALUE, 0); }
-		public TerminalNode DECIMAL_VALUE() { return getToken(ArcticSqlExtendParser.DECIMAL_VALUE, 0); }
-		public TerminalNode STRING() { return getToken(ArcticSqlExtendParser.STRING, 0); }
-		public TerminalNode PLUS() { return getToken(ArcticSqlExtendParser.PLUS, 0); }
-		public TerminalNode MINUS() { return getToken(ArcticSqlExtendParser.MINUS, 0); }
+		public TerminalNode INTEGER_VALUE() { return getToken(MixedFormatSqlExtendParser.INTEGER_VALUE, 0); }
+		public TerminalNode DECIMAL_VALUE() { return getToken(MixedFormatSqlExtendParser.DECIMAL_VALUE, 0); }
+		public TerminalNode STRING() { return getToken(MixedFormatSqlExtendParser.STRING, 0); }
+		public TerminalNode PLUS() { return getToken(MixedFormatSqlExtendParser.PLUS, 0); }
+		public TerminalNode MINUS() { return getToken(MixedFormatSqlExtendParser.MINUS, 0); }
 		public IntervalValueContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_intervalValue; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterIntervalValue(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterIntervalValue(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitIntervalValue(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitIntervalValue(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitIntervalValue(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitIntervalValue(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -10232,8 +10232,8 @@ public class ArcticSqlExtendParser extends Parser {
 	public static class ColPositionContext extends ParserRuleContext {
 		public Token position;
 		public ErrorCapturingIdentifierContext afterCol;
-		public TerminalNode FIRST() { return getToken(ArcticSqlExtendParser.FIRST, 0); }
-		public TerminalNode AFTER() { return getToken(ArcticSqlExtendParser.AFTER, 0); }
+		public TerminalNode FIRST() { return getToken(MixedFormatSqlExtendParser.FIRST, 0); }
+		public TerminalNode AFTER() { return getToken(MixedFormatSqlExtendParser.AFTER, 0); }
 		public ErrorCapturingIdentifierContext errorCapturingIdentifier() {
 			return getRuleContext(ErrorCapturingIdentifierContext.class,0);
 		}
@@ -10243,15 +10243,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_colPosition; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterColPosition(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterColPosition(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitColPosition(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitColPosition(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitColPosition(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitColPosition(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -10307,91 +10307,91 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 	public static class ComplexDataTypeContext extends DataTypeContext {
 		public Token complex;
-		public TerminalNode LT() { return getToken(ArcticSqlExtendParser.LT, 0); }
+		public TerminalNode LT() { return getToken(MixedFormatSqlExtendParser.LT, 0); }
 		public List<DataTypeContext> dataType() {
 			return getRuleContexts(DataTypeContext.class);
 		}
 		public DataTypeContext dataType(int i) {
 			return getRuleContext(DataTypeContext.class,i);
 		}
-		public TerminalNode GT() { return getToken(ArcticSqlExtendParser.GT, 0); }
-		public TerminalNode ARRAY() { return getToken(ArcticSqlExtendParser.ARRAY, 0); }
-		public TerminalNode MAP() { return getToken(ArcticSqlExtendParser.MAP, 0); }
-		public TerminalNode STRUCT() { return getToken(ArcticSqlExtendParser.STRUCT, 0); }
-		public TerminalNode NEQ() { return getToken(ArcticSqlExtendParser.NEQ, 0); }
+		public TerminalNode GT() { return getToken(MixedFormatSqlExtendParser.GT, 0); }
+		public TerminalNode ARRAY() { return getToken(MixedFormatSqlExtendParser.ARRAY, 0); }
+		public TerminalNode MAP() { return getToken(MixedFormatSqlExtendParser.MAP, 0); }
+		public TerminalNode STRUCT() { return getToken(MixedFormatSqlExtendParser.STRUCT, 0); }
+		public TerminalNode NEQ() { return getToken(MixedFormatSqlExtendParser.NEQ, 0); }
 		public ComplexColTypeListContext complexColTypeList() {
 			return getRuleContext(ComplexColTypeListContext.class,0);
 		}
 		public ComplexDataTypeContext(DataTypeContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterComplexDataType(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterComplexDataType(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitComplexDataType(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitComplexDataType(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitComplexDataType(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitComplexDataType(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class YearMonthIntervalDataTypeContext extends DataTypeContext {
 		public Token from;
 		public Token to;
-		public TerminalNode INTERVAL() { return getToken(ArcticSqlExtendParser.INTERVAL, 0); }
-		public TerminalNode YEAR() { return getToken(ArcticSqlExtendParser.YEAR, 0); }
-		public List<TerminalNode> MONTH() { return getTokens(ArcticSqlExtendParser.MONTH); }
+		public TerminalNode INTERVAL() { return getToken(MixedFormatSqlExtendParser.INTERVAL, 0); }
+		public TerminalNode YEAR() { return getToken(MixedFormatSqlExtendParser.YEAR, 0); }
+		public List<TerminalNode> MONTH() { return getTokens(MixedFormatSqlExtendParser.MONTH); }
 		public TerminalNode MONTH(int i) {
-			return getToken(ArcticSqlExtendParser.MONTH, i);
+			return getToken(MixedFormatSqlExtendParser.MONTH, i);
 		}
-		public TerminalNode TO() { return getToken(ArcticSqlExtendParser.TO, 0); }
+		public TerminalNode TO() { return getToken(MixedFormatSqlExtendParser.TO, 0); }
 		public YearMonthIntervalDataTypeContext(DataTypeContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterYearMonthIntervalDataType(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterYearMonthIntervalDataType(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitYearMonthIntervalDataType(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitYearMonthIntervalDataType(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitYearMonthIntervalDataType(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitYearMonthIntervalDataType(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class DayTimeIntervalDataTypeContext extends DataTypeContext {
 		public Token from;
 		public Token to;
-		public TerminalNode INTERVAL() { return getToken(ArcticSqlExtendParser.INTERVAL, 0); }
-		public TerminalNode DAY() { return getToken(ArcticSqlExtendParser.DAY, 0); }
-		public List<TerminalNode> HOUR() { return getTokens(ArcticSqlExtendParser.HOUR); }
+		public TerminalNode INTERVAL() { return getToken(MixedFormatSqlExtendParser.INTERVAL, 0); }
+		public TerminalNode DAY() { return getToken(MixedFormatSqlExtendParser.DAY, 0); }
+		public List<TerminalNode> HOUR() { return getTokens(MixedFormatSqlExtendParser.HOUR); }
 		public TerminalNode HOUR(int i) {
-			return getToken(ArcticSqlExtendParser.HOUR, i);
+			return getToken(MixedFormatSqlExtendParser.HOUR, i);
 		}
-		public List<TerminalNode> MINUTE() { return getTokens(ArcticSqlExtendParser.MINUTE); }
+		public List<TerminalNode> MINUTE() { return getTokens(MixedFormatSqlExtendParser.MINUTE); }
 		public TerminalNode MINUTE(int i) {
-			return getToken(ArcticSqlExtendParser.MINUTE, i);
+			return getToken(MixedFormatSqlExtendParser.MINUTE, i);
 		}
-		public List<TerminalNode> SECOND() { return getTokens(ArcticSqlExtendParser.SECOND); }
+		public List<TerminalNode> SECOND() { return getTokens(MixedFormatSqlExtendParser.SECOND); }
 		public TerminalNode SECOND(int i) {
-			return getToken(ArcticSqlExtendParser.SECOND, i);
+			return getToken(MixedFormatSqlExtendParser.SECOND, i);
 		}
-		public TerminalNode TO() { return getToken(ArcticSqlExtendParser.TO, 0); }
+		public TerminalNode TO() { return getToken(MixedFormatSqlExtendParser.TO, 0); }
 		public DayTimeIntervalDataTypeContext(DataTypeContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterDayTimeIntervalDataType(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterDayTimeIntervalDataType(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitDayTimeIntervalDataType(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitDayTimeIntervalDataType(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitDayTimeIntervalDataType(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitDayTimeIntervalDataType(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -10399,22 +10399,22 @@ public class ArcticSqlExtendParser extends Parser {
 		public IdentifierContext identifier() {
 			return getRuleContext(IdentifierContext.class,0);
 		}
-		public List<TerminalNode> INTEGER_VALUE() { return getTokens(ArcticSqlExtendParser.INTEGER_VALUE); }
+		public List<TerminalNode> INTEGER_VALUE() { return getTokens(MixedFormatSqlExtendParser.INTEGER_VALUE); }
 		public TerminalNode INTEGER_VALUE(int i) {
-			return getToken(ArcticSqlExtendParser.INTEGER_VALUE, i);
+			return getToken(MixedFormatSqlExtendParser.INTEGER_VALUE, i);
 		}
 		public PrimitiveDataTypeContext(DataTypeContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterPrimitiveDataType(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterPrimitiveDataType(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitPrimitiveDataType(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitPrimitiveDataType(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitPrimitiveDataType(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitPrimitiveDataType(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -10632,15 +10632,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_colTypeList; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterColTypeList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterColTypeList(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitColTypeList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitColTypeList(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitColTypeList(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitColTypeList(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -10693,8 +10693,8 @@ public class ArcticSqlExtendParser extends Parser {
 		public ErrorCapturingIdentifierContext errorCapturingIdentifier() {
 			return getRuleContext(ErrorCapturingIdentifierContext.class,0);
 		}
-		public TerminalNode NOT() { return getToken(ArcticSqlExtendParser.NOT, 0); }
-		public TerminalNode NULL() { return getToken(ArcticSqlExtendParser.NULL, 0); }
+		public TerminalNode NOT() { return getToken(MixedFormatSqlExtendParser.NOT, 0); }
+		public TerminalNode NULL() { return getToken(MixedFormatSqlExtendParser.NULL, 0); }
 		public CommentSpecContext commentSpec() {
 			return getRuleContext(CommentSpecContext.class,0);
 		}
@@ -10704,15 +10704,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_colType; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterColType(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterColType(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitColType(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitColType(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitColType(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitColType(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -10775,15 +10775,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_complexColTypeList; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterComplexColTypeList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterComplexColTypeList(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitComplexColTypeList(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitComplexColTypeList(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitComplexColTypeList(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitComplexColTypeList(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -10833,8 +10833,8 @@ public class ArcticSqlExtendParser extends Parser {
 		public DataTypeContext dataType() {
 			return getRuleContext(DataTypeContext.class,0);
 		}
-		public TerminalNode NOT() { return getToken(ArcticSqlExtendParser.NOT, 0); }
-		public TerminalNode NULL() { return getToken(ArcticSqlExtendParser.NULL, 0); }
+		public TerminalNode NOT() { return getToken(MixedFormatSqlExtendParser.NOT, 0); }
+		public TerminalNode NULL() { return getToken(MixedFormatSqlExtendParser.NULL, 0); }
 		public CommentSpecContext commentSpec() {
 			return getRuleContext(CommentSpecContext.class,0);
 		}
@@ -10844,15 +10844,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_complexColType; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterComplexColType(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterComplexColType(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitComplexColType(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitComplexColType(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitComplexColType(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitComplexColType(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -10916,8 +10916,8 @@ public class ArcticSqlExtendParser extends Parser {
 	public static class WhenClauseContext extends ParserRuleContext {
 		public ExpressionContext condition;
 		public ExpressionContext result;
-		public TerminalNode WHEN() { return getToken(ArcticSqlExtendParser.WHEN, 0); }
-		public TerminalNode THEN() { return getToken(ArcticSqlExtendParser.THEN, 0); }
+		public TerminalNode WHEN() { return getToken(MixedFormatSqlExtendParser.WHEN, 0); }
+		public TerminalNode THEN() { return getToken(MixedFormatSqlExtendParser.THEN, 0); }
 		public List<ExpressionContext> expression() {
 			return getRuleContexts(ExpressionContext.class);
 		}
@@ -10930,15 +10930,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_whenClause; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterWhenClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterWhenClause(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitWhenClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitWhenClause(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitWhenClause(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitWhenClause(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -10971,7 +10971,7 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class WindowClauseContext extends ParserRuleContext {
-		public TerminalNode WINDOW() { return getToken(ArcticSqlExtendParser.WINDOW, 0); }
+		public TerminalNode WINDOW() { return getToken(MixedFormatSqlExtendParser.WINDOW, 0); }
 		public List<NamedWindowContext> namedWindow() {
 			return getRuleContexts(NamedWindowContext.class);
 		}
@@ -10984,15 +10984,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_windowClause; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterWindowClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterWindowClause(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitWindowClause(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitWindowClause(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitWindowClause(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitWindowClause(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -11041,7 +11041,7 @@ public class ArcticSqlExtendParser extends Parser {
 
 	public static class NamedWindowContext extends ParserRuleContext {
 		public ErrorCapturingIdentifierContext name;
-		public TerminalNode AS() { return getToken(ArcticSqlExtendParser.AS, 0); }
+		public TerminalNode AS() { return getToken(MixedFormatSqlExtendParser.AS, 0); }
 		public WindowSpecContext windowSpec() {
 			return getRuleContext(WindowSpecContext.class,0);
 		}
@@ -11054,15 +11054,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_namedWindow; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterNamedWindow(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterNamedWindow(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitNamedWindow(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitNamedWindow(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitNamedWindow(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitNamedWindow(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -11111,25 +11111,25 @@ public class ArcticSqlExtendParser extends Parser {
 		public WindowRefContext(WindowSpecContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterWindowRef(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterWindowRef(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitWindowRef(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitWindowRef(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitWindowRef(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitWindowRef(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class WindowDefContext extends WindowSpecContext {
 		public ExpressionContext expression;
 		public List<ExpressionContext> partition = new ArrayList<ExpressionContext>();
-		public TerminalNode CLUSTER() { return getToken(ArcticSqlExtendParser.CLUSTER, 0); }
-		public List<TerminalNode> BY() { return getTokens(ArcticSqlExtendParser.BY); }
+		public TerminalNode CLUSTER() { return getToken(MixedFormatSqlExtendParser.CLUSTER, 0); }
+		public List<TerminalNode> BY() { return getTokens(MixedFormatSqlExtendParser.BY); }
 		public TerminalNode BY(int i) {
-			return getToken(ArcticSqlExtendParser.BY, i);
+			return getToken(MixedFormatSqlExtendParser.BY, i);
 		}
 		public List<ExpressionContext> expression() {
 			return getRuleContexts(ExpressionContext.class);
@@ -11146,22 +11146,22 @@ public class ArcticSqlExtendParser extends Parser {
 		public SortItemContext sortItem(int i) {
 			return getRuleContext(SortItemContext.class,i);
 		}
-		public TerminalNode PARTITION() { return getToken(ArcticSqlExtendParser.PARTITION, 0); }
-		public TerminalNode DISTRIBUTE() { return getToken(ArcticSqlExtendParser.DISTRIBUTE, 0); }
-		public TerminalNode ORDER() { return getToken(ArcticSqlExtendParser.ORDER, 0); }
-		public TerminalNode SORT() { return getToken(ArcticSqlExtendParser.SORT, 0); }
+		public TerminalNode PARTITION() { return getToken(MixedFormatSqlExtendParser.PARTITION, 0); }
+		public TerminalNode DISTRIBUTE() { return getToken(MixedFormatSqlExtendParser.DISTRIBUTE, 0); }
+		public TerminalNode ORDER() { return getToken(MixedFormatSqlExtendParser.ORDER, 0); }
+		public TerminalNode SORT() { return getToken(MixedFormatSqlExtendParser.SORT, 0); }
 		public WindowDefContext(WindowSpecContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterWindowDef(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterWindowDef(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitWindowDef(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitWindowDef(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitWindowDef(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitWindowDef(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -11353,31 +11353,31 @@ public class ArcticSqlExtendParser extends Parser {
 		public Token frameType;
 		public FrameBoundContext start;
 		public FrameBoundContext end;
-		public TerminalNode RANGE() { return getToken(ArcticSqlExtendParser.RANGE, 0); }
+		public TerminalNode RANGE() { return getToken(MixedFormatSqlExtendParser.RANGE, 0); }
 		public List<FrameBoundContext> frameBound() {
 			return getRuleContexts(FrameBoundContext.class);
 		}
 		public FrameBoundContext frameBound(int i) {
 			return getRuleContext(FrameBoundContext.class,i);
 		}
-		public TerminalNode ROWS() { return getToken(ArcticSqlExtendParser.ROWS, 0); }
-		public TerminalNode BETWEEN() { return getToken(ArcticSqlExtendParser.BETWEEN, 0); }
-		public TerminalNode AND() { return getToken(ArcticSqlExtendParser.AND, 0); }
+		public TerminalNode ROWS() { return getToken(MixedFormatSqlExtendParser.ROWS, 0); }
+		public TerminalNode BETWEEN() { return getToken(MixedFormatSqlExtendParser.BETWEEN, 0); }
+		public TerminalNode AND() { return getToken(MixedFormatSqlExtendParser.AND, 0); }
 		public WindowFrameContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_windowFrame; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterWindowFrame(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterWindowFrame(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitWindowFrame(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitWindowFrame(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitWindowFrame(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitWindowFrame(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -11452,11 +11452,11 @@ public class ArcticSqlExtendParser extends Parser {
 
 	public static class FrameBoundContext extends ParserRuleContext {
 		public Token boundType;
-		public TerminalNode UNBOUNDED() { return getToken(ArcticSqlExtendParser.UNBOUNDED, 0); }
-		public TerminalNode PRECEDING() { return getToken(ArcticSqlExtendParser.PRECEDING, 0); }
-		public TerminalNode FOLLOWING() { return getToken(ArcticSqlExtendParser.FOLLOWING, 0); }
-		public TerminalNode ROW() { return getToken(ArcticSqlExtendParser.ROW, 0); }
-		public TerminalNode CURRENT() { return getToken(ArcticSqlExtendParser.CURRENT, 0); }
+		public TerminalNode UNBOUNDED() { return getToken(MixedFormatSqlExtendParser.UNBOUNDED, 0); }
+		public TerminalNode PRECEDING() { return getToken(MixedFormatSqlExtendParser.PRECEDING, 0); }
+		public TerminalNode FOLLOWING() { return getToken(MixedFormatSqlExtendParser.FOLLOWING, 0); }
+		public TerminalNode ROW() { return getToken(MixedFormatSqlExtendParser.ROW, 0); }
+		public TerminalNode CURRENT() { return getToken(MixedFormatSqlExtendParser.CURRENT, 0); }
 		public ExpressionContext expression() {
 			return getRuleContext(ExpressionContext.class,0);
 		}
@@ -11466,15 +11466,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_frameBound; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterFrameBound(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterFrameBound(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitFrameBound(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitFrameBound(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitFrameBound(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitFrameBound(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -11549,24 +11549,24 @@ public class ArcticSqlExtendParser extends Parser {
 		public QualifiedNameContext qualifiedName() {
 			return getRuleContext(QualifiedNameContext.class,0);
 		}
-		public TerminalNode FILTER() { return getToken(ArcticSqlExtendParser.FILTER, 0); }
-		public TerminalNode LEFT() { return getToken(ArcticSqlExtendParser.LEFT, 0); }
-		public TerminalNode RIGHT() { return getToken(ArcticSqlExtendParser.RIGHT, 0); }
+		public TerminalNode FILTER() { return getToken(MixedFormatSqlExtendParser.FILTER, 0); }
+		public TerminalNode LEFT() { return getToken(MixedFormatSqlExtendParser.LEFT, 0); }
+		public TerminalNode RIGHT() { return getToken(MixedFormatSqlExtendParser.RIGHT, 0); }
 		public FunctionNameContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_functionName; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterFunctionName(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterFunctionName(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitFunctionName(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitFunctionName(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitFunctionName(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitFunctionName(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -11632,15 +11632,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_qualifiedName; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterQualifiedName(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterQualifiedName(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitQualifiedName(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitQualifiedName(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitQualifiedName(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitQualifiedName(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -11698,15 +11698,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_errorCapturingIdentifier; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterErrorCapturingIdentifier(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterErrorCapturingIdentifier(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitErrorCapturingIdentifier(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitErrorCapturingIdentifier(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitErrorCapturingIdentifier(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitErrorCapturingIdentifier(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -11746,9 +11746,9 @@ public class ArcticSqlExtendParser extends Parser {
 		}
 	}
 	public static class ErrorIdentContext extends ErrorCapturingIdentifierExtraContext {
-		public List<TerminalNode> MINUS() { return getTokens(ArcticSqlExtendParser.MINUS); }
+		public List<TerminalNode> MINUS() { return getTokens(MixedFormatSqlExtendParser.MINUS); }
 		public TerminalNode MINUS(int i) {
-			return getToken(ArcticSqlExtendParser.MINUS, i);
+			return getToken(MixedFormatSqlExtendParser.MINUS, i);
 		}
 		public List<IdentifierContext> identifier() {
 			return getRuleContexts(IdentifierContext.class);
@@ -11759,15 +11759,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public ErrorIdentContext(ErrorCapturingIdentifierExtraContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterErrorIdent(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterErrorIdent(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitErrorIdent(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitErrorIdent(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitErrorIdent(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitErrorIdent(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -11775,15 +11775,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public RealIdentContext(ErrorCapturingIdentifierExtraContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterRealIdent(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterRealIdent(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitRealIdent(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitRealIdent(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitRealIdent(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitRealIdent(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -11856,15 +11856,15 @@ public class ArcticSqlExtendParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_identifier; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterIdentifier(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterIdentifier(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitIdentifier(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitIdentifier(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitIdentifier(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitIdentifier(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -11923,20 +11923,20 @@ public class ArcticSqlExtendParser extends Parser {
 		public QuotedIdentifierAlternativeContext(StrictIdentifierContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterQuotedIdentifierAlternative(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterQuotedIdentifierAlternative(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitQuotedIdentifierAlternative(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitQuotedIdentifierAlternative(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitQuotedIdentifierAlternative(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitQuotedIdentifierAlternative(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class UnquotedIdentifierContext extends StrictIdentifierContext {
-		public TerminalNode IDENTIFIER() { return getToken(ArcticSqlExtendParser.IDENTIFIER, 0); }
+		public TerminalNode IDENTIFIER() { return getToken(MixedFormatSqlExtendParser.IDENTIFIER, 0); }
 		public AnsiNonReservedContext ansiNonReserved() {
 			return getRuleContext(AnsiNonReservedContext.class,0);
 		}
@@ -11946,15 +11946,15 @@ public class ArcticSqlExtendParser extends Parser {
 		public UnquotedIdentifierContext(StrictIdentifierContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterUnquotedIdentifier(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterUnquotedIdentifier(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitUnquotedIdentifier(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitUnquotedIdentifier(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitUnquotedIdentifier(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitUnquotedIdentifier(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -12016,22 +12016,22 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class QuotedIdentifierContext extends ParserRuleContext {
-		public TerminalNode BACKQUOTED_IDENTIFIER() { return getToken(ArcticSqlExtendParser.BACKQUOTED_IDENTIFIER, 0); }
+		public TerminalNode BACKQUOTED_IDENTIFIER() { return getToken(MixedFormatSqlExtendParser.BACKQUOTED_IDENTIFIER, 0); }
 		public QuotedIdentifierContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_quotedIdentifier; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterQuotedIdentifier(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterQuotedIdentifier(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitQuotedIdentifier(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitQuotedIdentifier(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitQuotedIdentifier(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitQuotedIdentifier(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -12069,183 +12069,183 @@ public class ArcticSqlExtendParser extends Parser {
 		}
 	}
 	public static class DecimalLiteralContext extends NumberContext {
-		public TerminalNode DECIMAL_VALUE() { return getToken(ArcticSqlExtendParser.DECIMAL_VALUE, 0); }
-		public TerminalNode MINUS() { return getToken(ArcticSqlExtendParser.MINUS, 0); }
+		public TerminalNode DECIMAL_VALUE() { return getToken(MixedFormatSqlExtendParser.DECIMAL_VALUE, 0); }
+		public TerminalNode MINUS() { return getToken(MixedFormatSqlExtendParser.MINUS, 0); }
 		public DecimalLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterDecimalLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterDecimalLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitDecimalLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitDecimalLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitDecimalLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitDecimalLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class BigIntLiteralContext extends NumberContext {
-		public TerminalNode BIGINT_LITERAL() { return getToken(ArcticSqlExtendParser.BIGINT_LITERAL, 0); }
-		public TerminalNode MINUS() { return getToken(ArcticSqlExtendParser.MINUS, 0); }
+		public TerminalNode BIGINT_LITERAL() { return getToken(MixedFormatSqlExtendParser.BIGINT_LITERAL, 0); }
+		public TerminalNode MINUS() { return getToken(MixedFormatSqlExtendParser.MINUS, 0); }
 		public BigIntLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterBigIntLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterBigIntLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitBigIntLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitBigIntLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitBigIntLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitBigIntLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class TinyIntLiteralContext extends NumberContext {
-		public TerminalNode TINYINT_LITERAL() { return getToken(ArcticSqlExtendParser.TINYINT_LITERAL, 0); }
-		public TerminalNode MINUS() { return getToken(ArcticSqlExtendParser.MINUS, 0); }
+		public TerminalNode TINYINT_LITERAL() { return getToken(MixedFormatSqlExtendParser.TINYINT_LITERAL, 0); }
+		public TerminalNode MINUS() { return getToken(MixedFormatSqlExtendParser.MINUS, 0); }
 		public TinyIntLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterTinyIntLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterTinyIntLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitTinyIntLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitTinyIntLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitTinyIntLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitTinyIntLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class LegacyDecimalLiteralContext extends NumberContext {
-		public TerminalNode EXPONENT_VALUE() { return getToken(ArcticSqlExtendParser.EXPONENT_VALUE, 0); }
-		public TerminalNode DECIMAL_VALUE() { return getToken(ArcticSqlExtendParser.DECIMAL_VALUE, 0); }
-		public TerminalNode MINUS() { return getToken(ArcticSqlExtendParser.MINUS, 0); }
+		public TerminalNode EXPONENT_VALUE() { return getToken(MixedFormatSqlExtendParser.EXPONENT_VALUE, 0); }
+		public TerminalNode DECIMAL_VALUE() { return getToken(MixedFormatSqlExtendParser.DECIMAL_VALUE, 0); }
+		public TerminalNode MINUS() { return getToken(MixedFormatSqlExtendParser.MINUS, 0); }
 		public LegacyDecimalLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterLegacyDecimalLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterLegacyDecimalLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitLegacyDecimalLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitLegacyDecimalLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitLegacyDecimalLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitLegacyDecimalLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class BigDecimalLiteralContext extends NumberContext {
-		public TerminalNode BIGDECIMAL_LITERAL() { return getToken(ArcticSqlExtendParser.BIGDECIMAL_LITERAL, 0); }
-		public TerminalNode MINUS() { return getToken(ArcticSqlExtendParser.MINUS, 0); }
+		public TerminalNode BIGDECIMAL_LITERAL() { return getToken(MixedFormatSqlExtendParser.BIGDECIMAL_LITERAL, 0); }
+		public TerminalNode MINUS() { return getToken(MixedFormatSqlExtendParser.MINUS, 0); }
 		public BigDecimalLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterBigDecimalLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterBigDecimalLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitBigDecimalLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitBigDecimalLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitBigDecimalLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitBigDecimalLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class ExponentLiteralContext extends NumberContext {
-		public TerminalNode EXPONENT_VALUE() { return getToken(ArcticSqlExtendParser.EXPONENT_VALUE, 0); }
-		public TerminalNode MINUS() { return getToken(ArcticSqlExtendParser.MINUS, 0); }
+		public TerminalNode EXPONENT_VALUE() { return getToken(MixedFormatSqlExtendParser.EXPONENT_VALUE, 0); }
+		public TerminalNode MINUS() { return getToken(MixedFormatSqlExtendParser.MINUS, 0); }
 		public ExponentLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterExponentLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterExponentLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitExponentLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitExponentLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitExponentLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitExponentLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class DoubleLiteralContext extends NumberContext {
-		public TerminalNode DOUBLE_LITERAL() { return getToken(ArcticSqlExtendParser.DOUBLE_LITERAL, 0); }
-		public TerminalNode MINUS() { return getToken(ArcticSqlExtendParser.MINUS, 0); }
+		public TerminalNode DOUBLE_LITERAL() { return getToken(MixedFormatSqlExtendParser.DOUBLE_LITERAL, 0); }
+		public TerminalNode MINUS() { return getToken(MixedFormatSqlExtendParser.MINUS, 0); }
 		public DoubleLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterDoubleLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterDoubleLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitDoubleLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitDoubleLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitDoubleLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitDoubleLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class IntegerLiteralContext extends NumberContext {
-		public TerminalNode INTEGER_VALUE() { return getToken(ArcticSqlExtendParser.INTEGER_VALUE, 0); }
-		public TerminalNode MINUS() { return getToken(ArcticSqlExtendParser.MINUS, 0); }
+		public TerminalNode INTEGER_VALUE() { return getToken(MixedFormatSqlExtendParser.INTEGER_VALUE, 0); }
+		public TerminalNode MINUS() { return getToken(MixedFormatSqlExtendParser.MINUS, 0); }
 		public IntegerLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterIntegerLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterIntegerLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitIntegerLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitIntegerLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitIntegerLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitIntegerLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class FloatLiteralContext extends NumberContext {
-		public TerminalNode FLOAT_LITERAL() { return getToken(ArcticSqlExtendParser.FLOAT_LITERAL, 0); }
-		public TerminalNode MINUS() { return getToken(ArcticSqlExtendParser.MINUS, 0); }
+		public TerminalNode FLOAT_LITERAL() { return getToken(MixedFormatSqlExtendParser.FLOAT_LITERAL, 0); }
+		public TerminalNode MINUS() { return getToken(MixedFormatSqlExtendParser.MINUS, 0); }
 		public FloatLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterFloatLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterFloatLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitFloatLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitFloatLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitFloatLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitFloatLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class SmallIntLiteralContext extends NumberContext {
-		public TerminalNode SMALLINT_LITERAL() { return getToken(ArcticSqlExtendParser.SMALLINT_LITERAL, 0); }
-		public TerminalNode MINUS() { return getToken(ArcticSqlExtendParser.MINUS, 0); }
+		public TerminalNode SMALLINT_LITERAL() { return getToken(MixedFormatSqlExtendParser.SMALLINT_LITERAL, 0); }
+		public TerminalNode MINUS() { return getToken(MixedFormatSqlExtendParser.MINUS, 0); }
 		public SmallIntLiteralContext(NumberContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterSmallIntLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterSmallIntLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitSmallIntLiteral(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitSmallIntLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitSmallIntLiteral(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitSmallIntLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -12466,209 +12466,209 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class AnsiNonReservedContext extends ParserRuleContext {
-		public TerminalNode ADD() { return getToken(ArcticSqlExtendParser.ADD, 0); }
-		public TerminalNode AFTER() { return getToken(ArcticSqlExtendParser.AFTER, 0); }
-		public TerminalNode ALTER() { return getToken(ArcticSqlExtendParser.ALTER, 0); }
-		public TerminalNode ANALYZE() { return getToken(ArcticSqlExtendParser.ANALYZE, 0); }
-		public TerminalNode ANTI() { return getToken(ArcticSqlExtendParser.ANTI, 0); }
-		public TerminalNode ARCHIVE() { return getToken(ArcticSqlExtendParser.ARCHIVE, 0); }
-		public TerminalNode ARRAY() { return getToken(ArcticSqlExtendParser.ARRAY, 0); }
-		public TerminalNode ASC() { return getToken(ArcticSqlExtendParser.ASC, 0); }
-		public TerminalNode AT() { return getToken(ArcticSqlExtendParser.AT, 0); }
-		public TerminalNode BETWEEN() { return getToken(ArcticSqlExtendParser.BETWEEN, 0); }
-		public TerminalNode BUCKET() { return getToken(ArcticSqlExtendParser.BUCKET, 0); }
-		public TerminalNode BUCKETS() { return getToken(ArcticSqlExtendParser.BUCKETS, 0); }
-		public TerminalNode BY() { return getToken(ArcticSqlExtendParser.BY, 0); }
-		public TerminalNode CACHE() { return getToken(ArcticSqlExtendParser.CACHE, 0); }
-		public TerminalNode CASCADE() { return getToken(ArcticSqlExtendParser.CASCADE, 0); }
-		public TerminalNode CHANGE() { return getToken(ArcticSqlExtendParser.CHANGE, 0); }
-		public TerminalNode CLEAR() { return getToken(ArcticSqlExtendParser.CLEAR, 0); }
-		public TerminalNode CLUSTER() { return getToken(ArcticSqlExtendParser.CLUSTER, 0); }
-		public TerminalNode CLUSTERED() { return getToken(ArcticSqlExtendParser.CLUSTERED, 0); }
-		public TerminalNode CODEGEN() { return getToken(ArcticSqlExtendParser.CODEGEN, 0); }
-		public TerminalNode COLLECTION() { return getToken(ArcticSqlExtendParser.COLLECTION, 0); }
-		public TerminalNode COLUMNS() { return getToken(ArcticSqlExtendParser.COLUMNS, 0); }
-		public TerminalNode COMMENT() { return getToken(ArcticSqlExtendParser.COMMENT, 0); }
-		public TerminalNode COMMIT() { return getToken(ArcticSqlExtendParser.COMMIT, 0); }
-		public TerminalNode COMPACT() { return getToken(ArcticSqlExtendParser.COMPACT, 0); }
-		public TerminalNode COMPACTIONS() { return getToken(ArcticSqlExtendParser.COMPACTIONS, 0); }
-		public TerminalNode COMPUTE() { return getToken(ArcticSqlExtendParser.COMPUTE, 0); }
-		public TerminalNode CONCATENATE() { return getToken(ArcticSqlExtendParser.CONCATENATE, 0); }
-		public TerminalNode COST() { return getToken(ArcticSqlExtendParser.COST, 0); }
-		public TerminalNode CUBE() { return getToken(ArcticSqlExtendParser.CUBE, 0); }
-		public TerminalNode CURRENT() { return getToken(ArcticSqlExtendParser.CURRENT, 0); }
-		public TerminalNode DATA() { return getToken(ArcticSqlExtendParser.DATA, 0); }
-		public TerminalNode DATABASE() { return getToken(ArcticSqlExtendParser.DATABASE, 0); }
-		public TerminalNode DATABASES() { return getToken(ArcticSqlExtendParser.DATABASES, 0); }
-		public TerminalNode DAY() { return getToken(ArcticSqlExtendParser.DAY, 0); }
-		public TerminalNode DBPROPERTIES() { return getToken(ArcticSqlExtendParser.DBPROPERTIES, 0); }
-		public TerminalNode DEFINED() { return getToken(ArcticSqlExtendParser.DEFINED, 0); }
-		public TerminalNode DELETE() { return getToken(ArcticSqlExtendParser.DELETE, 0); }
-		public TerminalNode DELIMITED() { return getToken(ArcticSqlExtendParser.DELIMITED, 0); }
-		public TerminalNode DESC() { return getToken(ArcticSqlExtendParser.DESC, 0); }
-		public TerminalNode DESCRIBE() { return getToken(ArcticSqlExtendParser.DESCRIBE, 0); }
-		public TerminalNode DFS() { return getToken(ArcticSqlExtendParser.DFS, 0); }
-		public TerminalNode DIRECTORIES() { return getToken(ArcticSqlExtendParser.DIRECTORIES, 0); }
-		public TerminalNode DIRECTORY() { return getToken(ArcticSqlExtendParser.DIRECTORY, 0); }
-		public TerminalNode DISTRIBUTE() { return getToken(ArcticSqlExtendParser.DISTRIBUTE, 0); }
-		public TerminalNode DIV() { return getToken(ArcticSqlExtendParser.DIV, 0); }
-		public TerminalNode DROP() { return getToken(ArcticSqlExtendParser.DROP, 0); }
-		public TerminalNode ESCAPED() { return getToken(ArcticSqlExtendParser.ESCAPED, 0); }
-		public TerminalNode EXCHANGE() { return getToken(ArcticSqlExtendParser.EXCHANGE, 0); }
-		public TerminalNode EXISTS() { return getToken(ArcticSqlExtendParser.EXISTS, 0); }
-		public TerminalNode EXPLAIN() { return getToken(ArcticSqlExtendParser.EXPLAIN, 0); }
-		public TerminalNode EXPORT() { return getToken(ArcticSqlExtendParser.EXPORT, 0); }
-		public TerminalNode EXTENDED() { return getToken(ArcticSqlExtendParser.EXTENDED, 0); }
-		public TerminalNode EXTERNAL() { return getToken(ArcticSqlExtendParser.EXTERNAL, 0); }
-		public TerminalNode EXTRACT() { return getToken(ArcticSqlExtendParser.EXTRACT, 0); }
-		public TerminalNode FIELDS() { return getToken(ArcticSqlExtendParser.FIELDS, 0); }
-		public TerminalNode FILEFORMAT() { return getToken(ArcticSqlExtendParser.FILEFORMAT, 0); }
-		public TerminalNode FIRST() { return getToken(ArcticSqlExtendParser.FIRST, 0); }
-		public TerminalNode FOLLOWING() { return getToken(ArcticSqlExtendParser.FOLLOWING, 0); }
-		public TerminalNode FORMAT() { return getToken(ArcticSqlExtendParser.FORMAT, 0); }
-		public TerminalNode FORMATTED() { return getToken(ArcticSqlExtendParser.FORMATTED, 0); }
-		public TerminalNode FUNCTION() { return getToken(ArcticSqlExtendParser.FUNCTION, 0); }
-		public TerminalNode FUNCTIONS() { return getToken(ArcticSqlExtendParser.FUNCTIONS, 0); }
-		public TerminalNode GLOBAL() { return getToken(ArcticSqlExtendParser.GLOBAL, 0); }
-		public TerminalNode GROUPING() { return getToken(ArcticSqlExtendParser.GROUPING, 0); }
-		public TerminalNode HOUR() { return getToken(ArcticSqlExtendParser.HOUR, 0); }
-		public TerminalNode IF() { return getToken(ArcticSqlExtendParser.IF, 0); }
-		public TerminalNode IGNORE() { return getToken(ArcticSqlExtendParser.IGNORE, 0); }
-		public TerminalNode IMPORT() { return getToken(ArcticSqlExtendParser.IMPORT, 0); }
-		public TerminalNode INDEX() { return getToken(ArcticSqlExtendParser.INDEX, 0); }
-		public TerminalNode INDEXES() { return getToken(ArcticSqlExtendParser.INDEXES, 0); }
-		public TerminalNode INPATH() { return getToken(ArcticSqlExtendParser.INPATH, 0); }
-		public TerminalNode INPUTFORMAT() { return getToken(ArcticSqlExtendParser.INPUTFORMAT, 0); }
-		public TerminalNode INSERT() { return getToken(ArcticSqlExtendParser.INSERT, 0); }
-		public TerminalNode INTERVAL() { return getToken(ArcticSqlExtendParser.INTERVAL, 0); }
-		public TerminalNode ITEMS() { return getToken(ArcticSqlExtendParser.ITEMS, 0); }
-		public TerminalNode KEYS() { return getToken(ArcticSqlExtendParser.KEYS, 0); }
-		public TerminalNode LAST() { return getToken(ArcticSqlExtendParser.LAST, 0); }
-		public TerminalNode LAZY() { return getToken(ArcticSqlExtendParser.LAZY, 0); }
-		public TerminalNode LIKE() { return getToken(ArcticSqlExtendParser.LIKE, 0); }
-		public TerminalNode LIMIT() { return getToken(ArcticSqlExtendParser.LIMIT, 0); }
-		public TerminalNode LINES() { return getToken(ArcticSqlExtendParser.LINES, 0); }
-		public TerminalNode LIST() { return getToken(ArcticSqlExtendParser.LIST, 0); }
-		public TerminalNode LOAD() { return getToken(ArcticSqlExtendParser.LOAD, 0); }
-		public TerminalNode LOCAL() { return getToken(ArcticSqlExtendParser.LOCAL, 0); }
-		public TerminalNode LOCATION() { return getToken(ArcticSqlExtendParser.LOCATION, 0); }
-		public TerminalNode LOCK() { return getToken(ArcticSqlExtendParser.LOCK, 0); }
-		public TerminalNode LOCKS() { return getToken(ArcticSqlExtendParser.LOCKS, 0); }
-		public TerminalNode LOGICAL() { return getToken(ArcticSqlExtendParser.LOGICAL, 0); }
-		public TerminalNode MACRO() { return getToken(ArcticSqlExtendParser.MACRO, 0); }
-		public TerminalNode MAP() { return getToken(ArcticSqlExtendParser.MAP, 0); }
-		public TerminalNode MATCHED() { return getToken(ArcticSqlExtendParser.MATCHED, 0); }
-		public TerminalNode MERGE() { return getToken(ArcticSqlExtendParser.MERGE, 0); }
-		public TerminalNode MINUTE() { return getToken(ArcticSqlExtendParser.MINUTE, 0); }
-		public TerminalNode MONTH() { return getToken(ArcticSqlExtendParser.MONTH, 0); }
-		public TerminalNode MSCK() { return getToken(ArcticSqlExtendParser.MSCK, 0); }
-		public TerminalNode NAMESPACE() { return getToken(ArcticSqlExtendParser.NAMESPACE, 0); }
-		public TerminalNode NAMESPACES() { return getToken(ArcticSqlExtendParser.NAMESPACES, 0); }
-		public TerminalNode NO() { return getToken(ArcticSqlExtendParser.NO, 0); }
-		public TerminalNode NULLS() { return getToken(ArcticSqlExtendParser.NULLS, 0); }
-		public TerminalNode OF() { return getToken(ArcticSqlExtendParser.OF, 0); }
-		public TerminalNode OPTION() { return getToken(ArcticSqlExtendParser.OPTION, 0); }
-		public TerminalNode OPTIONS() { return getToken(ArcticSqlExtendParser.OPTIONS, 0); }
-		public TerminalNode OUT() { return getToken(ArcticSqlExtendParser.OUT, 0); }
-		public TerminalNode OUTPUTFORMAT() { return getToken(ArcticSqlExtendParser.OUTPUTFORMAT, 0); }
-		public TerminalNode OVER() { return getToken(ArcticSqlExtendParser.OVER, 0); }
-		public TerminalNode OVERLAY() { return getToken(ArcticSqlExtendParser.OVERLAY, 0); }
-		public TerminalNode OVERWRITE() { return getToken(ArcticSqlExtendParser.OVERWRITE, 0); }
-		public TerminalNode PARTITION() { return getToken(ArcticSqlExtendParser.PARTITION, 0); }
-		public TerminalNode PARTITIONED() { return getToken(ArcticSqlExtendParser.PARTITIONED, 0); }
-		public TerminalNode PARTITIONS() { return getToken(ArcticSqlExtendParser.PARTITIONS, 0); }
-		public TerminalNode PERCENTLIT() { return getToken(ArcticSqlExtendParser.PERCENTLIT, 0); }
-		public TerminalNode PIVOT() { return getToken(ArcticSqlExtendParser.PIVOT, 0); }
-		public TerminalNode PLACING() { return getToken(ArcticSqlExtendParser.PLACING, 0); }
-		public TerminalNode POSITION() { return getToken(ArcticSqlExtendParser.POSITION, 0); }
-		public TerminalNode PRECEDING() { return getToken(ArcticSqlExtendParser.PRECEDING, 0); }
-		public TerminalNode PRINCIPALS() { return getToken(ArcticSqlExtendParser.PRINCIPALS, 0); }
-		public TerminalNode PROPERTIES() { return getToken(ArcticSqlExtendParser.PROPERTIES, 0); }
-		public TerminalNode PURGE() { return getToken(ArcticSqlExtendParser.PURGE, 0); }
-		public TerminalNode QUERY() { return getToken(ArcticSqlExtendParser.QUERY, 0); }
-		public TerminalNode RANGE() { return getToken(ArcticSqlExtendParser.RANGE, 0); }
-		public TerminalNode RECORDREADER() { return getToken(ArcticSqlExtendParser.RECORDREADER, 0); }
-		public TerminalNode RECORDWRITER() { return getToken(ArcticSqlExtendParser.RECORDWRITER, 0); }
-		public TerminalNode RECOVER() { return getToken(ArcticSqlExtendParser.RECOVER, 0); }
-		public TerminalNode REDUCE() { return getToken(ArcticSqlExtendParser.REDUCE, 0); }
-		public TerminalNode REFRESH() { return getToken(ArcticSqlExtendParser.REFRESH, 0); }
-		public TerminalNode RENAME() { return getToken(ArcticSqlExtendParser.RENAME, 0); }
-		public TerminalNode REPAIR() { return getToken(ArcticSqlExtendParser.REPAIR, 0); }
-		public TerminalNode REPLACE() { return getToken(ArcticSqlExtendParser.REPLACE, 0); }
-		public TerminalNode RESET() { return getToken(ArcticSqlExtendParser.RESET, 0); }
-		public TerminalNode RESPECT() { return getToken(ArcticSqlExtendParser.RESPECT, 0); }
-		public TerminalNode RESTRICT() { return getToken(ArcticSqlExtendParser.RESTRICT, 0); }
-		public TerminalNode REVOKE() { return getToken(ArcticSqlExtendParser.REVOKE, 0); }
-		public TerminalNode RLIKE() { return getToken(ArcticSqlExtendParser.RLIKE, 0); }
-		public TerminalNode ROLE() { return getToken(ArcticSqlExtendParser.ROLE, 0); }
-		public TerminalNode ROLES() { return getToken(ArcticSqlExtendParser.ROLES, 0); }
-		public TerminalNode ROLLBACK() { return getToken(ArcticSqlExtendParser.ROLLBACK, 0); }
-		public TerminalNode ROLLUP() { return getToken(ArcticSqlExtendParser.ROLLUP, 0); }
-		public TerminalNode ROW() { return getToken(ArcticSqlExtendParser.ROW, 0); }
-		public TerminalNode ROWS() { return getToken(ArcticSqlExtendParser.ROWS, 0); }
-		public TerminalNode SCHEMA() { return getToken(ArcticSqlExtendParser.SCHEMA, 0); }
-		public TerminalNode SECOND() { return getToken(ArcticSqlExtendParser.SECOND, 0); }
-		public TerminalNode SEMI() { return getToken(ArcticSqlExtendParser.SEMI, 0); }
-		public TerminalNode SEPARATED() { return getToken(ArcticSqlExtendParser.SEPARATED, 0); }
-		public TerminalNode SERDE() { return getToken(ArcticSqlExtendParser.SERDE, 0); }
-		public TerminalNode SERDEPROPERTIES() { return getToken(ArcticSqlExtendParser.SERDEPROPERTIES, 0); }
-		public TerminalNode SET() { return getToken(ArcticSqlExtendParser.SET, 0); }
-		public TerminalNode SETMINUS() { return getToken(ArcticSqlExtendParser.SETMINUS, 0); }
-		public TerminalNode SETS() { return getToken(ArcticSqlExtendParser.SETS, 0); }
-		public TerminalNode SHOW() { return getToken(ArcticSqlExtendParser.SHOW, 0); }
-		public TerminalNode SKEWED() { return getToken(ArcticSqlExtendParser.SKEWED, 0); }
-		public TerminalNode SORT() { return getToken(ArcticSqlExtendParser.SORT, 0); }
-		public TerminalNode SORTED() { return getToken(ArcticSqlExtendParser.SORTED, 0); }
-		public TerminalNode START() { return getToken(ArcticSqlExtendParser.START, 0); }
-		public TerminalNode STATISTICS() { return getToken(ArcticSqlExtendParser.STATISTICS, 0); }
-		public TerminalNode STORED() { return getToken(ArcticSqlExtendParser.STORED, 0); }
-		public TerminalNode STRATIFY() { return getToken(ArcticSqlExtendParser.STRATIFY, 0); }
-		public TerminalNode STRUCT() { return getToken(ArcticSqlExtendParser.STRUCT, 0); }
-		public TerminalNode SUBSTR() { return getToken(ArcticSqlExtendParser.SUBSTR, 0); }
-		public TerminalNode SUBSTRING() { return getToken(ArcticSqlExtendParser.SUBSTRING, 0); }
-		public TerminalNode SYNC() { return getToken(ArcticSqlExtendParser.SYNC, 0); }
-		public TerminalNode TABLES() { return getToken(ArcticSqlExtendParser.TABLES, 0); }
-		public TerminalNode TABLESAMPLE() { return getToken(ArcticSqlExtendParser.TABLESAMPLE, 0); }
-		public TerminalNode TBLPROPERTIES() { return getToken(ArcticSqlExtendParser.TBLPROPERTIES, 0); }
-		public TerminalNode TEMPORARY() { return getToken(ArcticSqlExtendParser.TEMPORARY, 0); }
-		public TerminalNode TERMINATED() { return getToken(ArcticSqlExtendParser.TERMINATED, 0); }
-		public TerminalNode TOUCH() { return getToken(ArcticSqlExtendParser.TOUCH, 0); }
-		public TerminalNode TRANSACTION() { return getToken(ArcticSqlExtendParser.TRANSACTION, 0); }
-		public TerminalNode TRANSACTIONS() { return getToken(ArcticSqlExtendParser.TRANSACTIONS, 0); }
-		public TerminalNode TRANSFORM() { return getToken(ArcticSqlExtendParser.TRANSFORM, 0); }
-		public TerminalNode TRIM() { return getToken(ArcticSqlExtendParser.TRIM, 0); }
-		public TerminalNode TRUE() { return getToken(ArcticSqlExtendParser.TRUE, 0); }
-		public TerminalNode TRUNCATE() { return getToken(ArcticSqlExtendParser.TRUNCATE, 0); }
-		public TerminalNode TRY_CAST() { return getToken(ArcticSqlExtendParser.TRY_CAST, 0); }
-		public TerminalNode TYPE() { return getToken(ArcticSqlExtendParser.TYPE, 0); }
-		public TerminalNode UNARCHIVE() { return getToken(ArcticSqlExtendParser.UNARCHIVE, 0); }
-		public TerminalNode UNBOUNDED() { return getToken(ArcticSqlExtendParser.UNBOUNDED, 0); }
-		public TerminalNode UNCACHE() { return getToken(ArcticSqlExtendParser.UNCACHE, 0); }
-		public TerminalNode UNLOCK() { return getToken(ArcticSqlExtendParser.UNLOCK, 0); }
-		public TerminalNode UNSET() { return getToken(ArcticSqlExtendParser.UNSET, 0); }
-		public TerminalNode UPDATE() { return getToken(ArcticSqlExtendParser.UPDATE, 0); }
-		public TerminalNode USE() { return getToken(ArcticSqlExtendParser.USE, 0); }
-		public TerminalNode VALUES() { return getToken(ArcticSqlExtendParser.VALUES, 0); }
-		public TerminalNode VIEW() { return getToken(ArcticSqlExtendParser.VIEW, 0); }
-		public TerminalNode VIEWS() { return getToken(ArcticSqlExtendParser.VIEWS, 0); }
-		public TerminalNode WINDOW() { return getToken(ArcticSqlExtendParser.WINDOW, 0); }
-		public TerminalNode YEAR() { return getToken(ArcticSqlExtendParser.YEAR, 0); }
-		public TerminalNode ZONE() { return getToken(ArcticSqlExtendParser.ZONE, 0); }
+		public TerminalNode ADD() { return getToken(MixedFormatSqlExtendParser.ADD, 0); }
+		public TerminalNode AFTER() { return getToken(MixedFormatSqlExtendParser.AFTER, 0); }
+		public TerminalNode ALTER() { return getToken(MixedFormatSqlExtendParser.ALTER, 0); }
+		public TerminalNode ANALYZE() { return getToken(MixedFormatSqlExtendParser.ANALYZE, 0); }
+		public TerminalNode ANTI() { return getToken(MixedFormatSqlExtendParser.ANTI, 0); }
+		public TerminalNode ARCHIVE() { return getToken(MixedFormatSqlExtendParser.ARCHIVE, 0); }
+		public TerminalNode ARRAY() { return getToken(MixedFormatSqlExtendParser.ARRAY, 0); }
+		public TerminalNode ASC() { return getToken(MixedFormatSqlExtendParser.ASC, 0); }
+		public TerminalNode AT() { return getToken(MixedFormatSqlExtendParser.AT, 0); }
+		public TerminalNode BETWEEN() { return getToken(MixedFormatSqlExtendParser.BETWEEN, 0); }
+		public TerminalNode BUCKET() { return getToken(MixedFormatSqlExtendParser.BUCKET, 0); }
+		public TerminalNode BUCKETS() { return getToken(MixedFormatSqlExtendParser.BUCKETS, 0); }
+		public TerminalNode BY() { return getToken(MixedFormatSqlExtendParser.BY, 0); }
+		public TerminalNode CACHE() { return getToken(MixedFormatSqlExtendParser.CACHE, 0); }
+		public TerminalNode CASCADE() { return getToken(MixedFormatSqlExtendParser.CASCADE, 0); }
+		public TerminalNode CHANGE() { return getToken(MixedFormatSqlExtendParser.CHANGE, 0); }
+		public TerminalNode CLEAR() { return getToken(MixedFormatSqlExtendParser.CLEAR, 0); }
+		public TerminalNode CLUSTER() { return getToken(MixedFormatSqlExtendParser.CLUSTER, 0); }
+		public TerminalNode CLUSTERED() { return getToken(MixedFormatSqlExtendParser.CLUSTERED, 0); }
+		public TerminalNode CODEGEN() { return getToken(MixedFormatSqlExtendParser.CODEGEN, 0); }
+		public TerminalNode COLLECTION() { return getToken(MixedFormatSqlExtendParser.COLLECTION, 0); }
+		public TerminalNode COLUMNS() { return getToken(MixedFormatSqlExtendParser.COLUMNS, 0); }
+		public TerminalNode COMMENT() { return getToken(MixedFormatSqlExtendParser.COMMENT, 0); }
+		public TerminalNode COMMIT() { return getToken(MixedFormatSqlExtendParser.COMMIT, 0); }
+		public TerminalNode COMPACT() { return getToken(MixedFormatSqlExtendParser.COMPACT, 0); }
+		public TerminalNode COMPACTIONS() { return getToken(MixedFormatSqlExtendParser.COMPACTIONS, 0); }
+		public TerminalNode COMPUTE() { return getToken(MixedFormatSqlExtendParser.COMPUTE, 0); }
+		public TerminalNode CONCATENATE() { return getToken(MixedFormatSqlExtendParser.CONCATENATE, 0); }
+		public TerminalNode COST() { return getToken(MixedFormatSqlExtendParser.COST, 0); }
+		public TerminalNode CUBE() { return getToken(MixedFormatSqlExtendParser.CUBE, 0); }
+		public TerminalNode CURRENT() { return getToken(MixedFormatSqlExtendParser.CURRENT, 0); }
+		public TerminalNode DATA() { return getToken(MixedFormatSqlExtendParser.DATA, 0); }
+		public TerminalNode DATABASE() { return getToken(MixedFormatSqlExtendParser.DATABASE, 0); }
+		public TerminalNode DATABASES() { return getToken(MixedFormatSqlExtendParser.DATABASES, 0); }
+		public TerminalNode DAY() { return getToken(MixedFormatSqlExtendParser.DAY, 0); }
+		public TerminalNode DBPROPERTIES() { return getToken(MixedFormatSqlExtendParser.DBPROPERTIES, 0); }
+		public TerminalNode DEFINED() { return getToken(MixedFormatSqlExtendParser.DEFINED, 0); }
+		public TerminalNode DELETE() { return getToken(MixedFormatSqlExtendParser.DELETE, 0); }
+		public TerminalNode DELIMITED() { return getToken(MixedFormatSqlExtendParser.DELIMITED, 0); }
+		public TerminalNode DESC() { return getToken(MixedFormatSqlExtendParser.DESC, 0); }
+		public TerminalNode DESCRIBE() { return getToken(MixedFormatSqlExtendParser.DESCRIBE, 0); }
+		public TerminalNode DFS() { return getToken(MixedFormatSqlExtendParser.DFS, 0); }
+		public TerminalNode DIRECTORIES() { return getToken(MixedFormatSqlExtendParser.DIRECTORIES, 0); }
+		public TerminalNode DIRECTORY() { return getToken(MixedFormatSqlExtendParser.DIRECTORY, 0); }
+		public TerminalNode DISTRIBUTE() { return getToken(MixedFormatSqlExtendParser.DISTRIBUTE, 0); }
+		public TerminalNode DIV() { return getToken(MixedFormatSqlExtendParser.DIV, 0); }
+		public TerminalNode DROP() { return getToken(MixedFormatSqlExtendParser.DROP, 0); }
+		public TerminalNode ESCAPED() { return getToken(MixedFormatSqlExtendParser.ESCAPED, 0); }
+		public TerminalNode EXCHANGE() { return getToken(MixedFormatSqlExtendParser.EXCHANGE, 0); }
+		public TerminalNode EXISTS() { return getToken(MixedFormatSqlExtendParser.EXISTS, 0); }
+		public TerminalNode EXPLAIN() { return getToken(MixedFormatSqlExtendParser.EXPLAIN, 0); }
+		public TerminalNode EXPORT() { return getToken(MixedFormatSqlExtendParser.EXPORT, 0); }
+		public TerminalNode EXTENDED() { return getToken(MixedFormatSqlExtendParser.EXTENDED, 0); }
+		public TerminalNode EXTERNAL() { return getToken(MixedFormatSqlExtendParser.EXTERNAL, 0); }
+		public TerminalNode EXTRACT() { return getToken(MixedFormatSqlExtendParser.EXTRACT, 0); }
+		public TerminalNode FIELDS() { return getToken(MixedFormatSqlExtendParser.FIELDS, 0); }
+		public TerminalNode FILEFORMAT() { return getToken(MixedFormatSqlExtendParser.FILEFORMAT, 0); }
+		public TerminalNode FIRST() { return getToken(MixedFormatSqlExtendParser.FIRST, 0); }
+		public TerminalNode FOLLOWING() { return getToken(MixedFormatSqlExtendParser.FOLLOWING, 0); }
+		public TerminalNode FORMAT() { return getToken(MixedFormatSqlExtendParser.FORMAT, 0); }
+		public TerminalNode FORMATTED() { return getToken(MixedFormatSqlExtendParser.FORMATTED, 0); }
+		public TerminalNode FUNCTION() { return getToken(MixedFormatSqlExtendParser.FUNCTION, 0); }
+		public TerminalNode FUNCTIONS() { return getToken(MixedFormatSqlExtendParser.FUNCTIONS, 0); }
+		public TerminalNode GLOBAL() { return getToken(MixedFormatSqlExtendParser.GLOBAL, 0); }
+		public TerminalNode GROUPING() { return getToken(MixedFormatSqlExtendParser.GROUPING, 0); }
+		public TerminalNode HOUR() { return getToken(MixedFormatSqlExtendParser.HOUR, 0); }
+		public TerminalNode IF() { return getToken(MixedFormatSqlExtendParser.IF, 0); }
+		public TerminalNode IGNORE() { return getToken(MixedFormatSqlExtendParser.IGNORE, 0); }
+		public TerminalNode IMPORT() { return getToken(MixedFormatSqlExtendParser.IMPORT, 0); }
+		public TerminalNode INDEX() { return getToken(MixedFormatSqlExtendParser.INDEX, 0); }
+		public TerminalNode INDEXES() { return getToken(MixedFormatSqlExtendParser.INDEXES, 0); }
+		public TerminalNode INPATH() { return getToken(MixedFormatSqlExtendParser.INPATH, 0); }
+		public TerminalNode INPUTFORMAT() { return getToken(MixedFormatSqlExtendParser.INPUTFORMAT, 0); }
+		public TerminalNode INSERT() { return getToken(MixedFormatSqlExtendParser.INSERT, 0); }
+		public TerminalNode INTERVAL() { return getToken(MixedFormatSqlExtendParser.INTERVAL, 0); }
+		public TerminalNode ITEMS() { return getToken(MixedFormatSqlExtendParser.ITEMS, 0); }
+		public TerminalNode KEYS() { return getToken(MixedFormatSqlExtendParser.KEYS, 0); }
+		public TerminalNode LAST() { return getToken(MixedFormatSqlExtendParser.LAST, 0); }
+		public TerminalNode LAZY() { return getToken(MixedFormatSqlExtendParser.LAZY, 0); }
+		public TerminalNode LIKE() { return getToken(MixedFormatSqlExtendParser.LIKE, 0); }
+		public TerminalNode LIMIT() { return getToken(MixedFormatSqlExtendParser.LIMIT, 0); }
+		public TerminalNode LINES() { return getToken(MixedFormatSqlExtendParser.LINES, 0); }
+		public TerminalNode LIST() { return getToken(MixedFormatSqlExtendParser.LIST, 0); }
+		public TerminalNode LOAD() { return getToken(MixedFormatSqlExtendParser.LOAD, 0); }
+		public TerminalNode LOCAL() { return getToken(MixedFormatSqlExtendParser.LOCAL, 0); }
+		public TerminalNode LOCATION() { return getToken(MixedFormatSqlExtendParser.LOCATION, 0); }
+		public TerminalNode LOCK() { return getToken(MixedFormatSqlExtendParser.LOCK, 0); }
+		public TerminalNode LOCKS() { return getToken(MixedFormatSqlExtendParser.LOCKS, 0); }
+		public TerminalNode LOGICAL() { return getToken(MixedFormatSqlExtendParser.LOGICAL, 0); }
+		public TerminalNode MACRO() { return getToken(MixedFormatSqlExtendParser.MACRO, 0); }
+		public TerminalNode MAP() { return getToken(MixedFormatSqlExtendParser.MAP, 0); }
+		public TerminalNode MATCHED() { return getToken(MixedFormatSqlExtendParser.MATCHED, 0); }
+		public TerminalNode MERGE() { return getToken(MixedFormatSqlExtendParser.MERGE, 0); }
+		public TerminalNode MINUTE() { return getToken(MixedFormatSqlExtendParser.MINUTE, 0); }
+		public TerminalNode MONTH() { return getToken(MixedFormatSqlExtendParser.MONTH, 0); }
+		public TerminalNode MSCK() { return getToken(MixedFormatSqlExtendParser.MSCK, 0); }
+		public TerminalNode NAMESPACE() { return getToken(MixedFormatSqlExtendParser.NAMESPACE, 0); }
+		public TerminalNode NAMESPACES() { return getToken(MixedFormatSqlExtendParser.NAMESPACES, 0); }
+		public TerminalNode NO() { return getToken(MixedFormatSqlExtendParser.NO, 0); }
+		public TerminalNode NULLS() { return getToken(MixedFormatSqlExtendParser.NULLS, 0); }
+		public TerminalNode OF() { return getToken(MixedFormatSqlExtendParser.OF, 0); }
+		public TerminalNode OPTION() { return getToken(MixedFormatSqlExtendParser.OPTION, 0); }
+		public TerminalNode OPTIONS() { return getToken(MixedFormatSqlExtendParser.OPTIONS, 0); }
+		public TerminalNode OUT() { return getToken(MixedFormatSqlExtendParser.OUT, 0); }
+		public TerminalNode OUTPUTFORMAT() { return getToken(MixedFormatSqlExtendParser.OUTPUTFORMAT, 0); }
+		public TerminalNode OVER() { return getToken(MixedFormatSqlExtendParser.OVER, 0); }
+		public TerminalNode OVERLAY() { return getToken(MixedFormatSqlExtendParser.OVERLAY, 0); }
+		public TerminalNode OVERWRITE() { return getToken(MixedFormatSqlExtendParser.OVERWRITE, 0); }
+		public TerminalNode PARTITION() { return getToken(MixedFormatSqlExtendParser.PARTITION, 0); }
+		public TerminalNode PARTITIONED() { return getToken(MixedFormatSqlExtendParser.PARTITIONED, 0); }
+		public TerminalNode PARTITIONS() { return getToken(MixedFormatSqlExtendParser.PARTITIONS, 0); }
+		public TerminalNode PERCENTLIT() { return getToken(MixedFormatSqlExtendParser.PERCENTLIT, 0); }
+		public TerminalNode PIVOT() { return getToken(MixedFormatSqlExtendParser.PIVOT, 0); }
+		public TerminalNode PLACING() { return getToken(MixedFormatSqlExtendParser.PLACING, 0); }
+		public TerminalNode POSITION() { return getToken(MixedFormatSqlExtendParser.POSITION, 0); }
+		public TerminalNode PRECEDING() { return getToken(MixedFormatSqlExtendParser.PRECEDING, 0); }
+		public TerminalNode PRINCIPALS() { return getToken(MixedFormatSqlExtendParser.PRINCIPALS, 0); }
+		public TerminalNode PROPERTIES() { return getToken(MixedFormatSqlExtendParser.PROPERTIES, 0); }
+		public TerminalNode PURGE() { return getToken(MixedFormatSqlExtendParser.PURGE, 0); }
+		public TerminalNode QUERY() { return getToken(MixedFormatSqlExtendParser.QUERY, 0); }
+		public TerminalNode RANGE() { return getToken(MixedFormatSqlExtendParser.RANGE, 0); }
+		public TerminalNode RECORDREADER() { return getToken(MixedFormatSqlExtendParser.RECORDREADER, 0); }
+		public TerminalNode RECORDWRITER() { return getToken(MixedFormatSqlExtendParser.RECORDWRITER, 0); }
+		public TerminalNode RECOVER() { return getToken(MixedFormatSqlExtendParser.RECOVER, 0); }
+		public TerminalNode REDUCE() { return getToken(MixedFormatSqlExtendParser.REDUCE, 0); }
+		public TerminalNode REFRESH() { return getToken(MixedFormatSqlExtendParser.REFRESH, 0); }
+		public TerminalNode RENAME() { return getToken(MixedFormatSqlExtendParser.RENAME, 0); }
+		public TerminalNode REPAIR() { return getToken(MixedFormatSqlExtendParser.REPAIR, 0); }
+		public TerminalNode REPLACE() { return getToken(MixedFormatSqlExtendParser.REPLACE, 0); }
+		public TerminalNode RESET() { return getToken(MixedFormatSqlExtendParser.RESET, 0); }
+		public TerminalNode RESPECT() { return getToken(MixedFormatSqlExtendParser.RESPECT, 0); }
+		public TerminalNode RESTRICT() { return getToken(MixedFormatSqlExtendParser.RESTRICT, 0); }
+		public TerminalNode REVOKE() { return getToken(MixedFormatSqlExtendParser.REVOKE, 0); }
+		public TerminalNode RLIKE() { return getToken(MixedFormatSqlExtendParser.RLIKE, 0); }
+		public TerminalNode ROLE() { return getToken(MixedFormatSqlExtendParser.ROLE, 0); }
+		public TerminalNode ROLES() { return getToken(MixedFormatSqlExtendParser.ROLES, 0); }
+		public TerminalNode ROLLBACK() { return getToken(MixedFormatSqlExtendParser.ROLLBACK, 0); }
+		public TerminalNode ROLLUP() { return getToken(MixedFormatSqlExtendParser.ROLLUP, 0); }
+		public TerminalNode ROW() { return getToken(MixedFormatSqlExtendParser.ROW, 0); }
+		public TerminalNode ROWS() { return getToken(MixedFormatSqlExtendParser.ROWS, 0); }
+		public TerminalNode SCHEMA() { return getToken(MixedFormatSqlExtendParser.SCHEMA, 0); }
+		public TerminalNode SECOND() { return getToken(MixedFormatSqlExtendParser.SECOND, 0); }
+		public TerminalNode SEMI() { return getToken(MixedFormatSqlExtendParser.SEMI, 0); }
+		public TerminalNode SEPARATED() { return getToken(MixedFormatSqlExtendParser.SEPARATED, 0); }
+		public TerminalNode SERDE() { return getToken(MixedFormatSqlExtendParser.SERDE, 0); }
+		public TerminalNode SERDEPROPERTIES() { return getToken(MixedFormatSqlExtendParser.SERDEPROPERTIES, 0); }
+		public TerminalNode SET() { return getToken(MixedFormatSqlExtendParser.SET, 0); }
+		public TerminalNode SETMINUS() { return getToken(MixedFormatSqlExtendParser.SETMINUS, 0); }
+		public TerminalNode SETS() { return getToken(MixedFormatSqlExtendParser.SETS, 0); }
+		public TerminalNode SHOW() { return getToken(MixedFormatSqlExtendParser.SHOW, 0); }
+		public TerminalNode SKEWED() { return getToken(MixedFormatSqlExtendParser.SKEWED, 0); }
+		public TerminalNode SORT() { return getToken(MixedFormatSqlExtendParser.SORT, 0); }
+		public TerminalNode SORTED() { return getToken(MixedFormatSqlExtendParser.SORTED, 0); }
+		public TerminalNode START() { return getToken(MixedFormatSqlExtendParser.START, 0); }
+		public TerminalNode STATISTICS() { return getToken(MixedFormatSqlExtendParser.STATISTICS, 0); }
+		public TerminalNode STORED() { return getToken(MixedFormatSqlExtendParser.STORED, 0); }
+		public TerminalNode STRATIFY() { return getToken(MixedFormatSqlExtendParser.STRATIFY, 0); }
+		public TerminalNode STRUCT() { return getToken(MixedFormatSqlExtendParser.STRUCT, 0); }
+		public TerminalNode SUBSTR() { return getToken(MixedFormatSqlExtendParser.SUBSTR, 0); }
+		public TerminalNode SUBSTRING() { return getToken(MixedFormatSqlExtendParser.SUBSTRING, 0); }
+		public TerminalNode SYNC() { return getToken(MixedFormatSqlExtendParser.SYNC, 0); }
+		public TerminalNode TABLES() { return getToken(MixedFormatSqlExtendParser.TABLES, 0); }
+		public TerminalNode TABLESAMPLE() { return getToken(MixedFormatSqlExtendParser.TABLESAMPLE, 0); }
+		public TerminalNode TBLPROPERTIES() { return getToken(MixedFormatSqlExtendParser.TBLPROPERTIES, 0); }
+		public TerminalNode TEMPORARY() { return getToken(MixedFormatSqlExtendParser.TEMPORARY, 0); }
+		public TerminalNode TERMINATED() { return getToken(MixedFormatSqlExtendParser.TERMINATED, 0); }
+		public TerminalNode TOUCH() { return getToken(MixedFormatSqlExtendParser.TOUCH, 0); }
+		public TerminalNode TRANSACTION() { return getToken(MixedFormatSqlExtendParser.TRANSACTION, 0); }
+		public TerminalNode TRANSACTIONS() { return getToken(MixedFormatSqlExtendParser.TRANSACTIONS, 0); }
+		public TerminalNode TRANSFORM() { return getToken(MixedFormatSqlExtendParser.TRANSFORM, 0); }
+		public TerminalNode TRIM() { return getToken(MixedFormatSqlExtendParser.TRIM, 0); }
+		public TerminalNode TRUE() { return getToken(MixedFormatSqlExtendParser.TRUE, 0); }
+		public TerminalNode TRUNCATE() { return getToken(MixedFormatSqlExtendParser.TRUNCATE, 0); }
+		public TerminalNode TRY_CAST() { return getToken(MixedFormatSqlExtendParser.TRY_CAST, 0); }
+		public TerminalNode TYPE() { return getToken(MixedFormatSqlExtendParser.TYPE, 0); }
+		public TerminalNode UNARCHIVE() { return getToken(MixedFormatSqlExtendParser.UNARCHIVE, 0); }
+		public TerminalNode UNBOUNDED() { return getToken(MixedFormatSqlExtendParser.UNBOUNDED, 0); }
+		public TerminalNode UNCACHE() { return getToken(MixedFormatSqlExtendParser.UNCACHE, 0); }
+		public TerminalNode UNLOCK() { return getToken(MixedFormatSqlExtendParser.UNLOCK, 0); }
+		public TerminalNode UNSET() { return getToken(MixedFormatSqlExtendParser.UNSET, 0); }
+		public TerminalNode UPDATE() { return getToken(MixedFormatSqlExtendParser.UPDATE, 0); }
+		public TerminalNode USE() { return getToken(MixedFormatSqlExtendParser.USE, 0); }
+		public TerminalNode VALUES() { return getToken(MixedFormatSqlExtendParser.VALUES, 0); }
+		public TerminalNode VIEW() { return getToken(MixedFormatSqlExtendParser.VIEW, 0); }
+		public TerminalNode VIEWS() { return getToken(MixedFormatSqlExtendParser.VIEWS, 0); }
+		public TerminalNode WINDOW() { return getToken(MixedFormatSqlExtendParser.WINDOW, 0); }
+		public TerminalNode YEAR() { return getToken(MixedFormatSqlExtendParser.YEAR, 0); }
+		public TerminalNode ZONE() { return getToken(MixedFormatSqlExtendParser.ZONE, 0); }
 		public AnsiNonReservedContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_ansiNonReserved; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterAnsiNonReserved(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterAnsiNonReserved(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitAnsiNonReserved(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitAnsiNonReserved(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitAnsiNonReserved(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitAnsiNonReserved(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -12704,37 +12704,37 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class StrictNonReservedContext extends ParserRuleContext {
-		public TerminalNode ANTI() { return getToken(ArcticSqlExtendParser.ANTI, 0); }
-		public TerminalNode CROSS() { return getToken(ArcticSqlExtendParser.CROSS, 0); }
-		public TerminalNode EXCEPT() { return getToken(ArcticSqlExtendParser.EXCEPT, 0); }
-		public TerminalNode FULL() { return getToken(ArcticSqlExtendParser.FULL, 0); }
-		public TerminalNode INNER() { return getToken(ArcticSqlExtendParser.INNER, 0); }
-		public TerminalNode INTERSECT() { return getToken(ArcticSqlExtendParser.INTERSECT, 0); }
-		public TerminalNode JOIN() { return getToken(ArcticSqlExtendParser.JOIN, 0); }
-		public TerminalNode LATERAL() { return getToken(ArcticSqlExtendParser.LATERAL, 0); }
-		public TerminalNode LEFT() { return getToken(ArcticSqlExtendParser.LEFT, 0); }
-		public TerminalNode NATURAL() { return getToken(ArcticSqlExtendParser.NATURAL, 0); }
-		public TerminalNode ON() { return getToken(ArcticSqlExtendParser.ON, 0); }
-		public TerminalNode RIGHT() { return getToken(ArcticSqlExtendParser.RIGHT, 0); }
-		public TerminalNode SEMI() { return getToken(ArcticSqlExtendParser.SEMI, 0); }
-		public TerminalNode SETMINUS() { return getToken(ArcticSqlExtendParser.SETMINUS, 0); }
-		public TerminalNode UNION() { return getToken(ArcticSqlExtendParser.UNION, 0); }
-		public TerminalNode USING() { return getToken(ArcticSqlExtendParser.USING, 0); }
+		public TerminalNode ANTI() { return getToken(MixedFormatSqlExtendParser.ANTI, 0); }
+		public TerminalNode CROSS() { return getToken(MixedFormatSqlExtendParser.CROSS, 0); }
+		public TerminalNode EXCEPT() { return getToken(MixedFormatSqlExtendParser.EXCEPT, 0); }
+		public TerminalNode FULL() { return getToken(MixedFormatSqlExtendParser.FULL, 0); }
+		public TerminalNode INNER() { return getToken(MixedFormatSqlExtendParser.INNER, 0); }
+		public TerminalNode INTERSECT() { return getToken(MixedFormatSqlExtendParser.INTERSECT, 0); }
+		public TerminalNode JOIN() { return getToken(MixedFormatSqlExtendParser.JOIN, 0); }
+		public TerminalNode LATERAL() { return getToken(MixedFormatSqlExtendParser.LATERAL, 0); }
+		public TerminalNode LEFT() { return getToken(MixedFormatSqlExtendParser.LEFT, 0); }
+		public TerminalNode NATURAL() { return getToken(MixedFormatSqlExtendParser.NATURAL, 0); }
+		public TerminalNode ON() { return getToken(MixedFormatSqlExtendParser.ON, 0); }
+		public TerminalNode RIGHT() { return getToken(MixedFormatSqlExtendParser.RIGHT, 0); }
+		public TerminalNode SEMI() { return getToken(MixedFormatSqlExtendParser.SEMI, 0); }
+		public TerminalNode SETMINUS() { return getToken(MixedFormatSqlExtendParser.SETMINUS, 0); }
+		public TerminalNode UNION() { return getToken(MixedFormatSqlExtendParser.UNION, 0); }
+		public TerminalNode USING() { return getToken(MixedFormatSqlExtendParser.USING, 0); }
 		public StrictNonReservedContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_strictNonReserved; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterStrictNonReserved(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterStrictNonReserved(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitStrictNonReserved(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitStrictNonReserved(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitStrictNonReserved(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitStrictNonReserved(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -12770,263 +12770,263 @@ public class ArcticSqlExtendParser extends Parser {
 	}
 
 	public static class NonReservedContext extends ParserRuleContext {
-		public TerminalNode ADD() { return getToken(ArcticSqlExtendParser.ADD, 0); }
-		public TerminalNode AFTER() { return getToken(ArcticSqlExtendParser.AFTER, 0); }
-		public TerminalNode ALL() { return getToken(ArcticSqlExtendParser.ALL, 0); }
-		public TerminalNode ALTER() { return getToken(ArcticSqlExtendParser.ALTER, 0); }
-		public TerminalNode ANALYZE() { return getToken(ArcticSqlExtendParser.ANALYZE, 0); }
-		public TerminalNode AND() { return getToken(ArcticSqlExtendParser.AND, 0); }
-		public TerminalNode ANY() { return getToken(ArcticSqlExtendParser.ANY, 0); }
-		public TerminalNode ARCHIVE() { return getToken(ArcticSqlExtendParser.ARCHIVE, 0); }
-		public TerminalNode ARRAY() { return getToken(ArcticSqlExtendParser.ARRAY, 0); }
-		public TerminalNode AS() { return getToken(ArcticSqlExtendParser.AS, 0); }
-		public TerminalNode ASC() { return getToken(ArcticSqlExtendParser.ASC, 0); }
-		public TerminalNode AT() { return getToken(ArcticSqlExtendParser.AT, 0); }
-		public TerminalNode AUTHORIZATION() { return getToken(ArcticSqlExtendParser.AUTHORIZATION, 0); }
-		public TerminalNode BETWEEN() { return getToken(ArcticSqlExtendParser.BETWEEN, 0); }
-		public TerminalNode BOTH() { return getToken(ArcticSqlExtendParser.BOTH, 0); }
-		public TerminalNode BUCKET() { return getToken(ArcticSqlExtendParser.BUCKET, 0); }
-		public TerminalNode BUCKETS() { return getToken(ArcticSqlExtendParser.BUCKETS, 0); }
-		public TerminalNode BY() { return getToken(ArcticSqlExtendParser.BY, 0); }
-		public TerminalNode CACHE() { return getToken(ArcticSqlExtendParser.CACHE, 0); }
-		public TerminalNode CASCADE() { return getToken(ArcticSqlExtendParser.CASCADE, 0); }
-		public TerminalNode CASE() { return getToken(ArcticSqlExtendParser.CASE, 0); }
-		public TerminalNode CAST() { return getToken(ArcticSqlExtendParser.CAST, 0); }
-		public TerminalNode CHANGE() { return getToken(ArcticSqlExtendParser.CHANGE, 0); }
-		public TerminalNode CHECK() { return getToken(ArcticSqlExtendParser.CHECK, 0); }
-		public TerminalNode CLEAR() { return getToken(ArcticSqlExtendParser.CLEAR, 0); }
-		public TerminalNode CLUSTER() { return getToken(ArcticSqlExtendParser.CLUSTER, 0); }
-		public TerminalNode CLUSTERED() { return getToken(ArcticSqlExtendParser.CLUSTERED, 0); }
-		public TerminalNode CODEGEN() { return getToken(ArcticSqlExtendParser.CODEGEN, 0); }
-		public TerminalNode COLLATE() { return getToken(ArcticSqlExtendParser.COLLATE, 0); }
-		public TerminalNode COLLECTION() { return getToken(ArcticSqlExtendParser.COLLECTION, 0); }
-		public TerminalNode COLUMN() { return getToken(ArcticSqlExtendParser.COLUMN, 0); }
-		public TerminalNode COLUMNS() { return getToken(ArcticSqlExtendParser.COLUMNS, 0); }
-		public TerminalNode COMMENT() { return getToken(ArcticSqlExtendParser.COMMENT, 0); }
-		public TerminalNode COMMIT() { return getToken(ArcticSqlExtendParser.COMMIT, 0); }
-		public TerminalNode COMPACT() { return getToken(ArcticSqlExtendParser.COMPACT, 0); }
-		public TerminalNode COMPACTIONS() { return getToken(ArcticSqlExtendParser.COMPACTIONS, 0); }
-		public TerminalNode COMPUTE() { return getToken(ArcticSqlExtendParser.COMPUTE, 0); }
-		public TerminalNode CONCATENATE() { return getToken(ArcticSqlExtendParser.CONCATENATE, 0); }
-		public TerminalNode CONSTRAINT() { return getToken(ArcticSqlExtendParser.CONSTRAINT, 0); }
-		public TerminalNode COST() { return getToken(ArcticSqlExtendParser.COST, 0); }
-		public TerminalNode CREATE() { return getToken(ArcticSqlExtendParser.CREATE, 0); }
-		public TerminalNode CUBE() { return getToken(ArcticSqlExtendParser.CUBE, 0); }
-		public TerminalNode CURRENT() { return getToken(ArcticSqlExtendParser.CURRENT, 0); }
-		public TerminalNode CURRENT_DATE() { return getToken(ArcticSqlExtendParser.CURRENT_DATE, 0); }
-		public TerminalNode CURRENT_TIME() { return getToken(ArcticSqlExtendParser.CURRENT_TIME, 0); }
-		public TerminalNode CURRENT_TIMESTAMP() { return getToken(ArcticSqlExtendParser.CURRENT_TIMESTAMP, 0); }
-		public TerminalNode CURRENT_USER() { return getToken(ArcticSqlExtendParser.CURRENT_USER, 0); }
-		public TerminalNode DATA() { return getToken(ArcticSqlExtendParser.DATA, 0); }
-		public TerminalNode DATABASE() { return getToken(ArcticSqlExtendParser.DATABASE, 0); }
-		public TerminalNode DATABASES() { return getToken(ArcticSqlExtendParser.DATABASES, 0); }
-		public TerminalNode DAY() { return getToken(ArcticSqlExtendParser.DAY, 0); }
-		public TerminalNode DBPROPERTIES() { return getToken(ArcticSqlExtendParser.DBPROPERTIES, 0); }
-		public TerminalNode DEFINED() { return getToken(ArcticSqlExtendParser.DEFINED, 0); }
-		public TerminalNode DELETE() { return getToken(ArcticSqlExtendParser.DELETE, 0); }
-		public TerminalNode DELIMITED() { return getToken(ArcticSqlExtendParser.DELIMITED, 0); }
-		public TerminalNode DESC() { return getToken(ArcticSqlExtendParser.DESC, 0); }
-		public TerminalNode DESCRIBE() { return getToken(ArcticSqlExtendParser.DESCRIBE, 0); }
-		public TerminalNode DFS() { return getToken(ArcticSqlExtendParser.DFS, 0); }
-		public TerminalNode DIRECTORIES() { return getToken(ArcticSqlExtendParser.DIRECTORIES, 0); }
-		public TerminalNode DIRECTORY() { return getToken(ArcticSqlExtendParser.DIRECTORY, 0); }
-		public TerminalNode DISTINCT() { return getToken(ArcticSqlExtendParser.DISTINCT, 0); }
-		public TerminalNode DISTRIBUTE() { return getToken(ArcticSqlExtendParser.DISTRIBUTE, 0); }
-		public TerminalNode DIV() { return getToken(ArcticSqlExtendParser.DIV, 0); }
-		public TerminalNode DROP() { return getToken(ArcticSqlExtendParser.DROP, 0); }
-		public TerminalNode ELSE() { return getToken(ArcticSqlExtendParser.ELSE, 0); }
-		public TerminalNode END() { return getToken(ArcticSqlExtendParser.END, 0); }
-		public TerminalNode ESCAPE() { return getToken(ArcticSqlExtendParser.ESCAPE, 0); }
-		public TerminalNode ESCAPED() { return getToken(ArcticSqlExtendParser.ESCAPED, 0); }
-		public TerminalNode EXCHANGE() { return getToken(ArcticSqlExtendParser.EXCHANGE, 0); }
-		public TerminalNode EXISTS() { return getToken(ArcticSqlExtendParser.EXISTS, 0); }
-		public TerminalNode EXPLAIN() { return getToken(ArcticSqlExtendParser.EXPLAIN, 0); }
-		public TerminalNode EXPORT() { return getToken(ArcticSqlExtendParser.EXPORT, 0); }
-		public TerminalNode EXTENDED() { return getToken(ArcticSqlExtendParser.EXTENDED, 0); }
-		public TerminalNode EXTERNAL() { return getToken(ArcticSqlExtendParser.EXTERNAL, 0); }
-		public TerminalNode EXTRACT() { return getToken(ArcticSqlExtendParser.EXTRACT, 0); }
-		public TerminalNode FALSE() { return getToken(ArcticSqlExtendParser.FALSE, 0); }
-		public TerminalNode FETCH() { return getToken(ArcticSqlExtendParser.FETCH, 0); }
-		public TerminalNode FILTER() { return getToken(ArcticSqlExtendParser.FILTER, 0); }
-		public TerminalNode FIELDS() { return getToken(ArcticSqlExtendParser.FIELDS, 0); }
-		public TerminalNode FILEFORMAT() { return getToken(ArcticSqlExtendParser.FILEFORMAT, 0); }
-		public TerminalNode FIRST() { return getToken(ArcticSqlExtendParser.FIRST, 0); }
-		public TerminalNode FOLLOWING() { return getToken(ArcticSqlExtendParser.FOLLOWING, 0); }
-		public TerminalNode FOR() { return getToken(ArcticSqlExtendParser.FOR, 0); }
-		public TerminalNode FOREIGN() { return getToken(ArcticSqlExtendParser.FOREIGN, 0); }
-		public TerminalNode FORMAT() { return getToken(ArcticSqlExtendParser.FORMAT, 0); }
-		public TerminalNode FORMATTED() { return getToken(ArcticSqlExtendParser.FORMATTED, 0); }
-		public TerminalNode FROM() { return getToken(ArcticSqlExtendParser.FROM, 0); }
-		public TerminalNode FUNCTION() { return getToken(ArcticSqlExtendParser.FUNCTION, 0); }
-		public TerminalNode FUNCTIONS() { return getToken(ArcticSqlExtendParser.FUNCTIONS, 0); }
-		public TerminalNode GLOBAL() { return getToken(ArcticSqlExtendParser.GLOBAL, 0); }
-		public TerminalNode GRANT() { return getToken(ArcticSqlExtendParser.GRANT, 0); }
-		public TerminalNode GROUP() { return getToken(ArcticSqlExtendParser.GROUP, 0); }
-		public TerminalNode GROUPING() { return getToken(ArcticSqlExtendParser.GROUPING, 0); }
-		public TerminalNode HAVING() { return getToken(ArcticSqlExtendParser.HAVING, 0); }
-		public TerminalNode HOUR() { return getToken(ArcticSqlExtendParser.HOUR, 0); }
-		public TerminalNode IF() { return getToken(ArcticSqlExtendParser.IF, 0); }
-		public TerminalNode IGNORE() { return getToken(ArcticSqlExtendParser.IGNORE, 0); }
-		public TerminalNode IMPORT() { return getToken(ArcticSqlExtendParser.IMPORT, 0); }
-		public TerminalNode IN() { return getToken(ArcticSqlExtendParser.IN, 0); }
-		public TerminalNode INDEX() { return getToken(ArcticSqlExtendParser.INDEX, 0); }
-		public TerminalNode INDEXES() { return getToken(ArcticSqlExtendParser.INDEXES, 0); }
-		public TerminalNode INPATH() { return getToken(ArcticSqlExtendParser.INPATH, 0); }
-		public TerminalNode INPUTFORMAT() { return getToken(ArcticSqlExtendParser.INPUTFORMAT, 0); }
-		public TerminalNode INSERT() { return getToken(ArcticSqlExtendParser.INSERT, 0); }
-		public TerminalNode INTERVAL() { return getToken(ArcticSqlExtendParser.INTERVAL, 0); }
-		public TerminalNode INTO() { return getToken(ArcticSqlExtendParser.INTO, 0); }
-		public TerminalNode IS() { return getToken(ArcticSqlExtendParser.IS, 0); }
-		public TerminalNode ITEMS() { return getToken(ArcticSqlExtendParser.ITEMS, 0); }
-		public TerminalNode KEYS() { return getToken(ArcticSqlExtendParser.KEYS, 0); }
-		public TerminalNode LAST() { return getToken(ArcticSqlExtendParser.LAST, 0); }
-		public TerminalNode LAZY() { return getToken(ArcticSqlExtendParser.LAZY, 0); }
-		public TerminalNode LEADING() { return getToken(ArcticSqlExtendParser.LEADING, 0); }
-		public TerminalNode LIKE() { return getToken(ArcticSqlExtendParser.LIKE, 0); }
-		public TerminalNode LIMIT() { return getToken(ArcticSqlExtendParser.LIMIT, 0); }
-		public TerminalNode LINES() { return getToken(ArcticSqlExtendParser.LINES, 0); }
-		public TerminalNode LIST() { return getToken(ArcticSqlExtendParser.LIST, 0); }
-		public TerminalNode LOAD() { return getToken(ArcticSqlExtendParser.LOAD, 0); }
-		public TerminalNode LOCAL() { return getToken(ArcticSqlExtendParser.LOCAL, 0); }
-		public TerminalNode LOCATION() { return getToken(ArcticSqlExtendParser.LOCATION, 0); }
-		public TerminalNode LOCK() { return getToken(ArcticSqlExtendParser.LOCK, 0); }
-		public TerminalNode LOCKS() { return getToken(ArcticSqlExtendParser.LOCKS, 0); }
-		public TerminalNode LOGICAL() { return getToken(ArcticSqlExtendParser.LOGICAL, 0); }
-		public TerminalNode MACRO() { return getToken(ArcticSqlExtendParser.MACRO, 0); }
-		public TerminalNode MAP() { return getToken(ArcticSqlExtendParser.MAP, 0); }
-		public TerminalNode MATCHED() { return getToken(ArcticSqlExtendParser.MATCHED, 0); }
-		public TerminalNode MERGE() { return getToken(ArcticSqlExtendParser.MERGE, 0); }
-		public TerminalNode MINUTE() { return getToken(ArcticSqlExtendParser.MINUTE, 0); }
-		public TerminalNode MONTH() { return getToken(ArcticSqlExtendParser.MONTH, 0); }
-		public TerminalNode MSCK() { return getToken(ArcticSqlExtendParser.MSCK, 0); }
-		public TerminalNode NAMESPACE() { return getToken(ArcticSqlExtendParser.NAMESPACE, 0); }
-		public TerminalNode NAMESPACES() { return getToken(ArcticSqlExtendParser.NAMESPACES, 0); }
-		public TerminalNode NO() { return getToken(ArcticSqlExtendParser.NO, 0); }
-		public TerminalNode NOT() { return getToken(ArcticSqlExtendParser.NOT, 0); }
-		public TerminalNode NULL() { return getToken(ArcticSqlExtendParser.NULL, 0); }
-		public TerminalNode NULLS() { return getToken(ArcticSqlExtendParser.NULLS, 0); }
-		public TerminalNode OF() { return getToken(ArcticSqlExtendParser.OF, 0); }
-		public TerminalNode ONLY() { return getToken(ArcticSqlExtendParser.ONLY, 0); }
-		public TerminalNode OPTION() { return getToken(ArcticSqlExtendParser.OPTION, 0); }
-		public TerminalNode OPTIONS() { return getToken(ArcticSqlExtendParser.OPTIONS, 0); }
-		public TerminalNode OR() { return getToken(ArcticSqlExtendParser.OR, 0); }
-		public TerminalNode ORDER() { return getToken(ArcticSqlExtendParser.ORDER, 0); }
-		public TerminalNode OUT() { return getToken(ArcticSqlExtendParser.OUT, 0); }
-		public TerminalNode OUTER() { return getToken(ArcticSqlExtendParser.OUTER, 0); }
-		public TerminalNode OUTPUTFORMAT() { return getToken(ArcticSqlExtendParser.OUTPUTFORMAT, 0); }
-		public TerminalNode OVER() { return getToken(ArcticSqlExtendParser.OVER, 0); }
-		public TerminalNode OVERLAPS() { return getToken(ArcticSqlExtendParser.OVERLAPS, 0); }
-		public TerminalNode OVERLAY() { return getToken(ArcticSqlExtendParser.OVERLAY, 0); }
-		public TerminalNode OVERWRITE() { return getToken(ArcticSqlExtendParser.OVERWRITE, 0); }
-		public TerminalNode PARTITION() { return getToken(ArcticSqlExtendParser.PARTITION, 0); }
-		public TerminalNode PARTITIONED() { return getToken(ArcticSqlExtendParser.PARTITIONED, 0); }
-		public TerminalNode PARTITIONS() { return getToken(ArcticSqlExtendParser.PARTITIONS, 0); }
-		public TerminalNode PERCENTLIT() { return getToken(ArcticSqlExtendParser.PERCENTLIT, 0); }
-		public TerminalNode PIVOT() { return getToken(ArcticSqlExtendParser.PIVOT, 0); }
-		public TerminalNode PLACING() { return getToken(ArcticSqlExtendParser.PLACING, 0); }
-		public TerminalNode POSITION() { return getToken(ArcticSqlExtendParser.POSITION, 0); }
-		public TerminalNode PRECEDING() { return getToken(ArcticSqlExtendParser.PRECEDING, 0); }
-		public TerminalNode PRIMARY() { return getToken(ArcticSqlExtendParser.PRIMARY, 0); }
-		public TerminalNode PRINCIPALS() { return getToken(ArcticSqlExtendParser.PRINCIPALS, 0); }
-		public TerminalNode PROPERTIES() { return getToken(ArcticSqlExtendParser.PROPERTIES, 0); }
-		public TerminalNode PURGE() { return getToken(ArcticSqlExtendParser.PURGE, 0); }
-		public TerminalNode QUERY() { return getToken(ArcticSqlExtendParser.QUERY, 0); }
-		public TerminalNode RANGE() { return getToken(ArcticSqlExtendParser.RANGE, 0); }
-		public TerminalNode RECORDREADER() { return getToken(ArcticSqlExtendParser.RECORDREADER, 0); }
-		public TerminalNode RECORDWRITER() { return getToken(ArcticSqlExtendParser.RECORDWRITER, 0); }
-		public TerminalNode RECOVER() { return getToken(ArcticSqlExtendParser.RECOVER, 0); }
-		public TerminalNode REDUCE() { return getToken(ArcticSqlExtendParser.REDUCE, 0); }
-		public TerminalNode REFERENCES() { return getToken(ArcticSqlExtendParser.REFERENCES, 0); }
-		public TerminalNode REFRESH() { return getToken(ArcticSqlExtendParser.REFRESH, 0); }
-		public TerminalNode RENAME() { return getToken(ArcticSqlExtendParser.RENAME, 0); }
-		public TerminalNode REPAIR() { return getToken(ArcticSqlExtendParser.REPAIR, 0); }
-		public TerminalNode REPLACE() { return getToken(ArcticSqlExtendParser.REPLACE, 0); }
-		public TerminalNode RESET() { return getToken(ArcticSqlExtendParser.RESET, 0); }
-		public TerminalNode RESPECT() { return getToken(ArcticSqlExtendParser.RESPECT, 0); }
-		public TerminalNode RESTRICT() { return getToken(ArcticSqlExtendParser.RESTRICT, 0); }
-		public TerminalNode REVOKE() { return getToken(ArcticSqlExtendParser.REVOKE, 0); }
-		public TerminalNode RLIKE() { return getToken(ArcticSqlExtendParser.RLIKE, 0); }
-		public TerminalNode ROLE() { return getToken(ArcticSqlExtendParser.ROLE, 0); }
-		public TerminalNode ROLES() { return getToken(ArcticSqlExtendParser.ROLES, 0); }
-		public TerminalNode ROLLBACK() { return getToken(ArcticSqlExtendParser.ROLLBACK, 0); }
-		public TerminalNode ROLLUP() { return getToken(ArcticSqlExtendParser.ROLLUP, 0); }
-		public TerminalNode ROW() { return getToken(ArcticSqlExtendParser.ROW, 0); }
-		public TerminalNode ROWS() { return getToken(ArcticSqlExtendParser.ROWS, 0); }
-		public TerminalNode SCHEMA() { return getToken(ArcticSqlExtendParser.SCHEMA, 0); }
-		public TerminalNode SECOND() { return getToken(ArcticSqlExtendParser.SECOND, 0); }
-		public TerminalNode SELECT() { return getToken(ArcticSqlExtendParser.SELECT, 0); }
-		public TerminalNode SEPARATED() { return getToken(ArcticSqlExtendParser.SEPARATED, 0); }
-		public TerminalNode SERDE() { return getToken(ArcticSqlExtendParser.SERDE, 0); }
-		public TerminalNode SERDEPROPERTIES() { return getToken(ArcticSqlExtendParser.SERDEPROPERTIES, 0); }
-		public TerminalNode SESSION_USER() { return getToken(ArcticSqlExtendParser.SESSION_USER, 0); }
-		public TerminalNode SET() { return getToken(ArcticSqlExtendParser.SET, 0); }
-		public TerminalNode SETS() { return getToken(ArcticSqlExtendParser.SETS, 0); }
-		public TerminalNode SHOW() { return getToken(ArcticSqlExtendParser.SHOW, 0); }
-		public TerminalNode SKEWED() { return getToken(ArcticSqlExtendParser.SKEWED, 0); }
-		public TerminalNode SOME() { return getToken(ArcticSqlExtendParser.SOME, 0); }
-		public TerminalNode SORT() { return getToken(ArcticSqlExtendParser.SORT, 0); }
-		public TerminalNode SORTED() { return getToken(ArcticSqlExtendParser.SORTED, 0); }
-		public TerminalNode START() { return getToken(ArcticSqlExtendParser.START, 0); }
-		public TerminalNode STATISTICS() { return getToken(ArcticSqlExtendParser.STATISTICS, 0); }
-		public TerminalNode STORED() { return getToken(ArcticSqlExtendParser.STORED, 0); }
-		public TerminalNode STRATIFY() { return getToken(ArcticSqlExtendParser.STRATIFY, 0); }
-		public TerminalNode STRUCT() { return getToken(ArcticSqlExtendParser.STRUCT, 0); }
-		public TerminalNode SUBSTR() { return getToken(ArcticSqlExtendParser.SUBSTR, 0); }
-		public TerminalNode SUBSTRING() { return getToken(ArcticSqlExtendParser.SUBSTRING, 0); }
-		public TerminalNode SYNC() { return getToken(ArcticSqlExtendParser.SYNC, 0); }
-		public TerminalNode TABLE() { return getToken(ArcticSqlExtendParser.TABLE, 0); }
-		public TerminalNode TABLES() { return getToken(ArcticSqlExtendParser.TABLES, 0); }
-		public TerminalNode TABLESAMPLE() { return getToken(ArcticSqlExtendParser.TABLESAMPLE, 0); }
-		public TerminalNode TBLPROPERTIES() { return getToken(ArcticSqlExtendParser.TBLPROPERTIES, 0); }
-		public TerminalNode TEMPORARY() { return getToken(ArcticSqlExtendParser.TEMPORARY, 0); }
-		public TerminalNode TERMINATED() { return getToken(ArcticSqlExtendParser.TERMINATED, 0); }
-		public TerminalNode THEN() { return getToken(ArcticSqlExtendParser.THEN, 0); }
-		public TerminalNode TIME() { return getToken(ArcticSqlExtendParser.TIME, 0); }
-		public TerminalNode TO() { return getToken(ArcticSqlExtendParser.TO, 0); }
-		public TerminalNode TOUCH() { return getToken(ArcticSqlExtendParser.TOUCH, 0); }
-		public TerminalNode TRAILING() { return getToken(ArcticSqlExtendParser.TRAILING, 0); }
-		public TerminalNode TRANSACTION() { return getToken(ArcticSqlExtendParser.TRANSACTION, 0); }
-		public TerminalNode TRANSACTIONS() { return getToken(ArcticSqlExtendParser.TRANSACTIONS, 0); }
-		public TerminalNode TRANSFORM() { return getToken(ArcticSqlExtendParser.TRANSFORM, 0); }
-		public TerminalNode TRIM() { return getToken(ArcticSqlExtendParser.TRIM, 0); }
-		public TerminalNode TRUE() { return getToken(ArcticSqlExtendParser.TRUE, 0); }
-		public TerminalNode TRUNCATE() { return getToken(ArcticSqlExtendParser.TRUNCATE, 0); }
-		public TerminalNode TRY_CAST() { return getToken(ArcticSqlExtendParser.TRY_CAST, 0); }
-		public TerminalNode TYPE() { return getToken(ArcticSqlExtendParser.TYPE, 0); }
-		public TerminalNode UNARCHIVE() { return getToken(ArcticSqlExtendParser.UNARCHIVE, 0); }
-		public TerminalNode UNBOUNDED() { return getToken(ArcticSqlExtendParser.UNBOUNDED, 0); }
-		public TerminalNode UNCACHE() { return getToken(ArcticSqlExtendParser.UNCACHE, 0); }
-		public TerminalNode UNIQUE() { return getToken(ArcticSqlExtendParser.UNIQUE, 0); }
-		public TerminalNode UNKNOWN() { return getToken(ArcticSqlExtendParser.UNKNOWN, 0); }
-		public TerminalNode UNLOCK() { return getToken(ArcticSqlExtendParser.UNLOCK, 0); }
-		public TerminalNode UNSET() { return getToken(ArcticSqlExtendParser.UNSET, 0); }
-		public TerminalNode UPDATE() { return getToken(ArcticSqlExtendParser.UPDATE, 0); }
-		public TerminalNode USE() { return getToken(ArcticSqlExtendParser.USE, 0); }
-		public TerminalNode USER() { return getToken(ArcticSqlExtendParser.USER, 0); }
-		public TerminalNode VALUES() { return getToken(ArcticSqlExtendParser.VALUES, 0); }
-		public TerminalNode VIEW() { return getToken(ArcticSqlExtendParser.VIEW, 0); }
-		public TerminalNode VIEWS() { return getToken(ArcticSqlExtendParser.VIEWS, 0); }
-		public TerminalNode WHEN() { return getToken(ArcticSqlExtendParser.WHEN, 0); }
-		public TerminalNode WHERE() { return getToken(ArcticSqlExtendParser.WHERE, 0); }
-		public TerminalNode WINDOW() { return getToken(ArcticSqlExtendParser.WINDOW, 0); }
-		public TerminalNode WITH() { return getToken(ArcticSqlExtendParser.WITH, 0); }
-		public TerminalNode YEAR() { return getToken(ArcticSqlExtendParser.YEAR, 0); }
-		public TerminalNode ZONE() { return getToken(ArcticSqlExtendParser.ZONE, 0); }
+		public TerminalNode ADD() { return getToken(MixedFormatSqlExtendParser.ADD, 0); }
+		public TerminalNode AFTER() { return getToken(MixedFormatSqlExtendParser.AFTER, 0); }
+		public TerminalNode ALL() { return getToken(MixedFormatSqlExtendParser.ALL, 0); }
+		public TerminalNode ALTER() { return getToken(MixedFormatSqlExtendParser.ALTER, 0); }
+		public TerminalNode ANALYZE() { return getToken(MixedFormatSqlExtendParser.ANALYZE, 0); }
+		public TerminalNode AND() { return getToken(MixedFormatSqlExtendParser.AND, 0); }
+		public TerminalNode ANY() { return getToken(MixedFormatSqlExtendParser.ANY, 0); }
+		public TerminalNode ARCHIVE() { return getToken(MixedFormatSqlExtendParser.ARCHIVE, 0); }
+		public TerminalNode ARRAY() { return getToken(MixedFormatSqlExtendParser.ARRAY, 0); }
+		public TerminalNode AS() { return getToken(MixedFormatSqlExtendParser.AS, 0); }
+		public TerminalNode ASC() { return getToken(MixedFormatSqlExtendParser.ASC, 0); }
+		public TerminalNode AT() { return getToken(MixedFormatSqlExtendParser.AT, 0); }
+		public TerminalNode AUTHORIZATION() { return getToken(MixedFormatSqlExtendParser.AUTHORIZATION, 0); }
+		public TerminalNode BETWEEN() { return getToken(MixedFormatSqlExtendParser.BETWEEN, 0); }
+		public TerminalNode BOTH() { return getToken(MixedFormatSqlExtendParser.BOTH, 0); }
+		public TerminalNode BUCKET() { return getToken(MixedFormatSqlExtendParser.BUCKET, 0); }
+		public TerminalNode BUCKETS() { return getToken(MixedFormatSqlExtendParser.BUCKETS, 0); }
+		public TerminalNode BY() { return getToken(MixedFormatSqlExtendParser.BY, 0); }
+		public TerminalNode CACHE() { return getToken(MixedFormatSqlExtendParser.CACHE, 0); }
+		public TerminalNode CASCADE() { return getToken(MixedFormatSqlExtendParser.CASCADE, 0); }
+		public TerminalNode CASE() { return getToken(MixedFormatSqlExtendParser.CASE, 0); }
+		public TerminalNode CAST() { return getToken(MixedFormatSqlExtendParser.CAST, 0); }
+		public TerminalNode CHANGE() { return getToken(MixedFormatSqlExtendParser.CHANGE, 0); }
+		public TerminalNode CHECK() { return getToken(MixedFormatSqlExtendParser.CHECK, 0); }
+		public TerminalNode CLEAR() { return getToken(MixedFormatSqlExtendParser.CLEAR, 0); }
+		public TerminalNode CLUSTER() { return getToken(MixedFormatSqlExtendParser.CLUSTER, 0); }
+		public TerminalNode CLUSTERED() { return getToken(MixedFormatSqlExtendParser.CLUSTERED, 0); }
+		public TerminalNode CODEGEN() { return getToken(MixedFormatSqlExtendParser.CODEGEN, 0); }
+		public TerminalNode COLLATE() { return getToken(MixedFormatSqlExtendParser.COLLATE, 0); }
+		public TerminalNode COLLECTION() { return getToken(MixedFormatSqlExtendParser.COLLECTION, 0); }
+		public TerminalNode COLUMN() { return getToken(MixedFormatSqlExtendParser.COLUMN, 0); }
+		public TerminalNode COLUMNS() { return getToken(MixedFormatSqlExtendParser.COLUMNS, 0); }
+		public TerminalNode COMMENT() { return getToken(MixedFormatSqlExtendParser.COMMENT, 0); }
+		public TerminalNode COMMIT() { return getToken(MixedFormatSqlExtendParser.COMMIT, 0); }
+		public TerminalNode COMPACT() { return getToken(MixedFormatSqlExtendParser.COMPACT, 0); }
+		public TerminalNode COMPACTIONS() { return getToken(MixedFormatSqlExtendParser.COMPACTIONS, 0); }
+		public TerminalNode COMPUTE() { return getToken(MixedFormatSqlExtendParser.COMPUTE, 0); }
+		public TerminalNode CONCATENATE() { return getToken(MixedFormatSqlExtendParser.CONCATENATE, 0); }
+		public TerminalNode CONSTRAINT() { return getToken(MixedFormatSqlExtendParser.CONSTRAINT, 0); }
+		public TerminalNode COST() { return getToken(MixedFormatSqlExtendParser.COST, 0); }
+		public TerminalNode CREATE() { return getToken(MixedFormatSqlExtendParser.CREATE, 0); }
+		public TerminalNode CUBE() { return getToken(MixedFormatSqlExtendParser.CUBE, 0); }
+		public TerminalNode CURRENT() { return getToken(MixedFormatSqlExtendParser.CURRENT, 0); }
+		public TerminalNode CURRENT_DATE() { return getToken(MixedFormatSqlExtendParser.CURRENT_DATE, 0); }
+		public TerminalNode CURRENT_TIME() { return getToken(MixedFormatSqlExtendParser.CURRENT_TIME, 0); }
+		public TerminalNode CURRENT_TIMESTAMP() { return getToken(MixedFormatSqlExtendParser.CURRENT_TIMESTAMP, 0); }
+		public TerminalNode CURRENT_USER() { return getToken(MixedFormatSqlExtendParser.CURRENT_USER, 0); }
+		public TerminalNode DATA() { return getToken(MixedFormatSqlExtendParser.DATA, 0); }
+		public TerminalNode DATABASE() { return getToken(MixedFormatSqlExtendParser.DATABASE, 0); }
+		public TerminalNode DATABASES() { return getToken(MixedFormatSqlExtendParser.DATABASES, 0); }
+		public TerminalNode DAY() { return getToken(MixedFormatSqlExtendParser.DAY, 0); }
+		public TerminalNode DBPROPERTIES() { return getToken(MixedFormatSqlExtendParser.DBPROPERTIES, 0); }
+		public TerminalNode DEFINED() { return getToken(MixedFormatSqlExtendParser.DEFINED, 0); }
+		public TerminalNode DELETE() { return getToken(MixedFormatSqlExtendParser.DELETE, 0); }
+		public TerminalNode DELIMITED() { return getToken(MixedFormatSqlExtendParser.DELIMITED, 0); }
+		public TerminalNode DESC() { return getToken(MixedFormatSqlExtendParser.DESC, 0); }
+		public TerminalNode DESCRIBE() { return getToken(MixedFormatSqlExtendParser.DESCRIBE, 0); }
+		public TerminalNode DFS() { return getToken(MixedFormatSqlExtendParser.DFS, 0); }
+		public TerminalNode DIRECTORIES() { return getToken(MixedFormatSqlExtendParser.DIRECTORIES, 0); }
+		public TerminalNode DIRECTORY() { return getToken(MixedFormatSqlExtendParser.DIRECTORY, 0); }
+		public TerminalNode DISTINCT() { return getToken(MixedFormatSqlExtendParser.DISTINCT, 0); }
+		public TerminalNode DISTRIBUTE() { return getToken(MixedFormatSqlExtendParser.DISTRIBUTE, 0); }
+		public TerminalNode DIV() { return getToken(MixedFormatSqlExtendParser.DIV, 0); }
+		public TerminalNode DROP() { return getToken(MixedFormatSqlExtendParser.DROP, 0); }
+		public TerminalNode ELSE() { return getToken(MixedFormatSqlExtendParser.ELSE, 0); }
+		public TerminalNode END() { return getToken(MixedFormatSqlExtendParser.END, 0); }
+		public TerminalNode ESCAPE() { return getToken(MixedFormatSqlExtendParser.ESCAPE, 0); }
+		public TerminalNode ESCAPED() { return getToken(MixedFormatSqlExtendParser.ESCAPED, 0); }
+		public TerminalNode EXCHANGE() { return getToken(MixedFormatSqlExtendParser.EXCHANGE, 0); }
+		public TerminalNode EXISTS() { return getToken(MixedFormatSqlExtendParser.EXISTS, 0); }
+		public TerminalNode EXPLAIN() { return getToken(MixedFormatSqlExtendParser.EXPLAIN, 0); }
+		public TerminalNode EXPORT() { return getToken(MixedFormatSqlExtendParser.EXPORT, 0); }
+		public TerminalNode EXTENDED() { return getToken(MixedFormatSqlExtendParser.EXTENDED, 0); }
+		public TerminalNode EXTERNAL() { return getToken(MixedFormatSqlExtendParser.EXTERNAL, 0); }
+		public TerminalNode EXTRACT() { return getToken(MixedFormatSqlExtendParser.EXTRACT, 0); }
+		public TerminalNode FALSE() { return getToken(MixedFormatSqlExtendParser.FALSE, 0); }
+		public TerminalNode FETCH() { return getToken(MixedFormatSqlExtendParser.FETCH, 0); }
+		public TerminalNode FILTER() { return getToken(MixedFormatSqlExtendParser.FILTER, 0); }
+		public TerminalNode FIELDS() { return getToken(MixedFormatSqlExtendParser.FIELDS, 0); }
+		public TerminalNode FILEFORMAT() { return getToken(MixedFormatSqlExtendParser.FILEFORMAT, 0); }
+		public TerminalNode FIRST() { return getToken(MixedFormatSqlExtendParser.FIRST, 0); }
+		public TerminalNode FOLLOWING() { return getToken(MixedFormatSqlExtendParser.FOLLOWING, 0); }
+		public TerminalNode FOR() { return getToken(MixedFormatSqlExtendParser.FOR, 0); }
+		public TerminalNode FOREIGN() { return getToken(MixedFormatSqlExtendParser.FOREIGN, 0); }
+		public TerminalNode FORMAT() { return getToken(MixedFormatSqlExtendParser.FORMAT, 0); }
+		public TerminalNode FORMATTED() { return getToken(MixedFormatSqlExtendParser.FORMATTED, 0); }
+		public TerminalNode FROM() { return getToken(MixedFormatSqlExtendParser.FROM, 0); }
+		public TerminalNode FUNCTION() { return getToken(MixedFormatSqlExtendParser.FUNCTION, 0); }
+		public TerminalNode FUNCTIONS() { return getToken(MixedFormatSqlExtendParser.FUNCTIONS, 0); }
+		public TerminalNode GLOBAL() { return getToken(MixedFormatSqlExtendParser.GLOBAL, 0); }
+		public TerminalNode GRANT() { return getToken(MixedFormatSqlExtendParser.GRANT, 0); }
+		public TerminalNode GROUP() { return getToken(MixedFormatSqlExtendParser.GROUP, 0); }
+		public TerminalNode GROUPING() { return getToken(MixedFormatSqlExtendParser.GROUPING, 0); }
+		public TerminalNode HAVING() { return getToken(MixedFormatSqlExtendParser.HAVING, 0); }
+		public TerminalNode HOUR() { return getToken(MixedFormatSqlExtendParser.HOUR, 0); }
+		public TerminalNode IF() { return getToken(MixedFormatSqlExtendParser.IF, 0); }
+		public TerminalNode IGNORE() { return getToken(MixedFormatSqlExtendParser.IGNORE, 0); }
+		public TerminalNode IMPORT() { return getToken(MixedFormatSqlExtendParser.IMPORT, 0); }
+		public TerminalNode IN() { return getToken(MixedFormatSqlExtendParser.IN, 0); }
+		public TerminalNode INDEX() { return getToken(MixedFormatSqlExtendParser.INDEX, 0); }
+		public TerminalNode INDEXES() { return getToken(MixedFormatSqlExtendParser.INDEXES, 0); }
+		public TerminalNode INPATH() { return getToken(MixedFormatSqlExtendParser.INPATH, 0); }
+		public TerminalNode INPUTFORMAT() { return getToken(MixedFormatSqlExtendParser.INPUTFORMAT, 0); }
+		public TerminalNode INSERT() { return getToken(MixedFormatSqlExtendParser.INSERT, 0); }
+		public TerminalNode INTERVAL() { return getToken(MixedFormatSqlExtendParser.INTERVAL, 0); }
+		public TerminalNode INTO() { return getToken(MixedFormatSqlExtendParser.INTO, 0); }
+		public TerminalNode IS() { return getToken(MixedFormatSqlExtendParser.IS, 0); }
+		public TerminalNode ITEMS() { return getToken(MixedFormatSqlExtendParser.ITEMS, 0); }
+		public TerminalNode KEYS() { return getToken(MixedFormatSqlExtendParser.KEYS, 0); }
+		public TerminalNode LAST() { return getToken(MixedFormatSqlExtendParser.LAST, 0); }
+		public TerminalNode LAZY() { return getToken(MixedFormatSqlExtendParser.LAZY, 0); }
+		public TerminalNode LEADING() { return getToken(MixedFormatSqlExtendParser.LEADING, 0); }
+		public TerminalNode LIKE() { return getToken(MixedFormatSqlExtendParser.LIKE, 0); }
+		public TerminalNode LIMIT() { return getToken(MixedFormatSqlExtendParser.LIMIT, 0); }
+		public TerminalNode LINES() { return getToken(MixedFormatSqlExtendParser.LINES, 0); }
+		public TerminalNode LIST() { return getToken(MixedFormatSqlExtendParser.LIST, 0); }
+		public TerminalNode LOAD() { return getToken(MixedFormatSqlExtendParser.LOAD, 0); }
+		public TerminalNode LOCAL() { return getToken(MixedFormatSqlExtendParser.LOCAL, 0); }
+		public TerminalNode LOCATION() { return getToken(MixedFormatSqlExtendParser.LOCATION, 0); }
+		public TerminalNode LOCK() { return getToken(MixedFormatSqlExtendParser.LOCK, 0); }
+		public TerminalNode LOCKS() { return getToken(MixedFormatSqlExtendParser.LOCKS, 0); }
+		public TerminalNode LOGICAL() { return getToken(MixedFormatSqlExtendParser.LOGICAL, 0); }
+		public TerminalNode MACRO() { return getToken(MixedFormatSqlExtendParser.MACRO, 0); }
+		public TerminalNode MAP() { return getToken(MixedFormatSqlExtendParser.MAP, 0); }
+		public TerminalNode MATCHED() { return getToken(MixedFormatSqlExtendParser.MATCHED, 0); }
+		public TerminalNode MERGE() { return getToken(MixedFormatSqlExtendParser.MERGE, 0); }
+		public TerminalNode MINUTE() { return getToken(MixedFormatSqlExtendParser.MINUTE, 0); }
+		public TerminalNode MONTH() { return getToken(MixedFormatSqlExtendParser.MONTH, 0); }
+		public TerminalNode MSCK() { return getToken(MixedFormatSqlExtendParser.MSCK, 0); }
+		public TerminalNode NAMESPACE() { return getToken(MixedFormatSqlExtendParser.NAMESPACE, 0); }
+		public TerminalNode NAMESPACES() { return getToken(MixedFormatSqlExtendParser.NAMESPACES, 0); }
+		public TerminalNode NO() { return getToken(MixedFormatSqlExtendParser.NO, 0); }
+		public TerminalNode NOT() { return getToken(MixedFormatSqlExtendParser.NOT, 0); }
+		public TerminalNode NULL() { return getToken(MixedFormatSqlExtendParser.NULL, 0); }
+		public TerminalNode NULLS() { return getToken(MixedFormatSqlExtendParser.NULLS, 0); }
+		public TerminalNode OF() { return getToken(MixedFormatSqlExtendParser.OF, 0); }
+		public TerminalNode ONLY() { return getToken(MixedFormatSqlExtendParser.ONLY, 0); }
+		public TerminalNode OPTION() { return getToken(MixedFormatSqlExtendParser.OPTION, 0); }
+		public TerminalNode OPTIONS() { return getToken(MixedFormatSqlExtendParser.OPTIONS, 0); }
+		public TerminalNode OR() { return getToken(MixedFormatSqlExtendParser.OR, 0); }
+		public TerminalNode ORDER() { return getToken(MixedFormatSqlExtendParser.ORDER, 0); }
+		public TerminalNode OUT() { return getToken(MixedFormatSqlExtendParser.OUT, 0); }
+		public TerminalNode OUTER() { return getToken(MixedFormatSqlExtendParser.OUTER, 0); }
+		public TerminalNode OUTPUTFORMAT() { return getToken(MixedFormatSqlExtendParser.OUTPUTFORMAT, 0); }
+		public TerminalNode OVER() { return getToken(MixedFormatSqlExtendParser.OVER, 0); }
+		public TerminalNode OVERLAPS() { return getToken(MixedFormatSqlExtendParser.OVERLAPS, 0); }
+		public TerminalNode OVERLAY() { return getToken(MixedFormatSqlExtendParser.OVERLAY, 0); }
+		public TerminalNode OVERWRITE() { return getToken(MixedFormatSqlExtendParser.OVERWRITE, 0); }
+		public TerminalNode PARTITION() { return getToken(MixedFormatSqlExtendParser.PARTITION, 0); }
+		public TerminalNode PARTITIONED() { return getToken(MixedFormatSqlExtendParser.PARTITIONED, 0); }
+		public TerminalNode PARTITIONS() { return getToken(MixedFormatSqlExtendParser.PARTITIONS, 0); }
+		public TerminalNode PERCENTLIT() { return getToken(MixedFormatSqlExtendParser.PERCENTLIT, 0); }
+		public TerminalNode PIVOT() { return getToken(MixedFormatSqlExtendParser.PIVOT, 0); }
+		public TerminalNode PLACING() { return getToken(MixedFormatSqlExtendParser.PLACING, 0); }
+		public TerminalNode POSITION() { return getToken(MixedFormatSqlExtendParser.POSITION, 0); }
+		public TerminalNode PRECEDING() { return getToken(MixedFormatSqlExtendParser.PRECEDING, 0); }
+		public TerminalNode PRIMARY() { return getToken(MixedFormatSqlExtendParser.PRIMARY, 0); }
+		public TerminalNode PRINCIPALS() { return getToken(MixedFormatSqlExtendParser.PRINCIPALS, 0); }
+		public TerminalNode PROPERTIES() { return getToken(MixedFormatSqlExtendParser.PROPERTIES, 0); }
+		public TerminalNode PURGE() { return getToken(MixedFormatSqlExtendParser.PURGE, 0); }
+		public TerminalNode QUERY() { return getToken(MixedFormatSqlExtendParser.QUERY, 0); }
+		public TerminalNode RANGE() { return getToken(MixedFormatSqlExtendParser.RANGE, 0); }
+		public TerminalNode RECORDREADER() { return getToken(MixedFormatSqlExtendParser.RECORDREADER, 0); }
+		public TerminalNode RECORDWRITER() { return getToken(MixedFormatSqlExtendParser.RECORDWRITER, 0); }
+		public TerminalNode RECOVER() { return getToken(MixedFormatSqlExtendParser.RECOVER, 0); }
+		public TerminalNode REDUCE() { return getToken(MixedFormatSqlExtendParser.REDUCE, 0); }
+		public TerminalNode REFERENCES() { return getToken(MixedFormatSqlExtendParser.REFERENCES, 0); }
+		public TerminalNode REFRESH() { return getToken(MixedFormatSqlExtendParser.REFRESH, 0); }
+		public TerminalNode RENAME() { return getToken(MixedFormatSqlExtendParser.RENAME, 0); }
+		public TerminalNode REPAIR() { return getToken(MixedFormatSqlExtendParser.REPAIR, 0); }
+		public TerminalNode REPLACE() { return getToken(MixedFormatSqlExtendParser.REPLACE, 0); }
+		public TerminalNode RESET() { return getToken(MixedFormatSqlExtendParser.RESET, 0); }
+		public TerminalNode RESPECT() { return getToken(MixedFormatSqlExtendParser.RESPECT, 0); }
+		public TerminalNode RESTRICT() { return getToken(MixedFormatSqlExtendParser.RESTRICT, 0); }
+		public TerminalNode REVOKE() { return getToken(MixedFormatSqlExtendParser.REVOKE, 0); }
+		public TerminalNode RLIKE() { return getToken(MixedFormatSqlExtendParser.RLIKE, 0); }
+		public TerminalNode ROLE() { return getToken(MixedFormatSqlExtendParser.ROLE, 0); }
+		public TerminalNode ROLES() { return getToken(MixedFormatSqlExtendParser.ROLES, 0); }
+		public TerminalNode ROLLBACK() { return getToken(MixedFormatSqlExtendParser.ROLLBACK, 0); }
+		public TerminalNode ROLLUP() { return getToken(MixedFormatSqlExtendParser.ROLLUP, 0); }
+		public TerminalNode ROW() { return getToken(MixedFormatSqlExtendParser.ROW, 0); }
+		public TerminalNode ROWS() { return getToken(MixedFormatSqlExtendParser.ROWS, 0); }
+		public TerminalNode SCHEMA() { return getToken(MixedFormatSqlExtendParser.SCHEMA, 0); }
+		public TerminalNode SECOND() { return getToken(MixedFormatSqlExtendParser.SECOND, 0); }
+		public TerminalNode SELECT() { return getToken(MixedFormatSqlExtendParser.SELECT, 0); }
+		public TerminalNode SEPARATED() { return getToken(MixedFormatSqlExtendParser.SEPARATED, 0); }
+		public TerminalNode SERDE() { return getToken(MixedFormatSqlExtendParser.SERDE, 0); }
+		public TerminalNode SERDEPROPERTIES() { return getToken(MixedFormatSqlExtendParser.SERDEPROPERTIES, 0); }
+		public TerminalNode SESSION_USER() { return getToken(MixedFormatSqlExtendParser.SESSION_USER, 0); }
+		public TerminalNode SET() { return getToken(MixedFormatSqlExtendParser.SET, 0); }
+		public TerminalNode SETS() { return getToken(MixedFormatSqlExtendParser.SETS, 0); }
+		public TerminalNode SHOW() { return getToken(MixedFormatSqlExtendParser.SHOW, 0); }
+		public TerminalNode SKEWED() { return getToken(MixedFormatSqlExtendParser.SKEWED, 0); }
+		public TerminalNode SOME() { return getToken(MixedFormatSqlExtendParser.SOME, 0); }
+		public TerminalNode SORT() { return getToken(MixedFormatSqlExtendParser.SORT, 0); }
+		public TerminalNode SORTED() { return getToken(MixedFormatSqlExtendParser.SORTED, 0); }
+		public TerminalNode START() { return getToken(MixedFormatSqlExtendParser.START, 0); }
+		public TerminalNode STATISTICS() { return getToken(MixedFormatSqlExtendParser.STATISTICS, 0); }
+		public TerminalNode STORED() { return getToken(MixedFormatSqlExtendParser.STORED, 0); }
+		public TerminalNode STRATIFY() { return getToken(MixedFormatSqlExtendParser.STRATIFY, 0); }
+		public TerminalNode STRUCT() { return getToken(MixedFormatSqlExtendParser.STRUCT, 0); }
+		public TerminalNode SUBSTR() { return getToken(MixedFormatSqlExtendParser.SUBSTR, 0); }
+		public TerminalNode SUBSTRING() { return getToken(MixedFormatSqlExtendParser.SUBSTRING, 0); }
+		public TerminalNode SYNC() { return getToken(MixedFormatSqlExtendParser.SYNC, 0); }
+		public TerminalNode TABLE() { return getToken(MixedFormatSqlExtendParser.TABLE, 0); }
+		public TerminalNode TABLES() { return getToken(MixedFormatSqlExtendParser.TABLES, 0); }
+		public TerminalNode TABLESAMPLE() { return getToken(MixedFormatSqlExtendParser.TABLESAMPLE, 0); }
+		public TerminalNode TBLPROPERTIES() { return getToken(MixedFormatSqlExtendParser.TBLPROPERTIES, 0); }
+		public TerminalNode TEMPORARY() { return getToken(MixedFormatSqlExtendParser.TEMPORARY, 0); }
+		public TerminalNode TERMINATED() { return getToken(MixedFormatSqlExtendParser.TERMINATED, 0); }
+		public TerminalNode THEN() { return getToken(MixedFormatSqlExtendParser.THEN, 0); }
+		public TerminalNode TIME() { return getToken(MixedFormatSqlExtendParser.TIME, 0); }
+		public TerminalNode TO() { return getToken(MixedFormatSqlExtendParser.TO, 0); }
+		public TerminalNode TOUCH() { return getToken(MixedFormatSqlExtendParser.TOUCH, 0); }
+		public TerminalNode TRAILING() { return getToken(MixedFormatSqlExtendParser.TRAILING, 0); }
+		public TerminalNode TRANSACTION() { return getToken(MixedFormatSqlExtendParser.TRANSACTION, 0); }
+		public TerminalNode TRANSACTIONS() { return getToken(MixedFormatSqlExtendParser.TRANSACTIONS, 0); }
+		public TerminalNode TRANSFORM() { return getToken(MixedFormatSqlExtendParser.TRANSFORM, 0); }
+		public TerminalNode TRIM() { return getToken(MixedFormatSqlExtendParser.TRIM, 0); }
+		public TerminalNode TRUE() { return getToken(MixedFormatSqlExtendParser.TRUE, 0); }
+		public TerminalNode TRUNCATE() { return getToken(MixedFormatSqlExtendParser.TRUNCATE, 0); }
+		public TerminalNode TRY_CAST() { return getToken(MixedFormatSqlExtendParser.TRY_CAST, 0); }
+		public TerminalNode TYPE() { return getToken(MixedFormatSqlExtendParser.TYPE, 0); }
+		public TerminalNode UNARCHIVE() { return getToken(MixedFormatSqlExtendParser.UNARCHIVE, 0); }
+		public TerminalNode UNBOUNDED() { return getToken(MixedFormatSqlExtendParser.UNBOUNDED, 0); }
+		public TerminalNode UNCACHE() { return getToken(MixedFormatSqlExtendParser.UNCACHE, 0); }
+		public TerminalNode UNIQUE() { return getToken(MixedFormatSqlExtendParser.UNIQUE, 0); }
+		public TerminalNode UNKNOWN() { return getToken(MixedFormatSqlExtendParser.UNKNOWN, 0); }
+		public TerminalNode UNLOCK() { return getToken(MixedFormatSqlExtendParser.UNLOCK, 0); }
+		public TerminalNode UNSET() { return getToken(MixedFormatSqlExtendParser.UNSET, 0); }
+		public TerminalNode UPDATE() { return getToken(MixedFormatSqlExtendParser.UPDATE, 0); }
+		public TerminalNode USE() { return getToken(MixedFormatSqlExtendParser.USE, 0); }
+		public TerminalNode USER() { return getToken(MixedFormatSqlExtendParser.USER, 0); }
+		public TerminalNode VALUES() { return getToken(MixedFormatSqlExtendParser.VALUES, 0); }
+		public TerminalNode VIEW() { return getToken(MixedFormatSqlExtendParser.VIEW, 0); }
+		public TerminalNode VIEWS() { return getToken(MixedFormatSqlExtendParser.VIEWS, 0); }
+		public TerminalNode WHEN() { return getToken(MixedFormatSqlExtendParser.WHEN, 0); }
+		public TerminalNode WHERE() { return getToken(MixedFormatSqlExtendParser.WHERE, 0); }
+		public TerminalNode WINDOW() { return getToken(MixedFormatSqlExtendParser.WINDOW, 0); }
+		public TerminalNode WITH() { return getToken(MixedFormatSqlExtendParser.WITH, 0); }
+		public TerminalNode YEAR() { return getToken(MixedFormatSqlExtendParser.YEAR, 0); }
+		public TerminalNode ZONE() { return getToken(MixedFormatSqlExtendParser.ZONE, 0); }
 		public NonReservedContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_nonReserved; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).enterNonReserved(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).enterNonReserved(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof ArcticSqlExtendListener ) ((ArcticSqlExtendListener)listener).exitNonReserved(this);
+			if ( listener instanceof MixedFormatSqlExtendListener ) ((MixedFormatSqlExtendListener)listener).exitNonReserved(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof ArcticSqlExtendVisitor ) return ((ArcticSqlExtendVisitor<? extends T>)visitor).visitNonReserved(this);
+			if ( visitor instanceof MixedFormatSqlExtendVisitor ) return ((MixedFormatSqlExtendVisitor<? extends T>)visitor).visitNonReserved(this);
 			else return visitor.visitChildren(this);
 		}
 	}

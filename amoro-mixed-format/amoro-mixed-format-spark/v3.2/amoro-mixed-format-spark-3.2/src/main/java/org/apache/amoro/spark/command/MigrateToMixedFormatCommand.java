@@ -20,8 +20,8 @@ package org.apache.amoro.spark.command;
 
 import org.apache.amoro.spark.MixedFormatSparkCatalog;
 import org.apache.amoro.spark.MixedFormatSparkSessionCatalog;
-import org.apache.amoro.spark.table.UnkeyedSparkTable;
 import org.apache.amoro.spark.table.MixedSparkTable;
+import org.apache.amoro.spark.table.UnkeyedSparkTable;
 import org.apache.amoro.spark.util.MixedFormatSparkUtils;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.hadoop.conf.Configuration;
@@ -72,8 +72,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * migrate a v1 table to mixed-format table. will reuse file in v1 table , but delete metadata in session
- * catalog
+ * migrate a v1 table to mixed-format table. will reuse file in v1 table , but delete metadata in
+ * session catalog
  */
 public class MigrateToMixedFormatCommand implements MixedFormatSparkCommand {
   private static final Logger LOG = LoggerFactory.getLogger(MigrateToMixedFormatCommand.class);
@@ -322,7 +322,8 @@ public class MigrateToMixedFormatCommand implements MixedFormatSparkCommand {
 
     private void checkTargetCatalog(TableCatalog catalog) {
       Preconditions.checkArgument(
-          catalog instanceof MixedFormatSparkCatalog || catalog instanceof MixedFormatSparkSessionCatalog,
+          catalog instanceof MixedFormatSparkCatalog
+              || catalog instanceof MixedFormatSparkSessionCatalog,
           "target catalog must be %s",
           MixedFormatSparkCatalog.class.getName());
     }

@@ -18,8 +18,9 @@
 
 package org.apache.amoro.spark.sql.catalyst.analysis
 
-import org.apache.amoro.spark.command.MigrateToMixedFormatCommand
 import scala.collection.JavaConverters.seqAsJavaList
+
+import org.apache.amoro.spark.command.MigrateToMixedFormatCommand
 import org.apache.amoro.spark.sql.catalyst.plans
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan

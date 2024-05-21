@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.sql.catalyst.plans
 
-import org.apache.amoro.spark.command.{MixedFormatSparkCommand, MigrateToMixedFormatCommand}
+import org.apache.amoro.spark.command.{MigrateToMixedFormatCommand, MixedFormatSparkCommand}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
 import org.apache.spark.sql.catalyst.util.truncatedString

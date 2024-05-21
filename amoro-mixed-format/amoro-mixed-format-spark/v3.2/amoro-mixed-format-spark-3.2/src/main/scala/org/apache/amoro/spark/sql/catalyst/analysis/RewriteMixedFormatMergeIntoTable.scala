@@ -24,13 +24,13 @@ import org.apache.amoro.spark.mixed.SparkSQLProperties
 import org.apache.amoro.spark.sql.MixedFormatExtensionUtils
 import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.isMixedFormatRelation
 import org.apache.amoro.spark.sql.catalyst.plans
-import org.apache.amoro.spark.sql.catalyst.plans.{MixedFormatRowLevelWrite, MergeIntoMixedFormatTable, MergeRows}
+import org.apache.amoro.spark.sql.catalyst.plans.{MergeIntoMixedFormatTable, MergeRows, MixedFormatRowLevelWrite}
 import org.apache.amoro.spark.sql.utils.{FieldReference, ProjectingInternalRow, WriteQueryProjections}
 import org.apache.amoro.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
 import org.apache.amoro.spark.table.MixedSparkTable
 import org.apache.amoro.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.amoro.catalyst.{MixedFormatSpark32Helper, ExpressionHelper}
+import org.apache.spark.sql.amoro.catalyst.{ExpressionHelper, MixedFormatSpark32Helper}
 import org.apache.spark.sql.catalyst.analysis.EliminateSubqueryAliases
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Expression, ExprId, IsNotNull, Literal}
 import org.apache.spark.sql.catalyst.expressions.Literal.TrueLiteral

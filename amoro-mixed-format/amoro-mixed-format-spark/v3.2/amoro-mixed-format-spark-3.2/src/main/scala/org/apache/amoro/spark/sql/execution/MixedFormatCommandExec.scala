@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.sql.execution
 
-import org.apache.amoro.spark.command.{MixedFormatSparkCommand, MigrateToMixedFormatCommand}
+import org.apache.amoro.spark.command.{MigrateToMixedFormatCommand, MixedFormatSparkCommand}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.encoders.{ExpressionEncoder, RowEncoder}
@@ -49,7 +49,8 @@ abstract class MixedFormatCommandExec(command: MixedFormatSparkCommand) extends 
   }
 }
 
-case class MigrateToMixedFormatExec(command: MigrateToMixedFormatCommand) extends MixedFormatCommandExec(command) {
+case class MigrateToMixedFormatExec(command: MigrateToMixedFormatCommand)
+  extends MixedFormatCommandExec(command) {
   override def children: Seq[SparkPlan] = Nil
 
   override protected def withNewChildrenInternal(newChildren: IndexedSeq[SparkPlan]): SparkPlan =
