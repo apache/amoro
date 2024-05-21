@@ -189,10 +189,10 @@ public abstract class MixedSparkCatalogBase
   }
 
   /**
-   * Build an Arctic {@link TableIdentifier} for the given Spark identifier.
+   * Build an Amoro {@link TableIdentifier} for the given Spark identifier.
    *
    * @param identifier Spark's identifier
-   * @return an Arctic identifier
+   * @return an Amoro identifier
    */
   protected TableIdentifier buildIdentifier(Identifier identifier) {
     Preconditions.checkArgument(

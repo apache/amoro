@@ -314,7 +314,7 @@ public class UnkeyedSparkBatchWrite
                       f ->
                           !f.name().equals("_file")
                               && !f.name().equals("_pos")
-                              && !f.name().equals("_arctic_upsert_op"))
+                              && !f.name().equals("_upsert_op"))
                   .toArray(StructField[]::new));
       return new SimpleRowLevelDataWriter(
           newWriter(partitionId, taskId, schema),

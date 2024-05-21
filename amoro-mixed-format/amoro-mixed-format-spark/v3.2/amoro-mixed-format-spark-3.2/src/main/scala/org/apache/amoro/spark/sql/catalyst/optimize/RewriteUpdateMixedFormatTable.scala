@@ -180,9 +180,9 @@ case class RewriteUpdateMixedFormatTable(spark: SparkSession) extends Rule[Logic
       }).toMap
     val outputWithValues = relation.output ++ output.map(a => {
       if (assignmentMap.contains(a.name)) {
-        Alias(assignmentMap(a.name), "_arctic_after_" + a.name)()
+        Alias(assignmentMap(a.name), "_mixed_after_" + a.name)()
       } else {
-        Alias(a, "_arctic_after_" + a.name)()
+        Alias(a, "_mixed_after_" + a.name)()
       }
     })
     Project(Seq(Alias(Literal(UPDATE_OPERATION), OPERATION_COLUMN)()) ++ outputWithValues, scanPlan)

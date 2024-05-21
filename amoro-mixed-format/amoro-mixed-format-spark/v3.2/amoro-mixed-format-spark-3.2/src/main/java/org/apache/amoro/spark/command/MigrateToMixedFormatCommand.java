@@ -78,7 +78,7 @@ import java.util.stream.Collectors;
 public class MigrateToMixedFormatCommand implements MixedFormatSparkCommand {
   private static final Logger LOG = LoggerFactory.getLogger(MigrateToMixedFormatCommand.class);
 
-  private static final String V1TABLE_BACKUP_SUFFIX = "_BAK_ARCTIC_";
+  private static final String V1TABLE_BACKUP_SUFFIX = "_BAK_MIXED_";
   protected static final List<String> EXCLUDED_PROPERTIES =
       ImmutableList.of("path", "transient_lastDdlTime", "serialization.format");
 

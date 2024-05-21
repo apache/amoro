@@ -47,7 +47,7 @@ case class RewriteAppendMixedFormatTable(spark: SparkSession) extends Rule[Logic
         Seq(Alias(Literal(UPDATE_OPERATION), OPERATION_COLUMN)()) ++ upsertQuery.output,
         upsertQuery)
       val insertAttribute =
-        insertQuery.output.filter(_.name.contains("_arctic_before_"))
+        insertQuery.output.filter(_.name.contains("_mixed_before_"))
       val projections = buildInsertProjections(insertQuery, insertAttribute, isUpsert = true)
       val upsertOptions = writeOptions + (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.mode)
       val writeBuilder =
@@ -109,7 +109,7 @@ case class RewriteAppendMixedFormatTable(spark: SparkSession) extends Rule[Logic
       val primary = primaries.get(i)
       val primaryAttr = insertPlan.output.find(_.name == primary).get
       val joinAttribute =
-        tableScan.output.find(_.name.replace("_arctic_before_", "") == primary).get
+        tableScan.output.find(_.name.replace("_mixed_before_", "") == primary).get
       val experssion = EqualTo(primaryAttr, joinAttribute)
       expressions.add(experssion)
       i += 1
@@ -144,7 +144,7 @@ case class RewriteAppendMixedFormatTable(spark: SparkSession) extends Rule[Logic
   private def buildKeyedTableInsertProjection(relation: LogicalPlan): LogicalPlan = {
     val output = relation.output
     val outputWithValues = output.map(a => {
-      Alias(a, "_arctic_after_" + a.name)()
+      Alias(a, "_mixed_after_" + a.name)()
     })
     Project(outputWithValues, relation)
   }
@@ -152,7 +152,7 @@ case class RewriteAppendMixedFormatTable(spark: SparkSession) extends Rule[Logic
   private def buildKeyedTableBeforeProject(relation: DataSourceV2Relation): LogicalPlan = {
     val output = relation.output
     val outputWithValues = output.map(a => {
-      Alias(a, "_arctic_before_" + a.name)()
+      Alias(a, "_mixed_before_" + a.name)()
     })
     Project(outputWithValues, relation)
   }

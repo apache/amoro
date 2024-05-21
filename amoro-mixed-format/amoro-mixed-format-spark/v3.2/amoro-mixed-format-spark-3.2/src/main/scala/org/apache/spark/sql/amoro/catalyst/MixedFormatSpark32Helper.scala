@@ -56,7 +56,7 @@ object MixedFormatSpark32Helper extends SQLConfHelper {
         resolve(it.ref.fieldNames)
       case fbt: FileIndexBucket =>
         MixedFormatFileIndexBucketTransform(fbt.mask(), fbt.primaryKeyData(), fbt.schema())
-      case ArcticBucketTransform(n, r) =>
+      case MixedFormatBucketTransform(n, r) =>
         IcebergBucketTransform(n, ExpressionHelper.resolveRef[NamedExpression](r, query))
       case yt: YearsTransform =>
         IcebergYearTransform(resolve(yt.ref.fieldNames))
@@ -98,7 +98,7 @@ object MixedFormatSpark32Helper extends SQLConfHelper {
     }
   }
 
-  private object ArcticBucketTransform {
+  private object MixedFormatBucketTransform {
     def unapply(transform: Transform): Option[(Int, FieldReference)] = transform match {
       case bt: BucketTransform => bt.columns match {
           case Seq(nf: NamedReference) =>
@@ -137,7 +137,7 @@ object MixedFormatSpark32Helper extends SQLConfHelper {
     override def children: Seq[Expression] = Nil
 
     override def toString(): String = {
-      s"ArcticFileIndexBucket($numBuckets)"
+      s"MixedFormatFileIndexBucket($numBuckets)"
     }
 
     override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression])
