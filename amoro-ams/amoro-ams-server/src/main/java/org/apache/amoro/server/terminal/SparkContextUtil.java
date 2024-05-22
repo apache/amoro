@@ -30,7 +30,7 @@ public class SparkContextUtil {
   public static final String ICEBERG_EXTENSION =
       "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions";
   public static final String MIXED_FORMAT_EXTENSION =
-      "org.apache.amoro.spark.ArcticSparkExtensions";
+      "org.apache.amoro.spark.MixedFormatSparkExtensions";
   public static final String ICEBERG_CATALOG = "org.apache.iceberg.spark.SparkCatalog";
   public static final String MIXED_FORMAT_CATALOG =
       "org.apache.amoro.spark.MixedFormatSparkCatalog";
@@ -42,7 +42,7 @@ public class SparkContextUtil {
   public static final String UNIFIED_CATALOG = "org.apache.amoro.spark.SparkUnifiedCatalog";
 
   public static final String MIXED_FORMAT_PROPERTY_REFRESH_BEFORE_USAGE =
-      "spark.sql.arctic.refresh-catalog-before-usage";
+      "spark.sql.mixed-format.refresh-catalog-before-usage";
 
   public static Map<String, String> getSparkConf(Configurations sessionConfig) {
     Map<String, String> sparkConf = Maps.newLinkedHashMap();

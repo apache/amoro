@@ -17,13 +17,13 @@
 # limitations under the License.
 #
 
-# Utility for creating well-formed pull request merges and pushing them to Arctic
+# Utility for creating well-formed pull request merges and pushing them to Amoro
 # For committers:
 # Please check your local git envs via `git remote -v` which should
-# netease	git@github.com:netease/arctic.git (fetch)
-# netease	git@github.com:netease/arctic.git (push)
-# origin	git@github.com:[ YOUR GITHUB USER NAME ]/arctic.git (fetch)
-# origin	git@github.com:[ YOUR GITHUB USER NAME ]/arctic.git (push)
+# apache	git@github.com:apache/amoro.git (fetch)
+# apache	git@github.com:apache/amoro.git (push)
+# origin	git@github.com:[ YOUR GITHUB USER NAME ]/amoro.git (fetch)
+# origin	git@github.com:[ YOUR GITHUB USER NAME ]/amoro.git (push)
 
 import json
 import os
@@ -34,11 +34,11 @@ from urllib.request import urlopen
 from urllib.request import Request
 from urllib.error import HTTPError
 
-ARCTIC_HOME = os.environ.get("ARCTIC_HOME", os.getcwd())
-PR_REMOTE_NAME = os.environ.get("PR_REMOTE_NAME", "netease")
-PUSH_REMOTE_NAME = os.environ.get("PUSH_REMOTE_NAME", "netease")
+AMORO_HOME = os.environ.get("AMORO_HOME", os.getcwd())
+PR_REMOTE_NAME = os.environ.get("PR_REMOTE_NAME", "apache")
+PUSH_REMOTE_NAME = os.environ.get("PUSH_REMOTE_NAME", "apache")
 GITHUB_OAUTH_KEY = os.environ.get("GITHUB_OAUTH_KEY")
-GITHUB_API_BASE = "https://api.github.com/repos/netease/arctic"
+GITHUB_API_BASE = "https://api.github.com/repos/apache/amoro"
 BRANCH_PREFIX = "PR_TOOL"
 
 
@@ -51,7 +51,7 @@ def get_json(url):
     except HTTPError as e:
         if "X-RateLimit-Remaining" in e.headers and e.headers["X-RateLimit-Remaining"] == '0':
             print("Exceeded the GitHub API rate limit; see the instructions in " +
-                  "dev/merge_arctic_pr.py to configure an OAuth token for making authenticated " +
+                  "dev/merge_amoro_pr.py to configure an OAuth token for making authenticated " +
                   "GitHub requests.")
         else:
             print("Unable to fetch URL, exiting: %s" % url, e)
@@ -90,10 +90,10 @@ def clean_up():
             run_cmd("git branch -D %s" % branch)
 
 def fix_title(text, num):
-    if (re.search(r'^\[ARCTIC\s#[0-9]{3,6}\].*', text)):
+    if (re.search(r'^\[AMORO\s#[0-9]{3,6}\].*', text)):
         return text
 
-    return '[ARCTIC #%s] %s' % (num, text)
+    return '[AMORO #%s] %s' % (num, text)
 
 # merge the requested PR and return the merge hash
 def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
@@ -136,7 +136,7 @@ def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
     merge_message_flags += ["-m", title]
     if body is not None:
         # We remove @ symbols from the body to avoid triggering e-mails
-        # to people every time someone creates a public fork of Arctic.
+        # to people every time someone creates a public fork of Amoro.
         merge_message_flags += ["-m", body.replace("@", "")]
 
     committer_name = run_cmd("git config --get user.name").strip()
@@ -150,8 +150,8 @@ def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
     # The string "Closes #%s" string is required for GitHub to correctly close the PR
     merge_message_flags += ["-m", "Closes #%s from %s." % (pr_num, pr_repo_desc)]
 
-    for issueId in re.findall("ARCTIC #[0-9]{3,5}", title):
-        merge_message_flags += ["-m", issueId.replace("ARCTIC", "Closes")]
+    for issueId in re.findall("AMORO #[0-9]{3,5}", title):
+        merge_message_flags += ["-m", issueId.replace("AMORO", "Closes")]
 
     for c in commits:
         merge_message_flags += ["-m", c]
@@ -228,7 +228,7 @@ def get_current_ref():
 def main():
     global original_head
 
-    os.chdir(ARCTIC_HOME)
+    os.chdir(AMORO_HOME)
     original_head = get_current_ref()
 
     branches = get_json("%s/branches" % GITHUB_API_BASE)

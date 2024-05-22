@@ -322,9 +322,6 @@
                                         <include>
                                             org.apache.spark.sql.execution.datasources.v2.SetWriteDistributionAndOrderingExec*
                                         </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ArcticTableWriteExec*
-                                        </include>
                                     </includes>
                                 </relocation>
                                 <relocation>

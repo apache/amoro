@@ -52,7 +52,7 @@ In the example above, op_time is set as the event time field of the table, and t
 To handle out-of-order writes, the permitted lateness of data when calculating the watermark is set to one minute.
 You can view the current watermark of the table in the table details on the AMS Dashboard at AMS dashboard.
 
-![arctic-table-watermark](../images/admin/watermark_table_detail.png)
+![mixed-format-table-watermark](../images/admin/watermark_table_detail.png)
 
 You can also use the following SQL statement in the `Terminal` to query the watermark of a table:
 
