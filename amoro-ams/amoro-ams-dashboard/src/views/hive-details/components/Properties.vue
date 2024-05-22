@@ -71,12 +71,9 @@ limitations under the License.
 <script setup lang="ts">
 import { onMounted, reactive, ref, watch } from 'vue'
 import { IMap, IKeyAndValue } from '@/types/common.type'
-import { CloseOutlined } from '@ant-design/icons-vue'
 import { getUpgradeProperties } from '@/services/table.service'
 import { getUUid } from '@/utils/index'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
-
-import { Button as AButton, Input as AInput, Form as AForm, FormItem as AFormItem } from 'ant-design-vue'
 
 interface IItem {
   key: string
