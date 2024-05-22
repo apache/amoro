@@ -26,10 +26,6 @@ import scala.util.Try
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
-import org.apache.amoro.spark.sql.catalyst.plans.UnresolvedMergeIntoMixedFormatTable
-import org.apache.amoro.spark.sql.parser._
-import org.apache.amoro.spark.table.MixedSparkTable
-import org.apache.amoro.spark.util.MixedFormatSparkUtils
 import org.apache.iceberg.spark.Spark3Util
 import org.apache.iceberg.spark.source.SparkTable
 import org.apache.spark.sql.{AnalysisException, SparkSession}
@@ -42,6 +38,11 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
 import org.apache.spark.sql.types.{DataType, StructType}
+
+import org.apache.amoro.spark.sql.catalyst.plans.UnresolvedMergeIntoMixedFormatTable
+import org.apache.amoro.spark.sql.parser._
+import org.apache.amoro.spark.table.MixedSparkTable
+import org.apache.amoro.spark.util.MixedFormatSparkUtils
 
 class MixedFormatSqlExtensionsParser(delegate: ParserInterface) extends ParserInterface
   with SQLConfHelper {

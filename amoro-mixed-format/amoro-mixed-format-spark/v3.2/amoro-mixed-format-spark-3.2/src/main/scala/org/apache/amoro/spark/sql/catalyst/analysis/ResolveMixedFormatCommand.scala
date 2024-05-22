@@ -20,11 +20,12 @@ package org.apache.amoro.spark.sql.catalyst.analysis
 
 import scala.collection.JavaConverters.seqAsJavaList
 
-import org.apache.amoro.spark.command.MigrateToMixedFormatCommand
-import org.apache.amoro.spark.sql.catalyst.plans
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
+
+import org.apache.amoro.spark.command.MigrateToMixedFormatCommand
+import org.apache.amoro.spark.sql.catalyst.plans
 
 case class ResolveMixedFormatCommand(spark: SparkSession) extends Rule[LogicalPlan] {
 

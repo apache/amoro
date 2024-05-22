@@ -27,8 +27,6 @@ import scala.collection.mutable.{ArrayBuffer, Set}
 
 import org.antlr.v4.runtime.{ParserRuleContext, Token}
 import org.antlr.v4.runtime.tree.{ParseTree, RuleNode, TerminalNode}
-import org.apache.amoro.spark.sql.parser.{MixedFormatSqlExtendBaseVisitor, MixedFormatSqlExtendParser}
-import org.apache.amoro.spark.sql.parser.MixedFormatSqlExtendParser._
 import org.apache.commons.codec.DecoderException
 import org.apache.commons.codec.binary.Hex
 import org.apache.spark.internal.Logging
@@ -51,6 +49,9 @@ import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.{CalendarInterval, UTF8String}
 import org.apache.spark.util.Utils.isTesting
 import org.apache.spark.util.random.RandomSampler
+
+import org.apache.amoro.spark.sql.parser.{MixedFormatSqlExtendBaseVisitor, MixedFormatSqlExtendParser}
+import org.apache.amoro.spark.sql.parser.MixedFormatSqlExtendParser._
 
 class MixedFormatSqlExtendAstBuilder()
   extends MixedFormatSqlExtendBaseVisitor[AnyRef] with SQLConfHelper with Logging {

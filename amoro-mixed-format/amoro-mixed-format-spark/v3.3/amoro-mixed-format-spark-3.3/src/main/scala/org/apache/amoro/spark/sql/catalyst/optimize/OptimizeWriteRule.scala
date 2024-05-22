@@ -18,18 +18,19 @@
 
 package org.apache.amoro.spark.sql.catalyst.optimize
 
-import org.apache.amoro.spark.SupportSparkAdapter
-import org.apache.amoro.spark.mixed.SparkSQLProperties
-import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.{isMixedFormatRelation, isUnkeyedRelation}
-import org.apache.amoro.spark.sql.catalyst.plans.MixedFormatRowLevelWrite
-import org.apache.amoro.spark.table.{MixedSparkTable, UnkeyedSparkTable}
-import org.apache.amoro.spark.util.DistributionAndOrderingUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Expression, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
+
+import org.apache.amoro.spark.SupportSparkAdapter
+import org.apache.amoro.spark.mixed.SparkSQLProperties
+import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.{isMixedFormatRelation, isUnkeyedRelation}
+import org.apache.amoro.spark.sql.catalyst.plans.MixedFormatRowLevelWrite
+import org.apache.amoro.spark.table.{MixedSparkTable, UnkeyedSparkTable}
+import org.apache.amoro.spark.util.DistributionAndOrderingUtil
 
 case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan]
   with SupportSparkAdapter {

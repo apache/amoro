@@ -18,13 +18,14 @@
 
 package org.apache.amoro.spark.sql.execution
 
-import org.apache.amoro.op.OverwriteBaseFiles
-import org.apache.amoro.spark.table.{MixedSparkTable, UnkeyedSparkTable}
 import org.apache.iceberg.expressions.Expressions
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.execution.datasources.v2.LeafV2CommandExec
+
+import org.apache.amoro.op.OverwriteBaseFiles
+import org.apache.amoro.spark.table.{MixedSparkTable, UnkeyedSparkTable}
 
 case class TruncateMixedFormatTableExec(table: Table) extends LeafV2CommandExec {
   override protected def run(): Seq[InternalRow] = {

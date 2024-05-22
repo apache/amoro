@@ -18,13 +18,6 @@
 
 package org.apache.amoro.spark.sql.catalyst.optimize
 
-import org.apache.amoro.spark.sql.MixedFormatExtensionUtils
-import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.{asTableRelation, isMixedFormatRelation, MixedFormatTableHelper}
-import org.apache.amoro.spark.sql.catalyst.plans.MixedFormatRowLevelWrite
-import org.apache.amoro.spark.sql.utils.{MixedFormatRewriteHelper, ProjectingInternalRow, WriteQueryProjections}
-import org.apache.amoro.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, OPERATION_COLUMN}
-import org.apache.amoro.spark.table.{MixedSparkTable, SupportsExtendIdentColumns, SupportsRowLevelOperator}
-import org.apache.amoro.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.amoro.catalyst.MixedFormatSpark32Helper
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, Literal}
@@ -32,6 +25,14 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.StructType
+
+import org.apache.amoro.spark.sql.MixedFormatExtensionUtils
+import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.{asTableRelation, isMixedFormatRelation, MixedFormatTableHelper}
+import org.apache.amoro.spark.sql.catalyst.plans.MixedFormatRowLevelWrite
+import org.apache.amoro.spark.sql.utils.{MixedFormatRewriteHelper, ProjectingInternalRow, WriteQueryProjections}
+import org.apache.amoro.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, OPERATION_COLUMN}
+import org.apache.amoro.spark.table.{MixedSparkTable, SupportsExtendIdentColumns, SupportsRowLevelOperator}
+import org.apache.amoro.spark.writer.WriteMode
 
 case class RewriteDeleteFromMixedFormatTable(spark: SparkSession) extends Rule[LogicalPlan]
   with MixedFormatRewriteHelper {

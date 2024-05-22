@@ -18,9 +18,6 @@
 
 package org.apache.amoro.spark.sql.catalyst.analysis
 
-import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.isMixedFormatRelation
-import org.apache.amoro.spark.sql.catalyst.plans.{MergeIntoMixedFormatTable, UnresolvedMergeIntoMixedFormatTable}
-import org.apache.amoro.spark.table.MixedSparkTable
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.{caseInsensitiveResolution, withPosition, AnalysisErrorAt, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, CurrentDate, CurrentTimestamp, Expression, ExtractValue, LambdaFunction}
@@ -29,6 +26,10 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin.withOrigin
 import org.apache.spark.sql.catalyst.util.toPrettySQL
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
+
+import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.isMixedFormatRelation
+import org.apache.amoro.spark.sql.catalyst.plans.{MergeIntoMixedFormatTable, UnresolvedMergeIntoMixedFormatTable}
+import org.apache.amoro.spark.table.MixedSparkTable
 
 case class ResolveMergeIntoMixedFormatTableReferences(spark: SparkSession)
   extends Rule[LogicalPlan] {

@@ -20,15 +20,6 @@ package org.apache.amoro.spark.sql.catalyst.analysis
 
 import scala.collection.{mutable, Seq}
 
-import org.apache.amoro.spark.mixed.SparkSQLProperties
-import org.apache.amoro.spark.sql.MixedFormatExtensionUtils
-import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.isMixedFormatRelation
-import org.apache.amoro.spark.sql.catalyst.plans
-import org.apache.amoro.spark.sql.catalyst.plans.{MergeIntoMixedFormatTable, MergeRows, MixedFormatRowLevelWrite}
-import org.apache.amoro.spark.sql.utils.{FieldReference, ProjectingInternalRow, WriteQueryProjections}
-import org.apache.amoro.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
-import org.apache.amoro.spark.table.MixedSparkTable
-import org.apache.amoro.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.amoro.catalyst.{ExpressionHelper, MixedFormatSpark33Helper}
 import org.apache.spark.sql.catalyst.analysis.EliminateSubqueryAliases
@@ -41,6 +32,16 @@ import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.connector.expressions.NamedReference
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.{IntegerType, StructType}
+
+import org.apache.amoro.spark.mixed.SparkSQLProperties
+import org.apache.amoro.spark.sql.MixedFormatExtensionUtils
+import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.isMixedFormatRelation
+import org.apache.amoro.spark.sql.catalyst.plans
+import org.apache.amoro.spark.sql.catalyst.plans.{MergeIntoMixedFormatTable, MergeRows, MixedFormatRowLevelWrite}
+import org.apache.amoro.spark.sql.utils.{FieldReference, ProjectingInternalRow, WriteQueryProjections}
+import org.apache.amoro.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
+import org.apache.amoro.spark.table.MixedSparkTable
+import org.apache.amoro.spark.writer.WriteMode
 
 case class RewriteMixedFormatMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] {
 

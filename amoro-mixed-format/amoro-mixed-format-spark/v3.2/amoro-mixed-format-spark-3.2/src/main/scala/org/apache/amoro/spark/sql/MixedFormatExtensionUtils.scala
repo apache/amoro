@@ -20,8 +20,6 @@ package org.apache.amoro.spark.sql
 
 import scala.collection.JavaConverters.seqAsJavaList
 
-import org.apache.amoro.spark.{MixedFormatSparkCatalog, MixedFormatSparkSessionCatalog}
-import org.apache.amoro.spark.table.{MixedSparkTable, SupportsRowLevelOperator, UnkeyedSparkTable}
 import org.apache.iceberg.spark.Spark3Util
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -30,6 +28,9 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, Subque
 import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier, Table, TableCatalog}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.{ArrayType, MapType, StructField, StructType}
+
+import org.apache.amoro.spark.{MixedFormatSparkCatalog, MixedFormatSparkSessionCatalog}
+import org.apache.amoro.spark.table.{MixedSparkTable, SupportsRowLevelOperator, UnkeyedSparkTable}
 
 object MixedFormatExtensionUtils {
 

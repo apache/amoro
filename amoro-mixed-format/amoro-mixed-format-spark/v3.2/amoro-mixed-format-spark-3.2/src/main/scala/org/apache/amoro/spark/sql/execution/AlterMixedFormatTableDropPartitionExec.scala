@@ -20,8 +20,6 @@ package org.apache.amoro.spark.sql.execution
 
 import java.util
 
-import org.apache.amoro.op.OverwriteBaseFiles
-import org.apache.amoro.spark.table.{MixedSparkTable, UnkeyedSparkTable}
 import org.apache.iceberg.spark.SparkFilters
 import org.apache.spark.sql.amoro.catalyst.ExpressionHelper
 import org.apache.spark.sql.catalyst.InternalRow
@@ -30,6 +28,9 @@ import org.apache.spark.sql.catalyst.expressions.{And, Attribute, AttributeRefer
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.execution.datasources.v2.LeafV2CommandExec
 import org.apache.spark.sql.types._
+
+import org.apache.amoro.op.OverwriteBaseFiles
+import org.apache.amoro.spark.table.{MixedSparkTable, UnkeyedSparkTable}
 
 case class AlterMixedFormatTableDropPartitionExec(
     table: Table,

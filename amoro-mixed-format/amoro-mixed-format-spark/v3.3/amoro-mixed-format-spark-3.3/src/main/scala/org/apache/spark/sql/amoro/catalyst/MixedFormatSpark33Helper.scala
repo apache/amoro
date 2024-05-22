@@ -20,9 +20,6 @@ package org.apache.spark.sql.amoro.catalyst
 
 import java.util.UUID
 
-import org.apache.amoro.data.PrimaryKeyData
-import org.apache.amoro.spark.SparkInternalRowWrapper
-import org.apache.amoro.spark.sql.connector.expressions.FileIndexBucket
 import org.apache.iceberg.Schema
 import org.apache.iceberg.spark.SparkSchemaUtil
 import org.apache.spark.sql.{catalyst, connector, AnalysisException}
@@ -34,6 +31,10 @@ import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.connector.expressions._
 import org.apache.spark.sql.connector.write.{ExtendedLogicalWriteInfoImpl, WriteBuilder}
 import org.apache.spark.sql.types.{DataType, LongType, StructType}
+
+import org.apache.amoro.data.PrimaryKeyData
+import org.apache.amoro.spark.SparkInternalRowWrapper
+import org.apache.amoro.spark.sql.connector.expressions.FileIndexBucket
 
 object MixedFormatSpark33Helper extends SQLConfHelper {
 

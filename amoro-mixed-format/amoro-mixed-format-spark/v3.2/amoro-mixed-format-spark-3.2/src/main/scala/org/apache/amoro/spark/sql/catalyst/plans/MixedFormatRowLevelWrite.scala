@@ -18,10 +18,11 @@
 
 package org.apache.amoro.spark.sql.catalyst.plans
 
-import org.apache.amoro.spark.sql.utils.WriteQueryProjections
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan, V2WriteCommandLike}
 import org.apache.spark.sql.connector.write.Write
+
+import org.apache.amoro.spark.sql.utils.WriteQueryProjections
 
 case class MixedFormatRowLevelWrite(
     table: NamedRelation,

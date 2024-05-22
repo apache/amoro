@@ -18,9 +18,6 @@
 
 package org.apache.amoro.spark.sql.execution
 
-import org.apache.amoro.spark.sql.utils.WriteQueryProjections
-import org.apache.amoro.spark.table.MixedSparkTable
-import org.apache.amoro.spark.writer.RowLevelWriter
 import org.apache.spark.SparkException
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
@@ -28,6 +25,10 @@ import org.apache.spark.sql.connector.write.Write
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.{ExtendedV2ExistingTableWriteExec, WritingSparkTask}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
+
+import org.apache.amoro.spark.sql.utils.WriteQueryProjections
+import org.apache.amoro.spark.table.MixedSparkTable
+import org.apache.amoro.spark.writer.RowLevelWriter
 
 /**
  * Physical plan node to write a delta of rows to an existing table.

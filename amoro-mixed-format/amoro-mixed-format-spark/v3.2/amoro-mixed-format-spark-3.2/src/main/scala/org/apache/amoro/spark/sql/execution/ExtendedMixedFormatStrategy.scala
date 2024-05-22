@@ -20,8 +20,6 @@ package org.apache.amoro.spark.sql.execution
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
-import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.{isMixedFormatTable, MixedFormatTableHelper}
-import org.apache.amoro.spark.sql.catalyst.plans._
 import org.apache.spark.sql.{SparkSession, Strategy}
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
 import org.apache.spark.sql.catalyst.expressions.PredicateHelper
@@ -29,6 +27,9 @@ import org.apache.spark.sql.catalyst.plans.logical.{DescribeRelation, LogicalPla
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
+
+import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.{isMixedFormatTable, MixedFormatTableHelper}
+import org.apache.amoro.spark.sql.catalyst.plans._
 
 case class ExtendedMixedFormatStrategy(spark: SparkSession) extends Strategy with PredicateHelper {
 

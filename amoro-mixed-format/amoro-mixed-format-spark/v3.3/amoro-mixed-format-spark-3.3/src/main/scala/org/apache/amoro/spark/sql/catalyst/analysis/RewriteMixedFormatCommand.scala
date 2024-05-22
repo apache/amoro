@@ -18,13 +18,6 @@
 
 package org.apache.amoro.spark.sql.catalyst.analysis
 
-import org.apache.amoro.spark.{MixedFormatSparkCatalog, MixedFormatSparkSessionCatalog}
-import org.apache.amoro.spark.mixed.MixedSessionCatalogBase
-import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.buildCatalogAndIdentifier
-import org.apache.amoro.spark.sql.catalyst.plans.{AlterMixedFormatTableDropPartition, TruncateMixedFormatTable}
-import org.apache.amoro.spark.table.MixedSparkTable
-import org.apache.amoro.spark.writer.WriteMode
-import org.apache.amoro.table.KeyedTable
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{ResolvedDBObjectName, ResolvedTable}
@@ -32,6 +25,14 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.TableCatalog
 import org.apache.spark.sql.execution.command.CreateTableLikeCommand
+
+import org.apache.amoro.spark.{MixedFormatSparkCatalog, MixedFormatSparkSessionCatalog}
+import org.apache.amoro.spark.mixed.MixedSessionCatalogBase
+import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.buildCatalogAndIdentifier
+import org.apache.amoro.spark.sql.catalyst.plans.{AlterMixedFormatTableDropPartition, TruncateMixedFormatTable}
+import org.apache.amoro.spark.table.MixedSparkTable
+import org.apache.amoro.spark.writer.WriteMode
+import org.apache.amoro.table.KeyedTable
 
 /**
  * Rule for rewrite some spark commands to mixed-format's implementation.

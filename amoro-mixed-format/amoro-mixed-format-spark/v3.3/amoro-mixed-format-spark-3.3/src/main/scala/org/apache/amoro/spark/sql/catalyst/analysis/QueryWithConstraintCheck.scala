@@ -18,11 +18,6 @@
 
 package org.apache.amoro.spark.sql.catalyst.analysis
 
-import org.apache.amoro.spark.{MixedFormatSparkCatalog, MixedFormatSparkSessionCatalog}
-import org.apache.amoro.spark.mixed.SparkSQLProperties
-import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.isKeyedRelation
-import org.apache.amoro.spark.sql.catalyst.plans.QueryWithConstraintCheckPlan
-import org.apache.amoro.spark.table.MixedSparkTable
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.ResolvedDBObjectName
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, EqualNullSafe, Expression, GreaterThan, Literal}
@@ -32,6 +27,12 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.execution.datasources.DataSourceAnalysis.resolver
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
+
+import org.apache.amoro.spark.{MixedFormatSparkCatalog, MixedFormatSparkSessionCatalog}
+import org.apache.amoro.spark.mixed.SparkSQLProperties
+import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.isKeyedRelation
+import org.apache.amoro.spark.sql.catalyst.plans.QueryWithConstraintCheckPlan
+import org.apache.amoro.spark.table.MixedSparkTable
 
 case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPlan] {
 
