@@ -96,7 +96,7 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan]
 
     def toCatalyst(expr: Expr): Expression = sparkAdapter.expressions().toCatalyst(expr, query)
 
-    val mixedTable = mixedTable match {
+    val mixedTable = table match {
       case t: MixedSparkTable => t.table()
       case t: UnkeyedSparkTable => t.table()
     }
