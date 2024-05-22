@@ -77,6 +77,7 @@ limitations under the License.
 </template>
 
 <script lang="ts">
+import { message } from 'ant-design-vue'
 import { computed, defineComponent, onMounted, reactive } from 'vue'
 import loginService from '@/services/login.service'
 import { useRouter } from 'vue-router'
