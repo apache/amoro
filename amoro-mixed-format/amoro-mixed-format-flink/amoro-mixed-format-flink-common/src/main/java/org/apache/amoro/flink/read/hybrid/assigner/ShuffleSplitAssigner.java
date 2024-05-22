@@ -20,9 +20,9 @@ package org.apache.amoro.flink.read.hybrid.assigner;
 
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyedFile;
-import org.apache.amoro.flink.read.hybrid.enumerator.ArcticSourceEnumState;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplitState;
+import org.apache.amoro.flink.read.hybrid.enumerator.MixedFormatSourceEnumState;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplitState;
 import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
@@ -54,7 +54,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   private static final Logger LOG = LoggerFactory.getLogger(ShuffleSplitAssigner.class);
 
   private static final long POLL_TIMEOUT = 200;
-  private final SplitEnumeratorContext<ArcticSplit> enumeratorContext;
+  private final SplitEnumeratorContext<MixedFormatSplit> enumeratorContext;
 
   private int totalParallelism;
   private int totalSplitNum;
@@ -62,17 +62,17 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   private final Object lock = new Object();
 
   /**
-   * Key is the partition data and file index of the arctic file, Value is flink application
+   * Key is the partition data and file index of the mixed-format file, Value is flink application
    * subtaskId.
    */
   private final Map<Long, Integer> partitionIndexSubtaskMap;
-  /** Key is subtaskId, Value is the queue of unAssigned arctic splits. */
-  private final Map<Integer, PriorityBlockingQueue<ArcticSplit>> subtaskSplitMap;
+  /** Key is subtaskId, Value is the queue of unAssigned mixed-format splits. */
+  private final Map<Integer, PriorityBlockingQueue<MixedFormatSplit>> subtaskSplitMap;
 
   private CompletableFuture<Void> availableFuture;
 
   @VisibleForTesting
-  public ShuffleSplitAssigner(SplitEnumeratorContext<ArcticSplit> enumeratorContext) {
+  public ShuffleSplitAssigner(SplitEnumeratorContext<MixedFormatSplit> enumeratorContext) {
     this.enumeratorContext = enumeratorContext;
     this.totalParallelism = enumeratorContext.currentParallelism();
     this.partitionIndexSubtaskMap = new ConcurrentHashMap<>();
@@ -80,21 +80,21 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   }
 
   public ShuffleSplitAssigner(
-      SplitEnumeratorContext<ArcticSplit> enumeratorContext,
+      SplitEnumeratorContext<MixedFormatSplit> enumeratorContext,
       String tableName,
-      @Nullable ArcticSourceEnumState enumState) {
+      @Nullable MixedFormatSourceEnumState enumState) {
     this.enumeratorContext = enumeratorContext;
     this.partitionIndexSubtaskMap = new ConcurrentHashMap<>();
     this.subtaskSplitMap = new ConcurrentHashMap<>();
     if (enumState == null) {
       this.totalParallelism = enumeratorContext.currentParallelism();
       LOG.info(
-          "Arctic source enumerator current parallelism is {} for table {}",
+          "Mixed-format source enumerator current parallelism is {} for table {}",
           totalParallelism,
           tableName);
     } else {
       LOG.info(
-          "Arctic source restored {} splits from state for table {}",
+          "Mixed-format source restored {} splits from state for table {}",
           enumState.pendingSplits().size(),
           tableName);
       deserializePartitionIndex(
@@ -120,7 +120,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
         .orElseGet(isEmpty() ? Split::unavailable : Split::subtaskUnavailable);
   }
 
-  private Optional<ArcticSplit> getNextSplit(int subTaskId) {
+  private Optional<MixedFormatSplit> getNextSplit(int subTaskId) {
     int currentParallelism = enumeratorContext.currentParallelism();
     if (totalParallelism != currentParallelism) {
       throw new FlinkRuntimeException(
@@ -129,24 +129,25 @@ public class ShuffleSplitAssigner implements SplitAssigner {
               totalParallelism, currentParallelism));
     }
     if (subtaskSplitMap.containsKey(subTaskId)) {
-      PriorityBlockingQueue<ArcticSplit> queue = subtaskSplitMap.get(subTaskId);
+      PriorityBlockingQueue<MixedFormatSplit> queue = subtaskSplitMap.get(subTaskId);
 
-      ArcticSplit arcticSplit = null;
+      MixedFormatSplit mixedFormatSplit = null;
       try {
-        arcticSplit = queue.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS);
+        mixedFormatSplit = queue.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
         LOG.warn("interruptedException", e);
       }
-      if (arcticSplit == null) {
-        LOG.debug("Subtask {}, couldn't retrieve arctic source split in the queue.", subTaskId);
+      if (mixedFormatSplit == null) {
+        LOG.debug(
+            "Subtask {}, couldn't retrieve mixed-format source split in the queue.", subTaskId);
         return Optional.empty();
       } else {
         LOG.info(
-            "get next arctic split taskIndex {}, totalSplitNum {}, arcticSplit {}.",
-            arcticSplit.taskIndex(),
+            "get next mixed-format split taskIndex {}, totalSplitNum {}, mixed-format split {}.",
+            mixedFormatSplit.taskIndex(),
             totalSplitNum,
-            arcticSplit);
-        return Optional.of(arcticSplit);
+            mixedFormatSplit);
+        return Optional.of(mixedFormatSplit);
       }
     } else {
       LOG.debug(
@@ -156,21 +157,21 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   }
 
   @Override
-  public void onDiscoveredSplits(Collection<ArcticSplit> splits) {
-    splits.forEach(this::putArcticIntoQueue);
+  public void onDiscoveredSplits(Collection<MixedFormatSplit> splits) {
+    splits.forEach(this::putSplitIntoQueue);
     // only complete pending future if new splits are discovered
     completeAvailableFuturesIfNeeded();
   }
 
   @Override
-  public void onUnassignedSplits(Collection<ArcticSplit> splits) {
+  public void onUnassignedSplits(Collection<MixedFormatSplit> splits) {
     onDiscoveredSplits(splits);
   }
 
-  void putArcticIntoQueue(final ArcticSplit split) {
+  void putSplitIntoQueue(final MixedFormatSplit split) {
     List<DataTreeNode> exactlyTreeNodes = getExactlyTreeNodes(split);
 
-    PrimaryKeyedFile file = findAnyFileInArcticSplit(split);
+    PrimaryKeyedFile file = findAnyFileInSplit(split);
 
     for (DataTreeNode node : exactlyTreeNodes) {
       long partitionIndexKey = Math.abs(file.partition().toString().hashCode() + node.index());
@@ -184,9 +185,9 @@ public class ShuffleSplitAssigner implements SplitAssigner {
           node.index(),
           subtaskId);
 
-      PriorityBlockingQueue<ArcticSplit> queue =
+      PriorityBlockingQueue<MixedFormatSplit> queue =
           subtaskSplitMap.getOrDefault(subtaskId, new PriorityBlockingQueue<>());
-      ArcticSplit copiedSplit = split.copy();
+      MixedFormatSplit copiedSplit = split.copy();
       copiedSplit.modifyTreeNode(node);
       LOG.info("put split into queue: {}", copiedSplit);
       queue.add(copiedSplit);
@@ -196,14 +197,14 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   }
 
   @Override
-  public Collection<ArcticSplitState> state() {
-    List<ArcticSplitState> arcticSplitStates = new ArrayList<>();
+  public Collection<MixedFormatSplitState> state() {
+    List<MixedFormatSplitState> mixedFormatSplitStates = new ArrayList<>();
     subtaskSplitMap.forEach(
         (key, value) ->
-            arcticSplitStates.addAll(
-                value.stream().map(ArcticSplitState::new).collect(Collectors.toList())));
+            mixedFormatSplitStates.addAll(
+                value.stream().map(MixedFormatSplitState::new).collect(Collectors.toList())));
 
-    return arcticSplitStates;
+    return mixedFormatSplitStates;
   }
 
   @Override
@@ -218,7 +219,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
     if (subtaskSplitMap.isEmpty()) {
       return true;
     }
-    for (Map.Entry<Integer, PriorityBlockingQueue<ArcticSplit>> entry :
+    for (Map.Entry<Integer, PriorityBlockingQueue<MixedFormatSplit>> entry :
         subtaskSplitMap.entrySet()) {
       if (!entry.getValue().isEmpty()) {
         return false;
@@ -261,9 +262,9 @@ public class ShuffleSplitAssigner implements SplitAssigner {
 
   /**
    * Different data files may locate in different layers when multi snapshots are committed, so
-   * arctic source reading should consider emitting the records and keeping ordering. According to
-   * the dataTreeNode of the arctic split and the currentMaskOfTreeNode, return the exact tree node
-   * list which may move up or go down layers in the arctic tree.
+   * mixed-format source reading should consider emitting the records and keeping ordering.
+   * According to the dataTreeNode of the mixed-format split and the currentMaskOfTreeNode, return
+   * the exact tree node list which may move up or go down layers in the mixed-format tree.
    *
    * <pre>
    * |mask=0          o
@@ -273,11 +274,11 @@ public class ShuffleSplitAssigner implements SplitAssigner {
    * |mask=3  o     o  o     o
    * </pre>
    *
-   * @param arcticSplit Arctic split.
+   * @param mixedFormatSplit Mixed-format split.
    * @return The exact tree node list.
    */
-  public List<DataTreeNode> getExactlyTreeNodes(ArcticSplit arcticSplit) {
-    DataTreeNode dataTreeNode = arcticSplit.dataTreeNode();
+  public List<DataTreeNode> getExactlyTreeNodes(MixedFormatSplit mixedFormatSplit) {
+    DataTreeNode dataTreeNode = mixedFormatSplit.dataTreeNode();
     long mask = dataTreeNode.mask();
 
     synchronized (lock) {
@@ -306,26 +307,26 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   }
 
   /**
-   * In one arctic split, the partitions, mask and index of the files are the same.
+   * In one mixed-format split, the partitions, mask and index of the files are the same.
    *
-   * @param arcticSplit arctic source split
-   * @return anyone primary keyed file in the arcticSplit.
+   * @param mixedFormatSplit mixed-format source split
+   * @return anyone primary keyed file in the mixed-format split.
    */
-  private PrimaryKeyedFile findAnyFileInArcticSplit(ArcticSplit arcticSplit) {
+  private PrimaryKeyedFile findAnyFileInSplit(MixedFormatSplit mixedFormatSplit) {
     AtomicReference<PrimaryKeyedFile> file = new AtomicReference<>();
-    if (arcticSplit.isChangelogSplit()) {
-      List<MixedFileScanTask> arcticSplits =
-          new ArrayList<>(arcticSplit.asChangelogSplit().insertTasks());
-      arcticSplits.addAll(arcticSplit.asChangelogSplit().deleteTasks());
-      arcticSplits.stream().findFirst().ifPresent(task -> file.set(task.file()));
+    if (mixedFormatSplit.isChangelogSplit()) {
+      List<MixedFileScanTask> mixedFileScanTasks =
+          new ArrayList<>(mixedFormatSplit.asChangelogSplit().insertTasks());
+      mixedFileScanTasks.addAll(mixedFormatSplit.asChangelogSplit().deleteTasks());
+      mixedFileScanTasks.stream().findFirst().ifPresent(task -> file.set(task.file()));
       if (file.get() != null) {
         return file.get();
       }
     }
 
-    List<MixedFileScanTask> arcticSplits =
-        new ArrayList<>(arcticSplit.asSnapshotSplit().insertTasks());
-    arcticSplits.stream().findFirst().ifPresent(task -> file.set(task.file()));
+    List<MixedFileScanTask> mixedFileScanTasks =
+        new ArrayList<>(mixedFormatSplit.asSnapshotSplit().insertTasks());
+    mixedFileScanTasks.stream().findFirst().ifPresent(task -> file.set(task.file()));
     if (file.get() != null) {
       return file.get();
     }

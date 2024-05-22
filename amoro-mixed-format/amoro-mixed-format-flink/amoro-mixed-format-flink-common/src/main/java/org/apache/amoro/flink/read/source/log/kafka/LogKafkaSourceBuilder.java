@@ -18,14 +18,14 @@
 
 package org.apache.amoro.flink.read.source.log.kafka;
 
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_GROUP_OFFSETS;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_SPECIFIC_OFFSETS;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_SPECIFIC_OFFSETS;
-import static org.apache.amoro.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SCAN_STARTUP_MODE;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SCAN_STARTUP_MODE_GROUP_OFFSETS;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SCAN_STARTUP_MODE_LATEST;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SCAN_STARTUP_MODE_SPECIFIC_OFFSETS;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SCAN_STARTUP_MODE_TIMESTAMP;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SCAN_STARTUP_SPECIFIC_OFFSETS;
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
 import static org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
 import static org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
 import static org.apache.amoro.table.TableProperties.LOG_STORE_ADDRESS;
@@ -33,7 +33,7 @@ import static org.apache.amoro.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
-import org.apache.amoro.flink.table.descriptors.ArcticValidator;
+import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.flink.api.connector.source.Boundedness;
@@ -68,7 +68,7 @@ import java.util.regex.Pattern;
  * {@link LogKafkaSource}.
  *
  * <pre>{@code
- * LogKafkaSource source = LogKafkaSource.builder(arcticSchema, configuration)
+ * LogKafkaSource source = LogKafkaSource.builder(mixedFormatSchema, configuration)
  *    .setTopics(Arrays.asList(TOPIC1))
  *    .setStartingOffsets(OffsetsInitializer.earliest())
  *    .setProperties(properties)
@@ -98,7 +98,7 @@ public class LogKafkaSourceBuilder {
 
   /**
    * @param schema read schema, only contains the selected fields
-   * @param tableProperties arctic table properties, maybe include Flink SQL hints.
+   * @param tableProperties mixed-format table properties, maybe include Flink SQL hints.
    */
   LogKafkaSourceBuilder(Schema schema, Map<String, String> tableProperties) {
     this.subscriber = null;
@@ -462,7 +462,7 @@ public class LogKafkaSourceBuilder {
         throw new ValidationException(
             String.format(
                 "%s only support '%s', '%s', '%s', '%s', '%s'. But input is '%s'",
-                ArcticValidator.SCAN_STARTUP_MODE,
+                MixedFormatValidator.SCAN_STARTUP_MODE,
                 SCAN_STARTUP_MODE_LATEST,
                 SCAN_STARTUP_MODE_EARLIEST,
                 SCAN_STARTUP_MODE_TIMESTAMP,

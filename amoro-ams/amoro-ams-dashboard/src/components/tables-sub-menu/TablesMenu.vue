@@ -86,14 +86,7 @@
 </template>
 
 <script lang="ts">
-import { Select as ASelect, InputSearch as AInputSearch } from 'ant-design-vue'
-
 import { defineComponent, onBeforeMount, reactive, toRefs, computed } from 'vue'
-import {
-  // PlusOutlined,
-  SearchOutlined,
-  CloseCircleOutlined
-} from '@ant-design/icons-vue'
 import CreateDBModal from './CreateDB.vue'
 import { useRoute, useRouter } from 'vue-router'
 import useStore from '@/store/index'
@@ -115,12 +108,8 @@ interface ITableItem {
 export default defineComponent({
   name: 'TablesMenu',
   components: {
-    // PlusOutlined,
-    SearchOutlined,
-    CloseCircleOutlined,
     CreateDBModal,
     virtualRecycleScroller,
-    ASelect
   },
   emits: ['goCreatePage'],
   setup(_, { emit }) {

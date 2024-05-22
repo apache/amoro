@@ -105,7 +105,6 @@ export default defineComponent ({
   justify-content: flex-start;
   align-items: center;
   padding: 10px 12px;
-  height: 40px;
   color: rgba(255,255,255,0.8);
   cursor: pointer;
   &.active,

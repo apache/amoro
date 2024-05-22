@@ -50,11 +50,8 @@ import { computed, defineComponent, nextTick, reactive, ref, toRefs, watchEffect
 import { useRoute, useRouter } from 'vue-router'
 import useStore from '@/store/index'
 import TableMenu from '@/components/tables-sub-menu/TablesMenu.vue'
-import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { getQueryString } from '@/utils'
-
-import { Menu as AMenu, MenuItem as AMenuItem, Button as AButton } from 'ant-design-vue'
 
 interface MenuItem {
   key: string
@@ -65,13 +62,7 @@ interface MenuItem {
 export default defineComponent({
   name: 'Sidebar',
   components: {
-    MenuFoldOutlined,
-    MenuUnfoldOutlined,
     TableMenu,
-
-    AMenu,
-    AMenuItem,
-    AButton
   },
   setup () {
     const { t } = useI18n()

@@ -20,7 +20,7 @@ package org.apache.amoro.flink.lookup;
 
 public class LookupMetrics {
 
-  public static final String GROUP_NAME_LOOKUP = "arctic_lookup";
+  public static final String GROUP_NAME_LOOKUP = "mixed_format_lookup";
   public static final String LOADING_TIME_MS = "lookup_loading_cost_ms";
   public static final String UNIQUE_CACHE_SIZE = "lookup_unique_index_cache_size";
   public static final String SECONDARY_CACHE_SIZE = "lookup_secondary_index_cache_size";

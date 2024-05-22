@@ -185,7 +185,7 @@ public class MockEnvironmentBuilder {
       this.ioManager = new IOManagerAsync();
     }
 
-    return new MockEnvironmentArctic(
+    return new MixedFormatMockEnvironment(
         this.jobID,
         this.jobVertexID,
         this.taskName,

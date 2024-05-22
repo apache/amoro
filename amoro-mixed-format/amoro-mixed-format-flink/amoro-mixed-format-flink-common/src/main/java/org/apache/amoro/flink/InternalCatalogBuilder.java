@@ -40,7 +40,7 @@ public class InternalCatalogBuilder implements Serializable {
   private String metastoreUrl;
   private Map<String, String> properties = new HashMap<>(0);
 
-  private MixedFormatCatalog createBaseArcticCatalog() {
+  private MixedFormatCatalog createMixedFormatCatalog() {
     Preconditions.checkArgument(
         StringUtils.isNotBlank(metastoreUrl),
         "metastoreUrl can not be empty. e.g: thrift://127.0.0.1:port/catalogName");
@@ -62,7 +62,7 @@ public class InternalCatalogBuilder implements Serializable {
   }
 
   public MixedFormatCatalog build() {
-    return createBaseArcticCatalog();
+    return createMixedFormatCatalog();
   }
 
   public InternalCatalogBuilder metastoreUrl(String metastoreUrl) {

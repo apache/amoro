@@ -18,9 +18,9 @@
 
 package org.apache.amoro.flink.read.hybrid.assigner;
 
-import org.apache.amoro.flink.read.hybrid.enumerator.ArcticSourceEnumState;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplit;
-import org.apache.amoro.flink.read.hybrid.split.ArcticSplitState;
+import org.apache.amoro.flink.read.hybrid.enumerator.MixedFormatSourceEnumState;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
+import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplitState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,14 +42,14 @@ public class StaticSplitAssigner implements SplitAssigner {
   private static final long POLL_TIMEOUT = 200;
   private int totalSplitNum;
 
-  private final PriorityBlockingQueue<ArcticSplit> splitQueue;
+  private final PriorityBlockingQueue<MixedFormatSplit> splitQueue;
 
   private CompletableFuture<Void> availableFuture;
 
-  public StaticSplitAssigner(@Nullable ArcticSourceEnumState enumState) {
+  public StaticSplitAssigner(@Nullable MixedFormatSourceEnumState enumState) {
     this.splitQueue = new PriorityBlockingQueue<>();
     if (enumState != null) {
-      Collection<ArcticSplitState> splitStates = enumState.pendingSplits();
+      Collection<MixedFormatSplitState> splitStates = enumState.pendingSplits();
       splitStates.forEach(
           state -> onDiscoveredSplits(Collections.singleton(state.toSourceSplit())));
     }
@@ -65,46 +65,47 @@ public class StaticSplitAssigner implements SplitAssigner {
     return getNext();
   }
 
-  private Optional<ArcticSplit> getNextSplit() {
-    ArcticSplit arcticSplit = null;
+  private Optional<MixedFormatSplit> getNextSplit() {
+    MixedFormatSplit mixedFormatSplit = null;
     try {
-      arcticSplit = splitQueue.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS);
+      mixedFormatSplit = splitQueue.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       LOG.warn("Interrupted when polling splits from the split queue", e);
     }
-    if (arcticSplit == null) {
-      LOG.debug("Couldn't retrieve arctic source split from the queue, as the queue is empty.");
+    if (mixedFormatSplit == null) {
+      LOG.debug(
+          "Couldn't retrieve mixed-format source split from the queue, as the queue is empty.");
       return Optional.empty();
     } else {
       LOG.info(
-          "Assigning the arctic split, task index is {}, total number of splits is {}, arctic split is {}.",
-          arcticSplit.taskIndex(),
+          "Assigning the mixed-format split, task index is {}, total number of splits is {}, mixed-format split is {}.",
+          mixedFormatSplit.taskIndex(),
           totalSplitNum,
-          arcticSplit);
-      return Optional.of(arcticSplit);
+          mixedFormatSplit);
+      return Optional.of(mixedFormatSplit);
     }
   }
 
   @Override
-  public void onDiscoveredSplits(Collection<ArcticSplit> splits) {
-    splits.forEach(this::putArcticIntoQueue);
+  public void onDiscoveredSplits(Collection<MixedFormatSplit> splits) {
+    splits.forEach(this::putSplitIntoQueue);
     totalSplitNum += splits.size();
     // only complete pending future if new splits are discovered
     completeAvailableFuturesIfNeeded();
   }
 
   @Override
-  public void onUnassignedSplits(Collection<ArcticSplit> splits) {
+  public void onUnassignedSplits(Collection<MixedFormatSplit> splits) {
     onDiscoveredSplits(splits);
   }
 
-  void putArcticIntoQueue(final ArcticSplit split) {
+  void putSplitIntoQueue(final MixedFormatSplit split) {
     splitQueue.put(split);
   }
 
   @Override
-  public Collection<ArcticSplitState> state() {
-    return splitQueue.stream().map(ArcticSplitState::new).collect(Collectors.toList());
+  public Collection<MixedFormatSplitState> state() {
+    return splitQueue.stream().map(MixedFormatSplitState::new).collect(Collectors.toList());
   }
 
   @Override

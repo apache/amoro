@@ -33,7 +33,7 @@ import org.apache.iceberg.types.Types;
 
 import java.io.Serializable;
 
-/** This helper operates to one arctic table and the data of the table. */
+/** This helper operates to one mixed-format table and the data of the table. */
 public class ShuffleHelper implements Serializable {
   private static final long serialVersionUID = 1L;
 
@@ -52,7 +52,7 @@ public class ShuffleHelper implements Serializable {
     if (table.spec() != null && !CollectionUtil.isNullOrEmpty(table.spec().fields())) {
       partitionKey = new PartitionKey(projectPartition(table.spec(), schema), schema);
     }
-    schema = addFieldsNotInArctic(schema, rowType);
+    schema = addFieldsNotInMixedFormat(schema, rowType);
 
     if (table.isUnkeyedTable()) {
       return new ShuffleHelper(rowType, schema.asStruct(), partitionKey);
@@ -69,14 +69,14 @@ public class ShuffleHelper implements Serializable {
   }
 
   /**
-   * If using arctic table as build table, there will be an additional implicit field, valuing
+   * If using mixed-format table as build table, there will be an additional implicit field, valuing
    * process time.
    *
-   * @param schema The physical schema in Arctic table.
+   * @param schema The physical schema in mixed-format table.
    * @param rowType Flink RowData type.
-   * @return the Arctic Schema with additional implicit field.
+   * @return the mixed-format Schema with additional implicit field.
    */
-  public static Schema addFieldsNotInArctic(Schema schema, RowType rowType) {
+  public static Schema addFieldsNotInMixedFormat(Schema schema, RowType rowType) {
     Types.NestedField[] nestedFields = new Types.NestedField[rowType.getFieldCount()];
 
     for (int i = 0; i < nestedFields.length; i++) {
@@ -86,7 +86,7 @@ public class ShuffleHelper implements Serializable {
         nestedFields[i] = nestedField;
       } else {
         // for now, there is only one case that virtual watermark exist in RowData, but not in
-        // Arctic table schema.
+        // mixed-format table schema.
         nestedFields[i] =
             Types.NestedField.optional(-1, field.getName(), Types.TimestampType.withoutZone());
       }
