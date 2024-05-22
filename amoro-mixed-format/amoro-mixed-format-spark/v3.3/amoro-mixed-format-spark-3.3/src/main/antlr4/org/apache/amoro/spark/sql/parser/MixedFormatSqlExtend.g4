@@ -14,7 +14,7 @@
  * This file is an adaptation of Presto's presto-parser/src/main/antlr4/com/facebook/presto/sql/parser/SqlBase.g4 grammar.
  */
 
-grammar ArcticSqlExtend;
+grammar MixedFormatSqlExtend;
 
 @parser::members {
   /**
