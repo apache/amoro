@@ -49,7 +49,7 @@ export default defineComponent ({
     RecycleScroller
   },
   emits: ['mouseEnter', 'handleClickTable'],
-  setup(props, { emit }) {
+  setup(_, { emit }) {
     const handleMouseEnter = (item: IMap<string>) => {
       emit('mouseEnter', item.label)
     }

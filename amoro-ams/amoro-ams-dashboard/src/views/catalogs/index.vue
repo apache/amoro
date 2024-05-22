@@ -43,7 +43,7 @@ import Detail from './Detail.vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 
-import { Modal, Button as AButton, Empty as AEmpty } from 'ant-design-vue'
+import { Modal, Empty as AEmpty } from 'ant-design-vue'
 
 const { t } = useI18n()
 const router = useRouter()

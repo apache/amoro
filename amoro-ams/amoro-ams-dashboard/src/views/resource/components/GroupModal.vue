@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -18,46 +17,20 @@ limitations under the License.
 /-->
 
 <template>
-  <a-modal
-    :visible="true"
-    :title="edit ? $t('editgroup') : $t('addgroup')"
-    :confirmLoading="confirmLoading"
-    :closable="false"
-    class="group-modal"
-    @ok="handleOk"
-    @cancel="handleCancel"
-  >
+  <a-modal :visible="true" :title="edit ? $t('editgroup') : $t('addgroup')" :confirmLoading="confirmLoading"
+    :closable="false" class="group-modal" @ok="handleOk" @cancel="handleCancel">
     <a-form ref="formRef" :model="formState" class="label-120">
-      <a-form-item
-        name="name"
-        :label="$t('name')"
-        :rules="[{ required: true, message: `${placeholder.groupNamePh}` }]"
-      >
-        <a-input
-          v-model:value="formState.name"
-          :placeholder="placeholder.groupNamePh"
-          :disabled="edit"
-        />
+      <a-form-item name="name" :label="$t('name')" :rules="[{ required: true, message: `${placeholder.groupNamePh}` }]">
+        <a-input v-model:value="formState.name" :placeholder="placeholder.groupNamePh" :disabled="edit" />
       </a-form-item>
-      <a-form-item
-        name="container"
-        :label="$t('container')"
-        :rules="[{ required: true, message: `${placeholder.groupContainer}` }]"
-      >
-        <a-select
-          v-model:value="formState.container"
-          :showSearch="true"
-          :options="selectList.containerList"
-          :placeholder="placeholder.groupContainer"
-        />
+      <a-form-item name="container" :label="$t('container')"
+        :rules="[{ required: true, message: `${placeholder.groupContainer}` }]">
+        <a-select v-model:value="formState.container" :showSearch="true" :options="selectList.containerList"
+          :placeholder="placeholder.groupContainer" />
       </a-form-item>
       <a-form-item :label="$t('properties')"> </a-form-item>
       <a-form-item>
-        <Properties
-          :propertiesObj="formState.properties"
-          :isEdit="true"
-          ref="propertiesRef"
-        />
+        <Properties :propertiesObj="formState.properties" :isEdit="true" ref="propertiesRef" />
       </a-form-item>
     </a-form>
   </a-modal>
@@ -74,7 +47,7 @@ import {
 } from '@/services/optimize.service'
 import Properties from '@/views/catalogs/Properties.vue'
 
-import { message, Modal as AModal, Select as ASelect, Input as AInput, Form as AForm, FormItem as AFormItem  } from 'ant-design-vue'
+import { message, Modal as AModal } from 'ant-design-vue'
 
 import { useI18n } from 'vue-i18n'
 

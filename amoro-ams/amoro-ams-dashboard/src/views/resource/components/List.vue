@@ -63,7 +63,7 @@ import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
 import { mbToSize, dateFormat } from '@/utils'
 
-import { message, Modal, Table as ATable } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 
 import { useRouter } from 'vue-router'
 import ScaleOut from '@/views/resource/components/ScaleOut.vue'
