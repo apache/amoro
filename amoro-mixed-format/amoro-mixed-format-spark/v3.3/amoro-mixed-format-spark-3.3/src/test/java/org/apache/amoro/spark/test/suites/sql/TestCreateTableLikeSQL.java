@@ -158,7 +158,7 @@ public class TestCreateTableLikeSQL extends MixedTableTestBase {
     sql("CREATE TABLE " + target() + " LIKE " + source() + " " + provider);
     Assertions.assertEquals(expectCreate, tableExists());
     if (!expectCreate) {
-      // not an arctic table.
+      // not a mixed-format table.
       TestIdentifier target = target();
       CONTEXT.dropHiveTable(target.database, target.table);
     }

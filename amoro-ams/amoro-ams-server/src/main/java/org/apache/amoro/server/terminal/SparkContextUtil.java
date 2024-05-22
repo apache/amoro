@@ -32,10 +32,11 @@ public class SparkContextUtil {
   public static final String MIXED_FORMAT_EXTENSION =
       "org.apache.amoro.spark.ArcticSparkExtensions";
   public static final String ICEBERG_CATALOG = "org.apache.iceberg.spark.SparkCatalog";
-  public static final String MIXED_FORMAT_CATALOG = "org.apache.amoro.spark.ArcticSparkCatalog";
+  public static final String MIXED_FORMAT_CATALOG =
+      "org.apache.amoro.spark.MixedFormatSparkCatalog";
   public static final String PAIMON_CATALOG = "org.apache.paimon.spark.SparkCatalog";
   public static final String MIXED_FORMAT_SESSION_CATALOG =
-      "org.apache.amoro.spark.ArcticSparkSessionCatalog";
+      "org.apache.amoro.spark.MixedFormatSparkSessionCatalog";
   public static final String UNIFIED_SESSION_CATALOG =
       "org.apache.amoro.spark.SparkUnifiedSessionCatalog";
   public static final String UNIFIED_CATALOG = "org.apache.amoro.spark.SparkUnifiedCatalog";

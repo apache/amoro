@@ -121,7 +121,8 @@ public abstract class MixedSparkCatalogBase
   @Override
   public void createNamespace(String[] namespace, Map<String, String> metadata) {
     if (namespace.length > 1) {
-      throw new UnsupportedOperationException("arctic does not support multi-level namespace.");
+      throw new UnsupportedOperationException(
+          "mixed-format does not support multi-level namespace.");
     }
     String database = namespace[0];
     catalog.createDatabase(database);
@@ -200,7 +201,7 @@ public abstract class MixedSparkCatalogBase
         "database is not specific, table identifier: " + identifier.name());
     Preconditions.checkArgument(
         identifier.namespace() != null && identifier.namespace().length == 1,
-        "arctic does not support multi-level namespace: "
+        "mixed-format does not support multi-level namespace: "
             + Joiner.on(".").join(identifier.namespace()));
     return TableIdentifier.of(
         catalog.name(), identifier.namespace()[0].split("\\.")[0], identifier.name());
@@ -212,7 +213,7 @@ public abstract class MixedSparkCatalogBase
         "database is not specific, table identifier: " + identifier.name());
     Preconditions.checkArgument(
         identifier.namespace().length == 2,
-        "arctic does not support multi-level namespace: "
+        "mixed-format does not support multi-level namespace: "
             + Joiner.on(".").join(identifier.namespace()));
 
     return TableIdentifier.of(catalog.name(), identifier.namespace()[0], identifier.namespace()[1]);

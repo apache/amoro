@@ -262,13 +262,13 @@ public class SparkParquetReaders {
       switch (primitive.getPrimitiveTypeName()) {
         case FIXED_LEN_BYTE_ARRAY:
         case BINARY:
-          // Change For Arctic ⬇
+          // Change for mixed-format table ⬇
           if (expected == Types.StringType.get()) {
             return new StringReader(desc);
           } else {
             return new ParquetValueReaders.ByteArrayReader(desc);
           }
-          // Change For Arctic ⬆
+          // Change for mixed-format table ⬆
         case INT32:
           if (expected != null && expected.typeId() == org.apache.iceberg.types.Type.TypeID.LONG) {
             return new ParquetValueReaders.IntAsLongReader(desc);

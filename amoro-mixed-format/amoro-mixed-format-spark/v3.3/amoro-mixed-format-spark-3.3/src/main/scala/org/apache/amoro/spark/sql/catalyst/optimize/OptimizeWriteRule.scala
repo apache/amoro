@@ -20,9 +20,9 @@ package org.apache.amoro.spark.sql.catalyst.optimize
 
 import org.apache.amoro.spark.SupportSparkAdapter
 import org.apache.amoro.spark.mixed.SparkSQLProperties
-import org.apache.amoro.spark.sql.ArcticExtensionUtils.{isArcticIcebergRelation, isArcticRelation}
-import org.apache.amoro.spark.sql.catalyst.plans.ArcticRowLevelWrite
-import org.apache.amoro.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
+import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.{isMixedFormatRelation, isUnkeyedRelation}
+import org.apache.amoro.spark.sql.catalyst.plans.MixedFormatRowLevelWrite
+import org.apache.amoro.spark.table.{MixedSparkTable, UnkeyedSparkTable}
 import org.apache.amoro.spark.util.DistributionAndOrderingUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Expression, SortOrder}
@@ -46,35 +46,35 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan]
   // write update_before and update_after in same time.
   def optimizeWritePlan(plan: LogicalPlan): LogicalPlan = plan transformDown {
     case o @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, writeOptions, _, _)
-        if isArcticRelation(r) =>
+        if isMixedFormatRelation(r) =>
       val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
       val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
       o.copy(query = newQuery, writeOptions = options)
 
     case o @ OverwriteByExpression(r: DataSourceV2Relation, _, query, writeOptions, _, _)
-        if isArcticRelation(r) =>
+        if isMixedFormatRelation(r) =>
       val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
       val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
       o.copy(query = newQuery, writeOptions = options)
 
     case a @ AppendData(r: DataSourceV2Relation, query, writeOptions, _, _)
-        if isArcticRelation(r) =>
+        if isMixedFormatRelation(r) =>
       val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
       val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
       a.copy(query = newQuery, writeOptions = options)
 
     case a @ AppendData(r: DataSourceV2Relation, query, _, _, _)
-        if isArcticIcebergRelation(r) =>
+        if isUnkeyedRelation(r) =>
       val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
       a.copy(query = newQuery)
 
     case o @ OverwriteByExpression(r: DataSourceV2Relation, _, query, _, _, _)
-        if isArcticIcebergRelation(r) =>
+        if isUnkeyedRelation(r) =>
       val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
       o.copy(query = newQuery)
 
     case o @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, _, _, _)
-        if isArcticIcebergRelation(r) =>
+        if isUnkeyedRelation(r) =>
       val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
       o.copy(query = newQuery)
   }
@@ -95,13 +95,13 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan]
 
     def toCatalyst(expr: Expr): Expression = sparkAdapter.expressions().toCatalyst(expr, query)
 
-    val arcticTable = table match {
-      case t: ArcticSparkTable => t.table()
-      case t: ArcticIcebergSparkTable => t.table()
+    val mixedTable = mixedTable match {
+      case t: MixedSparkTable => t.table()
+      case t: UnkeyedSparkTable => t.table()
     }
 
     val distribution =
-      DistributionAndOrderingUtil.buildTableRequiredDistribution(arcticTable, writeBase)
+      DistributionAndOrderingUtil.buildTableRequiredDistribution(mixedTable, writeBase)
         .toSeq.map(e => toCatalyst(e))
         .asInstanceOf[Seq[Expression]]
 
@@ -114,7 +114,7 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan]
     }
 
     val orderingExpressions = DistributionAndOrderingUtil.buildTableRequiredSortOrder(
-      arcticTable,
+      mixedTable,
       rowLevelOperation,
       writeBase)
     val ordering = orderingExpressions.toSeq

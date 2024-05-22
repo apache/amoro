@@ -44,10 +44,10 @@ import java.util.Map;
 public class SparkTestContext {
 
   public static final String SESSION_CATALOG_IMPL =
-      "org.apache.amoro.spark.ArcticSparkSessionCatalog";
-  public static final String MIXED_CATALOG_IMPL = "org.apache.amoro.spark.ArcticSparkCatalog";
+      "org.apache.amoro.spark.MixedFormatSparkSessionCatalog";
+  public static final String MIXED_CATALOG_IMPL = "org.apache.amoro.spark.MixedFormatSparkCatalog";
   public static final String SQL_EXTENSIONS_IMPL =
-      "org.apache.amoro.spark.ArcticSparkExtensions"
+      "org.apache.amoro.spark.MixedFormatExtensions"
           + ",org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions";
 
   public static final String UNIFIED_CATALOG_IMP = SparkUnifiedCatalog.class.getName();
@@ -250,7 +250,7 @@ public class SparkTestContext {
       cleanLocalSparkContext();
 
       SparkConf sparkconf =
-          new SparkConf().setAppName("arctic-spark-unit-tests").setMaster("local[*]");
+          new SparkConf().setAppName("mixed-format-spark-unit-tests").setMaster("local[*]");
       sparkConf.forEach(sparkconf::set);
       spark = SparkSession.builder().config(sparkconf).getOrCreate();
       spark.sparkContext().setLogLevel("WARN");

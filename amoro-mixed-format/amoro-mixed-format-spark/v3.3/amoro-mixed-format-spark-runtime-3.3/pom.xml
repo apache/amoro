@@ -137,11 +137,6 @@
                                     <shadedPattern>
                                         org.apache.amoro.shade.org.apache.spark.sql.catalyst
                                     </shadedPattern>
-                                    <includes>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.Arctic*
-                                        </include>
-                                    </includes>
                                 </relocation>
 
                                 <relocation>

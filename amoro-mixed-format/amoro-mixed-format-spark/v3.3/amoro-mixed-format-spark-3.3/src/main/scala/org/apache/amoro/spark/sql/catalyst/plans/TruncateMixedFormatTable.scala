@@ -18,25 +18,11 @@
 
 package org.apache.amoro.spark.sql.catalyst.plans
 
-import org.apache.amoro.spark.command.{MigrateToMixedFormatCommand, MixedFormatSparkCommand}
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
-import org.apache.spark.sql.catalyst.util.truncatedString
 
-abstract class MixedFormatCommandLogicalPlan(command: MixedFormatSparkCommand) extends Command {
-  override def output: Seq[Attribute] = {
-    command.outputType().map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
-  }
-
-  override def simpleString(maxFields: Int): String = {
-    s"${command.name()}LogicPlan${truncatedString(output, "[", ",", "]", maxFields)} ${command.execInfo}"
-  }
-}
-
-case class MigrateToMixedFormatLogicalPlan(command: MigrateToMixedFormatCommand)
-  extends MixedFormatCommandLogicalPlan(command) {
-  override def children: Seq[LogicalPlan] = Nil
+case class TruncateMixedFormatTable(child: LogicalPlan) extends Command {
+  override def children: Seq[LogicalPlan] = child :: Nil
 
   override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
-      : LogicalPlan = null
+      : LogicalPlan = child
 }

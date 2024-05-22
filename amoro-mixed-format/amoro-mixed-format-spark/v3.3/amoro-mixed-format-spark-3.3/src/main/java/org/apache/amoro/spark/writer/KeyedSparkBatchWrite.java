@@ -64,7 +64,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite, Write {
+public class KeyedSparkBatchWrite implements MixedFormatSparkWriteBuilder.MixedFormatWrite, Write {
   private final KeyedTable table;
   private final StructType dsSchema;
 

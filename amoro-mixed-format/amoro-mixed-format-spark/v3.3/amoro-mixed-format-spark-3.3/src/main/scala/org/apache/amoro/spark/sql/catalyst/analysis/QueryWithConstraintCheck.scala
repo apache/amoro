@@ -18,11 +18,11 @@
 
 package org.apache.amoro.spark.sql.catalyst.analysis
 
-import org.apache.amoro.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
+import org.apache.amoro.spark.{MixedFormatSparkCatalog, MixedFormatSparkSessionCatalog}
 import org.apache.amoro.spark.mixed.SparkSQLProperties
-import org.apache.amoro.spark.sql.ArcticExtensionUtils.isArcticKeyedRelation
+import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.isKeyedRelation
 import org.apache.amoro.spark.sql.catalyst.plans.QueryWithConstraintCheckPlan
-import org.apache.amoro.spark.table.ArcticSparkTable
+import org.apache.amoro.spark.table.MixedSparkTable
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.ResolvedDBObjectName
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, EqualNullSafe, Expression, GreaterThan, Literal}
@@ -37,19 +37,19 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsUp {
     case a @ AppendData(r: DataSourceV2Relation, query, _, _, _)
-        if checkDuplicatesEnabled() && isArcticKeyedRelation(r) =>
+        if checkDuplicatesEnabled() && isKeyedRelation(r) =>
       val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
       val checkDataQuery = QueryWithConstraintCheckPlan(query, validateQuery)
       a.copy(query = checkDataQuery)
 
     case a @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, _, _, _)
-        if checkDuplicatesEnabled() && isArcticKeyedRelation(r) =>
+        if checkDuplicatesEnabled() && isKeyedRelation(r) =>
       val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
       val checkDataQuery = QueryWithConstraintCheckPlan(query, validateQuery)
       a.copy(query = checkDataQuery)
 
     case a @ OverwriteByExpression(r: DataSourceV2Relation, deleteExpr, query, _, _, _)
-        if checkDuplicatesEnabled() && isArcticKeyedRelation(r) =>
+        if checkDuplicatesEnabled() && isKeyedRelation(r) =>
       val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
       var finalExpr: Expression = deleteExpr
       deleteExpr match {
@@ -76,10 +76,10 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
 
   def isCreateKeyedTable(catalog: CatalogPlugin, tableSpec: TableSpec): Boolean = {
     catalog match {
-      case _: ArcticSparkCatalog =>
+      case _: MixedFormatSparkCatalog =>
         tableSpec.provider.isDefined && tableSpec.provider.get.equalsIgnoreCase(
           "arctic") && tableSpec.properties.contains("primary.keys")
-      case _: ArcticSparkSessionCatalog[_] =>
+      case _: MixedFormatSparkSessionCatalog[_] =>
         tableSpec.provider.isDefined && tableSpec.provider.get.equalsIgnoreCase(
           "arctic") && tableSpec.properties.contains("primary.keys")
       case _ =>
@@ -91,9 +91,9 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
       r: DataSourceV2Relation,
       query: LogicalPlan): LogicalPlan = {
     r.table match {
-      case arctic: ArcticSparkTable =>
-        if (arctic.table().isKeyedTable) {
-          val primaries = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
+      case mixedSparkTable: MixedSparkTable =>
+        if (mixedSparkTable.table().isKeyedTable) {
+          val primaries = mixedSparkTable.table().asKeyedTable().primaryKeySpec().fieldNames()
           val attributes = query.output.filter(p => primaries.contains(p.name))
           val aggSumCol = Alias(
             AggregateExpression(Count(Literal(1)), Complete, isDistinct = false),
