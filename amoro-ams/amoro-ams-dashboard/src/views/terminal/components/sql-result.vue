@@ -59,7 +59,6 @@ limitations under the License.
 <script lang="ts" setup>
 import { IDebugResult, debugResultBgcMap } from '@/types/common.type'
 import { computed } from 'vue'
-import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@ant-design/icons-vue'
 
 const props = defineProps<{ info: IDebugResult}>()
 

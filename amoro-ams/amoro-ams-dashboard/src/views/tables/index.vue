@@ -57,9 +57,6 @@ limitations under the License.
 </template>
 
 <script lang="ts">
-// TODO: replace to antv-4. After all replacements are completed, switch to automatic import.
-import { Tabs, TabPane, Divider } from 'ant-design-vue'
-
 import { defineComponent, reactive, toRefs, watch, shallowReactive, computed, onMounted, ref, nextTick } from 'vue'
 import UDetails from './components/Details.vue'
 import UFiles from './components/Files.vue'
@@ -78,10 +75,6 @@ export default defineComponent({
     UOperations,
     USnapshots,
     UOptimizing,
-
-    ATabs: Tabs,
-    ATabPane: TabPane,
-    ADivider: Divider
   },
   setup() {
     const router = useRouter()

@@ -24,9 +24,6 @@ import router from './router'
 import useStore from './store'
 import VueI18n from './language/i18n'
 
-// TODO： import the global style for v3. Will be removed after migrate to the ant-design-vue-v4
-import 'ant-design-vue-v3/dist/antd.css';
-
 import RegisterComponents from './components/register'
 
 import './styles/index.less'

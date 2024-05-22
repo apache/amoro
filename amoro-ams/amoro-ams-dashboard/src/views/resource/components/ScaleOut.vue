@@ -19,7 +19,7 @@ limitations under the License.
 
 <template>
   <a-modal
-    :visible="true"
+    :open="true"
     :title="$t('scaleOut')"
     :confirmLoading="confirmLoading"
     :closable="false"

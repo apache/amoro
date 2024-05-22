@@ -77,14 +77,12 @@ limitations under the License.
 </template>
 
 <script lang="ts">
+import { message } from 'ant-design-vue'
 import { computed, defineComponent, onMounted, reactive } from 'vue'
-import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
 import loginService from '@/services/login.service'
 import { useRouter } from 'vue-router'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import useStore from '@/store'
-
-import { message, Button as AButton, Input as AInput, InputPassword as AInputPassword, Form as AForm, FormItem as AFormItem } from 'ant-design-vue'
 
 interface FormState {
   username: string;
@@ -93,15 +91,6 @@ interface FormState {
 
 export default defineComponent({
   name: 'Login',
-  components: {
-    AButton,
-    AInput,
-    AInputPassword,
-    AForm,
-    AFormItem,
-    UserOutlined,
-    LockOutlined
-  },
   setup() {
     const router = useRouter()
     const formState = reactive<FormState>({
@@ -146,15 +135,15 @@ export default defineComponent({
 
 <style lang="less" scoped>
 .login-wrap {
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   margin: 0 auto;
-  // padding-top: 100px;
   display: flex;
   align-items: center;
-  background: #f5f6fa;
+  background: linear-gradient(to top right, #0036A1 0%, #fff 100%);
+
   .login-content {
-    width: 480px;
-    height: 490px;
+    width: 400px;
     border-radius: 16px;
     padding: 64px 60px;
     background: #ffffff;
@@ -193,14 +182,14 @@ export default defineComponent({
     }
   }
   .login-form-button {
-    margin-top: 66px;
+    margin-top: 36px;
     height: 48px;
     width: 100%;
     border-radius: 8px;
     color: #fff;
     border-color: transparent;
     &.ant-btn-primary {
-      background: #0036a1;
+      background: linear-gradient(to right, #2A72FF 0%, #0036A1 100%);
     }
     &.ant-btn-primary[disabled] {
       background: #cdcfd7;
