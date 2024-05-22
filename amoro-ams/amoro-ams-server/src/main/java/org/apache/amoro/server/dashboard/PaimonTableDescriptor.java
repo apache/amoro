@@ -47,8 +47,8 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.util.Pair;
-import org.apache.paimon.AbstractFileStore;
 import org.apache.paimon.CoreOptions;
+import org.apache.paimon.FileStore;
 import org.apache.paimon.Snapshot;
 import org.apache.paimon.data.BinaryRow;
 import org.apache.paimon.io.DataFileMeta;
@@ -101,7 +101,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public ServerTableMeta getTableDetail(AmoroTable<?> amoroTable) {
     FileStoreTable table = getTable(amoroTable);
-    AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
+    FileStore<?> store = table.store();
 
     ServerTableMeta serverTableMeta = new ServerTableMeta();
     serverTableMeta.setTableIdentifier(amoroTable.id());
@@ -191,7 +191,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
       snapshots = Collections.singleton(table.tagManager().taggedSnapshot(ref)).iterator();
     }
 
-    AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
+    FileStore<?> store = table.store();
     List<CompletableFuture<AmoroSnapshotsOfTable>> futures = new ArrayList<>();
     Predicate<Snapshot> predicate =
         operationType == OperationType.ALL
@@ -226,7 +226,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     FileStoreTable table = getTable(amoroTable);
     List<PartitionFileBaseInfo> amsDataFileInfos = new ArrayList<>();
     Snapshot snapshot = table.snapshotManager().snapshot(snapshotId);
-    AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
+    FileStore<?> store = table.store();
     FileStorePathFactory fileStorePathFactory = store.pathFactory();
     ManifestList manifestList = store.manifestListFactory().create();
     ManifestFile manifestFile = store.manifestFileFactory().create();
@@ -262,7 +262,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public List<PartitionBaseInfo> getTablePartitions(AmoroTable<?> amoroTable) {
     FileStoreTable table = getTable(amoroTable);
-    AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
+    FileStore<?> store = table.store();
     FileStorePathFactory fileStorePathFactory = store.pathFactory();
     List<ManifestEntry> files = store.newScan().plan().files(FileKind.ADD);
     Map<BinaryRow, Map<Integer, List<DataFileMeta>>> groupByPartFiles = groupByPartFiles(files);
@@ -294,7 +294,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   public List<PartitionFileBaseInfo> getTableFiles(
       AmoroTable<?> amoroTable, String partition, Integer specId) {
     FileStoreTable table = getTable(amoroTable);
-    AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
+    FileStore<?> store = table.store();
 
     // Cache file add snapshot id
     Map<DataFileMeta, Long> fileSnapshotIdMap = new ConcurrentHashMap<>();
@@ -364,7 +364,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     List<OptimizingProcessInfo> processInfoList = new ArrayList<>();
     TableIdentifier tableIdentifier = amoroTable.id();
     FileStoreTable fileStoreTable = (FileStoreTable) amoroTable.originalTable();
-    AbstractFileStore<?> store = (AbstractFileStore<?>) fileStoreTable.store();
+    FileStore<?> store = fileStoreTable.store();
     boolean isPrimaryTable = !fileStoreTable.primaryKeys().isEmpty();
     int maxLevel = CoreOptions.fromMap(fileStoreTable.options()).numLevels() - 1;
     int total;
@@ -447,7 +447,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @NotNull
-  private AmoroSnapshotsOfTable getSnapshotsOfTable(AbstractFileStore<?> store, Snapshot snapshot) {
+  private AmoroSnapshotsOfTable getSnapshotsOfTable(FileStore<?> store, Snapshot snapshot) {
     Map<String, String> summary = new HashMap<>();
     summary.put("commitUser", snapshot.commitUser());
     summary.put("commitIdentifier", String.valueOf(snapshot.commitIdentifier()));
@@ -520,7 +520,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   private AmoroSnapshotsOfTable manifestListInfo(
-      AbstractFileStore<?> store,
+      FileStore<?> store,
       Snapshot snapshot,
       BiFunction<ManifestList, Snapshot, List<ManifestFileMeta>> biFunction) {
     ManifestList manifestList = store.manifestListFactory().create();
@@ -560,7 +560,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     return partitionString + "/bucket-" + bucket;
   }
 
-  private String fullFilePath(AbstractFileStore<?> store, ManifestEntry manifestEntry) {
+  private String fullFilePath(FileStore<?> store, ManifestEntry manifestEntry) {
     return store
         .pathFactory()
         .createDataFilePathFactory(manifestEntry.partition(), manifestEntry.bucket())
