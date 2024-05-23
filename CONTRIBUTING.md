@@ -80,9 +80,16 @@ for reference.
 
 ## Building the Project Locally
 
-Amoro is built using Maven with Java 1.8 and Java 17(only for `amoro-mixed-format/amoro-mixed-format-trino` module).
+Amoro is built using Maven with JDK 8 and JDK 17(only for `amoro-mixed-format/amoro-mixed-format-trino` module).
 
-* To build Trino module need config `toolchains.xml` in `${user.home}/.m2/` dir, the content is
+* Build all modules without `amoro-mixed-format-trino`: `mvn clean package`
+* Build and skip tests: `mvn clean package -DskipTests `
+* Build with hadoop 2.x(the default is 3.x) dependencies: `mvn clean package -DskipTests -Dhadoop=v2`
+* Specify Flink version for Flink optimizer(the default is 1.18.1): `mvn clean package -DskipTests -Dflink-optimizer.flink-version=1.15.4`
+  * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-pre-1.15` parameter: `mvn clean package -DskipTests -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`
+* Specify Spark version for Spark optimizer(the default is 3.3.3): `mvn clean package -DskipTests -Dspark-optimizer.spark-version=3.2.2`
+* Build `amoro-mixed-format-trino` module under JDK 17: `mvn clean package -DskipTests -Ptrino-spotless,build-mixed-format-trino -pl 'amoro-mixed-format/amoro-mixed-format-trino' -am`.
+* To package all modules: `mvn clean package -DskipTests -Ptoolchain,build-mixed-format-trino`, besides you need config `toolchains.xml` in `${user.home}/.m2/` dir with content below.
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
@@ -99,18 +106,6 @@ Amoro is built using Maven with Java 1.8 and Java 17(only for `amoro-mixed-forma
     </toolchain>
 </toolchains>
 ```
-
-* To invoke a build and run tests: `mvn package -P toolchain`
-* To skip tests: `mvn -DskipTests package -P toolchain`
-* To package without trino module and JAVA 17 dependency: `mvn clean package -DskipTests`
-* To build with hadoop 2.x(the default is 3.x) `mvn clean package -DskipTests -Dhadoop=v2`
-* To indicate Flink version for optimizer (the default is 1.18.1): `mvn clean package -Dflink-optimizer.flink-version=1.15.4`. If the version of Flink is below 1.15.0, you also need to add the `-Pflink-pre-1.15` parameter: `mvn clean package -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`.
-  `mvn clean package -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6 -DskipTests`
-
->Spotless is skipped by default in `trino` module. So if you want to perform checkstyle when building `trino` module, you must be in a Java 17 environment.
-
-* To invoke a build include `amoro-mixed-format/amoro-mixed-format-trino` module in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless,build-mixed-format-trino`
-* To only build `amoro-mixed-format/amoro-mixed-format-trino` and its dependent modules in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless,build-mixed-format-trino -pl 'amoro-mixed-format/amoro-mixed-format-trino' -am`
 
 ## Code suggestions
 
