@@ -273,6 +273,9 @@
                                         <exclude>
                                             org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameterImpl
                                         </exclude>
+                                        <exclude>
+                                            org.apache.spark.sql.connector.iceberg.write.*
+                                        </exclude>
                                     </excludes>
                                 </relocation>
 
@@ -363,9 +366,6 @@
                                         </inlucde>
                                         <inlucde>
                                             org.apache.spark.sql.execution.datasources.v2.WriteDeltaExec*
-                                        </inlucde>
-                                        <inlucde>
-                                            org.apache.spark.sql.execution.datasources.v2.DeleteFromTableExec*
                                         </inlucde>
                                     </includes>
                                 </relocation>
