@@ -80,32 +80,7 @@ for reference.
 
 ## Building the Project Locally
 
-Amoro is built using Maven with JDK 8 and JDK 17(only for `amoro-mixed-format/amoro-mixed-format-trino` module).
-
-* Build all modules without `amoro-mixed-format-trino`: `mvn clean package`
-* Build and skip tests: `mvn clean package -DskipTests `
-* Build with hadoop 2.x(the default is 3.x) dependencies: `mvn clean package -DskipTests -Dhadoop=v2`
-* Specify Flink version for Flink optimizer(the default is 1.18.1): `mvn clean package -DskipTests -Dflink-optimizer.flink-version=1.15.4`
-  * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-pre-1.15` parameter: `mvn clean package -DskipTests -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`
-* Specify Spark version for Spark optimizer(the default is 3.3.3): `mvn clean package -DskipTests -Dspark-optimizer.spark-version=3.2.2`
-* Build `amoro-mixed-format-trino` module under JDK 17: `mvn clean package -DskipTests -Ptrino-spotless,build-mixed-format-trino -pl 'amoro-mixed-format/amoro-mixed-format-trino' -am`.
-* To package all modules: `mvn clean package -DskipTests -Ptoolchain,build-mixed-format-trino`, besides you need config `toolchains.xml` in `${user.home}/.m2/` dir with content below.
-
-```
-<?xml version="1.0" encoding="UTF-8"?>
-<toolchains>
-    <toolchain>
-        <type>jdk</type>
-        <provides>
-            <version>17</version>
-            <vendor>sun</vendor>
-        </provides>
-        <configuration>
-            <jdkHome>${YourJDK17Home}</jdkHome>
-        </configuration>
-    </toolchain>
-</toolchains>
-```
+[Build Guide](https://github.com/apache/amoro?tab=readme-ov-file#building) can be found in GitHub readme.
 
 ## Code suggestions
 
