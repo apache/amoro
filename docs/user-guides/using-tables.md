@@ -217,7 +217,7 @@ DROP TABLE test_db.test_log_store;
 
 The current terminal is using the Spark engine to execute SQL. For more information about deleting tables, you can refer to  [Spark DDL](../spark-ddl/#drop-table).
 
-## Table metrics
+## Explore table details
 The Amoro Tables details page provides multiple tabs to display the status of the table from various dimensions, mainly including:
 
 | **Tab Name** | **Description**                                                                                                                                                                                                                                                                          |
@@ -232,7 +232,7 @@ The Amoro Tables details page provides multiple tabs to display the status of th
 
 ![table-optimize-history](../images/admin/table_optimizer_history.png)
 
-## Self-optimizing metrics
+## Explore self-optimizing status
 The Optimizing page displays self-optimizing status of all tables.
 ![optimizing-metrics](../images/admin/optimizer_metrics.png)
 
