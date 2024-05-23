@@ -55,111 +55,111 @@ public class TableOptimizingMetrics {
   // table optimizing status duration metrics
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_IDLE_DURATION =
       defineGauge("table_optimizing_status_idle_duration_mills")
-          .withDescription("Duration in seconds after table be in idle status")
+          .withDescription("Duration in milliseconds after table be in idle status")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_PENDING_DURATION =
       defineGauge("table_optimizing_status_pending_duration_mills")
-          .withDescription("Duration in seconds after table be in pending status")
+          .withDescription("Duration in milliseconds after table be in pending status")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_PLANNING_DURATION =
       defineGauge("table_optimizing_status_planning_duration_mills")
-          .withDescription("Duration in seconds after table be in planning status")
+          .withDescription("Duration in milliseconds after table be in planning status")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_EXECUTING_DURATION =
       defineGauge("table_optimizing_status_executing_duration_mills")
-          .withDescription("Duration in seconds after table be in executing status")
+          .withDescription("Duration in milliseconds after table be in executing status")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_COMMITTING_DURATION =
       defineGauge("table_optimizing_status_committing_duration_mills")
-          .withDescription("Duration in seconds after table be in committing status")
+          .withDescription("Duration in milliseconds after table be in committing status")
           .withTags("catalog", "database", "table")
           .build();
 
   // table optimizing process count metrics
   public static final MetricDefine TABLE_OPTIMIZING_PROCESS_TOTAL_COUNT =
       defineCounter("table_optimizing_process_total_count")
-          .withDescription("Count of all process since ams started")
+          .withDescription("Count of all optimizing process since ams started")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_PROCESS_FAILED_COUNT =
       defineCounter("table_optimizing_process_failed_count")
-          .withDescription("Count of failed process since ams started")
+          .withDescription("Count of failed optimizing process since ams started")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_MINOR_TOTAL_COUNT =
       defineCounter("table_optimizing_minor_total_count")
-          .withDescription("Count of minor process since ams started")
+          .withDescription("Count of minor optimizing process since ams started")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_MINOR_FAILED_COUNT =
       defineCounter("table_optimizing_minor_failed_count")
-          .withDescription("Count of failed minor process since ams started")
+          .withDescription("Count of failed minor optimizing process since ams started")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_MAJOR_TOTAL_COUNT =
       defineCounter("table_optimizing_major_total_count")
-          .withDescription("Count of major process since ams started")
+          .withDescription("Count of major optimizing process since ams started")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_MAJOR_FAILED_COUNT =
       defineCounter("table_optimizing_major_failed_count")
-          .withDescription("Count of failed major process since ams started")
+          .withDescription("Count of failed major optimizing process since ams started")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_FULL_TOTAL_COUNT =
       defineCounter("table_optimizing_full_total_count")
-          .withDescription("Count of full process since ams started")
+          .withDescription("Count of full optimizing process since ams started")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_FULL_FAILED_COUNT =
       defineCounter("table_optimizing_full_failed_count")
-          .withDescription("Count of failed full process since ams started")
+          .withDescription("Count of failed full optimizing process since ams started")
           .withTags("catalog", "database", "table")
           .build();
 
   // table optimizing process status metrics
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_IN_IDLE =
       defineGauge("table_optimizing_status_in_idle")
-          .withDescription("If currently table is in status idle")
+          .withDescription("If currently table is in idle status")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_IN_PENDING =
       defineGauge("table_optimizing_status_in_pending")
-          .withDescription("If currently table is in status pending")
+          .withDescription("If currently table is in pending status")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_IN_PLANNING =
       defineGauge("table_optimizing_status_in_planning")
-          .withDescription("If currently table is in status planning")
+          .withDescription("If currently table is in planning status")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_IN_EXECUTING =
       defineGauge("table_optimizing_status_in_executing")
-          .withDescription("If currently table is in status executing")
+          .withDescription("If currently table is in executing status")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_IN_COMMITTING =
       defineGauge("table_optimizing_status_in_committing")
-          .withDescription("If currently table is in status committing")
+          .withDescription("If currently table is in committing status")
           .withTags("catalog", "database", "table")
           .build();
 
@@ -175,7 +175,7 @@ public class TableOptimizingMetrics {
   private final ServerTableIdentifier identifier;
 
   private OptimizingStatus optimizingStatus;
-  private long stateSetTimestamp = System.currentTimeMillis();
+  private long statusSetTimestamp = System.currentTimeMillis();
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
   private MetricRegistry globalRegistry;
 
@@ -200,7 +200,7 @@ public class TableOptimizingMetrics {
 
   public void register(MetricRegistry registry) {
     if (globalRegistry == null) {
-      // register state duration metrics
+      // register status duration metrics
       registerMetric(
           registry, TABLE_OPTIMIZING_STATUS_IDLE_DURATION, new StatusDurationGauge(STATUS_IDLE));
       registerMetric(
@@ -252,14 +252,14 @@ public class TableOptimizingMetrics {
   }
 
   /**
-   * Handle table self optimizing state change event.
+   * Handle table self optimizing status change event.
    *
    * @param optimizingStatus new optimizing status
-   * @param stateSetTimestamp timestamp of status changed.
+   * @param statusSetTimestamp timestamp of status changed.
    */
-  public void statusChanged(OptimizingStatus optimizingStatus, long stateSetTimestamp) {
+  public void statusChanged(OptimizingStatus optimizingStatus, long statusSetTimestamp) {
     this.optimizingStatus = optimizingStatus;
-    this.stateSetTimestamp = stateSetTimestamp;
+    this.statusSetTimestamp = statusSetTimestamp;
   }
 
   /**
@@ -322,15 +322,15 @@ public class TableOptimizingMetrics {
 
     @Override
     public Long getValue() {
-      String state = getOptimizingStatusDesc(optimizingStatus);
-      if (targetStatus.equals(state)) {
-        return stateDuration();
+      String status = getOptimizingStatusDesc(optimizingStatus);
+      if (targetStatus.equals(status)) {
+        return statusDuration();
       }
       return 0L;
     }
 
-    private Long stateDuration() {
-      return System.currentTimeMillis() - stateSetTimestamp;
+    private Long statusDuration() {
+      return System.currentTimeMillis() - statusSetTimestamp;
     }
   }
 
@@ -343,8 +343,8 @@ public class TableOptimizingMetrics {
 
     @Override
     public Long getValue() {
-      String state = getOptimizingStatusDesc(optimizingStatus);
-      if (targetStatus.equals(state)) {
+      String status = getOptimizingStatusDesc(optimizingStatus);
+      if (targetStatus.equals(status)) {
         return 1L;
       }
       return 0L;

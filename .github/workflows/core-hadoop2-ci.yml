@@ -18,6 +18,7 @@ on:
       - "master"
       - "0.**"
     paths:
+      - ".github/workflows/**"
       - "amoro-ams/**"
       - "amoro-core/**"
       - "amoro-mixed-format/amoro-mixed-format-flink/**"
@@ -43,7 +44,7 @@ jobs:
         run: mvn validate
 
       - name: Build all module with Maven
-        run: mvn clean install -pl '!amoro-mixed-format/amoro-mixed-format-trino' -Djacoco.flink.skip=true -B -ntp -Dhadoop=v2
+        run: mvn clean install -Djacoco.flink.skip=true -B -ntp -Dhadoop=v2
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
