@@ -247,6 +247,6 @@ The Optimizing page displays self-optimizing status of all tables.
   - committing: means that self-optimizing process is being committed.
 - **Duration**: The duration of the current status.
 - **File Count**: The total number of files involved in the current Self-optimizing, including base, insert, eq-delete, and pos-delete file types.
-- **File Size**: The total size of files involved in the current Self-optimizing.
+- **File Size**: The total size of files involved in the current self-optimizing.
 - **Quota**: The proportion of self-optimizing execution time executed per unit time.
 - **Quota Occupation**: The actual Quota used for self-optimizing during execution of the table in the last hour. When optimizer resources are sufficient and the table requires more resources for self-optimizing, this value will be greater than 100%. When resources are scarce or the table requires fewer resources for self-optimizing, this value will be less than 100%.
