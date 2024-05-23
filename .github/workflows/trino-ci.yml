@@ -18,6 +18,7 @@ on:
       - "master"
       - "0.**"
     paths:
+      - ".github/workflows/**"
       - "amoro-ams/**"
       - "amoro-core/**"
       - "amoro-mixed-format/amoro-mixed-format-hive/**"
@@ -41,7 +42,7 @@ jobs:
         run: mvn validate -P trino-spotless
 
       - name: Build trino module with Maven
-        run: mvn clean install -pl 'amoro-mixed-format/amoro-mixed-format-trino' -Dhadoop=v2 -am -B -P trino-spotless
+        run: mvn clean install -pl 'amoro-mixed-format/amoro-mixed-format-trino' -Dhadoop=v2 -am -B -P trino-spotless,build-mixed-format-trino
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
