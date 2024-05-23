@@ -216,3 +216,37 @@ DROP TABLE test_db.test_log_store;
 ```
 
 The current terminal is using the Spark engine to execute SQL. For more information about deleting tables, you can refer to  [Spark DDL](../spark-ddl/#drop-table).
+
+## Explore table details
+The Amoro Tables details page provides multiple tabs to display the status of the table from various dimensions, mainly including:
+
+| **Tab Name** | **Description**                                                                                                                                                                                                                                                                          |
+|--------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Details      | Display the table's schema, primary key configuration, partition configuration, properties; as well as the metric information of the files stored in ChangeStore and BaseStore, including the number of files and average file size, as well as the latest submission time of the files. |
+| Files        | Display all partitions and files of the table.                                                                                                                                                                                                                                           |
+| Snapshots    | Display all snapshots of the table, which can be filtered by branch and tag.                                                                                                                                                                                                             |
+| Optimizing   | Display all the self-optimizing processes of the table, each record shows the number and average size of files before and after Optimize, as well as the execution time of each process.                                                                                                 |
+| Operations   | Display the current table's DDL historical change records.                                                                                                                                                                                                                               |
+
+![table-details](../images/admin/table_metrics.png)
+
+![table-optimize-history](../images/admin/table_optimizer_history.png)
+
+## Explore self-optimizing status
+The Optimizing page displays self-optimizing status of all tables.
+![optimizing-metrics](../images/admin/optimizer_metrics.png)
+
+
+- **Optimizing Status**: The current optimizing status of the table, including idle, pending, planning, minor, major, full, committing.
+  - idle: means that self-optimizing is not required on the table.
+  - pending: means that self-optimizing is required on the table and is waiting for resources.
+  - planning: means that self-optimizing process is being planed.
+  - minor: means that minor optimizing is being executed on the table. 
+  - major: means that major optimizing is being executed on the table.
+  - full: means that full optimizing is being executed on the table.
+  - committing: means that self-optimizing process is being committed.
+- **Duration**: The duration of the current status.
+- **File Count**: The total number of files involved in the current Self-optimizing, including base, insert, eq-delete, and pos-delete file types.
+- **File Size**: The total size of files involved in the current self-optimizing.
+- **Quota**: The proportion of self-optimizing execution time executed per unit time.
+- **Quota Occupation**: The actual Quota used for self-optimizing during execution of the table in the last hour. When optimizer resources are sufficient and the table requires more resources for self-optimizing, this value will be greater than 100%. When resources are scarce or the table requires fewer resources for self-optimizing, this value will be less than 100%.
