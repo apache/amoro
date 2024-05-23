@@ -63,7 +63,7 @@ If the Flink version in the amoro-ams/amoro-ams-optimizer/amoro-optimizer-flink 
 for example `mvn clean package -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6 -DskipTests` to compile.
 
 If you need to compile the Trino module at the same time, you need to install jdk17 locally and configure `toolchains.xml` in the user's `${user.home}/.m2/` directory,
-then run `mvn package -P toolchain` to compile the entire project.
+then run `mvn package -Ptoolchain,build-mixed-format-trino` to compile the entire project.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
