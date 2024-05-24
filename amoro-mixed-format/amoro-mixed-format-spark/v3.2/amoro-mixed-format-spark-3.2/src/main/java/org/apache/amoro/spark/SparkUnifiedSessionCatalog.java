@@ -18,24 +18,20 @@
 
 package org.apache.amoro.spark;
 
-import org.apache.amoro.TableFormat;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
+import org.apache.spark.sql.connector.catalog.FunctionCatalog;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
-import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.iceberg.catalog.Procedure;
-import org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-import java.util.Map;
 import java.util.ServiceLoader;
 
-public class SparkUnifiedSessionCatalog<T extends TableCatalog & SupportsNamespaces>
-    extends SessionCatalogBase<T> implements ProcedureCatalog {
-
-  private final Map<TableFormat, SparkTableFormat> tableFormats = Maps.newConcurrentMap();
+/** @Auth: hzwangtao6 @Time: 2024/5/24 14:04 @Description: */
+public class SparkUnifiedSessionCatalog<
+        T extends TableCatalog & SupportsNamespaces & FunctionCatalog>
+    extends SparkUnifiedSessionCatalogBase<T> {
 
   @Override
   protected TableCatalog buildTargetCatalog(String name, CaseInsensitiveStringMap options) {
@@ -46,36 +42,6 @@ public class SparkUnifiedSessionCatalog<T extends TableCatalog & SupportsNamespa
       tableFormats.put(format.format(), format);
     }
     return sparkUnifiedCatalog;
-  }
-
-  @Override
-  protected boolean isManagedTable(Table table) {
-    return tableFormats.values().stream().anyMatch(f -> f.isFormatOf(table));
-  }
-
-  @Override
-  protected boolean isManagedProvider(String provider) {
-    if (provider == null) {
-      return false;
-    }
-    try {
-      TableFormat.valueOf(provider.toUpperCase());
-      return true;
-    } catch (Exception e) {
-      return false;
-    }
-  }
-
-  @Override
-  protected boolean isManagedSubTable(Identifier ident) {
-    if (ident.namespace().length == 2) {
-      for (SparkTableFormat sparkTableFormat : tableFormats.values()) {
-        if (sparkTableFormat.isSubTableName(ident.name())) {
-          return true;
-        }
-      }
-    }
-    return false;
   }
 
   @Override

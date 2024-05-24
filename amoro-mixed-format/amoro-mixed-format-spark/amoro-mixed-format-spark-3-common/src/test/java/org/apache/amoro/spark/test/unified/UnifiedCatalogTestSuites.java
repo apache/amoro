@@ -22,7 +22,7 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.UnifiedCatalogLoader;
-import org.apache.amoro.spark.SparkUnifiedSessionCatalog;
+import org.apache.amoro.spark.SparkUnifiedSessionCatalogBase;
 import org.apache.amoro.spark.test.SparkTestBase;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -41,7 +41,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
   protected Map<String, String> sparkSessionConfig() {
     return ImmutableMap.of(
         "spark.sql.catalog.spark_catalog",
-        SparkUnifiedSessionCatalog.class.getName(),
+        SparkUnifiedSessionCatalogBase.class.getName(),
         "spark.sql.catalog.spark_catalog.uri",
         CONTEXT.amsCatalogUrl(null));
   }
