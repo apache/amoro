@@ -21,6 +21,7 @@ package org.apache.amoro.server.terminal.kyuubi;
 import org.apache.amoro.api.config.ConfigOption;
 import org.apache.amoro.api.config.ConfigOptions;
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.terminal.SparkContextUtil;
 import org.apache.amoro.server.terminal.TerminalSession;
 import org.apache.amoro.server.terminal.TerminalSessionFactory;
@@ -122,8 +123,8 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     if (!metaStore.isKerberosAuthMethod()) {
       if (!CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_S3.equalsIgnoreCase(
           metaStore.getStorageType())) {
-          properties.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
-          sessionConf.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
+        properties.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
+        sessionConf.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
       }
     }
 
