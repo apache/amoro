@@ -80,7 +80,6 @@ public class TableMetaStore implements Serializable {
   public static final String SIMPLE_USER_NAME = "simple.user.name";
   public static final String AUTH_METHOD_SIMPLE = "SIMPLE";
   public static final String AUTH_METHOD_KERBEROS = "KERBEROS";
-
   private static final String KRB_CONF_FILE_NAME = "krb5.conf";
   private static final String KEY_TAB_FILE_NAME = "krb.keytab";
   private static final String META_STORE_SITE_FILE_NAME = "hive-site.xml";
@@ -117,6 +116,7 @@ public class TableMetaStore implements Serializable {
   private final byte[] hdfsSite;
   private final byte[] coreSite;
   private final String authMethod;
+  private final String storageType;
   private final String hadoopUsername;
   private final byte[] krbKeyTab;
   private final byte[] krbConf;
@@ -132,6 +132,7 @@ public class TableMetaStore implements Serializable {
 
   private TableMetaStore(
       byte[] metaStoreSite,
+      String storageType,
       byte[] hdfsSite,
       byte[] coreSite,
       String authMethod,
@@ -147,6 +148,7 @@ public class TableMetaStore implements Serializable {
         "Error auth method:%s",
         authMethod);
     this.metaStoreSite = metaStoreSite;
+    this.storageType = storageType;
     this.hdfsSite = hdfsSite;
     this.coreSite = coreSite;
     this.authMethod = authMethod;
@@ -159,6 +161,10 @@ public class TableMetaStore implements Serializable {
 
   public byte[] getMetaStoreSite() {
     return metaStoreSite;
+  }
+
+  public String getStorageType() {
+    return storageType;
   }
 
   public byte[] getHdfsSite() {
@@ -549,6 +555,7 @@ public class TableMetaStore implements Serializable {
     private byte[] hdfsSite;
     private byte[] coreSite;
     private String authMethod;
+    private String storageType;
     private String hadoopUsername;
     private byte[] krbKeyTab;
     private byte[] krbConf;
@@ -559,6 +566,11 @@ public class TableMetaStore implements Serializable {
 
     public Builder withMetaStoreSitePath(String metaStoreSitePath) {
       this.metaStoreSite = readBytesFromFile(metaStoreSitePath);
+      return this;
+    }
+
+    public Builder withStorageType(String storageType) {
+      this.storageType = storageType;
       return this;
     }
 
@@ -748,6 +760,7 @@ public class TableMetaStore implements Serializable {
           krbPrincipal);
       return new TableMetaStore(
           metaStoreSite,
+          storageType,
           hdfsSite,
           coreSite,
           authMethod,
@@ -764,6 +777,7 @@ public class TableMetaStore implements Serializable {
       TableMetaStore tableMetaStore =
           new TableMetaStore(
               metaStoreSite,
+              storageType,
               hdfsSite,
               coreSite,
               authMethod,

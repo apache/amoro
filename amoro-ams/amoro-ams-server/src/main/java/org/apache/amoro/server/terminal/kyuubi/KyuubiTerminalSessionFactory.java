@@ -108,9 +108,6 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
   public TerminalSession create(TableMetaStore metaStore, Configurations configuration) {
     List<String> logs = Lists.newArrayList();
     JdbcConnectionParams connectionParams = new JdbcConnectionParams(this.params);
-    if (metaStore.isKerberosAuthMethod()) {
-      checkAndFillKerberosInfo(connectionParams, metaStore);
-    }
 
     Map<String, String> sparkConf = SparkContextUtil.getSparkConf(configuration);
     sparkConf.forEach((k, v) -> connectionParams.getHiveVars().put(k, v));
@@ -122,10 +119,12 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     Map<String, String> sessionConf = configuration.toMap();
     sessionConf.put("jdbc.url", kyuubiJdbcUrl);
     Properties properties = new Properties();
-
     if (!metaStore.isKerberosAuthMethod()) {
-      properties.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
-      sessionConf.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
+      if (!CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_S3.equalsIgnoreCase(
+          metaStore.getStorageType())) {
+          properties.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
+          sessionConf.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
+      }
     }
 
     Connection connection = metaStore.doAs(() -> driver.connect(kyuubiJdbcUrl, properties));
@@ -160,21 +159,5 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
   private void logMessage(List<String> logs, String message) {
     logs.add(message);
     LOG.info(message);
-  }
-
-  private void checkAndFillKerberosInfo(
-      JdbcConnectionParams connectionParams, TableMetaStore metaStore) {
-    if (connectionParams.getSessionVars().containsKey(JdbcConnectionParams.AUTH_PRINCIPAL)) {
-      throw new RuntimeException(
-          "jdbc url should not contain principal when kyuubi kerberos enable");
-    }
-    connectionParams
-        .getSessionVars()
-        .put(
-            JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE,
-            JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT);
-    connectionParams
-        .getSessionVars()
-        .put(JdbcConnectionParams.AUTH_PRINCIPAL, metaStore.getKrbPrincipal());
   }
 }
