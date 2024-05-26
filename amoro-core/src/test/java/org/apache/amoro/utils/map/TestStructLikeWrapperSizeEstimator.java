@@ -58,15 +58,15 @@ public class TestStructLikeWrapperSizeEstimator {
 
   @Test
   public void testSizeEstimatorWithNullField() {
-    final Schema TEST_SCHEMA =
+    final Schema schema =
         new Schema(
             Types.NestedField.required(1, "id", Types.IntegerType.get()),
             Types.NestedField.required(2, "name", Types.StringType.get()),
             Types.NestedField.optional(3, "ts", Types.LongType.get()));
 
-    Record record1 = MixedDataTestHelpers.createRecord(TEST_SCHEMA, 1, "name1", 0);
+    Record record1 = MixedDataTestHelpers.createRecord(schema, 1, "name1", 0);
     // Set the ts field to null
-    Record record2 = MixedDataTestHelpers.createRecord(TEST_SCHEMA, 1, "name1", null);
+    Record record2 = MixedDataTestHelpers.createRecord(schema, 1, "name1", null);
     Map<StructLike, ChangedLsn> map = Maps.newHashMap();
     ChangedLsn changedLsn = ChangedLsn.of(1, 2);
     map.put(record1, changedLsn);
@@ -75,7 +75,7 @@ public class TestStructLikeWrapperSizeEstimator {
     long newSize = RamUsageEstimator.sizeOfObject(map, 0);
     long record2Size = newSize - oldSize;
 
-    StructLikeWrapper wrapper = StructLikeWrapper.forType(TEST_SCHEMA.asStruct()).set(record2);
+    StructLikeWrapper wrapper = StructLikeWrapper.forType(schema.asStruct()).set(record2);
 
     long estimateSize = new StructLikeWrapperSizeEstimator().sizeEstimate(wrapper);
     Assert.assertEquals(1, record2Size / estimateSize);
