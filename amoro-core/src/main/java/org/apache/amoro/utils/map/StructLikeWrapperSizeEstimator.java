@@ -22,6 +22,9 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.util.StructLikeWrapper;
 import org.apache.lucene.util.RamUsageEstimator;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 /** Size Estimator for StructLikeWrapper record payload. */
 public class StructLikeWrapperSizeEstimator implements SizeEstimator<StructLikeWrapper> {
   @Override
@@ -34,15 +37,21 @@ public class StructLikeWrapperSizeEstimator implements SizeEstimator<StructLikeW
   }
 
   private long sizeOf(Object[] objects) {
-    long size = 0;
-    for (Object object : objects) {
-      if (object.getClass().isArray()) {
-        size += sizeOf((Object[]) object);
-      } else {
-        size += RamUsageEstimator.sizeOfObject(object, 0);
-      }
+    if (objects == null) {
+      return 0;
     }
-    return size;
+
+    return Arrays.stream(objects)
+        .filter(Objects::nonNull)
+        .mapToLong(
+            object -> {
+              if (object.getClass().isArray()) {
+                return sizeOf((Object[]) object);
+              } else {
+                return RamUsageEstimator.sizeOfObject(object, 0);
+              }
+            })
+        .sum();
   }
 
   private Object[] structLikeObjects(StructLike structLike) {
