@@ -20,7 +20,6 @@ RUN AMORO_VERSION=`cat /root/pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<ver
 
 RUN AMORO_VERSION=`cat /workspace/amoro/versions`  \
     && cd /workspace/amoro/lib \
-    && cp /root/docker/dlc/lib/* ./  \
     && wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.30/mysql-connector-java-8.0.30.jar
 
 
