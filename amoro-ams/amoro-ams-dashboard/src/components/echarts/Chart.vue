@@ -22,14 +22,10 @@
   </a-spin>
 </template>
 <script lang="ts">
-import { Spin as ASpin } from 'ant-design-vue'
 import { defineComponent, onMounted, onBeforeUnmount, watch, ref, toRefs, reactive } from 'vue'
 import echarts from './index'
 
 export default defineComponent({
-  components: {
-    ASpin
-  },
   props: {
     width: {
       type: String,

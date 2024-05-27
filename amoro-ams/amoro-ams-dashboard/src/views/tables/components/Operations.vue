@@ -60,7 +60,7 @@ import { useRoute } from 'vue-router'
 import { dateFormat } from '@/utils'
 import useClipboard from 'vue-clipboard3'
 
-import { message, Modal as AModal, Button as AButton, Table as ATable } from 'ant-design-vue'
+import { message, Modal as AModal } from 'ant-design-vue'
 
 const { toClipboard } = useClipboard()
 const { t } = useI18n()
