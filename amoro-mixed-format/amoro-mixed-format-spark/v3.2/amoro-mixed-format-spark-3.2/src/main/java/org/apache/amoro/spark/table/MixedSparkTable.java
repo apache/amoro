@@ -21,6 +21,7 @@ package org.apache.amoro.spark.table;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.spark.reader.SparkScanBuilder;
+import org.apache.amoro.spark.util.MixedFormatSparkUtils;
 import org.apache.amoro.spark.writer.MixedFormatSparkWriteBuilder;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
@@ -140,7 +141,7 @@ public class MixedSparkTable
               .getOrDefault(
                   TableProperties.CHANGE_FILE_FORMAT, TableProperties.CHANGE_FILE_FORMAT_DEFAULT));
     }
-    propsBuilder.put("provider", "arctic");
+    propsBuilder.put("provider", MixedFormatSparkUtils.mixedTableProvider(table()));
     mixedTable.properties().entrySet().stream()
         .filter(entry -> !RESERVED_PROPERTIES.contains(entry.getKey()))
         .forEach(propsBuilder::put);
