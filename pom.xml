@@ -1187,5 +1187,25 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>tencent-dlc</id>
+            <repositories>
+                <repository>
+                    <id>dlc-repo</id>
+                    <name>dlc-repo</name>
+                    <url>https://mirrors.tencent.com/repository/maven/dlc</url>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <updatePolicy>daily</updatePolicy>
+                    </snapshots>
+                </repository>
+            </repositories>
+
+            <properties>
+                <hadoop.version>3.2.0</hadoop.version>
+                <hive.version>2.3.7-dlc-226</hive.version>
+            </properties>
+        </profile>
     </profiles>
 </project>
