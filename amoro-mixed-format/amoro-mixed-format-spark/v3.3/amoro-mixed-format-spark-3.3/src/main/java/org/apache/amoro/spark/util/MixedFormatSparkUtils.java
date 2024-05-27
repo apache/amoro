@@ -22,7 +22,6 @@ import static org.apache.amoro.table.TableProperties.WRITE_DISTRIBUTION_MODE;
 import static org.apache.amoro.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
 import static org.apache.iceberg.spark.Spark3Util.toTransforms;
 
-import org.apache.amoro.spark.mixed.MixedIcebergDataSource;
 import org.apache.amoro.spark.table.MixedSparkTable;
 import org.apache.amoro.table.DistributionHashMode;
 import org.apache.amoro.table.MixedTable;
