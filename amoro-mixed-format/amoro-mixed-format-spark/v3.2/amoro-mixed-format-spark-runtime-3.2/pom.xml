@@ -134,12 +134,6 @@
                                     <pattern>org.apache.spark.sql.amoro</pattern>
                                     <shadedPattern>org.apache.amoro.spark.sql</shadedPattern>
                                 </relocation>
-                                <relocation>
-                                    <pattern>org.apache.spark.sql.catalyst</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst
-                                    </shadedPattern>
-                                </relocation>
 
                                 <relocation>
                                     <pattern>org.apache.zookeeper</pattern>
