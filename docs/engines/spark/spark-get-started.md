@@ -75,13 +75,13 @@ Then switch to the newly created database and perform the create table operation
 use test_db;
 
 -- create a table with 3 columns
-create table test1 (id int, data string, ts timestamp) using mixed-iceberg;
+create table test1 (id int, data string, ts timestamp) using mixed_iceberg;
 
 -- create a table with hidden partition
-create table test2 (id int, data string, ts timestamp) using mixed-iceberg partitioned by (days(ts));
+create table test2 (id int, data string, ts timestamp) using mixed_iceberg partitioned by (days(ts));
 
 -- create a table with hidden partition and primary key
-create table test3 (id int, data string, ts timestamp, primary key(id)) using mixed-iceberg partitioned by (days(ts));
+create table test3 (id int, data string, ts timestamp, primary key(id)) using mixed_iceberg partitioned by (days(ts));
 ```
 
 For more information on Spark DDL related to tables, please refer to [Spark DDL](../spark-ddl/)

@@ -61,7 +61,7 @@ When using the `MixedFormatSparkSessionCatalog` as the implementation of the `sp
   the MixedFormat flag, it will be loaded by `MixedFormatSparkCatalog` again.
 
 - Create Table: The behavior of `CREATE TABLE` is determined by the `using {provider}` clause in the DDL statement. If
-  the clause contains `using mixed-iceberg` or `using mixed-hive`, a Mixed-Format table will be created. Otherwise, the default Spark implementation
+  the clause contains `using mixed_iceberg` or `using mixed_hive`, a Mixed-Format table will be created. Otherwise, the default Spark implementation
   will be used to create the table.
 
 When using the `MixedFormatSparkSessionCatalog`, there are several points to keep in mind:

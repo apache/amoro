@@ -22,8 +22,10 @@ import static org.apache.amoro.table.TableProperties.WRITE_DISTRIBUTION_MODE;
 import static org.apache.amoro.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
 import static org.apache.iceberg.spark.Spark3Util.toTransforms;
 
+import org.apache.amoro.spark.mixed.MixedIcebergDataSource;
 import org.apache.amoro.spark.table.MixedSparkTable;
 import org.apache.amoro.table.DistributionHashMode;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
 import org.apache.avro.generic.GenericData;
@@ -50,10 +52,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class MixedFormatSparkUtils {
   private static final Logger LOG = LoggerFactory.getLogger(MixedFormatSparkUtils.class);
@@ -181,5 +180,15 @@ public class MixedFormatSparkUtils {
       default:
     }
     return value;
+  }
+
+  public static String mixedTableProvider(MixedTable table) {
+    switch (table.format()) {
+      case MIXED_ICEBERG:
+      case MIXED_HIVE:
+        return table.format().name().toLowerCase(Locale.ROOT);
+      default:
+        throw new IllegalArgumentException("Not a mixed-format table:" + table.format());
+    }
   }
 }

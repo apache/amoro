@@ -12,14 +12,14 @@ menu:
 
 ## CREATE TABLE
 
-To create an MixedFormat table under an Amoro Catalog, you can use `using mixed-iceberg` or `using mixed-hive` to specify the provider in the
+To create an MixedFormat table under an Amoro Catalog, you can use `using mixed_iceberg` or `using mixed_hive` to specify the provider in the
 `CREATE TABLE` statement. If the Catalog type is Hive, the created table will be a Hive-compatible table.
 
 ```sql
 CREATE TABLE mixed_catalog.db.sample (
     id bigint  COMMENT "unique id",
     data string
-) USING mixed-iceberg 
+) USING mixed_iceberg 
 ```
 
 ### PRIMARY KEY
@@ -32,7 +32,7 @@ CREATE TABLE mixed_catalog.db.sample (
     id bigint  COMMENT "unique id",
     data string ,
     PRIMARY KEY (id)
-) USING mixed-iceberg 
+) USING mixed_iceberg 
 ```
 
 ### PARTITIONED BY
@@ -44,7 +44,7 @@ CREATE TABLE mixed_catalog.db.sample (
     id bigint,
     data string,
     category string)
-USING mixed-iceberg
+USING mixed_iceberg
 PARTITIONED BY (category)
 ```
 
@@ -58,7 +58,7 @@ CREATE TABLE mixed_catalog.db.sample (
     category string,
     ts timestamp, 
     PRIMARY KEY (id) )
-USING mixed-iceberg
+USING mixed_iceberg
 PARTITIONED BY (bucket(16, id), days(ts), category)
 ```
 
@@ -81,7 +81,7 @@ Supported transformations are:
 
 ``` 
 CREATE TABLE mixed_catalog.db.sample
-USING mixed-iceberg
+USING mixed_iceberg
 AS SELECT ...
 ```
 
@@ -97,7 +97,7 @@ You can use the following syntax to create a table with primary keys, partitions
 
 ```
 CREATE TABLE mixed_catalog.db.sample
-PRIMARY KEY(id) USING mixed-iceberg 
+PRIMARY KEY(id) USING mixed_iceberg 
 PARTITIONED BY (pt)  
 TBLPROPERTIES (''prop1''=''val1'', ''prop2''=''val2'')
 AS SELECT ...
@@ -116,7 +116,7 @@ table, but it does not copy the data.
 USE mixed_catalog;
 CREATE TABLE db.sample
 LIKE db.sample2
-USING mixed-iceberg
+USING mixed_iceberg
 TBLPROPERTIES ('owner'='xxxx');
 ```
 
@@ -133,7 +133,7 @@ TBLPROPERTIES ('owner'='xxxx');
 
 ``` 
 REPLACE TABLE mixed_catalog.db.sample
-USING mixed-iceberg
+USING mixed_iceberg
 AS SELECT ...
 ```
 

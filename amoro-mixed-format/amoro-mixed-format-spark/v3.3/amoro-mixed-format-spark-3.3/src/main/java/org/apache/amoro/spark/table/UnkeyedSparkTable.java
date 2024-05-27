@@ -18,6 +18,7 @@
 
 package org.apache.amoro.spark.table;
 
+import org.apache.amoro.spark.util.MixedFormatSparkUtils;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -51,7 +52,7 @@ public class UnkeyedSparkTable extends SparkTable implements SupportsPartitionMa
   public Map<String, String> properties() {
     Map<String, String> properties = Maps.newHashMap();
     properties.putAll(super.properties());
-    properties.put("provider", "arctic");
+    properties.put("provider", MixedFormatSparkUtils.mixedTableProvider(table()));
     return properties;
   }
 

@@ -29,7 +29,7 @@ CREATE TABLE mixed_catalog.db.sample (
     data string,
     ts timestamp,
     primary key (id))
-USING mixed-iceberg
+USING mixed_iceberg
 PARTITIONED BY (days(ts))
 ```
 
@@ -83,7 +83,7 @@ CREATE TABLE mixed_catalog.db.keyedTable (
     id int,
     data string,
     primary key (id))
-USING mixed-iceberg
+USING mixed_iceberg
 TBLPROPERTIES ('write.upsert.enabled' = 'true')
 ```
 
@@ -186,7 +186,7 @@ The primary keys and partition keys could be specified by `partitionBy()` and `o
 
 ```sql
 val data: DataFrame = ...
-data.write().format("mixed-iceberg")
+data.write().format("mixed_iceberg")
     .partitionBy("data")
     .option("primary.keys", "'xxx'")
     .save("mixed_catalog.db.sample")
