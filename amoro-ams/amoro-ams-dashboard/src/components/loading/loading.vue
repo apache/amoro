@@ -19,17 +19,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue'
 
-// name: 'ULoading',
-// props: {
-//   loadingText: {
-//     type: String,
-//     default: 'Loading'
-//   },
-//   fullscreen: {
-//     type: Boolean,
-//     default: false
-//   }
-// },
 const props = defineProps({
   loadingText: {
     type: String,
@@ -41,10 +30,6 @@ const props = defineProps({
   }
 })
 const visible = ref<boolean>(true)
-
-const hide = () => {
-  visible.value = false
-}
 
 onBeforeUnmount(() => {
   visible.value = false;
