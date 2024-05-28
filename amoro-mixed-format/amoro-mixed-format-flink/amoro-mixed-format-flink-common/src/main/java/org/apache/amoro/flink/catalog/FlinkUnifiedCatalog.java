@@ -60,6 +60,7 @@ import org.apache.flink.table.catalog.stats.CatalogTableStatistics;
 import org.apache.flink.table.expressions.Expression;
 import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.Factory;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -226,22 +227,23 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
     TableIdentifier tableIdentifier =
         TableIdentifier.of(
             unifiedCatalog.name(), tablePath.getDatabaseName(), tablePath.getObjectName());
-    if (!configuration.contains(TABLE_FORMAT)) {
-      // if user doesn't specify the table format, we try to load the table and get the table
-      // format.
-      try {
-        AmoroTable amoroTable =
-            unifiedCatalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
-        format = amoroTable.format();
-      } catch (NoSuchTableException | NoSuchDatabaseException e) {
-        String msg =
-            String.format(
-                "Can't decide table format of table %s, Please specify 'table.format' "
-                    + "in table properties",
-                tableIdentifier.toString());
-        throw new CatalogException(msg);
+    String errorMessage =
+        String.format(
+            "Can't decide table format of table %s, Please specify 'table.format' "
+                + "in table properties",
+            tableIdentifier);
+
+    Preconditions.checkNotNull(format, errorMessage);
+    try {
+      unifiedCatalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+      if (!ignoreIfExists) {
+        throw new TableAlreadyExistException(getName(), tablePath);
       }
+      return;
+    } catch (NoSuchTableException e) {
+      // do nothing
     }
+
     final TableFormat catalogFormat = format;
     AbstractCatalog catalog =
         getOriginalCatalog(format)
