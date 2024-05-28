@@ -91,7 +91,6 @@
                                     </include>
                                     <include>org.apache.iceberg:iceberg-bundled-guava</include>
                                     <include>org.apache.orc:*</include>
-
                                     <include>org.apache.thrift:libthrift</include>
                                     <include>org.apache.avro:avro</include>
                                     <include>org.apache.parquet:parquet-avro</include>
@@ -99,6 +98,8 @@
                                     <include>org.apache.commons:commons-lang3</include>
                                     <include>org.apache.commons:commons-collections</include>
                                     <include>com.github.ben-manes.caffeine:caffeine</include>
+                                    <include>org.apache.httpcomponents.client5:*</include>
+                                    <include>org.apache.httpcomponents.core5:*</include>
                                 </includes>
                                 <excludes>
                                     <exclude>com.google.code.findbugs:jsr305</exclude>
@@ -486,7 +487,11 @@
                                         </include>
                                     </includes>
                                 </relocation>
-
+                                <relocation>
+                                    <pattern>org.apache.hc</pattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.hc
+                                    </shadedPattern>
+                                </relocation>
                             </relocations>
                             <finalName>${project.artifactId}-${project.version}</finalName>
                         </configuration>
