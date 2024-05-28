@@ -578,7 +578,8 @@ public class MixedHiveCatalog implements MixedFormatCatalog {
           // do some check for whether the table has been upgraded!!!
           if (CompatibleHivePropertyUtil.propertyAsBoolean(
               hiveTable.getParameters(), HiveTableProperties.MIXED_TABLE_FLAG, false)) {
-            throw new IllegalArgumentException(
+            // flink will ignore the AlreadyExistsdException to continue
+            throw new org.apache.iceberg.exceptions.AlreadyExistsException(
                 String.format("Table %s has already been upgraded !", identifier));
           }
         }
@@ -586,6 +587,7 @@ public class MixedHiveCatalog implements MixedFormatCatalog {
           LOG.info("No need to check hive table exist");
         } else {
           if (hiveTable != null) {
+            // we should throw the exception for stop create.
             throw new IllegalArgumentException(
                 "Table is already existed in hive meta store:" + identifier);
           }
