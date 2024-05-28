@@ -124,11 +124,9 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     sessionConf.put("jdbc.url", kyuubiJdbcUrl);
     Properties properties = new Properties();
 
-    if (!metaStore.isKerberosAuthMethod()) {
-      if (Objects.nonNull(metaStore.getHadoopUsername())) {
-        properties.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
-        sessionConf.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
-      }
+    if (!metaStore.isKerberosAuthMethod() && Objects.nonNull(metaStore.getHadoopUsername())) {
+      properties.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
+      sessionConf.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
     }
 
     Connection connection = metaStore.doAs(() -> driver.connect(kyuubiJdbcUrl, properties));
