@@ -50,25 +50,28 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
       new Schema(
           Types.NestedField.required(1, "id", Types.IntegerType.get()),
           Types.NestedField.required(2, "data", Types.StringType.get()),
-          Types.NestedField.required(3, "pt", Types.StringType.get()));
+          Types.NestedField.required(3, "fdata", Types.FloatType.get()),
+          Types.NestedField.required(4, "ddata", Types.DoubleType.get()),
+          Types.NestedField.required(5, "pt", Types.StringType.get()));
+
   private static final PrimaryKeySpec pk =
       PrimaryKeySpec.builderFor(schema).addColumn("id").build();
 
   private static final List<Record> base =
       Lists.newArrayList(
-          RecordGenerator.newRecord(schema, 1, "a", "001"),
-          RecordGenerator.newRecord(schema, 2, "b", "002"));
+          RecordGenerator.newRecord(schema, 1, "a", 1.1, 2.2, "001"),
+          RecordGenerator.newRecord(schema, 2, "b", 1.1, 2.2, "002"));
   private static final List<Record> change =
       Lists.newArrayList(
-          RecordGenerator.newRecord(schema, 3, "c", "001"),
-          RecordGenerator.newRecord(schema, 4, "d", "002"));
+          RecordGenerator.newRecord(schema, 3, "c", 1.1, 2.2, "001"),
+          RecordGenerator.newRecord(schema, 4, "d", 1.1, 2.2, "002"));
 
   private static final List<Record> source =
       Lists.newArrayList(
-          RecordGenerator.newRecord(schema, 1, "s1", "001"),
-          RecordGenerator.newRecord(schema, 2, "s2", "002"),
-          RecordGenerator.newRecord(schema, 5, "s5", "001"),
-          RecordGenerator.newRecord(schema, 6, "s6", "003"));
+          RecordGenerator.newRecord(schema, 1, "s1", 1.1, 2.2, "001"),
+          RecordGenerator.newRecord(schema, 2, "s2", 1.1, 2.2, "002"),
+          RecordGenerator.newRecord(schema, 5, "s5", 1.1, 2.2, "001"),
+          RecordGenerator.newRecord(schema, 6, "s6", 1.1, 2.2, "003"));
 
   private final List<Record> target = Lists.newArrayList();
 
@@ -108,7 +111,8 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
             + " AS s ON t.id == s.id "
             + "WHEN MATCHED AND t.id = 1 THEN DELETE "
             + "WHEN MATCHED AND t.id = 2 THEN UPDATE SET * "
-            + "WHEN NOT MATCHED AND s.id != 5 THEN INSERT *");
+            + "WHEN NOT MATCHED AND s.id != 5 THEN INSERT *"
+            + "WHEN NOT MATCHED THEN INSERT (t.id,t.data,t.fdata,t.ddata,t.pt) VALUES (s.id,s.data,1.024,1.024,'001')");
 
     List<Record> expects =
         ExpectResultUtil.expectMergeResult(target, source, r -> r.getField("id"))
@@ -135,7 +139,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
             + " AS t USING "
             + source()
             + " AS s ON t.id == s.id "
-            + "WHEN MATCHED AND t.id = 2 THEN UPDATE SET t.data = 'ccc' ");
+            + "WHEN MATCHED AND t.id = 2 THEN UPDATE SET t.data = 'ccc', t.fdata = 1.024, t.ddata = 1.024");
 
     List<Record> expects =
         ExpectResultUtil.expectMergeResult(target, source, r -> r.getField("id"))
@@ -167,7 +171,8 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
             + " AS s ON t.id == s.id "
             + "WHEN MATCHED AND t.id = 1 THEN DELETE "
             + "WHEN MATCHED AND t.id = 2 THEN UPDATE SET * "
-            + "WHEN NOT MATCHED THEN INSERT *");
+            + "WHEN NOT MATCHED THEN INSERT *"
+            + "WHEN NOT MATCHED THEN INSERT (t.id,t.data,t.fdata,t.ddata,t.pt) VALUES (s.id,s.data,1.024,1.024,'001')");
 
     table.refresh();
     List<Record> expects = Lists.newArrayList(source);

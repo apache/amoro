@@ -26,6 +26,7 @@ import org.apache.spark.sql.execution.datasources.v2.{ExtendedDataSourceV2Strate
 import org.apache.spark.sql.execution.dynamicpruning.RowLevelCommandDynamicPruning
 
 import org.apache.amoro.spark.sql.catalyst.analysis
+import org.apache.amoro.spark.sql.catalyst.analysis.{MixedFormatAlignRowLevelCommandAssignments, QueryWithConstraintCheck}
 import org.apache.amoro.spark.sql.catalyst.analysis.{QueryWithConstraintCheck, ResolveMergeIntoMixedFormatTableReferences, ResolveMixedFormatCommand, RewriteMixedFormatCommand, RewriteMixedFormatMergeIntoTable}
 import org.apache.amoro.spark.sql.catalyst.optimize.{OptimizeWriteRule, RewriteAppendMixedFormatTable, RewriteDeleteFromMixedFormatTable, RewriteUpdateMixedFormatTable}
 import org.apache.amoro.spark.sql.catalyst.parser.MixedFormatSqlExtensionsParser
@@ -38,6 +39,7 @@ class MixedFormatSparkExtensions extends (SparkSessionExtensions => Unit) {
       case (_, parser) => new MixedFormatSqlExtensionsParser(parser)
     }
     // resolve mixed-format command
+    extensions.injectResolutionRule { _ => MixedFormatAlignRowLevelCommandAssignments }
     extensions.injectResolutionRule { spark => ResolveMixedFormatCommand(spark) }
     extensions.injectResolutionRule { spark => ResolveMergeIntoMixedFormatTableReferences(spark) }
     extensions.injectResolutionRule { spark => RewriteMixedFormatMergeIntoTable(spark) }

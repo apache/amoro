@@ -18,8 +18,8 @@
 
 package org.apache.amoro.spark.sql.catalyst.plans
 
-import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.plans.logical.{BinaryCommand, LogicalPlan, MergeAction}
+import org.apache.spark.sql.catalyst.expressions.{AssignmentUtils, Expression}
+import org.apache.spark.sql.catalyst.plans.logical.{BinaryCommand, DeleteAction, InsertAction, LogicalPlan, MergeAction, UpdateAction}
 
 /**
  * A node that hides the MERGE condition and actions from regular Spark resolution.
@@ -30,6 +30,26 @@ case class UnresolvedMergeIntoMixedFormatTable(
     mergeCondition: Expression,
     matchedActions: Seq[MergeAction],
     notMatchedActions: Seq[MergeAction]) extends BinaryCommand {
+
+  lazy val aligned: Boolean = {
+    val matchedActionsAligned = matchedActions.forall {
+      case UpdateAction(_, assignments) =>
+        AssignmentUtils.aligned(targetTable, assignments)
+      case _: DeleteAction =>
+        true
+      case _ =>
+        false
+    }
+
+    val notMatchedActionsAligned = notMatchedActions.forall {
+      case InsertAction(_, assignments) =>
+        AssignmentUtils.aligned(targetTable, assignments)
+      case _ =>
+        false
+    }
+
+    matchedActionsAligned && notMatchedActionsAligned
+  }
 
   def duplicateResolved: Boolean = targetTable.outputSet.intersect(sourceTable.outputSet).isEmpty
 
