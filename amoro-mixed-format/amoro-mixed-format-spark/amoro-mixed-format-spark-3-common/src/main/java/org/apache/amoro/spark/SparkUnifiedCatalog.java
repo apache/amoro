@@ -63,8 +63,8 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
   private static final Map<TableFormat, String> defaultTableCatalogImplMap =
       ImmutableMap.of(
           TableFormat.ICEBERG, "org.apache.iceberg.spark.SparkCatalog",
-          TableFormat.MIXED_HIVE, "org.apache.amoro.spark.ArcticSparkCatalog",
-          TableFormat.MIXED_ICEBERG, "org.apache.amoro.spark.ArcticSparkCatalog",
+          TableFormat.MIXED_HIVE, "org.apache.amoro.spark.MixedFormatSparkCatalog",
+          TableFormat.MIXED_ICEBERG, "org.apache.amoro.spark.MixedFormatSparkCatalog",
           TableFormat.PAIMON, "org.apache.paimon.spark.SparkCatalog");
 
   private UnifiedCatalog unifiedCatalog;

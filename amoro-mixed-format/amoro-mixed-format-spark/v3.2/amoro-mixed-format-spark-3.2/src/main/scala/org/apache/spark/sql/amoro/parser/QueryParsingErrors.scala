@@ -19,8 +19,9 @@
 package org.apache.spark.sql.amoro.parser
 
 import org.antlr.v4.runtime.ParserRuleContext
-import org.apache.amoro.spark.sql.parser.ArcticSqlExtendParser._
 import org.apache.spark.sql.catalyst.parser.ParseException
+
+import org.apache.amoro.spark.sql.parser.MixedFormatSqlExtendParser._
 
 /**
  * Object for grouping all error messages of the query parsing.

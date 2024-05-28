@@ -64,7 +64,7 @@ public class MixedTableTestBase extends SparkTestBase {
   }
 
   public MixedTable loadTable() {
-    return catalog().loadTable(target().toArcticIdentifier());
+    return catalog().loadTable(target().toAmoroIdentifier());
   }
 
   public String provider(TableFormat format) {
@@ -73,10 +73,10 @@ public class MixedTableTestBase extends SparkTestBase {
     return "arctic";
   }
 
-  public MixedTable createArcticSource(Schema schema, Consumer<TableBuilder> consumer) {
+  public MixedTable createMixedFormatSource(Schema schema, Consumer<TableBuilder> consumer) {
     TestIdentifier identifier =
         TestIdentifier.ofDataLake(currentCatalog, catalog().name(), database(), sourceTable, true);
-    TableBuilder builder = catalog().newTableBuilder(identifier.toArcticIdentifier(), schema);
+    TableBuilder builder = catalog().newTableBuilder(identifier.toAmoroIdentifier(), schema);
     consumer.accept(builder);
     MixedTable source = builder.create();
     this.source = identifier;
@@ -85,13 +85,13 @@ public class MixedTableTestBase extends SparkTestBase {
 
   public MixedTable createTarget(Schema schema, Consumer<TableBuilder> consumer) {
     TestIdentifier identifier = target();
-    TableBuilder builder = catalog().newTableBuilder(identifier.toArcticIdentifier(), schema);
+    TableBuilder builder = catalog().newTableBuilder(identifier.toAmoroIdentifier(), schema);
     consumer.accept(builder);
     return builder.create();
   }
 
   protected boolean tableExists() {
-    return catalog().tableExists(target().toArcticIdentifier());
+    return catalog().tableExists(target().toAmoroIdentifier());
   }
 
   @AfterEach
@@ -100,7 +100,7 @@ public class MixedTableTestBase extends SparkTestBase {
       return;
     }
     if (TestIdentifier.SOURCE_TYPE_ARCTIC.equalsIgnoreCase(source.sourceType)) {
-      catalog().dropTable(source.toArcticIdentifier(), true);
+      catalog().dropTable(source.toAmoroIdentifier(), true);
     } else if (TestIdentifier.SOURCE_TYPE_HIVE.equalsIgnoreCase(source.sourceType)) {
       CONTEXT.dropHiveTable(source.database, source.table);
     } else if (TestIdentifier.SOURCE_TYPE_VIEW.equalsIgnoreCase(source.sourceType)) {

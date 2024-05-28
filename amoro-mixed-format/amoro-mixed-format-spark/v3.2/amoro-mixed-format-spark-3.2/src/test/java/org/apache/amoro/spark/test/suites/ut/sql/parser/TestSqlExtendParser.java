@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.test.suites.ut.sql.parser;
 
-import org.apache.amoro.spark.sql.catalyst.parser.ArcticSqlExtensionsParser;
+import org.apache.amoro.spark.sql.catalyst.parser.MixedFormatSqlExtensionsParser;
 import org.apache.amoro.spark.test.utils.ScalaTestUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.spark.sql.catalyst.parser.AbstractSqlParser;
@@ -42,8 +42,8 @@ import java.util.stream.Stream;
 
 public class TestSqlExtendParser {
 
-  private final ArcticSqlExtensionsParser parser =
-      new ArcticSqlExtensionsParser(
+  private final MixedFormatSqlExtensionsParser parser =
+      new MixedFormatSqlExtensionsParser(
           new AbstractSqlParser() {
             @Override
             public AstBuilder astBuilder() {

@@ -97,6 +97,8 @@
                                     <include>org.apache.commons:commons-lang3</include>
                                     <include>org.apache.commons:commons-collections</include>
                                     <include>com.github.ben-manes.caffeine:caffeine</include>
+                                    <include>org.apache.httpcomponents.client5:*</include>
+                                    <include>org.apache.httpcomponents.core5:*</include>
                                 </includes>
                                 <excludes>
                                     <exclude>com.google.code.findbugs:jsr305</exclude>
@@ -131,17 +133,6 @@
                                 <relocation>
                                     <pattern>org.apache.spark.sql.amoro</pattern>
                                     <shadedPattern>org.apache.amoro.spark.sql</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.apache.spark.sql.catalyst</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst
-                                    </shadedPattern>
-                                    <includes>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.Arctic*
-                                        </include>
-                                    </includes>
                                 </relocation>
 
                                 <relocation>
@@ -325,9 +316,6 @@
                                         <include>
                                             org.apache.spark.sql.execution.datasources.v2.SetWriteDistributionAndOrderingExec*
                                         </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ArcticTableWriteExec*
-                                        </include>
                                     </includes>
                                 </relocation>
                                 <relocation>
@@ -502,7 +490,11 @@
                                         </include>
                                     </includes>
                                 </relocation>
-
+                                <relocation>
+                                    <pattern>org.apache.hc</pattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.hc
+                                    </shadedPattern>
+                                </relocation>
                             </relocations>
                             <finalName>${project.artifactId}-${project.version}</finalName>
                         </configuration>
