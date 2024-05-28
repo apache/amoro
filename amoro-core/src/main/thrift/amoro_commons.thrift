@@ -19,8 +19,8 @@
 namespace java org.apache.amoro.api
 
 /**
-* General definition of the arctic thrift interface.
-* This file defines the type definitions that all of arctic's multiple thrift services depend on.
+* General definition of the amoro thrift interface.
+* This file defines the type definitions that all of amoro's multiple thrift services depend on.
 **/
 
 exception AlreadyExistsException {

@@ -18,12 +18,13 @@
 
 package org.apache.amoro.spark.sql.catalyst.plans
 
-import org.apache.amoro.spark.command.{ArcticSparkCommand, MigrateToArcticCommand}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
 import org.apache.spark.sql.catalyst.util.truncatedString
 
-abstract class ArcticCommandLogicalPlan(command: ArcticSparkCommand) extends Command {
+import org.apache.amoro.spark.command.{MigrateToMixedFormatCommand, MixedFormatSparkCommand}
+
+abstract class MixedFormatCommandLogicalPlan(command: MixedFormatSparkCommand) extends Command {
   override def output: Seq[Attribute] = {
     command.outputType().map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
   }
@@ -33,8 +34,8 @@ abstract class ArcticCommandLogicalPlan(command: ArcticSparkCommand) extends Com
   }
 }
 
-case class MigrateToArcticLogicalPlan(command: MigrateToArcticCommand)
-  extends ArcticCommandLogicalPlan(command) {
+case class MigrateToMixedFormatLogicalPlan(command: MigrateToMixedFormatCommand)
+  extends MixedFormatCommandLogicalPlan(command) {
   override def children: Seq[LogicalPlan] = Nil
 
   override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])

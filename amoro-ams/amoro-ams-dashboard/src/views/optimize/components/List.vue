@@ -60,7 +60,7 @@ import { usePagination } from '@/hooks/usePagination'
 import { bytesToSize, formatMS2Time, formatMS2DisplayTime } from '@/utils'
 import { useRouter } from 'vue-router'
 
-import { Modal, Select as ASelect, Table as ATable } from 'ant-design-vue'
+import { Modal } from 'ant-design-vue'
 
 const { t } = useI18n()
 const router = useRouter()

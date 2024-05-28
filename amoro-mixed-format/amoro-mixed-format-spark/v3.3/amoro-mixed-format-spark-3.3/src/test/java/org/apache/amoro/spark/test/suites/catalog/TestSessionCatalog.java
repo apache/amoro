@@ -19,7 +19,7 @@
 package org.apache.amoro.spark.test.suites.catalog;
 
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.spark.table.ArcticSparkTable;
+import org.apache.amoro.spark.table.MixedSparkTable;
 import org.apache.amoro.spark.test.MixedTableTestBase;
 import org.apache.amoro.spark.test.SparkTestContext;
 import org.apache.amoro.table.PrimaryKeySpec;
@@ -64,6 +64,6 @@ public class TestSessionCatalog extends MixedTableTestBase {
         (TableCatalog) spark().sessionState().catalogManager().catalog(SPARK_SESSION_CATALOG);
 
     Table table = sessionCatalog.loadTable(target().toSparkIdentifier());
-    Assertions.assertTrue(table instanceof ArcticSparkTable);
+    Assertions.assertTrue(table instanceof MixedSparkTable);
   }
 }

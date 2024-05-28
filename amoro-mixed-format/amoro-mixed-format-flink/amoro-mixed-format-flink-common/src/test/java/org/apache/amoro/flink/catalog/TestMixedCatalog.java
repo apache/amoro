@@ -193,7 +193,7 @@ public class TestMixedCatalog extends CatalogTestBase {
 
   @Test
   public void testDDLWithVirtualColumn() throws IOException {
-    // create mixed-format table with compute columns and watermark under arctic catalog
+    // create mixed-format table with compute columns and watermark under mixed-format catalog
     // org.apache.iceberg.flink.TypeToFlinkType will convert Timestamp to Timestamp(6), so we cast
     // datatype manually
     sql(

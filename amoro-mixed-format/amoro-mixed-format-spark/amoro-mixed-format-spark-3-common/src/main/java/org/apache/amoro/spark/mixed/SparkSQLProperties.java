@@ -21,20 +21,21 @@ package org.apache.amoro.spark.mixed;
 public class SparkSQLProperties {
 
   public static final String USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES =
-      "spark.sql.arctic.use-timestamp-without-timezone-in-new-tables";
+      "spark.sql.mixed-format.use-timestamp-without-timezone-in-new-tables";
 
   public static final String USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT = "false";
 
   public static final String REFRESH_CATALOG_BEFORE_USAGE =
-      "spark.sql.arctic.refresh-catalog-before-usage";
+      "spark.sql.mixed-format.refresh-catalog-before-usage";
 
   public static final String REFRESH_CATALOG_BEFORE_USAGE_DEFAULT = "false";
 
   public static final String CHECK_SOURCE_DUPLICATES_ENABLE =
-      "spark.sql.arctic.check-source-data-uniqueness.enabled";
+      "spark.sql.mixed-format.check-source-data-uniqueness.enabled";
 
   public static final String CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT = "false";
 
-  public static final String OPTIMIZE_WRITE_ENABLED = "spark.sql.arctic.optimize-write-enabled";
+  public static final String OPTIMIZE_WRITE_ENABLED =
+      "spark.sql.mixed-format.optimize-write-enabled";
   public static final String OPTIMIZE_WRITE_ENABLED_DEFAULT = "true";
 }

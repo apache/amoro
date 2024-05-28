@@ -168,14 +168,6 @@ import {
   UploadChangeParam,
   message,
   Modal,
-  Select as ASelect,
-  Button as AButton,
-  Input as AInput,
-  Form as AForm,
-  FormItem as AFormItem,
-  Checkbox as ACheckbox,
-  CheckboxGroup as ACheckboxGroup,
-  Upload as AUpload
 } from 'ant-design-vue'
 
 interface IStorageConfigItem {
