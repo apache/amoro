@@ -28,6 +28,7 @@ import org.apache.amoro.NoSuchTableException;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.client.AmsThriftUrl;
+import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.amoro.flink.catalog.factories.FlinkUnifiedCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.iceberg.IcebergFlinkCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.mixed.MixedCatalogFactory;
@@ -59,7 +60,10 @@ import org.apache.flink.table.catalog.stats.CatalogTableStatistics;
 import org.apache.flink.table.expressions.Expression;
 import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.Factory;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -68,6 +72,8 @@ import java.util.Optional;
 
 /** This is a Flink catalog wrap a unified catalog. */
 public class FlinkUnifiedCatalog extends AbstractCatalog {
+  private static final Logger LOG = LoggerFactory.getLogger(FlinkUnifiedCatalog.class);
+
   private final UnifiedCatalog unifiedCatalog;
   private final String amsUri;
   private final String amoroCatalogName;
@@ -221,8 +227,27 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
     TableIdentifier tableIdentifier =
         TableIdentifier.of(
             unifiedCatalog.name(), tablePath.getDatabaseName(), tablePath.getObjectName());
+    String errorMessage =
+        String.format(
+            "Can't decide table format of table %s, Please specify 'table.format' "
+                + "in table properties",
+            tableIdentifier);
+
+    Preconditions.checkNotNull(format, errorMessage);
+    try {
+      unifiedCatalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+      if (!ignoreIfExists) {
+        throw new TableAlreadyExistException(getName(), tablePath);
+      }
+      return;
+    } catch (NoSuchTableException e) {
+      // do nothing
+    }
+
+    final TableFormat catalogFormat = format;
     AbstractCatalog catalog =
-        getOriginalCatalog(format).orElseGet(() -> createOriginalCatalog(tableIdentifier, format));
+        getOriginalCatalog(format)
+            .orElseGet(() -> createOriginalCatalog(tableIdentifier, catalogFormat));
     catalog.createTable(tablePath, table, ignoreIfExists);
   }
 
@@ -462,6 +487,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
 
     AbstractCatalog originalCatalog;
     try {
+      context.getOptions().put(CatalogFactoryOptions.FLINK_TABLE_FORMATS.key(), tableFormat.name());
       originalCatalog = (AbstractCatalog) catalogFactory.createCatalog(context);
     } catch (CatalogException e) {
       if (e.getMessage().contains("must implement createCatalog(Context)")) {
