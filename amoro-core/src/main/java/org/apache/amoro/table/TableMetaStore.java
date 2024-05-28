@@ -116,7 +116,6 @@ public class TableMetaStore implements Serializable {
   private final byte[] hdfsSite;
   private final byte[] coreSite;
   private final String authMethod;
-  private final String storageType;
   private final String hadoopUsername;
   private final byte[] krbKeyTab;
   private final byte[] krbConf;
@@ -132,7 +131,6 @@ public class TableMetaStore implements Serializable {
 
   private TableMetaStore(
       byte[] metaStoreSite,
-      String storageType,
       byte[] hdfsSite,
       byte[] coreSite,
       String authMethod,
@@ -148,7 +146,6 @@ public class TableMetaStore implements Serializable {
         "Error auth method:%s",
         authMethod);
     this.metaStoreSite = metaStoreSite;
-    this.storageType = storageType;
     this.hdfsSite = hdfsSite;
     this.coreSite = coreSite;
     this.authMethod = authMethod;
@@ -161,10 +158,6 @@ public class TableMetaStore implements Serializable {
 
   public byte[] getMetaStoreSite() {
     return metaStoreSite;
-  }
-
-  public String getStorageType() {
-    return storageType;
   }
 
   public byte[] getHdfsSite() {
@@ -569,11 +562,6 @@ public class TableMetaStore implements Serializable {
       return this;
     }
 
-    public Builder withStorageType(String storageType) {
-      this.storageType = storageType;
-      return this;
-    }
-
     public Builder withMetaStoreSite(byte[] metaStoreSiteBytes) {
       this.metaStoreSite = metaStoreSiteBytes;
       return this;
@@ -760,7 +748,6 @@ public class TableMetaStore implements Serializable {
           krbPrincipal);
       return new TableMetaStore(
           metaStoreSite,
-          storageType,
           hdfsSite,
           coreSite,
           authMethod,
@@ -777,7 +764,6 @@ public class TableMetaStore implements Serializable {
       TableMetaStore tableMetaStore =
           new TableMetaStore(
               metaStoreSite,
-              storageType,
               hdfsSite,
               coreSite,
               authMethod,

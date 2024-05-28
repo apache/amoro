@@ -302,10 +302,6 @@ public class TerminalManager {
                 catalogMeta
                     .getStorageConfigs()
                     .get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE));
-      } else if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_S3.equalsIgnoreCase(
-          MixedCatalogUtil.getCompatibleStorageType(storageConfigs))) {
-        builder.withStorageType(
-            catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE));
       }
     }
     String authType = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
