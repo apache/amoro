@@ -206,6 +206,7 @@ function build_amoro() {
     local BUILD_CMD="mvn clean package -am -e -pl amoro-ams/dist -DskipTests "
     echo "Amoro dist package is not exists in ${DIST_FILE}"
     echo "please check file or run '$BUILD_CMD' first"
+    exit 1
   fi
 
   set -x
