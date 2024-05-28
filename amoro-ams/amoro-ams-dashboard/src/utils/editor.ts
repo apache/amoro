@@ -27,7 +27,7 @@ import sqlFormatter from 'sql-formatter'
 const registerSql = () => {
   // SQL keyword hints
   monaco.languages.registerCompletionItemProvider('sql', {
-    provideCompletionItems: (model, position, context, token) => {
+    provideCompletionItems: (model, position) => {
       const textUntilPosition = model.getValueInRange({
         startLineNumber: position.lineNumber,
         startColumn: 1,

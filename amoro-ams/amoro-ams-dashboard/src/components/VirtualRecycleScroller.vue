@@ -27,7 +27,7 @@
   >
     <div :class="{'active': activeItem === item.label, 'hive-table': item.type === 'HIVE'}" @mouseenter="handleMouseEnter(item)" @click="handleClickTable(item)" class="desc">
       <svg-icon v-if="iconName === 'database'" icon-class="database" class="table-icon g-mr-8" />
-      <svg-icon v-else :icon-class="tableTypeIconMap[item.type]" class="table-icon g-mr-8" />
+      <svg-icon v-else :icon-class="tableTypeIconMap[item.type as keyof typeof tableTypeIconMap]" class="table-icon g-mr-8" />
       <p :title="item.label" class="name g-text-nowrap">
         {{ item.label }}
       </p>
