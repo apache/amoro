@@ -90,10 +90,10 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
   @Override
   public InputPartition[] planInputPartitions() {
     List<CombinedScanTask> scanTasks = tasks();
-    ArcticInputPartition[] readTasks = new ArcticInputPartition[scanTasks.size()];
+    MixedFormatInputPartition[] readTasks = new MixedFormatInputPartition[scanTasks.size()];
     for (int i = 0; i < scanTasks.size(); i++) {
       readTasks[i] =
-          new ArcticInputPartition(scanTasks.get(i), table, expectedSchema, caseSensitive);
+          new MixedFormatInputPartition(scanTasks.get(i), table, expectedSchema, caseSensitive);
     }
     return readTasks;
   }
@@ -168,8 +168,8 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
   private static class ReaderFactory implements PartitionReaderFactory {
     @Override
     public PartitionReader<InternalRow> createReader(InputPartition partition) {
-      if (partition instanceof ArcticInputPartition) {
-        return new RowReader((ArcticInputPartition) partition);
+      if (partition instanceof MixedFormatInputPartition) {
+        return new RowReader((MixedFormatInputPartition) partition);
       } else {
         throw new UnsupportedOperationException("Incorrect input partition type: " + partition);
       }
@@ -178,15 +178,15 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
 
   private static class RowReader implements PartitionReader<InternalRow> {
 
-    ArcticSparkUnkeyedDataReader reader;
+    SparkUnkeyedDataReader reader;
     Iterator<FileScanTask> scanTasks;
     FileScanTask currentScanTask;
     CloseableIterator<InternalRow> currentIterator = CloseableIterator.empty();
     InternalRow current;
 
-    RowReader(ArcticInputPartition task) {
+    RowReader(MixedFormatInputPartition task) {
       reader =
-          new ArcticSparkUnkeyedDataReader(
+          new SparkUnkeyedDataReader(
               task.io, task.tableSchema, task.expectedSchema, task.nameMapping, task.caseSensitive);
       scanTasks = task.combinedScanTask.files().iterator();
     }
@@ -222,7 +222,7 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
     }
   }
 
-  private static class ArcticInputPartition implements InputPartition, Serializable {
+  private static class MixedFormatInputPartition implements InputPartition, Serializable {
     final CombinedScanTask combinedScanTask;
     final AuthenticatedFileIO io;
     final boolean caseSensitive;
@@ -230,7 +230,7 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
     final Schema tableSchema;
     final String nameMapping;
 
-    ArcticInputPartition(
+    MixedFormatInputPartition(
         CombinedScanTask combinedScanTask,
         UnkeyedTable table,
         Schema expectedSchema,

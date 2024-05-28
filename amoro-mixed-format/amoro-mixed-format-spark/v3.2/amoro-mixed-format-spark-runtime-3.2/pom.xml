@@ -135,17 +135,6 @@
                                     <pattern>org.apache.spark.sql.amoro</pattern>
                                     <shadedPattern>org.apache.amoro.spark.sql</shadedPattern>
                                 </relocation>
-                                <relocation>
-                                    <pattern>org.apache.spark.sql.catalyst</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst
-                                    </shadedPattern>
-                                    <includes>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.Arctic*
-                                        </include>
-                                    </includes>
-                                </relocation>
 
                                 <relocation>
                                     <pattern>org.apache.zookeeper</pattern>
@@ -327,9 +316,6 @@
                                         </include>
                                         <include>
                                             org.apache.spark.sql.execution.datasources.v2.SetWriteDistributionAndOrderingExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ArcticTableWriteExec*
                                         </include>
                                     </includes>
                                 </relocation>

@@ -19,7 +19,7 @@
 package org.apache.amoro.spark.sql.utils
 
 object RowDeltaUtils {
-  final val OPERATION_COLUMN: String = "_arctic_upsert_op"
+  final val OPERATION_COLUMN: String = "_upsert_op"
   final val DELETE_OPERATION: String = "D"
   final val UPDATE_OPERATION: String = "U"
   final val INSERT_OPERATION: String = "I"

@@ -62,7 +62,7 @@ public class TestCreateTableLikeSQL extends MixedTableTestBase {
         new Schema(
             Types.NestedField.required(1, "id", Types.IntegerType.get()),
             Types.NestedField.optional(2, "ts", Types.TimestampType.withZone()));
-    createArcticSource(schema, x -> {});
+    createMixedFormatSource(schema, x -> {});
 
     spark()
         .conf()
@@ -117,7 +117,7 @@ public class TestCreateTableLikeSQL extends MixedTableTestBase {
   @MethodSource
   public void testCreateTableLikeDataLakeTable(TableFormat format, TestTable source) {
     MixedTable expect =
-        createArcticSource(
+        createMixedFormatSource(
             source.schema,
             builder ->
                 builder
@@ -158,7 +158,7 @@ public class TestCreateTableLikeSQL extends MixedTableTestBase {
     sql("CREATE TABLE " + target() + " LIKE " + source() + " " + provider);
     Assertions.assertEquals(expectCreate, tableExists());
     if (!expectCreate) {
-      // not an arctic table.
+      // not a mixed-format table.
       TestIdentifier target = target();
       CONTEXT.dropHiveTable(target.database, target.table);
     }

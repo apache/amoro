@@ -204,7 +204,7 @@ public class TestMixedWriter extends MixedTableTestBase {
     StructType structType = SparkSchemaUtil.convert(table.schema());
     LogicalWriteInfoImpl info =
         new LogicalWriteInfoImpl("queryId", structType, new CaseInsensitiveStringMap(map));
-    ArcticSparkWriteBuilder builder = new ArcticSparkWriteBuilder(table, info, catalog());
+    MixedFormatSparkWriteBuilder builder = new MixedFormatSparkWriteBuilder(table, info, catalog());
     Write write = builder.build();
     DataWriter<InternalRow> writer =
         write.toBatch().createBatchWriterFactory(null).createWriter(0, 0);

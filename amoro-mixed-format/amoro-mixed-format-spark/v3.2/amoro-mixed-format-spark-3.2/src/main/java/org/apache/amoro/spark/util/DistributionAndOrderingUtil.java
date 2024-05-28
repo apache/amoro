@@ -69,7 +69,7 @@ public class DistributionAndOrderingUtil {
    * {@link org.apache.spark.sql.catalyst.expressions.Expression} which will be used by a {@link
    * org.apache.spark.sql.catalyst.plans.logical.RepartitionByExpression} operator.
    *
-   * @param table the arctic table to write
+   * @param table the mixed-format table to write
    * @param writeBase write to base store
    * @return array of expressions indicate how to shuffle incoming data.
    */
@@ -116,7 +116,7 @@ public class DistributionAndOrderingUtil {
    * org.apache.spark.sql.catalyst.expressions.Expression} list and be used for a local sort by add
    * an {@link org.apache.spark.sql.catalyst.plans.logical.Sort} operator for in-coming data.
    *
-   * @param table the arctic table to write to
+   * @param table the mixed-format table to write to
    * @param rowLevelOperation is this writing is an row-level-operation or a batch overwrite.
    * @param writeBase is this writing happened in base store.
    * @return array of expression to indicate how incoming data will be sorted.

@@ -66,7 +66,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite, Write {
+public class UnkeyedSparkBatchWrite
+    implements MixedFormatSparkWriteBuilder.MixedFormatWrite, Write {
 
   private final UnkeyedTable table;
   private final StructType dsSchema;
@@ -313,7 +314,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
                       f ->
                           !f.name().equals("_file")
                               && !f.name().equals("_pos")
-                              && !f.name().equals("_arctic_upsert_op"))
+                              && !f.name().equals("_upsert_op"))
                   .toArray(StructField[]::new));
       return new SimpleRowLevelDataWriter(
           newWriter(partitionId, taskId, schema),

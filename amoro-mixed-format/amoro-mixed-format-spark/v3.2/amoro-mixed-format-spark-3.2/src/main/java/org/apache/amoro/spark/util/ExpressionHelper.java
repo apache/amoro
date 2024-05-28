@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.util;
 
-import org.apache.spark.sql.amoro.catalyst.ArcticSpark32Helper;
+import org.apache.spark.sql.amoro.catalyst.MixedFormatSpark32Helper;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
 import org.apache.spark.sql.connector.expressions.Expression;
 import org.apache.spark.sql.connector.expressions.Expressions;
@@ -66,6 +66,6 @@ public class ExpressionHelper {
 
   public org.apache.spark.sql.catalyst.expressions.Expression toCatalyst(
       Expression expr, LogicalPlan plan) {
-    return ArcticSpark32Helper.toCatalyst(expr, plan);
+    return MixedFormatSpark32Helper.toCatalyst(expr, plan);
   }
 }

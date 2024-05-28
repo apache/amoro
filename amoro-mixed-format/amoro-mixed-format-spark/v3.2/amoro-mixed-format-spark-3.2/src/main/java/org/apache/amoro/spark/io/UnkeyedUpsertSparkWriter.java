@@ -56,7 +56,7 @@ public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
   private final FileFormat format;
   private final Schema schema;
   private final MixedTable table;
-  private final ArcticSparkBaseTaskWriter writer;
+  private final SparkBaseTaskWriter writer;
   private final Map<PartitionKey, SortedPosDeleteWriter<InternalRow>> writerMap = new HashMap<>();
   private boolean closed = false;
 
@@ -66,7 +66,7 @@ public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
       OutputFileFactory fileFactory,
       FileFormat format,
       Schema schema,
-      ArcticSparkBaseTaskWriter writer) {
+      SparkBaseTaskWriter writer) {
     this.table = table;
     this.appenderFactory = appenderFactory;
     this.fileFactory = fileFactory;
