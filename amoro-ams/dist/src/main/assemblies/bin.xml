@@ -48,7 +48,7 @@
             <source>
                 ../amoro-ams-metrics/amoro-metrics-prometheus/target/amoro-metrics-prometheus-${project.version}-jar-with-dependencies.jar
             </source>
-            <outputDirectory>plugin/metrics-reporter</outputDirectory>
+            <outputDirectory>plugin/metric-reporters</outputDirectory>
             <destName>prometheus-reporter.jar</destName>
             <fileMode>0644</fileMode>
         </file>
