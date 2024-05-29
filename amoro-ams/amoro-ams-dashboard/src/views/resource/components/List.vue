@@ -27,7 +27,7 @@ limitations under the License.
           </span>
         </template>
         <template v-if="column.dataIndex === 'optimizeStatus'">
-          <span :style="{ 'background-color': (STATUS_CONFIG[record.optimizeStatus] || {}).color }"
+          <span :style="{ 'background-color': (STATUS_CONFIG[record.optimizeStatus as keyof typeof STATUS_CONFIG] as any)?.color }"
             class="status-icon"></span>
           <span>{{ record.optimizeStatus }}</span>
         </template>
@@ -73,7 +73,11 @@ const router = useRouter()
 
 const props = defineProps<{ curGroupName: string, type: string }>()
 
-const emit = defineEmits<{ (e: 'editGroup', record: IIOptimizeGroupItem): void; (e: 'refresh'): void }>()
+const emit = defineEmits<{
+  (e: 'editGroup', record: IIOptimizeGroupItem): void;
+  (e: 'refresh'): void
+  (e: 'refreshCurGroupInfo'): void
+}>()
 
 const STATUS_CONFIG = shallowReactive({
   pending: { title: 'pending', color: '#ffcc00' },
@@ -127,7 +131,7 @@ function refresh(resetPage?: boolean) {
   }
 }
 
-function releaseModal(record: IOptimizeResourceTableItem) {
+function releaseModal(record: any) {
   if (record.container === 'external') {
     return
   }
@@ -220,7 +224,18 @@ const removeGroup = async (record: IIOptimizeGroupItem) => {
   })
 }
 
-const groupRecord = ref({})
+const groupRecord = ref<IIOptimizeGroupItem>({
+  resourceGroup: {
+    name: '',
+    container: '',
+    properties: {}
+  },
+  occupationCore: 0,
+  occupationMemory: 0,
+  name: '',
+  container: '',
+  resourceOccupation: ''
+})
 const scaleOutViseble = ref<boolean>(false)
 const scaleOutGroup = (record: IIOptimizeGroupItem) => {
   if (record.container === 'external') {

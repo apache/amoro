@@ -70,6 +70,7 @@ export interface IBaseDetailInfo {
 }
 
 export interface DetailColumnItem {
+  checked?: unknown;
   field: string
   type: string
   required: boolean
