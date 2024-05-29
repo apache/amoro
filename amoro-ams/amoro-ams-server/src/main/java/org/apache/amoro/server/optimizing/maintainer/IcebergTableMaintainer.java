@@ -244,7 +244,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
       DataExpirationConfig expirationConfig, Types.NestedField field) {
     switch (expirationConfig.getBaseOnRule()) {
       case CURRENT_TIME:
-        return Instant.now().atZone(getDefaultZoneId(field)).toInstant();
+        return Instant.now();
       case LAST_COMMIT_TIME:
         long lastCommitTimestamp = fetchLatestNonOptimizedSnapshotTime(getTable());
         // if the table does not exist any non-optimized snapshots, should skip the expiration
