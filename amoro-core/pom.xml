@@ -316,12 +316,6 @@
                     <artifactId>hadoop-cos</artifactId>
                     <version>3.1.0-8.3.1</version>
                 </dependency>
-
-                <dependency>
-                    <groupId>com.qcloud.cos</groupId>
-                    <artifactId>lakefs-cosn-client</artifactId>
-                    <version>2.2.6-release</version>
-                </dependency>
             </dependencies>
         </profile>
     </profiles>
