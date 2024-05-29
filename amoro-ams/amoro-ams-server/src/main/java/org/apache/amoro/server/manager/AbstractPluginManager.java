@@ -109,7 +109,8 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
         name -> {
           T plugin = foundedPlugins.get(name);
           if (plugin == null) {
-            throw new LoadingPluginException("Cannot find am implement class for plugin:" + name);
+            throw new LoadingPluginException(
+                "Cannot find an implement class for the plugin:" + name);
           }
           plugin.open(pluginConfig.getProperties());
           exists.set(false);
@@ -221,8 +222,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
   protected void findSingleJarExternalPlugins(File pluginJarFile, ClassLoader parentClassLoader) {
     try {
       ClassLoader pluginClassLoader =
-          new URLClassLoader(
-              new URL[] {new URL(pluginJarFile.getAbsolutePath())}, parentClassLoader);
+          new URLClassLoader(new URL[] {pluginJarFile.toURI().toURL()}, parentClassLoader);
       ServiceLoader<T> loader = ServiceLoader.load(pluginType, pluginClassLoader);
       addToFoundedPlugin(loader);
     } catch (MalformedURLException e) {

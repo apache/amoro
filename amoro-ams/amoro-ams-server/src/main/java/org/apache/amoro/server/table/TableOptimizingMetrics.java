@@ -174,7 +174,7 @@ public class TableOptimizingMetrics {
 
   private final ServerTableIdentifier identifier;
 
-  private OptimizingStatus optimizingStatus;
+  private OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   private long statusSetTimestamp = System.currentTimeMillis();
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
   private MetricRegistry globalRegistry;
