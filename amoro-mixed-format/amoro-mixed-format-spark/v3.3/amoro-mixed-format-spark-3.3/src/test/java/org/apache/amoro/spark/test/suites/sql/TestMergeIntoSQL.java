@@ -32,6 +32,7 @@ import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
+import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -59,19 +60,19 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
 
   private static final List<Record> base =
       Lists.newArrayList(
-          RecordGenerator.newRecord(schema, 1, "a", 1.1, 2.2, "001"),
-          RecordGenerator.newRecord(schema, 2, "b", 1.1, 2.2, "002"));
+          RecordGenerator.newRecord(schema, 1, "a", 1.1f, 1.1D, "001"),
+          RecordGenerator.newRecord(schema, 2, "b", 1.1f, 1.1D, "002"));
   private static final List<Record> change =
       Lists.newArrayList(
-          RecordGenerator.newRecord(schema, 3, "c", 1.1, 2.2, "001"),
-          RecordGenerator.newRecord(schema, 4, "d", 1.1, 2.2, "002"));
+          RecordGenerator.newRecord(schema, 3, "c", 1.1f, 1.1D, "001"),
+          RecordGenerator.newRecord(schema, 4, "d", 1.1f, 1.1D, "002"));
 
   private static final List<Record> source =
       Lists.newArrayList(
-          RecordGenerator.newRecord(schema, 1, "s1", 1.1, 2.2, "001"),
-          RecordGenerator.newRecord(schema, 2, "s2", 1.1, 2.2, "002"),
-          RecordGenerator.newRecord(schema, 5, "s5", 1.1, 2.2, "001"),
-          RecordGenerator.newRecord(schema, 6, "s6", 1.1, 2.2, "003"));
+          RecordGenerator.newRecord(schema, 1, "s1", 1.1f, 1.1D, "001"),
+          RecordGenerator.newRecord(schema, 2, "s2", 1.1f, 1.1D, "002"),
+          RecordGenerator.newRecord(schema, 5, "s5", 1.1f, 1.1D, "001"),
+          RecordGenerator.newRecord(schema, 6, "s6", 1.1f, 1.1D, "003"));
 
   private final List<Record> target = Lists.newArrayList();
 
@@ -111,18 +112,34 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
             + " AS s ON t.id == s.id "
             + "WHEN MATCHED AND t.id = 1 THEN DELETE "
             + "WHEN MATCHED AND t.id = 2 THEN UPDATE SET * "
-            + "WHEN NOT MATCHED AND s.id != 5 THEN INSERT *"
-            + "WHEN NOT MATCHED THEN INSERT (t.id,t.data,t.fdata,t.ddata,t.pt) VALUES (s.id,s.data,1.024,1.024,'001')");
+            + "WHEN NOT MATCHED AND s.id != 5 THEN INSERT (t.data, t.pt, t.id, t.fdata,t.ddata) values ( s.data, s.pt, 1000,1.1,1.1)");
 
     List<Record> expects =
         ExpectResultUtil.expectMergeResult(target, source, r -> r.getField("id"))
             .whenMatched((t, s) -> t.getField("id").equals(1), (t, s) -> null)
             .whenMatched((t, s) -> t.getField("id").equals(2), (t, s) -> s)
-            .whenNotMatched(s -> !s.getField("id").equals(5), Function.identity())
+            .whenNotMatched(
+                s -> !s.getField("id").equals(5),
+                s -> {
+                  s.setField("id", 1000);
+                  s.setField("fdata", 1.1f);
+                  s.setField("ddata", 1.1D);
+                  return s;
+                })
             .results();
 
     MixedTable table = loadTable();
     List<Record> actual = TestTableUtil.tableRecords(table);
+    // check fdata/ddata of row with id 100。
+    Record record = actual.stream().filter(r -> r.getField("id").equals(1000)).findFirst().get();
+    Assert.assertNotNull(record);
+
+    Assert.assertTrue(
+        String.format(
+            "fdata %s != 1.1, data %s != 1.1",
+            record.getField("fdata"), record.getField("fdata").toString()),
+        record.getField("fdata").toString().equals("1.1")
+            && record.getField("fdata").toString().equals("1.1"));
     DataComparator.build(expects, actual).ignoreOrder("id").assertRecordsEqual();
   }
 
@@ -139,7 +156,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
             + " AS t USING "
             + source()
             + " AS s ON t.id == s.id "
-            + "WHEN MATCHED AND t.id = 2 THEN UPDATE SET t.data = 'ccc', t.fdata = 1.024, t.ddata = 1.024");
+            + "WHEN MATCHED AND t.id = 2 THEN UPDATE SET t.data = 'ccc', t.fdata = 1.1, t.ddata = 1.1");
 
     List<Record> expects =
         ExpectResultUtil.expectMergeResult(target, source, r -> r.getField("id"))
@@ -171,8 +188,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
             + " AS s ON t.id == s.id "
             + "WHEN MATCHED AND t.id = 1 THEN DELETE "
             + "WHEN MATCHED AND t.id = 2 THEN UPDATE SET * "
-            + "WHEN NOT MATCHED THEN INSERT *"
-            + "WHEN NOT MATCHED THEN INSERT (t.id,t.data,t.fdata,t.ddata,t.pt) VALUES (s.id,s.data,1.024,1.024,'001')");
+            + "WHEN NOT MATCHED THEN INSERT *");
 
     table.refresh();
     List<Record> expects = Lists.newArrayList(source);
@@ -245,7 +261,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
             + source()
             + " AS s ON t.id == s.id "
             + "WHEN MATCHED THEN UPDATE SET t.id = s.id, t.data = s.pt, t.pt = s.pt "
-            + "WHEN NOT MATCHED THEN INSERT (t.data, t.pt, t.id) values ( s.pt, s.pt, s.id) ");
+            + "WHEN NOT MATCHED THEN INSERT (t.data, t.pt, t.id, t.fdata,t.ddata) values ( s.data, s.pt, s.id,s.fdata,s.ddata) ");
 
     Function<Record, Record> dataAsPt =
         s -> {
@@ -284,7 +300,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
               + source()
               + " AS s ON t.pt == s.id "
               + "WHEN MATCHED THEN UPDATE SET t.id = s.id, t.data = s.pt, t.pt = s.pt "
-              + "WHEN NOT MATCHED THEN INSERT (t.data, t.pt, t.id) values ( s.pt, s.pt, s.id) ");
+              + "WHEN NOT MATCHED THEN INSERT (t.data, t.pt, t.id,t.fdata,t.ddata) values ( s.pt, s.data, s.id,s.fdata,s.ddata) ");
     } catch (Exception e) {
       catched = true;
     }
@@ -298,8 +314,8 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
     setupTest(pk);
     List<Record> source =
         Lists.newArrayList(
-            RecordGenerator.newRecord(schema, 1, "s1", "001"),
-            RecordGenerator.newRecord(schema, 1, "s2", "001"));
+            RecordGenerator.newRecord(schema, 1, "s1", 1.1f, 2.2D, "001"),
+            RecordGenerator.newRecord(schema, 1, "s2", 1.1f, 2.2D, "001"));
     createViewSource(schema, source);
 
     boolean catched = false;
@@ -311,7 +327,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
               + source()
               + " AS s ON t.id == s.id "
               + "WHEN MATCHED THEN UPDATE SET t.id = s.id, t.data = s.pt, t.pt = s.pt "
-              + "WHEN NOT MATCHED THEN INSERT (t.data, t.pt, t.id) values ( s.pt, s.pt, s.id) ");
+              + "WHEN NOT MATCHED THEN INSERT (t.data, t.pt, t.id, t.fdata, t.ddata) values ( s.data, s.pt, s.id, s.fdata, s.ddata) ");
     } catch (Exception e) {
       catched = true;
     }

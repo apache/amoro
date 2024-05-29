@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.expressions.AssignmentUtils
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 
-import org.apache.amoro.spark.sql.catalyst.plans.UnresolvedMergeIntoMixedFormatTable
+import org.apache.amoro.spark.sql.catalyst.plans.{MergeIntoMixedFormatTable, UnresolvedMergeIntoMixedFormatTable}
 
 /**
  * A rule that aligns assignments in UPDATE and MERGE operations.
@@ -35,7 +35,7 @@ object MixedFormatAlignRowLevelCommandAssignments
   extends Rule[LogicalPlan] with MixedFormatAssignmentAlignmentSupport {
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperators {
-    case m: UnresolvedMergeIntoMixedFormatTable if m.resolved && !m.aligned =>
+    case m: MergeIntoMixedFormatTable if m.resolved && !m.aligned =>
       val alignedMatchedActions = m.matchedActions.map {
         case u @ UpdateAction(_, assignments) =>
           u.copy(assignments = alignAssignments(m.targetTable, assignments))
