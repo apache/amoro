@@ -129,6 +129,7 @@
         <prometheus.version>0.16.0</prometheus.version>
         <flink.version>1.18.1</flink.version>
         <fabric8-kubernetes-client.version.version>6.12.1</fabric8-kubernetes-client.version.version>
+        <hudi.version>0.14.1</hudi.version>
     </properties>
 
     <dependencies>
@@ -800,6 +801,12 @@
                 <version>${fabric8-kubernetes-client.version.version}</version>
             </dependency>
 
+            <!--  apache hudi dependencies management -->
+            <dependency>
+                <groupId>org.apache.hudi</groupId>
+                <artifactId>hudi-java-client</artifactId>
+                <version>${hudi.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>junit</groupId>

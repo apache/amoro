@@ -64,6 +64,12 @@
             <artifactId>paimon-shade-jackson-2</artifactId>
         </dependency>
 
+        <!--  apache hudi dependencies -->
+        <dependency>
+            <groupId>org.apache.hudi</groupId>
+            <artifactId>hudi-java-client</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
