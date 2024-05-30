@@ -111,7 +111,7 @@
         <terminal.spark.version>3.3.2</terminal.spark.version>
         <terminal.spark.major.version>3.3</terminal.spark.major.version>
         <dropwizard.metrics.version>4.2.19</dropwizard.metrics.version>
-        <thrift.version>0.13.0</thrift.version>
+        <thrift.version>0.20.0</thrift.version>
         <caffeine.version>2.9.3</caffeine.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <mybatis.version>3.5.15</mybatis.version>

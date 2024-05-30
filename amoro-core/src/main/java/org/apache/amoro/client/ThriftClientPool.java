@@ -22,10 +22,10 @@ import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
+import org.apache.thrift.transport.layered.TFramedTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,9 +47,6 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
   private final ThriftPingFactory pingFactory;
   private final GenericObjectPool<ThriftClient<T>> pool;
   private final PoolConfig poolConfig;
-  private final String serviceName;
-  private final String url;
-  private final boolean serviceReset = false;
 
   /**
    * Construct a new pool using
@@ -74,14 +71,12 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
       throw new IllegalArgumentException("config is empty!");
     }
 
-    this.url = url;
     this.clientFactory = factory;
     this.pingFactory = pingFactory;
     this.poolConfig = config;
     // test if config change
     this.poolConfig.setTestOnReturn(true);
     this.poolConfig.setTestOnBorrow(true);
-    this.serviceName = serviceName;
     this.pool =
         new GenericObjectPool<>(
             new BasePooledObjectFactory<ThriftClient<T>>() {
