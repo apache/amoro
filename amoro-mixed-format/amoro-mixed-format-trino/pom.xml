@@ -41,7 +41,7 @@
         <guice.version>5.1.0</guice.version>
         <inject.version>1</inject.version>
         <servlet-api.version>4.0.1</servlet-api.version>
-        <commons-collections.version>3.2.1</commons-collections.version>
+        <commons-collections.version>3.2.2</commons-collections.version>
         <avro.version>1.10.1</avro.version>
         <jersey.version>1.19.4</jersey.version>
         <guava-retrying.version>2.0.0</guava-retrying.version>
