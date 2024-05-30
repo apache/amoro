@@ -34,7 +34,6 @@
     <url>https://amoro.apache.org</url>
 
     <properties>
-        <hive.version>2.3.9</hive.version>
         <spark.version>3.2.4</spark.version>
         <scala.version>2.12.15</scala.version>
     </properties>
