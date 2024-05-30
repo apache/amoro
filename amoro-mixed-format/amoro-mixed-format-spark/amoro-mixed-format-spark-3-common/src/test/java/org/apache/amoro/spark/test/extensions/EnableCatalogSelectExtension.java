@@ -21,7 +21,7 @@ package org.apache.amoro.spark.test.extensions;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.spark.test.SparkTestBase;
 import org.apache.amoro.spark.test.SparkTestContext;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.engine.execution.BeforeEachMethodAdapter;

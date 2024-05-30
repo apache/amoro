@@ -19,7 +19,7 @@
 package org.apache.amoro.server.dashboard.model;
 
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 

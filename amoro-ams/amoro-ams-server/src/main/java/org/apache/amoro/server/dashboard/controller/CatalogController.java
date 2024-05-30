@@ -65,7 +65,7 @@ import org.apache.amoro.server.dashboard.utils.PropertiesUtil;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.MixedCatalogUtil;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.AwsClientProperties;
 import org.apache.iceberg.aws.glue.GlueCatalog;
