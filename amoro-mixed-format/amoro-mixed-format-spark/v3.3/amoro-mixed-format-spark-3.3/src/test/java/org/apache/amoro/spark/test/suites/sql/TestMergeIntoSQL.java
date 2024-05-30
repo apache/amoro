@@ -32,7 +32,6 @@ import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -130,16 +129,6 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
 
     MixedTable table = loadTable();
     List<Record> actual = TestTableUtil.tableRecords(table);
-    // check fdata/ddata of row with id 100。
-    Record record = actual.stream().filter(r -> r.getField("id").equals(1000)).findFirst().get();
-    Assert.assertNotNull(record);
-
-    Assert.assertTrue(
-        String.format(
-            "fdata %s != 1.1, data %s != 1.1",
-            record.getField("fdata"), record.getField("fdata").toString()),
-        record.getField("fdata").toString().equals("1.1")
-            && record.getField("fdata").toString().equals("1.1"));
     DataComparator.build(expects, actual).ignoreOrder("id").assertRecordsEqual();
   }
 
@@ -261,7 +250,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
             + source()
             + " AS s ON t.id == s.id "
             + "WHEN MATCHED THEN UPDATE SET t.id = s.id, t.data = s.pt, t.pt = s.pt "
-            + "WHEN NOT MATCHED THEN INSERT (t.data, t.pt, t.id, t.fdata,t.ddata) values ( s.data, s.pt, s.id,s.fdata,s.ddata) ");
+            + "WHEN NOT MATCHED THEN INSERT (t.data, t.pt, t.id, t.fdata,t.ddata) values ( s.pt, s.pt, s.id,s.fdata,s.ddata) ");
 
     Function<Record, Record> dataAsPt =
         s -> {
