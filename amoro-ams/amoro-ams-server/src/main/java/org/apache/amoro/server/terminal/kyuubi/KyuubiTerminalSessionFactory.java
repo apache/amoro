@@ -37,6 +37,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -123,7 +124,7 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     sessionConf.put("jdbc.url", kyuubiJdbcUrl);
     Properties properties = new Properties();
 
-    if (!metaStore.isKerberosAuthMethod()) {
+    if (!metaStore.isKerberosAuthMethod() && Objects.nonNull(metaStore.getHadoopUsername())) {
       properties.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
       sessionConf.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
     }
