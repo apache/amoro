@@ -126,7 +126,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
 
   @Override
   public boolean namespaceExists(String[] namespace) {
-    return unifiedCatalog.exist(namespaceToDatabase(namespace));
+    return unifiedCatalog.databaseExists(namespaceToDatabase(namespace));
   }
 
   @Override
@@ -160,7 +160,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
       unifiedCatalog.dropTable(database, id.getIdentifier().getTableName(), true);
     }
     unifiedCatalog.dropDatabase(database);
-    return !unifiedCatalog.exist(database);
+    return !unifiedCatalog.databaseExists(database);
   }
 
   @Override
@@ -215,7 +215,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
 
   @Override
   public boolean tableExists(Identifier ident) {
-    return unifiedCatalog.exist(namespaceToDatabase(ident.namespace()), ident.name());
+    return unifiedCatalog.tableExists(namespaceToDatabase(ident.namespace()), ident.name());
   }
 
   @Override

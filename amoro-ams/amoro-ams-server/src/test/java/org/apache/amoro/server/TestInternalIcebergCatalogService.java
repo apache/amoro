@@ -125,7 +125,7 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
     @AfterEach
     public void clean() {
       nsCatalog.dropTable(identifier);
-      if (serverCatalog.exist(database, table)) {
+      if (serverCatalog.tableExists(database, table)) {
         serverCatalog.dropTable(database, table);
       }
       serverCatalog.dropDatabase(database);

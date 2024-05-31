@@ -47,12 +47,12 @@ public class PaimonCatalog implements FormatCatalog {
   }
 
   @Override
-  public boolean exist(String database) {
+  public boolean databaseExists(String database) {
     return catalog.databaseExists(database);
   }
 
   @Override
-  public boolean exist(String database, String table) {
+  public boolean tableExists(String database, String table) {
     return catalog.tableExists(Identifier.create(database, table));
   }
 
