@@ -70,12 +70,12 @@ public class TestServerCatalog extends TableCatalogTestBase {
 
   @Test
   public void dataBaseExists() {
-    Assert.assertTrue(getServerCatalog().exist(testDatabaseName));
+    Assert.assertTrue(getServerCatalog().databaseExists(testDatabaseName));
   }
 
   @Test
   public void tableExists() {
-    Assert.assertTrue(getServerCatalog().exist(testDatabaseName, testTableName));
+    Assert.assertTrue(getServerCatalog().tableExists(testDatabaseName, testTableName));
   }
 
   @Test

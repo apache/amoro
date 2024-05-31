@@ -103,7 +103,7 @@ public class MixedHiveCatalogImpl extends InternalCatalog {
   }
 
   @Override
-  public boolean exist(String database) {
+  public boolean databaseExists(String database) {
     try {
       return hiveClientPool.run(
           client -> {

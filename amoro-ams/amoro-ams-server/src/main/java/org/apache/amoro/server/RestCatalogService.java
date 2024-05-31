@@ -209,7 +209,7 @@ public class RestCatalogService extends PersistentBase {
           } else {
             checkUnsupported(
                 !ns.contains("."), "multi-level namespace is not supported, parent: " + ns);
-            checkDatabaseExist(catalog.exist(ns), ns);
+            checkDatabaseExist(catalog.databaseExists(ns), ns);
           }
           return ListNamespacesResponse.builder().addAll(nsLists).build();
         });
@@ -224,7 +224,7 @@ public class RestCatalogService extends PersistentBase {
           Namespace ns = request.namespace();
           checkUnsupported(ns.length() == 1, "multi-level namespace is not supported now");
           String database = ns.level(0);
-          checkAlreadyExists(!catalog.exist(database), "Database", database);
+          checkAlreadyExists(!catalog.databaseExists(database), "Database", database);
           catalog.createDatabase(database);
           return CreateNamespaceResponse.builder().withNamespace(Namespace.of(database)).build();
         });
@@ -410,7 +410,7 @@ public class RestCatalogService extends PersistentBase {
           String ns = ctx.pathParam("namespace");
           Preconditions.checkNotNull(ns, "namespace is null");
           checkUnsupported(!ns.contains("."), "multi-level namespace is not supported");
-          checkDatabaseExist(catalog.exist(ns), ns);
+          checkDatabaseExist(catalog.databaseExists(ns), ns);
           return handler.apply(catalog, ns);
         });
   }

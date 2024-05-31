@@ -96,7 +96,7 @@ public class SparkTestBase {
     try {
       LOG.debug("prepare database for table test: " + database());
       UnifiedCatalog catalog = unifiedCatalog();
-      if (!unifiedCatalog().exist(database())) {
+      if (!unifiedCatalog().databaseExists(database())) {
         catalog.createDatabase(database());
       }
     } catch (AlreadyExistsException e) {
