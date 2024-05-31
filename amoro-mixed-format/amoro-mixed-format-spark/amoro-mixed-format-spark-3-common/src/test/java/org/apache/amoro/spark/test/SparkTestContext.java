@@ -25,15 +25,15 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.apache.amoro.spark.SparkUnifiedCatalog;
+import org.apache.amoro.spark.SparkUnifiedCatalogBase;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.relocated.com.google.common.base.Joiner;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.apache.thrift.TException;
@@ -50,7 +50,7 @@ public class SparkTestContext {
       "org.apache.amoro.spark.MixedFormatSparkExtensions"
           + ",org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions";
 
-  public static final String UNIFIED_CATALOG_IMP = SparkUnifiedCatalog.class.getName();
+  public static final String UNIFIED_CATALOG_IMP = SparkUnifiedCatalogBase.class.getName();
 
   final TemporaryFolder warehouse = new TemporaryFolder();
   public static final String AMS_ALL_FORMAT_CATALOG_NAME = "all_formats";

@@ -41,6 +41,13 @@
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.scala-lang.modules</groupId>
+            <artifactId>scala-collection-compat_${scala.binary.version}</artifactId>
+            <version>${scala.collection.compat}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.scala-lang.modules</groupId>
             <artifactId>scala-collection-compat_${scala.binary.version}</artifactId>

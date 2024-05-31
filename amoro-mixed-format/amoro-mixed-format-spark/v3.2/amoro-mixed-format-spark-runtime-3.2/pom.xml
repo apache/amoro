@@ -264,6 +264,9 @@
                                             org.apache.spark.sql.execution.datasources.v2.ExtendedDataSourceV2Strategy*
                                         </include>
                                         <include>
+                                            org.apache.spark.sql.execution.datasources.v2.MixedFormatExtendedDataSourceV2Strategy*
+                                        </include>
+                                        <include>
                                             org.apache.spark.sql.execution.datasources.v2.MergeIntoExec*
                                         </include>
                                         <include>
@@ -277,6 +280,18 @@
                                         </include>
                                         <include>
                                             org.apache.spark.sql.execution.datasources.v2.SetWriteDistributionAndOrderingExec*
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.execution.datasources.v2.OptimizeMetadataOnlyDeleteFromTable*
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.execution.datasources.v2.RowLevelCommandScanRelationPushDown*
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.execution.datasources.v2.ExtendedV2Writes*
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.execution.datasources.v2.ReplaceRewrittenRowLevelCommand*
                                         </include>
                                     </includes>
                                 </relocation>
@@ -312,6 +327,30 @@
                                         <include>
                                             org.apache.spark.sql.catalyst.analysis.RowLevelOperationsPredicateCheck*
                                         </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.analysis.ResolveMergeIntoTableReferences*
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.analysis.CheckMergeIntoTableConditions*
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.analysis.AlignRowLevelCommandAssignments*
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.analysis.RewriteDeleteFromTable*
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.analysis.RewriteUpdateTable*
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.analysis.RewriteMergeIntoTable*
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.analysis.MergeIntoIcebergTableResolutionCheck*
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.analysis.AlignedRowLevelIcebergCommandCheck*
+                                        </include>
                                     </includes>
                                 </relocation>
                                 <relocation>
@@ -335,19 +374,10 @@
                                     </shadedPattern>
                                     <includes>
                                         <include>
-                                            org.apache.spark.sql.catalyst.optimizer.OptimizeConditionsInRowLevelOperations*
+                                            org.apache.spark.sql.catalyst.optimizer.ExtendedSimplifyConditionalsInPredicate*
                                         </include>
                                         <include>
-                                            org.apache.spark.sql.catalyst.optimizer.PullupCorrelatedPredicatesInRowLevelOperations*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.optimizer.RewriteDelete*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.optimizer.RewriteMergeInto*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.optimizer.RewriteUpdate*
+                                            org.apache.spark.sql.catalyst.optimizer.ExtendedReplaceNullWithFalseInPredicate*
                                         </include>
                                     </includes>
                                 </relocation>
@@ -363,6 +393,9 @@
                                         </include>
                                         <include>
                                             org.apache.spark.sql.catalyst.parser.extensions.UpperCaseCharStream*
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.parser.extensions.IcebergSparkSqlExtensionsParser*
                                         </include>
                                     </includes>
                                 </relocation>
@@ -438,6 +471,17 @@
                                     <pattern>org.apache.hc</pattern>
                                     <shadedPattern>org.apache.amoro.shade.org.apache.hc
                                     </shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.spark.sql.execution.dynamicpruning</pattern>
+                                    <shadedPattern>
+                                        org.apache.amoro.shade.org.apache.spark.sql.execution.dynamicpruning
+                                    </shadedPattern>
+                                    <includes>
+                                        <include>
+                                            org.apache.spark.sql.execution.dynamicpruning.RowLevelCommandDynamicPruning*
+                                        </include>
+                                    </includes>
                                 </relocation>
                             </relocations>
                             <finalName>${project.artifactId}-${project.version}</finalName>
