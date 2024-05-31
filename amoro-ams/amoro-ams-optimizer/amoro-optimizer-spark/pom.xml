@@ -155,32 +155,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>optimizer.spark3.3</id>
-            <activation>
-                <property>
-                    <name>!optimizer.spark</name>
-                </property>
-            </activation>
-            <properties>
-                <spark-optimizer.spark-version>3.3.3</spark-optimizer.spark-version>
-                <spark-optimizer.scala-version>2.12</spark-optimizer.scala-version>
-            </properties>
-        </profile>
-        <profile>
-            <id>optimizer.spark3.2</id>
-            <activation>
-                <property>
-                    <name>optimizer.spark</name>
-                    <value>3.2</value>
-                </property>
-            </activation>
-            <properties>
-                <spark-optimizer.spark-version>3.2.4</spark-optimizer.spark-version>
-                <spark-optimizer.scala-version>2.12</spark-optimizer.scala-version>
-            </properties>
-        </profile>
-    </profiles>
 </project>
