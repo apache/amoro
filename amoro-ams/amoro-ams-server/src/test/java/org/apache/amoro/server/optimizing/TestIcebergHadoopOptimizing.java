@@ -74,7 +74,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     if (icebergCatalog != null) {
       icebergCatalog.dropTable(TableIdentifier.of(DATABASE, TABLE), true);
     }
-    if (serverCatalog != null && serverCatalog.exist(DATABASE, TABLE)) {
+    if (serverCatalog != null && serverCatalog.tableExists(DATABASE, TABLE)) {
       serverCatalog.dropTable(DATABASE, TABLE);
     }
   }
@@ -410,7 +410,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
         amsEnv.serviceContainer().getTableService().getServerCatalog(catalog);
     if (serverCatalog instanceof InternalCatalog) {
       this.serverCatalog = (InternalCatalog) serverCatalog;
-      if (!this.serverCatalog.exist(DATABASE)) {
+      if (!this.serverCatalog.databaseExists(DATABASE)) {
         this.serverCatalog.createDatabase(DATABASE);
       }
     }

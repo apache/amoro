@@ -83,13 +83,13 @@ public class ExternalCatalog extends ServerCatalog {
   }
 
   @Override
-  public boolean exist(String database) {
-    return doAs(() -> unifiedCatalog.exist(database));
+  public boolean databaseExists(String database) {
+    return doAs(() -> unifiedCatalog.databaseExists(database));
   }
 
   @Override
-  public boolean exist(String database, String tableName) {
-    return doAs(() -> unifiedCatalog.exist(database, tableName));
+  public boolean tableExists(String database, String tableName) {
+    return doAs(() -> unifiedCatalog.tableExists(database, tableName));
   }
 
   @Override

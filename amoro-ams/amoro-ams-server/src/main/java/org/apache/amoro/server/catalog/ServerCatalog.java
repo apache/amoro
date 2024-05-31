@@ -48,9 +48,9 @@ public abstract class ServerCatalog extends PersistentBase {
     this.metadata = metadata;
   }
 
-  public abstract boolean exist(String database);
+  public abstract boolean databaseExists(String database);
 
-  public abstract boolean exist(String database, String tableName);
+  public abstract boolean tableExists(String database, String tableName);
 
   public abstract List<String> listDatabases();
 

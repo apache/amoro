@@ -95,7 +95,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     testCallProcedure(format);
 
     sql("DROP TABLE " + target() + " PURGE");
-    Assertions.assertFalse(unifiedCatalog().exist(target().database, target().table));
+    Assertions.assertFalse(unifiedCatalog().tableExists(target().database, target().table));
   }
 
   private String pkDDL(TableFormat format) {
@@ -173,7 +173,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     UnifiedCatalog unifiedCatalog =
         UnifiedCatalogLoader.loadUnifiedCatalog(
             CONTEXT.amsThriftUrl(), format.name().toLowerCase(), Maps.newHashMap());
-    if (!unifiedCatalog().exist(database())) {
+    if (!unifiedCatalog().databaseExists(database())) {
       unifiedCatalog.createDatabase(database());
     }
   }

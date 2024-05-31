@@ -76,14 +76,14 @@ public abstract class TestAmoroCatalogBase extends AmoroCatalogTestBase {
   @Test
   public void testExistsDatabase() {
     createDatabase(DB1);
-    Assert.assertTrue(amoroCatalog.exist(DB1));
+    Assert.assertTrue(amoroCatalog.databaseExists(DB1));
   }
 
   @Test
   public void testExistsTable() {
     createDatabase(DB1);
     createTable(DB1, TABLE, new HashMap<>());
-    Assert.assertTrue(amoroCatalog.exist(DB1, TABLE));
+    Assert.assertTrue(amoroCatalog.tableExists(DB1, TABLE));
   }
 
   @Test

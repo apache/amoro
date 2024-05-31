@@ -36,7 +36,7 @@ public interface AmoroCatalog {
    * @param database a database name
    * @return true if the database exists, false otherwise
    */
-  boolean exist(String database);
+  boolean databaseExists(String database);
 
   /**
    * Check whether table exists.
@@ -45,7 +45,7 @@ public interface AmoroCatalog {
    * @param table a table name
    * @return true if the table exists, false otherwise
    */
-  boolean exist(String database, String table);
+  boolean tableExists(String database, String table);
 
   /**
    * create database catalog.

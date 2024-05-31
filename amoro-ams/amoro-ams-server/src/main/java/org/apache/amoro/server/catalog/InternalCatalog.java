@@ -51,7 +51,7 @@ public abstract class InternalCatalog extends ServerCatalog {
   }
 
   public void createDatabase(String databaseName) {
-    if (!exist(databaseName)) {
+    if (!databaseExists(databaseName)) {
       doAsTransaction(
           // make sure catalog existed in database
           () ->
@@ -70,7 +70,7 @@ public abstract class InternalCatalog extends ServerCatalog {
   }
 
   public void dropDatabase(String databaseName) {
-    if (exist(databaseName)) {
+    if (databaseExists(databaseName)) {
       doAsTransaction(
           () ->
               doAsExisted(
@@ -177,7 +177,7 @@ public abstract class InternalCatalog extends ServerCatalog {
   }
 
   @Override
-  public boolean exist(String database) {
+  public boolean databaseExists(String database) {
     return getAs(
             TableMetaMapper.class,
             mapper -> mapper.selectDatabase(getMetadata().getCatalogName(), database))
@@ -185,7 +185,7 @@ public abstract class InternalCatalog extends ServerCatalog {
   }
 
   @Override
-  public boolean exist(String database, String tableName) {
+  public boolean tableExists(String database, String tableName) {
     ServerTableIdentifier tableIdentifier =
         getAs(
             TableMetaMapper.class,
