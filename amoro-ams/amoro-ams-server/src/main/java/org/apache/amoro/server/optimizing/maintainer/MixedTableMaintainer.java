@@ -24,11 +24,9 @@ import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.mi
 import org.apache.amoro.IcebergFileEntry;
 import org.apache.amoro.api.config.DataExpirationConfig;
 import org.apache.amoro.data.FileNameRules;
-import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.HiveLocationUtil;
-import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.KeyedTable;
