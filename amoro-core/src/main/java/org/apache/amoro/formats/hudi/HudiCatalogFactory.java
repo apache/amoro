@@ -21,6 +21,7 @@ package org.apache.amoro.formats.hudi;
 import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.FormatCatalogFactory;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.table.TableMetaStore;
 
 import java.util.Map;
@@ -34,6 +35,8 @@ public class HudiCatalogFactory implements FormatCatalogFactory {
       String catalogName, String metastoreType, Map<String, String> properties, TableMetaStore metaStore) {
     if ("hadoop".equalsIgnoreCase(metastoreType)) {
       return new HudiHadoopCatalog(catalogName, properties, metaStore);
+    } else if (CatalogMetaProperties.CATALOG_TYPE_HIVE.equalsIgnoreCase(metastoreType)) {
+      return new HudiHiveCatalog(catalogName, properties, metaStore);
     }
     throw new IllegalArgumentException("Un-supported metastore type:" + metastoreType + " for Hudi");
   }

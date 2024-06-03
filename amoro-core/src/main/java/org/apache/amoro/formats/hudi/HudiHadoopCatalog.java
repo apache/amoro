@@ -40,18 +40,15 @@ import java.util.Map;
  */
 public class HudiHadoopCatalog extends HudiCatalogBase {
 
-  private final Map<String, String> catalogProperties;
   private final Path warehouse;
 
   protected HudiHadoopCatalog(
       String catalog, Map<String, String> properties, TableMetaStore metaStore) {
-    super(catalog, metaStore);
-    this.catalogProperties = properties == null?
-        Collections.emptyMap(): Collections.unmodifiableMap(properties);
+    super(catalog, properties, metaStore);
     Preconditions.checkArgument(
-        this.catalogProperties.containsKey(CatalogMetaProperties.KEY_WAREHOUSE),
+        getProperties().containsKey(CatalogMetaProperties.KEY_WAREHOUSE),
         "Lack required property: {}", CatalogMetaProperties.KEY_WAREHOUSE);
-    String warehosue = this.catalogProperties.get(CatalogMetaProperties.KEY_WAREHOUSE);
+    String warehosue = getProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
     this.warehouse = new Path(warehosue);
   }
 

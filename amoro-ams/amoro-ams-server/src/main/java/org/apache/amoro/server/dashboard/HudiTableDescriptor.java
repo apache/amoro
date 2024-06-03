@@ -31,15 +31,18 @@ import org.apache.amoro.server.dashboard.model.PartitionFileBaseInfo;
 import org.apache.amoro.server.dashboard.model.ServerTableMeta;
 import org.apache.amoro.server.dashboard.model.TagOrBranchInfo;
 import org.apache.avro.Schema;
+import org.apache.hudi.common.model.HoodieCommitMetadata;
 import org.apache.hudi.common.table.HoodieTableMetaClient;
 import org.apache.hudi.common.table.TableSchemaResolver;
 import org.apache.hudi.common.table.timeline.HoodieDefaultTimeline;
 import org.apache.hudi.common.table.timeline.HoodieTimeline;
+import org.apache.hudi.common.util.Option;
 import org.apache.hudi.table.HoodieJavaTable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.Pair;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -74,7 +77,6 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     List<AMSColumnInfo> columns = Lists.newArrayList();
     try {
       Schema scheme = schemaResolver.getTableAvroSchema(false);
-
       scheme.getFields().forEach(field -> {
         AMSColumnInfo columnInfo = new AMSColumnInfo();
         columnInfo.setField(field.name());
@@ -115,11 +117,21 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
           HoodieTimeline.COMMIT_ACTION, HoodieTimeline.DELTA_COMMIT_ACTION,
           HoodieTimeline.SAVEPOINT_ACTION, HoodieTimeline.ROLLBACK_ACTION));
     }
-    return timeline.getInstantsAsStream().map(
+    return timeline.getInstantsAsStream().parallel().map(
         i -> {
           AmoroSnapshotsOfTable s = new AmoroSnapshotsOfTable();
           s.setSnapshotId(i.getTimestamp());
           s.setOperation(i.getAction());
+          Option<byte[]> optDetail = activeTimeline.getInstantDetails(i);
+          if (optDetail.isPresent()) {
+            byte[] detail = optDetail.get();
+            try {
+              HoodieCommitMetadata metadata = HoodieCommitMetadata.fromBytes(
+                  detail, HoodieCommitMetadata.class);
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          }
           return s;
         }
     ).collect(Collectors.toList());

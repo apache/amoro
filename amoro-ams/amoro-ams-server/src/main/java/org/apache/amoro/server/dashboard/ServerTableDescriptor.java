@@ -57,7 +57,8 @@ public class ServerTableDescriptor extends PersistentBase {
     FormatTableDescriptor[] formatTableDescriptors =
         new FormatTableDescriptor[] {
           new MixedAndIcebergTableDescriptor(executorService),
-          new PaimonTableDescriptor(executorService)
+          new PaimonTableDescriptor(executorService),
+          new HudiTableDescriptor(executorService)
         };
     for (FormatTableDescriptor formatTableDescriptor : formatTableDescriptors) {
       for (TableFormat format : formatTableDescriptor.supportFormat()) {

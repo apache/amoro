@@ -26,6 +26,9 @@ import org.apache.hudi.client.common.HoodieJavaEngineContext;
 import org.apache.hudi.config.HoodieWriteConfig;
 import org.apache.hudi.table.HoodieJavaTable;
 
+import java.util.Collections;
+import java.util.Map;
+
 /**
  * The base implement for hudi catalog.
  */
@@ -33,10 +36,19 @@ public abstract class HudiCatalogBase implements FormatCatalog {
 
   protected final TableMetaStore metaStore;
   protected final String catalog;
+  protected final Map<String, String> properties;
 
-  protected HudiCatalogBase(String catalog, TableMetaStore metaStore) {
+  protected HudiCatalogBase(String catalog, Map<String, String> catalogProperties, TableMetaStore metaStore) {
     this.catalog = catalog;
     this.metaStore = metaStore;
+    this.properties = catalogProperties == null ?
+        Collections.emptyMap():
+        Collections.unmodifiableMap(catalogProperties);
+  }
+
+
+  protected Map<String, String> getProperties() {
+    return this.properties;
   }
 
   @Override
