@@ -25,6 +25,7 @@ import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.io.writer.GenericIcebergPartitionedFanoutWriter;
 import org.apache.amoro.io.writer.RecordWithAction;
 import org.apache.amoro.table.TableProperties;
+import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
