@@ -39,7 +39,7 @@
   {{- end -}}
 {{- end -}}
 
-{{/*Spark Optimizer Image Pull Secrets*/}}
+{{/*Kubernetes Optimizer Image Pull Secrets*/}}
 {{- define "amoro.optimizer.container.kubernetes.pull.secrets" -}}
   {{- if .Values.imagePullSecrets -}}
     {{- $secrets := .Values.imagePullSecrets -}}
