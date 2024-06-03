@@ -35,34 +35,35 @@
   - ".rat-excludes"
   - ".scalafmt"
   - "**/*pom.xml"
-  - "dist/**/*"
+  - "amoro-ams/dist/**/*"
   - "docker/**/*"
+  - "charts/**/"
 
 "type:docs":
   - "*.md"
   - "docs/**/*"
 
 "module:core":
-  - "core/**/*"
+  - "amoro-core/**/*"
 
-"module:ams":
-  - "ams/api/**/*"
-  - "ams/ams-server/**/*"
+"module:ams-server":
+  - "amoro-ams/api/**/*"
+  - "amoro-ams/server/**/*"
 
-"module:dashboard":
-  - "ams/**/*"
+"module:ams-dashboard":
+  - "amoro-ams/amoro-ams-dashboard/**/*"
 
-"module:spark":
-  - "spark/**/*"
+"module:ams-optimizer":
+  - "amoro-ams/amoro-ams-optimizer/**/*"
 
-"module:flink":
-  - "flink/**/*"
+"module:mixed-spark":
+  - "amoro-mixed-format/amoro-mixed-format-spark/**/*"
 
-"module:hive":
-  - "hive/**/*"
+"module:mixed-flink":
+  - "amoro-mixed-format/amoro-mixed-format-flink/**/*"
 
-"module:optimize":
-  - "optimize/**/*"
+"module:mixed-hive":
+  - "amoro-mixed-format/amoro-mixed-format-hive/**/*"
 
-"module:trino":
-  - "trino/**/*"
+"module:mixed-trino":
+  - "amoro-mixed-format/amoro-mixed-format-trino/**/*"

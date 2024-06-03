@@ -55,7 +55,7 @@ core/derby.log
 target/
 
 # keberos configs
-*arctic_krb_conf/
+*amoro_krb_conf/
 
 # local config
 conf/
@@ -67,5 +67,9 @@ conf/
 */.gitignore
 *.tgz
 
-!ams/dist/src/main/arctic-bin/bin/
-!ams/dist/src/main/arctic-bin/conf/
+# dashboard static resources
+amoro-ams/amoro-ams-dashboard/src/main/resources/static/
+amoro-ams/amoro-ams-dashboard/node/
+
+!amoro-ams/dist/src/main/amoro-bin/bin/
+!amoro-ams/dist/src/main/amoro-bin/conf/

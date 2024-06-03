@@ -56,6 +56,8 @@ data:
 
       self-optimizing:
         commit-thread-count: 10
+        runtime-data-keep-days: 30
+        runtime-data-expire-interval-hours: 1
 
       optimizer:
         heart-beat-timeout: 60000 # 1min
@@ -79,25 +81,41 @@ data:
 
       database:
         type: {{ .Values.amoroConf.database.type }}
-        url: {{ .Values.amoroConf.database.url }}
         jdbc-driver-class: {{ .Values.amoroConf.database.driver | quote }}
-        {{- if eq .Values.amoroConf.database.type "mysql" }}
+        url: {{ .Values.amoroConf.database.url }}
+        {{- if or (eq .Values.amoroConf.database.type "mysql") (eq .Values.amoroConf.database.type "postgres") }}
         username: {{ .Values.amoroConf.database.username | quote }}
+        password: {{ .Values.amoroConf.database.password | quote }}
         {{- end }}
-
+        connection-pool-max-total: 20
+        connection-pool-max-idle: 16
+        connection-pool-max-wait-millis: 1000
 
       terminal:
-        backend: local
-        local.spark.sql.iceberg.handle-timestamp-without-timezone: false
-
+        backend: {{ .Values.amoroConf.terminal.backend }}
+        {{- if eq .Values.amoroConf.terminal.backend "local" }}
+        local.spark.sql.iceberg.handle-timestamp-without-timezone: {{ .Values.amoroConf.terminal.icebergHandleTimestampWithoutTimezone }}
+        {{- end }}
+        {{- if eq .Values.amoroConf.terminal.backend "kyuubi" }}
+        kyuubi.jdbc.url: {{ .Values.amoroConf.terminal.kyuubiJdbcUrl | quote  }}
+        {{- end }}
+        
     containers:
       {{- if .Values.optimizer.flink.enabled }}
       - name: {{ .Values.optimizer.flink.name | default "flink" }}
         {{- include "amoro.optimizer.container.flink" . | nindent 8 }}
       {{ end }}
+      {{- if .Values.optimizer.spark.enabled }}
+      - name: {{ .Values.optimizer.spark.name | default "spark" }}
+        {{- include "amoro.optimizer.container.spark" . | nindent 8 }}
+      {{ end }}
       {{- if .Values.optimizer.local.enabled }}
       - name: {{ .Values.optimizer.local.name | default "local" }}
         {{- include "amoro.optimizer.container.local" . | nindent 8 }}
+      {{ end }}
+      {{- if .Values.optimizer.kubernetes.enabled }}
+      - name: {{ .Values.optimizer.local.name | default "kubernetes" }}
+        {{- include "amoro.optimizer.container.kubernetes" . | nindent 8 }}
       {{ end }}
 
 

@@ -18,12 +18,14 @@ on:
       - "master"
       - "0.**"
     paths:
-      - "ams/**"
-      - "core/**"
-      - "mixed/flink/**"
-      - "mixed/hive/**"
-      - "mixed/spark/**"
+      - ".github/workflows/**"
+      - "amoro-ams/**"
+      - "amoro-core/**"
+      - "amoro-mixed-format/amoro-mixed-format-flink/**"
+      - "amoro-mixed-format/amoro-mixed-format-hive/**"
+      - "amoro-mixed-format/amoro-mixed-format-spark/**"
       - "pom.xml"
+      - "tools/maven/**"
 
 jobs:
   build:
@@ -42,7 +44,7 @@ jobs:
         run: mvn validate
 
       - name: Build all module with Maven
-        run: mvn clean install -pl '!mixed/trino' -Djacoco.flink.skip=true -B -ntp -Dhadoop=v2
+        run: mvn clean install -Djacoco.flink.skip=true -B -ntp -Dhadoop=v2
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

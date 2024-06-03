@@ -18,11 +18,13 @@ on:
       - "master"
       - "0.**"
     paths:
-      - "ams/**"
-      - "core/**"
-      - "mixed/hive/**"
-      - "mixed/trino/**"
+      - ".github/workflows/**"
+      - "amoro-ams/**"
+      - "amoro-core/**"
+      - "amoro-mixed-format/amoro-mixed-format-hive/**"
+      - "amoro-mixed-format/amoro-mixed-format-trino/**"
       - "pom.xml"
+      - "tools/maven/**"
 
 jobs:
   build:
@@ -39,11 +41,8 @@ jobs:
       - name: Validate checkstyle first
         run: mvn validate -P trino-spotless
 
-      - name: Install dependency with Maven
-        run: mvn clean install -DskipTests -pl 'ams/api,core,mixed/hive' -Dhadoop=v2 -am -B -P trino-spotless
-
-      - name: Build with Maven
-        run: mvn clean test -pl 'mixed/trino' -B -ntp -Dhadoop=v2 -P trino-spotless
+      - name: Build trino module with Maven
+        run: mvn clean install -pl 'amoro-mixed-format/amoro-mixed-format-trino' -Dhadoop=v2 -am -B -P trino-spotless,build-mixed-format-trino
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

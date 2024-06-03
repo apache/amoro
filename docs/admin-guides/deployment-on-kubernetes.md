@@ -21,15 +21,15 @@ If you want to deploy AMS on Kubernetes, you’d better get a sense of the follo
 
 ## Amoro Official Docker Image
 
-You can find the official docker image at [Amoro Docker Hub](https://hub.docker.com/u/arctic163).
+You can find the official docker image at [Amoro Docker Hub](https://hub.docker.com/u/apache).
 
 The following are images that can be used in a production environment.
 
-**arctic163/amoro**
+**apache/amoro**
 
 This is an image built based on the Amoro binary distribution package for deploying AMS.
 
-**arctic163/optimizer-flink**
+**apache/amoro-flink-optimizer**
 
 This is an image built based on the official version of Flink for deploying the Flink optimizer.
 
@@ -65,7 +65,7 @@ $ tar zxvf amoro-*.tgz
 Alternatively, you can find the latest charts directly from the Github source code.
 
 ```shell
-$ git clone https://github.com/NetEase/amoro.git
+$ git clone https://github.com/apache/amoro.git
 $ cd amoro/charts
 $ helm dependency build ./amoro
 ```
@@ -84,7 +84,7 @@ After successful installation, you can access WebUI through the following comman
 $ kubectl port-forward services/<deployment-name>-amoro-rest 1630:1630
 ```
 
-Open browser to go web: http://loclhost:1630
+Open browser to go web: http://localhost:1630
 
 ## Access logs
 
@@ -171,22 +171,22 @@ optimizer:
     name: ~ 
     image:
       ## the image repository
-      repository: arctic163/optimizer-flink
+      repository: apache/amoro-flink-optimizer
       ## the image tag, if not set, the default value is the same with amoro image tag.
       tag: ~
       ## the location of flink optimizer jar in image.
       jobUri: "local:///opt/flink/usrlib/optimizer-job.jar"
     properties: {
       "flink-conf.taskmanager.memory.managed.size": "32mb",
-      "flink-conf.taskmanager.memory.netwrok.max": "32mb",
-      "flink-conf.taskmanager.memory.netwrok.nin": "32mb"
+      "flink-conf.taskmanager.memory.network.max": "32mb",
+      "flink-conf.taskmanager.memory.network.min": "32mb"
     }
 ```
 
 
 ### Configure the RBAC
 
-By default, Helm Chart creates a service account, role, and role bind for Amaro deploy. 
+By default, Helm Chart creates a service account, role, and role bind for Amoro deploy. 
 You can also modify this configuration to use an existing account.
 
 ```yaml

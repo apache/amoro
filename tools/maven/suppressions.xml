@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<!DOCTYPE suppressions PUBLIC
+        "-//Puppy Crawl//DTD Suppressions 1.1//EN"
+        "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
+
+<suppressions>
+    <!-- Using ([/\\]) as the file path separator instead of (/)
+    enables it to be compatible with both Linux and Windows systems. -->
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]utils[/\\]StatisticsFileUtil\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]LogDataJsonSerialization\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]LogDataToJsonConverters\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]LogDataJsonDeserialization\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]JsonToLogDataConverters\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]utils[/\\]TablePropertyUtil\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]OptimizingConfig\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]DataExpirationConfig\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]TagConfiguration\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]TableConfiguration\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]RestCatalogService\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]persistence[/\\]converter[/\\]JsonObjectConverter\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]optimizing[/\\]OptimizingConfig\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]optimizing[/\\]plan[/\\]OptimizingEvaluator\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]optimizing[/\\]MetricsSummary\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]table[/\\]TagConfiguration\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]table[/\\]TableConfiguration\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]flink[/\\]interceptor[/\\]ProxyFactory\.java"
+            checks="TodoComment"/>
+    <suppress
+            files="org[/\\]apache[/\\]hadoop[/\\]util[/\\]VersionInfo\.java"
+            checks="MethodName"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]iceberg[/\\]BaseConnectorTest\.java"
+            checks="FileLength"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]keyed[/\\]KeyedConnectorSplit\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]keyed[/\\]KeyedTableHandle\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]delete[/\\]TrinoDeleteFile\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]unkeyed[/\\]IcebergSplit\.java"
+            checks="Regexp"/>
+    <suppress
+            files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]unkeyed[/\\]AdaptHiveIcebergTableHandle\.java"
+            checks="Regexp"/>
+
+</suppressions>

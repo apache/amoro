@@ -34,9 +34,9 @@ configure_jvm_options() {
     declare -l lowerKey=$key
     if grep "$lowerKey" "$JVM_PROPERTIES_FILE" >/dev/null
     then
-       sed -i "s/$lowerKey=.*$/$lowerKey=\"$value\"/g" "$JVM_PROPERTIES_FILE"
+       sed -i "s/$lowerKey=.*$/$lowerKey=$value/g" "$JVM_PROPERTIES_FILE"
     else
-       sed -i '$a/'"$lowerKey=\"$value\""  "$JVM_PROPERTIES_FILE"
+       sed -i '$a'"$lowerKey=$value"  "$JVM_PROPERTIES_FILE"
     fi
   done
 }
@@ -56,7 +56,7 @@ elif [ "$1" == "ams" ]; then
 elif [ "$1" == "optimizer" ]; then
   args=("${args[@]:1}")
   echo "Start Amoro Optimizer"
-  exec "$AMORO_HOME/bin/optimizer.sh " "${args[@]}"
+  exec "$AMORO_HOME/bin/optimizer.sh" "start-foreground" "${args[@]}"
 fi
 
 # Running command in pass-through mode

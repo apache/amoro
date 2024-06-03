@@ -10,7 +10,7 @@ menu:
 ---
 # Deployment
 
-You can choose to download the stable release package from [download page](../../../download/), or the source code form [Github](https://github.com/NetEase/amoro) and compile it according to the README.
+You can choose to download the stable release package from [download page](../../../download/), or the source code form [Github](https://github.com/apache/amoro) and compile it according to the README.
 
 ## System requirements
 
@@ -32,11 +32,11 @@ Unzip it to create the amoro-x.y.z directory in the same directory, and then go 
 You can build based on the master branch without compiling Trino. The compilation method and the directory of results are described below:
 
 ```shell
-git clone https://github.com/NetEase/amoro.git
+git clone https://github.com/apache/amoro.git
 cd amoro
 base_dir=$(pwd) 
-mvn clean package -DskipTests -pl '!mixed/trino'
-cd ams/dist/target/
+mvn clean package -DskipTests
+cd amoro-ams/dist/target/
 ls
 amoro-x.y.z-bin.zip # AMS release package
 dist-x.y.z-tests.jar
@@ -44,23 +44,26 @@ dist-x.y.z.jar
 archive-tmp/
 maven-archiver/
 
-cd ${base_dir}/mixed/flink/v1.15/flink-runtime/target
+cd ${base_dir}/amoro-mixed-format/amoro-mixed-format-flink/v1.15/amoro-mixed-format-flink-runtime-1.15/target
 ls 
-amoro-mixed-flink-runtime-1.15-x.y.z-tests.jar
-amoro-mixed-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
-original-amoro-mixed-flink-runtime-1.15-x.y.z.jar
+amoro-mixed-format-flink-runtime-1.15-x.y.z-tests.jar
+amoro-mixed-format-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
+original-amoro-mixed-format-flink-runtime-1.15-x.y.z.jar
 maven-archiver/
 
-cd ${base_dir}/mixed/spark/v3.1/spark-runtime/target
+cd ${base_dir}/amoro-mixed-format/amoro-mixed-format-spark/v3.2/amoro-mixed-format-spark-runtime-3.2/target
 ls
-amoro-mixed-spark-3.1-runtime-x.y.z.jar # Spark v3.1 runtime package)
-amoro-mixed-spark-3.1-runtime-x.y.z-tests.jar
-amoro-mixed-spark-3.1-runtime-x.y.z-sources.jar
-original-amoro-mixed-spark-3.1-runtime-x.y.z.jar
+amoro-mixed-format-spark-runtime-3.2-x.y.z.jar # Spark v3.2 runtime package)
+amoro-mixed-format-spark-runtime-3.2-x.y.z-tests.jar
+amoro-mixed-format-spark-runtime-3.2-x.y.z-sources.jar
+original-amoro-mixed-format-spark-runtime-3.2-x.y.z.jar
 ```
 
+If the Flink version in the amoro-ams/amoro-ams-optimizer/amoro-optimizer-flink module you compiled is lower than 1.15, you must add the `-Pflink-pre-1.15` parameter before mvn.
+for example `mvn clean package -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6 -DskipTests` to compile.
+
 If you need to compile the Trino module at the same time, you need to install jdk17 locally and configure `toolchains.xml` in the user's `${user.home}/.m2/` directory,
-then run `mvn package -P toolchain` to compile the entire project.
+then run `mvn package -Ptoolchain,build-mixed-format-trino` to compile the entire project.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -89,6 +92,7 @@ If you want to use AMS in a production environment, it is recommended to modify 
 - The `ams.thrift-server.table-service.bind-port` configuration specifies the binding port of the Thrift Server that provides the table service. The compute engines access AMS through this port, and the default value is 1260.
 - The `ams.thrift-server.optimizing-service.bind-port` configuration specifies the binding port of the Thrift Server that provides the optimizing service. The optimizers access AMS through this port, and the default value is 1261.
 - The `ams.http-server.bind-port` configuration specifies the port to which the HTTP service is bound. The Dashboard and Open API are bound to this port, and the default value is 1630.
+- The `ams.http-server.rest-auth-type` configuration specifies the REST API auth type, which could be token(default) or basic. The basic auth would reuse `ams.admin-username` and `ams.admin-password` for authentication. 
 
 ```yaml
 ams:
@@ -168,12 +172,12 @@ AMS provides implementations of `LocalContainer` and `FlinkContainer` by default
 ```yaml
 containers:
   - name: localContainer
-    container-impl: com.netease.amoro.optimizer.LocalOptimizerContainer
+    container-impl: org.apache.amoro.optimizer.LocalOptimizerContainer
     properties:
       export.JAVA_HOME: "/opt/java"   # JDK environment
   
   - name: flinkContainer
-    container-impl: com.netease.amoro.optimizer.FlinkOptimizerContainer
+    container-impl: org.apache.amoro.optimizer.FlinkOptimizerContainer
     properties:
       flink-home: "/opt/flink/"                                     # The installation directory of Flink
       export.JVM_ARGS: "-Djava.security.krb5.conf=/opt/krb5.conf"   # Submitting Flink jobs with Java parameters, such as Kerberos parameters.
@@ -197,6 +201,48 @@ ams:
     local.using-session-catalog-for-hive: true
 ```
 
+### Configure metric reporter
+
+Amoro provides metric reporters by plugin mechanism to connect to  external metric systems.
+
+All metric-reporter plugins are configured in `$AMORO_CONF_DIR/plugins/metric-repoters.yaml` .
+
+The configuration format of the plug-in is:
+
+```yaml
+
+metric-reporters:
+  - name:                 # the unified plugin name.
+    enabled:              # if this plugin is enabled, default is true.
+    properties:           # a map defines properties of plugin.
+```
+
+Currently, there is only one reporter is available.
+
+#### Prometheus Exporter
+
+By enable the `prometheus-exporter` plugin, the AMS will start a prometheus http exporter server.
+
+```yaml
+metric-reporters:
+  - name: prometheus-exporter            # configs for prometheus exporter
+    enabled: true
+    properties:
+       port: 9090                        # the port that the prometheus-exporter listens on.
+```
+
+You can add a scrape job in your prometheus configs
+
+```yaml
+# Your prometheus configs file.
+scrape_configs:
+  - job_name: 'amoro-exporter'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['localhost:9090']  # The host and port that you configured in Amoro plugins configs file.
+```
+
+
 ### Environments variables
 
 The following environment variables take effect during the startup process of AMS,
@@ -219,6 +265,18 @@ The following JVM options could be set in `${AMORO_CONF_DIR}/jvm.properties`.
 | xmx             | "-Xmx${value}m                                 | Xmx config for jvm       |
 | jmx.remote.port | "-Dcom.sun.management.jmxremote.port=${value}  | Enable remote debug      |
 | extra.options   | "JAVA_OPTS="${JAVA_OPTS} ${JVM_EXTRA_CONFIG}"  | The addition jvm options |
+
+### Terminal configurations
+
+Terminal support local and kyuubi, the default is local. If the user uses local to run in the spark local context, you can set the **spark.*** configuration, and if you use kyuubi, you can set the **kyuubi.*** configuration
+
+| Key                      | Default | Description                                                                                       |
+|--------------------------|---------|---------------------------------------------------------------------------------------------------|
+| terminal.backend         | local   | Terminal backend implementation. local, kyuubi and custom are valid values.                       |
+| terminal.factory         | -       | Session factory implement of terminal, `terminal.backend` must be `custom` if this is set.        |
+| terminal.result.limit    | 1000    | Row limit of result-set                                                                           |
+| terminal.stop-on-error   | false   | When a statement fails to execute, stop execution or continue executing the remaining statements. |
+| terminal.session.timeout | 30      | Session timeout in minutes.                                                                       |
 
 
 ## Start AMS

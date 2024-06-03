@@ -40,7 +40,7 @@ to track it.
 Pull requests are the preferred mechanism for contributing to Amoro
 
 ### Contributor License Agreement
-Before your contribution, To get your PR merged, you must submit [Amoro's Contributor License Agreement (CLA) ](https://cla-assistant.io/NetEase/amoro)first. You only need to submit it ONCE.
+Before your contribution, To get your PR merged, you must submit [Amoro's Contributor License Agreement (CLA) ](https://cla-assistant.io/apache/amoro)first. You only need to submit it ONCE.
 
 * Generally, create a PR only to the master branch.
 * PR should be linked to the corresponding issue.
@@ -77,6 +77,10 @@ the Issue. If it is a relatively large work, it is recommended to write a design
 feature. Here is
 a [design document template](https://docs.google.com/document/d/1LeTyrlzQJfSs2DkRBsucK_vV5gtHRYLb1KSrpu0hp3g/edit?usp=sharing)
 for reference.
+
+## Building the Project Locally
+
+[Build Guide](https://github.com/apache/amoro?tab=readme-ov-file#building) can be found in GitHub readme.
 
 ## Code suggestions
 
