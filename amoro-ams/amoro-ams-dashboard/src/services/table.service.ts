@@ -67,7 +67,7 @@ export function getPartitionTable(
     filter: string,
     page: number,
     pageSize: number,
-    token: string
+    token?: string
   }
 ) {
   const { catalog, db, table, filter, page, pageSize, token } = params
@@ -98,7 +98,7 @@ export function getPartitionFiles(
     specId: number,
     page: number
     pageSize: number
-    token: string
+    token?: string
   }
 ) {
   const { catalog, db, table, partition, specId, page, pageSize, token } = params
@@ -144,7 +144,7 @@ export function getOperations(
     table: string,
     page: number
     pageSize: number
-    token: string
+    token?: string
   }
 ) {
   const { catalog, db, table, page, pageSize, token } = params
@@ -158,7 +158,7 @@ export function getOptimizingProcesses(
     table: string,
     page: number
     pageSize: number
-    token: string
+    token?: string
   }
 ) {
   const { catalog, db, table, page, pageSize, token } = params

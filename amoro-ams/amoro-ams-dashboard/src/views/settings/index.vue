@@ -84,11 +84,7 @@ const route = useRoute()
 const loading = ref<boolean>(false)
 const systemSettingArray = reactive<IKeyAndValue[]>([])
 const containerSetting = reactive<IContainerSetting[]>([])
-const optimzeGroupColumns: IColumns[] = reactive([
-  { title: t('name'), dataIndex: 'name', width: 340, ellipsis: true },
-  { title: t('propertiesMemory', { type: 'taskmanager' }), dataIndex: 'tmMemory', width: '50%', ellipsis: true },
-  { title: t('propertiesMemory', { type: 'jobmanager' }), dataIndex: 'jmMemory', width: '50%', ellipsis: true }
-])
+
 const basicColumns: IColumns[] = reactive([
   { title: t('key'), dataIndex: 'key', width: 340, ellipsis: true },
   { title: t('value'), dataIndex: 'value' }

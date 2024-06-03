@@ -207,7 +207,7 @@ export interface ICatalogItem {
   catalogType: string
 }
 export interface IDebugResult {
-  status: number;
+  status: string;
   columns: string[];
   rowData: (string | null)[][];
   id: string
@@ -311,6 +311,7 @@ export interface IOptimizeGroup {
   container: string
   name: string
   properties: IMap<any>
+  innerPropertiesArray?: any[]
 }
 
 export interface IContainerSetting {

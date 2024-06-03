@@ -65,13 +65,11 @@ import { mbToSize, dateFormat } from '@/utils'
 
 import { message, Modal } from 'ant-design-vue'
 
-import { useRouter } from 'vue-router'
 import ScaleOut from '@/views/resource/components/ScaleOut.vue'
 
 const { t } = useI18n()
-const router = useRouter()
 
-const props = defineProps<{ curGroupName: string, type: string }>()
+const props = defineProps<{ curGroupName?: string, type: string }>()
 
 const emit = defineEmits<{
   (e: 'editGroup', record: IIOptimizeGroupItem): void;

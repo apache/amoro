@@ -121,6 +121,7 @@ import { ICatalogItem, IDebugResult, ILableAndValue, IMap, debugResultBgcMap } f
 import { executeSql, getExampleSqlCode, getJobDebugResult, getLogsResult, getShortcutsList, stopSql, getLastDebugInfo } from '@/services/terminal.service'
 import { getCatalogList } from '@/services/table.service'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
+import { message } from 'ant-design-vue'
 
 interface ISessionInfo {
   sessionId: string
