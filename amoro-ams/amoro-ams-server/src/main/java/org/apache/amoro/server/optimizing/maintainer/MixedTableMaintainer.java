@@ -22,6 +22,7 @@ import static org.apache.amoro.utils.MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 import org.apache.amoro.IcebergFileEntry;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.config.DataExpirationConfig;
 import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.scan.TableEntriesScan;
@@ -79,13 +80,13 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   private final BaseTableMaintainer baseMaintainer;
 
-  public MixedTableMaintainer(ArcticTable arcticTable) {
-    this.arcticTable = arcticTable;
-    if (arcticTable.isKeyedTable()) {
-      changeMaintainer = new ChangeTableMaintainer(arcticTable.asKeyedTable().changeTable());
-      baseMaintainer = new BaseTableMaintainer(arcticTable.asKeyedTable().baseTable());
+  public MixedTableMaintainer(MixedTable mixedTable) {
+    this.mixedTable = mixedTable;
+    if (mixedTable.isKeyedTable()) {
+      changeMaintainer = new ChangeTableMaintainer(mixedTable.asKeyedTable().changeTable());
+      baseMaintainer = new BaseTableMaintainer(mixedTable.asKeyedTable().baseTable());
     } else {
-      baseMaintainer = new BaseTableMaintainer(arcticTable.asUnkeyedTable());
+      baseMaintainer = new BaseTableMaintainer(mixedTable.asUnkeyedTable());
     }
   }
 
@@ -435,7 +436,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     public BaseTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
       if (unkeyedTable.format() == TableFormat.MIXED_HIVE) {
-        hiveFiles.addAll(HiveLocationUtil.getHiveLocation(arcticTable));
+        hiveFiles.addAll(HiveLocationUtil.getHiveLocation(mixedTable));
       }
     }
 
