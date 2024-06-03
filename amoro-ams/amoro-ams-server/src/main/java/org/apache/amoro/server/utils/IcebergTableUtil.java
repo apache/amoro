@@ -58,6 +58,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/** Util class for iceberg table. */
 public class IcebergTableUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergTableUtil.class);
@@ -143,13 +144,16 @@ public class IcebergTableUtil {
             .useSnapshot(internalTable.currentSnapshot().snapshotId())
             .includeFileContent(FileContent.EQUALITY_DELETES, FileContent.POSITION_DELETES)
             .build();
-
-    for (IcebergFileEntry entry : entriesScan.entries()) {
-      ContentFile<?> file = entry.getFile();
-      String path = file.path().toString();
-      if (!deleteFilesPath.contains(path)) {
-        danglingDeleteFiles.add((DeleteFile) file);
+    try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
+      for (IcebergFileEntry entry : entries) {
+        ContentFile<?> file = entry.getFile();
+        String path = file.path().toString();
+        if (!deleteFilesPath.contains(path)) {
+          danglingDeleteFiles.add((DeleteFile) file);
+        }
       }
+    } catch (IOException e) {
+      throw new RuntimeException("Error when fetch iceberg entries", e);
     }
 
     return danglingDeleteFiles;
