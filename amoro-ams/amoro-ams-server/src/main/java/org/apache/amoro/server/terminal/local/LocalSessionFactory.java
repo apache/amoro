@@ -21,6 +21,7 @@ package org.apache.amoro.server.terminal.local;
 import org.apache.amoro.api.config.ConfigOption;
 import org.apache.amoro.api.config.ConfigOptions;
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.server.dashboard.utils.DesensitizationUtil;
 import org.apache.amoro.server.terminal.SparkContextUtil;
 import org.apache.amoro.server.terminal.TerminalSession;
 import org.apache.amoro.server.terminal.TerminalSessionFactory;
@@ -85,9 +86,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
 
   private boolean isExternalConnector(String catalog, Configurations configurations) {
     String connector =
-        configurations
-            .get(TerminalSessionFactory.SessionConfigOptions.catalogConnector(catalog))
-            .toLowerCase();
+        configurations.get(SessionConfigOptions.catalogConnector(catalog)).toLowerCase();
     return EXTERNAL_CONNECTORS.contains(connector);
   }
 
@@ -104,7 +103,11 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   private void updateSessionConf(
       SparkSession session, List<String> logs, String key, String value) {
     session.conf().set(key, value);
-    logs.add(key + "  " + value);
+    if (DesensitizationUtil.containsSensitiveVal(key)) {
+      logs.add(key + "  " + DesensitizationUtil.desensitize(value));
+    } else {
+      logs.add(key + "  " + value);
+    }
   }
 
   protected synchronized SparkSession lazyInitContext() {

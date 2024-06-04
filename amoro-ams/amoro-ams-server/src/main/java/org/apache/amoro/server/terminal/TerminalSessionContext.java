@@ -19,6 +19,7 @@
 package org.apache.amoro.server.terminal;
 
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.server.dashboard.utils.DesensitizationUtil;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.commons.io.Charsets;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -199,8 +200,16 @@ public class TerminalSessionContext {
               executionResult.appendLog("fetch terminal session: " + sessionId);
               executionResult.appendLogs(session.logs());
               for (String key : session.configs().keySet()) {
-                executionResult.appendLog(
-                    "session configuration: " + key + " => " + session.configs().get(key));
+                if (DesensitizationUtil.containsSensitiveVal(key)) {
+                  executionResult.appendLog(
+                      "session configuration: "
+                          + key
+                          + " => "
+                          + DesensitizationUtil.desensitize(session.configs().get(key)));
+                } else {
+                  executionResult.appendLog(
+                      "session configuration: " + key + " => " + session.configs().get(key));
+                }
               }
 
               return execute(session);

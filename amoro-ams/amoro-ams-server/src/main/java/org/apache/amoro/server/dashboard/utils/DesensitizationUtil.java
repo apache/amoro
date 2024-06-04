@@ -22,11 +22,26 @@ package org.apache.amoro.server.dashboard.utils;
 public class DesensitizationUtil {
   public static String COMMON_SECRET_FORMAT = "********";
 
+  private static final String[] SENSITIVE_CONF_KEYWORDS = {"secret", "token", "password"};
+
   public static String desensitize(Object data) {
     return COMMON_SECRET_FORMAT;
   }
 
   public static boolean isDesensitized(Object data) {
     return COMMON_SECRET_FORMAT.equals(data);
+  }
+
+  public static boolean containsSensitiveVal(String input) {
+    if (input == null || input.isEmpty()) {
+      return false;
+    }
+    String lowerCaseInput = input.toLowerCase();
+    for (String keyword : SENSITIVE_CONF_KEYWORDS) {
+      if (lowerCaseInput.contains(keyword.toLowerCase())) {
+        return true;
+      }
+    }
+    return false;
   }
 }
