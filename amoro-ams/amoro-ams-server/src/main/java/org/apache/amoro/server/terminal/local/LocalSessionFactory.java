@@ -86,7 +86,9 @@ public class LocalSessionFactory implements TerminalSessionFactory {
 
   private boolean isExternalConnector(String catalog, Configurations configurations) {
     String connector =
-        configurations.get(SessionConfigOptions.catalogConnector(catalog)).toLowerCase();
+            configurations
+                    .get(TerminalSessionFactory.SessionConfigOptions.catalogConnector(catalog))
+                    .toLowerCase();
     return EXTERNAL_CONNECTORS.contains(connector);
   }
 
