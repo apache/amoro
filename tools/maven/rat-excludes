@@ -18,3 +18,5 @@ docs/**
 **/pnpm-lock.yaml
 **/ams-dashboard/dist/**
 **/components.d.ts
+tools/maven/rat-excludes
+tools/maven/scalafmt.conf
