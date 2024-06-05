@@ -185,11 +185,7 @@ public class IcebergTableUtil {
         CloseableIterable.transform(tasks, task -> task.asDataTask().rows());
 
     try (CloseableIterable<StructLike> rows = CloseableIterable.concat(transform)) {
-      rows.forEach(
-          r -> {
-            String path = r.get(0, String.class);
-            allManifestFiles.add(path);
-          });
+      rows.forEach(r -> allManifestFiles.add(r.get(0, String.class)));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
