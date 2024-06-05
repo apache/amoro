@@ -40,3 +40,28 @@ spec:
 ---
 {{- end }}
 {{- end }}
+{{- range $reporter := .Values.plugin.metricReporters }}
+{{- if and $reporter.enabled $reporter.properties.port $reporter.service}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "common.names.fullname" $ }}-{{ $reporter.name }}
+  labels:
+    {{- include "amoro.labels" $ | nindent 4 }}
+  {{- with $reporter.service.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ $reporter.service.type }}
+  ports:
+    - name: {{ tpl $reporter.name $ }}
+      port: {{ tpl $reporter.service.port $ }}
+      {{- if and (eq $reporter.service.type "NodePort") ($reporter.service.nodePort) }}
+      nodePort: {{ $reporter.service.nodePort }}
+      {{- end }}
+      targetPort: {{ $reporter.properties.port }}
+  selector:
+    {{- include "amoro.selectorLabels"  $ | nindent 4 }}
+---
+{{- end }}
+{{- end }}

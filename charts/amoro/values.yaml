@@ -257,6 +257,38 @@ optimizer:
       image: "apache/amoro:0.6"
   extra: []
 
+## Configure the plugin that allows you to access the metric reporters and events listeners.
+##
+plugin:
+  ##
+  ## metric reporters
+  ##
+  metricReporters: ~
+## e.g:  
+##  metricReporters:
+##    ## @param Configure Prometheus exporter
+##    ##
+##    - name: prometheus-exporter
+##      ## @param Enable or disable the Prometheus exporter
+##      ##
+##      enabled: true
+##      ## @param Properties for the Prometheus exporter
+##      ##
+##      properties:
+##        port: 7001
+##      ## @param Kubernetes service configuration for the Prometheus exporter
+##      ## ref: https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
+##      ##
+##      service:
+##        type: ClusterIP
+##        port: "7001"
+##        nodePort: ~
+##        annotations: {
+##          "prometheus.io/scrape": "true",
+##          "prometheus.io/path": "/metrics",
+##          "prometheus.io/port": "7001"
+##        }
+
 ## Configure the ingress resource that allows you to access the
 ## Amoro installation. Set up the URL
 ## ref: https://kubernetes.io/docs/user-guide/ingress/
