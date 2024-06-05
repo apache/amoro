@@ -71,7 +71,11 @@ public class TerminalSessionContext {
     this.threadPool = executor;
     this.factory = factory;
     this.sessionConfiguration = sessionConfiguration;
-    this.sensitiveConfKeys = Arrays.stream(sessionConfiguration.getString(AmoroManagementConf.TERMINAL_SENSITIVE_CONF_KEYS).split(","))
+    this.sensitiveConfKeys =
+        Arrays.stream(
+                sessionConfiguration
+                    .getString(AmoroManagementConf.TERMINAL_SENSITIVE_CONF_KEYS)
+                    .split(","))
             .map(String::trim)
             .collect(Collectors.toList());
   }

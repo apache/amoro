@@ -55,7 +55,9 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   @Override
   public void initialize(Configurations properties) {
     this.conf = properties;
-    this.sensitiveConfKeys = Arrays.stream(properties.getString(AmoroManagementConf.TERMINAL_SENSITIVE_CONF_KEYS).split(","))
+    this.sensitiveConfKeys =
+        Arrays.stream(
+                properties.getString(AmoroManagementConf.TERMINAL_SENSITIVE_CONF_KEYS).split(","))
             .map(String::trim)
             .collect(Collectors.toList());
   }
