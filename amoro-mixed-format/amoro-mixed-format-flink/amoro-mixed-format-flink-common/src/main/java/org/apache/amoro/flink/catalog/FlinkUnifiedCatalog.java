@@ -125,7 +125,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
 
   @Override
   public boolean databaseExists(String databaseName) {
-    return unifiedCatalog.exist(databaseName);
+    return unifiedCatalog.databaseExists(databaseName);
   }
 
   @Override
@@ -193,7 +193,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   @Override
   public boolean tableExists(ObjectPath tablePath) {
     try {
-      return unifiedCatalog.exist(tablePath.getDatabaseName(), tablePath.getObjectName());
+      return unifiedCatalog.tableExists(tablePath.getDatabaseName(), tablePath.getObjectName());
     } catch (NoSuchDatabaseException | NoSuchTableException e) {
       return false;
     }

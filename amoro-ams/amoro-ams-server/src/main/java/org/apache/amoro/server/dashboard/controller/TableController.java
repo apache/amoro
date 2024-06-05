@@ -297,7 +297,7 @@ public class TableController {
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     Preconditions.checkArgument(offset >= 0, "offset[%s] must >= 0", offset);
     Preconditions.checkArgument(limit >= 0, "limit[%s] must >= 0", limit);
-    Preconditions.checkState(serverCatalog.exist(db, table), "no such table");
+    Preconditions.checkState(serverCatalog.tableExists(db, table), "no such table");
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     Pair<List<OptimizingProcessInfo>, Integer> optimizingProcessesInfo =
@@ -327,7 +327,7 @@ public class TableController {
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     Preconditions.checkArgument(offset >= 0, "offset[%s] must >= 0", offset);
     Preconditions.checkArgument(limit >= 0, "limit[%s] must >= 0", limit);
-    Preconditions.checkState(serverCatalog.exist(db, table), "no such table");
+    Preconditions.checkState(serverCatalog.tableExists(db, table), "no such table");
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     List<OptimizingTaskInfo> optimizingTaskInfos =

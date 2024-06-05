@@ -59,12 +59,12 @@ public class IcebergCatalog implements FormatCatalog {
   }
 
   @Override
-  public boolean exist(String database) {
+  public boolean databaseExists(String database) {
     return listDatabases().contains(database);
   }
 
   @Override
-  public boolean exist(String database, String table) {
+  public boolean tableExists(String database, String table) {
     TableIdentifier identifier = TableIdentifier.of(database, table);
     return metaStore.doAs(() -> icebergCatalog.tableExists(identifier));
   }

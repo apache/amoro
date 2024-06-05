@@ -118,7 +118,7 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
 
     Preconditions.checkArgument(
         format == format(), "the catalog only support to create %s table", format().name());
-    if (exist(database, tableName)) {
+    if (tableExists(database, tableName)) {
       throw new AlreadyExistsException(
           "Table " + name() + "." + database + "." + tableName + " already " + "exists.");
     }

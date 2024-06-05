@@ -278,7 +278,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   public boolean tableExist(TableIdentifier tableIdentifier) {
     checkStarted();
     return getServerCatalog(tableIdentifier.getCatalog())
-        .exist(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+        .tableExists(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 
   @Override
