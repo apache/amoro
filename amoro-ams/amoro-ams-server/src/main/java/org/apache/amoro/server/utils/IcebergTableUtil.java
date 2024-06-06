@@ -31,14 +31,21 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.HasTableOperations;
+import org.apache.iceberg.MetadataTableType;
+import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Predicate;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +58,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/** Util class for iceberg table. */
 public class IcebergTableUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergTableUtil.class);
@@ -136,15 +144,52 @@ public class IcebergTableUtil {
             .useSnapshot(internalTable.currentSnapshot().snapshotId())
             .includeFileContent(FileContent.EQUALITY_DELETES, FileContent.POSITION_DELETES)
             .build();
-
-    for (IcebergFileEntry entry : entriesScan.entries()) {
-      ContentFile<?> file = entry.getFile();
-      String path = file.path().toString();
-      if (!deleteFilesPath.contains(path)) {
-        danglingDeleteFiles.add((DeleteFile) file);
+    try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
+      for (IcebergFileEntry entry : entries) {
+        ContentFile<?> file = entry.getFile();
+        String path = file.path().toString();
+        if (!deleteFilesPath.contains(path)) {
+          danglingDeleteFiles.add((DeleteFile) file);
+        }
       }
+    } catch (IOException e) {
+      throw new RuntimeException("Error when fetch iceberg entries", e);
     }
 
     return danglingDeleteFiles;
+  }
+
+  /**
+   * Fetch all manifest files of an Iceberg Table
+   *
+   * @param table An iceberg table, or maybe base store or change store of mixed-iceberg format.
+   * @return Path set of all valid manifest files.
+   */
+  public static Set<String> getAllManifestFiles(Table table) {
+    Preconditions.checkArgument(
+        table instanceof HasTableOperations, "the table must support table operation.");
+    TableOperations ops = ((HasTableOperations) table).operations();
+
+    Table allManifest =
+        MetadataTableUtils.createMetadataTableInstance(
+            ops,
+            table.name(),
+            table.name() + "#" + MetadataTableType.ALL_MANIFESTS.name(),
+            MetadataTableType.ALL_MANIFESTS);
+
+    Set<String> allManifestFiles = Sets.newConcurrentHashSet();
+    TableScan scan = allManifest.newScan().select("path");
+
+    CloseableIterable<FileScanTask> tasks = scan.planFiles();
+    CloseableIterable<CloseableIterable<StructLike>> transform =
+        CloseableIterable.transform(tasks, task -> task.asDataTask().rows());
+
+    try (CloseableIterable<StructLike> rows = CloseableIterable.concat(transform)) {
+      rows.forEach(r -> allManifestFiles.add(r.get(0, String.class)));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    return allManifestFiles;
   }
 }
