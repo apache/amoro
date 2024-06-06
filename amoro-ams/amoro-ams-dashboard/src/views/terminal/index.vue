@@ -230,10 +230,7 @@ export default defineComponent({
         resetResult()
         runStatus.value = 'Running'
 
-        let sqlToExecute = sqlEditorRef.value.getSelection()
-        if (!sqlToExecute) {
-          sqlToExecute = sqlSource.value
-        }
+        const sqlToExecute = sqlEditorRef.value.getSelection() || sqlSource.value
 
         const res: ISessionInfo = await executeSql({
           catalog: curCatalog.value,
