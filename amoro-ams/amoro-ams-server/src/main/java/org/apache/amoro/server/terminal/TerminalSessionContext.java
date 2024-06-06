@@ -53,7 +53,7 @@ public class TerminalSessionContext {
   private final TerminalSessionFactory factory;
   private final Configurations sessionConfiguration;
 
-  private final List sensitiveConfKeys;
+  private final List<String> sensitiveConfKeys;
   private volatile TerminalSession session;
 
   private volatile long lastExecutionTime = System.currentTimeMillis();

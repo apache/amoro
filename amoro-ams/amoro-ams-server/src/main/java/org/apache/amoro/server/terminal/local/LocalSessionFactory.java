@@ -54,7 +54,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
 
   SparkSession context = null;
   Configurations conf;
-  List sensitiveConfKeys;
+  List<String> sensitiveConfKeys;
 
   @Override
   public void initialize(Configurations properties) {
