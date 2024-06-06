@@ -229,9 +229,15 @@ export default defineComponent({
         showDebug.value = true
         resetResult()
         runStatus.value = 'Running'
+
+        let sqlToExecute = sqlEditorRef.value.getSelection()
+        if (!sqlToExecute) {
+          sqlToExecute = sqlSource.value
+        }
+
         const res: ISessionInfo = await executeSql({
           catalog: curCatalog.value,
-          sql: sqlSource.value
+          sql: sqlToExecute
         })
         sessionId.value = res.sessionId || '0'
         getLogResult()
