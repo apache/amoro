@@ -172,12 +172,12 @@ amoroConf:
   ##    kyuubiJdbcUrl: jdbc:hive2://127.0.0.1:10009/
 
   ## @param amoroDefaults The value (templated string) is used for conf.yaml file
-  ## ref: https://github.com/apache/amoro/blob/master/dist/src/main/amoro-bin/conf/config.yaml
+  ## ref: https://github.com/apache/amoro/blob/master/amoro-ams/dist/src/main/amoro-bin/conf/config.yaml
   ##
   amoroDefaults: ~
   ##
   ## @param log4j2 The value (templated string) is used for conf/log4j2.xml file
-  ## ref: https://github.com/apache/amoro/blob/master/dist/src/main/amoro-bin/conf/log4j2.xml
+  ## ref: https://github.com/apache/amoro/blob/master/amoro-ams/dist/src/main/amoro-bin/conf/log4j2.xml
   log4j2: ~
 
 ## Configure the container of optimizer that allows you to submit optimizer by AMS
@@ -291,7 +291,7 @@ plugin:
 
 ## Configure the ingress resource that allows you to access the
 ## Amoro installation. Set up the URL
-## ref: https://kubernetes.io/docs/user-guide/ingress/
+## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ##
 ingress:
   ## @param ingress.enabled Enable ingress controller resource for Amoro Dashbord
