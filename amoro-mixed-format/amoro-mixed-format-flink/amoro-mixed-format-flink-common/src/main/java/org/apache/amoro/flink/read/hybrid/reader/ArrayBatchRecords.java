@@ -19,11 +19,11 @@
 package org.apache.amoro.flink.read.hybrid.reader;
 
 import org.apache.amoro.flink.read.source.DataIterator;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.file.src.util.Pool;
 import org.apache.flink.table.data.RowData;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import javax.annotation.Nullable;
 

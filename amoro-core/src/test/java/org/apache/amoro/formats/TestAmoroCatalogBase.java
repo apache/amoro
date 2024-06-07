@@ -19,8 +19,8 @@
 package org.apache.amoro.formats;
 
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.Test;
 

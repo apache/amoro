@@ -21,9 +21,9 @@ package org.apache.amoro.table.blocker;
 import org.apache.amoro.AmsClient;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.OperationConflictException;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableIdentifier;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 

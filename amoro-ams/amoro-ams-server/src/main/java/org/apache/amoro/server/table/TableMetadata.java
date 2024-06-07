@@ -27,13 +27,13 @@ import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.properties.MetaTableProperties;
 import org.apache.amoro.server.dashboard.utils.PropertiesUtil;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.io.Serializable;
 import java.util.Arrays;

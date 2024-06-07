@@ -20,7 +20,7 @@ package org.apache.amoro.api;
 
 import org.apache.amoro.api.process.TableProcess;
 import org.apache.amoro.api.process.TableProcessState;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 
 import java.util.Collections;
 import java.util.Set;

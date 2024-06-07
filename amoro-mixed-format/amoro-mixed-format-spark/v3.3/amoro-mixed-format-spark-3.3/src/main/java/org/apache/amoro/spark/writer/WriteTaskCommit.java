@@ -18,10 +18,10 @@
 
 package org.apache.amoro.spark.writer;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
 import java.util.ArrayList;

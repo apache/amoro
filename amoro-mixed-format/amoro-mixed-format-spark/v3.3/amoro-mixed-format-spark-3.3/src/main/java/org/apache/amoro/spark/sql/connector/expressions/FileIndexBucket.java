@@ -19,10 +19,10 @@
 package org.apache.amoro.spark.sql.connector.expressions;
 
 import org.apache.amoro.data.PrimaryKeyData;
+import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.relocated.com.google.common.base.Joiner;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.spark.sql.connector.expressions.Expression;
 import org.apache.spark.sql.connector.expressions.Expressions;
 import org.apache.spark.sql.connector.expressions.NamedReference;

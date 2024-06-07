@@ -29,7 +29,7 @@ import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.IllegalMetadataException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;

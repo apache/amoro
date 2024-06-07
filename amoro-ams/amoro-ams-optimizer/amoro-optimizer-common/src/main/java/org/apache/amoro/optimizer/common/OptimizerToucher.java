@@ -22,7 +22,7 @@ import org.apache.amoro.ErrorCodes;
 import org.apache.amoro.api.AmoroException;
 import org.apache.amoro.api.OptimizerProperties;
 import org.apache.amoro.api.OptimizerRegisterInfo;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

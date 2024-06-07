@@ -18,8 +18,8 @@
 
 package org.apache.amoro.utils;
 
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.iceberg.util.LockManagers;
 import org.apache.iceberg.util.Tasks;
 import org.slf4j.Logger;

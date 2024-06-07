@@ -19,8 +19,8 @@
 package org.apache.amoro.formats.mixed;
 
 import org.apache.amoro.TableSnapshot;
+import org.apache.amoro.shade.guava32.com.google.common.primitives.Longs;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
 
 import java.util.Optional;
 

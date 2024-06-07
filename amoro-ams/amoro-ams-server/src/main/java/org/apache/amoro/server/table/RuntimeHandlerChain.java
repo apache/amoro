@@ -22,7 +22,7 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

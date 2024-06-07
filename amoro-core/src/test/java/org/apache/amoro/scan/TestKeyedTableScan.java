@@ -22,12 +22,12 @@ import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.io.TableDataTestBase;
 import org.apache.amoro.io.writer.GenericChangeTaskWriter;
 import org.apache.amoro.io.writer.GenericTaskWriters;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.WriteResult;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.junit.Assert;
 import org.junit.Test;
 

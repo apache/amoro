@@ -19,9 +19,9 @@
 package org.apache.amoro.server.dashboard.component.reverser;
 
 import org.apache.amoro.server.dashboard.model.DDLInfo;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.Collections;

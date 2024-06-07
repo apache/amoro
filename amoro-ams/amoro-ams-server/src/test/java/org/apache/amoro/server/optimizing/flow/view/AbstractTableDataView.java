@@ -24,6 +24,7 @@ import org.apache.amoro.io.writer.GenericBaseTaskWriter;
 import org.apache.amoro.io.writer.GenericChangeTaskWriter;
 import org.apache.amoro.io.writer.GenericTaskWriters;
 import org.apache.amoro.io.writer.RecordWithAction;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionKey;
@@ -39,7 +40,6 @@ import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.WriteResult;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.ArrayUtil;
 

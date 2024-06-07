@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.dashboard.utils;
 
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Test;
 

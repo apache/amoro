@@ -20,7 +20,7 @@ package org.apache.amoro.server.terminal.local;
 
 import org.apache.amoro.server.terminal.SimpleResultSet;
 import org.apache.amoro.server.terminal.TerminalSession;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;

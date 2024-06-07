@@ -20,11 +20,11 @@ package org.apache.iceberg.data.parquet;
 
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.iceberg.parquet.AdaptHivePrimitiveWriter;
 import org.apache.iceberg.parquet.ParquetTypeVisitor;
 import org.apache.iceberg.parquet.ParquetValueWriter;
 import org.apache.iceberg.parquet.ParquetValueWriters;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.parquet.Preconditions;
 import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.io.api.Binary;

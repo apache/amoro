@@ -19,11 +19,11 @@
 package org.apache.amoro.hive.utils;
 
 import org.apache.amoro.io.AuthenticatedHadoopFileIO;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
 

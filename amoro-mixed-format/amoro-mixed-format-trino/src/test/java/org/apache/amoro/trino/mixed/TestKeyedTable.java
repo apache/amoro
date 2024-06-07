@@ -25,7 +25,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TestedCatalogs;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import io.trino.testing.QueryRunner;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 

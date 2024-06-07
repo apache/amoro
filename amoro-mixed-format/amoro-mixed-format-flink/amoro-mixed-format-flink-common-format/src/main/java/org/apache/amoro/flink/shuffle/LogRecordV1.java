@@ -19,14 +19,15 @@
 package org.apache.amoro.flink.shuffle;
 
 import static org.apache.amoro.flink.shuffle.RowKindUtil.convertToFlinkRowKind;
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkNotNull;
 
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.log.FormatVersion;
 import org.apache.amoro.log.LogData;
 import org.apache.amoro.log.data.LogArrayData;
 import org.apache.amoro.log.data.LogMapData;
+import org.apache.amoro.shade.guava32.com.google.common.primitives.Longs;
 import org.apache.flink.table.data.ArrayData;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.GenericArrayData;
@@ -37,7 +38,6 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.util.FlinkRuntimeException;
-import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 

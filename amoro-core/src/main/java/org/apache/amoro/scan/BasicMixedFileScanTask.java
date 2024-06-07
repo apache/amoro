@@ -22,12 +22,12 @@ import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.DefaultKeyedFile;
 import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.data.PrimaryKeyedFile;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
 import java.util.Collections;
 import java.util.List;

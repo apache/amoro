@@ -18,11 +18,11 @@
 
 package org.apache.amoro.api.config;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
+import org.apache.amoro.shade.guava32.com.google.common.base.Objects;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
-import org.apache.iceberg.relocated.com.google.common.base.Objects;
 
 import java.time.Duration;
 import java.time.LocalDateTime;

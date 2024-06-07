@@ -28,14 +28,14 @@ import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.UnifiedCatalogLoader;
 import org.apache.amoro.client.AmsThriftUrl;
 import org.apache.amoro.flink.catalog.FlinkUnifiedCatalog;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import java.util.HashSet;
 import java.util.Set;

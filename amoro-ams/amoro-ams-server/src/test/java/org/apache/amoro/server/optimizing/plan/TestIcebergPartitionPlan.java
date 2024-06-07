@@ -28,7 +28,7 @@ import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.server.optimizing.scan.IcebergTableFileScanHelper;
 import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.utils.IcebergTableUtil;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

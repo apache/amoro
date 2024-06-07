@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.optimizing.maintainer;
 
+import static org.apache.amoro.shade.guava32.com.google.common.primitives.Longs.min;
 import static org.apache.amoro.utils.MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
-import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 import org.apache.amoro.IcebergFileEntry;
 import org.apache.amoro.TableFormat;
@@ -28,6 +28,10 @@ import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.HiveLocationUtil;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.KeyedTable;
@@ -48,10 +52,6 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;

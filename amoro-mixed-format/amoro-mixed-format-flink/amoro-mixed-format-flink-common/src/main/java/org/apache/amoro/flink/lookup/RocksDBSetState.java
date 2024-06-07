@@ -19,10 +19,10 @@
 package org.apache.amoro.flink.lookup;
 
 import org.apache.amoro.log.Bytes;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.utils.map.RocksDBBackend;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.table.data.RowData;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.util.Arrays;
