@@ -85,7 +85,16 @@ defineExpose({
   },
   updateOptions(options: any = {}) {
     editor && editor.updateOptions(options)
+  },
+  getSelection() {
+    const selection = editor.getSelection()
+    const model = editor.getModel()
+    if (selection && model) {
+      return model.getValueInRange(selection);
+    }
+    return ''
   }
+
 })
 
 onBeforeUnmount(() => {

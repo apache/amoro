@@ -38,7 +38,6 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Schema;
@@ -76,7 +75,6 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -570,29 +568,14 @@ public class IcebergTableMaintainer implements TableMaintainer {
     Iterable<Snapshot> snapshots = internalTable.snapshots();
     int size = Iterables.size(snapshots);
     LOG.info("{} getRuntime {} snapshots to scan", tableName, size);
-    int cnt = 0;
     for (Snapshot snapshot : snapshots) {
-      cnt++;
-      int before = validFiles.size();
       String manifestListLocation = snapshot.manifestListLocation();
-
       validFiles.add(TableFileUtil.getUriPath(manifestListLocation));
-
-      // valid data files
-      List<ManifestFile> manifestFiles = snapshot.allManifests(internalTable.io());
-      for (ManifestFile manifestFile : manifestFiles) {
-        validFiles.add(TableFileUtil.getUriPath(manifestFile.path()));
-      }
-
-      LOG.info(
-          "{} scan snapshot {}: {} and getRuntime {} files, complete {}/{}",
-          tableName,
-          snapshot.snapshotId(),
-          formatTime(snapshot.timestampMillis()),
-          validFiles.size() - before,
-          cnt,
-          size);
     }
+    // valid data files
+    Set<String> allManifestFiles = IcebergTableUtil.getAllManifestFiles(internalTable);
+    allManifestFiles.forEach(f -> validFiles.add(TableFileUtil.getUriPath(f)));
+
     Stream.of(
             ReachableFileUtil.metadataFileLocations(internalTable, false).stream(),
             ReachableFileUtil.statisticsFilesLocations(internalTable).stream(),
@@ -638,11 +621,6 @@ public class IcebergTableMaintainer implements TableMaintainer {
     }
 
     return filesToDelete;
-  }
-
-  private static String formatTime(long timestamp) {
-    return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault())
-        .toString();
   }
 
   CloseableIterable<FileEntry> fileScan(
