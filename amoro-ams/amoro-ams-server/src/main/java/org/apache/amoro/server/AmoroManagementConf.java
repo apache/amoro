@@ -356,6 +356,13 @@ public class AmoroManagementConf {
           .defaultValue(30)
           .withDescription("Session timeout in minutes.");
 
+  public static final ConfigOption<String> TERMINAL_SENSITIVE_CONF_KEYS =
+      ConfigOptions.key("terminal.sensitive-conf-keys")
+          .stringType()
+          .defaultValue("")
+          .withDescription(
+              "Comma-separated list of sensitive conf keys used to desensitize related value.");
+
   /** configs of data expiration */
   public static final ConfigOption<Boolean> DATA_EXPIRATION_ENABLED =
       ConfigOptions.key("data-expiration.enabled")

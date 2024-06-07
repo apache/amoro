@@ -107,6 +107,9 @@ public class TerminalManager {
     String connectorType = catalogConnectorType(catalogMeta);
     applyClientProperties(catalogMeta);
     Configurations configuration = new Configurations();
+    configuration.set(
+        AmoroManagementConf.TERMINAL_SENSITIVE_CONF_KEYS,
+        serviceConfig.get(AmoroManagementConf.TERMINAL_SENSITIVE_CONF_KEYS));
     configuration.setInteger(TerminalSessionFactory.SessionConfigOptions.FETCH_SIZE, resultLimits);
     configuration.set(
         TerminalSessionFactory.SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
@@ -364,6 +367,9 @@ public class TerminalManager {
       key = key.substring(factoryPropertiesPrefix.length());
       configuration.setString(key, value);
     }
+    configuration.set(
+        AmoroManagementConf.TERMINAL_SENSITIVE_CONF_KEYS,
+        serviceConfig.get(AmoroManagementConf.TERMINAL_SENSITIVE_CONF_KEYS));
     configuration.set(TerminalSessionFactory.FETCH_SIZE, this.resultLimits);
     factory.initialize(configuration);
     return factory;

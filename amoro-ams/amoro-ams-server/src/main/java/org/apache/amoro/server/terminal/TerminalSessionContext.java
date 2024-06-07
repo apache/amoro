@@ -19,6 +19,8 @@
 package org.apache.amoro.server.terminal;
 
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.dashboard.utils.DesensitizationUtil;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.commons.io.Charsets;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -30,12 +32,14 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.PrintStream;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class TerminalSessionContext {
   private static final Logger LOG = LoggerFactory.getLogger(TerminalSessionContext.class);
@@ -48,6 +52,8 @@ public class TerminalSessionContext {
   private volatile ExecutionTask task = null;
   private final TerminalSessionFactory factory;
   private final Configurations sessionConfiguration;
+
+  private final List<String> sensitiveConfKeys;
   private volatile TerminalSession session;
 
   private volatile long lastExecutionTime = System.currentTimeMillis();
@@ -65,6 +71,13 @@ public class TerminalSessionContext {
     this.threadPool = executor;
     this.factory = factory;
     this.sessionConfiguration = sessionConfiguration;
+    this.sensitiveConfKeys =
+        Arrays.stream(
+                sessionConfiguration
+                    .getString(AmoroManagementConf.TERMINAL_SENSITIVE_CONF_KEYS)
+                    .split(","))
+            .map(String::trim)
+            .collect(Collectors.toList());
   }
 
   public String getSessionId() {
@@ -199,8 +212,16 @@ public class TerminalSessionContext {
               executionResult.appendLog("fetch terminal session: " + sessionId);
               executionResult.appendLogs(session.logs());
               for (String key : session.configs().keySet()) {
-                executionResult.appendLog(
-                    "session configuration: " + key + " => " + session.configs().get(key));
+                if (sensitiveConfKeys.contains(key)) {
+                  executionResult.appendLog(
+                      "session configuration: "
+                          + key
+                          + " => "
+                          + DesensitizationUtil.desensitize(session.configs().get(key)));
+                } else {
+                  executionResult.appendLog(
+                      "session configuration: " + key + " => " + session.configs().get(key));
+                }
               }
 
               return execute(session);

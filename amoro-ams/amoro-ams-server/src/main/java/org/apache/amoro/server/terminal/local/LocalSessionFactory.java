@@ -21,6 +21,8 @@ package org.apache.amoro.server.terminal.local;
 import org.apache.amoro.api.config.ConfigOption;
 import org.apache.amoro.api.config.ConfigOptions;
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.dashboard.utils.DesensitizationUtil;
 import org.apache.amoro.server.terminal.SparkContextUtil;
 import org.apache.amoro.server.terminal.TerminalSession;
 import org.apache.amoro.server.terminal.TerminalSessionFactory;
@@ -32,10 +34,12 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.internal.SQLConf;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class LocalSessionFactory implements TerminalSessionFactory {
 
@@ -50,10 +54,16 @@ public class LocalSessionFactory implements TerminalSessionFactory {
 
   SparkSession context = null;
   Configurations conf;
+  List<String> sensitiveConfKeys;
 
   @Override
   public void initialize(Configurations properties) {
     this.conf = properties;
+    this.sensitiveConfKeys =
+        Arrays.stream(
+                properties.getString(AmoroManagementConf.TERMINAL_SENSITIVE_CONF_KEYS).split(","))
+            .map(String::trim)
+            .collect(Collectors.toList());
   }
 
   @Override
@@ -104,7 +114,11 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   private void updateSessionConf(
       SparkSession session, List<String> logs, String key, String value) {
     session.conf().set(key, value);
-    logs.add(key + "  " + value);
+    if (sensitiveConfKeys.contains(key)) {
+      logs.add(key + "  " + DesensitizationUtil.desensitize(value));
+    } else {
+      logs.add(key + "  " + value);
+    }
   }
 
   protected synchronized SparkSession lazyInitContext() {
