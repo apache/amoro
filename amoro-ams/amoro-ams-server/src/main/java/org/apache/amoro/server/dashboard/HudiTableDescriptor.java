@@ -21,6 +21,7 @@ package org.apache.amoro.server.dashboard;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.server.dashboard.model.AMSColumnInfo;
+import org.apache.amoro.server.dashboard.model.AMSPartitionField;
 import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;
 import org.apache.amoro.server.dashboard.model.DDLInfo;
 import org.apache.amoro.server.dashboard.model.OperationType;
@@ -35,6 +36,7 @@ import org.apache.amoro.server.utils.HudiTableUtil;
 import org.apache.avro.Schema;
 import org.apache.hudi.common.model.HoodieCommitMetadata;
 import org.apache.hudi.common.model.HoodieTableType;
+import org.apache.hudi.common.table.HoodieTableConfig;
 import org.apache.hudi.common.table.HoodieTableMetaClient;
 import org.apache.hudi.common.table.TableSchemaResolver;
 import org.apache.hudi.common.table.timeline.HoodieDefaultTimeline;
@@ -46,9 +48,12 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.Pair;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -74,6 +79,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
   public ServerTableMeta getTableDetail(AmoroTable<?> amoroTable) {
     HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
     HoodieTableMetaClient metaClient = hoodieTable.getMetaClient();
+    HoodieTableConfig hoodieTableConfig = metaClient.getTableConfig();
     TableSchemaResolver schemaResolver = new TableSchemaResolver(metaClient);
     ServerTableMeta meta = new ServerTableMeta();
     meta.setTableIdentifier(amoroTable.id());
@@ -92,6 +98,8 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     } catch (Exception e) {
       throw new IllegalStateException("Error when parse table schema", e);
     }
+    Map<String, AMSColumnInfo> columnMap = columns.stream()
+        .collect(Collectors.toMap(AMSColumnInfo::getField, Function.identity()));
     meta.setSchema(columns);
     meta.setProperties(amoroTable.properties());
     meta.setBaseLocation(metaClient.getBasePathV2().toString());
@@ -100,6 +108,28 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
         0, "0", "0", "Hudi(" + tableTable + ")"
     );
     meta.setTableSummary(tableSummary);
+
+    if (hoodieTableConfig.isTablePartitioned()) {
+      String[] partitionFields = hoodieTableConfig.getPartitionFields().get();
+      List<AMSPartitionField> partitions = new ArrayList<>(partitionFields.length);
+
+      for (String f: partitionFields) {
+        if (columnMap.containsKey(f)) {
+          partitions.add(new AMSPartitionField(f, null, null, null, null));
+        }
+      }
+      meta.setPartitionColumnList(partitions);
+    }
+    if (hoodieTableConfig.getRecordKeyFields().map(f -> f.length > 0).orElse(false)) {
+      String[] recordFields = hoodieTableConfig.getRecordKeyFields().get();
+      List<AMSColumnInfo> primaryKeys = Lists.newArrayList();
+      for (String field: recordFields) {
+        if (columnMap.containsKey(field)) {
+          primaryKeys.add(columnMap.get(field));
+        }
+      }
+      meta.setPkList(primaryKeys);
+    }
 
     return meta;
   }
