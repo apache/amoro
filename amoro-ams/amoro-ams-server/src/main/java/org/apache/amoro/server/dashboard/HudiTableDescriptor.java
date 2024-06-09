@@ -29,9 +29,12 @@ import org.apache.amoro.server.dashboard.model.OptimizingTaskInfo;
 import org.apache.amoro.server.dashboard.model.PartitionBaseInfo;
 import org.apache.amoro.server.dashboard.model.PartitionFileBaseInfo;
 import org.apache.amoro.server.dashboard.model.ServerTableMeta;
+import org.apache.amoro.server.dashboard.model.TableSummary;
 import org.apache.amoro.server.dashboard.model.TagOrBranchInfo;
+import org.apache.amoro.server.utils.HudiTableUtil;
 import org.apache.avro.Schema;
 import org.apache.hudi.common.model.HoodieCommitMetadata;
+import org.apache.hudi.common.model.HoodieTableType;
 import org.apache.hudi.common.table.HoodieTableMetaClient;
 import org.apache.hudi.common.table.TableSchemaResolver;
 import org.apache.hudi.common.table.timeline.HoodieDefaultTimeline;
@@ -43,6 +46,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.Pair;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -80,7 +84,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
       scheme.getFields().forEach(field -> {
         AMSColumnInfo columnInfo = new AMSColumnInfo();
         columnInfo.setField(field.name());
-        columnInfo.setType(field.schema().getType().getName());
+        columnInfo.setType(HudiTableUtil.convertAvroSchemaToFieldType(field.schema()).toLowerCase());
         columnInfo.setRequired(true);
         columnInfo.setComment(field.doc());
         columns.add(columnInfo);
@@ -91,7 +95,11 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     meta.setSchema(columns);
     meta.setProperties(amoroTable.properties());
     meta.setBaseLocation(metaClient.getBasePathV2().toString());
-//    meta.setCreateTime(metaClient.get);
+    String tableTable = metaClient.getTableType() == HoodieTableType.COPY_ON_WRITE ? "cow": "mor";
+    TableSummary tableSummary = new TableSummary(
+        0, "0", "0", "Hudi(" + tableTable + ")"
+    );
+    meta.setTableSummary(tableSummary);
 
     return meta;
   }
@@ -174,6 +182,6 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
-    return null;
+    return Collections.emptyList();
   }
 }

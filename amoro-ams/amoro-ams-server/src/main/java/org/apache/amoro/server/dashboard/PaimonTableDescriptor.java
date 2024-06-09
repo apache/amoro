@@ -37,6 +37,7 @@ import org.apache.amoro.server.dashboard.model.OptimizingTaskInfo;
 import org.apache.amoro.server.dashboard.model.PartitionBaseInfo;
 import org.apache.amoro.server.dashboard.model.PartitionFileBaseInfo;
 import org.apache.amoro.server.dashboard.model.ServerTableMeta;
+import org.apache.amoro.server.dashboard.model.TableSummary;
 import org.apache.amoro.server.dashboard.model.TagOrBranchInfo;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.FilesStatisticsBuilder;
@@ -134,10 +135,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     // properties
     serverTableMeta.setProperties(table.options());
 
-    Map<String, Object> tableSummary = new HashMap<>();
     Map<String, Object> baseMetric = new HashMap<>();
     // table summary
-    tableSummary.put("tableFormat", AmsUtil.formatString(amoroTable.format().name()));
+    TableSummary tableSummary;
     Snapshot snapshot = store.snapshotManager().latestSnapshot();
     if (snapshot != null) {
       AmoroSnapshotsOfTable snapshotsOfTable =
@@ -148,9 +148,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
       String averageFileSize = AmsUtil.byteToXB(fileCount == 0 ? 0 : fileSize / fileCount);
 
-      tableSummary.put("averageFile", averageFileSize);
-      tableSummary.put("file", fileCount);
-      tableSummary.put("size", totalSize);
+      tableSummary = new TableSummary(fileCount, totalSize, averageFileSize, "paimon");
 
       baseMetric.put("totalSize", totalSize);
       baseMetric.put("fileCount", fileCount);
@@ -161,9 +159,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         baseMetric.put("baseWatermark", watermark);
       }
     } else {
-      tableSummary.put("size", 0);
-      tableSummary.put("file", 0);
-      tableSummary.put("averageFile", 0);
+      tableSummary = new TableSummary(0, "0", "0", "paimon");
 
       baseMetric.put("totalSize", 0);
       baseMetric.put("fileCount", 0);

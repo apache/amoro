@@ -35,7 +35,7 @@ public class ServerTableMeta {
   private Map<String, String> properties;
   private Map<String, Object> changeMetrics;
   private Map<String, Object> baseMetrics;
-  private Map<String, Object> tableSummary;
+  private TableSummary tableSummary;
   private String baseLocation;
   private String filter;
   private long createTime;
@@ -158,11 +158,11 @@ public class ServerTableMeta {
     this.baseMetrics = baseMetrics;
   }
 
-  public Map<String, Object> getTableSummary() {
+  public TableSummary getTableSummary() {
     return tableSummary;
   }
 
-  public void setTableSummary(Map<String, Object> tableSummary) {
+  public void setTableSummary(TableSummary tableSummary) {
     this.tableSummary = tableSummary;
   }
 

@@ -38,6 +38,7 @@ import org.apache.amoro.server.dashboard.model.PartitionFileBaseInfo;
 import org.apache.amoro.server.dashboard.model.ServerTableMeta;
 import org.apache.amoro.server.dashboard.model.TableBasicInfo;
 import org.apache.amoro.server.dashboard.model.TableStatistics;
+import org.apache.amoro.server.dashboard.model.TableSummary;
 import org.apache.amoro.server.dashboard.model.TagOrBranchInfo;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.TableStatCollector;
@@ -150,12 +151,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       }
       serverTableMeta.setChangeMetrics(changeMetrics);
     }
-    Map<String, Object> tableSummary = new HashMap<>();
-    tableSummary.put("size", AmsUtil.byteToXB(tableSize));
-    tableSummary.put("file", tableFileCnt);
-    tableSummary.put(
-        "averageFile", AmsUtil.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
-    tableSummary.put("tableFormat", tableFormat);
+    String averageFileSize = AmsUtil.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt);
+    TableSummary tableSummary = new TableSummary(
+        tableFileCnt,
+        AmsUtil.byteToXB(tableSize),
+        averageFileSize,
+        tableFormat
+    );
     serverTableMeta.setTableSummary(tableSummary);
     return serverTableMeta;
   }
