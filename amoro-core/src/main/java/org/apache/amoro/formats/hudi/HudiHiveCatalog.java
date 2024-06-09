@@ -18,30 +18,48 @@
 
 package org.apache.amoro.formats.hudi;
 
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.NoSuchDatabaseException;
 import org.apache.amoro.NoSuchTableException;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClient;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hudi.client.common.HoodieJavaEngineContext;
 import org.apache.hudi.common.fs.FSUtils;
+import org.apache.hudi.config.HoodieWriteConfig;
+import org.apache.hudi.table.HoodieJavaTable;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-public class HudiHiveCatalog extends HudiCatalogBase {
+public class HudiHiveCatalog implements FormatCatalog {
+  private final TableMetaStore metaStore;
+  private final String catalog;
+  private final Map<String, String> properties;
   private final CachedHiveClientPool hiveClientPool;
 
   protected HudiHiveCatalog(String catalog, Map<String, String> catalogProperties, TableMetaStore metaStore) {
-    super(catalog, catalogProperties, metaStore);
+    this.catalog = catalog;
+    this.metaStore = metaStore;
+    this.properties = catalogProperties == null ?
+        Collections.emptyMap():
+        Collections.unmodifiableMap(catalogProperties);
     this.hiveClientPool = new CachedHiveClientPool(metaStore, catalogProperties);
   }
 
@@ -144,11 +162,28 @@ public class HudiHiveCatalog extends HudiCatalogBase {
   }
 
   @Override
-  protected String loadTableLocation(String database, String table) {
+  public AmoroTable<?> loadTable(String database, String table) {
     Optional<Table> hoodieHiveTable = loadHoodieHiveTable(database, table);
-    return hoodieHiveTable.map(t -> t.getSd().getLocation())
-        .orElseThrow(() -> new NoSuchTableException(
-            "Hoodie table: " + database + "." + table + " dose not exists"));
+    if (!hoodieHiveTable.isPresent()) {
+      throw new NoSuchDatabaseException("Hoodie table: " + database + "." + table + " dose not exists");
+    }
+    Table hiveTable = hoodieHiveTable.get();
+    String tableLocation = hiveTable.getSd().getLocation();
+    HoodieJavaEngineContext context = new HoodieJavaEngineContext(
+        metaStore.getConfiguration());
+    HoodieWriteConfig config = HoodieWriteConfig.newBuilder()
+        .withPath(tableLocation)
+        .build();
+
+    return metaStore.doAs(() -> {
+      HoodieJavaTable hoodieTable = HoodieJavaTable.create(config, context);
+      TableIdentifier identifier = TableIdentifier.of(catalog, database, table);
+      Map<String, String> tableProperties = hiveTable.getParameters();
+      tableProperties = filterEngineProperties(tableProperties);
+      Map<String, String> properties = MixedCatalogUtil.mergeCatalogPropertiesToTable(
+          tableProperties, this.properties);
+      return new HudiTable(identifier, hoodieTable, properties);
+    });
   }
 
   private Optional<Table> loadHoodieHiveTable(String database, String table) {
@@ -172,5 +207,26 @@ public class HudiHiveCatalog extends HudiCatalogBase {
     return "hudi".equalsIgnoreCase(
         table.getParameters().getOrDefault(SPARK_SOURCE_PROVIDER, ""))
         || "hudi".equalsIgnoreCase(table.getParameters().getOrDefault(FLINK_CONNECTOR, ""));
+  }
+
+  private Map<String, String> filterEngineProperties(Map<String, String> properties) {
+    Set<String> enginePropertyKeys = Sets.newHashSet(
+        "transient_lastDdlTime",
+        "spark.sql.sources.schema.part.",
+        "spark.sql.sources.schema.partCol.",
+        "spark.sql.sources.schema.numPartCols",
+        "spark.sql.sources.schema.numParts",
+        "spark.sql.sources.provider",
+        "spark.sql.create.version"
+    );
+    Map<String, String> filteredProperties = new HashMap<>();
+    properties.forEach((k,v) -> {
+      boolean exists = enginePropertyKeys.stream()
+          .anyMatch(k::startsWith);
+      if (!exists) {
+        filteredProperties.put(k, v);
+      }
+    });
+    return filteredProperties;
   }
 }

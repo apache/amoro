@@ -18,14 +18,21 @@
 
 package org.apache.amoro.formats.hudi;
 
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.DatabaseNotEmptyException;
+import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.NoSuchTableException;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hudi.client.common.HoodieJavaEngineContext;
 import org.apache.hudi.common.fs.FSUtils;
+import org.apache.hudi.config.HoodieWriteConfig;
+import org.apache.hudi.table.HoodieJavaTable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
@@ -38,17 +45,24 @@ import java.util.Map;
 /**
  * Hudi catalog implement in hadoop filesystem.
  */
-public class HudiHadoopCatalog extends HudiCatalogBase {
-
+public class HudiHadoopCatalog implements FormatCatalog {
+  private final TableMetaStore metaStore;
+  private final String catalog;
+  private final Map<String, String> properties;
   private final Path warehouse;
 
   protected HudiHadoopCatalog(
-      String catalog, Map<String, String> properties, TableMetaStore metaStore) {
-    super(catalog, properties, metaStore);
+      String catalog, Map<String, String> catalogProperties, TableMetaStore metaStore) {
+    this.catalog = catalog;
+    this.metaStore = metaStore;
+    this.properties = catalogProperties == null ?
+        Collections.emptyMap():
+        Collections.unmodifiableMap(catalogProperties);
+
     Preconditions.checkArgument(
-        getProperties().containsKey(CatalogMetaProperties.KEY_WAREHOUSE),
+        this.properties.containsKey(CatalogMetaProperties.KEY_WAREHOUSE),
         "Lack required property: {}", CatalogMetaProperties.KEY_WAREHOUSE);
-    String warehosue = getProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
+    String warehosue = this.properties.get(CatalogMetaProperties.KEY_WAREHOUSE);
     this.warehouse = new Path(warehosue);
   }
 
@@ -152,8 +166,27 @@ public class HudiHadoopCatalog extends HudiCatalogBase {
     });
   }
 
+
   @Override
-  protected String loadTableLocation(String database, String table) {
+  public AmoroTable<?> loadTable(String database, String table) {
+    String tableLocation = loadTableLocation(database, table);
+    HoodieJavaEngineContext context = new HoodieJavaEngineContext(
+        metaStore.getConfiguration());
+    HoodieWriteConfig config = HoodieWriteConfig.newBuilder()
+        .withPath(tableLocation)
+        .build();
+
+    return metaStore.doAs(() -> {
+      HoodieJavaTable hoodieTable = HoodieJavaTable.create(config, context);
+      TableIdentifier identifier = TableIdentifier.of(catalog, database, table);
+      Map<String, String> tableProperties = hoodieTable.getMetaClient().getTableConfig().propsMap();
+      Map<String, String> properties = MixedCatalogUtil.mergeCatalogPropertiesToTable(
+          tableProperties, this.properties);
+      return new HudiTable(identifier, hoodieTable, properties);
+    });
+  }
+
+  private String loadTableLocation(String database, String table) {
     Path databasePath = new Path(warehouse, database);
     Path tablePath = new Path(databasePath, table);
     return metaStore.doAs(() -> {

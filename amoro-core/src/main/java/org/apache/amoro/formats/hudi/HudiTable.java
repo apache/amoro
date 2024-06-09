@@ -6,14 +6,22 @@ import org.apache.amoro.TableSnapshot;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.hudi.table.HoodieJavaTable;
 
+import java.util.Collections;
 import java.util.Map;
 
 public class HudiTable implements AmoroTable<HoodieJavaTable> {
   private final TableIdentifier identifier;
   private final HoodieJavaTable hoodieTable;
-  public HudiTable(TableIdentifier identifier, HoodieJavaTable hoodieTable) {
+  private final Map<String, String> tableProperties;
+
+  public HudiTable(
+      TableIdentifier identifier,
+      HoodieJavaTable hoodieTable,
+      Map<String, String> tableProperties) {
     this.identifier = identifier;
     this.hoodieTable = hoodieTable;
+    this.tableProperties = tableProperties == null ?
+     Collections.emptyMap(): Collections.unmodifiableMap(tableProperties);
   }
 
   @Override
@@ -27,7 +35,7 @@ public class HudiTable implements AmoroTable<HoodieJavaTable> {
 
   @Override
   public Map<String, String> properties() {
-    return hoodieTable.getMetaClient().getTableConfig().propsMap();
+    return tableProperties;
   }
 
   @Override
