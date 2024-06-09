@@ -52,7 +52,8 @@ public class CatalogBuilder {
                   TableFormat.ICEBERG,
                   TableFormat.MIXED_ICEBERG,
                   TableFormat.MIXED_HIVE,
-                  TableFormat.PAIMON),
+                  TableFormat.PAIMON,
+                  TableFormat.HUDI),
           CATALOG_TYPE_AMS, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
 
   private static String getAmsURI(Configurations serviceConfig) {

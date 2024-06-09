@@ -348,7 +348,8 @@ export enum tableTypeIconMap {
   ICEBERG = 'iceberg',
   ARCTIC = 'amoro',
   HIVE = 'hive',
-  PAIMON = 'paimon'
+  PAIMON = 'paimon',
+  HUDI = 'hudi'
 }
 
 export type ILineChartOriginalData = Record<string, Record<string, number>>

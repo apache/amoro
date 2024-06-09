@@ -388,4 +388,11 @@ public class HMSMockServer {
       }
     }
   }
+
+  public static void main(String[] args) throws InterruptedException {
+    HMSMockServer hms = new HMSMockServer();
+    hms.start();
+    System.out.println("port:" + hms.port);
+    Thread.sleep(1000000);
+  }
 }

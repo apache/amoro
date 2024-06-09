@@ -18,7 +18,6 @@
 
 package org.apache.amoro.formats.hudi;
 
-import com.google.common.collect.Maps;
 import org.apache.amoro.NoSuchDatabaseException;
 import org.apache.amoro.NoSuchTableException;
 import org.apache.amoro.hive.CachedHiveClientPool;

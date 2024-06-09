@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.dashboard.controller;
 
+import static org.apache.amoro.TableFormat.HUDI;
 import static org.apache.amoro.TableFormat.ICEBERG;
 import static org.apache.amoro.TableFormat.MIXED_HIVE;
 import static org.apache.amoro.TableFormat.MIXED_ICEBERG;
@@ -122,6 +123,8 @@ public class CatalogController {
         CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_HIVE));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, PAIMON));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, HUDI));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(
             CATALOG_TYPE_HADOOP, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));

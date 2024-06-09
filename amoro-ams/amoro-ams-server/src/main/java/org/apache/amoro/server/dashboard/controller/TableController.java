@@ -487,6 +487,8 @@ public class TableController {
               return TableMeta.TableType.PAIMON.toString();
             case ICEBERG:
               return TableMeta.TableType.ICEBERG.toString();
+            case HUDI:
+              return TableMeta.TableType.HUDI.toString();
             default:
               throw new IllegalStateException("Unknown format");
           }
