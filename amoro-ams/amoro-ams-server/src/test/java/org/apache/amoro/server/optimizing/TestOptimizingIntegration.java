@@ -19,6 +19,7 @@
 package org.apache.amoro.server.optimizing;
 
 import org.apache.amoro.server.AmsEnvironment;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
@@ -28,7 +29,6 @@ import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
-import org.apache.thrift.TException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;

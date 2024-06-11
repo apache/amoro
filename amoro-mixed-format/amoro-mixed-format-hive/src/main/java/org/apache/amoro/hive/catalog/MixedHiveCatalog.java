@@ -409,7 +409,7 @@ public class MixedHiveCatalog implements MixedFormatCatalog {
             doRollbackCreateTable(meta);
             try {
               client.removeTable(identifier.buildTableIdentifier(), true);
-            } catch (TException e) {
+            } catch (org.apache.amoro.shade.thrift.org.apache.thrift.TException e) {
               throw new RuntimeException(e);
             }
           });

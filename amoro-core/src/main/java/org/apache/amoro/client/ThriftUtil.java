@@ -18,8 +18,8 @@
 
 package org.apache.amoro.client;
 
-import org.apache.thrift.TServiceClient;
-import org.apache.thrift.protocol.TProtocol;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TServiceClient;
+import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

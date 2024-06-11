@@ -42,7 +42,7 @@ import org.apache.iceberg.Schema;
 import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
-import org.apache.thrift.TException;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.rules.TemporaryFolder;
 

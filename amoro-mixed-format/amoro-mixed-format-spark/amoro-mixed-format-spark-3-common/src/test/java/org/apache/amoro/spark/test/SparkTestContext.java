@@ -27,6 +27,7 @@ import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.spark.SparkUnifiedCatalog;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -36,7 +37,6 @@ import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
-import org.apache.thrift.TException;
 import org.junit.rules.TemporaryFolder;
 
 import java.util.Map;

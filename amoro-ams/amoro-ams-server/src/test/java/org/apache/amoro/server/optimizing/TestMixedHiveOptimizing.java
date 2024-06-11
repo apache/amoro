@@ -23,6 +23,7 @@ import org.apache.amoro.io.AuthenticatedHadoopFileIO;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Streams;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
@@ -32,7 +33,6 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.FileInfo;
-import org.apache.thrift.TException;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;

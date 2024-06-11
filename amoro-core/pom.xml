@@ -35,8 +35,13 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-shade-thrift</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
         </dependency>
 
         <dependency>
@@ -200,7 +205,7 @@
                 </executions>
             </plugin>
 
-            <!--Compile thrift api with commend: mvn thrift:compile -pl ams/api-->
+            <!--Compile thrift api with commend: mvn thrift:compile -pl amoro-core-->
             <plugin>
                 <groupId>org.apache.thrift.tools</groupId>
                 <artifactId>maven-thrift-plugin</artifactId>

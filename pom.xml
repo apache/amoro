@@ -109,7 +109,6 @@
         <terminal.spark.version>3.3.2</terminal.spark.version>
         <terminal.spark.major.version>3.3</terminal.spark.major.version>
         <dropwizard.metrics.version>4.2.19</dropwizard.metrics.version>
-        <thrift.version>0.13.0</thrift.version>
         <caffeine.version>2.9.3</caffeine.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <mybatis.version>3.5.15</mybatis.version>
@@ -131,6 +130,8 @@
         <amoro-shade-guava.version>32.1.1-jre</amoro-shade-guava.version>
         <amoro-shade-jackson.version>2.14.2</amoro-shade-jackson.version>
         <amoro-shade-zookeeper.version>3.9.1</amoro-shade-zookeeper.version>
+        <amoro-shade-thrift.version>0.20.0</amoro-shade-thrift.version>
+        <annotation-api.version>1.3.2</annotation-api.version>
     </properties>
 
     <dependencies>
@@ -241,6 +242,12 @@
                 <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-shade-zookeeper-3</artifactId>
                 <version>${amoro-shade-zookeeper.version}-${amoro-shade.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-shade-thrift</artifactId>
+                <version>${amoro-shade-thrift.version}-${amoro-shade.version}</version>
             </dependency>
 
             <dependency>
@@ -514,18 +521,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.apache.thrift</groupId>
-                <artifactId>libthrift</artifactId>
-                <version>${thrift.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine.version}</version>
@@ -782,6 +777,11 @@
                 <version>${fabric8-kubernetes-client.version.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>${annotation-api.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>junit</groupId>
@@ -1170,4 +1170,17 @@
             </build>
         </profile>
     </profiles>
+
+    <repositories>
+        <repository>
+            <id>apache-releases</id>
+            <name>apache releases</name>
+            <url>https://repository.apache.org/content/repositories/releases/</url>
+        </repository>
+        <repository>
+            <id>apache-snapshots</id>
+            <name>apache snapshots</name>
+            <url>https://repository.apache.org/content/repositories/snapshots/</url>
+        </repository>
+    </repositories>
 </project>
