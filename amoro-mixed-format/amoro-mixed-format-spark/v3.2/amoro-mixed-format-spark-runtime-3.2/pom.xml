@@ -48,12 +48,12 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>shade-amoro</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <createSourcesJar>true</createSourcesJar>
                             <shadedArtifactAttached>false</shadedArtifactAttached>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
@@ -108,26 +108,12 @@
                                 </excludes>
                             </artifactSet>
                             <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
+                                <filter combine.children="append">
+                                    <artifact>*</artifact>
                                     <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                        <exclude>META-INF/services/javax.*</exclude>
-                                        <exclude>**/*.proto</exclude>
-                                        <exclude>hbase-webapps/**</exclude>
-                                        <exclude>org/codehaus/mojo/animal_sniffer/**</exclude>
                                         <exclude>org/apache/iceberg/spark/extensions/**</exclude>
-                                        <exclude>
-                                            org/apache/hadoop/hive/ql/optimizer/ppr/PartitionExpressionForMetastore**
-                                        </exclude>
-                                        <exclude>
-                                            org/apache/hadoop/hive/ql/security/authorization/AuthorizationPreEventListener**
-                                        </exclude>
                                     </excludes>
                                 </filter>
-
                             </filters>
                             <relocations>
                                 <!-- relocation amoro spark packages -->
@@ -147,7 +133,6 @@
                                     <shadedPattern>org.apache.amoro.shade.org.apache.curator
                                     </shadedPattern>
                                 </relocation>
-
 
                                 <!-- relocation required dependencies -->
                                 <relocation>
@@ -207,7 +192,6 @@
                                     <shadedPattern>org.apache.amoro.shade.parquet.it
                                     </shadedPattern>
                                 </relocation>
-
                                 <relocation>
                                     <pattern>org.apache.parquet.crypto</pattern>
                                     <shadedPattern>
