@@ -39,9 +39,9 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.amoro.shade.thrift.org.apache.thrift.server.TServer;
 import org.apache.amoro.shade.thrift.org.apache.thrift.server.TThreadPoolServer;
-import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TFramedTransport;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TServerSocket;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException;
+import org.apache.amoro.shade.thrift.org.apache.thrift.transport.layered.TFramedTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
