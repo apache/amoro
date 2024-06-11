@@ -20,6 +20,7 @@ package org.apache.amoro.server.dashboard;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.server.dashboard.model.AMSColumnInfo;
 import org.apache.amoro.server.dashboard.model.AMSPartitionField;
 import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;
@@ -32,36 +33,46 @@ import org.apache.amoro.server.dashboard.model.PartitionFileBaseInfo;
 import org.apache.amoro.server.dashboard.model.ServerTableMeta;
 import org.apache.amoro.server.dashboard.model.TableSummary;
 import org.apache.amoro.server.dashboard.model.TagOrBranchInfo;
+import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.utils.HudiTableUtil;
 import org.apache.avro.Schema;
+import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
+import org.apache.hudi.common.model.FileSlice;
+import org.apache.hudi.common.model.HoodieBaseFile;
 import org.apache.hudi.common.model.HoodieCommitMetadata;
 import org.apache.hudi.common.model.HoodieTableType;
 import org.apache.hudi.common.table.HoodieTableConfig;
 import org.apache.hudi.common.table.HoodieTableMetaClient;
 import org.apache.hudi.common.table.TableSchemaResolver;
 import org.apache.hudi.common.table.timeline.HoodieDefaultTimeline;
+import org.apache.hudi.common.table.timeline.HoodieInstantTimeGenerator;
 import org.apache.hudi.common.table.timeline.HoodieTimeline;
+import org.apache.hudi.common.table.view.SyncableFileSystemView;
 import org.apache.hudi.common.util.Option;
+import org.apache.hudi.metadata.HoodieTableMetadata;
 import org.apache.hudi.table.HoodieJavaTable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.Pair;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
  * Table descriptor for hudi.
  */
 public class HudiTableDescriptor implements FormatTableDescriptor {
-
 
   private final ExecutorService ioExecutors;
 
@@ -103,11 +114,6 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     meta.setSchema(columns);
     meta.setProperties(amoroTable.properties());
     meta.setBaseLocation(metaClient.getBasePathV2().toString());
-    String tableTable = metaClient.getTableType() == HoodieTableType.COPY_ON_WRITE ? "cow": "mor";
-    TableSummary tableSummary = new TableSummary(
-        0, "0", "0", "Hudi(" + tableTable + ")"
-    );
-    meta.setTableSummary(tableSummary);
 
     if (hoodieTableConfig.isTablePartitioned()) {
       String[] partitionFields = hoodieTableConfig.getPartitionFields().get();
@@ -131,6 +137,53 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
       meta.setPkList(primaryKeys);
     }
 
+    HoodieTableMetadata hoodieTableMetadata = hoodieTable.getMetadata();
+    List<String> partitions;
+    try {
+      partitions = hoodieTableMetadata.getAllPartitionPaths();
+    } catch (IOException e) {
+      throw new RuntimeException("Error when load partitions for table: " + amoroTable.id(), e);
+    }
+
+    SyncableFileSystemView fileSystemView = hoodieTable.getHoodieView();
+    Map<String, HudiTableUtil.HoodiePartitionMetric> metrics = HudiTableUtil.statisticPartitionsMetric(
+        partitions, fileSystemView, ioExecutors
+    );
+    long baseFileCount = 0;
+    long logFileCount = 0;
+    long totalBaseSizeInByte = 0;
+    long totalLogSizeInByte = 0;
+    for (HudiTableUtil.HoodiePartitionMetric m: metrics.values()) {
+      baseFileCount += m.getBaseFileCount();
+      logFileCount += m.getLogFileCount();
+      totalBaseSizeInByte += m.getTotalBaseFileSizeInBytes();
+      totalLogSizeInByte += m.getTotalLogFileSizeInBytes();
+    }
+    long totalFileCount = baseFileCount + logFileCount;
+    long totalFileSize = totalBaseSizeInByte + totalLogSizeInByte;
+    String averageFileSize = AmsUtil.byteToXB(totalFileCount == 0 ? 0 : totalFileSize / totalFileCount);
+
+    String tableType = metaClient.getTableType() == HoodieTableType.COPY_ON_WRITE ? "cow": "mor";
+    String tableFormat = "Hudi(" + tableType + ")";
+    TableSummary tableSummary = new TableSummary(
+        totalFileCount,  AmsUtil.byteToXB(totalFileSize), averageFileSize, tableFormat
+    );
+    meta.setTableSummary(tableSummary);
+
+    Map<String, Object> baseSummary = new HashMap<>();
+    baseSummary.put("totalSize", AmsUtil.byteToXB(totalBaseSizeInByte));
+    baseSummary.put("fileCount", baseFileCount);
+    baseSummary.put("averageFileSize", AmsUtil.byteToXB(baseFileCount == 0?
+        0: totalBaseSizeInByte / baseFileCount));
+    meta.setBaseMetrics(baseSummary);
+    if (HoodieTableType.MERGE_ON_READ == metaClient.getTableType()) {
+      Map<String, Object> logSummary = new HashMap<>();
+      logSummary.put("totalSize", AmsUtil.byteToXB(totalLogSizeInByte));
+      logSummary.put("fileCount", logFileCount);
+      logSummary.put("averageFileSize", AmsUtil.byteToXB(logFileCount == 0 ?
+          0: totalLogSizeInByte / logFileCount));
+      meta.setChangeMetrics(logSummary);
+    }
     return meta;
   }
 
@@ -187,12 +240,56 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<PartitionBaseInfo> getTablePartitions(AmoroTable<?> amoroTable) {
-    return Lists.newArrayList();
+    HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
+    HoodieTableMetadata hoodieTableMetadata = hoodieTable.getMetadata();
+    List<String> partitions;
+    try {
+      partitions = hoodieTableMetadata.getAllPartitionPaths();
+    } catch (IOException e) {
+      throw new RuntimeException("Error when load partitions for table: " + amoroTable.id(), e);
+    }
+    SyncableFileSystemView fileSystemView = hoodieTable.getHoodieView();
+    Map<String, HudiTableUtil.HoodiePartitionMetric> metrics = HudiTableUtil.statisticPartitionsMetric(
+        partitions, fileSystemView, ioExecutors
+    );
+    return metrics.entrySet().stream()
+        .map(e -> {
+          PartitionBaseInfo p = new PartitionBaseInfo();
+          p.setPartition(e.getKey());
+          p.setFileCount(e.getValue().getBaseFileCount() + e.getValue().getLogFileCount());
+          p.setFileSize(e.getValue().getTotalBaseFileSizeInBytes() + e.getValue().getTotalLogFileSizeInBytes());
+          return p;
+        }).collect(Collectors.toList());
   }
 
   @Override
   public List<PartitionFileBaseInfo> getTableFiles(AmoroTable<?> amoroTable, String partition, Integer specId) {
-    return Lists.newArrayList();
+    HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
+    SyncableFileSystemView fileSystemView = hoodieTable.getHoodieView();
+    Stream<FileSlice> fileSliceStream = fileSystemView.getLatestFileSlices(partition);
+    List<PartitionFileBaseInfo> pfList = Lists.newArrayList();
+    fileSliceStream.forEach( fs -> {
+      if (fs.getBaseFile().isPresent()) {
+        HoodieBaseFile baseFile = fs.getBaseFile().get();
+        long commitTime = parseHoodieCommitTime(baseFile.getCommitTime());
+        PartitionFileBaseInfo file = new PartitionFileBaseInfo(
+            baseFile.getCommitTime(), DataFileType.BASE_FILE,
+            commitTime, partition, 0, baseFile.getPath(),
+            baseFile.getFileSize()
+        );
+        pfList.add(file);
+      }
+      fs.getLogFiles().forEach(l -> {
+        //TODO: can't get commit time from log file
+        PartitionFileBaseInfo file = new PartitionFileBaseInfo(
+            "", DataFileType.LOG_FILE, 0L,
+            partition, 0, l.getPath().toString(), l.getFileSize()
+        );
+        pfList.add(file);
+      });
+
+    });
+    return pfList;
   }
 
   @Override
@@ -207,11 +304,20 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable) {
-    return null;
+    return Collections.emptyList();
   }
 
   @Override
   public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
     return Collections.emptyList();
+  }
+
+  private long parseHoodieCommitTime(String commitTime) {
+    try {
+      Date date = HoodieInstantTimeGenerator.parseDateFromInstantTime(commitTime);
+      return date.getTime();
+    } catch (ParseException e) {
+      throw new RuntimeException("Error when parse timestamp:" + commitTime, e);
+    }
   }
 }

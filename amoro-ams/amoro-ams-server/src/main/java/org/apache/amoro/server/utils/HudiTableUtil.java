@@ -22,8 +22,20 @@ import org.apache.amoro.api.ColumnInfo;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
 import org.apache.flink.api.common.typeinfo.Types;
+import org.apache.hudi.common.model.FileSlice;
+import org.apache.hudi.common.model.HoodieLogFile;
+import org.apache.hudi.common.table.view.SyncableFileSystemView;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -110,5 +122,87 @@ public class HudiTableUtil {
       default:
         throw new IllegalArgumentException("Unsupported Avro type '" + schema.getType() + "'.");
     }
+  }
+
+
+  public static class HoodiePartitionMetric {
+    private long totalBaseFileSizeInBytes;
+    private long totalLogFileSizeInBytes;
+    private long baseFileCount;
+    private long logFileCount;
+
+    public HoodiePartitionMetric(
+        int baseFileCount, int logFileCount,
+        long totalBaseFileSizeInBytes, long totalLogFileSizeInBytes) {
+      this.baseFileCount = baseFileCount;
+      this.logFileCount = logFileCount;
+      this.totalBaseFileSizeInBytes = totalBaseFileSizeInBytes;
+      this.totalLogFileSizeInBytes = totalLogFileSizeInBytes;
+    }
+
+    public long getTotalBaseFileSizeInBytes() {
+      return totalBaseFileSizeInBytes;
+    }
+
+    public long getTotalLogFileSizeInBytes() {
+      return totalLogFileSizeInBytes;
+    }
+
+    public long getBaseFileCount() {
+      return baseFileCount;
+    }
+
+    public long getLogFileCount() {
+      return logFileCount;
+    }
+  }
+
+
+  public static Map<String, HoodiePartitionMetric> statisticPartitionsMetric(
+      List<String> partitionPaths, SyncableFileSystemView fileSystemView, ExecutorService ioExecutors
+  ) {
+    Map<String, CompletableFuture<HoodiePartitionMetric>> futures = new HashMap<>();
+    for (String path: partitionPaths) {
+      CompletableFuture<HoodiePartitionMetric> f = CompletableFuture.supplyAsync(
+          () -> getPartitionMetric(path, fileSystemView), ioExecutors);
+      futures.put(path, f);
+    }
+
+    Map<String, HoodiePartitionMetric> results = new HashMap<>();
+    for (String path: partitionPaths) {
+      CompletableFuture<HoodiePartitionMetric> future = futures.get(path);
+      try {
+        HoodiePartitionMetric metric = future.get();
+        results.put(path, metric);
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException("Error when statistic partition: " + path + " metrics", e);
+      }
+    }
+    return results;
+  }
+
+  private static HoodiePartitionMetric getPartitionMetric(String partitionPath, SyncableFileSystemView fsView) {
+    List<FileSlice> latestSlices = fsView.getLatestFileSlices(partitionPath).collect(Collectors.toList());
+    // Total size of the metadata and count of base/log files
+    long totalBaseFileSizeInBytes = 0;
+    long totalLogFileSizeInBytes = 0;
+    int baseFileCount = 0;
+    int logFileCount = 0;
+
+    for (FileSlice slice : latestSlices) {
+      if (slice.getBaseFile().isPresent()) {
+        totalBaseFileSizeInBytes += slice.getBaseFile().get().getFileStatus().getLen();
+        ++baseFileCount;
+      }
+      Iterator<HoodieLogFile> it = slice.getLogFiles().iterator();
+      while (it.hasNext()) {
+        totalLogFileSizeInBytes += it.next().getFileSize();
+        ++logFileCount;
+      }
+    }
+
+    return new HoodiePartitionMetric(
+        baseFileCount, logFileCount, totalBaseFileSizeInBytes, totalLogFileSizeInBytes
+    );
   }
 }
