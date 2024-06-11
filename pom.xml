@@ -838,6 +838,30 @@
             <name>GCS Maven Central mirror Asia Pacific</name>
             <url>https://maven-central-asia.storage-download.googleapis.com/maven2/</url>
         </repository>
+
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>apache-releases</id>
+            <name>apache releases</name>
+            <url>https://repository.apache.org/content/repositories/releases/</url>
+        </repository>
+
+        <repository>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>apache-snapshots</id>
+            <name>apache snapshots</name>
+            <url>https://repository.apache.org/content/repositories/snapshots/</url>
+        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -1170,17 +1194,4 @@
             </build>
         </profile>
     </profiles>
-
-    <repositories>
-        <repository>
-            <id>apache-releases</id>
-            <name>apache releases</name>
-            <url>https://repository.apache.org/content/repositories/releases/</url>
-        </repository>
-        <repository>
-            <id>apache-snapshots</id>
-            <name>apache snapshots</name>
-            <url>https://repository.apache.org/content/repositories/snapshots/</url>
-        </repository>
-    </repositories>
 </project>
