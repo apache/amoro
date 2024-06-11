@@ -131,17 +131,15 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
               Set<Integer> currentDeleteIds =
                   ImmutableSet.copyOf(ContentFiles.asDeleteFile(delete).equalityFieldIds());
               if (!deleteIds.equals(currentDeleteIds)) {
-                LOG.warn(
-                    "Equality delete files have different ids. First equality fields ids:{},"
-                        + " current equality fields ids:{},"
-                        + " first delete file path : {},"
-                        + " current delete file path : {}.",
-                    deleteIds,
-                    firstDeleteFilePath,
-                    currentDeleteIds,
-                    delete.path().toString());
                 throw new IllegalArgumentException(
-                    "Equality delete files have different delete fields");
+                    String.format(
+                        "Equality delete files have different delete fields, first equality field ids:[%s],"
+                            + " current equality field ids:[%s], first delete file path:[%s], "
+                            + " current delete file path: [%s].",
+                        deleteIds,
+                        currentDeleteIds,
+                        firstDeleteFilePath,
+                        delete.path().toString()));
               }
             }
             eqDeleteBuilder.add(ContentFiles.asDeleteFile(delete));
