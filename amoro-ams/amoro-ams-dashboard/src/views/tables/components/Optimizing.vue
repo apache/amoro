@@ -43,7 +43,7 @@ limitations under the License.
           </template>
           <template v-if="column.dataIndex === 'status'">
             <div class="g-flex-ac">
-              <span :style="{ 'background-color': (STATUS_CONFIG[record.status] || {}).color }"
+              <span :style="{ 'background-color': (STATUS_CONFIG[record.status as keyof typeof STATUS_CONFIG] || {} as any).color }"
                 class="status-icon"></span>
               <span>{{ record.status }}</span>
               <a-tooltip v-if="record.status === 'FAILED'" placement="topRight" class="g-ml-4"
@@ -98,7 +98,7 @@ limitations under the License.
           </template>
           <template v-if="column.dataIndex === 'status'">
             <div class="g-flex-ac">
-              <span :style="{ 'background-color': (TASK_STATUS_CONFIG[record.status] || {}).color }"
+              <span :style="{ 'background-color': (TASK_STATUS_CONFIG[record.status as keyof typeof TASK_STATUS_CONFIG] || {} as any).color }"
                 class="status-icon"></span>
               <span>{{ record.status }}</span>
               <a-tooltip v-if="record.status === 'FAILED'" placement="topRight" class="g-ml-4"
@@ -130,6 +130,7 @@ import { IColumns, BreadcrumbOptimizingItem } from '@/types/common.type'
 import { getOptimizingProcesses, getTasksByOptimizingProcessId, cancelOptimizingProcess } from '@/services/table.service'
 import { useRoute } from 'vue-router'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
+import { Modal } from 'ant-design-vue'
 
 const hasBreadcrumb = ref<boolean>(false)
 
@@ -233,9 +234,9 @@ async function cancel() {
     onOk: async () => {
       try {
         loading.value = true
-        const result = await cancelOptimizingProcess({
+        await cancelOptimizingProcess({
           ...sourceData,
-          processId: processId.value
+          processId: processId.value?.toString()
         })
         cancelDisabled.value = true
         refresh()

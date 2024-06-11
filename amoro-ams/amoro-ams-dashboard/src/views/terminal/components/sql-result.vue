@@ -20,7 +20,7 @@ limitations under the License.
 <template>
 <!-- :style="{width: `${innerWidth}px`}" -->
   <div class="sql-result-wrap">
-    <div class="result-status" :style="{background: debugResultBgcMap[status]}">
+    <div class="result-status" :style="{background: debugResultBgcMap[status as keyof typeof debugResultBgcMap]}">
       <template v-if="status === 'Running'">
         <loading-outlined style="color: #1890ff" />
       </template>
@@ -45,9 +45,8 @@ limitations under the License.
         </thead>
         <tbody class="ant-table-tbody">
           <tr v-for="(rowItem, row) in props.info.rowData" :key="row + 1">
-            <td v-for="(val, col) in rowItem" :key="row + val + col" >
-              <!-- :style="{'maxWidth': `${(100 / (props.info.columns.length)) }%`}" -->
-              <span class="td-val" :title="val">{{ val }}</span>
+            <td v-for="(val, col) in rowItem" :key="`${row}${val}${col}`" >
+              <span class="td-val" :title="val || ''">{{ val }}</span>
             </td>
           </tr>
         </tbody>

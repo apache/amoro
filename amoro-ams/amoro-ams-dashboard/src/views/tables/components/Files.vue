@@ -24,7 +24,7 @@ limitations under the License.
         <a-input-search
           v-model:value="searchKey"
           :placeholder="$t('fileSearchPlaceholder')"
-          @search="(val) => handleSearch(val)"
+          @search="(val: string) => handleSearch(val)"
           style="width: 350px"
         >
           <template #prefix>
@@ -143,7 +143,7 @@ async function getTableInfo() {
       ...sourceData,
       filter: searchKey.value,
       page: pagination.current,
-      pageSize: pagination.pageSize
+      pageSize: pagination.pageSize,
     })
     const { list, total } = result
     pagination.total = total;
