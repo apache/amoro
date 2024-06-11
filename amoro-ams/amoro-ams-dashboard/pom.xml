@@ -113,4 +113,22 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>skip-dashboard-build</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>com.github.eirslett</groupId>
+                            <artifactId>frontend-maven-plugin</artifactId>
+                            <configuration>
+                                <skip>true</skip>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+    </profiles>
 </project>

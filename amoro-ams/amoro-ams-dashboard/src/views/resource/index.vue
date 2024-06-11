@@ -109,7 +109,18 @@ export default defineComponent({
       activeTab: 'optimizergroup' as string,
       showGroupModal: false as boolean,
       groupEdit: false,
-      groupEditRecord: {},
+      groupEditRecord: {
+        resourceGroup: {
+          name: '',
+          container: '',
+          properties: {}
+        },
+        occupationCore: 0,
+        occupationMemory: 0,
+        name: '',
+        container: '',
+        resourceOccupation: ''
+      },
       groupKeyCount: 1,
       showTab: false as boolean
     })
