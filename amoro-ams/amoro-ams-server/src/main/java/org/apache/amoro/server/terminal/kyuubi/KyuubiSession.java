@@ -20,7 +20,7 @@ package org.apache.amoro.server.terminal.kyuubi;
 
 import org.apache.amoro.server.terminal.JDBCResultSet;
 import org.apache.amoro.server.terminal.TerminalSession;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 
 import java.sql.Connection;
 import java.sql.SQLException;

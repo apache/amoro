@@ -19,9 +19,9 @@
 package org.apache.amoro.log;
 
 import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.shade.guava32.com.google.common.primitives.Longs;
 import org.apache.amoro.utils.FlipUtil;
 import org.apache.amoro.utils.IdGenerator;
-import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
 import org.apache.iceberg.types.Type;
 
 import java.io.Serializable;

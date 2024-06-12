@@ -18,17 +18,17 @@
 
 package org.apache.amoro.log;
 
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkArgument;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.amoro.log.data.LogArrayData;
 import org.apache.amoro.log.data.LogMapData;
+import org.apache.amoro.shade.guava32.com.google.common.base.Predicate;
+import org.apache.amoro.shade.guava32.com.google.common.primitives.Longs;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.amoro.utils.FlipUtil;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.relocated.com.google.common.base.Predicate;
-import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;

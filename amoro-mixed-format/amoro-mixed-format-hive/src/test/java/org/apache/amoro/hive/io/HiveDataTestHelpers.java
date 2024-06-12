@@ -26,6 +26,7 @@ import org.apache.amoro.hive.table.HiveLocationKind;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.BaseLocationKind;
 import org.apache.amoro.table.ChangeLocationKind;
 import org.apache.amoro.table.KeyedTable;
@@ -43,7 +44,6 @@ import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.junit.Assert;
 

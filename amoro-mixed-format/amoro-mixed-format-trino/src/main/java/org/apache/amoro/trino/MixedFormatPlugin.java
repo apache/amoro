@@ -20,7 +20,7 @@ package org.apache.amoro.trino;
 
 import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 
 /** Mixed-format implementation of {@link Plugin} */
 public class MixedFormatPlugin implements Plugin {

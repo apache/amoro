@@ -19,7 +19,7 @@
 package org.apache.amoro.server.manager;
 
 import org.apache.amoro.api.OptimizerProperties;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Test;
 

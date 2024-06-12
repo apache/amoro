@@ -19,6 +19,7 @@
 package org.apache.amoro.spark.test;
 
 import org.apache.amoro.hive.HMSMockServer;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterators;
 import org.apache.amoro.spark.reader.SparkParquetReaders;
 import org.apache.amoro.spark.test.utils.ResourceInputFile;
 import org.apache.iceberg.Schema;
@@ -28,7 +29,6 @@ import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.mapping.MappedField;
 import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.junit.jupiter.api.Assertions;

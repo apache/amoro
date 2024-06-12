@@ -18,12 +18,12 @@
 
 package org.apache.amoro.op;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.UpdateSchema;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;

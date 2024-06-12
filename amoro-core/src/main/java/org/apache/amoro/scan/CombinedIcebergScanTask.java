@@ -19,11 +19,11 @@
 package org.apache.amoro.scan;
 
 import org.apache.amoro.io.reader.GenericUnkeyedDataReader;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
 import java.util.List;
 

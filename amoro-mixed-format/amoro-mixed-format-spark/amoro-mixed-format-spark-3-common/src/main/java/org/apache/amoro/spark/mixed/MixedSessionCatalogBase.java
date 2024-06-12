@@ -18,9 +18,9 @@
 
 package org.apache.amoro.spark.mixed;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet;
 import org.apache.amoro.spark.SessionCatalogBase;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.Table;

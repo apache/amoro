@@ -20,8 +20,8 @@ package org.apache.amoro.trino.keyed;
 
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
 import static java.util.Objects.requireNonNull;
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
-import static org.apache.iceberg.relocated.com.google.common.base.Throwables.throwIfInstanceOf;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Throwables.throwIfInstanceOf;
 
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.PrimaryKeyedFile;
@@ -44,7 +44,7 @@ import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
 import org.apache.amoro.hive.io.reader.AdaptHiveMixedDeleteFilter;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.joda.time.DateTimeZone;
 import org.apache.amoro.trino.AmoroErrorCode;
 

@@ -26,7 +26,7 @@ import org.apache.amoro.api.TableCommitMeta;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.client.AmsClientPools;
-import org.apache.thrift.TException;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 
 import java.util.List;
 import java.util.Map;

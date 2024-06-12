@@ -26,7 +26,7 @@ import org.apache.amoro.api.metrics.MetricDefine;
 import org.apache.amoro.api.metrics.MetricKey;
 import org.apache.amoro.api.metrics.MetricSet;
 import org.apache.amoro.api.metrics.MetricType;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

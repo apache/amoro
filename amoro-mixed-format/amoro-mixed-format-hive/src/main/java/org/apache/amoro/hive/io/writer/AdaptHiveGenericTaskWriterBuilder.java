@@ -29,6 +29,7 @@ import org.apache.amoro.io.writer.OutputFileFactory;
 import org.apache.amoro.io.writer.SortedPosDeleteWriter;
 import org.apache.amoro.io.writer.TaskWriterBuilder;
 import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.BaseLocationKind;
 import org.apache.amoro.table.ChangeLocationKind;
 import org.apache.amoro.table.KeyedTable;
@@ -50,7 +51,6 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Locale;

@@ -18,6 +18,7 @@
 
 package org.apache.amoro.hive.io;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterators;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
@@ -27,7 +28,6 @@ import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.mapping.MappedField;
 import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 import org.junit.Test;

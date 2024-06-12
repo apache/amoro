@@ -136,7 +136,7 @@ ams:
   database:
     type: mysql
     jdbc-driver-class: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/amoro?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
+    url: jdbc:mysql://127.0.0.1:3306/amoro?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&allowPublicKeyRetrieval=true&useSSL=false
     username: root
     password: root
 # PostgreSQL

@@ -28,6 +28,7 @@ import org.apache.amoro.flink.read.hybrid.enumerator.MergeOnReadIncrementalPlann
 import org.apache.amoro.flink.read.source.FlinkKeyedMORDataReader;
 import org.apache.amoro.flink.util.DataUtil;
 import org.apache.amoro.flink.write.FlinkTaskWriterBaseTest;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.flink.configuration.Configuration;
@@ -41,7 +42,6 @@ import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.flink.data.RowDataUtil;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

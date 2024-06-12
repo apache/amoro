@@ -33,6 +33,10 @@ This is an image built based on the Amoro binary distribution package for deploy
 
 This is an image built based on the official version of Flink for deploying the Flink optimizer.
 
+**apache/amoro-spark-optimizer**
+
+This is an image built based on the official version of Spark for deploying the Spark optimizer.
+
 ## Build AMS Docker Image
 
 If you want to build images locally, you can find the `build.sh` script in the docker folder of the project and pass the following command:
@@ -41,12 +45,17 @@ If you want to build images locally, you can find the `build.sh` script in the d
 ./docker/build.sh amoro
 ```
 
-or build the `optimizer-flink` image by:
+or build the `amoro-flink-optimizer` image by:
 
 ```shell
-./docker/build.sh optimizer-flink --flink-version <flink-version>
+./docker/build.sh amoro-flink-optimizer --flink-version <flink-version>
 ```
 
+or build the `amoro-spark-optimizer` image by:
+
+```shell
+./docker/build.sh amoro-spark-optimizer --spark-version <spark-version>
+```
 
 ## Get Helm Charts
 
@@ -56,7 +65,7 @@ You can obtain the latest official release chart by adding the official Helm rep
 $ helm repo add amoro https://netease.github.io/amoro/charts
 $ helm search repo amoro 
 NAME           CHART VERSION    APP VERSION        DESCRIPTION           
-amoro/amoro    0.1.0            0.6.0              A Helm chart for Amoro 
+amoro/amoro    0.1.0            0.7.0              A Helm chart for Amoro 
 
 $ helm pull amoro/amoro 
 $ tar zxvf amoro-*.tgz
@@ -156,6 +165,7 @@ image:
   repository: <your repository>
   pullPolicy: IfNotPresent
   tag: <your tag>
+imagePullSecrets: [ ]
 ```
 
 ### Configure the Flink Optimizer Container
@@ -174,6 +184,7 @@ optimizer:
       repository: apache/amoro-flink-optimizer
       ## the image tag, if not set, the default value is the same with amoro image tag.
       tag: ~
+      pullPolicy: IfNotPresent
       ## the location of flink optimizer jar in image.
       jobUri: "local:///opt/flink/usrlib/optimizer-job.jar"
     properties: {

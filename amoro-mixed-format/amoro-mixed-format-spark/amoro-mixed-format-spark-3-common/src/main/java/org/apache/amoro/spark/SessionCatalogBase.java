@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark;
 
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;

@@ -18,9 +18,9 @@
 
 package org.apache.amoro.optimizing;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.HashMap;
 import java.util.Map;

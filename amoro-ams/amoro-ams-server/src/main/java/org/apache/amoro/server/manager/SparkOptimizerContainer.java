@@ -20,10 +20,10 @@ package org.apache.amoro.server.manager;
 
 import org.apache.amoro.api.OptimizerProperties;
 import org.apache.amoro.api.resource.Resource;
+import org.apache.amoro.shade.guava32.com.google.common.base.Function;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.relocated.com.google.common.base.Function;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;

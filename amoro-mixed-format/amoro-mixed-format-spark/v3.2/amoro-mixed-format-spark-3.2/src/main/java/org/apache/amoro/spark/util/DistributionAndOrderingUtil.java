@@ -20,6 +20,8 @@ package org.apache.amoro.spark.util;
 
 import static org.apache.iceberg.spark.Spark3Util.toTransforms;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ObjectArrays;
 import org.apache.amoro.spark.SparkAdapterLoader;
 import org.apache.amoro.spark.sql.connector.expressions.FileIndexBucket;
 import org.apache.amoro.table.DistributionHashMode;
@@ -31,8 +33,6 @@ import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.ObjectArrays;
 import org.apache.iceberg.transforms.SortOrderVisitor;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.spark.sql.connector.expressions.Expression;
