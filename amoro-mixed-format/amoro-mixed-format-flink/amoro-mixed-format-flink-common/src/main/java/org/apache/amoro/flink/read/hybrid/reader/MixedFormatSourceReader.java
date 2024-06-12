@@ -24,6 +24,8 @@ import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplitState;
 import org.apache.amoro.flink.read.hybrid.split.SplitRequestEvent;
 import org.apache.amoro.flink.util.FlinkClassReflectionUtil;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.flink.api.common.eventtime.Watermark;
 import org.apache.flink.api.common.eventtime.WatermarkOutputMultiplexer;
 import org.apache.flink.api.connector.source.ReaderOutput;
@@ -35,8 +37,6 @@ import org.apache.flink.connector.base.source.reader.SingleThreadMultiplexSource
 import org.apache.flink.core.io.InputStatus;
 import org.apache.flink.streaming.api.operators.source.ProgressiveTimestampsAndWatermarks;
 import org.apache.flink.streaming.api.operators.source.SourceOutputWithWatermarks;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

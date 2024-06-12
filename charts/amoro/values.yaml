@@ -172,12 +172,12 @@ amoroConf:
   ##    kyuubiJdbcUrl: jdbc:hive2://127.0.0.1:10009/
 
   ## @param amoroDefaults The value (templated string) is used for conf.yaml file
-  ## ref: https://github.com/apache/amoro/blob/master/dist/src/main/amoro-bin/conf/config.yaml
+  ## ref: https://github.com/apache/amoro/blob/master/amoro-ams/dist/src/main/amoro-bin/conf/config.yaml
   ##
   amoroDefaults: ~
   ##
   ## @param log4j2 The value (templated string) is used for conf/log4j2.xml file
-  ## ref: https://github.com/apache/amoro/blob/master/dist/src/main/amoro-bin/conf/log4j2.xml
+  ## ref: https://github.com/apache/amoro/blob/master/amoro-ams/dist/src/main/amoro-bin/conf/log4j2.xml
   log4j2: ~
 
 ## Configure the container of optimizer that allows you to submit optimizer by AMS
@@ -257,9 +257,41 @@ optimizer:
       image: "apache/amoro:0.6"
   extra: []
 
+## Configure the plugin that allows you to access the metric reporters and events listeners.
+##
+plugin:
+  ##
+  ## metric reporters
+  ##
+  metricReporters: ~
+## e.g:  
+##  metricReporters:
+##    ## @param Configure Prometheus exporter
+##    ##
+##    - name: prometheus-exporter
+##      ## @param Enable or disable the Prometheus exporter
+##      ##
+##      enabled: true
+##      ## @param Properties for the Prometheus exporter
+##      ##
+##      properties:
+##        port: 7001
+##      ## @param Kubernetes service configuration for the Prometheus exporter
+##      ## ref: https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
+##      ##
+##      service:
+##        type: ClusterIP
+##        port: "7001"
+##        nodePort: ~
+##        annotations: {
+##          "prometheus.io/scrape": "true",
+##          "prometheus.io/path": "/metrics",
+##          "prometheus.io/port": "7001"
+##        }
+
 ## Configure the ingress resource that allows you to access the
 ## Amoro installation. Set up the URL
-## ref: https://kubernetes.io/docs/user-guide/ingress/
+## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ##
 ingress:
   ## @param ingress.enabled Enable ingress controller resource for Amoro Dashbord

@@ -18,11 +18,11 @@
 
 package org.apache.amoro.utils;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.expressions.Literal;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 

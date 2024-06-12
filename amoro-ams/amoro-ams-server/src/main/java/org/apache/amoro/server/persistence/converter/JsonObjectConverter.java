@@ -18,9 +18,9 @@
 
 package org.apache.amoro.server.persistence.converter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
 

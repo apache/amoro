@@ -27,12 +27,12 @@ import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.properties.MetaTableProperties;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.utils.InternalTableUtil;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.io.OutputFile;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.util.LocationUtil;
 

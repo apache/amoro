@@ -18,9 +18,9 @@
 
 package org.apache.amoro.server.persistence;
 
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.ibatis.session.SqlSession;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.Closeable;
 import java.util.function.Supplier;

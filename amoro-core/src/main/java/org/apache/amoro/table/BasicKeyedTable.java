@@ -29,6 +29,8 @@ import org.apache.amoro.op.UpdateKeyedTableProperties;
 import org.apache.amoro.scan.BasicKeyedTableScan;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
 import org.apache.amoro.scan.KeyedTableScan;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.AppendFiles;
@@ -39,8 +41,6 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.events.CreateSnapshotEvent;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 

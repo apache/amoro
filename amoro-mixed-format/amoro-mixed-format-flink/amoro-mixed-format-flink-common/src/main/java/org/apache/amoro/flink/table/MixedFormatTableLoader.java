@@ -22,11 +22,11 @@ import org.apache.amoro.flink.InternalCatalogBuilder;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.amoro.flink.interceptor.FlinkTablePropertiesInvocationHandler;
 import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.flink.TableLoader;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.io.IOException;
 import java.util.HashMap;

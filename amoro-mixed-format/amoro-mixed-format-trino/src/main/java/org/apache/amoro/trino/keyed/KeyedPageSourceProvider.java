@@ -39,7 +39,7 @@ import io.trino.spi.type.TypeManager;
 import org.apache.amoro.hive.io.reader.AdaptHiveMixedDeleteFilter;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SchemaParser;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 
 import java.util.List;
 import java.util.stream.Collectors;

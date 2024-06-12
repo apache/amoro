@@ -18,12 +18,12 @@
 
 package org.apache.amoro.flink.lookup;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.utils.map.RocksDBBackend;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.shaded.guava30.com.google.common.cache.Cache;
 import org.apache.flink.table.data.RowData;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

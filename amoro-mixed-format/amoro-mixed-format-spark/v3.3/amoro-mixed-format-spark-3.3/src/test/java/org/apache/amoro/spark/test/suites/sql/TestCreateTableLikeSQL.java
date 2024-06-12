@@ -19,6 +19,8 @@
 package org.apache.amoro.spark.test.suites.sql;
 
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.spark.mixed.SparkSQLProperties;
 import org.apache.amoro.spark.test.MixedTableTestBase;
 import org.apache.amoro.spark.test.TestIdentifier;
@@ -28,8 +30,6 @@ import org.apache.amoro.spark.test.utils.TestTable;
 import org.apache.amoro.spark.test.utils.TestTables;
 import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.Assertions;

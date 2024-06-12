@@ -18,8 +18,8 @@
 
 package org.apache.amoro.client;
 
-import org.apache.thrift.TServiceClient;
-import org.apache.thrift.transport.TTransport;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TServiceClient;
+import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransport;
 
 public interface ThriftClientFactory {
 

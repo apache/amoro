@@ -20,9 +20,9 @@ package org.apache.amoro.client;
 
 import org.apache.amoro.Constants;
 import org.apache.amoro.properties.AmsHAProperties;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
+import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.KeeperException;
 import org.apache.amoro.utils.JacksonUtil;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

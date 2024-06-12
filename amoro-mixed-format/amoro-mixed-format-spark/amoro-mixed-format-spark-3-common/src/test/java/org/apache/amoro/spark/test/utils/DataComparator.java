@@ -18,9 +18,9 @@
 
 package org.apache.amoro.spark.test.utils;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.Streams;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 

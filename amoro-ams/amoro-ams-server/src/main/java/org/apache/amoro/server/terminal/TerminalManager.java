@@ -33,11 +33,11 @@ import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.terminal.kyuubi.KyuubiTerminalSessionFactory;
 import org.apache.amoro.server.terminal.local.LocalSessionFactory;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.CatalogProperties;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,6 +107,9 @@ public class TerminalManager {
     String connectorType = catalogConnectorType(catalogMeta);
     applyClientProperties(catalogMeta);
     Configurations configuration = new Configurations();
+    configuration.set(
+        AmoroManagementConf.TERMINAL_SENSITIVE_CONF_KEYS,
+        serviceConfig.get(AmoroManagementConf.TERMINAL_SENSITIVE_CONF_KEYS));
     configuration.setInteger(TerminalSessionFactory.SessionConfigOptions.FETCH_SIZE, resultLimits);
     configuration.set(
         TerminalSessionFactory.SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
@@ -364,6 +367,9 @@ public class TerminalManager {
       key = key.substring(factoryPropertiesPrefix.length());
       configuration.setString(key, value);
     }
+    configuration.set(
+        AmoroManagementConf.TERMINAL_SENSITIVE_CONF_KEYS,
+        serviceConfig.get(AmoroManagementConf.TERMINAL_SENSITIVE_CONF_KEYS));
     configuration.set(TerminalSessionFactory.FETCH_SIZE, this.resultLimits);
     factory.initialize(configuration);
     return factory;

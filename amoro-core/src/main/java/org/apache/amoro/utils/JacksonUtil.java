@@ -18,14 +18,14 @@
 
 package org.apache.amoro.utils;
 
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
-import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
-import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.SerializationFeature;
-import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.SerializationFeature;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.util.HashMap;

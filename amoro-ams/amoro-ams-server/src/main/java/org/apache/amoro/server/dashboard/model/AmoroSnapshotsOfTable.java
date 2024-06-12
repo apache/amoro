@@ -19,7 +19,7 @@
 package org.apache.amoro.server.dashboard.model;
 
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
-import org.apache.iceberg.relocated.com.google.common.base.Objects;
+import org.apache.amoro.shade.guava32.com.google.common.base.Objects;
 
 import java.util.Map;
 

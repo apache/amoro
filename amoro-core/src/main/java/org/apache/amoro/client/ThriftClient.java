@@ -18,9 +18,9 @@
 
 package org.apache.amoro.client;
 
+import org.apache.amoro.shade.thrift.org.apache.thrift.TServiceClient;
+import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransport;
 import org.apache.commons.pool2.ObjectPool;
-import org.apache.thrift.TServiceClient;
-import org.apache.thrift.transport.TTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

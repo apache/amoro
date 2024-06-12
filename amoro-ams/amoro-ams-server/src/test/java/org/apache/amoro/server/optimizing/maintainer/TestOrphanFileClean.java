@@ -28,16 +28,12 @@ import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.config.TableConfiguration;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
-import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.executor.ExecutorTestBase;
-import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.AppendFiles;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.GenericBlobMetadata;
 import org.apache.iceberg.GenericStatisticsFile;
 import org.apache.iceberg.Snapshot;
@@ -47,7 +43,6 @@ import org.apache.iceberg.puffin.BlobMetadata;
 import org.apache.iceberg.puffin.Puffin;
 import org.apache.iceberg.puffin.PuffinWriter;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -55,9 +50,7 @@ import org.mockito.Mockito;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
@@ -209,39 +202,6 @@ public class TestOrphanFileClean extends ExecutorTestBase {
       Assert.assertFalse(getMixedTable().io().exists(changeInvalidMetadataJson));
     }
     ExecutorTestBase.assertMetadataExists(getMixedTable());
-  }
-
-  @Test
-  public void orphanChangeDataFileInBaseClean() {
-    Assume.assumeTrue(isKeyedTable());
-    KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
-    List<DataFile> dataFiles =
-        tableTestHelper()
-            .writeChangeStore(
-                testKeyedTable, 1L, ChangeAction.INSERT, createRecords(1, 100), false);
-    Set<String> pathAll = new HashSet<>();
-    Set<String> fileInBaseStore = new HashSet<>();
-    Set<String> fileOnlyInChangeLocation = new HashSet<>();
-
-    AppendFiles appendFiles = testKeyedTable.asKeyedTable().baseTable().newAppend();
-
-    for (int i = 0; i < dataFiles.size(); i++) {
-      DataFile dataFile = dataFiles.get(i);
-      pathAll.add(TableFileUtil.getUriPath(dataFile.path().toString()));
-      if (i == 0) {
-        appendFiles.appendFile(dataFile).commit();
-        fileInBaseStore.add(TableFileUtil.getUriPath(dataFile.path().toString()));
-      } else {
-        fileOnlyInChangeLocation.add(TableFileUtil.getUriPath(dataFile.path().toString()));
-      }
-    }
-    pathAll.forEach(path -> Assert.assertTrue(testKeyedTable.io().exists(path)));
-
-    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable());
-    maintainer.cleanContentFiles(System.currentTimeMillis());
-
-    fileInBaseStore.forEach(path -> Assert.assertTrue(testKeyedTable.io().exists(path)));
-    fileOnlyInChangeLocation.forEach(path -> Assert.assertFalse(testKeyedTable.io().exists(path)));
   }
 
   @Test

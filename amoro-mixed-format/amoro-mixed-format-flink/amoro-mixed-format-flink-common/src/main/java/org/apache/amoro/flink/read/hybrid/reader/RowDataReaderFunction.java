@@ -31,6 +31,7 @@ import org.apache.amoro.flink.read.source.FlinkUnkyedDataReader;
 import org.apache.amoro.flink.read.source.MergeOnReadDataIterator;
 import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.io.AuthenticatedFileIO;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.utils.NodeFilter;
 import org.apache.flink.configuration.ReadableConfig;
@@ -38,7 +39,6 @@ import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.data.RowDataUtil;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.Collections;
 

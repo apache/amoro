@@ -22,11 +22,11 @@ import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplitSerializer;
 import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplitState;
 import org.apache.amoro.flink.read.hybrid.split.TemporalJoinSplits;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.core.memory.DataInputDeserializer;
 import org.apache.flink.core.memory.DataOutputSerializer;
 import org.apache.flink.util.InstantiationUtil;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

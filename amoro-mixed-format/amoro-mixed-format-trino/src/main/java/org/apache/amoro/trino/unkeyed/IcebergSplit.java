@@ -21,7 +21,7 @@ package org.apache.amoro.trino.unkeyed;
 import static io.airlift.slice.SizeOf.estimatedSizeOf;
 import static java.lang.Math.toIntExact;
 import static java.util.Objects.requireNonNull;
-import static org.apache.iceberg.relocated.com.google.common.base.MoreObjects.toStringHelper;
+import static org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects.toStringHelper;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -30,8 +30,8 @@ import org.apache.amoro.trino.delete.TrinoDeleteFile;
 import io.trino.plugin.iceberg.IcebergFileFormat;
 import io.trino.spi.HostAddress;
 import io.trino.spi.connector.ConnectorSplit;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.openjdk.jol.info.ClassLayout;
 
 import java.util.List;

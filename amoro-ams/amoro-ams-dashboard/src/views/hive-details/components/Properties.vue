@@ -38,7 +38,7 @@ limitations under the License.
           <a-auto-complete
             v-model:value="item.key"
             :options="options"
-            @select="(val, option) => onSelect(val, option, item)"
+            @select="(val:any, option: any) => onSelect(val, option, item)"
             :filter-option="filterOption"
             style="width: 100%"
             class="g-mr-12"
@@ -87,8 +87,8 @@ const propertiesArray = reactive<IItem[]>([])
 const options = ref<IMap<string>[]>()
 const propertiesIncludeValueList = reactive<IKeyAndValue[]>([]) // includes key value
 const propertiesFormRef = ref()
-const propertiesForm = reactive<IMap<string>>({
-  data: []
+const propertiesForm = reactive<IMap<any[]>>({
+  'data': []
 })
 const placeholder = reactive(usePlaceholder())
 
@@ -123,7 +123,7 @@ async function getPropertiesList() {
       text: result[key] || ''
     }
     propertiesIncludeValueList.push(item)
-    options.value.push(item)
+    options.value?.push(item)
   })
 }
 
@@ -131,16 +131,16 @@ function filterOption(input: string, option: IMap<string>) {
   return option.key.toUpperCase().indexOf(input.toUpperCase()) >= 0
 }
 
-function onSelect(val, option, item) {
+function onSelect(_val: any, option: { key: any }, item: { uuid: string }) {
   const key = option.key
   const selected = propertiesIncludeValueList.find((ele: IKeyAndValue) => ele.key === key)
   const selectVal = propertiesForm.data.find((ele: IItem) => ele.uuid === item.uuid)
   if (selectVal) {
-    selectVal.value = selected.text || ''
-    selectVal.key = selected.key || ''
+    selectVal.value = selected?.value || ''
+    selectVal.key = selected?.key || ''
   }
 }
-function removeRule(item) {
+function removeRule(item: any) {
   const index = propertiesForm.data.indexOf(item)
   if (index !== -1) {
     propertiesForm.data.splice(index, 1)

@@ -18,8 +18,8 @@
 
 package org.apache.amoro.api.process;
 
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 
 import java.util.Set;
 

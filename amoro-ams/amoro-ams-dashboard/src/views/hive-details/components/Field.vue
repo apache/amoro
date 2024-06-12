@@ -58,7 +58,3 @@ defineExpose({
 })
 
 </script>
-<style lang="less" scoped>
-.field-wrap {
-}
-</style>

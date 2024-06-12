@@ -107,14 +107,13 @@ This file is based on the checkstyle file of Apache Beam.
 
         <module name="IllegalImport">
             <property name="illegalPkgs" value="com.google.common"/>
-            <message key="import.illegal" value="{0}; Use iceberg-shaded-guava instead."/>
+            <message key="import.illegal" value="{0}; Use amoro shaded guava instead."/>
         </module>
 
         <module name="Regexp">
             <property name="format" value="import com\.fasterxml\.jackson"/>
             <property name="illegalPattern" value="true"/>
-            <property name="message"
-                      value="Use shaded jackson instead of jackson"/>
+            <property name="message" value="Use amoro shaded jackson instead."/>
         </module>
 
         <!-- Enforce Java-style array declarations -->
@@ -155,7 +154,7 @@ This file is based on the checkstyle file of Apache Beam.
         -->
         <module name="RegexpSinglelineJava">
             <property name="format" value="^import com.google.common.base.Preconditions;$"/>
-            <property name="message" value="Static import functions from Guava Preconditions"/>
+            <property name="message" value="Use amoro shaded guava instead."/>
         </module>
 
         <!--

@@ -20,10 +20,10 @@ package org.apache.amoro.data;
 
 import org.apache.amoro.Constants;
 import org.apache.amoro.io.writer.TaskWriterKey;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.utils.IdGenerator;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.FileFormat;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;

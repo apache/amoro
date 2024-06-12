@@ -21,10 +21,10 @@ package org.apache.amoro.utils;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.properties.MetaTableProperties;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.types.Types;
 
 import java.util.HashMap;

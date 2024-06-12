@@ -25,66 +25,20 @@ under the License.
 <suppressions>
     <!-- Using ([/\\]) as the file path separator instead of (/)
     enables it to be compatible with both Linux and Windows systems. -->
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]utils[/\\]StatisticsFileUtil\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]LogDataJsonSerialization\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]LogDataToJsonConverters\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]LogDataJsonDeserialization\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]log[/\\]JsonToLogDataConverters\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]utils[/\\]TablePropertyUtil\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]OptimizingConfig\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]DataExpirationConfig\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]TagConfiguration\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]api[/\\]config[/\\]TableConfiguration\.java"
-            checks="Regexp"/>
+
+    <!-- Limited by the Javalin framework, it is not possible to use shade classes. -->
     <suppress
             files="org[/\\]apache[/\\]amoro[/\\]server[/\\]RestCatalogService\.java"
             checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]persistence[/\\]converter[/\\]JsonObjectConverter\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]optimizing[/\\]OptimizingConfig\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]optimizing[/\\]plan[/\\]OptimizingEvaluator\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]optimizing[/\\]MetricsSummary\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]table[/\\]TagConfiguration\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]table[/\\]TableConfiguration\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]flink[/\\]interceptor[/\\]ProxyFactory\.java"
-            checks="TodoComment"/>
-    <suppress
-            files="org[/\\]apache[/\\]hadoop[/\\]util[/\\]VersionInfo\.java"
-            checks="MethodName"/>
+
     <suppress
             files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]iceberg[/\\]BaseConnectorTest\.java"
             checks="FileLength"/>
+    <suppress
+            files="org[/\\]apache[/\\]hadoop[/\\]util[/\\]VersionInfo\.java"
+            checks="MethodName"/>
+
+    <!-- Limited by the Trino framework, it is not possible to use shade classes. -->
     <suppress
             files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]keyed[/\\]KeyedConnectorSplit\.java"
             checks="Regexp"/>
