@@ -123,13 +123,13 @@ const onChange = (val: string) => {
 }
 
 const getBranchList = async () => {
-  const result = await getBranches(props)
+  const result = await getBranches(props as any)
   branchList.value = (result.list || []).map((l: IServiceBranchItem) => ({ value: l.name, label: l.name, type: branchTypeMap.BRANCH }))
   branchList.value.length && selectObject(branchList.value[0])
 }
 
 const getTagList = async () => {
-  const result = await getTags(props)
+  const result = await getTags(props as any)
   tagList.value = (result.list || []).map((l: IServiceBranchItem) => ({ value: l.name, label: l.name, type: branchTypeMap.TAG }))
 }
 
