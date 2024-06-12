@@ -147,7 +147,7 @@ amoroConf:
   ## e.g:
   ##    type: mysql
   ##    driver: com.mysql.cj.jdbc.Driver
-  ##    url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
+  ##    url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&allowPublicKeyRetrieval=true&useSSL=false
   ##    username: admin
   ##    password: admin
 
