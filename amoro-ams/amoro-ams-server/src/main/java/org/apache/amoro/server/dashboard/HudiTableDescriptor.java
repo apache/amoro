@@ -41,10 +41,13 @@ import org.apache.hudi.common.model.FileSlice;
 import org.apache.hudi.common.model.HoodieBaseFile;
 import org.apache.hudi.common.model.HoodieCommitMetadata;
 import org.apache.hudi.common.model.HoodieTableType;
+import org.apache.hudi.common.model.HoodieWriteStat;
+import org.apache.hudi.common.model.WriteOperationType;
 import org.apache.hudi.common.table.HoodieTableConfig;
 import org.apache.hudi.common.table.HoodieTableMetaClient;
 import org.apache.hudi.common.table.TableSchemaResolver;
 import org.apache.hudi.common.table.timeline.HoodieDefaultTimeline;
+import org.apache.hudi.common.table.timeline.HoodieInstant;
 import org.apache.hudi.common.table.timeline.HoodieInstantTimeGenerator;
 import org.apache.hudi.common.table.timeline.HoodieTimeline;
 import org.apache.hudi.common.table.view.SyncableFileSystemView;
@@ -54,25 +57,36 @@ import org.apache.hudi.table.HoodieJavaTable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.apache.hudi.common.table.timeline.HoodieTimeline.*;
 
 /**
  * Table descriptor for hudi.
  */
 public class HudiTableDescriptor implements FormatTableDescriptor {
+
+  private static final Logger LOG = LoggerFactory.getLogger(HudiTableDescriptor.class);
 
   private final ExecutorService ioExecutors;
 
@@ -187,45 +201,96 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     return meta;
   }
 
+  private final static Set<String> OPTIMIZING_INSTANT_TYPES = Sets.newHashSet(
+      CLEAN_ACTION, COMPACTION_ACTION, REPLACE_COMMIT_ACTION, INDEXING_ACTION, LOG_COMPACTION_ACTION);
+  private final static Set<String> WRITE_INSTANT_TYPES = Sets.newHashSet(
+      COMMIT_ACTION, DELTA_COMMIT_ACTION, REPLACE_COMMIT_ACTION, SAVEPOINT_ACTION, ROLLBACK_ACTION);
+
   @Override
   public List<AmoroSnapshotsOfTable> getSnapshots(
       AmoroTable<?> amoroTable, String ref, OperationType operationType) {
     HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
-    HoodieDefaultTimeline activeTimeline = hoodieTable.getActiveTimeline();
-    HoodieTimeline timeline = hoodieTable.getMetaClient().getActiveTimeline();
-    if (OperationType.ALL == operationType) {
-      timeline = activeTimeline.getAllCommitsTimeline();
-    } else if (OperationType.OPTIMIZING == operationType) {
-      timeline = activeTimeline.getTimelineOfActions(Sets.newHashSet(
-          HoodieTimeline.CLEAN_ACTION,
-          HoodieTimeline.COMPACTION_ACTION,
-          HoodieTimeline.REPLACE_COMMIT_ACTION,
-          HoodieTimeline.INDEXING_ACTION,
-          HoodieTimeline.LOG_COMPACTION_ACTION
-      ));
+    HoodieDefaultTimeline timeline = hoodieTable.getActiveTimeline();
+
+    Set<String> instantTypeFilter = Sets.newHashSet();
+    if (OperationType.OPTIMIZING == operationType) {
+      instantTypeFilter.addAll(OPTIMIZING_INSTANT_TYPES);
     } else if (OperationType.NON_OPTIMIZING == operationType) {
-      timeline = activeTimeline.getTimelineOfActions(Sets.newHashSet(
-          HoodieTimeline.COMMIT_ACTION, HoodieTimeline.DELTA_COMMIT_ACTION,
-          HoodieTimeline.SAVEPOINT_ACTION, HoodieTimeline.ROLLBACK_ACTION));
+      instantTypeFilter.addAll(WRITE_INSTANT_TYPES);
+    } else if (OperationType.ALL == operationType) {
+      instantTypeFilter.addAll(OPTIMIZING_INSTANT_TYPES);
+      instantTypeFilter.addAll(WRITE_INSTANT_TYPES);
     }
-    return timeline.getInstantsAsStream().parallel().map(
-        i -> {
-          AmoroSnapshotsOfTable s = new AmoroSnapshotsOfTable();
-          s.setSnapshotId(i.getTimestamp());
-          s.setOperation(i.getAction());
-          Option<byte[]> optDetail = activeTimeline.getInstantDetails(i);
-          if (optDetail.isPresent()) {
-            byte[] detail = optDetail.get();
-            try {
-              HoodieCommitMetadata metadata = HoodieCommitMetadata.fromBytes(
-                  detail, HoodieCommitMetadata.class);
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-          }
-          return s;
-        }
-    ).collect(Collectors.toList());
+
+    List<HoodieInstant> instants = timeline.filterCompletedInstants()
+        .filter(i -> instantTypeFilter.contains(i.getAction()))
+        .getInstants();
+
+    List<AmoroSnapshotsOfTable> snapshots = instants.stream()
+        .map(i -> CompletableFuture.supplyAsync(() -> instantToSnapshot(timeline, i), ioExecutors))
+        .map(CompletableFuture::join)
+        .collect(Collectors.toList());
+
+    if (OperationType.OPTIMIZING == operationType) {
+      snapshots = snapshots.stream()
+          .filter(s -> !Objects.equals(s.getOperation(), WriteOperationType.INSERT_OVERWRITE_TABLE.value()))
+          .collect(Collectors.toList());
+    }
+
+    return snapshots;
+  }
+
+  private AmoroSnapshotsOfTable instantToSnapshot(HoodieDefaultTimeline timeline, HoodieInstant instant) {
+    AmoroSnapshotsOfTable s = new AmoroSnapshotsOfTable();
+    s.setSnapshotId(instant.getTimestamp());
+    s.setOperation(instant.getAction());
+    Map<String, String> summary = new HashMap<>();
+    Option<byte[]> optDetail = timeline.getInstantDetails(instant);
+    if (optDetail.isPresent()) {
+      byte[] detail = optDetail.get();
+      try {
+        HoodieCommitMetadata metadata = HoodieCommitMetadata.fromBytes(
+            detail, HoodieCommitMetadata.class);
+        s.setOperation(metadata.getOperationType().toString());
+        summary = getSnapshotSummary(metadata);
+      } catch (IOException e) {
+        LOG.error("Error when fetch hoodie instant metadata", e);
+      }
+    }
+    s.setSummary(summary);
+    return s;
+  }
+
+  private Map<String, String> getSnapshotSummary(HoodieCommitMetadata metadata) {
+    Map<String, String> summary = new HashMap<>();
+    long totalWriteBytes = 0;
+    long recordWrites = 0;
+    long recordDeletes = 0;
+    long recordInserts =0;
+    long recordUpdates =0;
+    Set<String> partitions = new HashSet<>();
+    Set<String> files = new HashSet<>();
+    Map<String, List<HoodieWriteStat>> hoodieWriteStats = metadata.getPartitionToWriteStats();
+    for (String partition: hoodieWriteStats.keySet()) {
+      List<HoodieWriteStat> ptWriteStat = hoodieWriteStats.get(partition);
+      partitions.add(partition);
+      for (HoodieWriteStat writeStat: ptWriteStat) {
+        totalWriteBytes += writeStat.getTotalWriteBytes();
+        recordWrites += writeStat.getNumWrites();
+        recordDeletes += writeStat.getNumDeletes();
+        recordInserts += writeStat.getNumInserts();
+        recordUpdates += writeStat.getNumUpdateWrites();
+        files.add(writeStat.getPath());
+      }
+    }
+    summary.put("write-bytes", String.valueOf(totalWriteBytes));
+    summary.put("write-records", String.valueOf(recordWrites));
+    summary.put("delete-records", String.valueOf(recordDeletes));
+    summary.put("insert-records", String.valueOf(recordInserts));
+    summary.put("update-records", String.valueOf(recordUpdates));
+    summary.put("write-partitions", String.valueOf(partitions.size()));
+    summary.put("write-files", String.valueOf(files.size()));
+    return summary;
   }
 
   @Override
@@ -309,7 +374,14 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
-    return Collections.emptyList();
+    return Lists.newArrayList(
+        new TagOrBranchInfo("active-timeline",
+            -1,
+            -1,
+            0L,
+            0L,
+            TagOrBranchInfo.BRANCH)
+    );
   }
 
   private long parseHoodieCommitTime(String commitTime) {
