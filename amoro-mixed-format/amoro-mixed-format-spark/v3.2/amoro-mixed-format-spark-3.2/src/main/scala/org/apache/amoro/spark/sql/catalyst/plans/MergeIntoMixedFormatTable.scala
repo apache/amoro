@@ -18,6 +18,7 @@
 
 package org.apache.amoro.spark.sql.catalyst.plans
 
+import org.apache.spark.sql.amoro.catalyst.AssignmentHelper
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical._
 
@@ -28,6 +29,26 @@ case class MergeIntoMixedFormatTable(
     matchedActions: Seq[MergeAction],
     notMatchedActions: Seq[MergeAction],
     rewritePlan: Option[LogicalPlan] = None) extends BinaryCommand {
+
+  lazy val aligned: Boolean = {
+    val matchedActionsAligned = matchedActions.forall {
+      case UpdateAction(_, assignments) =>
+        AssignmentHelper.aligned(targetTable, assignments)
+      case _: DeleteAction =>
+        true
+      case _ =>
+        false
+    }
+
+    val notMatchedActionsAligned = notMatchedActions.forall {
+      case InsertAction(_, assignments) =>
+        AssignmentHelper.aligned(targetTable, assignments)
+      case _ =>
+        false
+    }
+
+    matchedActionsAligned && notMatchedActionsAligned
+  }
 
   def condition: Option[Expression] = Some(mergeCondition)
 
