@@ -44,7 +44,6 @@ import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
@@ -118,6 +117,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     ImmutableList.Builder<DeleteFile> posDeleteBuilder = ImmutableList.builder();
     ImmutableList.Builder<DeleteFile> eqDeleteBuilder = ImmutableList.builder();
     if (rewriteFilesInput.deleteFiles() != null) {
+      String firstDeleteFilePath = null;
       for (ContentFile<?> delete : rewriteFilesInput.deleteFiles()) {
         switch (delete.content()) {
           case POSITION_DELETES:
@@ -126,11 +126,21 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
           case EQUALITY_DELETES:
             if (deleteIds.isEmpty()) {
               deleteIds = ImmutableSet.copyOf(ContentFiles.asDeleteFile(delete).equalityFieldIds());
+              firstDeleteFilePath = delete.path().toString();
             } else {
-              Preconditions.checkArgument(
-                  deleteIds.equals(
-                      ImmutableSet.copyOf(ContentFiles.asDeleteFile(delete).equalityFieldIds())),
-                  "Equality delete files have different delete fields");
+              Set<Integer> currentDeleteIds =
+                  ImmutableSet.copyOf(ContentFiles.asDeleteFile(delete).equalityFieldIds());
+              if (!deleteIds.equals(currentDeleteIds)) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        "Equality delete files have different delete fields, first equality field ids:[%s],"
+                            + " current equality field ids:[%s], first delete file path:[%s], "
+                            + " current delete file path: [%s].",
+                        deleteIds,
+                        currentDeleteIds,
+                        firstDeleteFilePath,
+                        delete.path().toString()));
+              }
             }
             eqDeleteBuilder.add(ContentFiles.asDeleteFile(delete));
             break;
