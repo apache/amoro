@@ -201,6 +201,7 @@ optimizer:
       ## @param optimizer.flink.image.tag the image tag, if not set, the default value is the same with amoro image tag
       ##
       tag: ~
+      pullPolicy: IfNotPresent
       jobUri: "local:///opt/flink/usrlib/optimizer-job.jar"
     properties: {
       "flink-conf.taskmanager.memory.managed.size": "32mb",
@@ -226,6 +227,7 @@ optimizer:
       ## @param optimizer.spark.image.tag the image tag, if not set, the default value is the same with amoro image tag
       ##
       tag: ~
+      pullPolicy: IfNotPresent
       jobUri: "local:///opt/spark/usrlib/optimizer-job.jar"
     properties: {
       "master": "k8s://https://kubernetes.default.svc",
@@ -254,7 +256,8 @@ optimizer:
     properties:
       namespace: "default"
       kube-config-path: "～/.kube/config"
-      image: "apache/amoro:0.6"
+      image: "apache/amoro:latest"
+      pullPolicy: "IfNotPresent"
   extra: []
 
 ## Configure the plugin that allows you to access the metric reporters and events listeners.
