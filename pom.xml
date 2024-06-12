@@ -102,7 +102,6 @@
         <cglib.version>2.2.2</cglib.version>
         <curator.version>5.6.0</curator.version>
         <mockito.version>4.11.0</mockito.version>
-        <jackson.version>2.14.2</jackson.version>
         <parquet-avro.version>1.13.1</parquet-avro.version>
         <orc-core.version>1.8.3</orc-core.version>
         <awssdk.version>2.24.12</awssdk.version>
@@ -248,14 +247,6 @@
                 <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-shade-thrift</artifactId>
                 <version>${amoro-shade-thrift.version}-${amoro-shade.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson</groupId>
-                <artifactId>jackson-bom</artifactId>
-                <version>${jackson.version}</version>
-                <scope>import</scope>
-                <type>pom</type>
             </dependency>
 
             <dependency>
