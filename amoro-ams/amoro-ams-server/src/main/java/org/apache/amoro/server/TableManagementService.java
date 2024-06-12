@@ -32,7 +32,7 @@ import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.utils.InternalTableUtil;
-import org.apache.thrift.TException;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 
 import java.util.List;
 import java.util.Map;

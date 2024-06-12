@@ -18,9 +18,9 @@
 
 package org.apache.amoro.spark.test.suites.ut.sql.parser;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.spark.sql.catalyst.parser.MixedFormatSqlExtensionsParser;
 import org.apache.amoro.spark.test.utils.ScalaTestUtil;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.spark.sql.catalyst.analysis.UnresolvedDBObjectName;
 import org.apache.spark.sql.catalyst.parser.AbstractSqlParser;
 import org.apache.spark.sql.catalyst.parser.AstBuilder;

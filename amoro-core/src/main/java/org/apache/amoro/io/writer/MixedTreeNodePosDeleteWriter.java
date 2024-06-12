@@ -20,6 +20,7 @@ package org.apache.amoro.io.writer;
 
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.io.AuthenticatedFileIO;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
@@ -29,7 +30,6 @@ import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.DeleteWriteResult;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.FileWriter;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.io.IOException;
 import java.util.ArrayList;

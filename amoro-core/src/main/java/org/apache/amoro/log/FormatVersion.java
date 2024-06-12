@@ -18,7 +18,7 @@
 
 package org.apache.amoro.log;
 
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 
 import java.util.Arrays;
 

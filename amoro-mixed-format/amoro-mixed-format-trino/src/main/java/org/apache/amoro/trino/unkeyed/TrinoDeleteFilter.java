@@ -19,8 +19,8 @@
 package org.apache.amoro.trino.unkeyed;
 
 import static java.util.Objects.requireNonNull;
-import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
-import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet.toImmutableSet;
+import static org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList.toImmutableList;
+import static org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet.toImmutableSet;
 
 import org.apache.amoro.io.reader.DeleteFilter;
 import org.apache.amoro.trino.delete.TrinoRow;

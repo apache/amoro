@@ -18,11 +18,11 @@
 
 package org.apache.amoro.spark.table;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet;
 import org.apache.amoro.spark.reader.SparkScanBuilder;
 import org.apache.amoro.table.BasicUnkeyedTable;
 import org.apache.amoro.table.MetadataColumns;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.source.SparkTable;
 import org.apache.iceberg.types.Types;

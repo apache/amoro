@@ -33,6 +33,7 @@ import org.apache.amoro.server.table.internal.InternalMixedIcebergHandler;
 import org.apache.amoro.server.table.internal.InternalTableCreator;
 import org.apache.amoro.server.table.internal.InternalTableHandler;
 import org.apache.amoro.server.utils.InternalTableUtil;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.BasicKeyedTable;
 import org.apache.amoro.table.BasicUnkeyedTable;
 import org.apache.amoro.table.MixedTable;
@@ -40,7 +41,6 @@ import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 
 public class InternalMixedCatalogImpl extends InternalIcebergCatalogImpl {

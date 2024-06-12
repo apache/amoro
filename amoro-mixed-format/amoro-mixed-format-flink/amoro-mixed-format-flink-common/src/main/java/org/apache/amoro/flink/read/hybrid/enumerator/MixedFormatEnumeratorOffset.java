@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.read.hybrid.enumerator;
 
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
-import org.apache.iceberg.relocated.com.google.common.base.Objects;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
+import org.apache.amoro.shade.guava32.com.google.common.base.Objects;
 
 /**
  * The enumerator offset indicate the snapshot id of the change table, or the timestamp of snapshot.

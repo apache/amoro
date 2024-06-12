@@ -20,12 +20,12 @@ package org.apache.amoro.hive.op;
 
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.table.UnkeyedHiveTable;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.List;
 

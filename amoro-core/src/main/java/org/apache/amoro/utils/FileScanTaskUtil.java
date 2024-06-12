@@ -19,8 +19,8 @@
 package org.apache.amoro.utils;
 
 import org.apache.amoro.scan.MixedFileScanTask;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 
 import java.util.Collection;
 import java.util.stream.Collectors;

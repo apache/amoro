@@ -18,9 +18,9 @@
 
 package org.apache.amoro;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.utils.ManifestEntryFields;
 import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 /**
  * Entry of Iceberg ContentFile, include status, ContentFile, snapshotId and sequenceNumber. If the

@@ -19,7 +19,7 @@
 package org.apache.amoro.server.manager;
 
 import org.apache.amoro.api.resource.Resource;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

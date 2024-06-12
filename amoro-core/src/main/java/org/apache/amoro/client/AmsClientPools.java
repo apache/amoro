@@ -22,10 +22,10 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.apache.amoro.Constants;
 import org.apache.amoro.api.AmoroTableMetastore;
-import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TMultiplexedProtocol;
-import org.apache.thrift.protocol.TProtocol;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
+import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TMultiplexedProtocol;
+import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol;
 
 /** Client pool cache for different ams server, sharing in jvm. */
 public class AmsClientPools {

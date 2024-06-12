@@ -20,7 +20,7 @@ package org.apache.amoro;
 
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.catalog.CatalogTestHelper;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;

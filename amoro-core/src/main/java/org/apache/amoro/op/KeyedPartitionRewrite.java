@@ -18,6 +18,8 @@
 
 package org.apache.amoro.op;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.utils.MixedTableUtil;
@@ -29,8 +31,6 @@ import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.events.CreateSnapshotEvent;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.Collections;

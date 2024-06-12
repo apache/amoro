@@ -35,7 +35,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.util.PropertyUtil;
-import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -64,7 +63,7 @@ public class TestMixedCatalog extends CatalogTestBase {
     return BasicMixedIcebergCatalog.class.getName();
   }
 
-  protected void validateCreatedTable(MixedTable table, boolean withKey) throws TException {
+  protected void validateCreatedTable(MixedTable table, boolean withKey) throws Exception {
     Assert.assertEquals(getCreateTableSchema().asStruct(), table.schema().asStruct());
     Assert.assertEquals(getCreateTableSpec(), table.spec());
     Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, table.id());
@@ -108,18 +107,18 @@ public class TestMixedCatalog extends CatalogTestBase {
   }
 
   @Test
-  public void testCreateTableWithCatalogTablePropertiesKeyed() throws TException {
+  public void testCreateTableWithCatalogTablePropertiesKeyed() throws Exception {
     getMixedFormatCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     testCreateTableWithCatalogTableProperties(true);
   }
 
   @Test
-  public void testCreateTableWithCatalogTablePropertiesUnKeyed() throws TException {
+  public void testCreateTableWithCatalogTablePropertiesUnKeyed() throws Exception {
     getMixedFormatCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     testCreateTableWithCatalogTableProperties(false);
   }
 
-  private void testCreateTableWithCatalogTableProperties(boolean withKey) throws TException {
+  private void testCreateTableWithCatalogTableProperties(boolean withKey) throws Exception {
     MixedTable mixedTable = createTestTable(withKey);
     validateCreatedTable(mixedTable, withKey);
 
@@ -162,18 +161,18 @@ public class TestMixedCatalog extends CatalogTestBase {
   }
 
   @Test
-  public void testCreateTableWithNewCatalogLogPropertiesKeyed() throws TException {
+  public void testCreateTableWithNewCatalogLogPropertiesKeyed() throws Exception {
     getMixedFormatCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     testCreateTableWithNewCatalogLogProperties(true);
   }
 
   @Test
-  public void testCreateTableWithNewCatalogLogPropertiesUnKeyed() throws TException {
+  public void testCreateTableWithNewCatalogLogPropertiesUnKeyed() throws Exception {
     getMixedFormatCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     testCreateTableWithNewCatalogLogProperties(false);
   }
 
-  protected void testCreateTableWithNewCatalogLogProperties(boolean withKey) throws TException {
+  protected void testCreateTableWithNewCatalogLogProperties(boolean withKey) throws Exception {
     CatalogMeta testCatalogMeta =
         TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
     TEST_AMS

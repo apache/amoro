@@ -18,7 +18,7 @@
 
 package org.apache.amoro.table;
 
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 
 import java.io.Serializable;
 import java.util.Objects;

@@ -22,10 +22,10 @@ import io.javalin.http.Context;
 import org.apache.amoro.server.dashboard.PlatformFileManager;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.response.OkResponse;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

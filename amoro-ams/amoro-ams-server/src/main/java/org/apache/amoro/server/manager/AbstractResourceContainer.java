@@ -22,8 +22,8 @@ import org.apache.amoro.api.OptimizerProperties;
 import org.apache.amoro.api.resource.Resource;
 import org.apache.amoro.api.resource.ResourceContainer;
 import org.apache.amoro.api.resource.ResourceStatus;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.IOException;
 import java.util.ArrayList;
