@@ -85,13 +85,10 @@
                                 <includes combine.children="append">
                                     <include>org.apache.amoro:*</include>
                                     <include>org.apache.iceberg:*</include>
+                                    <include>com.fasterxml.jackson.core:*</include>
                                     <include>org.apache.parquet:*</include>
                                     <include>org.apache.commons:*</include>
-                                    <include>org.apache.zookeeper:*</include>
-                                    <include>org.apache.curator:*</include>
                                     <include>commons-lang:*</include>
-                                    <include>com.fasterxml.jackson.core:*</include>
-                                    <include>org.apache.thrift:*</include>
                                     <include>com.github.ben-manes.caffeine:*</include>
                                     <include>org.apache.avro:*</include>
                                     <include>org.apache.orc:*</include>
@@ -129,26 +126,8 @@
                                 </relocation>
 
                                 <relocation>
-                                    <pattern>org.apache.thrift</pattern>
-                                    <shadedPattern>org.apache.amoro.shade.org.apache.thrift</shadedPattern>
-                                    <excludes>
-                                        <exclude>org.apache.thrift.TException</exclude>
-                                    </excludes>
-                                </relocation>
-
-                                <relocation>
                                     <pattern>org.apache.avro</pattern>
                                     <shadedPattern>org.apache.amoro.shade.org.apache.avro</shadedPattern>
-                                </relocation>
-
-                                <relocation>
-                                    <pattern>org.apache.zookeeper</pattern>
-                                    <shadedPattern>org.apache.amoro.shade.org.apache.zookeeper</shadedPattern>
-                                </relocation>
-
-                                <relocation>
-                                    <pattern>org.apache.curator</pattern>
-                                    <shadedPattern>org.apache.amoro.shade.org.apache.curator</shadedPattern>
                                 </relocation>
 
                                 <relocation>
@@ -168,8 +147,7 @@
 
                                 <relocation>
                                     <pattern>org.apache.kafka</pattern>
-                                    <shadedPattern>org.apache.amoro.shade.org.apache.kafka
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.kafka</shadedPattern>
                                 </relocation>
 
                                 <relocation>
