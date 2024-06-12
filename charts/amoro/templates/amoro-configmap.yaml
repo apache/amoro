@@ -26,6 +26,17 @@ data:
   jvm.properties: |
     {{- . | nindent 4 }}
     {{- end }}
+    {{- with .Values.plugin.metricReporters }}
+  ## Helm chart provided metric reporters configurations
+  metric-reporters.yaml: |
+    metric-reporters:
+     {{- range . }}
+      - name: {{ .name }}
+        enabled: {{ .enabled }}
+        properties:
+          {{ .properties | toYaml | nindent 10 | trim}}
+    {{- end }}
+    {{- end }}
   ## Helm chart provided Amoro configurations
   config.yaml: |
     ams:
