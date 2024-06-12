@@ -113,7 +113,7 @@ This file is based on the checkstyle file of Apache Beam.
         <module name="Regexp">
             <property name="format" value="import com\.fasterxml\.jackson"/>
             <property name="illegalPattern" value="true"/>
-            <property name="message" value="Use amoro shaded guava instead."/>
+            <property name="message" value="Use amoro shaded jackson instead."/>
         </module>
 
         <!-- Enforce Java-style array declarations -->
