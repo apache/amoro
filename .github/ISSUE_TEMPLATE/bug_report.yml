@@ -48,12 +48,22 @@ body:
       required: true
 
   - type: dropdown
+    id: table-format
+    attributes:
+      label: What table format are you seeing the problem on?
+      multiple: true
+      options:
+        - Iceberg
+        - Paimon
+        - Mixed-Iceberg
+        - Mixed-Hive
+
+  - type: dropdown
     id: engines
     attributes:
       label: What engines are you seeing the problem on?
       multiple: true
       options:
-        - Core
         - AMS
         - Optimizer
         - Flink
