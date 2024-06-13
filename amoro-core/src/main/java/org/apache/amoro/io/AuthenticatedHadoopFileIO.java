@@ -100,7 +100,7 @@ public class AuthenticatedHadoopFileIO extends HadoopFileIO
                             new PathInfo(
                                 status.getPath().toString(),
                                 status.getLen(),
-                                status.getAccessTime(),
+                                status.getModificationTime(),
                                 status.isDirectory()))
                     .iterator();
             return () -> it;
