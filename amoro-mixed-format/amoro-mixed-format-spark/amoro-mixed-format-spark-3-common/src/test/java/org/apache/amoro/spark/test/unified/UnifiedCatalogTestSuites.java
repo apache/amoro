@@ -22,8 +22,9 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.UnifiedCatalogLoader;
-import org.apache.amoro.spark.SparkUnifiedSessionCatalogBase;
 import org.apache.amoro.spark.test.SparkTestBase;
+import org.apache.amoro.spark.test.TestIdentifier;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -41,7 +42,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
   protected Map<String, String> sparkSessionConfig() {
     return ImmutableMap.of(
         "spark.sql.catalog.spark_catalog",
-        SparkUnifiedSessionCatalogBase.class.getName(),
+        "org.apache.amoro.spark.SparkUnifiedSessionCatalog",
         "spark.sql.catalog.spark_catalog.uri",
         CONTEXT.amsCatalogUrl(null));
   }
@@ -64,7 +65,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
         "CREATE TABLE "
             + target()
             + " ( "
-            + "id int, "
+            + "id int not null, "
             + "data string, "
             + "pt string"
             + pkDDL(format)
@@ -93,6 +94,9 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
 
     // call procedure
     testCallProcedure(format);
+
+    // alter table test
+    testIcebergAlterTable(format, target(), "id");
 
     sql("DROP TABLE " + target() + " PURGE");
     Assertions.assertFalse(unifiedCatalog().tableExists(target().database, target().table));
@@ -176,5 +180,32 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     if (!unifiedCatalog().databaseExists(database())) {
       unifiedCatalog.createDatabase(database());
     }
+  }
+
+  private void testIcebergAlterTable(
+      TableFormat format, TestIdentifier targetTable, String fieldName) {
+    if (TableFormat.ICEBERG != format) {
+      // only tests for iceberg
+      return;
+    }
+    // set identifier fields
+    String sqlText =
+        String.format("alter table %s set identifier fields  %s", targetTable, fieldName);
+    Dataset<Row> rs = sql(sqlText);
+    Assertions.assertTrue(rs.columns().length == 0);
+
+    AmoroTable<?> icebergTable =
+        unifiedCatalog().loadTable(targetTable.database, targetTable.table);
+    Table table = (Table) icebergTable.originalTable();
+    Assertions.assertTrue(table.schema().identifierFieldNames().contains(fieldName));
+
+    // drop identifier fields/
+    sqlText = String.format("alter table %s DROP IDENTIFIER FIELDS  %s", targetTable, fieldName);
+    rs = sql(sqlText);
+    Assertions.assertTrue(rs.columns().length == 0);
+
+    icebergTable = unifiedCatalog().loadTable(targetTable.database, targetTable.table);
+    table = (Table) icebergTable.originalTable();
+    Assertions.assertFalse(table.schema().identifierFieldNames().contains(fieldName));
   }
 }

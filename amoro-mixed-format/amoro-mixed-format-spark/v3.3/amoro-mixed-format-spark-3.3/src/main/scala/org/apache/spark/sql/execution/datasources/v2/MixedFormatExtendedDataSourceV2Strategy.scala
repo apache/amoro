@@ -53,7 +53,8 @@ import org.apache.spark.sql.errors.QueryCompilationErrors
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.DataSourceStrategy
 
-import org.apache.amoro.spark.SparkUnifiedSessionCatalog
+import org.apache.amoro.UnifiedCatalog
+import org.apache.amoro.spark.{SparkUnifiedCatalog, SparkUnifiedSessionCatalog}
 
 /**
  * refer apache iceberg project
@@ -202,6 +203,8 @@ case class MixedFormatExtendedDataSourceV2Strategy(spark: SparkSession) extends 
         case icebergCatalog: SparkCatalog =>
           Some((icebergCatalog, catalogAndIdentifier.identifier))
         case icebergCatalog: SparkSessionCatalog[_] =>
+          Some((icebergCatalog, catalogAndIdentifier.identifier))
+        case icebergCatalog: SparkUnifiedCatalog =>
           Some((icebergCatalog, catalogAndIdentifier.identifier))
         case icebergCatalog: SparkUnifiedSessionCatalog[_] =>
           Some((icebergCatalog, catalogAndIdentifier.identifier))
