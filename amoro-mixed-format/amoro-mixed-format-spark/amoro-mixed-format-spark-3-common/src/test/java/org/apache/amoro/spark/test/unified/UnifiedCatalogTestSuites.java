@@ -222,8 +222,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     }
     String afterValue = "update-xxx";
     // set identifier fields
-    String sqlText =
-            String.format("update %s set data='%s' where id=1", targetTable, afterValue);
+    String sqlText = String.format("update %s set data='%s' where id=1", targetTable, afterValue);
     Dataset<Row> rs = sql(sqlText);
     Assertions.assertTrue(rs.columns().length == 0);
 
@@ -239,16 +238,15 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
       return;
     }
     // set identifier fields
-    String sqlText =
-            String.format("select min(id) from %s", targetTable);
+    String sqlText = String.format("select min(id) from %s", targetTable);
     Dataset<Row> rs = sql(sqlText);
     Assertions.assertTrue(rs.columns().length == 1);
     Integer minId = rs.head().getInt(0);
 
-
     // set identifier fields
     sqlText =
-            String.format("delete from %s where id=(select min(id) from %s);", targetTable, targetTable);
+        String.format(
+            "delete from %s where id=(select min(id) from %s);", targetTable, targetTable);
     rs = sql(sqlText);
     Assertions.assertTrue(rs.columns().length == 0);
 
@@ -259,25 +257,29 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
   }
 
   private void testIcebergDropPartitionField(
-          TableFormat format, TestIdentifier targetTable, String fieldName) {
+      TableFormat format, TestIdentifier targetTable, String fieldName) {
     if (TableFormat.ICEBERG != format) {
       // only tests for iceberg
       return;
     }
     // drop partition field
     String sqlText =
-            String.format("alter table %s drop partition field  %s", targetTable, fieldName);
+        String.format("alter table %s drop partition field  %s", targetTable, fieldName);
     Dataset<Row> rs = sql(sqlText);
     Assertions.assertTrue(rs.columns().length == 0);
 
     AmoroTable<?> icebergTable =
-            unifiedCatalog().loadTable(targetTable.database, targetTable.table);
+        unifiedCatalog().loadTable(targetTable.database, targetTable.table);
     Table table = (Table) icebergTable.originalTable();
-    Assertions.assertTrue(Optional.empty().equals(table.spec().fields().stream().filter(item -> item.name().equals(fieldName)).findAny()));
+    Assertions.assertTrue(
+        Optional.empty()
+            .equals(
+                table.spec().fields().stream()
+                    .filter(item -> item.name().equals(fieldName))
+                    .findAny()));
   }
 
-  private void testIcebergMetadata(
-          TableFormat format, TestIdentifier targetTable) {
+  private void testIcebergMetadata(TableFormat format, TestIdentifier targetTable) {
     if (TableFormat.ICEBERG != format) {
       // only tests for iceberg
       return;
@@ -285,23 +287,21 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     // drop partition field
     String tagKey = "tag-unittest";
     String sqlText =
-            String.format("alter table %s create tag if not exists `%s`", targetTable, tagKey);
+        String.format("alter table %s create tag if not exists `%s`", targetTable, tagKey);
     Dataset<Row> rs = sql(sqlText);
     Assertions.assertTrue(rs.columns().length == 0);
 
     AmoroTable<?> icebergTable =
-            unifiedCatalog().loadTable(targetTable.database, targetTable.table);
+        unifiedCatalog().loadTable(targetTable.database, targetTable.table);
     Table table = (Table) icebergTable.originalTable();
     Map<String, SnapshotRef> refs = table.refs();
     Assertions.assertTrue(refs != null && refs.containsKey(tagKey));
 
-    sqlText =
-            String.format("alter table %s drop tag `%s`", targetTable, tagKey);
+    sqlText = String.format("alter table %s drop tag `%s`", targetTable, tagKey);
     rs = sql(sqlText);
     Assertions.assertTrue(rs.columns().length == 0);
 
-    icebergTable =
-            unifiedCatalog().loadTable(targetTable.database, targetTable.table);
+    icebergTable = unifiedCatalog().loadTable(targetTable.database, targetTable.table);
     table = (Table) icebergTable.originalTable();
     refs = table.refs();
     Assertions.assertTrue(refs != null && !refs.containsKey(tagKey));
