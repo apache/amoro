@@ -344,19 +344,7 @@ public class TableMetaStore implements Serializable {
       if (ugi == null) {
         try {
           if (TableMetaStore.AUTH_METHOD_SIMPLE.equals(authMethod)) {
-            UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
-            if (currentUser == null
-                || !currentUser
-                    .getAuthenticationMethod()
-                    .equals(UserGroupInformation.AuthenticationMethod.valueOf(authMethod))
-                || !currentUser.getUserName().equals(hadoopUsername)) {
-              System.setProperty(HADOOP_USER_PROPERTY, hadoopUsername);
-              UserGroupInformation.setConfiguration(getConfiguration());
-              UserGroupInformation.loginUserFromSubject(null);
-              ugi = UserGroupInformation.getLoginUser();
-            } else {
-              ugi = currentUser;
-            }
+            ugi = UserGroupInformation.createRemoteUser(hadoopUsername);
           } else if (TableMetaStore.AUTH_METHOD_KERBEROS.equals(authMethod)) {
             constructKerberosUgi();
           }
