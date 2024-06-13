@@ -46,6 +46,7 @@
             <artifactId>amoro-mixed-format-flink-common</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-flink-1.17</artifactId>
@@ -65,6 +66,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
         <dependency>
             <groupId>org.apache.paimon</groupId>
             <artifactId>paimon-flink-1.17</artifactId>

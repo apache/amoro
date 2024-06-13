@@ -21,6 +21,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.apache</groupId>
+        <artifactId>apache</artifactId>
+        <version>23</version>
+    </parent>
+
     <groupId>org.apache.amoro</groupId>
     <artifactId>amoro-parent</artifactId>
     <version>0.7-SNAPSHOT</version>
@@ -29,6 +35,7 @@
     <name>Amoro Project Parent</name>
     <description>Amoro is a Lakehouse management system built on open data formats.</description>
     <url>https://amoro.apache.org</url>
+    <inceptionYear>2024</inceptionYear>
 
     <licenses>
         <license>
@@ -45,10 +52,10 @@
     </modules>
 
     <scm>
-        <connection>scm:git:git@github.com:NetEase/amoro.git</connection>
-        <developerConnection>scm:git:git@github.com:NetEase/amoro.git</developerConnection>
+        <url>scm:git:https://github.com/apache/amoro</url>
+        <connection>scm:git:git@github.com:apache/amoro.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/amoro.git</developerConnection>
         <tag>HEAD</tag>
-        <url>scm:git:git@github.com:NetEase/amoro.git</url>
     </scm>
 
     <issueManagement>
@@ -918,11 +925,6 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <version>${maven-shade-plugin.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>${maven-deploy-plugin.version}</version>
                 </plugin>
@@ -1063,6 +1065,60 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clean-plugin</artifactId>
                     <version>${maven-clean-plugin.version}</version>
+                    <configuration>
+                        <filesets>
+                            <fileset>
+                                <directory>${project.basedir}</directory>
+                                <includes>
+                                    <include>dependency-reduced-pom.xml</include>
+                                </includes>
+                            </fileset>
+                        </filesets>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven-shade-plugin.version}</version>
+                    <configuration>
+                        <filters combine.children="append">
+                            <filter>
+                                <artifact>*</artifact>
+                                <excludes>
+                                    <exclude>META-INF/maven/**</exclude>
+                                    <exclude>log4j.properties</exclude>
+                                    <exclude>log4j2.properties</exclude>
+                                    <exclude>log4j-test.properties</exclude>
+                                    <exclude>log4j2-test.properties</exclude>
+                                    <!-- Do not copy the signatures in the META-INF folder.
+                            Otherwise, this might cause SecurityExceptions when using the JAR. -->
+                                    <exclude>META-INF/*.SF</exclude>
+                                    <exclude>META-INF/*.DSA</exclude>
+                                    <exclude>META-INF/*.RSA</exclude>
+                                    <exclude>META-INF/services/javax.*</exclude>
+                                    <exclude>**/*.proto</exclude>
+                                    <exclude>hbase-webapps/**</exclude>
+                                    <exclude>org/codehaus/mojo/animal_sniffer/**</exclude>
+                                    <exclude>
+                                        org/apache/hadoop/hive/ql/optimizer/ppr/PartitionExpressionForMetastore**
+                                    </exclude>
+                                    <exclude>
+                                        org/apache/hadoop/hive/ql/security/authorization/AuthorizationPreEventListener**
+                                    </exclude>
+                                </excludes>
+                            </filter>
+                        </filters>
+                        <transformers>
+                            <!-- The service transformer is needed to merge META-INF/services files -->
+                            <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            <!-- The ApacheNoticeResourceTransformer collects and aggregates NOTICE files -->
+                            <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer">
+                                <projectName>Apache Amoro (incubating)</projectName>
+                                <inceptionYear>${project.inceptionYear}</inceptionYear>
+                                <encoding>UTF-8</encoding>
+                            </transformer>
+                        </transformers>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1087,6 +1143,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
