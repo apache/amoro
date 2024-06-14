@@ -34,6 +34,7 @@ import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hudi.client.common.HoodieJavaEngineContext;
+import org.apache.hudi.common.config.HoodieMetadataConfig;
 import org.apache.hudi.common.fs.FSUtils;
 import org.apache.hudi.config.HoodieWriteConfig;
 import org.apache.hudi.table.HoodieJavaTable;
@@ -173,6 +174,9 @@ public class HudiHiveCatalog implements FormatCatalog {
         metaStore.getConfiguration());
     HoodieWriteConfig config = HoodieWriteConfig.newBuilder()
         .withPath(tableLocation)
+        .withMetadataConfig(
+            HoodieMetadataConfig.newBuilder()
+                .enable(true).build())
         .build();
 
     return metaStore.doAs(() -> {

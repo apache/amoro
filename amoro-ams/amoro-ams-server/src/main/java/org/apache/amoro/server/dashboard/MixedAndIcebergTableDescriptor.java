@@ -299,7 +299,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
-  public List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, long snapshotId) {
+  public List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, String snapshotId) {
     MixedTable mixedTable = getTable(amoroTable);
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     Snapshot snapshot;
@@ -316,14 +316,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
           "unknown snapshot " + snapshotId + " of " + amoroTable.id());
     }
     final long snapshotTime = snapshot.timestampMillis();
-    String commitId = String.valueOf(snapshotId);
     snapshot
         .addedDataFiles(mixedTable.io())
         .forEach(
             f ->
                 result.add(
                     new PartitionFileBaseInfo(
-                        commitId,
+                        snapshotId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
                         MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
@@ -337,7 +336,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             f ->
                 result.add(
                     new PartitionFileBaseInfo(
-                        commitId,
+                        snapshotId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
                         MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
@@ -351,7 +350,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             f ->
                 result.add(
                     new PartitionFileBaseInfo(
-                        commitId,
+                        snapshotId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
                         MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
@@ -365,7 +364,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             f ->
                 result.add(
                     new PartitionFileBaseInfo(
-                        commitId,
+                        snapshotId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
                         MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
