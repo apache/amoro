@@ -37,6 +37,7 @@ import org.apache.amoro.flink.table.AmoroDynamicTableFactory;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableMetaStore;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
@@ -179,7 +180,9 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
       throw new TableNotExistException(getName(), tablePath, e);
     }
     AbstractCatalog catalog = originalCatalog(amoroTable);
-    CatalogTable catalogTable = (CatalogTable) catalog.getTable(tablePath);
+    TableMetaStore tableMetaStore = unifiedCatalog.authenticationContext();
+    CatalogTable catalogTable =
+        (CatalogTable) tableMetaStore.doAs(() -> catalog.getTable(tablePath));
     final Map<String, String> flinkProperties = Maps.newHashMap(catalogTable.getOptions());
     flinkProperties.put(TABLE_FORMAT.key(), amoroTable.format().toString());
 
@@ -471,7 +474,8 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
         catalogFactory = new MixedCatalogFactory();
         break;
       case ICEBERG:
-        catalogFactory = new IcebergFlinkCatalogFactory(hadoopConf);
+        catalogFactory =
+            new IcebergFlinkCatalogFactory(hadoopConf, unifiedCatalog.authenticationContext());
         break;
       case PAIMON:
         catalogFactory =
@@ -520,5 +524,9 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
         + ", availableCatalogs size="
         + availableCatalogs.size()
         + "}";
+  }
+
+  public CatalogFactory.Context getContext() {
+    return context;
   }
 }

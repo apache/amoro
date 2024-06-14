@@ -67,6 +67,16 @@ public class FlinkUnifiedCatalogFactory implements CatalogFactory {
     final Set<ConfigOption<?>> options = new HashSet<>();
     options.add(PROPERTY_VERSION);
     options.add(DEFAULT_DATABASE);
+
+    // authorization config for mixedCatalog Factory
+    options.add(CatalogFactoryOptions.AUTH_AMS_CONFIGS_DISABLE);
+    options.add(CatalogFactoryOptions.AUTH_METHOD);
+    options.add(CatalogFactoryOptions.SIMPLE_USER_NAME);
+    options.add(CatalogFactoryOptions.KEYTAB_LOGIN_USER);
+    options.add(CatalogFactoryOptions.KRB5_CONF_PATH);
+    options.add(CatalogFactoryOptions.KRB5_CONF_ENCODE);
+    options.add(CatalogFactoryOptions.KEYTAB_PATH);
+    options.add(CatalogFactoryOptions.KEYTAB_ENCODE);
     return options;
   }
 
