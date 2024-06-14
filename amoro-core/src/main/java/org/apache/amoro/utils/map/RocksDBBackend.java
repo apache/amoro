@@ -112,7 +112,7 @@ public class RocksDBBackend {
   /** Initialized Rocks DB instance. */
   private void setup(@Nullable Integer ttlSeconds) {
     try {
-      LOG.info("DELETING RocksDB instance persisted at " + rocksDBBasePath);
+      LOG.info("DELETING RocksDB instance persisted at {}", rocksDBBasePath);
       LocalFileUtil.deleteDirectory(new File(rocksDBBasePath));
 
       final DBOptions dbOptions =
@@ -126,7 +126,7 @@ public class RocksDBBackend {
           new org.rocksdb.Logger(dbOptions) {
             @Override
             protected void log(InfoLogLevel infoLogLevel, String logMsg) {
-              LOG.debug("From Rocks DB : " + logMsg);
+              LOG.debug("From Rocks DB : {}", logMsg);
             }
           });
       List<ColumnFamilyDescriptor> managedColumnFamilies;

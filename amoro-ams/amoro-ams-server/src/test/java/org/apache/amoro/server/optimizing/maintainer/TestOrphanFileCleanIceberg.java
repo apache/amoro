@@ -135,7 +135,7 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
       throw new RuntimeException(e);
     }
     for (String danglingDeleteFile : danglingDeleteFiles) {
-      LOG.info("find dangling delete files " + danglingDeleteFile);
+      LOG.info("find dangling delete files {}", danglingDeleteFile);
     }
     Assert.assertEquals(count, danglingDeleteFiles.size());
   }

@@ -112,7 +112,7 @@ public class AmsEnvironment {
 
   public AmsEnvironment(String rootPath) throws Exception {
     this.rootPath = rootPath;
-    LOG.info("ams environment root path: " + rootPath);
+    LOG.info("ams environment root path: {}", rootPath);
     String path =
         Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath();
     FileUtils.writeStringToFile(new File(rootPath + "/conf/config.yaml"), getAmsConfig());

@@ -224,7 +224,7 @@ public class MixedTables {
       change = tableMetaStore.doAs(changeBuilder::create);
       return change;
     } catch (RuntimeException e) {
-      LOG.warn("Create base store failed for reason: " + e.getMessage());
+      LOG.warn("Create base store failed for reason: {}", e.getMessage());
       tableMetaStore.doAs(() -> icebergCatalog.dropTable(baseIdentifier, true));
       throw e;
     }

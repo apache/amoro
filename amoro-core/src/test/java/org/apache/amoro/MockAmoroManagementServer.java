@@ -179,7 +179,7 @@ public class MockAmoroManagementServer implements Runnable {
                 Thread thread = new Thread(r);
                 String threadName = "ams-pool-" + threadCount.incrementAndGet();
                 thread.setName(threadName);
-                LOG.info("Mock AMS create thread: " + threadName);
+                LOG.info("Mock AMS create thread: {}", threadName);
                 return thread;
               },
               new ThreadPoolExecutor.AbortPolicy());

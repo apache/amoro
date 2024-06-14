@@ -120,7 +120,7 @@ public class ParamSignatureCalculator {
                 try {
                   return key + URLDecoder.decode(map.get(key), "UTF-8");
                 } catch (UnsupportedEncodingException e) {
-                  LOG.error("Failed to decode url value: " + map.get(key), e);
+                  LOG.error("Failed to decode url value: {}", map.get(key), e);
                 }
               }
               return null;

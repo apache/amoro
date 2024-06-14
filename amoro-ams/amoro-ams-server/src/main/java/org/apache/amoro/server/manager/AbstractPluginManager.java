@@ -189,7 +189,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
               try (ClassLoaderContext ignored = new ClassLoaderContext(plugin)) {
                 visitor.accept(plugin);
               } catch (Throwable throwable) {
-                LOG.error("Error when call plugin: " + plugin.name(), throwable);
+                LOG.error("Error when call plugin: {}", plugin.name(), throwable);
               }
             });
   }
@@ -260,7 +260,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
           "Failed when load plugin configs from file: " + mangerConfigPath, e);
     }
 
-    LOG.info("initializing plugin configuration for: " + pluginCategory());
+    LOG.info("initializing plugin configuration for: {}", pluginCategory());
     String pluginListKey = pluginCategory();
 
     JsonNode pluginConfigList = yamlConfig != null ? yamlConfig.get(pluginListKey) : null;

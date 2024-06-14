@@ -269,7 +269,7 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
       String exportCmd = String.join(" && ", exportSystemProperties());
       String releaseCmd = exportCmd + " && " + releaseCommand;
       String[] cmd = {"/bin/sh", "-c", releaseCmd};
-      LOG.info("Releasing spark optimizer using command: " + releaseCmd);
+      LOG.info("Releasing spark optimizer using command: {}", releaseCmd);
       Runtime.getRuntime().exec(cmd);
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to release spark optimizer.", e);
