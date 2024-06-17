@@ -29,15 +29,12 @@ public class TableProperties {
 
   private TableProperties() {}
 
-  public static final String SELF_OPTIMIZING_MIN_PLAN_INTERVAL =
-      "self-optimizing.min-plan-interval";
-  public static final long SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT = 60000;
-
   public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
 
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
 
   public static final String PARTITION_OPTIMIZED_SEQUENCE = "max-txId";
+
   public static final String PARTITION_BASE_OPTIMIZED_TIME = "base-op-time";
 
   public static final String LOCATION = "location";
@@ -118,6 +115,10 @@ public class TableProperties {
       "self-optimizing.full.rewrite-all-files";
   public static final boolean SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT = true;
 
+  public static final String SELF_OPTIMIZING_MIN_PLAN_INTERVAL =
+          "self-optimizing.min-plan-interval";
+  public static final long SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT = 60000;
+
   /** deprecated table optimize related properties */
   @Deprecated public static final String ENABLE_OPTIMIZE = "optimize.enable";
 
@@ -143,9 +144,7 @@ public class TableProperties {
 
   /** table clean related properties */
   public static final String ENABLE_TABLE_EXPIRE = "table-expire.enabled";
-
   public static final boolean ENABLE_TABLE_EXPIRE_DEFAULT = true;
-  @Deprecated public static final String ENABLE_TABLE_EXPIRE_LEGACY = "table-expire.enable";
 
   public static final String CHANGE_DATA_TTL = "change.data.ttl.minutes";
   public static final long CHANGE_DATA_TTL_DEFAULT = 10080; // 7 Days
@@ -153,40 +152,41 @@ public class TableProperties {
   public static final String BASE_SNAPSHOT_KEEP_MINUTES = "snapshot.base.keep.minutes";
   public static final long BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 720; // 12 Hours
 
+  public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
+  public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;
+
+  public static final String MIN_ORPHAN_FILE_EXISTING_TIME =
+          "clean-orphan-file.min-existing-time-minutes";
+  public static final long MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = 2880; // 2 Days
+  public static final String ENABLE_DANGLING_DELETE_FILES_CLEAN =
+          "clean-dangling-delete-files.enabled";
+  public static final boolean ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT = true;
+
   public static final String ENABLE_DATA_EXPIRATION = "data-expire.enabled";
   public static final boolean ENABLE_DATA_EXPIRATION_DEFAULT = false;
+
   public static final String DATA_EXPIRATION_LEVEL = "data-expire.level";
   public static final String DATA_EXPIRATION_LEVEL_DEFAULT = "partition";
+
   public static final String DATA_EXPIRATION_FIELD = "data-expire.field";
+
   public static final String DATA_EXPIRATION_DATE_STRING_PATTERN =
       "data-expire.datetime-string-pattern";
   public static final String DATA_EXPIRATION_DATE_STRING_PATTERN_DEFAULT = "yyyy-MM-dd";
+
   public static final String DATA_EXPIRATION_DATE_NUMBER_FORMAT =
       "data-expire.datetime-number-format";
   public static final String DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT = "TIMESTAMP_MS";
+
   public static final String DATA_EXPIRATION_RETENTION_TIME = "data-expire.retention-time";
+
   public static final String DATA_EXPIRATION_BASE_ON_RULE = "data-expire.base-on-rule";
   public static final String DATA_EXPIRATION_BASE_ON_RULE_DEFAULT = "LAST_COMMIT_TIME";
-
-  public static final String ENABLE_DANGLING_DELETE_FILES_CLEAN =
-      "clean-dangling-delete-files.enabled";
-  public static final boolean ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT = true;
-
-  public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
-  public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;
-  @Deprecated public static final String ENABLE_ORPHAN_CLEAN_LEGACY = "clean-orphan-file.enable";
-
-  public static final String MIN_ORPHAN_FILE_EXISTING_TIME =
-      "clean-orphan-file.min-existing-time-minutes";
-  public static final long MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = 2880; // 2 Days
 
   public static final String ENABLE_TABLE_TRASH = "table-trash.enabled";
   public static final boolean ENABLE_TABLE_TRASH_DEFAULT = false;
 
   public static final String TABLE_TRASH_CUSTOM_ROOT_LOCATION = "table-trash.custom-root-location";
-
-  public static final String TABLE_TRASH_KEEP_DAYS = "table-trash.keep.days";
-  public static final int TABLE_TRASH_KEEP_DAYS_DEFAULT = 7; // 7 Days
 
   public static final String TABLE_TRASH_FILE_PATTERN = "table-trash.file-pattern";
   public static final String TABLE_TRASH_FILE_PATTERN_DEFAULT =
@@ -199,9 +199,11 @@ public class TableProperties {
           + // v123.metadata.json
           "|.*[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}-m[0-9]+\\.avro"; // UUID-m0.avro
 
+  @Deprecated public static final String ENABLE_TABLE_EXPIRE_LEGACY = "table-expire.enable";
+  @Deprecated public static final String ENABLE_ORPHAN_CLEAN_LEGACY = "clean-orphan-file.enable";
+
   /** table tag management related properties */
   public static final String ENABLE_AUTO_CREATE_TAG = "tag.auto-create.enabled";
-
   public static final boolean ENABLE_AUTO_CREATE_TAG_DEFAULT = false;
 
   public static final String AUTO_CREATE_TAG_TRIGGER_PERIOD = "tag.auto-create.trigger.period";
@@ -224,17 +226,19 @@ public class TableProperties {
 
   /** table write related properties */
   public static final String FILE_FORMAT_PARQUET = "parquet";
-
   public static final String FILE_FORMAT_ORC = "orc";
+
   public static final String BASE_FILE_FORMAT = "base.write.format";
-  public static final String DELTA_FILE_FORMAT = "delta.write.format";
   public static final String BASE_FILE_FORMAT_DEFAULT = FILE_FORMAT_PARQUET;
+
+  public static final String DELTA_FILE_FORMAT = "delta.write.format";
 
   public static final String CHANGE_FILE_FORMAT = "change.write.format";
   public static final String CHANGE_FILE_FORMAT_DEFAULT = FILE_FORMAT_PARQUET;
 
   public static final String DEFAULT_FILE_FORMAT =
       org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
+
   public static final String DEFAULT_FILE_FORMAT_DEFAULT =
       org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 
@@ -280,11 +284,10 @@ public class TableProperties {
   public static final String SPLIT_OPEN_FILE_COST =
       org.apache.iceberg.TableProperties.SPLIT_OPEN_FILE_COST;
   public static final long SPLIT_OPEN_FILE_COST_DEFAULT = 4 * 1024 * 1024; // 4MB
+
   /** log store related properties */
   public static final String ENABLE_LOG_STORE = "log-store.enabled";
-
   public static final boolean ENABLE_LOG_STORE_DEFAULT = false;
-  @Deprecated public static final String ENABLE_LOG_STORE_LEGACY = "log-store.enable";
 
   public static final String LOG_STORE_TYPE = "log-store.type";
   public static final String LOG_STORE_STORAGE_TYPE_KAFKA = "kafka";
@@ -305,13 +308,19 @@ public class TableProperties {
 
   public static final String OWNER = "owner";
 
+  @Deprecated public static final String ENABLE_LOG_STORE_LEGACY = "log-store.enable";
+
   /** table format related properties */
   public static final String TABLE_FORMAT = "table-format";
 
   public static final String MIXED_FORMAT_PRIMARY_KEY_FIELDS = "mixed-format.primary-key-fields";
+
   public static final String MIXED_FORMAT_TABLE_STORE = "mixed-format.table-store";
+
   public static final String MIXED_FORMAT_TABLE_STORE_BASE = "base";
+
   public static final String MIXED_FORMAT_TABLE_STORE_CHANGE = "change";
+
   public static final String MIXED_FORMAT_CHANGE_STORE_IDENTIFIER =
       "mixed-format.change.identifier";
 

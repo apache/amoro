@@ -19,7 +19,7 @@ In Amoro, the catalog is a namespace for a group of libraries and tables. Under 
 AMS can also serve as a metadata service. In order to differentiate the storage method of metadata, Amoro classifies the catalog type into `Internal Catalog` and `External Catalog`. Catalogs that use AMS as the metadata service are internal catalogs, while others are external catalogs. When creating an external catalog, you need to select the storage backend for its metadata, such as Hive, Hadoop, or Custom.
 
 In addition, when defining a catalog, you also need to select the table format used under it. Currently, Amoro supports the following table formats:
-[Iceberg](../iceberg-format/) 、[Mixed-Hive](../mixed-hive-format/)、[Mixed-Iceberg](../mixed-iceberg-format/).
+[Iceberg](../iceberg-format/) 、[Paimon](../paimon-format)、[Mixed-Hive](../mixed-hive-format/)、[Mixed-Iceberg](../mixed-iceberg-format/).
 
 You can create a catalog in the AMS frontend:
 ![create_catalog](../images/admin/create-catalog.png)
@@ -29,7 +29,7 @@ You can create a catalog in the AMS frontend:
 - name: catalog name, only numbers, letters, _, - , starting with letters are supported (lower case letters are recommended)
 - type: Internal Catalog or External Catalog
 - metastore: storage type for table metadata. Hive Metastore (for using HMS to store metadata), Hadoop (corresponding to iceberg's Hadoop catalog), Glue (for using AWS Glue to store metadata), Custom (other iceberg catalog implementations).
-- table format: Iceberg 、Mixed-Hive、Mixed  Iceberg. Currently, only Hive Metastore supports both Mixed-Hive and Iceberg format table, only internal catalog support both Mixed-Iceberg and Iceberg format table. All other metastore types only support Iceberg, currently a Metastore only supports one kind of TableFormat, in the future will support multiple
+- table format: Iceberg 、Paimon、Mixed-Hive、Mixed-Iceberg.
 - optimizer group: tables under the catalog will automatically perform self-optimizing within this group.
 
 ### Configure storage
@@ -59,15 +59,10 @@ Common properties include:
 ### Configure table properties
 If you want to add the same table properties to all tables under a catalog, you can add these table properties here on the catalog level. If you also configure this property on the table level, the property on the table will take effect.
 
-We recommend users to create a Catalog following the guidelines below：
-
-- If you want to use it in conjunction with HMS, choose `External Catalog` for the `Type` and `Hive Metastore` for the `Metastore`, and choose the table format based on your needs, Mixed-Hive or Iceberg.
-- If you want to use Mixed-Iceberg provided by Amoro, choose `Internal Catalog` for the `Type` and `Mixed-Iceberg` for the table format.
-
 ## Delete catalog
 When a user needs to delete a Catalog, they can go to the details page of the Catalog and click the Remove button at the bottom of the page to perform the deletion.
 
 {{< hint info >}}
-Before deleting a Catalog, AMS will verify whether there is metadata for tables under that Catalog.
+Before deleting a internal catalog, AMS will verify whether there is metadata for tables under that Catalog.
 If there are still tables under that Catalog, AMS will prompt that the deletion failed.
 {{< /hint >}}
