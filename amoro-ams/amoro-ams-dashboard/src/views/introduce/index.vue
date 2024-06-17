@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,34 +14,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
-
-<template>
-  <div class="introduce-content">
-    <section class="home-section">
-      <div class="content">
-        <div class="title">
-          Amoro builds lake-native data warehouse and architecture for users, platforms and products
-        </div>
-        <img class="img" src="@/assets/images/home-content.png" />
-      </div>
-    </section>
-    <div class="home-feature">
-      <div class="content">
-        <div class="title">Key Features</div>
-        <div class="features">
-          <div class="feature-item" v-for="item in features" :key="item.title">
-            <div class="item-title">
-              <img :src="item.icon" />
-              {{ item.title }}
-            </div>
-            <div class="item-desc">{{ item.desc }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
+/ -->
 
 <script lang="ts">
 import { defineComponent, onMounted } from 'vue'
@@ -62,40 +34,71 @@ export default defineComponent({
       {
         title: 'Self-optimizing',
         desc: 'Continuously optimizing tables, including compacting small files, change files, regularly delete expired files to keep high query performance and reducing storage costs.',
-        icon: SelfManaged
+        icon: SelfManaged,
       },
       {
         title: 'Multiple Formats',
         desc: 'Support different table formats such as Iceberg, Mixed-Iceberg and Mixed-Hive to meet different scenario requirements and provide them with unified management capabilities.',
-        icon: MultipleFormats
+        icon: MultipleFormats,
       },
       {
         title: 'Catalog Service',
         desc: 'Provide an unified catalog service for all compute engines, which can also used with existing metadata store service such as Hive Metastore and AWS Glue.',
-        icon: CatalogService
+        icon: CatalogService,
       },
       {
         title: 'Rich Plugins',
         desc: 'Provide various plugins to integrate with other systems, like continuously optimizing with Flink and data analysis with Spark and Kyuubi.',
-        icon: RichPlugins
+        icon: RichPlugins,
       },
       {
         title: 'Management Tools',
         desc: 'Provide a variety of management tools, including WEB UI and standard SQL command line, to help you get started faster and integrate with other systems more easily.',
-        icon: ManagementTools
+        icon: ManagementTools,
       },
       {
         title: 'Infrastructure Independent',
         desc: 'Can be easily deployed and used in private environments, cloud environments, hybrid cloud environments, and multi-cloud environments.',
-        icon: InfrastructureIdependent
-      }
+        icon: InfrastructureIdependent,
+      },
     ]
     return {
-      features
+      features,
     }
-  }
+  },
 })
 </script>
+
+<template>
+  <div class="introduce-content">
+    <section class="home-section">
+      <div class="content">
+        <div class="title">
+          Amoro builds lake-native data warehouse and architecture for users, platforms and products
+        </div>
+        <img class="img" src="@/assets/images/home-content.png">
+      </div>
+    </section>
+    <div class="home-feature">
+      <div class="content">
+        <div class="title">
+          Key Features
+        </div>
+        <div class="features">
+          <div v-for="item in features" :key="item.title" class="feature-item">
+            <div class="item-title">
+              <img :src="item.icon">
+              {{ item.title }}
+            </div>
+            <div class="item-desc">
+              {{ item.desc }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style lang="less" scoped>
 .home-section {

@@ -14,11 +14,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- /-->
-
-<template>
-  <div class="m-sql-editor" :class="{ disabled: readOnly }" style="height: 100%; width: 100%;"></div>
-</template>
+ / -->
 
 <script lang="ts" setup>
 import * as monaco from 'monaco-editor'
@@ -27,13 +23,17 @@ import { nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import { EDITOR_OPTIONS } from './editor-config'
 
 interface EditorCommand {
-  [commandName: string]: string | null;
+  [commandName: string]: string | null
 }
 
-let editor: monaco.editor.IStandaloneCodeEditor
 // const value = ''
-const props = defineProps<{ sqlValue: string, options: any, readOnly: boolean}>()
-
+const props = defineProps<{ sqlValue: string, options: any, readOnly: boolean }>()
+const emit = defineEmits<{
+  (e: 'save'): void
+  (e: 'update:value', val: any): void
+  (e: 'change', val: any): void
+}>()
+let editor: monaco.editor.IStandaloneCodeEditor
 // @Component
 // export default class MSqlEditor extends Vue {
 // @Model('change', { type: String })
@@ -50,11 +50,6 @@ const props = defineProps<{ sqlValue: string, options: any, readOnly: boolean}>(
 let oldValue = ''
 const commandMap: EditorCommand = {}
 
-const emit = defineEmits<{
- (e: 'save'): void,
- (e: 'update:value', val: any): void,
- (e: 'change', val: any): void,
-}>()
 // @Watch('value')
 // private onValueChanged(val = '') {
 //   if (this.oldValue !== val && this.editor) {
@@ -69,7 +64,7 @@ watch(
         editor.setValue(value)
       }
     }
-  }
+  },
 )
 
 window.addEventListener('resize', resize)
@@ -90,10 +85,10 @@ defineExpose({
     const selection = editor.getSelection()
     const model = editor.getModel()
     if (selection && model) {
-      return model.getValueInRange(selection);
+      return model.getValueInRange(selection)
     }
     return ''
-  }
+  },
 
 })
 
@@ -119,20 +114,18 @@ onMounted(() => {
   })
 })
 /**
-   * Monaco Editor
-   * API： https://microsoft.github.io/monaco-editor/api/modules/monaco.editor.html
-   * config： https://microsoft.github.io/monaco-editor/api/interfaces/monaco.editor.ieditoroptions.html
-   */
+ * Monaco Editor
+ * API： https://microsoft.github.io/monaco-editor/api/modules/monaco.editor.html
+ * config： https://microsoft.github.io/monaco-editor/api/interfaces/monaco.editor.ieditoroptions.html
+ */
 
 function addCommand() {
   if (editor) {
-    // @ts-ignore
-    const saveBinding = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_S, () => {
+    const saveBinding = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       emit('save')
     })
     commandMap.save = saveBinding
-    // @ts-ignore
-    const formatBinding = editor.addCommand(monaco.KeyMod.Alt | monaco.KeyMod.Shift | monaco.KeyCode.KEY_F, () => {
+    const formatBinding = editor.addCommand(monaco.KeyMod.Alt | monaco.KeyMod.Shift | monaco.KeyCode.KeyF, () => {
       formatSql()
     })
     commandMap.format = formatBinding
@@ -143,8 +136,11 @@ function formatSql() {
   const action = editor && editor.getAction('editor.action.formatDocument')
   action && action.run()
 }
-
 </script>
+
+<template>
+  <div class="m-sql-editor" :class="{ disabled: readOnly }" style="height: 100%; width: 100%;" />
+</template>
 
 <style lang="less" scoped>
 .m-sql-editor {

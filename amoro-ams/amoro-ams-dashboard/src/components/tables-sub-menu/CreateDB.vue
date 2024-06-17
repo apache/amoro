@@ -14,10 +14,67 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- /-->
+ / -->
+
+<script lang="ts">
+import { defineComponent, reactive, ref } from 'vue'
+import { usePlaceholder } from '@/hooks/usePlaceholder'
+
+interface FormState {
+  catalog: string | undefined
+  dbname: string
+}
+
+export default defineComponent({
+  props: {
+    visible: {
+      type: Boolean,
+      default: false,
+    },
+    catalogOptions: {
+      type: Array,
+      default: () => [],
+    },
+  },
+  emits: ['cancel'],
+  setup(_, { emit }) {
+    const placeholder = reactive(usePlaceholder())
+
+    const formRef = ref()
+    const formState: FormState = reactive({
+      catalog: undefined,
+      dbname: '',
+    })
+    const handleOk = () => {
+      formRef.value
+        .validateFields()
+        .then(() => {
+          formRef.value.resetFields()
+          emit('cancel')
+        })
+        .catch((info: Error) => {
+          // eslint-disable-next-line no-console
+          console.log('Validate Failed:', info)
+        })
+    }
+    const handleCancel = () => {
+      formRef.value.resetFields()
+      emit('cancel')
+    }
+
+    return {
+      formRef,
+      formState,
+      placeholder,
+      handleOk,
+      handleCancel,
+    }
+  },
+})
+</script>
 
 <template>
-  <a-modal v-model:open="visible" :title="$t('createDatabase')" @ok="handleOk" @cancel="handleCancel">
+  <a-modal v-model:open="$props.visible" :title="$t('createDatabase')" @ok="handleOk" @cancel="handleCancel">
     <a-form ref="formRef" :model="formState" class="label-120">
       <a-form-item name="catalog" :label="$t('catalog')" :rules="[{ required: true, message: `${placeholder.selectClPh}` }]">
         <a-select
@@ -32,58 +89,3 @@
     </a-form>
   </a-modal>
 </template>
-<script lang="ts">
-import { defineComponent, reactive, ref } from 'vue'
-import { usePlaceholder } from '@/hooks/usePlaceholder'
-
-interface FormState {
-  catalog: string | undefined
-  dbname: string
-}
-
-export default defineComponent({
-  props: {
-    visible: {
-      type: Boolean,
-      default: false
-    },
-    catalogOptions: {
-      type: Array,
-      default: () => []
-    }
-  },
-  emits: ['cancel'],
-  setup(_, { emit }) {
-    const placeholder = reactive(usePlaceholder())
-
-    const formRef = ref()
-    const formState:FormState = reactive({
-      catalog: undefined,
-      dbname: ''
-    })
-    const handleOk = () => {
-      formRef.value
-        .validateFields()
-        .then(() => {
-          formRef.value.resetFields()
-          emit('cancel')
-        })
-        .catch((info: Error) => {
-          console.log('Validate Failed:', info)
-        })
-    }
-    const handleCancel = () => {
-      formRef.value.resetFields()
-      emit('cancel')
-    }
-
-    return {
-      formRef,
-      formState,
-      placeholder,
-      handleOk,
-      handleCancel
-    }
-  }
-})
-</script>

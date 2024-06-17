@@ -16,7 +16,8 @@
   * limitations under the License.
   */
 
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 
 const Home = () => import('@/views/Home.vue')
 const Page404 = () => import('@/views/404.vue')
@@ -42,7 +43,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'catalogs',
         name: 'Catalogs',
-        component: Catalogs
+        component: Catalogs,
       },
       {
         path: 'tables',
@@ -52,9 +53,9 @@ const routes: Array<RouteRecordRaw> = [
           {
             path: 'create',
             name: 'Create',
-            component: CreateTable
-          }
-        ]
+            component: CreateTable,
+          },
+        ],
       },
       {
         path: 'hive-tables',
@@ -64,56 +65,57 @@ const routes: Array<RouteRecordRaw> = [
           {
             path: 'upgrade',
             name: 'Upgrade',
-            component: UpgradeTable
-          }
-        ]
+            component: UpgradeTable,
+          },
+        ],
       },
       {
         path: 'optimizing',
         name: 'Optimizing',
-        component: Resource
+        component: Resource,
       },
       {
         path: 'settings',
         name: 'Settings',
-        component: Settings
-      }, {
+        component: Settings,
+      },
+      {
         path: 'terminal',
         name: 'Terminal',
-        component: Terminal
+        component: Terminal,
       },
       {
         path: 'introduce',
         name: 'Introduce',
-        component: Introduce
-      }
+        component: Introduce,
+      },
       // {
       //   path: 'resource',
       //   name: 'Resource',
       //   component: Resource
       // }
-    ]
+    ],
   },
   {
     path: '/login',
     name: 'Login',
-    component: Login
+    component: Login,
   },
   {
     path: '/404',
     name: 'Page404',
-    component: Page404
+    component: Page404,
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'Page404',
-    component: Page404
-  }
+    component: Page404,
+  },
 ]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
 })
 
 export default router

@@ -14,114 +14,19 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
-
-<template>
-  <div class="console-wrap">
-    <div class="console-content" :class="{ 'fullscreen': fullscreen }">
-      <div :style="{ height: `${sqlResultHeight}px` }" class="sql-wrap">
-        <div class="sql-block">
-          <div class="top-ops g-flex-jsb">
-            <div class="title-left g-flex-ac">
-              <div class="select-catalog g-mr-12">
-                <span class="label">{{ $t('use') }}</span>
-                <a-select v-model:value="curCatalog" style="width: 200px" :options="catalogOptions"
-                  @change="changeUseCatalog">
-                </a-select>
-              </div>
-              <a-tooltip v-if="runStatus === 'Running'" :title="$t('pause')" placement="bottom">
-                <svg-icon className="icon-svg" icon-class="sqlpause" @click="handleIconClick('pause')" class="g-mr-12"
-                  :disabled="readOnly" />
-              </a-tooltip>
-              <a-tooltip v-else :title="$t('run')" placement="bottom">
-                <svg-icon className="icon-svg" icon-class="sqldebug" @click="handleIconClick('debug')" class="g-mr-12"
-                  :disabled="readOnly" />
-              </a-tooltip>
-              <a-tooltip :title="$t('format')" placement="bottom">
-                <svg-icon className="icon-svg" :isStroke="true" icon-class="format" @click="handleIconClick('format')"
-                  :disabled="readOnly" />
-              </a-tooltip>
-            </div>
-            <div class="title-right">
-              <a-tooltip :title="fullscreen ? $t('recovery') : $t('fullscreen')" placement="bottom"
-                :getPopupContainer="getPopupContainer">
-                <svg-icon className="icon-svg" :isStroke="true" :icon-class="fullscreen ? 'sqlinit' : 'sqlmax'"
-                  @click="handleFull" :disabled="false" class="g-ml-12" />
-              </a-tooltip>
-            </div>
-          </div>
-          <div class="sql-content">
-            <div class="sql-raw">
-              <sql-editor ref="sqlEditorRef" :sqlValue="sqlSource" v-model:value="sqlSource" :readOnly="readOnly"
-                :options="{
-                  readOnly: readOnly,
-                  minimap: { enabled: false }
-                }" />
-            </div>
-            <div v-if="runStatus" class="run-status" :style="{ background: bgcMap[runStatus] }">
-              <template v-if="runStatus === 'Running' || runStatus === 'Canceling'">
-                <loading-outlined style="color: #1890ff" />
-              </template>
-              <template v-if="runStatus === 'Canceled' || runStatus === 'Failed'">
-                <close-circle-outlined style="color: #ff4d4f" />
-              </template>
-              <template v-if="runStatus === 'Finished'">
-                <check-circle-outlined style="color: #52c41a" />
-              </template>
-              <template v-if="runStatus === 'Created'">
-                <close-circle-outlined style="color:#333" />
-              </template>
-              <span class="g-ml-12">{{ $t(runStatus) }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="sql-shortcuts">
-          <div class="shortcuts">{{ $t('sqlShortcuts') }}</div>
-          <a-button v-for="code in shortcuts" :key="code" type="link"
-            :disabled="runStatus === 'Running' || runStatus === 'Canceling'" @click="generateCode(code)" class="code">{{
-            code
-            }}</a-button>
-        </div>
-      </div>
-      <!-- sql result -->
-      <div class="sql-result" :style="{ height: `calc(100% - ${sqlResultHeight}px)` }"
-        :class="resultFullscreen ? 'result-full' : ''">
-        <span class="drag-line" @mousedown="dragMounseDown"><svg-icon class="icon" icon-class="slide" /></span>
-        <div class="tab-operation">
-          <div class="tab">
-            <span :class="{ active: operationActive === 'log' }" @click="operationActive = 'log'"
-              class="tab-item">{{ $t('log') }}</span>
-            <span v-for="item in resultTabList" :key="item.id" :class="{ active: operationActive === item.id }"
-              @click="operationActive = item.id" class="tab-item">{{ item.id }}</span>
-          </div>
-          <!-- <div v-if="!fullscreen" class="operation">
-            <a-tooltip placement="bottom" :title="$t('maximize')">
-              <span @click="resultFull"><svg-icon :isStroke="true" className="icon-svg" :icon-class="resultFullscreen ? 'sqlinit' : 'sqlmax'" :disabled="false" /></span>
-            </a-tooltip>
-          </div> -->
-        </div>
-        <div class="debug-result">
-          <sql-log v-show="operationActive === 'log'" ref="sqlLogRef" />
-          <template v-for="item in resultTabList" :key="item.id">
-            <sql-result v-if="operationActive === item.id" :info="item" />
-          </template>
-        </div>
-      </div>
-    </div>
-    <u-loading v-if="loading" />
-  </div>
-</template>
+/ -->
 
 <script lang="ts">
 import { defineComponent, onBeforeUnmount, onMounted, reactive, ref, shallowReactive, watch } from 'vue'
-import SqlEditor from '@/components/sql-editor/index.vue'
+import { message } from 'ant-design-vue'
 import SqlResult from './components/sql-result.vue'
 import SqlLog from './components/sql-log.vue'
-import { ICatalogItem, IDebugResult, ILableAndValue, IMap, debugResultBgcMap } from '@/types/common.type'
-import { executeSql, getExampleSqlCode, getJobDebugResult, getLogsResult, getShortcutsList, stopSql, getLastDebugInfo } from '@/services/terminal.service'
+import SqlEditor from '@/components/sql-editor/index.vue'
+import type { ICatalogItem, IDebugResult, ILableAndValue, IMap } from '@/types/common.type'
+import { debugResultBgcMap } from '@/types/common.type'
+import { executeSql, getExampleSqlCode, getJobDebugResult, getLastDebugInfo, getLogsResult, getShortcutsList, stopSql } from '@/services/terminal.service'
 import { getCatalogList } from '@/services/table.service'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
-import { message } from 'ant-design-vue'
 
 interface ISessionInfo {
   sessionId: string
@@ -138,7 +43,7 @@ export default defineComponent({
   components: {
     SqlEditor,
     SqlResult,
-    SqlLog
+    SqlLog,
   },
   setup() {
     const placeholder = reactive(usePlaceholder())
@@ -169,9 +74,10 @@ export default defineComponent({
       () => readOnly,
       () => {
         sqlEditorRef.value.updateOptions({ readOnly })
-      })
+      },
+    )
 
-    const handleIconClick = (action: string) => {
+    function handleIconClick(action: string) {
       if (action === 'debug') {
         handleDebug()
         return
@@ -185,12 +91,12 @@ export default defineComponent({
       }
     }
 
-    const getCatalogOps = async () => {
+    async function getCatalogOps() {
       const res: ICatalogItem[] = await getCatalogList();
       (res || []).forEach((ele: ICatalogItem) => {
         catalogOptions.push({
           value: ele.catalogName,
-          label: ele.catalogName
+          label: ele.catalogName,
         })
       })
       if (catalogOptions.length) {
@@ -200,28 +106,28 @@ export default defineComponent({
       }
     }
 
-    const getShortcuts = async () => {
+    async function getShortcuts() {
       const res: string[] = await getShortcutsList()
       shortcuts.push(...(res || []))
     }
 
-    const changeUseCatalog = () => {
+    function changeUseCatalog() {
       saveValueToStorage(storageUseCatalogKey, curCatalog.value)
     }
 
-    const handleFull = () => {
+    function handleFull() {
       fullscreen.value = !fullscreen.value
     }
 
-    const resultFull = () => {
+    function resultFull() {
       resultFullscreen.value = !resultFullscreen.value
     }
-    const resetResult = () => {
+    function resetResult() {
       resultTabList.length = 0
       sqlLogRef.value.initData('')
     }
 
-    const handleDebug = async () => {
+    async function handleDebug() {
       try {
         if (!curCatalog.value) {
           message.error(placeholder.selectClPh)
@@ -235,17 +141,18 @@ export default defineComponent({
 
         const res: ISessionInfo = await executeSql({
           catalog: curCatalog.value,
-          sql: sqlToExecute
+          sql: sqlToExecute,
         })
         sessionId.value = res.sessionId || '0'
         getLogResult()
-      } catch (error) {
+      }
+      catch (error) {
         runStatus.value = 'Failed'
         message.error((error as Error).message || 'error')
       }
     }
 
-    const stopDebug = async () => {
+    async function stopDebug() {
       if (sessionId.value) {
         operationActive.value = 'log'
         logInterval.value && clearTimeout(logInterval.value)
@@ -270,11 +177,12 @@ export default defineComponent({
         if (res && res.length) {
           resultTabList.push(...res)
         }
-      } catch (error) {
+      }
+      catch (error) {
       }
     }
 
-    const getLogResult = async () => {
+    async function getLogResult() {
       logInterval.value && clearTimeout(logInterval.value)
       if (runStatus.value !== 'Running') {
         return
@@ -294,7 +202,8 @@ export default defineComponent({
           if (resultTabList.length) {
             operationActive.value = resultTabList[0].id
           }
-        } else {
+        }
+        else {
           if (runStatus.value === 'Canceled') {
             return
           }
@@ -314,13 +223,15 @@ export default defineComponent({
         clearTimeout(logInterval.value)
         loading.value = true
         const res: string = await getExampleSqlCode(code)
-        sqlSource.value = sqlSource.value + '\n-- SQL shortcut generated\n' + res
+        sqlSource.value = `${sqlSource.value}\n-- SQL shortcut generated\n${res}`
         showDebug.value = false
         runStatus.value = ''
         resetResult()
-      } catch (error) {
+      }
+      catch (error) {
         message.error((error as Error).message)
-      } finally {
+      }
+      finally {
         loading.value = false
       }
     }
@@ -345,9 +256,11 @@ export default defineComponent({
           showDebug.value = true
           getLogResult()
         }
-      } catch (error) {
+      }
+      catch (error) {
         message.error((error as Error).message)
-      } finally {
+      }
+      finally {
         loading.value = false
       }
     }
@@ -356,18 +269,18 @@ export default defineComponent({
       optionHeight: 44,
       resultTabHeight: 40,
       runStatusHeight: 32,
-      gap: 48
+      gap: 48,
     }
     let mounseDownClientTop = 0
     let mouseDownLeftHeight = 0
-    const dragMounseDown = (e: any) => {
+    function dragMounseDown(e: any) {
       mounseDownClientTop = e.clientY
       mouseDownLeftHeight = sqlResultHeight.value
       window.addEventListener('mousemove', dragMounseMove)
       window.addEventListener('mouseup', dragMounseUp)
     }
 
-    const dragMounseMove = (e: any) => {
+    function dragMounseMove(e: any) {
       const mounseTop = e.clientY
       const diff = mounseTop - mounseDownClientTop
       const topbarHeight = fullscreen.value ? 0 : editorSize.topbarHeight
@@ -378,23 +291,22 @@ export default defineComponent({
       sqlResultHeight.value = top
     }
 
-    const dragMounseUp = () => {
+    function dragMounseUp() {
       window.removeEventListener('mousemove', dragMounseMove)
       window.removeEventListener('mouseup', dragMounseUp)
     }
 
-    const saveValueToStorage = (key: string, value: string) => {
+    function saveValueToStorage(key: string, value: string) {
       localStorage.setItem(key, value)
     }
 
-    const getValueFromStorageByKey = (key: string) => {
+    function getValueFromStorageByKey(key: string) {
       return localStorage.getItem(key) || ''
     }
 
     onBeforeUnmount(() => {
       clearTimeout(logInterval.value)
       saveValueToStorage(storageSqlSourceKey, sqlSource.value)
-      console.log('onBeforeUnmount', sqlSource.value)
     })
 
     onMounted(() => {
@@ -426,12 +338,132 @@ export default defineComponent({
       getPopupContainer,
       sqlResultHeight,
       dragMounseDown,
-      changeUseCatalog
+      changeUseCatalog,
     }
-  }
+  },
 })
-
 </script>
+
+<template>
+  <div class="console-wrap">
+    <div class="console-content" :class="{ fullscreen }">
+      <div :style="{ height: `${sqlResultHeight}px` }" class="sql-wrap">
+        <div class="sql-block">
+          <div class="top-ops g-flex-jsb">
+            <div class="title-left g-flex-ac">
+              <div class="select-catalog g-mr-12">
+                <span class="label">{{ $t('use') }}</span>
+                <a-select
+                  v-model:value="curCatalog" style="width: 200px" :options="catalogOptions"
+                  @change="changeUseCatalog"
+                />
+              </div>
+              <a-tooltip v-if="runStatus === 'Running'" :title="$t('pause')" placement="bottom">
+                <svg-icon
+                  class-name="icon-svg" icon-class="sqlpause" class="g-mr-12" :disabled="readOnly"
+                  @click="handleIconClick('pause')"
+                />
+              </a-tooltip>
+              <a-tooltip v-else :title="$t('run')" placement="bottom">
+                <svg-icon
+                  class-name="icon-svg" icon-class="sqldebug" class="g-mr-12" :disabled="readOnly"
+                  @click="handleIconClick('debug')"
+                />
+              </a-tooltip>
+              <a-tooltip :title="$t('format')" placement="bottom">
+                <svg-icon
+                  class-name="icon-svg" :is-stroke="true" icon-class="format" :disabled="readOnly"
+                  @click="handleIconClick('format')"
+                />
+              </a-tooltip>
+            </div>
+            <div class="title-right">
+              <a-tooltip
+                :title="fullscreen ? $t('recovery') : $t('fullscreen')" placement="bottom"
+                :get-popup-container="getPopupContainer"
+              >
+                <svg-icon
+                  class-name="icon-svg" :is-stroke="true" :icon-class="fullscreen ? 'sqlinit' : 'sqlmax'"
+                  :disabled="false" class="g-ml-12" @click="handleFull"
+                />
+              </a-tooltip>
+            </div>
+          </div>
+          <div class="sql-content">
+            <div class="sql-raw">
+              <SqlEditor
+                ref="sqlEditorRef" v-model:value="sqlSource" :sql-value="sqlSource" :read-only="readOnly"
+                :options="{
+                  readOnly,
+                  minimap: { enabled: false },
+                }"
+              />
+            </div>
+            <div v-if="runStatus" class="run-status" :style="{ background: bgcMap[runStatus] }">
+              <template v-if="runStatus === 'Running' || runStatus === 'Canceling'">
+                <loading-outlined style="color: #1890ff" />
+              </template>
+              <template v-if="runStatus === 'Canceled' || runStatus === 'Failed'">
+                <close-circle-outlined style="color: #ff4d4f" />
+              </template>
+              <template v-if="runStatus === 'Finished'">
+                <check-circle-outlined style="color: #52c41a" />
+              </template>
+              <template v-if="runStatus === 'Created'">
+                <close-circle-outlined style="color:#333" />
+              </template>
+              <span class="g-ml-12">{{ $t(runStatus) }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="sql-shortcuts">
+          <div class="shortcuts">
+            {{ $t('sqlShortcuts') }}
+          </div>
+          <a-button
+            v-for="code in shortcuts" :key="code" type="link"
+            :disabled="runStatus === 'Running' || runStatus === 'Canceling'" class="code" @click="generateCode(code)"
+          >
+            {{
+              code
+            }}
+          </a-button>
+        </div>
+      </div>
+      <!-- sql result -->
+      <div
+        class="sql-result" :style="{ height: `calc(100% - ${sqlResultHeight}px)` }"
+        :class="resultFullscreen ? 'result-full' : ''"
+      >
+        <span class="drag-line" @mousedown="dragMounseDown"><svg-icon class="icon" icon-class="slide" /></span>
+        <div class="tab-operation">
+          <div class="tab">
+            <span
+              :class="{ active: operationActive === 'log' }" class="tab-item"
+              @click="operationActive = 'log'"
+            >{{ $t('log') }}</span>
+            <span
+              v-for="item in resultTabList" :key="item.id" :class="{ active: operationActive === item.id }"
+              class="tab-item" @click="operationActive = item.id"
+            >{{ item.id }}</span>
+          </div>
+          <!-- <div v-if="!fullscreen" class="operation">
+            <a-tooltip placement="bottom" :title="$t('maximize')">
+              <span @click="resultFull"><svg-icon :isStroke="true" className="icon-svg" :icon-class="resultFullscreen ? 'sqlinit' : 'sqlmax'" :disabled="false" /></span>
+            </a-tooltip>
+          </div> -->
+        </div>
+        <div class="debug-result">
+          <SqlLog v-show="operationActive === 'log'" ref="sqlLogRef" />
+          <template v-for="item in resultTabList" :key="item.id">
+            <SqlResult v-if="operationActive === item.id" :info="item" />
+          </template>
+        </div>
+      </div>
+    </div>
+    <u-loading v-if="loading" />
+  </div>
+</template>
 
 <style lang="less" scoped>
 .console-wrap {

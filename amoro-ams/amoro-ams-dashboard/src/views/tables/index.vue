@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,57 +14,18 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
-
-<template>
-  <div class="tables-wrap">
-    <div v-if="!isSecondaryNav" class="tables-content">
-      <div class="g-flex-jsb">
-        <div class="g-flex-col">
-          <div class="g-flex">
-            <span :title="baseInfo.tableName" class="table-name g-text-nowrap">{{baseInfo.tableName}}</span>
-            <span v-if="!isIceberg" class="create-time">{{ `${$t('createTime')}: ${baseInfo.createTime}` }}</span>
-          </div>
-          <div class="table-info g-flex-ac">
-            <p>{{`${$t('table')}${$t('size')}`}}: <span class="text-color">{{baseInfo.size}}</span></p>
-            <a-divider type="vertical" />
-            <p>{{$t('file')}}:  <span class="text-color">{{baseInfo.file}}</span></p>
-            <a-divider type="vertical" />
-            <p>{{$t('averageFileSize')}}: <span class="text-color">{{baseInfo.averageFile}}</span></p>
-            <a-divider type="vertical" />
-            <p>{{$t('tableFormat')}}: <span class="text-color">{{baseInfo.tableFormat}}</span></p>
-          </div>
-        </div>
-      </div>
-      <div class="content">
-        <a-tabs v-model:activeKey="activeKey" destroyInactiveTabPane @change="onChangeTab">
-          <a-tab-pane key="Details" tab="Details" forceRender>
-            <u-details @setBaseDetailInfo="setBaseDetailInfo" ref="detailRef"/>
-          </a-tab-pane>
-          <a-tab-pane v-if="detailLoaded" key="Files" tab="Files">
-            <u-files :hasPartition="baseInfo.hasPartition"/>
-          </a-tab-pane>
-          <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="`${tab.label}`">
-            <component :is="`U${tab.key}`"></component>
-          </a-tab-pane>
-        </a-tabs>
-      </div>
-    </div>
-    <!-- Create table secondary page -->
-    <router-view v-else @goBack="goBack"></router-view>
-  </div>
-</template>
+/ -->
 
 <script lang="ts">
-import { defineComponent, reactive, toRefs, watch, shallowReactive, computed, onMounted, ref, nextTick } from 'vue'
+import { computed, defineComponent, nextTick, onMounted, reactive, ref, shallowReactive, toRefs, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import UDetails from './components/Details.vue'
 import UFiles from './components/Files.vue'
 import UOperations from './components/Operations.vue'
 import USnapshots from './components/Snapshots.vue'
 import UOptimizing from './components/Optimizing.vue'
-import { useRoute, useRouter } from 'vue-router'
 import useStore from '@/store/index'
-import { IBaseDetailInfo } from '@/types/common.type'
+import type { IBaseDetailInfo } from '@/types/common.type'
 
 export default defineComponent({
   name: 'Tables',
@@ -86,7 +46,7 @@ export default defineComponent({
     const tabConfigs = shallowReactive([
       { key: 'Snapshots', label: 'Snapshots' },
       { key: 'Optimizing', label: 'Optimizing' },
-      { key: 'Operations', label: 'Operations' }
+      { key: 'Operations', label: 'Operations' },
     ])
 
     const state = reactive({
@@ -100,9 +60,9 @@ export default defineComponent({
         file: '',
         averageFile: '',
         tableFormat: '',
-        hasPartition: false
+        hasPartition: false,
       } as IBaseDetailInfo,
-      detailLoaded: false
+      detailLoaded: false,
     })
 
     const isIceberg = computed(() => {
@@ -132,8 +92,9 @@ export default defineComponent({
     watch(
       () => route.path,
       () => {
-        state.isSecondaryNav = !!(route.path.indexOf('create') > -1)
-      }, { immediate: true }
+        state.isSecondaryNav = !!(route.path.includes('create'))
+      },
+      { immediate: true },
     )
 
     watch(
@@ -146,7 +107,7 @@ export default defineComponent({
           return
         }
         state.activeKey = value.tab as string
-      }
+      },
     )
 
     onMounted(() => {
@@ -160,18 +121,57 @@ export default defineComponent({
 
     return {
       ...toRefs(state),
+      detailRef,
       tabConfigs,
       store,
       isIceberg,
       setBaseDetailInfo,
       hideTablesMenu,
       goBack,
-      onChangeTab
+      onChangeTab,
     }
-  }
+  },
 })
-
 </script>
+
+<template>
+  <div class="tables-wrap">
+    <div v-if="!isSecondaryNav" class="tables-content">
+      <div class="g-flex-jsb">
+        <div class="g-flex-col">
+          <div class="g-flex">
+            <span :title="baseInfo.tableName" class="table-name g-text-nowrap">{{ baseInfo.tableName }}</span>
+            <span v-if="!isIceberg" class="create-time">{{ `${$t('createTime')}: ${baseInfo.createTime}` }}</span>
+          </div>
+          <div class="table-info g-flex-ac">
+            <p>{{ `${$t('table')}${$t('size')}` }}: <span class="text-color">{{ baseInfo.size }}</span></p>
+            <a-divider type="vertical" />
+            <p>{{ $t('file') }}:  <span class="text-color">{{ baseInfo.file }}</span></p>
+            <a-divider type="vertical" />
+            <p>{{ $t('averageFileSize') }}: <span class="text-color">{{ baseInfo.averageFile }}</span></p>
+            <a-divider type="vertical" />
+            <p>{{ $t('tableFormat') }}: <span class="text-color">{{ baseInfo.tableFormat }}</span></p>
+          </div>
+        </div>
+      </div>
+      <div class="content">
+        <a-tabs v-model:activeKey="activeKey" destroy-inactive-tab-pane @change="onChangeTab">
+          <a-tab-pane key="Details" tab="Details" force-render>
+            <UDetails ref="detailRef" @set-base-detail-info="setBaseDetailInfo" />
+          </a-tab-pane>
+          <a-tab-pane v-if="detailLoaded" key="Files" tab="Files">
+            <UFiles :has-partition="baseInfo.hasPartition" />
+          </a-tab-pane>
+          <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="`${tab.label}`">
+            <component :is="`U${tab.key}`" />
+          </a-tab-pane>
+        </a-tabs>
+      </div>
+    </div>
+    <!-- Create table secondary page -->
+    <router-view v-else @go-back="goBack" />
+  </div>
+</template>
 
 <style lang="less" scoped>
 .tables-wrap {

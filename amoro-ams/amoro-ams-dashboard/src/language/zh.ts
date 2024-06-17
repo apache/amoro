@@ -21,5 +21,5 @@ export default {
   tables: '表',
   optimize: '优化',
   terminal: '终端',
-  settings: '设置'
+  settings: '设置',
 }

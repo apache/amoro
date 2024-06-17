@@ -16,4 +16,4 @@
   * limitations under the License.
   */
 
-import.meta.glob('./svg/*.svg', { eager: true });
+import.meta.glob('./svg/*.svg', { eager: true })

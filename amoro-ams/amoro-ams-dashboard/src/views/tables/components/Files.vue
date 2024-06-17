@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,92 +14,25 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
-
-<template>
-  <div class="table-partitons">
-    <template v-if="!hasBreadcrumb && hasPartition">
-      <div class="filter-wrap">
-        <a-input-search
-          v-model:value="searchKey"
-          :placeholder="$t('fileSearchPlaceholder')"
-          @search="(val: string) => handleSearch(val)"
-          style="width: 350px"
-        >
-          <template #prefix>
-            <SearchOutlined />
-          </template>
-          <template #suffix v-if="searchKey">
-            <CloseCircleOutlined @click="handleSearch('')" class="input-clear-icon" />
-          </template>
-        </a-input-search>
-      </div>
-      <a-table
-        rowKey="partiton"
-        :columns="columns"
-        :data-source="dataSource"
-        :pagination="pagination"
-        @change="change"
-        :loading="loading"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.dataIndex === 'partition'">
-            <a-button type="link" @click="toggleBreadcrumb(record)">
-              {{ record.partition }}
-            </a-button>
-          </template>
-        </template>
-      </a-table>
-    </template>
-    <template v-else>
-      <a-breadcrumb separator=">" v-if="hasPartition">
-        <a-breadcrumb-item @click="toggleBreadcrumb" class="text-active">All</a-breadcrumb-item>
-        <a-breadcrumb-item>{{ `${$t('partition')} ${partitionId}`}}</a-breadcrumb-item>
-      </a-breadcrumb>
-      <a-table
-        rowKey="file"
-        :columns="breadcrumbColumns"
-        :data-source="breadcrumbDataSource"
-        :pagination="breadcrumbPagination"
-        @change="change"
-        :loading="loading"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.dataIndex === 'file'">
-            <a-tooltip>
-              <template #title>{{record.file}}</template>
-              <span>{{record.file}}</span>
-            </a-tooltip>
-          </template>
-          <template v-if="column.dataIndex === 'path'">
-            <a-tooltip>
-              <template #title>{{record.path}}</template>
-              <span>{{record.path}}</span>
-            </a-tooltip>
-          </template>
-        </template>
-      </a-table>
-    </template>
-
-  </div>
-</template>
+/ -->
 
 <script lang="ts" setup>
 import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { usePagination } from '@/hooks/usePagination'
-import { BreadcrumbPartitionItem, IColumns, PartitionItem } from '@/types/common.type'
-import { getPartitionFiles, getPartitionTable } from '@/services/table.service'
 import { useRoute } from 'vue-router'
+import { usePagination } from '@/hooks/usePagination'
+import type { BreadcrumbPartitionItem, IColumns, PartitionItem } from '@/types/common.type'
+import { getPartitionFiles, getPartitionTable } from '@/services/table.service'
 import { dateFormat } from '@/utils'
 
+const props = defineProps<{ hasPartition: boolean }>()
 const hasBreadcrumb = ref<boolean>(false)
 const { t } = useI18n()
 const columns: IColumns[] = shallowReactive([
   { title: t('partition'), dataIndex: 'partition', ellipsis: true },
   { title: t('fileCount'), dataIndex: 'fileCount', width: 120, ellipsis: true },
   { title: t('size'), dataIndex: 'size', width: 120, ellipsis: true },
-  { title: t('lastCommitTime'), dataIndex: 'lastCommitTime', width: 200, ellipsis: true }
+  { title: t('lastCommitTime'), dataIndex: 'lastCommitTime', width: 200, ellipsis: true },
 ])
 const breadcrumbColumns = shallowReactive([
   { title: t('file'), dataIndex: 'file', ellipsis: true },
@@ -109,10 +41,9 @@ const breadcrumbColumns = shallowReactive([
   { title: t('size'), dataIndex: 'size', width: 120, ellipsis: true },
   { title: t('commitTime'), dataIndex: 'commitTime', width: 200, ellipsis: true },
   { title: t('commitId'), dataIndex: 'commitId', width: 200, ellipsis: true },
-  { title: t('path'), dataIndex: 'path', ellipsis: true, scopedSlots: { customRender: 'path' } }
+  { title: t('path'), dataIndex: 'path', ellipsis: true, scopedSlots: { customRender: 'path' } },
 ])
 
-const props = defineProps<{ hasPartition: boolean}>()
 const dataSource = reactive<PartitionItem[]>([])
 const breadcrumbDataSource = reactive<BreadcrumbPartitionItem[]>([])
 const partitionId = ref<string>('')
@@ -126,7 +57,7 @@ const sourceData = reactive({
   catalog: '',
   db: '',
   table: '',
-  ...query
+  ...query,
 })
 const searchKey = ref<string>('')
 
@@ -151,8 +82,10 @@ async function getTableInfo() {
       p.lastCommitTime = p.lastCommitTime ? dateFormat(p.lastCommitTime) : ''
       dataSource.push(p)
     })
-  } catch (error) {
-  } finally {
+  }
+  catch (error) {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -163,7 +96,8 @@ function change({ current = 1, pageSize = 25 }) {
       pagination.current = 1
     }
     pagination.pageSize = pageSize
-  } else {
+  }
+  else {
     breadcrumbPagination.current = current
     if (pageSize !== breadcrumbPagination.pageSize) {
       breadcrumbPagination.current = 1
@@ -180,7 +114,8 @@ function refresh() {
   }
   if (hasBreadcrumb.value) {
     getFiles()
-  } else {
+  }
+  else {
     getTableInfo()
   }
 }
@@ -194,7 +129,7 @@ async function getFiles() {
       partition: props.hasPartition ? encodeURIComponent(partitionId.value) : null,
       specId: specId.value,
       page: breadcrumbPagination.current,
-      pageSize: breadcrumbPagination.pageSize
+      pageSize: breadcrumbPagination.pageSize,
     }
     const result = await getPartitionFiles(params)
     const { list, total } = result
@@ -203,8 +138,10 @@ async function getFiles() {
       p.commitTime = p.commitTime ? dateFormat(p.commitTime) : ''
       breadcrumbDataSource.push(p)
     })
-  } catch (error) {
-  } finally {
+  }
+  catch (error) {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -224,12 +161,85 @@ onMounted(() => {
 
   if (props.hasPartition) {
     getTableInfo()
-  } else {
+  }
+  else {
     getFiles()
   }
 })
-
 </script>
+
+<template>
+  <div class="table-partitons">
+    <template v-if="!hasBreadcrumb && hasPartition">
+      <div class="filter-wrap">
+        <a-input-search
+          v-model:value="searchKey"
+          :placeholder="$t('fileSearchPlaceholder')"
+          style="width: 350px"
+          @search="(val: string) => handleSearch(val)"
+        >
+          <template #prefix>
+            <SearchOutlined />
+          </template>
+          <template v-if="searchKey" #suffix>
+            <CloseCircleOutlined class="input-clear-icon" @click="handleSearch('')" />
+          </template>
+        </a-input-search>
+      </div>
+      <a-table
+        row-key="partiton"
+        :columns="columns"
+        :data-source="dataSource"
+        :pagination="pagination"
+        :loading="loading"
+        @change="change"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'partition'">
+            <a-button type="link" @click="toggleBreadcrumb(record)">
+              {{ record.partition }}
+            </a-button>
+          </template>
+        </template>
+      </a-table>
+    </template>
+    <template v-else>
+      <a-breadcrumb v-if="hasPartition" separator=">">
+        <a-breadcrumb-item class="text-active" @click="toggleBreadcrumb">
+          All
+        </a-breadcrumb-item>
+        <a-breadcrumb-item>{{ `${$t('partition')} ${partitionId}` }}</a-breadcrumb-item>
+      </a-breadcrumb>
+      <a-table
+        row-key="file"
+        :columns="breadcrumbColumns"
+        :data-source="breadcrumbDataSource"
+        :pagination="breadcrumbPagination"
+        :loading="loading"
+        @change="change"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'file'">
+            <a-tooltip>
+              <template #title>
+                {{ record.file }}
+              </template>
+              <span>{{ record.file }}</span>
+            </a-tooltip>
+          </template>
+          <template v-if="column.dataIndex === 'path'">
+            <a-tooltip>
+              <template #title>
+                {{ record.path }}
+              </template>
+              <span>{{ record.path }}</span>
+            </a-tooltip>
+          </template>
+        </template>
+      </a-table>
+    </template>
+  </div>
+</template>
 
 <style lang="less" scoped>
 .table-partitons {

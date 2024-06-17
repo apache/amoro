@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,47 +14,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
-
-<template>
-  <div class="upgrade-table">
-    <div class="nav-bar">
-      <left-outlined @click="goBack" />
-      <span class="title g-ml-8">{{$t('upgradeHiveTable')}}</span>
-    </div>
-    <div class="content">
-      <div class="table-attrs">
-        <a-form
-          name="fields"
-          class="label-120"
-        >
-          <a-form-item
-            :label="$t('field')"
-            name="field"
-          >
-            <schema-field :loading="loading" :fields="field" ref="schemaFieldRef"></schema-field>
-          </a-form-item>
-          <a-form-item
-            :label="$t('partitonField')"
-            name="partitonField"
-          >
-            <partition-field :loading="loading" :partitionFields="partitionFields"></partition-field>
-          </a-form-item>
-          <a-form-item
-            :label="$t('otherProperties')"
-            name="otherProperties"
-          >
-            <other-properties :propertiesObj="propertiesObj" ref="propertiesRef" />
-          </a-form-item>
-        </a-form>
-      </div>
-      <div class="footer-btn">
-        <a-button type="primary" @click="onCofirm" :loading="loading" class="btn g-mr-12">{{$t('ok')}}</a-button>
-        <a-button type="ghost" @click="cancel" class="btn">{{$t('cancel')}}</a-button>
-      </div>
-    </div>
-  </div>
-</template>
+/ -->
 
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
@@ -63,25 +22,24 @@ import { useRoute } from 'vue-router'
 import schemaField from './components/Field.vue'
 import partitionField from './components/Partition.vue'
 import otherProperties from './components/Properties.vue'
-import { DetailColumnItem, IMap } from '@/types/common.type'
+import type { DetailColumnItem, IMap } from '@/types/common.type'
 import { getHiveTableDetail, upgradeHiveTable } from '@/services/table.service'
 
+const emit = defineEmits<{
+  (e: 'goBack'): void
+  (e: 'refresh'): void
+}>()
 const loading = ref<boolean>(false)
 const field = reactive<DetailColumnItem[]>([])
 const partitionFields = reactive<DetailColumnItem[]>([])
 const propertiesObj = reactive<IMap<string>>({})
 const pkName = reactive<IMap<string>[]>([])
 
-const emit = defineEmits<{
- (e: 'goBack'): void
- (e: 'refresh'): void
-}>()
-
 const route = useRoute()
 
 const params = computed(() => {
   return {
-    ...route.query
+    ...route.query,
   }
 })
 const schemaFieldRef = ref()
@@ -97,7 +55,7 @@ async function getDetails() {
     partitionFields.length = 0
     field.length = 0
     const result = await getHiveTableDetail({
-      ...params.value
+      ...params.value,
     })
     const { partitionColumnList = [], schema, properties } = result;
     (partitionColumnList || []).forEach((ele: DetailColumnItem) => {
@@ -107,8 +65,10 @@ async function getDetails() {
       field.push(ele)
     })
     Object.assign(propertiesObj, properties)
-  } catch (error) {
-  } finally {
+  }
+  catch (error) {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -139,14 +99,16 @@ async function upgradeTable() {
     await upgradeHiveTable({
       ...params.value,
       pkList: pkName,
-      properties: propertiesObj
+      properties: propertiesObj,
     })
     goBack()
     emit('refresh')
-  } catch (error) {
+  }
+  catch (error) {
     // failed
     goBack()
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -162,6 +124,50 @@ onMounted(() => {
   getDetails()
 })
 </script>
+
+<template>
+  <div class="upgrade-table">
+    <div class="nav-bar">
+      <left-outlined @click="goBack" />
+      <span class="title g-ml-8">{{ $t('upgradeHiveTable') }}</span>
+    </div>
+    <div class="content">
+      <div class="table-attrs">
+        <a-form
+          name="fields"
+          class="label-120"
+        >
+          <a-form-item
+            :label="$t('field')"
+            name="field"
+          >
+            <schema-field ref="schemaFieldRef" :loading="loading" :fields="field" />
+          </a-form-item>
+          <a-form-item
+            :label="$t('partitonField')"
+            name="partitonField"
+          >
+            <partition-field :loading="loading" :partition-fields="partitionFields" />
+          </a-form-item>
+          <a-form-item
+            :label="$t('otherProperties')"
+            name="otherProperties"
+          >
+            <other-properties ref="propertiesRef" :properties-obj="propertiesObj" />
+          </a-form-item>
+        </a-form>
+      </div>
+      <div class="footer-btn">
+        <a-button type="primary" :loading="loading" class="btn g-mr-12" @click="onCofirm">
+          {{ $t('ok') }}
+        </a-button>
+        <a-button type="ghost" class="btn" @click="cancel">
+          {{ $t('cancel') }}
+        </a-button>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style lang="less" scoped>
 .upgrade-table {

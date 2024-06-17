@@ -16,18 +16,18 @@
   * limitations under the License.
   */
 
-import { ECOption } from '@/components/echarts'
-import i18n from '@/language/i18n'
-import { ILineChartOriginalData } from '@/types/common.type'
 import { dateFormat } from '.'
+import type { ECOption } from '@/components/echarts'
+import i18n from '@/language/i18n'
+import type { ILineChartOriginalData } from '@/types/common.type'
 
 /**
  * Sort the line chart data in time order.
  * @param obj
  * @param sortCallback
- * @returns
+ * @returns Echarts options
  */
-const sortLineChartDataByKey = (obj: ILineChartOriginalData = {}, sortCallback: ((a: string, b: string) => number) = (a, b) => (Number(a) - Number(b))): ILineChartOriginalData => {
+function sortLineChartDataByKey(obj: ILineChartOriginalData = {}, sortCallback: ((a: string, b: string) => number) = (a, b) => (Number(a) - Number(b))): ILineChartOriginalData {
   const keys = Object.keys(obj)
   if (!keys.length) {
     return {}
@@ -41,9 +41,9 @@ const sortLineChartDataByKey = (obj: ILineChartOriginalData = {}, sortCallback: 
  * Generate a line chart option based on the original data
  * @param titleText chart title text, needs to be internationalized
  * @param data
- * @returns
+ * @returns Echarts options
  */
-export const generateLineChartOption = (titleText: string, data: ILineChartOriginalData) => {
+export function generateLineChartOption(titleText: string, data: ILineChartOriginalData) {
   if (!data) {
     return {}
   }
@@ -51,32 +51,32 @@ export const generateLineChartOption = (titleText: string, data: ILineChartOrigi
   const dataKeys = Object.keys(data)
   const option: ECOption = {
     tooltip: {
-      trigger: 'axis'
+      trigger: 'axis',
     },
     yAxis: {
-      type: 'value'
+      type: 'value',
     },
     xAxis: {
       type: 'category',
       data: dataKeys.map(d => dateFormat(d)),
       axisTick: {
         alignWithLabel: true,
-        interval: 0
-      }
+        interval: 0,
+      },
     },
     grid: {
       top: 40,
-      bottom: 50
-    }
+      bottom: 50,
+    },
   }
   titleText && (option.title = {
     left: 'center',
-    text: titleText
+    text: titleText,
   })
   const legendMap: Record<string, number[]> = {}
-  Object.values(data).forEach(val => {
+  Object.values(data).forEach((val) => {
     const keys = Object.keys(val)
-    keys.forEach(key => {
+    keys.forEach((key) => {
       const tKey = i18n.global.t(key)
       if (!legendMap[tKey]) {
         legendMap[tKey] = []
@@ -89,7 +89,7 @@ export const generateLineChartOption = (titleText: string, data: ILineChartOrigi
     name: key,
     type: 'line',
     symbol: 'circle',
-    data: legendMap[key]
+    data: legendMap[key],
   }))
   return option
 }

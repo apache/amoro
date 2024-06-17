@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,31 +14,34 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
+/ -->
+
+<script lang="ts" setup>
+import { Modal as AModal } from 'ant-design-vue'
+import { ref } from 'vue'
+
+const props = defineProps<{ msg: string }>()
+const emit = defineEmits<{
+  (e: 'cancle'): void
+}>()
+const open = ref(true)
+</script>
 
 <template>
-  <a-modal
+  <AModal
     v-model:open="open"
     :width="560"
     :title="`${$t('errorMessage')}`"
     :footer="null"
-    @cancel="emit('cancle')"
     class="upgrade-error"
-    >
-    <p class="msg">{{ props.msg }}</p>
-  </a-modal>
+    @cancel="emit('cancle')"
+  >
+    <p class="msg">
+      {{ props.msg }}
+    </p>
+  </AModal>
 </template>
-<script lang="ts" setup>
-import { Modal as AModal } from "ant-design-vue";
-import { ref } from "vue";
 
-const open = ref(true)
-const props = defineProps<{ msg: string }>()
-const emit = defineEmits<{
- (e: 'cancle'): void
-}>()
-
-</script>
 <style lang="less" scoped>
 .upgrade-error {
   .msg {

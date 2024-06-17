@@ -14,27 +14,27 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- /-->
-
-<template>
-  <a-config-provider :locale="locale === 'en' ? enUS : zhCN">
-    <router-view/>
-  </a-config-provider>
-</template>
+ / -->
 
 <script lang="ts" setup>
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
 import enUS from 'ant-design-vue/es/locale/en_US'
-import dayjs from 'dayjs';
+import dayjs from 'dayjs'
 import { ref, watch } from 'vue'
 
 const locale = ref(enUS.locale)
 dayjs.locale('en')
 
-watch(locale, val => {
-  dayjs.locale(val);
-});
+watch(locale, (val) => {
+  dayjs.locale(val)
+})
 </script>
+
+<template>
+  <a-config-provider :locale="locale === 'en' ? enUS : zhCN">
+    <router-view />
+  </a-config-provider>
+</template>
 
 <style>
 #app {

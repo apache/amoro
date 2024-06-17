@@ -17,8 +17,8 @@
   */
 
 import { createI18n } from 'vue-i18n'
-import messages from './index'
 import { datetimeFormats } from './datetimeFormats'
+import messages from './index'
 
 const i18n = createI18n({
   locale: 'en', // set locale
@@ -26,8 +26,7 @@ const i18n = createI18n({
   globalInjection: true, // global injection
   legacy: false, // Using the Composition API pattern
   messages, // Set locale information
-  // @ts-ignore
-  datetimeFormats
+  datetimeFormats,
 })
 
 export default i18n

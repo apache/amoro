@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,62 +14,11 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
-
-
-<template>
-  <div class="config-properties">
-    <div class="config-header g-flex">
-      <div class="td g-flex-ac">{{$t('key')}}</div>
-      <div class="td g-flex-ac bd-left">{{$t('value')}}</div>
-    </div>
-    <a-form ref="propertiesFormRef" :model="propertiesForm" class="g-mt-12">
-      <div class="config-row" v-for="(item, index) in propertiesForm.data" :key="item.uuid">
-        <!-- validator: validateUnique -->
-        <a-form-item
-          :name="['data', index, 'key']"
-          :rules="[{
-            required: true,
-            message: `${$t(placeholder.selectPh)}`
-          }]"
-          class="g-mr-8"
-        >
-          <a-auto-complete
-            v-model:value="item.key"
-            :options="options"
-            @select="(val:any, option: any) => onSelect(val, option, item)"
-            :filter-option="filterOption"
-            style="width: 100%"
-            class="g-mr-12"
-          >
-            <template #option="{key: key}">
-              <span>{{ key }}</span>
-            </template>
-          </a-auto-complete>
-        </a-form-item>
-        <a-form-item
-          :name="['data', index, 'value']"
-          :rules="[{
-            required: true,
-            message: `${$t(placeholder.inputPh)}`
-          }]"
-        >
-          <a-input
-            v-model:value="item.value"
-            :maxlength="64"
-            style="width: 100%"
-          />
-        </a-form-item>
-        <close-outlined class="icon-close" @click="removeRule(item)"  />
-      </div>
-    </a-form>
-    <a-button class="config-btn" @click="addRule">+</a-button>
-  </div>
-</template>
+/ -->
 
 <script setup lang="ts">
 import { onMounted, reactive, ref, watch } from 'vue'
-import { IMap, IKeyAndValue } from '@/types/common.type'
+import type { IKeyAndValue, IMap } from '@/types/common.type'
 import { getUpgradeProperties } from '@/services/table.service'
 import { getUUid } from '@/utils/index'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
@@ -88,7 +36,7 @@ const options = ref<IMap<string>[]>()
 const propertiesIncludeValueList = reactive<IKeyAndValue[]>([]) // includes key value
 const propertiesFormRef = ref()
 const propertiesForm = reactive<IMap<any[]>>({
-  'data': []
+  data: [],
 })
 const placeholder = reactive(usePlaceholder())
 
@@ -96,17 +44,17 @@ watch(() => props.propertiesObj, () => {
   initPropertiesArray()
 }, {
   immediate: true,
-  deep: true
+  deep: true,
 })
 
 function initPropertiesArray() {
   propertiesArray.length = 0
   propertiesForm.data.length = 0
-  Object.keys(props.propertiesObj).forEach(key => {
+  Object.keys(props.propertiesObj).forEach((key) => {
     propertiesForm.data.push({
-      key: key,
+      key,
       value: props.propertiesObj[key],
-      uuid: getUUid()
+      uuid: getUUid(),
     })
   })
 }
@@ -115,12 +63,12 @@ async function getPropertiesList() {
   propertiesIncludeValueList.length = 0
   options.value = []
   const result = await getUpgradeProperties()
-  Object.keys(result).forEach(key => {
+  Object.keys(result).forEach((key) => {
     const item = {
-      key: key,
+      key,
       label: key,
       value: key,
-      text: result[key] || ''
+      text: result[key] || '',
     }
     propertiesIncludeValueList.push(item)
     options.value?.push(item)
@@ -128,7 +76,7 @@ async function getPropertiesList() {
 }
 
 function filterOption(input: string, option: IMap<string>) {
-  return option.key.toUpperCase().indexOf(input.toUpperCase()) >= 0
+  return option.key.toUpperCase().includes(input.toUpperCase())
 }
 
 function onSelect(_val: any, option: { key: any }, item: { uuid: string }) {
@@ -151,7 +99,7 @@ function addRule() {
   propertiesForm.data.push({
     key: '',
     value: '',
-    uuid: getUUid()
+    uuid: getUUid(),
   })
 }
 
@@ -171,7 +119,7 @@ defineExpose({
       .validateFields()
       .then(() => {
         const propObj: IMap<string> = {}
-        propertiesForm.data.forEach(e => {
+        propertiesForm.data.forEach((e) => {
           propObj[e.key] = e.value
         })
         return Promise.resolve(propObj)
@@ -179,14 +127,69 @@ defineExpose({
       .catch(() => {
         return false
       })
-  }
+  },
 })
 
 onMounted(() => {
   getPropertiesList()
 })
-
 </script>
+
+<template>
+  <div class="config-properties">
+    <div class="config-header g-flex">
+      <div class="td g-flex-ac">
+        {{ $t('key') }}
+      </div>
+      <div class="td g-flex-ac bd-left">
+        {{ $t('value') }}
+      </div>
+    </div>
+    <a-form ref="propertiesFormRef" :model="propertiesForm" class="g-mt-12">
+      <div v-for="(item, index) in propertiesForm.data" :key="item.uuid" class="config-row">
+        <!-- validator: validateUnique -->
+        <a-form-item
+          :name="['data', index, 'key']"
+          :rules="[{
+            required: true,
+            message: `${$t(placeholder.selectPh)}`,
+          }]"
+          class="g-mr-8"
+        >
+          <a-auto-complete
+            v-model:value="item.key"
+            :options="options"
+            :filter-option="filterOption"
+            style="width: 100%"
+            class="g-mr-12"
+            @select="(val:any, option: any) => onSelect(val, option, item)"
+          >
+            <template #option="{ key: key }">
+              <span>{{ key }}</span>
+            </template>
+          </a-auto-complete>
+        </a-form-item>
+        <a-form-item
+          :name="['data', index, 'value']"
+          :rules="[{
+            required: true,
+            message: `${$t(placeholder.inputPh)}`,
+          }]"
+        >
+          <a-input
+            v-model:value="item.value"
+            :maxlength="64"
+            style="width: 100%"
+          />
+        </a-form-item>
+        <close-outlined class="icon-close" @click="removeRule(item)" />
+      </div>
+    </a-form>
+    <a-button class="config-btn" @click="addRule">
+      +
+    </a-button>
+  </div>
+</template>
 
 <style lang="less">
   .config-properties {

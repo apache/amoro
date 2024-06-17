@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,52 +14,17 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
+/ -->
 
-<template>
-  <div class="list-wrap">
-    <a-space class="filter-form">
-      <a-select allowClear v-model:value="optimizerGroup" placeholder="Optimizer group" :options="optimizerGroupList"
-        style="min-width: 150px;" @change="refresh" />
-    </a-space>
-    <a-table class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"
-      :loading="loading" @change="changeTable">
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.dataIndex === 'tableName'">
-          <span :title="record.tableName" class="primary-link" @click="goTableDetail(record)">
-            {{ record.tableName }}
-          </span>
-        </template>
-        <template v-if="column.dataIndex === 'durationDisplay'">
-          <span :title="record.durationDesc">
-            {{ record.durationDisplay }}
-          </span>
-        </template>
-        <template v-if="column.dataIndex === 'optimizeStatus'">
-          <span :style="{ 'background-color': (STATUS_CONFIG[record.optimizeStatus as keyof typeof STATUS_CONFIG] as any)?.color }"
-            class="status-icon"></span>
-          <span>{{ record.optimizeStatus }}</span>
-        </template>
-        <template v-if="column.dataIndex === 'operation'">
-          <span class="primary-link" :class="{ 'disabled': record.container === 'external' }" @click="releaseModal(record)">
-            {{ t('release') }}
-          </span>
-        </template>
-      </template>
-    </a-table>
-  </div>
-  <u-loading v-if="releaseLoading" />
-</template>
 <script lang="ts" setup>
 import { onMounted, reactive, ref, shallowReactive } from 'vue'
-import { IIOptimizeGroupItem, ILableAndValue, IOptimizeResourceTableItem, IOptimizeTableItem } from '@/types/common.type'
-import { getOptimizerTableList, getResourceGroupsListAPI, releaseResource } from '@/services/optimize.service'
 import { useI18n } from 'vue-i18n'
-import { usePagination } from '@/hooks/usePagination'
-import { bytesToSize, formatMS2Time, formatMS2DisplayTime } from '@/utils'
 import { useRouter } from 'vue-router'
-
 import { Modal } from 'ant-design-vue'
+import type { IIOptimizeGroupItem, ILableAndValue, IOptimizeResourceTableItem, IOptimizeTableItem } from '@/types/common.type'
+import { getOptimizerTableList, getResourceGroupsListAPI, releaseResource } from '@/services/optimize.service'
+import { usePagination } from '@/hooks/usePagination'
+import { bytesToSize, formatMS2DisplayTime, formatMS2Time } from '@/utils'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -72,7 +36,7 @@ const STATUS_CONFIG = shallowReactive({
   minor: { title: 'minor', color: '#0ad787' },
   major: { title: 'major', color: '#0ad787' },
   full: { title: 'full', color: '#0ad787' },
-  committing: { title: 'committing', color: '#0ad787' }
+  committing: { title: 'committing', color: '#0ad787' },
 })
 
 const loading = ref<boolean>(false)
@@ -87,14 +51,14 @@ const columns = shallowReactive([
   { dataIndex: 'fileCount', title: t('fileCount'), width: '10%', ellipsis: true },
   { dataIndex: 'fileSizeDesc', title: t('fileSize'), width: '10%', ellipsis: true },
   { dataIndex: 'quota', title: t('quota'), width: '10%', ellipsis: true },
-  { dataIndex: 'quotaOccupationDesc', title: t('occupation'), width: 120, ellipsis: true }
+  { dataIndex: 'quotaOccupationDesc', title: t('occupation'), width: 120, ellipsis: true },
 ])
 
 const pagination = reactive(usePagination())
 const dataSource = reactive<IOptimizeTableItem[]>([])
 const optimizerGroup = ref<ILableAndValue>()
 
-const getOptimizerGroupList = async () => {
+async function getOptimizerGroupList() {
   const res = await getResourceGroupsListAPI()
   const list = (res || []).map((item: IIOptimizeGroupItem) => ({ lable: item.resourceGroup.name, value: item.resourceGroup.name }))
   optimizerGroupList.value = list
@@ -114,7 +78,7 @@ async function getTableList() {
     const params = {
       optimizerGroup: optimizerGroup.value || 'all',
       page: pagination.current,
-      pageSize: pagination.pageSize
+      pageSize: pagination.pageSize,
     }
     const result = await getOptimizerTableList(params as any)
     const { list, total } = result
@@ -126,8 +90,10 @@ async function getTableList() {
       p.fileSizeDesc = bytesToSize(p.fileSize)
       dataSource.push(p)
     })
-  } catch (error) {
-  } finally {
+  }
+  catch (error) {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -143,7 +109,7 @@ function releaseModal(record: any) {
     cancelText: '',
     onOk: () => {
       releaseJob(record)
-    }
+    },
   })
 }
 async function releaseJob(record: IOptimizeResourceTableItem) {
@@ -151,10 +117,11 @@ async function releaseJob(record: IOptimizeResourceTableItem) {
     releaseLoading.value = true
     await releaseResource({
       optimizerGroup: record.groupName,
-      jobId: record.jobId as unknown as string
+      jobId: record.jobId as unknown as string,
     })
     refresh(true)
-  } finally {
+  }
+  finally {
     releaseLoading.value = false
   }
 }
@@ -172,8 +139,8 @@ function goTableDetail(record: IOptimizeTableItem) {
     query: {
       catalog,
       db: database,
-      table: tableName
-    }
+      table: tableName,
+    },
   })
 }
 
@@ -182,6 +149,48 @@ onMounted(() => {
   getOptimizerGroupList()
 })
 </script>
+
+<template>
+  <div class="list-wrap">
+    <a-space class="filter-form">
+      <a-select
+        v-model:value="optimizerGroup" allow-clear placeholder="Optimizer group" :options="optimizerGroupList"
+        style="min-width: 150px;" @change="refresh"
+      />
+    </a-space>
+    <a-table
+      class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"
+      :loading="loading" @change="changeTable"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.dataIndex === 'tableName'">
+          <span :title="record.tableName" class="primary-link" @click="goTableDetail(record)">
+            {{ record.tableName }}
+          </span>
+        </template>
+        <template v-if="column.dataIndex === 'durationDisplay'">
+          <span :title="record.durationDesc">
+            {{ record.durationDisplay }}
+          </span>
+        </template>
+        <template v-if="column.dataIndex === 'optimizeStatus'">
+          <span
+            :style="{ 'background-color': (STATUS_CONFIG[record.optimizeStatus as keyof typeof STATUS_CONFIG] as any)?.color }"
+            class="status-icon"
+          />
+          <span>{{ record.optimizeStatus }}</span>
+        </template>
+        <template v-if="column.dataIndex === 'operation'">
+          <span class="primary-link" :class="{ disabled: record.container === 'external' }" @click="releaseModal(record)">
+            {{ t('release') }}
+          </span>
+        </template>
+      </template>
+    </a-table>
+  </div>
+  <u-loading v-if="releaseLoading" />
+</template>
+
 <style lang="less" scoped>
 .list-wrap {
 

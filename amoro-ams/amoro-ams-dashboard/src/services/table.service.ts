@@ -17,7 +17,7 @@
   */
 
 // import { IOptions } from '@/types/common.type'
-import { ICatalogItem, IMap } from '@/types/common.type'
+import type { ICatalogItem, IMap } from '@/types/common.type'
 import request from '@/utils/request'
 
 export function getCatalogList(): Promise<ICatalogItem[]> {
@@ -42,19 +42,19 @@ export function getTableList(params: {
 
 // get tables detail
 export function getTableDetail(
-  { catalog = '' as string, db = '' as string, table = '' as string, token = '' as string }
+  { catalog = '' as string, db = '' as string, table = '' as string, token = '' as string },
 ) {
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/details`, { params: { token } })
 }
 
 export function getHiveTableDetail(
-  { catalog = '' as string, db = '' as string, table = '' as string }
+  { catalog = '' as string, db = '' as string, table = '' as string },
 ) {
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/hive/details`)
 }
 
 export function getUpgradeStatus(
-  { catalog = '' as string, db = '' as string, table = '' as string }
+  { catalog = '' as string, db = '' as string, table = '' as string },
 ) {
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/upgrade/status`)
 }
@@ -62,13 +62,13 @@ export function getUpgradeStatus(
 export function getPartitionTable(
   params: {
     catalog: string
-    db: string,
-    table: string,
-    filter: string,
-    page: number,
-    pageSize: number,
+    db: string
+    table: string
+    filter: string
+    page: number
+    pageSize: number
     token?: string
-  }
+  },
 ) {
   const { catalog, db, table, filter, page, pageSize, token } = params
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { filter, page, pageSize, token } })
@@ -78,12 +78,12 @@ export function getPartitionTable(
 export function getPartitions(
   params: {
     catalog: string
-    db: string,
-    table: string,
+    db: string
+    table: string
     page: number
     pageSize: number
     token: string
-  }
+  },
 ) {
   const { catalog, db, table, page, pageSize, token } = params
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { page, pageSize, token } })
@@ -92,14 +92,14 @@ export function getPartitions(
 export function getPartitionFiles(
   params: {
     catalog: string
-    db: string,
-    table: string,
-    partition: string | null,
-    specId: number,
+    db: string
+    table: string
+    partition: string | null
+    specId: number
     page: number
     pageSize: number
     token?: string
-  }
+  },
 ) {
   const { catalog, db, table, partition, specId, page, pageSize, token } = params
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions/${partition}/files`, { params: { specId, page, pageSize, token } })
@@ -108,14 +108,14 @@ export function getPartitionFiles(
 export function getSnapshots(
   params: {
     catalog: string
-    db: string,
-    table: string,
+    db: string
+    table: string
     page: number
     pageSize: number
     token?: string
     ref: string
     operation: string
-  }
+  },
 ) {
   const { catalog, db, table, page, pageSize, token, ref, operation } = params
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots`, { params: { page, pageSize, token, ref, operation } })
@@ -125,13 +125,13 @@ export function getSnapshots(
 export function getDetailBySnapshotId(
   params: {
     catalog: string
-    db: string,
-    table: string,
-    snapshotId: string,
+    db: string
+    table: string
+    snapshotId: string
     page: number
     pageSize: number
     token?: string
-  }
+  },
 ) {
   const { catalog, db, table, snapshotId, page, pageSize, token } = params
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots/${snapshotId}/detail`, { params: { page, pageSize, token } })
@@ -140,12 +140,12 @@ export function getDetailBySnapshotId(
 export function getOperations(
   params: {
     catalog: string
-    db: string,
-    table: string,
+    db: string
+    table: string
     page: number
     pageSize: number
     token?: string
-  }
+  },
 ) {
   const { catalog, db, table, page, pageSize, token } = params
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/operations`, { params: { page, pageSize, token } })
@@ -154,12 +154,12 @@ export function getOperations(
 export function getOptimizingProcesses(
   params: {
     catalog: string
-    db: string,
-    table: string,
+    db: string
+    table: string
     page: number
     pageSize: number
     token?: string
-  }
+  },
 ) {
   const { catalog, db, table, page, pageSize, token } = params
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes`, { params: { page, pageSize, token } })
@@ -169,24 +169,24 @@ export function getOptimizingProcesses(
 export function getTasksByOptimizingProcessId(
   params: {
     catalog: string
-    db: string,
-    table: string,
-    processId: number,
+    db: string
+    table: string
+    processId: number
     page: number
     pageSize: number
     token?: string
-  }
+  },
 ) {
   const { catalog, db, table, processId, page, pageSize, token } = params
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes/${processId}/tasks`, { params: { page, pageSize, token } })
 }
 
 export function upgradeHiveTable(
-  { catalog = '' as string, db = '' as string, table = '' as string, properties = {} as IMap<string>, pkList = [] as IMap<string>[] }
+  { catalog = '' as string, db = '' as string, table = '' as string, properties = {} as IMap<string>, pkList = [] as IMap<string>[] },
 ) {
   return request.post(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/upgrade`, {
     properties,
-    pkList
+    pkList,
   })
 }
 
@@ -195,7 +195,7 @@ export function getUpgradeProperties() {
 }
 
 export function cancelOptimizingProcess(
-  { catalog = '' as string, db = '' as string, table = '' as string, processId = '' as string }
+  { catalog = '' as string, db = '' as string, table = '' as string, processId = '' as string },
 ) {
   return request.post(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes/${processId}/cancel`)
 }

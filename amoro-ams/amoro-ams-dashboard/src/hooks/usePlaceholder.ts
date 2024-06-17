@@ -49,6 +49,6 @@ export function usePlaceholder() {
     filterDBPh: t('filterPlaceholder', { inputPh: filterDBPh }),
     filterTablePh: t('filterPlaceholder', { inputPh: filterTablePh }),
     groupNamePh: t('inputPlaceholder', { inputPh: namePh }),
-    groupContainer: t('selectPlaceholder', { selectPh: containerPh })
+    groupContainer: t('selectPlaceholder', { selectPh: containerPh }),
   }
 }

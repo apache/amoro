@@ -14,39 +14,41 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- /-->
-
-<template>
-  <RecycleScroller
-    class="scroller"
-    :items="items"
-    :item-size="40"
-    key-field="id"
-    v-slot="{ item }"
-    v-if="items.length && !loading"
-  >
-    <div :class="{'active': activeItem === item.label, 'hive-table': item.type === 'HIVE'}" @mouseenter="handleMouseEnter(item)" @click="handleClickTable(item)" class="desc">
-      <svg-icon v-if="iconName === 'database'" icon-class="database" class="table-icon g-mr-8" />
-      <svg-icon v-else :icon-class="tableTypeIconMap[item.type as keyof typeof tableTypeIconMap]" class="table-icon g-mr-8" />
-      <p :title="item.label" class="name g-text-nowrap">
-        {{ item.label }}
-      </p>
-    </div>
-  </RecycleScroller>
-  <a-empty class="theme-dark" v-if="!items.length && !loading" :image="simpleImage"></a-empty>
-</template>
+ / -->
 
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { RecycleScroller } from 'vue-virtual-scroller'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
-import { IMap, tableTypeIconMap } from '@/types/common.type'
-
 import { Empty as AEmpty } from 'ant-design-vue'
+import type { IMap } from '@/types/common.type'
+import { tableTypeIconMap } from '@/types/common.type'
 
 export default defineComponent ({
   components: {
-    RecycleScroller
+    RecycleScroller,
+  },
+  props: {
+    items: {
+      type: Array,
+      default: () => [],
+    },
+    activeItem: {
+      type: String,
+      default: '',
+    },
+    itemSize: {
+      type: Number,
+      default: 40,
+    },
+    iconName: {
+      type: String,
+      default: 'tableOutlined',
+    },
+    loading: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: ['mouseEnter', 'handleClickTable'],
   setup(_, { emit }) {
@@ -60,35 +62,33 @@ export default defineComponent ({
 
     return {
       simpleImage: AEmpty.PRESENTED_IMAGE_SIMPLE,
-      tableTypeIconMap: tableTypeIconMap,
+      tableTypeIconMap,
       handleMouseEnter,
-      handleClickTable
+      handleClickTable,
     }
   },
-  props: {
-    items: {
-      type: Array,
-      default: () => []
-    },
-    activeItem: {
-      type: String,
-      default: ''
-    },
-    itemSize: {
-      type: Number,
-      default: 40
-    },
-    iconName: {
-      type: String,
-      default: 'tableOutlined'
-    },
-    loading: {
-      type: Boolean,
-      default: false
-    }
-  }
 })
 </script>
+
+<template>
+  <RecycleScroller
+    v-if="items.length && !loading"
+    v-slot="{ item }"
+    class="scroller"
+    :items="items"
+    :item-size="40"
+    key-field="id"
+  >
+    <div :class="{ 'active': activeItem === item.label, 'hive-table': item.type === 'HIVE' }" class="desc" @mouseenter="handleMouseEnter(item)" @click="handleClickTable(item)">
+      <svg-icon v-if="iconName === 'database'" icon-class="database" class="table-icon g-mr-8" />
+      <svg-icon v-else :icon-class="tableTypeIconMap[item.type as keyof typeof tableTypeIconMap]" class="table-icon g-mr-8" />
+      <p :title="item.label" class="name g-text-nowrap">
+        {{ item.label }}
+      </p>
+    </div>
+  </RecycleScroller>
+  <a-empty v-if="!items.length && !loading" class="theme-dark" :image="simpleImage" />
+</template>
 
 <style lang="less" scoped>
 .scroller {
