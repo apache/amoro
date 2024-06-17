@@ -18,7 +18,7 @@
 
 package org.apache.amoro.optimizing;
 
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 
 import java.util.HashMap;
 import java.util.Map;

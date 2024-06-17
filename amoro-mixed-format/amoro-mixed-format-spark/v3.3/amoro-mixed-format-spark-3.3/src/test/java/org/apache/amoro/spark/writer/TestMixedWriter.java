@@ -22,6 +22,8 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.hive.io.HiveDataTestHelpers;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterators;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.spark.io.TaskWriters;
 import org.apache.amoro.spark.reader.SparkParquetReaders;
 import org.apache.amoro.spark.test.MixedTableTestBase;
@@ -41,8 +43,6 @@ import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.data.SparkOrcReader;
 import org.apache.iceberg.types.Types;
@@ -204,7 +204,7 @@ public class TestMixedWriter extends MixedTableTestBase {
     StructType structType = SparkSchemaUtil.convert(table.schema());
     LogicalWriteInfoImpl info =
         new LogicalWriteInfoImpl("queryId", structType, new CaseInsensitiveStringMap(map));
-    ArcticSparkWriteBuilder builder = new ArcticSparkWriteBuilder(table, info, catalog());
+    MixedFormatSparkWriteBuilder builder = new MixedFormatSparkWriteBuilder(table, info, catalog());
     Write write = builder.build();
     DataWriter<InternalRow> writer =
         write.toBatch().createBatchWriterFactory(null).createWriter(0, 0);

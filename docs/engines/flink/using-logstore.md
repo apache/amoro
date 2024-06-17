@@ -52,7 +52,7 @@ CREATE TABLE db.log_table (
     name string,
     ts timestamp,
     primary key (id)
-) using mixed-iceberg
+) using mixed_iceberg
 tblproperties (
 "log-store.enabled" = "true",
 "log-store.topic"="topic_log_test",

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.write.hidden;
 
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkNotNull;
 
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.flink.shuffle.LogRecordV1;

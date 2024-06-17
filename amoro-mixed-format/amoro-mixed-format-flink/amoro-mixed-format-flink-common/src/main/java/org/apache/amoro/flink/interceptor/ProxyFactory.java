@@ -23,7 +23,7 @@ import org.apache.amoro.flink.util.ProxyUtil;
 import java.io.Serializable;
 
 /**
- * Create proxy in runtime to avoid 'ClassNotFoundException: XXX$$EnhancerByCglib'
+ * Create proxy in runtime to avoid 'ClassNotFoundException: $$EnhancerByCglib'
  *
  * @param <T>
  */

@@ -20,8 +20,8 @@ package org.apache.amoro.server.dashboard.model;
 
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.table.TableProperties;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 /** Current optimizing state of tables. */
 public class TableOptimizingInfo {

@@ -24,6 +24,7 @@ import org.apache.amoro.io.writer.ChangeTaskWriter;
 import org.apache.amoro.io.writer.CommonOutputFileFactory;
 import org.apache.amoro.io.writer.OutputFileFactory;
 import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
@@ -36,7 +37,6 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.spark.sql.catalyst.InternalRow;
@@ -176,7 +176,7 @@ public class TaskWriters {
               transactionId);
     }
 
-    return new ArcticSparkBaseTaskWriter(
+    return new SparkBaseTaskWriter(
         fileFormat,
         appenderFactory,
         outputFileFactory,
@@ -225,7 +225,7 @@ public class TaskWriters {
             taskId,
             transactionId);
 
-    return new ArcticSparkChangeTaskWriter(
+    return new SparkChangeTaskWriter(
         fileFormat,
         appenderFactory,
         outputFileFactory,
@@ -265,8 +265,8 @@ public class TaskWriters {
             partitionId,
             taskId,
             transactionId);
-    ArcticSparkBaseTaskWriter arcticSparkBaseTaskWriter =
-        new ArcticSparkBaseTaskWriter(
+    SparkBaseTaskWriter sparkBaseTaskWriter =
+        new SparkBaseTaskWriter(
             fileFormat,
             build,
             commonOutputFileFactory,
@@ -278,7 +278,7 @@ public class TaskWriters {
             null,
             orderedWriter);
     return new UnkeyedUpsertSparkWriter<>(
-        table, build, commonOutputFileFactory, fileFormat, schema, arcticSparkBaseTaskWriter);
+        table, build, commonOutputFileFactory, fileFormat, schema, sparkBaseTaskWriter);
   }
 
   private void preconditions() {

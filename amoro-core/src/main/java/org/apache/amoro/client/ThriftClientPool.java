@@ -18,14 +18,14 @@
 
 package org.apache.amoro.client;
 
+import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TSocket;
+import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransport;
+import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException;
+import org.apache.amoro.shade.thrift.org.apache.thrift.transport.layered.TFramedTransport;
 import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.apache.thrift.transport.TFramedTransport;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +36,8 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
+public class ThriftClientPool<
+    T extends org.apache.amoro.shade.thrift.org.apache.thrift.TServiceClient> {
 
   private static final Logger LOG = LoggerFactory.getLogger(ThriftClientPool.class);
   // for thrift connects

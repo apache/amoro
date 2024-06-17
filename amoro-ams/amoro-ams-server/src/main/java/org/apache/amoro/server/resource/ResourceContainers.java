@@ -19,8 +19,8 @@
 package org.apache.amoro.server.resource;
 
 import org.apache.amoro.api.resource.ResourceContainer;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 
 import java.util.List;
 import java.util.Map;

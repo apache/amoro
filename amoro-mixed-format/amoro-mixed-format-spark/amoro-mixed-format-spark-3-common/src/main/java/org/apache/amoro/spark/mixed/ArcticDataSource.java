@@ -19,7 +19,7 @@
 package org.apache.amoro.spark.mixed;
 
 /**
- * Arctic DataSource register
+ * Mixed-format DataSource register
  *
  * @deprecated using {@link MixedHiveDataSource} or {@link MixedIcebergDataSource} instead.
  */

@@ -23,13 +23,13 @@ import static org.apache.amoro.spark.mixed.SparkSQLProperties.REFRESH_CATALOG_BE
 
 import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.spark.SupportAuthentication;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.relocated.com.google.common.base.Joiner;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.connector.catalog.Identifier;
@@ -121,7 +121,8 @@ public abstract class MixedSparkCatalogBase
   @Override
   public void createNamespace(String[] namespace, Map<String, String> metadata) {
     if (namespace.length > 1) {
-      throw new UnsupportedOperationException("arctic does not support multi-level namespace.");
+      throw new UnsupportedOperationException(
+          "mixed-format does not support multi-level namespace.");
     }
     String database = namespace[0];
     catalog.createDatabase(database);
@@ -189,10 +190,10 @@ public abstract class MixedSparkCatalogBase
   }
 
   /**
-   * Build an Arctic {@link TableIdentifier} for the given Spark identifier.
+   * Build an Amoro {@link TableIdentifier} for the given Spark identifier.
    *
    * @param identifier Spark's identifier
-   * @return an Arctic identifier
+   * @return an Amoro identifier
    */
   protected TableIdentifier buildIdentifier(Identifier identifier) {
     Preconditions.checkArgument(
@@ -200,7 +201,7 @@ public abstract class MixedSparkCatalogBase
         "database is not specific, table identifier: " + identifier.name());
     Preconditions.checkArgument(
         identifier.namespace() != null && identifier.namespace().length == 1,
-        "arctic does not support multi-level namespace: "
+        "mixed-format does not support multi-level namespace: "
             + Joiner.on(".").join(identifier.namespace()));
     return TableIdentifier.of(
         catalog.name(), identifier.namespace()[0].split("\\.")[0], identifier.name());
@@ -212,7 +213,7 @@ public abstract class MixedSparkCatalogBase
         "database is not specific, table identifier: " + identifier.name());
     Preconditions.checkArgument(
         identifier.namespace().length == 2,
-        "arctic does not support multi-level namespace: "
+        "mixed-format does not support multi-level namespace: "
             + Joiner.on(".").join(identifier.namespace()));
 
     return TableIdentifier.of(catalog.name(), identifier.namespace()[0], identifier.namespace()[1]);

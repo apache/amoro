@@ -113,7 +113,8 @@ Amoro contains modules as below:
 Amoro is built using Maven with JDK 8 and JDK 17(only for `amoro-mixed-format/amoro-mixed-format-trino` module).
 
 * Build all modules without `amoro-mixed-format-trino`: `mvn clean package`
-* Build and skip tests: `mvn clean package -DskipTests `
+* Build and skip tests: `mvn clean package -DskipTests`
+* Build and skip dashboard: `mvn clean package -Pskip-dashboard-build`
 * Build with hadoop 2.x(the default is 3.x) dependencies: `mvn clean package -DskipTests -Dhadoop=v2`
 * Specify Flink version for Flink optimizer(the default is 1.18.1): `mvn clean package -DskipTests -Dflink-optimizer.flink-version=1.15.4`
   * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-pre-1.15` parameter: `mvn clean package -DskipTests -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`

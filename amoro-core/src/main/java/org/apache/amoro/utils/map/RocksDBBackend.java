@@ -19,10 +19,10 @@
 package org.apache.amoro.utils.map;
 
 import org.apache.amoro.AmoroIOException;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.utils.LocalFileUtil;
 import org.apache.amoro.utils.SerializationUtil;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.rocksdb.AbstractImmutableNativeReference;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
@@ -112,7 +112,7 @@ public class RocksDBBackend {
   /** Initialized Rocks DB instance. */
   private void setup(@Nullable Integer ttlSeconds) {
     try {
-      LOG.info("DELETING RocksDB instance persisted at " + rocksDBBasePath);
+      LOG.info("DELETING RocksDB instance persisted at {}", rocksDBBasePath);
       LocalFileUtil.deleteDirectory(new File(rocksDBBasePath));
 
       final DBOptions dbOptions =
@@ -126,7 +126,7 @@ public class RocksDBBackend {
           new org.rocksdb.Logger(dbOptions) {
             @Override
             protected void log(InfoLogLevel infoLogLevel, String logMsg) {
-              LOG.debug("From Rocks DB : " + logMsg);
+              LOG.debug("From Rocks DB : {}", logMsg);
             }
           });
       List<ColumnFamilyDescriptor> managedColumnFamilies;

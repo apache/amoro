@@ -34,6 +34,7 @@ import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.op.OverwriteBaseFiles;
 import org.apache.amoro.op.RewritePartitions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.spark.io.TaskWriters;
 import org.apache.amoro.spark.sql.utils.RowDeltaUtils;
 import org.apache.amoro.table.KeyedTable;
@@ -43,7 +44,6 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
 import org.apache.spark.sql.catalyst.InternalRow;
@@ -64,7 +64,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite, Write {
+public class KeyedSparkBatchWrite implements MixedFormatSparkWriteBuilder.MixedFormatWrite, Write {
   private final KeyedTable table;
   private final StructType dsSchema;
 

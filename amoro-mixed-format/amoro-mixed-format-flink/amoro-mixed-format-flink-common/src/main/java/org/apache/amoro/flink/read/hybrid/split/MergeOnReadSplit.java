@@ -19,9 +19,9 @@
 package org.apache.amoro.flink.read.hybrid.split;
 
 import org.apache.amoro.scan.KeyedTableScanTask;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.utils.FileScanTaskUtil;
 import org.apache.flink.util.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 public class MergeOnReadSplit extends MixedFormatSplit {
   private static final long serialVersionUID = 1L;

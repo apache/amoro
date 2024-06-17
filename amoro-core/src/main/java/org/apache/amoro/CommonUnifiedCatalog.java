@@ -19,10 +19,10 @@
 package org.apache.amoro;
 
 import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.MixedCatalogUtil;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.List;
 import java.util.Map;
@@ -69,19 +69,19 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   }
 
   @Override
-  public boolean exist(String database) {
+  public boolean databaseExists(String database) {
     return listDatabases().contains(database);
   }
 
   @Override
-  public boolean exist(String database, String table) {
+  public boolean tableExists(String database, String table) {
     return formatCatalogAsOrder(TableFormat.values())
-        .anyMatch(formatCatalog -> formatCatalog.exist(database, table));
+        .anyMatch(formatCatalog -> formatCatalog.tableExists(database, table));
   }
 
   @Override
   public void createDatabase(String database) {
-    if (exist(database)) {
+    if (databaseExists(database)) {
       throw new AlreadyExistsException("Database: " + database + " already exists.");
     }
 
@@ -90,7 +90,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
 
   @Override
   public void dropDatabase(String database) {
-    if (!exist(database)) {
+    if (!databaseExists(database)) {
       throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
     }
     if (!listTables(database).isEmpty()) {
@@ -101,7 +101,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
 
   @Override
   public AmoroTable<?> loadTable(String database, String table) {
-    if (!exist(database)) {
+    if (!databaseExists(database)) {
       throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
     }
 
@@ -131,7 +131,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
 
   @Override
   public List<TableIDWithFormat> listTables(String database) {
-    if (!exist(database)) {
+    if (!databaseExists(database)) {
       throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
     }
     TableFormat[] formats =

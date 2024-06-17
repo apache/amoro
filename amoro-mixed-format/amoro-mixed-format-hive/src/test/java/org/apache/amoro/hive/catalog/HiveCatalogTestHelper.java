@@ -29,12 +29,12 @@ import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelpers;
 import org.apache.amoro.catalog.MixedTables;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.catalog.Catalog;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 

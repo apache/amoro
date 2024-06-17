@@ -21,14 +21,14 @@ package org.apache.amoro.spark.test;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableBuilder;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.spark.sql.Row;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -64,7 +64,7 @@ public class MixedTableTestBase extends SparkTestBase {
   }
 
   public MixedTable loadTable() {
-    return catalog().loadTable(target().toArcticIdentifier());
+    return catalog().loadTable(target().toAmoroIdentifier());
   }
 
   public String provider(TableFormat format) {
@@ -73,10 +73,10 @@ public class MixedTableTestBase extends SparkTestBase {
     return "arctic";
   }
 
-  public MixedTable createArcticSource(Schema schema, Consumer<TableBuilder> consumer) {
+  public MixedTable createMixedFormatSource(Schema schema, Consumer<TableBuilder> consumer) {
     TestIdentifier identifier =
         TestIdentifier.ofDataLake(currentCatalog, catalog().name(), database(), sourceTable, true);
-    TableBuilder builder = catalog().newTableBuilder(identifier.toArcticIdentifier(), schema);
+    TableBuilder builder = catalog().newTableBuilder(identifier.toAmoroIdentifier(), schema);
     consumer.accept(builder);
     MixedTable source = builder.create();
     this.source = identifier;
@@ -85,13 +85,13 @@ public class MixedTableTestBase extends SparkTestBase {
 
   public MixedTable createTarget(Schema schema, Consumer<TableBuilder> consumer) {
     TestIdentifier identifier = target();
-    TableBuilder builder = catalog().newTableBuilder(identifier.toArcticIdentifier(), schema);
+    TableBuilder builder = catalog().newTableBuilder(identifier.toAmoroIdentifier(), schema);
     consumer.accept(builder);
     return builder.create();
   }
 
   protected boolean tableExists() {
-    return catalog().tableExists(target().toArcticIdentifier());
+    return catalog().tableExists(target().toAmoroIdentifier());
   }
 
   @AfterEach
@@ -100,7 +100,7 @@ public class MixedTableTestBase extends SparkTestBase {
       return;
     }
     if (TestIdentifier.SOURCE_TYPE_ARCTIC.equalsIgnoreCase(source.sourceType)) {
-      catalog().dropTable(source.toArcticIdentifier(), true);
+      catalog().dropTable(source.toAmoroIdentifier(), true);
     } else if (TestIdentifier.SOURCE_TYPE_HIVE.equalsIgnoreCase(source.sourceType)) {
       CONTEXT.dropHiveTable(source.database, source.table);
     } else if (TestIdentifier.SOURCE_TYPE_VIEW.equalsIgnoreCase(source.sourceType)) {

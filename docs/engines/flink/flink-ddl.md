@@ -17,7 +17,7 @@ The following statement can be executed to create a Flink catalog:
 
 ```sql
 CREATE CATALOG <catalog_name> WITH (
-  'type'='mixed-iceberg',
+  'type'='mixed_iceberg',
   `<config_key>`=`<config_value>`
 ); 
 ```
@@ -26,7 +26,7 @@ Where `<catalog_name>` is the user-defined name of the Flink catalog, and `<conf
 
 | Key                              | Default Value | Type    | Required | Description                                                                                                                                                                                                                              |
 |----------------------------------|---------------|---------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| type                             | N/A           | String  | Yes      | Catalog type, validate values are mixed-iceberg and mixed-hive                                                                                                                                                                           |
+| type                             | N/A           | String  | Yes      | Catalog type, validate values are mixed_iceberg and mixed_hive                                                                                                                                                                           |
 | metastore.url                    | (none)        | String  | Yes      | The URL for Amoro Metastore is thrift://`<ip>`:`<port>`/`<catalog_name_in_metastore>`.<br>If high availability is enabled for AMS, it can also be specified in the form of zookeeper://{zookeeper-server}/{cluster-name}/{catalog-name}. |
 | default-database<img width=100/> | default       | String  | No       | The default database to use                                                                                                                                                                                                              |
 | property-version                 | 1             | Integer | No       | Catalog properties version, this option is for future backward compatibility                                                                                                                                                             |
@@ -50,7 +50,7 @@ Modify the `conf/sql-client-defaults.yaml` file in the Flink directory.
 ```yaml
 catalogs:
 - name: <catalog_name>
-  type: mixed-iceberg
+  type: mixed_iceberg
   metastore.url: ...
   ...
 ```
@@ -203,7 +203,7 @@ Not supported at the moment
 | ROW             | STRUCT         |
 
 
-### Mixed-Iceberg data types
+### mixed_iceberg data types
 | Flink Data Type                   | Mixed-Iceberg Data Type |
 |-----------------------------------|-------------------------|
 | CHAR(p)                           | STRING                  |

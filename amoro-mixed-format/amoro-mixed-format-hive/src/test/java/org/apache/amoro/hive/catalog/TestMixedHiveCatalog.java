@@ -71,7 +71,7 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
   }
 
   @Override
-  protected void validateCreatedTable(MixedTable table, boolean withKey) throws TException {
+  protected void validateCreatedTable(MixedTable table, boolean withKey) throws Exception {
     super.validateCreatedTable(table, withKey);
     validateMixedHiveTableProperties(table.id());
   }

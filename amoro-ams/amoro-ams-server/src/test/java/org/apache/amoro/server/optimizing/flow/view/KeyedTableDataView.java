@@ -25,6 +25,7 @@ import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.io.writer.RecordWithAction;
 import org.apache.amoro.server.optimizing.flow.DataReader;
 import org.apache.amoro.server.optimizing.flow.RandomRecordGenerator;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.MixedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.AppendFiles;
@@ -35,7 +36,6 @@ import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
@@ -74,7 +74,7 @@ public class KeyedTableDataView extends AbstractTableDataView {
       Long seed)
       throws Exception {
     super(mixedTable, primary, targetFileSize);
-    org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument(
+    org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkArgument(
         primary.columns().size() == 1
             && primary.columns().get(0).type().typeId() == Type.TypeID.INTEGER);
     this.schemaSize = schema.columns().size();

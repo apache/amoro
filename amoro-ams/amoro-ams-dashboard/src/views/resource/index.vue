@@ -71,9 +71,6 @@ limitations under the License.
 </template>
 
 <script lang="ts">
-// TODO: replace to antv-4. After all replacements are completed, switch to automatic import.
-import { Tabs, TabPane, Button as AButton } from 'ant-design-vue'
-
 import { ILableAndValue, IIOptimizeGroupItem } from '@/types/common.type'
 import {
   defineComponent,
@@ -96,11 +93,7 @@ export default defineComponent({
   components: {
     List,
     GroupModal,
-    TableList,
-
-    ATabs: Tabs,
-    ATabPane: TabPane,
-    AButton
+    TableList
   },
   setup() {
     const { t } = useI18n()
@@ -116,7 +109,18 @@ export default defineComponent({
       activeTab: 'optimizergroup' as string,
       showGroupModal: false as boolean,
       groupEdit: false,
-      groupEditRecord: {},
+      groupEditRecord: {
+        resourceGroup: {
+          name: '',
+          container: '',
+          properties: {}
+        },
+        occupationCore: 0,
+        occupationMemory: 0,
+        name: '',
+        container: '',
+        resourceOccupation: ''
+      },
       groupKeyCount: 1,
       showTab: false as boolean
     })

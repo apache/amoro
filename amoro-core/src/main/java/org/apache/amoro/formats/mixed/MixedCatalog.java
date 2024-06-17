@@ -44,12 +44,12 @@ public class MixedCatalog implements FormatCatalog {
   }
 
   @Override
-  public boolean exist(String database) {
+  public boolean databaseExists(String database) {
     return catalog.listDatabases().contains(database);
   }
 
   @Override
-  public boolean exist(String database, String table) {
+  public boolean tableExists(String database, String table) {
     return catalog.tableExists(TableIdentifier.of(catalog.name(), database, table));
   }
 

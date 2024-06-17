@@ -24,6 +24,7 @@ import static org.apache.spark.sql.types.DataTypes.StringType;
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.io.writer.OutputFileFactory;
 import org.apache.amoro.io.writer.SortedPosDeleteWriter;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.spark.SparkInternalRowCastWrapper;
 import org.apache.amoro.spark.SparkInternalRowWrapper;
 import org.apache.amoro.table.MixedTable;
@@ -36,7 +37,6 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.catalyst.InternalRow;
 
@@ -56,7 +56,7 @@ public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
   private final FileFormat format;
   private final Schema schema;
   private final MixedTable table;
-  private final ArcticSparkBaseTaskWriter writer;
+  private final SparkBaseTaskWriter writer;
   private final Map<PartitionKey, SortedPosDeleteWriter<InternalRow>> writerMap = new HashMap<>();
   private boolean closed = false;
 
@@ -66,7 +66,7 @@ public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
       OutputFileFactory fileFactory,
       FileFormat format,
       Schema schema,
-      ArcticSparkBaseTaskWriter writer) {
+      SparkBaseTaskWriter writer) {
     this.table = table;
     this.appenderFactory = appenderFactory;
     this.fileFactory = fileFactory;

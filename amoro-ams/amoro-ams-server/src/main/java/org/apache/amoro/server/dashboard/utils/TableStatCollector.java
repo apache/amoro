@@ -49,13 +49,13 @@ public class TableStatCollector {
       try {
         internalTable = table.changeTable();
       } catch (NoSuchTableException e) {
-        LOG.warn("No related hive table found. " + table.id(), e);
+        LOG.warn("No related hive table found. {}", table.id(), e);
       }
       TableStatistics tableInfo = new TableStatistics();
       fillTableStatistics(tableInfo, internalTable, table);
       return tableInfo;
     } catch (Exception e) {
-      LOG.error("failed to collect change table info of " + table.id(), e);
+      LOG.error("failed to collect change table info of {}", table.id(), e);
       return initEmptyTableStatistics(new TableStatistics(), table.id());
     }
   }
@@ -68,13 +68,13 @@ public class TableStatCollector {
       try {
         internalTable = table.baseTable();
       } catch (org.apache.iceberg.exceptions.NoSuchTableException e) {
-        LOG.warn("No related hive table found. " + table.id(), e);
+        LOG.warn("No related hive table found. {}", table.id(), e);
       }
       TableStatistics tableInfo = new TableStatistics();
       fillTableStatistics(tableInfo, internalTable, table);
       return tableInfo;
     } catch (Exception e) {
-      LOG.error("failed to collect base table info of " + table.id(), e);
+      LOG.error("failed to collect base table info of {}", table.id(), e);
       return initEmptyTableStatistics(new TableStatistics(), table.id());
     }
   }

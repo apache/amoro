@@ -25,6 +25,7 @@ import org.apache.amoro.server.optimizing.flow.view.MatchResult;
 import org.apache.amoro.server.optimizing.flow.view.TableDataView;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
 import org.apache.amoro.server.optimizing.plan.TaskDescriptor;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.table.MixedTable;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
@@ -32,7 +33,6 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 
 import javax.annotation.Nullable;
 

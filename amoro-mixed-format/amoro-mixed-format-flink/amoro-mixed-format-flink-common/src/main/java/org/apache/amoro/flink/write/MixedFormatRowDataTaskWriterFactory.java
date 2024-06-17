@@ -18,13 +18,13 @@
 
 package org.apache.amoro.flink.write;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.WriteOperationKind;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 /** This is an mixed-format table writer factory. */
 public class MixedFormatRowDataTaskWriterFactory implements TaskWriterFactory<RowData> {

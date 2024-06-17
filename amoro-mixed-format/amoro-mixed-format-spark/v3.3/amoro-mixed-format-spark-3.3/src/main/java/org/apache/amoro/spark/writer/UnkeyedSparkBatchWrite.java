@@ -32,6 +32,7 @@ import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.OperationConflictException;
 import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.spark.io.TaskWriters;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.table.blocker.Blocker;
@@ -44,7 +45,6 @@ import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
 import org.apache.spark.sql.catalyst.InternalRow;
@@ -65,7 +65,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite, Write {
+public class UnkeyedSparkBatchWrite
+    implements MixedFormatSparkWriteBuilder.MixedFormatWrite, Write {
 
   private final UnkeyedTable table;
   private final StructType dsSchema;
@@ -312,7 +313,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
                       f ->
                           !f.name().equals("_file")
                               && !f.name().equals("_pos")
-                              && !f.name().equals("_arctic_upsert_op"))
+                              && !f.name().equals("_upsert_op"))
                   .toArray(StructField[]::new));
       return new SimpleRowLevelDataWriter(
           newWriter(partitionId, taskId, schema),

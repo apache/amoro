@@ -263,3 +263,38 @@ tests:
         documentSelector:
           path: metadata.name
           value: test-optimizing
+  - it: Amoro Service for plugin metric reporters should reflect prometheus exporter configuration
+    set:
+      fullnameOverride: test
+      plugin:
+        metricReporters:
+          - name: prometheus-exporter
+            enabled: true
+            properties:
+              port: 7001
+            service:
+              type: ClusterIP
+              port: "7002"
+              nodePort: ~
+              annotations: {
+                "prometheus.io/scrape": "true",
+                "prometheus.io/path": "/metrics",
+                "prometheus.io/port": "7002"
+              }
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            name: prometheus-exporter
+            port: 7002
+            targetPort: 7001
+        documentSelector:
+          path: metadata.name
+          value: test-prometheus-exporter
+      - isSubset:
+          path: metadata.annotations
+          content:
+            prometheus.io/port: "7002"
+        documentSelector:
+          path: metadata.name
+          value: test-prometheus-exporter

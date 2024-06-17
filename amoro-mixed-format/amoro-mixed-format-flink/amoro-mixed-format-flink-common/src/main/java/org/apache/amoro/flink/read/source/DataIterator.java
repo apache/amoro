@@ -19,9 +19,9 @@
 package org.apache.amoro.flink.read.source;
 
 import org.apache.amoro.scan.MixedFileScanTask;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.flink.annotation.Internal;
 import org.apache.iceberg.io.CloseableIterator;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

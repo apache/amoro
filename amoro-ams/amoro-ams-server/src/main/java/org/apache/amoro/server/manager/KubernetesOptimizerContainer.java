@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.manager;
 
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -26,10 +28,10 @@ import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import org.apache.amoro.api.resource.Resource;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.commons.io.IOUtils;
-import org.apache.curator.shaded.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +39,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /** Kubernetes Optimizer Container with Standalone Optimizer */
 public class KubernetesOptimizerContainer extends AbstractResourceContainer {
@@ -48,6 +53,9 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
   public static final String CPU_FACTOR_PROPERTY = "cpu.factor";
   public static final String NAMESPACE = "namespace";
   public static final String IMAGE = "image";
+  public static final String PULL_POLICY = "pullPolicy";
+
+  public static final String PULL_SECRETS = "imagePullSecrets";
   public static final String KUBE_CONFIG_PATH = "kube-config-path";
 
   private static final String NAME_PREFIX = "amoro-optimizer-";
@@ -83,14 +91,21 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
 
     String namespace = groupProperties.getOrDefault(NAMESPACE, "default");
     String image = checkAndGetProperty(groupProperties, IMAGE);
+    String pullPolicy = checkAndGetProperty(groupProperties, PULL_POLICY);
+    String pullSecrets = groupProperties.getOrDefault(PULL_SECRETS, "");
     String cpuLimitFactorString = groupProperties.getOrDefault(CPU_FACTOR_PROPERTY, "1.0");
     double cpuLimitFactor = Double.parseDouble(cpuLimitFactorString);
     int cpuLimit = (int) (Math.ceil(cpuLimitFactor * resource.getThreadCount()));
 
+    List<LocalObjectReference> imagePullSecretsList =
+        Arrays.stream(pullSecrets.split(";"))
+            .map(secret -> new LocalObjectReferenceBuilder().withName(secret).build())
+            .collect(Collectors.toList());
+
     String resourceId = resource.getResourceId();
     String groupName = resource.getGroupName();
     String kubernetesName = NAME_PREFIX + resourceId;
-    Deployment deployment =
+    DeploymentBuilder deploymentBuilder =
         new DeploymentBuilder()
             .withNewMetadata()
             .withName(NAME_PREFIX + resourceId)
@@ -107,6 +122,7 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
             .addNewContainer()
             .withName("optimizer")
             .withImage(image)
+            .withImagePullPolicy(pullPolicy)
             .withCommand("sh", "-c", startUpArgs)
             .withResources(
                 new ResourceRequirementsBuilder()
@@ -129,8 +145,19 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
             .withNewSelector()
             .addToMatchLabels("app", NAME_PREFIX + resourceId)
             .endSelector()
-            .endSpec()
-            .build();
+            .endSpec();
+    if (!imagePullSecretsList.isEmpty()) {
+      deploymentBuilder
+          .editSpec()
+          .editTemplate()
+          .editSpec()
+          .withImagePullSecrets(imagePullSecretsList)
+          .endSpec()
+          .endTemplate()
+          .endSpec();
+    }
+    Deployment deployment = deploymentBuilder.build();
+
     client.apps().deployments().inNamespace(namespace).resource(deployment).create();
     Map<String, String> startupProperties = Maps.newHashMap();
     startupProperties.put(NAMESPACE, namespace);

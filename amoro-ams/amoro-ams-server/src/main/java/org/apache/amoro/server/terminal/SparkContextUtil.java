@@ -20,7 +20,7 @@ package org.apache.amoro.server.terminal;
 
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.server.catalog.CatalogType;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 
 import java.util.List;
 import java.util.Map;
@@ -30,18 +30,19 @@ public class SparkContextUtil {
   public static final String ICEBERG_EXTENSION =
       "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions";
   public static final String MIXED_FORMAT_EXTENSION =
-      "org.apache.amoro.spark.ArcticSparkExtensions";
+      "org.apache.amoro.spark.MixedFormatSparkExtensions";
   public static final String ICEBERG_CATALOG = "org.apache.iceberg.spark.SparkCatalog";
-  public static final String MIXED_FORMAT_CATALOG = "org.apache.amoro.spark.ArcticSparkCatalog";
+  public static final String MIXED_FORMAT_CATALOG =
+      "org.apache.amoro.spark.MixedFormatSparkCatalog";
   public static final String PAIMON_CATALOG = "org.apache.paimon.spark.SparkCatalog";
   public static final String MIXED_FORMAT_SESSION_CATALOG =
-      "org.apache.amoro.spark.ArcticSparkSessionCatalog";
+      "org.apache.amoro.spark.MixedFormatSparkSessionCatalog";
   public static final String UNIFIED_SESSION_CATALOG =
       "org.apache.amoro.spark.SparkUnifiedSessionCatalog";
   public static final String UNIFIED_CATALOG = "org.apache.amoro.spark.SparkUnifiedCatalog";
 
   public static final String MIXED_FORMAT_PROPERTY_REFRESH_BEFORE_USAGE =
-      "spark.sql.arctic.refresh-catalog-before-usage";
+      "spark.sql.mixed-format.refresh-catalog-before-usage";
 
   public static Map<String, String> getSparkConf(Configurations sessionConfig) {
     Map<String, String> sparkConf = Maps.newLinkedHashMap();

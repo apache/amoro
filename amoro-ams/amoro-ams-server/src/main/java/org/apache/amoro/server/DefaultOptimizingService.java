@@ -51,11 +51,11 @@ import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableRuntimeMeta;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.amoro.table.TableProperties;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,7 +145,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizers.forEach(optimizer -> registerOptimizer(optimizer, false));
     groupToTableRuntimes
         .keySet()
-        .forEach(groupName -> LOG.warn("Unloaded task runtime in group " + groupName));
+        .forEach(groupName -> LOG.warn("Unloaded task runtime in group {}", groupName));
   }
 
   private void registerOptimizer(OptimizerInstance optimizer, boolean needPersistency) {

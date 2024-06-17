@@ -85,8 +85,7 @@ import { useRoute } from 'vue-router'
 import { DetailColumnItem, IBaseDetailInfo, IColumns, IMap, PartitionColumnItem } from '@/types/common.type'
 import { getTableDetail } from '@/services/table.service'
 import { dateFormat } from '@/utils'
-
-import { Table as ATable } from 'ant-design-vue'
+import { ColumnProps } from 'ant-design-vue/es/table'
 
 const { t } = useI18n()
 const emit = defineEmits<{
@@ -202,7 +201,7 @@ onMounted(() => {
 
 defineExpose({ getTableDetails })
 
-const primaryColumns: IColumns[] = shallowReactive([
+const primaryColumns: ColumnProps[] = shallowReactive([
   { title: t('field'), dataIndex: 'field', width: '30%' },
   { title: t('type'), dataIndex: 'type', width: '20%' },
   { title: t('required'), dataIndex: 'required', width: '20%', customRender: text => String(text?.value) },

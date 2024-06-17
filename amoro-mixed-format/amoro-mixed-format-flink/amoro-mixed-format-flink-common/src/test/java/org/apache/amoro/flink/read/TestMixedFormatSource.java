@@ -887,7 +887,7 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
                 parentDirectory.add(new Path(file).getParent().toString());
                 deleteFiles.incrementAndGet();
               } catch (Throwable t) {
-                LOG.warn("failed to delete file " + file, t);
+                LOG.warn("failed to delete file {}", file, t);
               } finally {
                 toDeleteFiles.incrementAndGet();
               }

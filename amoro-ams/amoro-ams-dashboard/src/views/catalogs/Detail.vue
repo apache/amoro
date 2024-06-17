@@ -44,7 +44,8 @@ limitations under the License.
             :rules="[{ required: isEdit && isNewCatalog }]">
             <a-checkbox-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormatList"
               @change="changeTableFormat">
-              <a-checkbox v-for="item in formatOptions" :key="item" :value="item">{{ tableFormatText[item] }}</a-checkbox>
+              <a-checkbox v-for="item in formatOptions" :key="item" :value="item">{{ tableFormatText[item]
+                }}</a-checkbox>
             </a-checkbox-group>
           </a-form-item>
           <a-form-item :label="$t('optimizerGroup')" :name="['catalog', 'optimizerGroup']"
@@ -76,7 +77,7 @@ limitations under the License.
               class="g-flex-ac">
               <a-upload v-if="isEdit" v-model:file-list="config.fileList" name="file" accept=".xml"
                 :showUploadList="false" :action="uploadUrl" :disabled="config.uploadLoading"
-                @change="(args) => uploadFile(args, config, 'STORAGE')">
+                @change="(args: UploadChangeParam<UploadFile<any>>) => uploadFile(args, config, 'STORAGE')">
                 <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">{{ $t('upload')
                   }}</a-button>
               </a-upload>
@@ -108,9 +109,10 @@ limitations under the License.
               class="g-flex-ac">
               <a-upload v-if="isEdit" v-model:file-list="config.fileList" name="file"
                 :accept="config.key === 'auth.kerberos.keytab' ? '.keytab' : '.conf'" :showUploadList="false"
-                :action="uploadUrl" :disabled="config.uploadLoading" @change="(args) => uploadFile(args, config)">
-                <a-button type="primary" ghost :loading="config.uploadLoading"
-                  class="g-mr-12">{{ $t('upload') }}</a-button>
+                :action="uploadUrl" :disabled="config.uploadLoading"
+                @change="(args: UploadChangeParam<UploadFile<any>>) => uploadFile(args, config)">
+                <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">{{ $t('upload')
+                  }}</a-button>
               </a-upload>
               <span v-if="config.isSuccess || config.fileName" class="config-value auth-filename"
                 :class="{ 'view-active': !!config.fileUrl }" @click="viewFileDetail(config.fileUrl)"
@@ -168,14 +170,7 @@ import {
   UploadChangeParam,
   message,
   Modal,
-  Select as ASelect,
-  Button as AButton,
-  Input as AInput,
-  Form as AForm,
-  FormItem as AFormItem,
-  Checkbox as ACheckbox,
-  CheckboxGroup as ACheckboxGroup,
-  Upload as AUpload
+  UploadFile,
 } from 'ant-design-vue'
 
 interface IStorageConfigItem {
@@ -347,7 +342,7 @@ const getOptimizerGroupList = async () => {
 }
 async function getCatalogTypeOps() {
   const res = await getCatalogsTypes();
-  (res || []).forEach(ele => {
+  (res || []).forEach((ele: any) => {
     if (ele.value !== 'ams') {
       catalogTypeOps.push({
         label: ele.display,
@@ -358,7 +353,7 @@ async function getCatalogTypeOps() {
   getMetastoreType()
 }
 function getMetastoreType() {
-  metastoreType.value = (catalogTypeOps.find(ele => ele.value === formState.catalog.type) || {}).label
+  metastoreType.value = (catalogTypeOps.find(ele => ele.value === formState.catalog.type) || {}).label || ''
 }
 async function getConfigInfo() {
   try {
@@ -367,12 +362,12 @@ async function getConfigInfo() {
     if (!catalogname) { return }
     if (isNewCatalog.value) {
       formState.catalog.name = ''
-      formState.catalog.type = type || 'ams'
+      formState.catalog.type = (type || 'ams') as string
       formState.catalog.optimizerGroup = undefined
       formState.tableFormatList = [tableFormatMap.MIXED_ICEBERG]
       formState.authConfig = { ...newCatalogConfig.authConfig }
       formState.storageConfig = { ...newCatalogConfig.storageConfig }
-      const keys = defaultPropertiesMap[formState.catalog.type] || []
+      const keys = defaultPropertiesMap[formState.catalog.type as keyof typeof defaultPropertiesMap] || []
       formState.properties = {}
       keys.forEach(key => {
         formState.properties[key] = ''
@@ -381,7 +376,7 @@ async function getConfigInfo() {
       formState.storageConfigArray.length = 0
       formState.authConfigArray.length = 0
     } else {
-      const res = await getCatalogsSetting(catalogname)
+      const res = await getCatalogsSetting(catalogname as string)
       if (!res) { return }
       const { name, type, tableFormatList, storageConfig, authConfig, properties, tableProperties, optimizerGroup } = res
       formState.catalog.name = name
@@ -407,10 +402,10 @@ async function getConfigInfo() {
       if (configArr.includes(key)) {
         const item: IStorageConfigItem = {
           key,
-          label: storageConfigMap[key],
-          value: storageConfig[key]?.fileName,
-          fileName: storageConfig[key]?.fileName,
-          fileUrl: storageConfig[key]?.fileUrl,
+          label: storageConfigMap[key as keyof typeof storageConfigMap],
+          value: (storageConfig[key] as any)?.fileName,
+          fileName: (storageConfig[key] as any)?.fileName,
+          fileUrl: (storageConfig[key] as any)?.fileUrl,
           fileId: '',
           fileList: [],
           uploadLoading: false,
@@ -423,10 +418,10 @@ async function getConfigInfo() {
       if (['auth.kerberos.keytab', 'auth.kerberos.krb5'].includes(key)) {
         const item: IStorageConfigItem = {
           key,
-          label: authConfigMap[key],
-          value: authConfig[key]?.fileName,
-          fileName: authConfig[key]?.fileName,
-          fileUrl: authConfig[key]?.fileUrl,
+          label: authConfigMap[key as keyof typeof authConfigMap],
+          value: (authConfig[key] as any)?.fileName,
+          fileName: (authConfig[key] as any)?.fileName,
+          fileUrl: (authConfig[key] as any)?.fileUrl,
           fileId: '',
           fileList: [],
           uploadLoading: false,
@@ -452,20 +447,20 @@ const changeTypeShow = (val: string) => {
 
 const formatOptions = computed(() => {
   const type = formState.catalog.type
-  return storeSupportFormat[type] || []
+  return storeSupportFormat[type as keyof typeof storeSupportFormat] || []
 })
 
 async function changeProperties() {
   const properties = await propertiesRef.value.getPropertiesWithoputValidation()
-  const catalogKeys = defaultPropertiesMap[formState.catalog.type] || []
+  const catalogKeys = defaultPropertiesMap[formState.catalog.type as keyof typeof defaultPropertiesMap] || []
   catalogKeys.forEach(key => {
     if (key && !properties[key]) {
       properties[key] = ''
     }
   })
   const formatKeys = formState.tableFormatList.reduce((accumulator, current) => {
-    return [...accumulator, ...(defaultPropertiesMap[current] || [])]
-  }, [])
+    return [...accumulator, ...(defaultPropertiesMap[current as keyof typeof defaultPropertiesMap] || [])]
+  }, [] as string[])
   formatKeys.forEach(key => {
     if (key && !properties[key]) {
       properties[key] = ''
@@ -558,7 +553,7 @@ function handleEdit() {
   emit('updateEdit', true)
 }
 async function handleRemove() {
-  const res = await checkCatalogStatus(formState.catalog.name)
+  const res = await checkCatalogStatus(formState.catalog.name as string)
   if (res) {
     deleteCatalogModal()
     return
@@ -569,7 +564,7 @@ async function handleRemove() {
     wrapClassName: 'not-delete-modal'
   })
 }
-async function validatorName(rule, value) {
+async function validatorName(_: any, value: string) {
   if (!value) {
     return Promise.reject(new Error(t('inputPlaceholder')))
   }
@@ -584,13 +579,13 @@ function getFileIdParams() {
   Object.keys(authConfig).forEach(key => {
     if (['auth.kerberos.keytab', 'auth.kerberos.krb5'].includes(key)) {
       const id = (authConfigArray.find(item => item.key === key) || {}).fileId
-      authConfig[key] = id
+      authConfig[key as keyof typeof authConfig] = id || ''
     }
   })
   Object.keys(storageConfig).forEach(key => {
     if (['hadoop.core.site', 'hadoop.hdfs.site', 'hive.site'].includes(key)) {
       const id = (storageConfigArray.find(item => item.key === key) || {}).fileId
-      storageConfig[key] = id
+      storageConfig[key as keyof typeof storageConfig] = id || ''
     }
   })
 }
@@ -618,11 +613,11 @@ function handleSave() {
         authConfig,
         properties,
         tableProperties
-      }).then(() => {
+      } as any).then(() => {
         message.success(`${t('save')} ${t('success')}`)
         emit('updateEdit', false, {
-          catalogName: catalog.name,
-          catalogType: catalog.type
+          catalogName: catalog.name || '',
+          catalogType: catalog.type || ''
         })
         getConfigInfo()
         formRef.value.resetFields()
@@ -644,13 +639,13 @@ async function deleteCatalogModal() {
   Modal.confirm({
     title: t('deleteCatalogModalTitle'),
     onOk: async () => {
-      await delCatalog(formState.catalog.name)
+      await delCatalog(formState.catalog.name || '')
       message.success(`${t('remove')} ${t('success')}`)
-      emit('updateEdit', false, {})
+      emit('updateEdit', false)
     }
   })
 }
-function uploadFile(info: UploadChangeParam, config, type?) {
+function uploadFile(info: UploadChangeParam, config: { uploadLoading: boolean; isSuccess: boolean; fileName: any; key: string | number; fileUrl: any; fileId: any }, type?: string) {
   try {
     if (info.file.status === 'uploading') {
       config.uploadLoading = true
@@ -665,7 +660,7 @@ function uploadFile(info: UploadChangeParam, config, type?) {
       }
       const { url, id } = info.file.response.result
       config.isSuccess = true
-      config.fileName = type === 'STORAGE' ? storageConfigFileNameMap[config.key] : info.file.name
+      config.fileName = type === 'STORAGE' ? storageConfigFileNameMap[config.key as keyof typeof storageConfigFileNameMap] : info.file.name
       config.fileUrl = url
       config.fileId = id
       message.success(`${info.file.name} ${t('uploaded')} ${t('success')}`)

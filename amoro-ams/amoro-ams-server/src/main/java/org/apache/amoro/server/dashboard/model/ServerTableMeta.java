@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.dashboard.model;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.table.TableIdentifier;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.List;
 import java.util.Map;

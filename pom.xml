@@ -21,6 +21,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.apache</groupId>
+        <artifactId>apache</artifactId>
+        <version>23</version>
+    </parent>
+
     <groupId>org.apache.amoro</groupId>
     <artifactId>amoro-parent</artifactId>
     <version>0.7-SNAPSHOT</version>
@@ -29,6 +35,7 @@
     <name>Amoro Project Parent</name>
     <description>Amoro is a Lakehouse management system built on open data formats.</description>
     <url>https://amoro.apache.org</url>
+    <inceptionYear>2024</inceptionYear>
 
     <licenses>
         <license>
@@ -45,10 +52,10 @@
     </modules>
 
     <scm>
-        <connection>scm:git:git@github.com:NetEase/amoro.git</connection>
-        <developerConnection>scm:git:git@github.com:NetEase/amoro.git</developerConnection>
+        <url>scm:git:https://github.com/apache/amoro</url>
+        <connection>scm:git:git@github.com:apache/amoro.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/amoro.git</developerConnection>
         <tag>HEAD</tag>
-        <url>scm:git:git@github.com:NetEase/amoro.git</url>
     </scm>
 
     <issueManagement>
@@ -100,18 +107,14 @@
         <commons-pool2.version>2.12.0</commons-pool2.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
         <cglib.version>2.2.2</cglib.version>
-        <mockito.version>4.11.0</mockito.version>
         <curator.version>5.6.0</curator.version>
-        <zookeeper.version>3.9.1</zookeeper.version>
-        <jackson.version>2.14.2</jackson.version>
-        <paimon.jackson.version>2.14.2-0.4.0-incubating</paimon.jackson.version>
+        <mockito.version>4.11.0</mockito.version>
         <parquet-avro.version>1.13.1</parquet-avro.version>
         <orc-core.version>1.8.3</orc-core.version>
         <awssdk.version>2.24.12</awssdk.version>
         <terminal.spark.version>3.3.2</terminal.spark.version>
         <terminal.spark.major.version>3.3</terminal.spark.major.version>
         <dropwizard.metrics.version>4.2.19</dropwizard.metrics.version>
-        <thrift.version>0.13.0</thrift.version>
         <caffeine.version>2.9.3</caffeine.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <mybatis.version>3.5.15</mybatis.version>
@@ -129,6 +132,12 @@
         <prometheus.version>0.16.0</prometheus.version>
         <flink.version>1.18.1</flink.version>
         <fabric8-kubernetes-client.version.version>6.12.1</fabric8-kubernetes-client.version.version>
+        <amoro-shade.version>0.7-SNAPSHOT</amoro-shade.version>
+        <amoro-shade-guava.version>32.1.1-jre</amoro-shade-guava.version>
+        <amoro-shade-jackson.version>2.14.2</amoro-shade-jackson.version>
+        <amoro-shade-zookeeper.version>3.9.1</amoro-shade-zookeeper.version>
+        <amoro-shade-thrift.version>0.20.0</amoro-shade-thrift.version>
+        <annotation-api.version>1.3.2</annotation-api.version>
         <hudi.version>0.14.1</hudi.version>
     </properties>
 
@@ -225,11 +234,27 @@
             </dependency>
 
             <dependency>
-                <groupId>com.fasterxml.jackson</groupId>
-                <artifactId>jackson-bom</artifactId>
-                <version>${jackson.version}</version>
-                <scope>import</scope>
-                <type>pom</type>
+                <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-shade-jackson-2</artifactId>
+                <version>${amoro-shade-jackson.version}-${amoro-shade.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-shade-guava-32</artifactId>
+                <version>${amoro-shade-guava.version}-${amoro-shade.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-shade-zookeeper-3</artifactId>
+                <version>${amoro-shade-zookeeper.version}-${amoro-shade.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-shade-thrift</artifactId>
+                <version>${amoro-shade-thrift.version}-${amoro-shade.version}</version>
             </dependency>
 
             <dependency>
@@ -288,12 +313,6 @@
 
             <dependency>
                 <groupId>org.apache.iceberg</groupId>
-                <artifactId>iceberg-bundled-guava</artifactId>
-                <version>${iceberg.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.iceberg</groupId>
                 <artifactId>iceberg-aws</artifactId>
                 <version>${iceberg.version}</version>
             </dependency>
@@ -320,10 +339,6 @@
                     <exclusion>
                         <groupId>org.apache.kerby</groupId>
                         <artifactId>kerb-simplekdc</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -505,45 +520,9 @@
             </dependency>
 
             <dependency>
-                <groupId>org.apache.thrift</groupId>
-                <artifactId>libthrift</artifactId>
-                <version>${thrift.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-framework</artifactId>
-                <version>${curator.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-recipes</artifactId>
-                <version>${curator.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.paimon</groupId>
-                <artifactId>paimon-shade-jackson-2</artifactId>
-                <version>${paimon.jackson.version}</version>
             </dependency>
 
             <dependency>
@@ -704,10 +683,6 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>co.cask.tephra</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
@@ -801,6 +776,12 @@
                 <version>${fabric8-kubernetes-client.version.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>${annotation-api.version}</version>
+            </dependency>
+
             <!--  apache hudi dependencies management -->
             <dependency>
                 <groupId>org.apache.hudi</groupId>
@@ -862,6 +843,30 @@
             <id>gcs-maven-central-mirror</id>
             <name>GCS Maven Central mirror Asia Pacific</name>
             <url>https://maven-central-asia.storage-download.googleapis.com/maven2/</url>
+        </repository>
+
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>apache-releases</id>
+            <name>apache releases</name>
+            <url>https://repository.apache.org/content/repositories/releases/</url>
+        </repository>
+
+        <repository>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>apache-snapshots</id>
+            <name>apache snapshots</name>
+            <url>https://repository.apache.org/content/repositories/snapshots/</url>
         </repository>
     </repositories>
 
@@ -925,11 +930,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <version>${maven-shade-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1009,16 +1009,16 @@
                                 <order>,javax,java,\\#</order>
                             </importOrder>
                             <licenseHeader>
-                                <file>copyright.txt</file>
+                                <file>tools/maven/copyright.txt</file>
                             </licenseHeader>
                         </java>
                         <scala>
                             <scalafmt>
                                 <scalaMajorVersion>2.12</scalaMajorVersion>
-                                <file>.scalafmt.conf</file>
+                                <file>tools/maven/scalafmt.conf</file>
                             </scalafmt>
                             <licenseHeader>
-                                <file>copyright.txt</file>
+                                <file>tools/maven/copyright.txt</file>
                             </licenseHeader>
                         </scala>
                     </configuration>
@@ -1037,7 +1037,7 @@
                                 <familyName>Apache License 2.0</familyName>
                             </licenseFamily>
                         </licenseFamilies>
-                        <excludesFile>.rat-excludes</excludesFile>
+                        <excludesFile>tools/maven/rat-excludes</excludesFile>
                     </configuration>
                     <executions>
                         <execution>
@@ -1073,6 +1073,60 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clean-plugin</artifactId>
                     <version>${maven-clean-plugin.version}</version>
+                    <configuration>
+                        <filesets>
+                            <fileset>
+                                <directory>${project.basedir}</directory>
+                                <includes>
+                                    <include>dependency-reduced-pom.xml</include>
+                                </includes>
+                            </fileset>
+                        </filesets>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven-shade-plugin.version}</version>
+                    <configuration>
+                        <filters combine.children="append">
+                            <filter>
+                                <artifact>*</artifact>
+                                <excludes>
+                                    <exclude>META-INF/maven/**</exclude>
+                                    <exclude>log4j.properties</exclude>
+                                    <exclude>log4j2.properties</exclude>
+                                    <exclude>log4j-test.properties</exclude>
+                                    <exclude>log4j2-test.properties</exclude>
+                                    <!-- Do not copy the signatures in the META-INF folder.
+                            Otherwise, this might cause SecurityExceptions when using the JAR. -->
+                                    <exclude>META-INF/*.SF</exclude>
+                                    <exclude>META-INF/*.DSA</exclude>
+                                    <exclude>META-INF/*.RSA</exclude>
+                                    <exclude>META-INF/services/javax.*</exclude>
+                                    <exclude>**/*.proto</exclude>
+                                    <exclude>hbase-webapps/**</exclude>
+                                    <exclude>org/codehaus/mojo/animal_sniffer/**</exclude>
+                                    <exclude>
+                                        org/apache/hadoop/hive/ql/optimizer/ppr/PartitionExpressionForMetastore**
+                                    </exclude>
+                                    <exclude>
+                                        org/apache/hadoop/hive/ql/security/authorization/AuthorizationPreEventListener**
+                                    </exclude>
+                                </excludes>
+                            </filter>
+                        </filters>
+                        <transformers>
+                            <!-- The service transformer is needed to merge META-INF/services files -->
+                            <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            <!-- The ApacheNoticeResourceTransformer collects and aggregates NOTICE files -->
+                            <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer">
+                                <projectName>Apache Amoro (incubating)</projectName>
+                                <inceptionYear>${project.inceptionYear}</inceptionYear>
+                                <encoding>UTF-8</encoding>
+                            </transformer>
+                        </transformers>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1098,6 +1152,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+            </plugin>
         </plugins>
     </build>
 
@@ -1114,7 +1172,7 @@
                 <guava.version>14.0.1</guava.version>
                 <hive.version>2.3.9</hive.version>
                 <hadoop.version>2.10.2</hadoop.version>
-                <terminal.spark.version>3.2.2</terminal.spark.version>
+                <terminal.spark.version>3.2.4</terminal.spark.version>
                 <terminal.spark.major.version>3.2</terminal.spark.major.version>
             </properties>
         </profile>

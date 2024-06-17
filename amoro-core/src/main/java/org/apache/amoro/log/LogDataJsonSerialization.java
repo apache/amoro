@@ -18,9 +18,9 @@
 
 package org.apache.amoro.log;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.amoro.log.LogData.FieldGetterFactory;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.iceberg.Schema;
 
 import java.io.Serializable;

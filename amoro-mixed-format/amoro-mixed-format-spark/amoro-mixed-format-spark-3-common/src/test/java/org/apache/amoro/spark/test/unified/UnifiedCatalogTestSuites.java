@@ -22,11 +22,11 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.UnifiedCatalogLoader;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.spark.SparkUnifiedSessionCatalog;
 import org.apache.amoro.spark.test.SparkTestBase;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.junit.jupiter.api.Assertions;
@@ -95,7 +95,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     testCallProcedure(format);
 
     sql("DROP TABLE " + target() + " PURGE");
-    Assertions.assertFalse(unifiedCatalog().exist(target().database, target().table));
+    Assertions.assertFalse(unifiedCatalog().tableExists(target().database, target().table));
   }
 
   private String pkDDL(TableFormat format) {
@@ -173,7 +173,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     UnifiedCatalog unifiedCatalog =
         UnifiedCatalogLoader.loadUnifiedCatalog(
             CONTEXT.amsThriftUrl(), format.name().toLowerCase(), Maps.newHashMap());
-    if (!unifiedCatalog().exist(database())) {
+    if (!unifiedCatalog().databaseExists(database())) {
       unifiedCatalog.createDatabase(database());
     }
   }

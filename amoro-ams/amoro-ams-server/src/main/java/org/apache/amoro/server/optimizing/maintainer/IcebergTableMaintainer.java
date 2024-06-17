@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.optimizing.maintainer;
 
-import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
+import static org.apache.amoro.shade.guava32.com.google.common.primitives.Longs.min;
 
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.api.config.DataExpirationConfig;
@@ -29,6 +29,11 @@ import org.apache.amoro.io.SupportsFileSystemOperations;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
@@ -38,7 +43,6 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Schema;
@@ -54,11 +58,6 @@ import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.SupportsPrefixOperations;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.base.Strings;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
@@ -76,7 +75,6 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -210,7 +208,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
             TableFileUtil.deleteEmptyDirectory(fileIO(), parent, exclude);
           } catch (Exception e) {
             // Ignore exceptions to remove as many directories as possible
-            LOG.warn("Fail to delete empty directory " + parent, e);
+            LOG.warn("Fail to delete empty directory {}", parent, e);
           }
         });
 
@@ -244,7 +242,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
       DataExpirationConfig expirationConfig, Types.NestedField field) {
     switch (expirationConfig.getBaseOnRule()) {
       case CURRENT_TIME:
-        return Instant.now().atZone(getDefaultZoneId(field)).toInstant();
+        return Instant.now();
       case LAST_COMMIT_TIME:
         long lastCommitTimestamp = fetchLatestNonOptimizedSnapshotTime(getTable());
         // if the table does not exist any non-optimized snapshots, should skip the expiration
@@ -570,29 +568,14 @@ public class IcebergTableMaintainer implements TableMaintainer {
     Iterable<Snapshot> snapshots = internalTable.snapshots();
     int size = Iterables.size(snapshots);
     LOG.info("{} getRuntime {} snapshots to scan", tableName, size);
-    int cnt = 0;
     for (Snapshot snapshot : snapshots) {
-      cnt++;
-      int before = validFiles.size();
       String manifestListLocation = snapshot.manifestListLocation();
-
       validFiles.add(TableFileUtil.getUriPath(manifestListLocation));
-
-      // valid data files
-      List<ManifestFile> manifestFiles = snapshot.allManifests(internalTable.io());
-      for (ManifestFile manifestFile : manifestFiles) {
-        validFiles.add(TableFileUtil.getUriPath(manifestFile.path()));
-      }
-
-      LOG.info(
-          "{} scan snapshot {}: {} and getRuntime {} files, complete {}/{}",
-          tableName,
-          snapshot.snapshotId(),
-          formatTime(snapshot.timestampMillis()),
-          validFiles.size() - before,
-          cnt,
-          size);
     }
+    // valid data files
+    Set<String> allManifestFiles = IcebergTableUtil.getAllManifestFiles(internalTable);
+    allManifestFiles.forEach(f -> validFiles.add(TableFileUtil.getUriPath(f)));
+
     Stream.of(
             ReachableFileUtil.metadataFileLocations(internalTable, false).stream(),
             ReachableFileUtil.statisticsFilesLocations(internalTable).stream(),
@@ -638,11 +621,6 @@ public class IcebergTableMaintainer implements TableMaintainer {
     }
 
     return filesToDelete;
-  }
-
-  private static String formatTime(long timestamp) {
-    return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault())
-        .toString();
   }
 
   CloseableIterable<FileEntry> fileScan(

@@ -73,9 +73,6 @@ limitations under the License.
 </template>
 
 <script lang="ts" setup>
-// TODO: replace to antv-4. After all replacements are completed, switch to automatic import.
-import { Tabs as ATabs, TabPane as ATabPane, Table as ATable, Collapse as ACollapse, CollapsePanel as ACollapsePanel } from 'ant-design-vue'
-
 import { reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { IColumns, IKeyAndValue, IContainerSetting } from '@/types/common.type'
@@ -85,13 +82,9 @@ const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const loading = ref<boolean>(false)
-const systemSettingArray = reactive<IKeyAndValue>([])
+const systemSettingArray = reactive<IKeyAndValue[]>([])
 const containerSetting = reactive<IContainerSetting[]>([])
-const optimzeGroupColumns: IColumns[] = reactive([
-  { title: t('name'), dataIndex: 'name', width: 340, ellipsis: true },
-  { title: t('propertiesMemory', { type: 'taskmanager' }), dataIndex: 'tmMemory', width: '50%', ellipsis: true },
-  { title: t('propertiesMemory', { type: 'jobmanager' }), dataIndex: 'jmMemory', width: '50%', ellipsis: true }
-])
+
 const basicColumns: IColumns[] = reactive([
   { title: t('key'), dataIndex: 'key', width: 340, ellipsis: true },
   { title: t('value'), dataIndex: 'value' }
@@ -133,17 +126,17 @@ async function getContainersSettingInfo() {
     const res = await getContainersSetting()
     activeKey.value = []
     containerSetting.length = 0;
-    (res || []).forEach((ele, index) => {
+    (res || []).forEach((ele: any, index: number) => {
       ele.propertiesArray = []
       activeKey.value.push(ele.name)
       containerSetting.push(ele)
       Object.keys(ele.properties || {}).forEach(key => {
-        containerSetting[index].propertiesArray.push({
+        containerSetting[index].propertiesArray?.push({
           key: key,
           value: ele.properties[key]
         })
       });
-      (ele.optimizeGroup || []).forEach(group => {
+      (ele.optimizeGroup || []).forEach((group: { innerPropertiesArray: { key: string; value: any }[]; properties: { [x: string]: any } }) => {
         group.innerPropertiesArray = []
         Object.keys(group.properties || {}).forEach(key => {
           group.innerPropertiesArray.push({

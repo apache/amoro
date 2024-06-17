@@ -25,6 +25,8 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.spark.SparkUnifiedCatalog;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -32,8 +34,6 @@ import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.exceptions.NoSuchTableException;
-import org.apache.iceberg.relocated.com.google.common.base.Joiner;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.apache.thrift.TException;
@@ -44,10 +44,10 @@ import java.util.Map;
 public class SparkTestContext {
 
   public static final String SESSION_CATALOG_IMPL =
-      "org.apache.amoro.spark.ArcticSparkSessionCatalog";
-  public static final String MIXED_CATALOG_IMPL = "org.apache.amoro.spark.ArcticSparkCatalog";
+      "org.apache.amoro.spark.MixedFormatSparkSessionCatalog";
+  public static final String MIXED_CATALOG_IMPL = "org.apache.amoro.spark.MixedFormatSparkCatalog";
   public static final String SQL_EXTENSIONS_IMPL =
-      "org.apache.amoro.spark.ArcticSparkExtensions"
+      "org.apache.amoro.spark.MixedFormatSparkExtensions"
           + ",org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions";
 
   public static final String UNIFIED_CATALOG_IMP = SparkUnifiedCatalog.class.getName();
@@ -250,7 +250,7 @@ public class SparkTestContext {
       cleanLocalSparkContext();
 
       SparkConf sparkconf =
-          new SparkConf().setAppName("arctic-spark-unit-tests").setMaster("local[*]");
+          new SparkConf().setAppName("mixed-format-spark-unit-tests").setMaster("local[*]");
       sparkConf.forEach(sparkconf::set);
       spark = SparkSession.builder().config(sparkconf).getOrCreate();
       spark.sparkContext().setLogLevel("WARN");

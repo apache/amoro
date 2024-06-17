@@ -25,6 +25,7 @@ import static org.apache.amoro.table.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT
 
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
@@ -34,7 +35,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 
 import java.util.List;

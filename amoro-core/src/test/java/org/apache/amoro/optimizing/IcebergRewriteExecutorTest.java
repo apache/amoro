@@ -23,6 +23,10 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -44,10 +48,6 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.parquet.Parquet;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.Pair;
 import org.junit.Assert;
@@ -255,7 +255,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
         Schema projectionWithoutConstantAndMetadataFields =
             TypeUtil.selectNot(
                 fileProjection,
-                org.apache.iceberg.relocated.com.google.common.collect.Sets.union(
+                org.apache.amoro.shade.guava32.com.google.common.collect.Sets.union(
                     idToConstant.keySet(), MetadataColumns.metadataFieldIds()));
         org.apache.iceberg.orc.ORC.ReadBuilder orc =
             org.apache

@@ -18,11 +18,11 @@
 
 package org.apache.amoro.data;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;

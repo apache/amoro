@@ -35,11 +35,18 @@
 
     <properties>
         <hive.version>2.3.9</hive.version>
-        <spark.version>3.2.2</spark.version>
+        <spark.version>3.2.4</spark.version>
         <scala.version>2.12.15</scala.version>
+        <scala.collection.compat>2.11.0</scala.collection.compat>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.scala-lang.modules</groupId>
+            <artifactId>scala-collection-compat_${scala.binary.version}</artifactId>
+            <version>${scala.collection.compat}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_2.12</artifactId>

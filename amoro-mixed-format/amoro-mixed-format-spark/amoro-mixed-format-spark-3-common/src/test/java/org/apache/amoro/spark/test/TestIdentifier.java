@@ -54,7 +54,7 @@ public class TestIdentifier {
     return new TestIdentifier(sparkCatalog, amsCatalog, database, table, source);
   }
 
-  public TableIdentifier toArcticIdentifier() {
+  public TableIdentifier toAmoroIdentifier() {
     return TableIdentifier.of(amsCatalogName, database, table);
   }
 

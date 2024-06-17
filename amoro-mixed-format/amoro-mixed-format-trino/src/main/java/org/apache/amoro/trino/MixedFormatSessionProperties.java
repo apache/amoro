@@ -25,7 +25,7 @@ import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.iceberg.IcebergSessionProperties;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.session.PropertyMetadata;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 
 import javax.inject.Inject;
 

@@ -18,8 +18,8 @@
 
 package org.apache.iceberg.spark.data;
 
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.OriginalType;
@@ -38,7 +38,7 @@ import java.util.List;
 
 /**
  * Copy from iceberg {@link ParquetWithSparkSchemaVisitor} to change some code, see annotation
- * "Change For Arctic"
+ * "Change for mixed-format table"
  */
 public class AdaptHiveParquetWithSparkSchemaVisitor<T> {
   private final Deque<String> fieldNames = Lists.newLinkedList();
@@ -189,7 +189,7 @@ public class AdaptHiveParquetWithSparkSchemaVisitor<T> {
       Type field = group.getFields().get(i);
       StructField sField = sFields[i];
 
-      // Change For Arctic ⬇
+      // Change for mixed-format table ⬇
       // Preconditions.checkArgument(field.getName().equals(AvroSchemaUtil.makeCompatibleName(sField.name())),
       //     "Structs do not match: field %s != %s", field.getName(), sField.name());
       Preconditions.checkArgument(
@@ -197,7 +197,7 @@ public class AdaptHiveParquetWithSparkSchemaVisitor<T> {
           "Structs do not match: field %s != %s",
           field.getName(),
           sField.name());
-      // Change For Arctic ⬆
+      // Change for mixed-format table ⬆
       results.add(visitField(sField, field, visitor));
     }
 

@@ -26,7 +26,7 @@ import org.apache.amoro.api.NoSuchObjectException;
 import org.apache.amoro.api.OperationConflictException;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.TableIdentifier;
-import org.apache.thrift.TException;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 
 import java.util.HashMap;
 import java.util.Map;

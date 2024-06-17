@@ -39,8 +39,6 @@ import { shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { DetailColumnItem } from '@/types/common.type'
 
-import { Table as ATable, Checkbox as ACheckbox } from 'ant-design-vue'
-
 const { t } = useI18n()
 
 const props = defineProps<{ fields: DetailColumnItem[], loading: boolean }>()
@@ -60,7 +58,3 @@ defineExpose({
 })
 
 </script>
-<style lang="less" scoped>
-.field-wrap {
-}
-</style>

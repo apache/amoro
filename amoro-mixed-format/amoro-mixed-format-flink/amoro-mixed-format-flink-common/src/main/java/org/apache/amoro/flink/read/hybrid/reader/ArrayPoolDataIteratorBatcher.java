@@ -21,12 +21,12 @@ package org.apache.amoro.flink.read.hybrid.reader;
 import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SOURCE_READER_FETCH_BATCH_RECORD_COUNT;
 
 import org.apache.amoro.flink.read.source.DataIterator;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.SourceReaderOptions;
 import org.apache.flink.connector.file.src.util.Pool;
 import org.apache.iceberg.io.CloseableIterator;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.IOException;
 import java.util.NoSuchElementException;
