@@ -116,7 +116,7 @@ public class TableProperties {
   public static final boolean SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT = true;
 
   public static final String SELF_OPTIMIZING_MIN_PLAN_INTERVAL =
-          "self-optimizing.min-plan-interval";
+      "self-optimizing.min-plan-interval";
   public static final long SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT = 60000;
 
   /** deprecated table optimize related properties */
@@ -144,6 +144,7 @@ public class TableProperties {
 
   /** table clean related properties */
   public static final String ENABLE_TABLE_EXPIRE = "table-expire.enabled";
+
   public static final boolean ENABLE_TABLE_EXPIRE_DEFAULT = true;
 
   public static final String CHANGE_DATA_TTL = "change.data.ttl.minutes";
@@ -156,10 +157,10 @@ public class TableProperties {
   public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;
 
   public static final String MIN_ORPHAN_FILE_EXISTING_TIME =
-          "clean-orphan-file.min-existing-time-minutes";
+      "clean-orphan-file.min-existing-time-minutes";
   public static final long MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = 2880; // 2 Days
   public static final String ENABLE_DANGLING_DELETE_FILES_CLEAN =
-          "clean-dangling-delete-files.enabled";
+      "clean-dangling-delete-files.enabled";
   public static final boolean ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT = true;
 
   public static final String ENABLE_DATA_EXPIRATION = "data-expire.enabled";
@@ -204,6 +205,7 @@ public class TableProperties {
 
   /** table tag management related properties */
   public static final String ENABLE_AUTO_CREATE_TAG = "tag.auto-create.enabled";
+
   public static final boolean ENABLE_AUTO_CREATE_TAG_DEFAULT = false;
 
   public static final String AUTO_CREATE_TAG_TRIGGER_PERIOD = "tag.auto-create.trigger.period";
@@ -226,6 +228,7 @@ public class TableProperties {
 
   /** table write related properties */
   public static final String FILE_FORMAT_PARQUET = "parquet";
+
   public static final String FILE_FORMAT_ORC = "orc";
 
   public static final String BASE_FILE_FORMAT = "base.write.format";
@@ -287,6 +290,7 @@ public class TableProperties {
 
   /** log store related properties */
   public static final String ENABLE_LOG_STORE = "log-store.enabled";
+
   public static final boolean ENABLE_LOG_STORE_DEFAULT = false;
 
   public static final String LOG_STORE_TYPE = "log-store.type";
