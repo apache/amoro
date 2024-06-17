@@ -21,11 +21,13 @@ package org.apache.amoro.server.dashboard;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.data.DataFileType;
+import org.apache.amoro.formats.hudi.HudiSnapshot;
 import org.apache.amoro.formats.hudi.HudiTable;
 import org.apache.amoro.server.dashboard.model.AMSColumnInfo;
 import org.apache.amoro.server.dashboard.model.AMSPartitionField;
 import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;
 import org.apache.amoro.server.dashboard.model.DDLInfo;
+import org.apache.amoro.server.dashboard.model.FilesStatistics;
 import org.apache.amoro.server.dashboard.model.OperationType;
 import org.apache.amoro.server.dashboard.model.OptimizingProcessInfo;
 import org.apache.amoro.server.dashboard.model.OptimizingTaskInfo;
@@ -35,19 +37,33 @@ import org.apache.amoro.server.dashboard.model.ServerTableMeta;
 import org.apache.amoro.server.dashboard.model.TableSummary;
 import org.apache.amoro.server.dashboard.model.TagOrBranchInfo;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
+import org.apache.amoro.server.optimizing.OptimizingProcess;
+import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.utils.HudiTableUtil;
 import org.apache.avro.Schema;
+import org.apache.hudi.avro.model.HoodieCompactionOperation;
+import org.apache.hudi.avro.model.HoodieCompactionPlan;
 import org.apache.hudi.common.model.FileSlice;
 import org.apache.hudi.common.model.HoodieBaseFile;
+import org.apache.hudi.common.model.HoodieCommitMetadata;
 import org.apache.hudi.common.model.HoodieTableType;
+import org.apache.hudi.common.model.HoodieWriteStat;
 import org.apache.hudi.common.table.HoodieTableConfig;
 import org.apache.hudi.common.table.HoodieTableMetaClient;
 import org.apache.hudi.common.table.TableSchemaResolver;
+import org.apache.hudi.common.table.timeline.HoodieActiveTimeline;
+import org.apache.hudi.common.table.timeline.HoodieDefaultTimeline;
+import org.apache.hudi.common.table.timeline.HoodieInstant;
 import org.apache.hudi.common.table.timeline.HoodieInstantTimeGenerator;
+import org.apache.hudi.common.table.timeline.HoodieTimeline;
+import org.apache.hudi.common.table.timeline.TimelineMetadataUtils;
 import org.apache.hudi.common.table.view.SyncableFileSystemView;
+import org.apache.hudi.common.util.Option;
+import org.apache.hudi.common.util.StringUtils;
 import org.apache.hudi.metadata.HoodieTableMetadata;
 import org.apache.hudi.table.HoodieJavaTable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +76,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -199,7 +216,6 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
           snapshotsOfTable.setCommitTime(s.getCommitTimestamp());
           snapshotsOfTable.setFileCount(s.getTotalFileCount());
           snapshotsOfTable.setFileSize((int)s.getTotalFileSize());
-          snapshotsOfTable.setRecords(s.getTotalFileCount());
           snapshotsOfTable.setSummary(s.getSummary());
           snapshotsOfTable.setOperation(s.getOperation());
           Map<String, String> fileSummary = new HashMap<>();
@@ -287,9 +303,98 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
 
 
   @Override
-  public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(AmoroTable<?> amoroTable, int limit, int offset) {
-    return null;
+  public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
+      AmoroTable<?> amoroTable, int limit, int offset) {
+    HudiTable hudiTable = (HudiTable) amoroTable;
+    List<HudiSnapshot> snapshots = hudiTable.getSnapshotList(ioExecutors);
+    snapshots = snapshots.stream()
+        .filter(s -> OperationType.OPTIMIZING.name().equalsIgnoreCase(s.getOperationType()))
+        .collect(Collectors.toList());
+    HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
+    HoodieDefaultTimeline timeline = new HoodieActiveTimeline(hoodieTable.getMetaClient(), false);
+    List<HoodieInstant> instants = timeline.getInstants();
+    Map<String, HoodieInstant> instantMap = Maps.newHashMap();
+    for (HoodieInstant instant: instants) {
+      instantMap.put(instant.getTimestamp() + "_" + instant.getState().name(), instant);
+    }
+
+    List<OptimizingProcessInfo> infos = snapshots.stream()
+          .map(s -> {
+            OptimizingProcessInfo processInfo = null;
+            try {
+              processInfo = getOptimizingInfo(s.getSnapshotId(), instantMap, timeline);
+              processInfo.setProcessId(s.getCommitTimestamp());
+              processInfo.setCatalogName(amoroTable.id().getCatalog());
+              processInfo.setDbName(amoroTable.id().getDatabase());
+              processInfo.setTableName(amoroTable.id().getTableName());
+              return processInfo;
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          }).collect(Collectors.toList());
+    return Pair.of(infos, infos.size());
   }
+
+  protected OptimizingProcessInfo getOptimizingInfo(
+      String instantTimestamp, Map<String, HoodieInstant> instantMap, HoodieTimeline timeline) throws IOException {
+    OptimizingProcessInfo processInfo = new OptimizingProcessInfo();
+    long timestamp = parseHoodieCommitTime(instantTimestamp);
+    processInfo.setProcessId(timestamp);
+    HoodieInstant request = instantMap.get(instantTimestamp + "_" + HoodieInstant.State.REQUESTED.name());
+    if (request == null) {
+      return null;
+    }
+    long startTime = parseHoodieCommitTime(request.getStateTransitionTime());
+    processInfo.setStartTime(startTime);
+
+    Option<byte[]> detail = timeline.getInstantDetails(request);
+    HoodieCompactionPlan compactionPlan =
+        TimelineMetadataUtils.deserializeCompactionPlan(detail.get());
+    int inputFileCount = 0;
+    long inputFileSize = 0;
+    for (HoodieCompactionOperation operation: compactionPlan.getOperations()) {
+      if (StringUtils.nonEmpty(operation.getDataFilePath())) {
+        inputFileCount += 1;
+      }
+      inputFileCount += operation.getDeltaFilePaths().size();
+      inputFileSize += operation.getMetrics().getOrDefault("TOTAL_LOG_FILES_SIZE", 0.0);
+    }
+    processInfo.setInputFiles(FilesStatistics.build(inputFileCount, inputFileSize));
+    int tasks = compactionPlan.getOperations().size();
+    processInfo.setTotalTasks(tasks);
+    processInfo.setSuccessTasks(tasks);
+    processInfo.setOptimizingType(OptimizingType.MINOR);
+
+    HoodieInstant commit = instantMap.get(instantTimestamp + "_" + HoodieInstant.State.COMPLETED.name());
+
+    if (commit != null) {
+      long commitTimestamp = parseHoodieCommitTime(commit.getStateTransitionTime());
+      processInfo.setDuration(commitTimestamp - startTime);
+      processInfo.setStatus(OptimizingProcess.Status.SUCCESS);
+      Option<byte[]> commitDetail = timeline.getInstantDetails(commit);
+      HoodieCommitMetadata commitMetadata = HoodieCommitMetadata.fromBytes(
+          commitDetail.get(), HoodieCommitMetadata.class);
+      Map<String, List<HoodieWriteStat>> commitInfo = commitMetadata.getPartitionToWriteStats();
+      int outputFile = 0;
+      long outputFileSize = 0;
+      for (String partition: commitInfo.keySet()) {
+        List<HoodieWriteStat> writeStats = commitInfo.get(partition);
+        for (HoodieWriteStat stat: writeStats) {
+          outputFile += 1;
+          outputFileSize += stat.getFileSizeInBytes();
+        }
+      }
+      processInfo.setOutputFiles(FilesStatistics.build(outputFile, outputFileSize));
+    } else {
+      HoodieInstant inf = instantMap.get(instantTimestamp + "_" + HoodieInstant.State.INFLIGHT.name());
+      if (inf != null) {
+        processInfo.setStatus(OptimizingProcess.Status.RUNNING);
+      }
+    }
+
+    return processInfo;
+  }
+
 
   @Override
   public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, long processId) {

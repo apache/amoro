@@ -13,6 +13,7 @@ import org.apache.hudi.common.table.timeline.HoodieActiveTimeline;
 import org.apache.hudi.common.table.timeline.HoodieInstant;
 import org.apache.hudi.common.table.timeline.HoodieInstantTimeGenerator;
 import org.apache.hudi.common.table.timeline.HoodieTimeline;
+import org.apache.hudi.common.table.timeline.TimelineMetadataUtils;
 import org.apache.hudi.common.table.view.SyncableFileSystemView;
 import org.apache.hudi.common.util.Option;
 import org.apache.hudi.common.util.collection.Pair;
@@ -117,6 +118,11 @@ public class HudiTable implements AmoroTable<HoodieJavaTable> {
   private final static Set<String> WRITE_INSTANT_TYPES = Sets.newHashSet(
       COMMIT_ACTION, DELTA_COMMIT_ACTION, REPLACE_COMMIT_ACTION, SAVEPOINT_ACTION, ROLLBACK_ACTION);
 
+  private final static Set<String> OPTIMIZING_HOODIE_OPERATION = Sets.newHashSet(
+      WriteOperationType.CLUSTER.value(), WriteOperationType.COMPACT.value(),
+      WriteOperationType.LOG_COMPACT.value()
+  );
+
   private Map<String, HudiSnapshot> constructSnapshots(Executor ioExecutors) {
     HoodieActiveTimeline timeline = hoodieTable.getActiveTimeline();
     List<HoodieInstant> instants = timeline.filterCompletedInstants().getInstants();
@@ -144,9 +150,7 @@ public class HudiTable implements AmoroTable<HoodieJavaTable> {
         LOG.error("Error when fetch hoodie instant metadata", e);
       }
     }
-
     SyncableFileSystemView fileSystemView = hoodieTable.getHoodieView();
-
     AtomicInteger totalFileCount = new AtomicInteger(0);
     AtomicInteger baseFileCount = new AtomicInteger(0);
     AtomicInteger logFileCount = new AtomicInteger(0);
@@ -167,9 +171,9 @@ public class HudiTable implements AmoroTable<HoodieJavaTable> {
 
     }
 
-    String operation = instant.getAction();
+    String operation = instant.getAction().toUpperCase();
     if (hoodieOperationType != null) {
-      operation = operation + "(" + hoodieOperationType + ")";
+      operation = hoodieOperationType;
     }
     String operationType = null;
     if (WRITE_INSTANT_TYPES.contains(instant.getAction())) {
@@ -178,7 +182,7 @@ public class HudiTable implements AmoroTable<HoodieJavaTable> {
       operationType = "OPTIMIZING";
     }
 
-    if (REPLACE_COMMIT_ACTION.equalsIgnoreCase(operation) && WriteOperationType.CLUSTER.value().equalsIgnoreCase(hoodieOperationType)) {
+    if (OPTIMIZING_HOODIE_OPERATION.contains(hoodieOperationType)) {
       operationType = "OPTIMIZING";
     }
 
