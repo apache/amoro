@@ -403,7 +403,7 @@ public class MixedHiveTables {
       } else {
         String tableLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
         if (fileIO.exists(tableLocation)) {
-          LOG.info("try to delete table directory location is " + tableLocation);
+          LOG.info("try to delete table directory location is {}", tableLocation);
           fileIO.asPrefixFileIO().deletePrefix(tableLocation);
         }
       }

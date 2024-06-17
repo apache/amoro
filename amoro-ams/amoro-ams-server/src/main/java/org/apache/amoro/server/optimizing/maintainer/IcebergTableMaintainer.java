@@ -208,7 +208,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
             TableFileUtil.deleteEmptyDirectory(fileIO(), parent, exclude);
           } catch (Exception e) {
             // Ignore exceptions to remove as many directories as possible
-            LOG.warn("Fail to delete empty directory " + parent, e);
+            LOG.warn("Fail to delete empty directory {}", parent, e);
           }
         });
 

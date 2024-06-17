@@ -202,7 +202,7 @@ public class AmoroServiceContainer {
     Thread thread = new Thread(server::serve, threadName);
     thread.setDaemon(true);
     thread.start();
-    LOG.info(threadName + " has been started");
+    LOG.info("{} has been started", threadName);
   }
 
   private void initHttpService() {

@@ -94,7 +94,7 @@ public class SparkTestBase {
   @BeforeEach
   public void before() {
     try {
-      LOG.debug("prepare database for table test: " + database());
+      LOG.debug("prepare database for table test: {}", database());
       UnifiedCatalog catalog = unifiedCatalog();
       if (!unifiedCatalog().databaseExists(database())) {
         catalog.createDatabase(database());
@@ -107,7 +107,7 @@ public class SparkTestBase {
 
   @AfterEach
   public void after() {
-    LOG.debug("clean up table after test: " + currentCatalog + "." + database() + "." + table());
+    LOG.debug("clean up table after test: {}.{}.{}", currentCatalog, database(), table());
     UnifiedCatalog catalog = unifiedCatalog();
     try {
       catalog.dropTable(database, table, true);
@@ -153,7 +153,7 @@ public class SparkTestBase {
 
   protected Dataset<Row> sql(String sqlText) {
     long begin = System.currentTimeMillis();
-    LOG.info("Execute SQL: " + sqlText);
+    LOG.info("Execute SQL: {}", sqlText);
     Dataset<Row> ds = spark().sql(sqlText);
     if (ds.columns().length == 0) {
       LOG.info("+----------------+");
@@ -163,7 +163,7 @@ public class SparkTestBase {
       ds.show();
     }
     qe = ds.queryExecution();
-    LOG.info("SQL Execution cost: " + (System.currentTimeMillis() - begin) + " ms");
+    LOG.info("SQL Execution cost: {} ms", System.currentTimeMillis() - begin);
     return ds;
   }
 

@@ -425,7 +425,7 @@ public class MixedTableMaintainer implements TableMaintainer {
               changeFiles.size());
         }
       } catch (Throwable t) {
-        LOG.error(unkeyedTable.name() + " failed to delete change files, ignore", t);
+        LOG.error("{} failed to delete change files, ignore", unkeyedTable.name(), t);
       }
     }
   }

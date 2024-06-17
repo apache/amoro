@@ -145,7 +145,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizers.forEach(optimizer -> registerOptimizer(optimizer, false));
     groupToTableRuntimes
         .keySet()
-        .forEach(groupName -> LOG.warn("Unloaded task runtime in group " + groupName));
+        .forEach(groupName -> LOG.warn("Unloaded task runtime in group {}", groupName));
   }
 
   private void registerOptimizer(OptimizerInstance optimizer, boolean needPersistency) {

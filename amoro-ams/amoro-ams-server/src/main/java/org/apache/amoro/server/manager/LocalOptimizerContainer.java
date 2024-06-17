@@ -80,7 +80,7 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
     }
     try {
       Runtime runtime = Runtime.getRuntime();
-      LOG.info("Stopping optimizer using command:" + cmd);
+      LOG.info("Stopping optimizer using command:{}", cmd);
       runtime.exec(finalCmd);
     } catch (Exception e) {
       throw new RuntimeException("Failed to release optimizer.", e);
