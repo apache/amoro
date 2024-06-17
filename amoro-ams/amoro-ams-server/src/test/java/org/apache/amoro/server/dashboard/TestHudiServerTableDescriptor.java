@@ -18,5 +18,4 @@
 
 package org.apache.amoro.server.dashboard;
 
-public class TestHudiServerTableDescriptor {
-}
+public class TestHudiServerTableDescriptor {}

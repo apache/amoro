@@ -18,31 +18,23 @@
 
 package org.apache.amoro.server.utils;
 
-import org.apache.amoro.api.ColumnInfo;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
-import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.hudi.common.model.FileSlice;
 import org.apache.hudi.common.model.HoodieLogFile;
 import org.apache.hudi.common.table.view.SyncableFileSystemView;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Common utils for hudi table.
- */
+/** Common utils for hudi table. */
 public class HudiTableUtil {
-
 
   public static String convertAvroSchemaToFieldType(Schema schema) {
     switch (schema.getType()) {
@@ -72,8 +64,7 @@ public class HudiTableUtil {
       case FIXED:
         // logical decimal type
         if (schema.getLogicalType() instanceof LogicalTypes.Decimal) {
-          final LogicalTypes.Decimal decimalType =
-              (LogicalTypes.Decimal) schema.getLogicalType();
+          final LogicalTypes.Decimal decimalType = (LogicalTypes.Decimal) schema.getLogicalType();
           return "DECIMAL(" + decimalType.getPrecision() + ", " + decimalType.getScale() + ")";
         }
         // convert fixed size binary data to primitive byte arrays
@@ -81,8 +72,7 @@ public class HudiTableUtil {
       case BYTES:
         // logical decimal type
         if (schema.getLogicalType() instanceof LogicalTypes.Decimal) {
-          final LogicalTypes.Decimal decimalType =
-              (LogicalTypes.Decimal) schema.getLogicalType();
+          final LogicalTypes.Decimal decimalType = (LogicalTypes.Decimal) schema.getLogicalType();
           return "DECIMAL(" + decimalType.getPrecision() + ", " + decimalType + ")";
         }
         return "BYTES";
@@ -124,7 +114,6 @@ public class HudiTableUtil {
     }
   }
 
-
   public static class HoodiePartitionMetric {
     private long totalBaseFileSizeInBytes;
     private long totalLogFileSizeInBytes;
@@ -132,8 +121,10 @@ public class HudiTableUtil {
     private long logFileCount;
 
     public HoodiePartitionMetric(
-        int baseFileCount, int logFileCount,
-        long totalBaseFileSizeInBytes, long totalLogFileSizeInBytes) {
+        int baseFileCount,
+        int logFileCount,
+        long totalBaseFileSizeInBytes,
+        long totalLogFileSizeInBytes) {
       this.baseFileCount = baseFileCount;
       this.logFileCount = logFileCount;
       this.totalBaseFileSizeInBytes = totalBaseFileSizeInBytes;
@@ -157,19 +148,20 @@ public class HudiTableUtil {
     }
   }
 
-
   public static Map<String, HoodiePartitionMetric> statisticPartitionsMetric(
-      List<String> partitionPaths, SyncableFileSystemView fileSystemView, ExecutorService ioExecutors
-  ) {
+      List<String> partitionPaths,
+      SyncableFileSystemView fileSystemView,
+      ExecutorService ioExecutors) {
     Map<String, CompletableFuture<HoodiePartitionMetric>> futures = new HashMap<>();
-    for (String path: partitionPaths) {
-      CompletableFuture<HoodiePartitionMetric> f = CompletableFuture.supplyAsync(
-          () -> getPartitionMetric(path, fileSystemView), ioExecutors);
+    for (String path : partitionPaths) {
+      CompletableFuture<HoodiePartitionMetric> f =
+          CompletableFuture.supplyAsync(
+              () -> getPartitionMetric(path, fileSystemView), ioExecutors);
       futures.put(path, f);
     }
 
     Map<String, HoodiePartitionMetric> results = new HashMap<>();
-    for (String path: partitionPaths) {
+    for (String path : partitionPaths) {
       CompletableFuture<HoodiePartitionMetric> future = futures.get(path);
       try {
         HoodiePartitionMetric metric = future.get();
@@ -181,8 +173,10 @@ public class HudiTableUtil {
     return results;
   }
 
-  private static HoodiePartitionMetric getPartitionMetric(String partitionPath, SyncableFileSystemView fsView) {
-    List<FileSlice> latestSlices = fsView.getLatestFileSlices(partitionPath).collect(Collectors.toList());
+  private static HoodiePartitionMetric getPartitionMetric(
+      String partitionPath, SyncableFileSystemView fsView) {
+    List<FileSlice> latestSlices =
+        fsView.getLatestFileSlices(partitionPath).collect(Collectors.toList());
     // Total size of the metadata and count of base/log files
     long totalBaseFileSizeInBytes = 0;
     long totalLogFileSizeInBytes = 0;
@@ -202,7 +196,6 @@ public class HudiTableUtil {
     }
 
     return new HoodiePartitionMetric(
-        baseFileCount, logFileCount, totalBaseFileSizeInBytes, totalLogFileSizeInBytes
-    );
+        baseFileCount, logFileCount, totalBaseFileSizeInBytes, totalLogFileSizeInBytes);
   }
 }

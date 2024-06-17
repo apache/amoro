@@ -1,10 +1,37 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.amoro.formats.hudi;
+
+import static org.apache.hudi.common.table.timeline.HoodieTimeline.CLEAN_ACTION;
+import static org.apache.hudi.common.table.timeline.HoodieTimeline.COMMIT_ACTION;
+import static org.apache.hudi.common.table.timeline.HoodieTimeline.COMPACTION_ACTION;
+import static org.apache.hudi.common.table.timeline.HoodieTimeline.DELTA_COMMIT_ACTION;
+import static org.apache.hudi.common.table.timeline.HoodieTimeline.INDEXING_ACTION;
+import static org.apache.hudi.common.table.timeline.HoodieTimeline.LOG_COMPACTION_ACTION;
+import static org.apache.hudi.common.table.timeline.HoodieTimeline.REPLACE_COMMIT_ACTION;
+import static org.apache.hudi.common.table.timeline.HoodieTimeline.ROLLBACK_ACTION;
+import static org.apache.hudi.common.table.timeline.HoodieTimeline.SAVEPOINT_ACTION;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableSnapshot;
 import org.apache.amoro.table.TableIdentifier;
-import org.apache.hudi.common.model.BaseFile;
 import org.apache.hudi.common.model.FileSlice;
 import org.apache.hudi.common.model.HoodieCommitMetadata;
 import org.apache.hudi.common.model.HoodieWriteStat;
@@ -13,13 +40,10 @@ import org.apache.hudi.common.table.timeline.HoodieActiveTimeline;
 import org.apache.hudi.common.table.timeline.HoodieInstant;
 import org.apache.hudi.common.table.timeline.HoodieInstantTimeGenerator;
 import org.apache.hudi.common.table.timeline.HoodieTimeline;
-import org.apache.hudi.common.table.timeline.TimelineMetadataUtils;
 import org.apache.hudi.common.table.view.SyncableFileSystemView;
 import org.apache.hudi.common.util.Option;
-import org.apache.hudi.common.util.collection.Pair;
 import org.apache.hudi.metadata.HoodieTableMetadata;
 import org.apache.hudi.table.HoodieJavaTable;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,16 +66,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.apache.hudi.common.table.timeline.HoodieTimeline.CLEAN_ACTION;
-import static org.apache.hudi.common.table.timeline.HoodieTimeline.COMMIT_ACTION;
-import static org.apache.hudi.common.table.timeline.HoodieTimeline.COMPACTION_ACTION;
-import static org.apache.hudi.common.table.timeline.HoodieTimeline.DELTA_COMMIT_ACTION;
-import static org.apache.hudi.common.table.timeline.HoodieTimeline.INDEXING_ACTION;
-import static org.apache.hudi.common.table.timeline.HoodieTimeline.LOG_COMPACTION_ACTION;
-import static org.apache.hudi.common.table.timeline.HoodieTimeline.REPLACE_COMMIT_ACTION;
-import static org.apache.hudi.common.table.timeline.HoodieTimeline.ROLLBACK_ACTION;
-import static org.apache.hudi.common.table.timeline.HoodieTimeline.SAVEPOINT_ACTION;
-
 public class HudiTable implements AmoroTable<HoodieJavaTable> {
   private static final Logger LOG = LoggerFactory.getLogger(HudiTable.class);
   private final TableIdentifier identifier;
@@ -67,14 +81,17 @@ public class HudiTable implements AmoroTable<HoodieJavaTable> {
       Map<String, String> tableProperties) {
     this.identifier = identifier;
     this.hoodieTable = hoodieTable;
-    this.tableProperties = tableProperties == null ?
-     Collections.emptyMap(): Collections.unmodifiableMap(tableProperties);
+    this.tableProperties =
+        tableProperties == null
+            ? Collections.emptyMap()
+            : Collections.unmodifiableMap(tableProperties);
   }
 
   @Override
   public TableIdentifier id() {
     return identifier;
   }
+
   @Override
   public TableFormat format() {
     return TableFormat.HUDI;
@@ -95,7 +112,6 @@ public class HudiTable implements AmoroTable<HoodieJavaTable> {
     throw new IllegalStateException("The method is not implement.");
   }
 
-
   public List<HudiSnapshot> getSnapshotList(Executor ioExecutors) {
     return new ArrayList<>(getSnapshots(ioExecutors).values());
   }
@@ -113,15 +129,26 @@ public class HudiTable implements AmoroTable<HoodieJavaTable> {
     return snapshots;
   }
 
-  private final static Set<String> OPTIMIZING_INSTANT_TYPES = Sets.newHashSet(
-      CLEAN_ACTION, COMPACTION_ACTION, REPLACE_COMMIT_ACTION, INDEXING_ACTION, LOG_COMPACTION_ACTION);
-  private final static Set<String> WRITE_INSTANT_TYPES = Sets.newHashSet(
-      COMMIT_ACTION, DELTA_COMMIT_ACTION, REPLACE_COMMIT_ACTION, SAVEPOINT_ACTION, ROLLBACK_ACTION);
+  private static final Set<String> OPTIMIZING_INSTANT_TYPES =
+      Sets.newHashSet(
+          CLEAN_ACTION,
+          COMPACTION_ACTION,
+          REPLACE_COMMIT_ACTION,
+          INDEXING_ACTION,
+          LOG_COMPACTION_ACTION);
+  private static final Set<String> WRITE_INSTANT_TYPES =
+      Sets.newHashSet(
+          COMMIT_ACTION,
+          DELTA_COMMIT_ACTION,
+          REPLACE_COMMIT_ACTION,
+          SAVEPOINT_ACTION,
+          ROLLBACK_ACTION);
 
-  private final static Set<String> OPTIMIZING_HOODIE_OPERATION = Sets.newHashSet(
-      WriteOperationType.CLUSTER.value(), WriteOperationType.COMPACT.value(),
-      WriteOperationType.LOG_COMPACT.value()
-  );
+  private static final Set<String> OPTIMIZING_HOODIE_OPERATION =
+      Sets.newHashSet(
+          WriteOperationType.CLUSTER.value(),
+          WriteOperationType.COMPACT.value(),
+          WriteOperationType.LOG_COMPACT.value());
 
   private Map<String, HudiSnapshot> constructSnapshots(Executor ioExecutors) {
     HoodieActiveTimeline timeline = hoodieTable.getActiveTimeline();
@@ -142,8 +169,8 @@ public class HudiTable implements AmoroTable<HoodieJavaTable> {
     if (optDetail.isPresent()) {
       byte[] detail = optDetail.get();
       try {
-        HoodieCommitMetadata metadata = HoodieCommitMetadata.fromBytes(
-            detail, HoodieCommitMetadata.class);
+        HoodieCommitMetadata metadata =
+            HoodieCommitMetadata.fromBytes(detail, HoodieCommitMetadata.class);
         hoodieOperationType = metadata.getOperationType().value();
         summary = getSnapshotSummary(metadata);
       } catch (IOException e) {
@@ -155,20 +182,20 @@ public class HudiTable implements AmoroTable<HoodieJavaTable> {
     AtomicInteger baseFileCount = new AtomicInteger(0);
     AtomicInteger logFileCount = new AtomicInteger(0);
     AtomicLong totalFileSize = new AtomicLong(0);
-    for (String partition: this.partitions) {
-      Stream<FileSlice> fsStream = fileSystemView.getLatestMergedFileSlicesBeforeOrOn(
-          partition, instant.getTimestamp());
-      fsStream.forEach(fs -> {
-        int fsBaseCount = fs.getBaseFile().map( f -> 1).orElse(0);
-        int fsLogFileCount = (int)fs.getLogFiles().count();
+    for (String partition : this.partitions) {
+      Stream<FileSlice> fsStream =
+          fileSystemView.getLatestMergedFileSlicesBeforeOrOn(partition, instant.getTimestamp());
+      fsStream.forEach(
+          fs -> {
+            int fsBaseCount = fs.getBaseFile().map(f -> 1).orElse(0);
+            int fsLogFileCount = (int) fs.getLogFiles().count();
 
-        baseFileCount.addAndGet(fsBaseCount);
-        logFileCount.addAndGet(fsLogFileCount);
-        totalFileCount.addAndGet(fsBaseCount);
-        totalFileCount.addAndGet(fsLogFileCount);
-        totalFileSize.addAndGet(fs.getTotalFileSize());
-      });
-
+            baseFileCount.addAndGet(fsBaseCount);
+            logFileCount.addAndGet(fsLogFileCount);
+            totalFileCount.addAndGet(fsBaseCount);
+            totalFileCount.addAndGet(fsLogFileCount);
+            totalFileSize.addAndGet(fs.getTotalFileSize());
+          });
     }
 
     String operation = instant.getAction().toUpperCase();
@@ -186,11 +213,17 @@ public class HudiTable implements AmoroTable<HoodieJavaTable> {
       operationType = "OPTIMIZING";
     }
 
-
     return new HudiSnapshot(
-        snapshotId, timestamp, operationType, operation,
-        totalFileCount.get(), baseFileCount.get(), logFileCount.get(),
-        totalFileSize.get(), 0L,  summary);
+        snapshotId,
+        timestamp,
+        operationType,
+        operation,
+        totalFileCount.get(),
+        baseFileCount.get(),
+        logFileCount.get(),
+        totalFileSize.get(),
+        0L,
+        summary);
   }
 
   private Map<String, String> getSnapshotSummary(HoodieCommitMetadata metadata) {
@@ -198,15 +231,15 @@ public class HudiTable implements AmoroTable<HoodieJavaTable> {
     long totalWriteBytes = 0;
     long recordWrites = 0;
     long recordDeletes = 0;
-    long recordInserts =0;
-    long recordUpdates =0;
+    long recordInserts = 0;
+    long recordUpdates = 0;
     Set<String> partitions = new HashSet<>();
     Set<String> files = new HashSet<>();
     Map<String, List<HoodieWriteStat>> hoodieWriteStats = metadata.getPartitionToWriteStats();
-    for (String partition: hoodieWriteStats.keySet()) {
+    for (String partition : hoodieWriteStats.keySet()) {
       List<HoodieWriteStat> ptWriteStat = hoodieWriteStats.get(partition);
       partitions.add(partition);
-      for (HoodieWriteStat writeStat: ptWriteStat) {
+      for (HoodieWriteStat writeStat : ptWriteStat) {
         totalWriteBytes += writeStat.getTotalWriteBytes();
         recordWrites += writeStat.getNumWrites();
         recordDeletes += writeStat.getNumDeletes();
@@ -224,7 +257,6 @@ public class HudiTable implements AmoroTable<HoodieJavaTable> {
     summary.put("write-files", String.valueOf(files.size()));
     return summary;
   }
-
 
   private long parseHoodieCommitTime(String commitTime) {
     try {

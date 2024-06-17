@@ -42,9 +42,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Hudi catalog implement in hadoop filesystem.
- */
+/** Hudi catalog implement in hadoop filesystem. */
 public class HudiHadoopCatalog implements FormatCatalog {
   private final TableMetaStore metaStore;
   private final String catalog;
@@ -55,42 +53,46 @@ public class HudiHadoopCatalog implements FormatCatalog {
       String catalog, Map<String, String> catalogProperties, TableMetaStore metaStore) {
     this.catalog = catalog;
     this.metaStore = metaStore;
-    this.properties = catalogProperties == null ?
-        Collections.emptyMap():
-        Collections.unmodifiableMap(catalogProperties);
+    this.properties =
+        catalogProperties == null
+            ? Collections.emptyMap()
+            : Collections.unmodifiableMap(catalogProperties);
 
     Preconditions.checkArgument(
         this.properties.containsKey(CatalogMetaProperties.KEY_WAREHOUSE),
-        "Lack required property: {}", CatalogMetaProperties.KEY_WAREHOUSE);
+        "Lack required property: {}",
+        CatalogMetaProperties.KEY_WAREHOUSE);
     String warehosue = this.properties.get(CatalogMetaProperties.KEY_WAREHOUSE);
     this.warehouse = new Path(warehosue);
   }
 
   @Override
   public List<String> listDatabases() {
-    return metaStore.doAs(() -> {
-      FileSystem fs = fs();
-      FileStatus[] fileStatuses = fs.listStatus(warehouse);
-      if (fileStatuses == null || fileStatuses.length == 0) {
-        return Lists.newArrayList();
-      }
-      List<String> databases = Lists.newArrayList();
-      for (FileStatus s: fileStatuses) {
-        if (!s.isDirectory()) {
-          continue;
-        }
-        databases.add(s.getPath().getName());
-      }
-      return databases;
-    });
+    return metaStore.doAs(
+        () -> {
+          FileSystem fs = fs();
+          FileStatus[] fileStatuses = fs.listStatus(warehouse);
+          if (fileStatuses == null || fileStatuses.length == 0) {
+            return Lists.newArrayList();
+          }
+          List<String> databases = Lists.newArrayList();
+          for (FileStatus s : fileStatuses) {
+            if (!s.isDirectory()) {
+              continue;
+            }
+            databases.add(s.getPath().getName());
+          }
+          return databases;
+        });
   }
 
   @Override
   public boolean exist(String database) {
-    return metaStore.doAs(() -> {
-      FileSystem fs = fs();
-      return fs.exists(new Path(warehouse, database));
-    });
+    return metaStore.doAs(
+        () -> {
+          FileSystem fs = fs();
+          return fs.exists(new Path(warehouse, database));
+        });
   }
 
   @Override
@@ -98,104 +100,107 @@ public class HudiHadoopCatalog implements FormatCatalog {
     try {
       loadTableLocation(database, table);
       return true;
-    }catch (NoSuchTableException e) {
+    } catch (NoSuchTableException e) {
       return false;
     }
   }
 
   @Override
   public void createDatabase(String database) {
-    metaStore.doAs(() -> {
-      FileSystem fs = fs();
-      fs.mkdirs(new Path(warehouse, database));
-      return null;
-    });
+    metaStore.doAs(
+        () -> {
+          FileSystem fs = fs();
+          fs.mkdirs(new Path(warehouse, database));
+          return null;
+        });
   }
 
   @Override
   public void dropDatabase(String database) {
     List<String> tables = listTables(database);
     if (!tables.isEmpty()) {
-      throw new DatabaseNotEmptyException("Database: "+ database + " is not empty");
+      throw new DatabaseNotEmptyException("Database: " + database + " is not empty");
     }
-    metaStore.doAs(() -> {
-      FileSystem fs = fs();
-      Path path = new Path(warehouse, database);
-      fs.delete(path, true);
-      return null;
-    });
+    metaStore.doAs(
+        () -> {
+          FileSystem fs = fs();
+          Path path = new Path(warehouse, database);
+          fs.delete(path, true);
+          return null;
+        });
   }
 
   @Override
   public boolean dropTable(String database, String table, boolean purge) {
     Path databasePath = new Path(warehouse, database);
     Path tablePath = new Path(databasePath, table);
-    return metaStore.doAs(() -> {
-      Path dropPath = new Path(tablePath, ".hoodie");
-      if (purge) {
-        dropPath = tablePath;
-      }
-      try {
-        FileSystem fs = fs();
-        return fs.delete(dropPath, true);
-      }catch (IOException e) {
-        return false;
-      }
-    });
+    return metaStore.doAs(
+        () -> {
+          Path dropPath = new Path(tablePath, ".hoodie");
+          if (purge) {
+            dropPath = tablePath;
+          }
+          try {
+            FileSystem fs = fs();
+            return fs.delete(dropPath, true);
+          } catch (IOException e) {
+            return false;
+          }
+        });
   }
 
   @Override
   public List<String> listTables(String database) {
-    return metaStore.doAs(() -> {
-      FileSystem fs = fs();
-      Path databasePath = new Path(warehouse, database);
-      FileStatus[] items = fs.listStatus(databasePath);
-      if (items == null || items.length == 0) {
-        return Lists.newArrayList();
-      }
-      List<String> hoodieTables = Lists.newArrayList();
-      for (FileStatus fileStatus: items) {
-        if (fileStatus.isDirectory()) {
-          Path tablePath = fileStatus.getPath();
-          if (isHoodieTableBase(fs, tablePath)) {
-            hoodieTables.add(tablePath.getName());
+    return metaStore.doAs(
+        () -> {
+          FileSystem fs = fs();
+          Path databasePath = new Path(warehouse, database);
+          FileStatus[] items = fs.listStatus(databasePath);
+          if (items == null || items.length == 0) {
+            return Lists.newArrayList();
           }
-        }
-      }
-      return hoodieTables;
-    });
+          List<String> hoodieTables = Lists.newArrayList();
+          for (FileStatus fileStatus : items) {
+            if (fileStatus.isDirectory()) {
+              Path tablePath = fileStatus.getPath();
+              if (isHoodieTableBase(fs, tablePath)) {
+                hoodieTables.add(tablePath.getName());
+              }
+            }
+          }
+          return hoodieTables;
+        });
   }
-
 
   @Override
   public AmoroTable<?> loadTable(String database, String table) {
     String tableLocation = loadTableLocation(database, table);
-    HoodieJavaEngineContext context = new HoodieJavaEngineContext(
-        metaStore.getConfiguration());
-    HoodieWriteConfig config = HoodieWriteConfig.newBuilder()
-        .withPath(tableLocation)
-        .build();
+    HoodieJavaEngineContext context = new HoodieJavaEngineContext(metaStore.getConfiguration());
+    HoodieWriteConfig config = HoodieWriteConfig.newBuilder().withPath(tableLocation).build();
 
-    return metaStore.doAs(() -> {
-      HoodieJavaTable hoodieTable = HoodieJavaTable.create(config, context);
-      TableIdentifier identifier = TableIdentifier.of(catalog, database, table);
-      Map<String, String> tableProperties = hoodieTable.getMetaClient().getTableConfig().propsMap();
-      Map<String, String> properties = MixedCatalogUtil.mergeCatalogPropertiesToTable(
-          tableProperties, this.properties);
-      return new HudiTable(identifier, hoodieTable, properties);
-    });
+    return metaStore.doAs(
+        () -> {
+          HoodieJavaTable hoodieTable = HoodieJavaTable.create(config, context);
+          TableIdentifier identifier = TableIdentifier.of(catalog, database, table);
+          Map<String, String> tableProperties =
+              hoodieTable.getMetaClient().getTableConfig().propsMap();
+          Map<String, String> properties =
+              MixedCatalogUtil.mergeCatalogPropertiesToTable(tableProperties, this.properties);
+          return new HudiTable(identifier, hoodieTable, properties);
+        });
   }
 
   private String loadTableLocation(String database, String table) {
     Path databasePath = new Path(warehouse, database);
     Path tablePath = new Path(databasePath, table);
-    return metaStore.doAs(() -> {
-      FileSystem fs = fs();
-      if (isHoodieTableBase(fs, tablePath)) {
-        return tablePath.toString();
-      }
-      throw new NoSuchTableException(database + "." + table + " is not exists");
-    });
+    return metaStore.doAs(
+        () -> {
+          FileSystem fs = fs();
+          if (isHoodieTableBase(fs, tablePath)) {
+            return tablePath.toString();
+          }
+          throw new NoSuchTableException(database + "." + table + " is not exists");
+        });
   }
 
   private boolean isHoodieTableBase(FileSystem fs, Path path) throws IOException {
@@ -203,7 +208,7 @@ public class HudiHadoopCatalog implements FormatCatalog {
       Path metadataPath = new Path(path, ".hoodie");
       FileStatus status = fs.getFileStatus(metadataPath);
       return status.isDirectory();
-    }catch (FileNotFoundException e) {
+    } catch (FileNotFoundException e) {
       return false;
     }
   }

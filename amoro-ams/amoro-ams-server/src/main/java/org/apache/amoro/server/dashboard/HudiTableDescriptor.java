@@ -21,7 +21,6 @@ package org.apache.amoro.server.dashboard;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.data.DataFileType;
-import org.apache.amoro.formats.hudi.HudiSnapshot;
 import org.apache.amoro.formats.hudi.HudiTable;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.dashboard.model.AMSColumnInfo;
@@ -80,16 +79,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * Table descriptor for hudi.
- */
+/** Table descriptor for hudi. */
 public class HudiTableDescriptor implements FormatTableDescriptor {
 
   private static final Logger LOG = LoggerFactory.getLogger(HudiTableDescriptor.class);
@@ -99,7 +95,6 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
   public HudiTableDescriptor(ExecutorService ioExecutor) {
     this.ioExecutors = ioExecutor;
   }
-
 
   @Override
   public List<TableFormat> supportFormat() {
@@ -118,19 +113,23 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     List<AMSColumnInfo> columns = Lists.newArrayList();
     try {
       Schema scheme = schemaResolver.getTableAvroSchema(false);
-      scheme.getFields().forEach(field -> {
-        AMSColumnInfo columnInfo = new AMSColumnInfo();
-        columnInfo.setField(field.name());
-        columnInfo.setType(HudiTableUtil.convertAvroSchemaToFieldType(field.schema()).toLowerCase());
-        columnInfo.setRequired(true);
-        columnInfo.setComment(field.doc());
-        columns.add(columnInfo);
-      });
+      scheme
+          .getFields()
+          .forEach(
+              field -> {
+                AMSColumnInfo columnInfo = new AMSColumnInfo();
+                columnInfo.setField(field.name());
+                columnInfo.setType(
+                    HudiTableUtil.convertAvroSchemaToFieldType(field.schema()).toLowerCase());
+                columnInfo.setRequired(true);
+                columnInfo.setComment(field.doc());
+                columns.add(columnInfo);
+              });
     } catch (Exception e) {
       throw new IllegalStateException("Error when parse table schema", e);
     }
-    Map<String, AMSColumnInfo> columnMap = columns.stream()
-        .collect(Collectors.toMap(AMSColumnInfo::getField, Function.identity()));
+    Map<String, AMSColumnInfo> columnMap =
+        columns.stream().collect(Collectors.toMap(AMSColumnInfo::getField, Function.identity()));
     meta.setSchema(columns);
     meta.setProperties(amoroTable.properties());
     meta.setBaseLocation(metaClient.getBasePathV2().toString());
@@ -139,7 +138,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
       String[] partitionFields = hoodieTableConfig.getPartitionFields().get();
       List<AMSPartitionField> partitions = new ArrayList<>(partitionFields.length);
 
-      for (String f: partitionFields) {
+      for (String f : partitionFields) {
         if (columnMap.containsKey(f)) {
           partitions.add(new AMSPartitionField(f, null, null, null, null));
         }
@@ -149,7 +148,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     if (hoodieTableConfig.getRecordKeyFields().map(f -> f.length > 0).orElse(false)) {
       String[] recordFields = hoodieTableConfig.getRecordKeyFields().get();
       List<AMSColumnInfo> primaryKeys = Lists.newArrayList();
-      for (String field: recordFields) {
+      for (String field : recordFields) {
         if (columnMap.containsKey(field)) {
           primaryKeys.add(columnMap.get(field));
         }
@@ -166,14 +165,13 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     }
 
     SyncableFileSystemView fileSystemView = hoodieTable.getHoodieView();
-    Map<String, HudiTableUtil.HoodiePartitionMetric> metrics = HudiTableUtil.statisticPartitionsMetric(
-        partitions, fileSystemView, ioExecutors
-    );
+    Map<String, HudiTableUtil.HoodiePartitionMetric> metrics =
+        HudiTableUtil.statisticPartitionsMetric(partitions, fileSystemView, ioExecutors);
     long baseFileCount = 0;
     long logFileCount = 0;
     long totalBaseSizeInByte = 0;
     long totalLogSizeInByte = 0;
-    for (HudiTableUtil.HoodiePartitionMetric m: metrics.values()) {
+    for (HudiTableUtil.HoodiePartitionMetric m : metrics.values()) {
       baseFileCount += m.getBaseFileCount();
       logFileCount += m.getLogFileCount();
       totalBaseSizeInByte += m.getTotalBaseFileSizeInBytes();
@@ -181,27 +179,30 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     }
     long totalFileCount = baseFileCount + logFileCount;
     long totalFileSize = totalBaseSizeInByte + totalLogSizeInByte;
-    String averageFileSize = AmsUtil.byteToXB(totalFileCount == 0 ? 0 : totalFileSize / totalFileCount);
+    String averageFileSize =
+        AmsUtil.byteToXB(totalFileCount == 0 ? 0 : totalFileSize / totalFileCount);
 
-    String tableType = metaClient.getTableType() == HoodieTableType.COPY_ON_WRITE ? "cow": "mor";
+    String tableType = metaClient.getTableType() == HoodieTableType.COPY_ON_WRITE ? "cow" : "mor";
     String tableFormat = "Hudi(" + tableType + ")";
-    TableSummary tableSummary = new TableSummary(
-        totalFileCount,  AmsUtil.byteToXB(totalFileSize), averageFileSize, tableFormat
-    );
+    TableSummary tableSummary =
+        new TableSummary(
+            totalFileCount, AmsUtil.byteToXB(totalFileSize), averageFileSize, tableFormat);
     meta.setTableSummary(tableSummary);
 
     Map<String, Object> baseSummary = new HashMap<>();
     baseSummary.put("totalSize", AmsUtil.byteToXB(totalBaseSizeInByte));
     baseSummary.put("fileCount", baseFileCount);
-    baseSummary.put("averageFileSize", AmsUtil.byteToXB(baseFileCount == 0?
-        0: totalBaseSizeInByte / baseFileCount));
+    baseSummary.put(
+        "averageFileSize",
+        AmsUtil.byteToXB(baseFileCount == 0 ? 0 : totalBaseSizeInByte / baseFileCount));
     meta.setBaseMetrics(baseSummary);
     if (HoodieTableType.MERGE_ON_READ == metaClient.getTableType()) {
       Map<String, Object> logSummary = new HashMap<>();
       logSummary.put("totalSize", AmsUtil.byteToXB(totalLogSizeInByte));
       logSummary.put("fileCount", logFileCount);
-      logSummary.put("averageFileSize", AmsUtil.byteToXB(logFileCount == 0 ?
-          0: totalLogSizeInByte / logFileCount));
+      logSummary.put(
+          "averageFileSize",
+          AmsUtil.byteToXB(logFileCount == 0 ? 0 : totalLogSizeInByte / logFileCount));
       meta.setChangeMetrics(logSummary);
     }
     return meta;
@@ -212,40 +213,42 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
       AmoroTable<?> amoroTable, String ref, OperationType operationType) {
     HudiTable hudiTable = (HudiTable) amoroTable;
 
-    return hudiTable.getSnapshotList(ioExecutors)
-        .stream()
-        .filter(s -> OperationType.ALL == operationType || operationType.name().equalsIgnoreCase(s.getOperationType()))
-        .map(s -> {
-          AmoroSnapshotsOfTable snapshotsOfTable = new AmoroSnapshotsOfTable();
-          snapshotsOfTable.setSnapshotId(s.getSnapshotId());
-          snapshotsOfTable.setCommitTime(s.getCommitTimestamp());
-          snapshotsOfTable.setFileCount(s.getTotalFileCount());
-          snapshotsOfTable.setFileSize((int)s.getTotalFileSize());
-          snapshotsOfTable.setSummary(s.getSummary());
-          snapshotsOfTable.setOperation(s.getOperation());
-          Map<String, String> fileSummary = new HashMap<>();
-          fileSummary.put("delta-files", "0");
-          fileSummary.put("data-files", String.valueOf(s.getBaseFileCount()));
-          fileSummary.put("changelogs", String.valueOf(s.getLogFileCount()));
-          snapshotsOfTable.setFilesSummaryForChart(fileSummary);
-          return snapshotsOfTable;
-        }).collect(Collectors.toList());
+    return hudiTable.getSnapshotList(ioExecutors).stream()
+        .filter(
+            s ->
+                OperationType.ALL == operationType
+                    || operationType.name().equalsIgnoreCase(s.getOperationType()))
+        .map(
+            s -> {
+              AmoroSnapshotsOfTable snapshotsOfTable = new AmoroSnapshotsOfTable();
+              snapshotsOfTable.setSnapshotId(s.getSnapshotId());
+              snapshotsOfTable.setCommitTime(s.getCommitTimestamp());
+              snapshotsOfTable.setFileCount(s.getTotalFileCount());
+              snapshotsOfTable.setFileSize((int) s.getTotalFileSize());
+              snapshotsOfTable.setSummary(s.getSummary());
+              snapshotsOfTable.setOperation(s.getOperation());
+              Map<String, String> fileSummary = new HashMap<>();
+              fileSummary.put("delta-files", "0");
+              fileSummary.put("data-files", String.valueOf(s.getBaseFileCount()));
+              fileSummary.put("changelogs", String.valueOf(s.getLogFileCount()));
+              snapshotsOfTable.setFilesSummaryForChart(fileSummary);
+              return snapshotsOfTable;
+            })
+        .collect(Collectors.toList());
   }
 
-
-
-
   @Override
-  public List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, String snapshotId) {
+  public List<PartitionFileBaseInfo> getSnapshotDetail(
+      AmoroTable<?> amoroTable, String snapshotId) {
     HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
     SyncableFileSystemView fileSystemView = hoodieTable.getHoodieView();
-    Map<String, Stream<FileSlice>> ptFsMap = fileSystemView.getAllLatestFileSlicesBeforeOrOn(snapshotId);
+    Map<String, Stream<FileSlice>> ptFsMap =
+        fileSystemView.getAllLatestFileSlicesBeforeOrOn(snapshotId);
     List<PartitionFileBaseInfo> files = Lists.newArrayList();
-    for (String partition: ptFsMap.keySet()) {
+    for (String partition : ptFsMap.keySet()) {
       Stream<FileSlice> fsStream = ptFsMap.get(partition);
-      List<PartitionFileBaseInfo> fileInPartition = fsStream
-          .flatMap( fs -> fileSliceToFileStream(partition, fs))
-          .collect(Collectors.toList());
+      List<PartitionFileBaseInfo> fileInPartition =
+          fsStream.flatMap(fs -> fileSliceToFileStream(partition, fs)).collect(Collectors.toList());
       files.addAll(fileInPartition);
     }
     return files;
@@ -262,25 +265,31 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
     List<String> partitions = hudiTable.getPartitions();
     SyncableFileSystemView fileSystemView = hoodieTable.getHoodieView();
-    Map<String, HudiTableUtil.HoodiePartitionMetric> metrics = HudiTableUtil.statisticPartitionsMetric(
-        partitions, fileSystemView, ioExecutors
-    );
+    Map<String, HudiTableUtil.HoodiePartitionMetric> metrics =
+        HudiTableUtil.statisticPartitionsMetric(partitions, fileSystemView, ioExecutors);
     return metrics.entrySet().stream()
-        .map(e -> {
-          PartitionBaseInfo p = new PartitionBaseInfo();
-          p.setPartition(e.getKey());
-          p.setFileCount(e.getValue().getBaseFileCount() + e.getValue().getLogFileCount());
-          p.setFileSize(e.getValue().getTotalBaseFileSizeInBytes() + e.getValue().getTotalLogFileSizeInBytes());
-          return p;
-        }).collect(Collectors.toList());
+        .map(
+            e -> {
+              PartitionBaseInfo p = new PartitionBaseInfo();
+              p.setPartition(e.getKey());
+              p.setFileCount(e.getValue().getBaseFileCount() + e.getValue().getLogFileCount());
+              p.setFileSize(
+                  e.getValue().getTotalBaseFileSizeInBytes()
+                      + e.getValue().getTotalLogFileSizeInBytes());
+              return p;
+            })
+        .collect(Collectors.toList());
   }
 
   @Override
-  public List<PartitionFileBaseInfo> getTableFiles(AmoroTable<?> amoroTable, String partition, Integer specId) {
+  public List<PartitionFileBaseInfo> getTableFiles(
+      AmoroTable<?> amoroTable, String partition, Integer specId) {
     HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
     SyncableFileSystemView fileSystemView = hoodieTable.getHoodieView();
     Stream<FileSlice> fileSliceStream = fileSystemView.getLatestFileSlices(partition);
-    return fileSliceStream.flatMap(fs -> fileSliceToFileStream(partition, fs)).collect(Collectors.toList());
+    return fileSliceStream
+        .flatMap(fs -> fileSliceToFileStream(partition, fs))
+        .collect(Collectors.toList());
   }
 
   private Stream<PartitionFileBaseInfo> fileSliceToFileStream(String partition, FileSlice fs) {
@@ -288,24 +297,34 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     if (fs.getBaseFile().isPresent()) {
       HoodieBaseFile baseFile = fs.getBaseFile().get();
       long commitTime = parseHoodieCommitTime(baseFile.getCommitTime());
-      PartitionFileBaseInfo file = new PartitionFileBaseInfo(
-          baseFile.getCommitTime(), DataFileType.BASE_FILE,
-          commitTime, partition, 0, baseFile.getPath(),
-          baseFile.getFileSize()
-      );
+      PartitionFileBaseInfo file =
+          new PartitionFileBaseInfo(
+              baseFile.getCommitTime(),
+              DataFileType.BASE_FILE,
+              commitTime,
+              partition,
+              0,
+              baseFile.getPath(),
+              baseFile.getFileSize());
       files.add(file);
     }
-    fs.getLogFiles().forEach(l -> {
-      //TODO: can't get commit time from log file
-      PartitionFileBaseInfo file = new PartitionFileBaseInfo(
-          "", DataFileType.LOG_FILE, 0L,
-          partition, 0, l.getPath().toString(), l.getFileSize()
-      );
-      files.add(file);
-    });
+    fs.getLogFiles()
+        .forEach(
+            l -> {
+              // TODO: can't get commit time from log file
+              PartitionFileBaseInfo file =
+                  new PartitionFileBaseInfo(
+                      "",
+                      DataFileType.LOG_FILE,
+                      0L,
+                      partition,
+                      0,
+                      l.getPath().toString(),
+                      l.getFileSize());
+              files.add(file);
+            });
     return files.stream();
   }
-
 
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
@@ -314,47 +333,52 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     HoodieDefaultTimeline timeline = new HoodieActiveTimeline(hoodieTable.getMetaClient(), false);
     List<HoodieInstant> instants = timeline.getInstants();
     Map<String, HoodieInstant> instantMap = Maps.newHashMap();
-    for (HoodieInstant instant: instants) {
+    for (HoodieInstant instant : instants) {
       instantMap.put(instant.getTimestamp() + "_" + instant.getState().name(), instant);
     }
-    Set<String> optimizingActions = Sets.newHashSet(
-        HoodieTimeline.COMPACTION_ACTION,
-        HoodieTimeline.CLEAN_ACTION,
-        HoodieTimeline.REPLACE_COMMIT_ACTION
-    );
+    Set<String> optimizingActions =
+        Sets.newHashSet(
+            HoodieTimeline.COMPACTION_ACTION,
+            HoodieTimeline.CLEAN_ACTION,
+            HoodieTimeline.REPLACE_COMMIT_ACTION);
 
-    List<String> timestamps = instants.stream()
-        .filter(i -> i.getState() == HoodieInstant.State.REQUESTED)
-        .filter(i -> optimizingActions.contains(i.getAction()))
-        .map(HoodieInstant::getTimestamp)
-        .collect(Collectors.toList());
+    List<String> timestamps =
+        instants.stream()
+            .filter(i -> i.getState() == HoodieInstant.State.REQUESTED)
+            .filter(i -> optimizingActions.contains(i.getAction()))
+            .map(HoodieInstant::getTimestamp)
+            .collect(Collectors.toList());
 
-    List<OptimizingProcessInfo> infos = timestamps.stream()
-          .map(t -> {
-            OptimizingProcessInfo processInfo = null;
-            try {
-              processInfo = getOptimizingInfo(t, instantMap, timeline);
-              if (processInfo == null) {
-                return null;
-              }
-              processInfo.setCatalogName(amoroTable.id().getCatalog());
-              processInfo.setDbName(amoroTable.id().getDatabase());
-              processInfo.setTableName(amoroTable.id().getTableName());
-              return processInfo;
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-          })
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+    List<OptimizingProcessInfo> infos =
+        timestamps.stream()
+            .map(
+                t -> {
+                  OptimizingProcessInfo processInfo = null;
+                  try {
+                    processInfo = getOptimizingInfo(t, instantMap, timeline);
+                    if (processInfo == null) {
+                      return null;
+                    }
+                    processInfo.setCatalogName(amoroTable.id().getCatalog());
+                    processInfo.setDbName(amoroTable.id().getDatabase());
+                    processInfo.setTableName(amoroTable.id().getTableName());
+                    return processInfo;
+                  } catch (IOException e) {
+                    throw new RuntimeException(e);
+                  }
+                })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
     return Pair.of(infos, infos.size());
   }
 
   protected OptimizingProcessInfo getOptimizingInfo(
-      String instantTimestamp, Map<String, HoodieInstant> instantMap, HoodieTimeline timeline) throws IOException {
+      String instantTimestamp, Map<String, HoodieInstant> instantMap, HoodieTimeline timeline)
+      throws IOException {
     OptimizingProcessInfo processInfo = new OptimizingProcessInfo();
     processInfo.setProcessId(instantTimestamp);
-    HoodieInstant request = instantMap.get(instantTimestamp + "_" + HoodieInstant.State.REQUESTED.name());
+    HoodieInstant request =
+        instantMap.get(instantTimestamp + "_" + HoodieInstant.State.REQUESTED.name());
     if (request == null) {
       return null;
     }
@@ -366,7 +390,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
         TimelineMetadataUtils.deserializeCompactionPlan(detail.get());
     int inputFileCount = 0;
     long inputFileSize = 0;
-    for (HoodieCompactionOperation operation: compactionPlan.getOperations()) {
+    for (HoodieCompactionOperation operation : compactionPlan.getOperations()) {
       if (StringUtils.nonEmpty(operation.getDataFilePath())) {
         inputFileCount += 1;
       }
@@ -379,28 +403,30 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     processInfo.setSuccessTasks(tasks);
     processInfo.setOptimizingType(OptimizingType.MINOR);
 
-    HoodieInstant commit = instantMap.get(instantTimestamp + "_" + HoodieInstant.State.COMPLETED.name());
+    HoodieInstant commit =
+        instantMap.get(instantTimestamp + "_" + HoodieInstant.State.COMPLETED.name());
 
     if (commit != null) {
       long commitTimestamp = parseHoodieCommitTime(commit.getStateTransitionTime());
       processInfo.setDuration(commitTimestamp - startTime);
       processInfo.setStatus(OptimizingProcess.Status.SUCCESS);
       Option<byte[]> commitDetail = timeline.getInstantDetails(commit);
-      HoodieCommitMetadata commitMetadata = HoodieCommitMetadata.fromBytes(
-          commitDetail.get(), HoodieCommitMetadata.class);
+      HoodieCommitMetadata commitMetadata =
+          HoodieCommitMetadata.fromBytes(commitDetail.get(), HoodieCommitMetadata.class);
       Map<String, List<HoodieWriteStat>> commitInfo = commitMetadata.getPartitionToWriteStats();
       int outputFile = 0;
       long outputFileSize = 0;
-      for (String partition: commitInfo.keySet()) {
+      for (String partition : commitInfo.keySet()) {
         List<HoodieWriteStat> writeStats = commitInfo.get(partition);
-        for (HoodieWriteStat stat: writeStats) {
+        for (HoodieWriteStat stat : writeStats) {
           outputFile += 1;
           outputFileSize += stat.getFileSizeInBytes();
         }
       }
       processInfo.setOutputFiles(FilesStatistics.build(outputFile, outputFileSize));
     } else {
-      HoodieInstant inf = instantMap.get(instantTimestamp + "_" + HoodieInstant.State.INFLIGHT.name());
+      HoodieInstant inf =
+          instantMap.get(instantTimestamp + "_" + HoodieInstant.State.INFLIGHT.name());
       if (inf != null) {
         processInfo.setStatus(OptimizingProcess.Status.RUNNING);
       }
@@ -408,15 +434,15 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     return processInfo;
   }
 
-
   @Override
-  public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, String processId) {
+  public List<OptimizingTaskInfo> getOptimizingTaskInfos(
+      AmoroTable<?> amoroTable, String processId) {
     HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
     HoodieDefaultTimeline timeline = new HoodieActiveTimeline(hoodieTable.getMetaClient(), false);
     List<HoodieInstant> instants = timeline.getInstants();
     HoodieInstant request = null;
     HoodieInstant complete = null;
-    for (HoodieInstant instant: instants) {
+    for (HoodieInstant instant : instants) {
       if (processId.equals(instant.getTimestamp())) {
         if (instant.getState() == HoodieInstant.State.REQUESTED) {
           request = instant;
@@ -438,13 +464,13 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
       endTime = parseHoodieCommitTime(complete.getStateTransitionTime());
       Option<byte[]> commitDetail = timeline.getInstantDetails(complete);
       try {
-        HoodieCommitMetadata commitMetadata = HoodieCommitMetadata.fromBytes(
-            commitDetail.get(), HoodieCommitMetadata.class);
+        HoodieCommitMetadata commitMetadata =
+            HoodieCommitMetadata.fromBytes(commitDetail.get(), HoodieCommitMetadata.class);
         Map<String, List<HoodieWriteStat>> commitInfo = commitMetadata.getPartitionToWriteStats();
 
-        for (String partition: commitInfo.keySet()) {
+        for (String partition : commitInfo.keySet()) {
           List<HoodieWriteStat> writeStats = commitInfo.get(partition);
-          for (HoodieWriteStat stat: writeStats) {
+          for (HoodieWriteStat stat : writeStats) {
             FilesStatistics fs = new FilesStatistics(1, stat.getFileSizeInBytes());
             outputFileStatistic.put(stat.getFileId(), fs);
           }
@@ -458,20 +484,31 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
       HoodieCompactionPlan compactionPlan =
           TimelineMetadataUtils.deserializeCompactionPlan(detail.get());
       int taskId = 0;
-      for (HoodieCompactionOperation operation: compactionPlan.getOperations()) {
+      for (HoodieCompactionOperation operation : compactionPlan.getOperations()) {
         int inputFileCount = operation.getDeltaFilePaths().size();
-        long inputFileSize = operation.getMetrics().getOrDefault("TOTAL_LOG_FILES_SIZE", 0.0).longValue();
-        OptimizingTaskInfo task = new OptimizingTaskInfo(
-            -1L, processId, taskId++, operation.getPartitionPath(),
-            status, 0, "", 0, startTime, endTime,
-            0, "",
-            new FilesStatistics(inputFileCount, inputFileSize),
-            outputFileStatistic.get(operation.getFileId()),
-            Maps.newHashMap(), Maps.newHashMap()
-        );
+        long inputFileSize =
+            operation.getMetrics().getOrDefault("TOTAL_LOG_FILES_SIZE", 0.0).longValue();
+        OptimizingTaskInfo task =
+            new OptimizingTaskInfo(
+                -1L,
+                processId,
+                taskId++,
+                operation.getPartitionPath(),
+                status,
+                0,
+                "",
+                0,
+                startTime,
+                endTime,
+                0,
+                "",
+                new FilesStatistics(inputFileCount, inputFileSize),
+                outputFileStatistic.get(operation.getFileId()),
+                Maps.newHashMap(),
+                Maps.newHashMap());
         results.add(task);
       }
-    }catch (IOException e) {
+    } catch (IOException e) {
       throw new IllegalStateException("Failed to get optimizing task info", e);
     }
 
@@ -486,13 +523,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
   @Override
   public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
     return Lists.newArrayList(
-        new TagOrBranchInfo("hoodie-timeline",
-            -1,
-            -1,
-            0L,
-            0L,
-            TagOrBranchInfo.BRANCH)
-    );
+        new TagOrBranchInfo("hoodie-timeline", -1, -1, 0L, 0L, TagOrBranchInfo.BRANCH));
   }
 
   private long parseHoodieCommitTime(String commitTime) {

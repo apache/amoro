@@ -18,17 +18,14 @@
 
 package org.apache.amoro.server.dashboard.model;
 
-/**
- * Table summary for page of details
- */
+/** Table summary for page of details */
 public class TableSummary {
   private long file;
   private String size;
   private String averageFile;
   private String tableFormat;
 
-  public TableSummary() {
-  }
+  public TableSummary() {}
 
   public TableSummary(long file, String size, String averageFile, String tableFormat) {
     this.file = file;
@@ -37,30 +34,22 @@ public class TableSummary {
     this.tableFormat = tableFormat;
   }
 
-  /**
-   * Total size of table in human readable.
-   */
+  /** Total size of table in human readable. */
   public String getSize() {
     return size;
   }
 
-  /**
-   * Average file size in human readable
-   */
+  /** Average file size in human readable */
   public String getAverageFile() {
     return averageFile;
   }
 
-  /**
-   * Table type of specified table.
-   */
+  /** Table type of specified table. */
   public String getTableFormat() {
     return tableFormat;
   }
 
-  /**
-   * Total file nums.
-   */
+  /** Total file nums. */
   public long getFile() {
     return file;
   }

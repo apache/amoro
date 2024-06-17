@@ -382,8 +382,7 @@ public class TableController {
 
     List<PartitionFileBaseInfo> result =
         tableDescriptor.getSnapshotDetail(
-            TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(),
-            snapshotId);
+            TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(), snapshotId);
     int offset = (page - 1) * pageSize;
     PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(result, offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));

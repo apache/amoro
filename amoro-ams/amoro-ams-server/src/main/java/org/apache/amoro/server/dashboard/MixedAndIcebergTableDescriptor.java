@@ -152,12 +152,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       serverTableMeta.setChangeMetrics(changeMetrics);
     }
     String averageFileSize = AmsUtil.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt);
-    TableSummary tableSummary = new TableSummary(
-        tableFileCnt,
-        AmsUtil.byteToXB(tableSize),
-        averageFileSize,
-        tableFormat
-    );
+    TableSummary tableSummary =
+        new TableSummary(tableFileCnt, AmsUtil.byteToXB(tableSize), averageFileSize, tableFormat);
     serverTableMeta.setTableSummary(tableSummary);
     return serverTableMeta;
   }
@@ -299,7 +295,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
-  public List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, String snapshotId) {
+  public List<PartitionFileBaseInfo> getSnapshotDetail(
+      AmoroTable<?> amoroTable, String snapshotId) {
     MixedTable mixedTable = getTable(amoroTable);
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     Snapshot snapshot;
@@ -489,7 +486,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
-  public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, String processId) {
+  public List<OptimizingTaskInfo> getOptimizingTaskInfos(
+      AmoroTable<?> amoroTable, String processId) {
     long id = Long.parseLong(processId);
     List<OptimizingTaskMeta> optimizingTaskMetaList =
         getAs(

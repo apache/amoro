@@ -21,7 +21,6 @@ package org.apache.amoro.formats.hudi;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.NoSuchDatabaseException;
-import org.apache.amoro.NoSuchTableException;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClient;
 import org.apache.amoro.table.TableIdentifier;
@@ -55,12 +54,14 @@ public class HudiHiveCatalog implements FormatCatalog {
   private final Map<String, String> properties;
   private final CachedHiveClientPool hiveClientPool;
 
-  protected HudiHiveCatalog(String catalog, Map<String, String> catalogProperties, TableMetaStore metaStore) {
+  protected HudiHiveCatalog(
+      String catalog, Map<String, String> catalogProperties, TableMetaStore metaStore) {
     this.catalog = catalog;
     this.metaStore = metaStore;
-    this.properties = catalogProperties == null ?
-        Collections.emptyMap():
-        Collections.unmodifiableMap(catalogProperties);
+    this.properties =
+        catalogProperties == null
+            ? Collections.emptyMap()
+            : Collections.unmodifiableMap(catalogProperties);
     this.hiveClientPool = new CachedHiveClientPool(metaStore, catalogProperties);
   }
 
@@ -95,10 +96,11 @@ public class HudiHiveCatalog implements FormatCatalog {
     try {
       Database hiveDatabase = new Database();
       hiveDatabase.setName(database);
-      hiveClientPool.run(client -> {
-        client.createDatabase(hiveDatabase);
-        return null;
-      });
+      hiveClientPool.run(
+          client -> {
+            client.createDatabase(hiveDatabase);
+            return null;
+          });
     } catch (AlreadyExistsException e) {
       throw new org.apache.amoro.AlreadyExistsException("Database:" + database + " already exists");
     } catch (TException | InterruptedException e) {
@@ -109,10 +111,11 @@ public class HudiHiveCatalog implements FormatCatalog {
   @Override
   public void dropDatabase(String database) {
     try {
-      hiveClientPool.run(client -> {
-        client.dropDatabase(database, false, false, false);
-        return null;
-      });
+      hiveClientPool.run(
+          client -> {
+            client.dropDatabase(database, false, false, false);
+            return null;
+          });
     } catch (NoSuchObjectException e) {
       // pass
     } catch (TException | InterruptedException e) {
@@ -129,20 +132,22 @@ public class HudiHiveCatalog implements FormatCatalog {
     Table hiveTable = optHiveTable.get();
     String location = hiveTable.getSd().getLocation();
     try {
-      hiveClientPool.run(client -> {
-        client.dropTable(database, table, purge, true);
-        return null;
-      });
+      hiveClientPool.run(
+          client -> {
+            client.dropTable(database, table, purge, true);
+            return null;
+          });
     } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to drop database from HMS", e);
     }
     if (purge) {
-      metaStore.doAs(() -> {
-        Path tableLocation = new Path(location);
-        FileSystem fs = FSUtils.getFs(tableLocation, metaStore.getConfiguration());
-        fs.delete(tableLocation, true);
-        return null;
-      });
+      metaStore.doAs(
+          () -> {
+            Path tableLocation = new Path(location);
+            FileSystem fs = FSUtils.getFs(tableLocation, metaStore.getConfiguration());
+            fs.delete(tableLocation, true);
+            return null;
+          });
     }
     return true;
   }
@@ -166,28 +171,28 @@ public class HudiHiveCatalog implements FormatCatalog {
   public AmoroTable<?> loadTable(String database, String table) {
     Optional<Table> hoodieHiveTable = loadHoodieHiveTable(database, table);
     if (!hoodieHiveTable.isPresent()) {
-      throw new NoSuchDatabaseException("Hoodie table: " + database + "." + table + " dose not exists");
+      throw new NoSuchDatabaseException(
+          "Hoodie table: " + database + "." + table + " dose not exists");
     }
     Table hiveTable = hoodieHiveTable.get();
     String tableLocation = hiveTable.getSd().getLocation();
-    HoodieJavaEngineContext context = new HoodieJavaEngineContext(
-        metaStore.getConfiguration());
-    HoodieWriteConfig config = HoodieWriteConfig.newBuilder()
-        .withPath(tableLocation)
-        .withMetadataConfig(
-            HoodieMetadataConfig.newBuilder()
-                .enable(true).build())
-        .build();
+    HoodieJavaEngineContext context = new HoodieJavaEngineContext(metaStore.getConfiguration());
+    HoodieWriteConfig config =
+        HoodieWriteConfig.newBuilder()
+            .withPath(tableLocation)
+            .withMetadataConfig(HoodieMetadataConfig.newBuilder().enable(true).build())
+            .build();
 
-    return metaStore.doAs(() -> {
-      HoodieJavaTable hoodieTable = HoodieJavaTable.create(config, context);
-      TableIdentifier identifier = TableIdentifier.of(catalog, database, table);
-      Map<String, String> tableProperties = hiveTable.getParameters();
-      tableProperties = filterEngineProperties(tableProperties);
-      Map<String, String> properties = MixedCatalogUtil.mergeCatalogPropertiesToTable(
-          tableProperties, this.properties);
-      return new HudiTable(identifier, hoodieTable, properties);
-    });
+    return metaStore.doAs(
+        () -> {
+          HoodieJavaTable hoodieTable = HoodieJavaTable.create(config, context);
+          TableIdentifier identifier = TableIdentifier.of(catalog, database, table);
+          Map<String, String> tableProperties = hiveTable.getParameters();
+          tableProperties = filterEngineProperties(tableProperties);
+          Map<String, String> properties =
+              MixedCatalogUtil.mergeCatalogPropertiesToTable(tableProperties, this.properties);
+          return new HudiTable(identifier, hoodieTable, properties);
+        });
   }
 
   private Optional<Table> loadHoodieHiveTable(String database, String table) {
@@ -208,29 +213,28 @@ public class HudiHiveCatalog implements FormatCatalog {
   private boolean isHoodieTable(Table table) {
     final String SPARK_SOURCE_PROVIDER = "spark.sql.sources.provider";
     final String FLINK_CONNECTOR = "connector";
-    return "hudi".equalsIgnoreCase(
-        table.getParameters().getOrDefault(SPARK_SOURCE_PROVIDER, ""))
+    return "hudi".equalsIgnoreCase(table.getParameters().getOrDefault(SPARK_SOURCE_PROVIDER, ""))
         || "hudi".equalsIgnoreCase(table.getParameters().getOrDefault(FLINK_CONNECTOR, ""));
   }
 
   private Map<String, String> filterEngineProperties(Map<String, String> properties) {
-    Set<String> enginePropertyKeys = Sets.newHashSet(
-        "transient_lastDdlTime",
-        "spark.sql.sources.schema.part.",
-        "spark.sql.sources.schema.partCol.",
-        "spark.sql.sources.schema.numPartCols",
-        "spark.sql.sources.schema.numParts",
-        "spark.sql.sources.provider",
-        "spark.sql.create.version"
-    );
+    Set<String> enginePropertyKeys =
+        Sets.newHashSet(
+            "transient_lastDdlTime",
+            "spark.sql.sources.schema.part.",
+            "spark.sql.sources.schema.partCol.",
+            "spark.sql.sources.schema.numPartCols",
+            "spark.sql.sources.schema.numParts",
+            "spark.sql.sources.provider",
+            "spark.sql.create.version");
     Map<String, String> filteredProperties = new HashMap<>();
-    properties.forEach((k,v) -> {
-      boolean exists = enginePropertyKeys.stream()
-          .anyMatch(k::startsWith);
-      if (!exists) {
-        filteredProperties.put(k, v);
-      }
-    });
+    properties.forEach(
+        (k, v) -> {
+          boolean exists = enginePropertyKeys.stream().anyMatch(k::startsWith);
+          if (!exists) {
+            filteredProperties.put(k, v);
+          }
+        });
     return filteredProperties;
   }
 }

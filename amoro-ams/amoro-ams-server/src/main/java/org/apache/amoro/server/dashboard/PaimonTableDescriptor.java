@@ -218,7 +218,8 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, String snapshotId) {
+  public List<PartitionFileBaseInfo> getSnapshotDetail(
+      AmoroTable<?> amoroTable, String snapshotId) {
     FileStoreTable table = getTable(amoroTable);
     List<PartitionFileBaseInfo> amsDataFileInfos = new ArrayList<>();
     long commitId = Long.parseLong(snapshotId);
@@ -439,7 +440,8 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, String processId) {
+  public List<OptimizingTaskInfo> getOptimizingTaskInfos(
+      AmoroTable<?> amoroTable, String processId) {
     throw new UnsupportedOperationException();
   }
 

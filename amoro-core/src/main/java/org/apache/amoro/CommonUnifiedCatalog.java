@@ -136,7 +136,11 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     }
     TableFormat[] formats =
         new TableFormat[] {
-          TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG, TableFormat.PAIMON, TableFormat.HUDI
+          TableFormat.MIXED_HIVE,
+          TableFormat.MIXED_ICEBERG,
+          TableFormat.ICEBERG,
+          TableFormat.PAIMON,
+          TableFormat.HUDI
         };
 
     Map<String, TableFormat> tableNameToFormat = Maps.newHashMap();
