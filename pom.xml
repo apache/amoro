@@ -1029,7 +1029,43 @@
                                 <familyName>Apache License 2.0</familyName>
                             </licenseFamily>
                         </licenseFamilies>
-                        <excludesFile>tools/maven/rat-excludes</excludesFile>
+                        <excludes>
+                            <!-- Additional files like .gitignore etc.-->
+                            <exclude>**/.*/**</exclude>
+                            <exclude>**/*.prefs</exclude>
+                            <exclude>**/*.log</exclude>
+                            <exclude>tools/maven/scalafmt.conf</exclude>
+                            <!-- Administrative files in the main trunk. -->
+                            <exclude>**/README.md</exclude>
+                            <exclude>**/CODE_OF_CONDUCT.md</exclude>
+                            <exclude>.github/**</exclude>
+                            <!-- IDE files. -->
+                            <exclude>**/*.iml</exclude>
+                            <exclude>**/.idea/**</exclude>
+                            <!-- Docs -->
+                            <exclude>docs/**</exclude>
+                            <!-- Generated content -->
+                            <exclude>**/target/**</exclude>
+                            <exclude>**/scalastyle-output.xml</exclude>
+                            <exclude>docs/resources/**</exclude>
+                            <exclude>docs/public/**</exclude>
+                            <exclude>docs/themes/book/**</exclude>
+                            <exclude>docs/assets/github.css</exclude>
+                            <exclude>docs/static/js/anchor.min.js</exclude>
+                            <exclude>**/*.svg</exclude>
+                            <exclude>**/dependency-reduced-pom.xml</exclude>
+                            <exclude>**/gen-antlr/**</exclude>
+                            <exclude>**/node_modules/**</exclude>
+                            <exclude>**/src/main/resources/static/**</exclude>
+                            <exclude>**/amoro_krb_conf/**</exclude>
+                            <exclude>**/metastore_db/**</exclude>
+                            <exclude>**/unit_test_base_tmp/**</exclude>
+                            <exclude>**/pnpm-lock.yaml</exclude>
+                            <exclude>**/components.d.ts</exclude>
+                            <exclude>**/Chart.lock</exclude>
+                            <!-- artifacts created during release process -->
+                            <exclude>release/**</exclude>
+                        </excludes>
                     </configuration>
                     <executions>
                         <execution>
