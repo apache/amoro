@@ -379,7 +379,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
               .map(
                   s -> {
                     OptimizingProcessInfo optimizingProcessInfo = new OptimizingProcessInfo();
-                    optimizingProcessInfo.setProcessId(s.id());
+                    optimizingProcessInfo.setProcessId(String.valueOf(s.id()));
                     optimizingProcessInfo.setCatalogName(tableIdentifier.getCatalog());
                     optimizingProcessInfo.setDbName(tableIdentifier.getDatabase());
                     optimizingProcessInfo.setTableName(tableIdentifier.getTableName());
@@ -439,7 +439,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, long processId) {
+  public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, String processId) {
     throw new UnsupportedOperationException();
   }
 

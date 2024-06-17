@@ -126,7 +126,7 @@ public class ServerTableDescriptor extends PersistentBase {
   }
 
   public List<OptimizingTaskInfo> getOptimizingProcessTaskInfos(
-      TableIdentifier tableIdentifier, long processId) {
+      TableIdentifier tableIdentifier, String processId) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getOptimizingTaskInfos(amoroTable, processId);

@@ -28,7 +28,7 @@ public class OptimizingTaskInfo {
   public static String OPTIMIZER_TOKEN_PROP = "optimizer.token";
   public static String OPTIMIZER_THREAD_ID_PROP = "optimizer.thread-id";
   private Long tableId;
-  private Long processId;
+  private String processId;
   private int taskId;
   private String partitionData;
   private TaskRuntime.Status status;
@@ -46,7 +46,7 @@ public class OptimizingTaskInfo {
 
   public OptimizingTaskInfo(
       Long tableId,
-      Long processId,
+      String processId,
       int taskId,
       String partitionData,
       TaskRuntime.Status status,
@@ -98,11 +98,11 @@ public class OptimizingTaskInfo {
     this.tableId = tableId;
   }
 
-  public Long getProcessId() {
+  public String getProcessId() {
     return processId;
   }
 
-  public void setProcessId(Long processId) {
+  public void setProcessId(String processId) {
     this.processId = processId;
   }
 

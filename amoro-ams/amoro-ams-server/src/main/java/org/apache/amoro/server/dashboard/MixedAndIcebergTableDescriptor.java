@@ -489,11 +489,12 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
-  public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, long processId) {
+  public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, String processId) {
+    long id = Long.parseLong(processId);
     List<OptimizingTaskMeta> optimizingTaskMetaList =
         getAs(
             OptimizingMapper.class,
-            mapper -> mapper.selectOptimizeTaskMetas(Collections.singletonList(processId)));
+            mapper -> mapper.selectOptimizeTaskMetas(Collections.singletonList(id)));
     if (CollectionUtils.isEmpty(optimizingTaskMetaList)) {
       return Collections.emptyList();
     }
@@ -502,7 +503,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             taskMeta ->
                 new OptimizingTaskInfo(
                     taskMeta.getTableId(),
-                    taskMeta.getProcessId(),
+                    String.valueOf(taskMeta.getProcessId()),
                     taskMeta.getTaskId(),
                     taskMeta.getPartitionData(),
                     taskMeta.getStatus(),

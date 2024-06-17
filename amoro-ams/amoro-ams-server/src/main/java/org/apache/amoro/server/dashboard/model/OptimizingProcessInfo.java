@@ -33,7 +33,7 @@ public class OptimizingProcessInfo {
   private String dbName;
   private String tableName;
 
-  private Long processId;
+  private String processId;
   private long startTime;
   private OptimizingType optimizingType;
   private OptimizingProcess.Status status;
@@ -79,11 +79,11 @@ public class OptimizingProcessInfo {
     this.tableName = tableName;
   }
 
-  public Long getProcessId() {
+  public String getProcessId() {
     return processId;
   }
 
-  public void setProcessId(Long processId) {
+  public void setProcessId(String processId) {
     this.processId = processId;
   }
 
@@ -219,7 +219,7 @@ public class OptimizingProcessInfo {
     result.setDbName(meta.getDbName());
     result.setTableName(meta.getTableName());
 
-    result.setProcessId(meta.getProcessId());
+    result.setProcessId(String.valueOf(meta.getProcessId()));
     result.setStartTime(meta.getPlanTime());
     result.setOptimizingType(meta.getOptimizingType());
     result.setStatus(meta.getStatus());

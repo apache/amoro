@@ -332,7 +332,7 @@ public class TableController {
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     List<OptimizingTaskInfo> optimizingTaskInfos =
         tableDescriptor.getOptimizingProcessTaskInfos(
-            tableIdentifier.buildTableIdentifier(), Long.parseLong(processId));
+            tableIdentifier.buildTableIdentifier(), processId);
 
     PageResult<OptimizingTaskInfo> pageResult = PageResult.of(optimizingTaskInfos, offset, limit);
     ctx.json(OkResponse.of(pageResult));

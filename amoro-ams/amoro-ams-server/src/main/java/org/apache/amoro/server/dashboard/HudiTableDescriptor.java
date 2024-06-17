@@ -23,6 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.formats.hudi.HudiSnapshot;
 import org.apache.amoro.formats.hudi.HudiTable;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.dashboard.model.AMSColumnInfo;
 import org.apache.amoro.server.dashboard.model.AMSPartitionField;
 import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;
@@ -39,6 +40,7 @@ import org.apache.amoro.server.dashboard.model.TagOrBranchInfo;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingType;
+import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.utils.HudiTableUtil;
 import org.apache.avro.Schema;
 import org.apache.hudi.avro.model.HoodieCompactionOperation;
@@ -64,6 +66,7 @@ import org.apache.hudi.metadata.HoodieTableMetadata;
 import org.apache.hudi.table.HoodieJavaTable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +79,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -305,11 +310,6 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable, int limit, int offset) {
-    HudiTable hudiTable = (HudiTable) amoroTable;
-    List<HudiSnapshot> snapshots = hudiTable.getSnapshotList(ioExecutors);
-    snapshots = snapshots.stream()
-        .filter(s -> OperationType.OPTIMIZING.name().equalsIgnoreCase(s.getOperationType()))
-        .collect(Collectors.toList());
     HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
     HoodieDefaultTimeline timeline = new HoodieActiveTimeline(hoodieTable.getMetaClient(), false);
     List<HoodieInstant> instants = timeline.getInstants();
@@ -317,13 +317,26 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     for (HoodieInstant instant: instants) {
       instantMap.put(instant.getTimestamp() + "_" + instant.getState().name(), instant);
     }
+    Set<String> optimizingActions = Sets.newHashSet(
+        HoodieTimeline.COMPACTION_ACTION,
+        HoodieTimeline.CLEAN_ACTION,
+        HoodieTimeline.REPLACE_COMMIT_ACTION
+    );
 
-    List<OptimizingProcessInfo> infos = snapshots.stream()
-          .map(s -> {
+    List<String> timestamps = instants.stream()
+        .filter(i -> i.getState() == HoodieInstant.State.REQUESTED)
+        .filter(i -> optimizingActions.contains(i.getAction()))
+        .map(HoodieInstant::getTimestamp)
+        .collect(Collectors.toList());
+
+    List<OptimizingProcessInfo> infos = timestamps.stream()
+          .map(t -> {
             OptimizingProcessInfo processInfo = null;
             try {
-              processInfo = getOptimizingInfo(s.getSnapshotId(), instantMap, timeline);
-              processInfo.setProcessId(s.getCommitTimestamp());
+              processInfo = getOptimizingInfo(t, instantMap, timeline);
+              if (processInfo == null) {
+                return null;
+              }
               processInfo.setCatalogName(amoroTable.id().getCatalog());
               processInfo.setDbName(amoroTable.id().getDatabase());
               processInfo.setTableName(amoroTable.id().getTableName());
@@ -331,15 +344,16 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
             } catch (IOException e) {
               throw new RuntimeException(e);
             }
-          }).collect(Collectors.toList());
+          })
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
     return Pair.of(infos, infos.size());
   }
 
   protected OptimizingProcessInfo getOptimizingInfo(
       String instantTimestamp, Map<String, HoodieInstant> instantMap, HoodieTimeline timeline) throws IOException {
     OptimizingProcessInfo processInfo = new OptimizingProcessInfo();
-    long timestamp = parseHoodieCommitTime(instantTimestamp);
-    processInfo.setProcessId(timestamp);
+    processInfo.setProcessId(instantTimestamp);
     HoodieInstant request = instantMap.get(instantTimestamp + "_" + HoodieInstant.State.REQUESTED.name());
     if (request == null) {
       return null;
@@ -391,14 +405,77 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
         processInfo.setStatus(OptimizingProcess.Status.RUNNING);
       }
     }
-
     return processInfo;
   }
 
 
   @Override
-  public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, long processId) {
-    return null;
+  public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, String processId) {
+    HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
+    HoodieDefaultTimeline timeline = new HoodieActiveTimeline(hoodieTable.getMetaClient(), false);
+    List<HoodieInstant> instants = timeline.getInstants();
+    HoodieInstant request = null;
+    HoodieInstant complete = null;
+    for (HoodieInstant instant: instants) {
+      if (processId.equals(instant.getTimestamp())) {
+        if (instant.getState() == HoodieInstant.State.REQUESTED) {
+          request = instant;
+        } else if (instant.getState() == HoodieInstant.State.COMPLETED) {
+          complete = instant;
+        }
+      }
+    }
+    if (request == null) {
+      return Lists.newArrayList();
+    }
+    long startTime = parseHoodieCommitTime(request.getStateTransitionTime());
+    long endTime = AmoroServiceConstants.INVALID_TIME;
+    Option<byte[]> detail = timeline.getInstantDetails(request);
+    TaskRuntime.Status status = TaskRuntime.Status.ACKED;
+    Map<String, FilesStatistics> outputFileStatistic = Maps.newHashMap();
+    if (complete != null) {
+      status = TaskRuntime.Status.SUCCESS;
+      endTime = parseHoodieCommitTime(complete.getStateTransitionTime());
+      Option<byte[]> commitDetail = timeline.getInstantDetails(complete);
+      try {
+        HoodieCommitMetadata commitMetadata = HoodieCommitMetadata.fromBytes(
+            commitDetail.get(), HoodieCommitMetadata.class);
+        Map<String, List<HoodieWriteStat>> commitInfo = commitMetadata.getPartitionToWriteStats();
+
+        for (String partition: commitInfo.keySet()) {
+          List<HoodieWriteStat> writeStats = commitInfo.get(partition);
+          for (HoodieWriteStat stat: writeStats) {
+            FilesStatistics fs = new FilesStatistics(1, stat.getFileSizeInBytes());
+            outputFileStatistic.put(stat.getFileId(), fs);
+          }
+        }
+      } catch (IOException e) {
+        throw new RuntimeException("Failed to read commit metadata", e);
+      }
+    }
+    List<OptimizingTaskInfo> results = Lists.newArrayList();
+    try {
+      HoodieCompactionPlan compactionPlan =
+          TimelineMetadataUtils.deserializeCompactionPlan(detail.get());
+      int taskId = 0;
+      for (HoodieCompactionOperation operation: compactionPlan.getOperations()) {
+        int inputFileCount = operation.getDeltaFilePaths().size();
+        long inputFileSize = operation.getMetrics().getOrDefault("TOTAL_LOG_FILES_SIZE", 0.0).longValue();
+        OptimizingTaskInfo task = new OptimizingTaskInfo(
+            -1L, processId, taskId++, operation.getPartitionPath(),
+            status, 0, "", 0, startTime, endTime,
+            0, "",
+            new FilesStatistics(inputFileCount, inputFileSize),
+            outputFileStatistic.get(operation.getFileId()),
+            Maps.newHashMap(), Maps.newHashMap()
+        );
+        results.add(task);
+      }
+    }catch (IOException e) {
+      throw new IllegalStateException("Failed to get optimizing task info", e);
+    }
+
+    return results;
   }
 
   @Override

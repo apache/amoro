@@ -64,7 +64,7 @@ public interface FormatTableDescriptor {
       AmoroTable<?> amoroTable, int limit, int offset);
 
   /** Get the paged optimizing process tasks information of the {@link AmoroTable}. */
-  List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, long processId);
+  List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, String processId);
 
   /** Get the tag information of the {@link AmoroTable}. */
   List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable);
