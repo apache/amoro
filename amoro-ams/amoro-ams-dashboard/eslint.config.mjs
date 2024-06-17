@@ -36,5 +36,6 @@ export default antfu({
     '**/dist',
     'mock',
     '**/src/main',
+    '**/license.node.js',
   ],
 })

@@ -91,6 +91,16 @@
                             <arguments>run build</arguments>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>pnpm run gen:license</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <arguments>run gen:license</arguments>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
 

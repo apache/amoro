@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "dev:mock": "vite --mode mock",
-    "build": "vite build && node ./license.node.js",
+    "build": "vite build",
+    "gen:license": "node ./license.node.js",
     "preview": "vite preview",
     "tslint": "npx vue-tsc --noEmit",
     "lint": "eslint ./src",
