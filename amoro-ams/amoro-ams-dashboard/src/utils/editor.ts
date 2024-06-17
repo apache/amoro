@@ -20,7 +20,7 @@
  * Keywords and formatting configuration in sql editor
  */
 import * as monaco from 'monaco-editor'
-import sqlFormatter from 'sql-formatter'
+import * as sqlFormatter from 'sql-formatter'
 import { language as sqlLanguage } from './sql'
 
 function registerSql() {
