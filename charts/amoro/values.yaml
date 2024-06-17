@@ -271,7 +271,7 @@ plugin:
 ##  metricReporters:
 ##    ## @param Configure Prometheus exporter
 ##    ##
-##    - name: prometheus-exporter
+##    - name: prometheus
 ##      ## @param Enable or disable the Prometheus exporter
 ##      ##
 ##      enabled: true

@@ -52,9 +52,10 @@ public class PrometheusMetricsReporter implements MetricReporter {
     this.server.close();
   }
 
+  /** {@inheritDoc} */
   @Override
   public String name() {
-    return "prometheus-exporter";
+    return "prometheus";
   }
 
   @Override
