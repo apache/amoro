@@ -27,6 +27,7 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.flink.catalog.factories.FlinkUnifiedCatalogFactory;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;
@@ -37,7 +38,6 @@ import org.apache.flink.table.catalog.ResolvedCatalogTable;
 import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.jupiter.params.provider.Arguments;
 
 import java.util.ArrayList;

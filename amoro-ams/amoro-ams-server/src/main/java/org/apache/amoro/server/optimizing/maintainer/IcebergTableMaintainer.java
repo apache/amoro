@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.optimizing.maintainer;
 
-import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
+import static org.apache.amoro.shade.guava32.com.google.common.primitives.Longs.min;
 
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.api.config.DataExpirationConfig;
@@ -29,6 +29,11 @@ import org.apache.amoro.io.SupportsFileSystemOperations;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
@@ -53,11 +58,6 @@ import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.SupportsPrefixOperations;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.base.Strings;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
@@ -208,7 +208,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
             TableFileUtil.deleteEmptyDirectory(fileIO(), parent, exclude);
           } catch (Exception e) {
             // Ignore exceptions to remove as many directories as possible
-            LOG.warn("Fail to delete empty directory " + parent, e);
+            LOG.warn("Fail to delete empty directory {}", parent, e);
           }
         });
 

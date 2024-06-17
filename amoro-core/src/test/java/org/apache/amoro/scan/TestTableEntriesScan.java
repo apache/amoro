@@ -22,6 +22,7 @@ import org.apache.amoro.IcebergFileEntry;
 import org.apache.amoro.io.TableDataTestBase;
 import org.apache.amoro.io.writer.GenericBaseTaskWriter;
 import org.apache.amoro.io.writer.GenericTaskWriters;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.utils.ManifestEntryFields;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -34,7 +35,6 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.WriteResult;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.junit.Assert;
 import org.junit.Test;
 

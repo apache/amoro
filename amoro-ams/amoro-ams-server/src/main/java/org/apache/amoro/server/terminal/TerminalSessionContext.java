@@ -21,9 +21,9 @@ package org.apache.amoro.server.terminal;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.dashboard.utils.DesensitizationUtil;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.commons.io.Charsets;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

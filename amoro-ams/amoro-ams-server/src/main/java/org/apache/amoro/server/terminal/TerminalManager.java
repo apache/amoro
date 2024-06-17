@@ -33,11 +33,11 @@ import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.terminal.kyuubi.KyuubiTerminalSessionFactory;
 import org.apache.amoro.server.terminal.local.LocalSessionFactory;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.CatalogProperties;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -398,13 +398,13 @@ public class TerminalManager {
       LOG.info("Terminal Session Clean Task started");
       LOG.info(
           "Terminal Session Clean Task, check interval: " + SESSION_TIMEOUT_CHECK_INTERVAL + " ms");
-      LOG.info("Terminal Session Timeout: " + sessionTimeout + " minutes");
+      LOG.info("Terminal Session Timeout: {} minutes", sessionTimeout);
       while (!stop) {
         try {
           List<TerminalSessionContext> sessionToRelease = checkIdleSession();
           sessionToRelease.forEach(this::releaseSession);
           if (!sessionToRelease.isEmpty()) {
-            LOG.info("Terminal Session release count: " + sessionToRelease.size());
+            LOG.info("Terminal Session release count: {}", sessionToRelease.size());
           }
         } catch (Throwable t) {
           LOG.error("error when check and release session", t);
@@ -441,7 +441,7 @@ public class TerminalManager {
       try {
         sessionContext.release();
       } catch (Throwable t) {
-        LOG.error("error when release session: " + sessionContext.getSessionId(), t);
+        LOG.error("error when release session: {}", sessionContext.getSessionId(), t);
       }
     }
   }

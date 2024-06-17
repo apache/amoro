@@ -18,8 +18,8 @@
 
 package org.apache.amoro.api.config;
 
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkNotNull;
 
 import javax.annotation.Nonnull;
 

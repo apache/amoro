@@ -18,8 +18,8 @@
 
 package org.apache.amoro.utils.map;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.utils.SerializationUtil;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import javax.annotation.Nullable;
 

@@ -23,13 +23,13 @@ import static org.apache.amoro.spark.mixed.SparkSQLProperties.REFRESH_CATALOG_BE
 
 import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.spark.SupportAuthentication;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.relocated.com.google.common.base.Joiner;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.connector.catalog.Identifier;

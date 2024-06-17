@@ -18,7 +18,7 @@
 
 package org.apache.amoro.client;
 
-import org.apache.thrift.TServiceClient;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TServiceClient;
 
 public interface ThriftPingFactory {
   boolean ping(TServiceClient client);

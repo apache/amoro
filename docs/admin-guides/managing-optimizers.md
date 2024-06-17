@@ -41,11 +41,12 @@ KubernetesOptimizerContainer support the following properties:
 
 | Property Name             | Required | Default Value | Description                                                                                                   |
 |---------------------------|----------|---------------|---------------------------------------------------------------------------------------------------------------|
-| kube-config-path          | true     | N/A           | Kubernetes config location.                                                                                   |
+| kube-config-path          | true     | N/A           | Kubernetes config location                                                                                    |
 | image                     | true     | N/A           | Optimizer Image name                                                                                          |
+| pullPolicy                | false    | IfNotPresent  | Specify the imagePullPolicy in the container spec                                                             |
 | namespace                 | false    | "default"     | The namespace of optimizer to deploy                                                                          |
-| ams-optimizing-uri        | false    | N/A           | uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available |
-| cpu.factor                | false    | "1.0"         | Cpu factor when request kubernetes resource. Default 1 Cpu pre thread                                         |
+| ams-optimizing-uri        | false    | N/A           | URI of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available |
+| cpu.factor                | false    | "1.0"         | CPU factor when request kubernetes resource. Default 1 Cpu pre thread                                         |
 | memory                    | true     | N/A           | Memory usage for pre thread                                                                                   |
 
 
@@ -56,6 +57,7 @@ containers:
     properties:
       kube-config-path: ～/.kube/config
       image: apache/amoro:{version}
+      pullPolicy: IfNotPresent
 ```
 
 ### Flink container
@@ -65,19 +67,19 @@ you need to add a new container configuration. with container-impl as `org.apach
 
 FlinkOptimizerContainer support the following properties:
 
-| Property Name             | Required | Default Value | Description                                                                                                                                                                                                                                                                          |
-|---------------------------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| flink-home                | true     | N/A           | Flink installation location                                                                                                                                                                                                                                                          |
-| target                    | true     | yarn-per-job  | flink job deployed target, available values `yarn-per-job`, `yarn-application`, `kubernetes-application`, `session`                                                                                                                                                                  |
-| job-uri                   | false    | N/A           | The jar uri of flink optimizer job. This is required if target is application mode.                                                                                                                                                                                                  |
-| ams-optimizing-uri        | false | N/A           | uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available                                                                                                                                                                        |
-| export.\<key\>            | false | N/A           | environment variables will be exported during job submit                                                                                                                                                                                                                             |
-| export.JAVA_HOME          | false | N/A           | Java runtime location                                                                                                                                                                                                                                                                |
-| export.HADOOP_CONF_DIR    | false | N/A           | Direction which holds the configuration files for the hadoop cluster (including hdfs-site.xml, core-site.xml, yarn-site.xml ). If the hadoop cluster has kerberos authentication enabled, you need to prepare an additional krb5.conf and a keytab file for the user to submit tasks |
-| export.JVM_ARGS           | false | N/A           | you can configure flink to run additional configuration parameters, here is an example of configuring krb5.conf, specify the address of krb5.conf to be used by Flink when committing via `-Djava.security.krb5.conf=/opt/krb5.conf`                                                 |
-| export.HADOOP_USER_NAME   | false | N/A           | the username used to submit tasks to yarn, used for simple authentication                                                                                                                                                                                                            |
-| export.FLINK_CONF_DIR     | false | N/A           | the directory where flink_conf.yaml is located                                                                                                                                                                                                                                       |
-| flink-conf.\<key\>        | false | N/A           | [Flink Configuration Options](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/config/) will be passed to cli by `-Dkey=value`,                                                                                                                                  |
+| Property Name             | Required | Default Value    | Description                                                                                                                                                                                                                                                                           |
+|---------------------------|----------|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| flink-home                | true     | N/A              | Flink installation location                                                                                                                                                                                                                                                           |
+| target                    | true     | yarn-per-job     | flink job deployed target, available values `yarn-per-job`, `yarn-application`, `kubernetes-application`, `session`                                                                                                                                                                   |
+| job-uri                   | false    | N/A              | The jar uri of flink optimizer job. This is required if target is application mode.                                                                                                                                                                                                   |
+| ams-optimizing-uri        | false    | N/A              | uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available                                                                                                                                                                         |
+| export.\<key\>            | false    | N/A              | environment variables will be exported during job submit                                                                                                                                                                                                                              |
+| export.JAVA_HOME          | false    | N/A              | Java runtime location                                                                                                                                                                                                                                                                 |
+| export.HADOOP_CONF_DIR    | false    | N/A              | Direction which holds the configuration files for the hadoop cluster (including hdfs-site.xml, core-site.xml, yarn-site.xml ). If the hadoop cluster has kerberos authentication enabled, you need to prepare an additional krb5.conf and a keytab file for the user to submit tasks  |
+| export.JVM_ARGS           | false    | N/A              | you can configure flink to run additional configuration parameters, here is an example of configuring krb5.conf, specify the address of krb5.conf to be used by Flink when committing via `-Djava.security.krb5.conf=/opt/krb5.conf`                                                  |
+| export.HADOOP_USER_NAME   | false    | N/A              | the username used to submit tasks to yarn, used for simple authentication                                                                                                                                                                                                             |
+| export.FLINK_CONF_DIR     | false    | N/A              | the directory where flink_conf.yaml is located                                                                                                                                                                                                                                        |
+| flink-conf.\<key\>        | false    | N/A              | [Flink Configuration Options](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/config/) will be passed to cli by `-Dkey=value`,                                                                                                                                   |
 
 {{< hint info >}}
 To better utilize the resources of Flink Optimizer, it is recommended to add the following configuration to the Flink Optimizer Group:
@@ -110,6 +112,7 @@ containers:
     properties:
       flink-home: /opt/flink/                                                        # Flink install home
       target: kubernetes-application                                                 # Flink run as native kubernetes
+      pullPolicy: IfNotPresent                                                       # Specify the imagePullPolicy in the container spec  
       job-uri: "local:///opt/flink/usrlib/optimizer-job.jar"                         # Optimizer job main jar for kubernetes application
       ams-optimizing-uri: thrift://ams.amoro.service.local:1261                      # AMS optimizing uri 
       export.FLINK_CONF_DIR: /opt/flink/conf/                                        # Flink config dir
@@ -192,6 +195,7 @@ containers:
       spark-home: /opt/spark/                                                                 # Spark install home
       master: k8s://https://<k8s-apiserver-host>:<k8s-apiserver-port>                         # The k8s cluster manager to connect to
       deploy-mode: cluster                                                                    # Spark deploy mode, client or cluster
+      pullPolicy: IfNotPresent                                                                # Specify the imagePullPolicy in the container spec 
       job-uri: "local:///opt/spark/usrlib/optimizer-job.jar"                                  # Optimizer job main jar for kubernetes application
       ams-optimizing-uri: thrift://ams.amoro.service.local:1261                               # AMS optimizing uri 
       export.HADOOP_USER_NAME: hadoop                                                         # Hadoop user submits on yarn

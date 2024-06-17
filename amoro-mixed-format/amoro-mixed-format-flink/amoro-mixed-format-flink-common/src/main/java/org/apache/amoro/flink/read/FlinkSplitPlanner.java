@@ -27,12 +27,12 @@ import org.apache.amoro.scan.ChangeTableIncrementalScan;
 import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScan;
 import org.apache.amoro.scan.MixedFileScanTask;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

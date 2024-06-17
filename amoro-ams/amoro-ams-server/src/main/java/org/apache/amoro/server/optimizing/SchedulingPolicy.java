@@ -22,8 +22,8 @@ import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.resource.ResourceGroup;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 
 import java.util.Comparator;
 import java.util.HashMap;

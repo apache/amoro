@@ -33,8 +33,8 @@ import static org.apache.amoro.trino.mixed.TestHiveTableBaseForTrino.STRUCT_SUB_
 
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

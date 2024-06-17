@@ -21,8 +21,8 @@ package org.apache.amoro.trino.unkeyed;
 import static io.trino.plugin.base.util.Closables.closeAllSuppress;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
 import static java.util.Objects.requireNonNull;
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
-import static org.apache.iceberg.relocated.com.google.common.base.Throwables.throwIfInstanceOf;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Throwables.throwIfInstanceOf;
 
 import org.apache.amoro.io.reader.DeleteFilter;
 import org.apache.amoro.trino.delete.TrinoRow;

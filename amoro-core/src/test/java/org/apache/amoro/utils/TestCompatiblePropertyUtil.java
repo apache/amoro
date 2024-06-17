@@ -18,8 +18,8 @@
 
 package org.apache.amoro.utils;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableProperties;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Test;
 

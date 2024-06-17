@@ -24,11 +24,11 @@ import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
 import org.apache.amoro.flink.InternalCatalogBuilder;
 import org.apache.amoro.flink.catalog.MixedCatalog;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.FactoryUtil;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Collections;
 import java.util.HashSet;

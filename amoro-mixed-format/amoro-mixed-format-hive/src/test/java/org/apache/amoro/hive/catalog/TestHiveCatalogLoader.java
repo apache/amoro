@@ -26,7 +26,7 @@ import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;

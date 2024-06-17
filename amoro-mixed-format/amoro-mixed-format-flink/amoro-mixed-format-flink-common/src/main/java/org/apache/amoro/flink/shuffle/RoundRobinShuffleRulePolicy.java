@@ -22,12 +22,12 @@ import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 import org.apache.amoro.data.DataTreeNode;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.DistributionHashMode;
 import org.apache.flink.api.common.functions.Partitioner;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.table.data.RowData;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -20,13 +20,13 @@ package org.apache.amoro.log;
 
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.amoro.log.data.LogArrayData;
 import org.apache.amoro.log.data.LogMapData;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.node.ArrayNode;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 

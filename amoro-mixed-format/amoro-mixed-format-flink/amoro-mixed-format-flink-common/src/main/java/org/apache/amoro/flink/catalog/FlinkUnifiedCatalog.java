@@ -34,6 +34,8 @@ import org.apache.amoro.flink.catalog.factories.iceberg.IcebergFlinkCatalogFacto
 import org.apache.amoro.flink.catalog.factories.mixed.MixedCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.paimon.PaimonFlinkCatalogFactory;
 import org.apache.amoro.flink.table.AmoroDynamicTableFactory;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.catalog.AbstractCatalog;
@@ -60,8 +62,6 @@ import org.apache.flink.table.catalog.stats.CatalogTableStatistics;
 import org.apache.flink.table.expressions.Expression;
 import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.Factory;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

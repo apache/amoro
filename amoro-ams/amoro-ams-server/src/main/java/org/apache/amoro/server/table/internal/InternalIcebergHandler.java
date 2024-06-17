@@ -22,8 +22,8 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.utils.InternalTableUtil;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.iceberg.TableOperations;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

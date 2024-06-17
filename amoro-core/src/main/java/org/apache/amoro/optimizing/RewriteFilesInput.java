@@ -20,12 +20,12 @@ package org.apache.amoro.optimizing;
 
 import org.apache.amoro.data.DefaultKeyedFile;
 import org.apache.amoro.data.PrimaryKeyedFile;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.ArrayList;
 import java.util.Arrays;

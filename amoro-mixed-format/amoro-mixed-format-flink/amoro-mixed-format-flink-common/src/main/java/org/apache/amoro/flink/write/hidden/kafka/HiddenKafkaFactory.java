@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.write.hidden.kafka;
 
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkNotNull;
 
 import org.apache.amoro.flink.shuffle.ShuffleHelper;
 import org.apache.amoro.flink.write.hidden.LogMsgFactory;

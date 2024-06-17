@@ -19,6 +19,8 @@
 package org.apache.amoro.op;
 
 import org.apache.amoro.scan.CombinedScanTask;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.UnkeyedTable;
@@ -40,8 +42,6 @@ import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.IOException;

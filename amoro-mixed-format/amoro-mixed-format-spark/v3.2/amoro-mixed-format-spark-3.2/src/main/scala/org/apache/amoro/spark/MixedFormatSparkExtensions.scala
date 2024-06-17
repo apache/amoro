@@ -39,6 +39,7 @@ class MixedFormatSparkExtensions extends (SparkSessionExtensions => Unit) {
     // resolve mixed-format command
     extensions.injectResolutionRule { spark => ResolveMixedFormatCommand(spark) }
     extensions.injectResolutionRule { spark => ResolveMergeIntoMixedFormatTableReferences(spark) }
+    extensions.injectResolutionRule { _ => MixedFormatAlignRowLevelCommandAssignments }
     extensions.injectResolutionRule { spark => RewriteMixedFormatMergeIntoTable(spark) }
 
     extensions.injectPostHocResolutionRule(spark => RewriteMixedFormatCommand(spark))

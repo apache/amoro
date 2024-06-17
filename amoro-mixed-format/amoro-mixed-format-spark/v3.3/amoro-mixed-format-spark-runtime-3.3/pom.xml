@@ -48,12 +48,12 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>shade-amoro</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <createSourcesJar>true</createSourcesJar>
                             <shadedArtifactAttached>false</shadedArtifactAttached>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
@@ -63,7 +63,10 @@
                                     <include>org.apache.amoro:amoro-core</include>
                                     <include>org.apache.amoro:amoro-ams-api</include>
                                     <include>org.apache.amoro:amoro-mixed-format-hive</include>
-                                    <include>org.apache.paimon:paimon-shade-jackson-2</include>
+                                    <include>org.apache.amoro:amoro-shade-guava-32</include>
+                                    <include>org.apache.amoro:amoro-shade-jackson-2</include>
+                                    <include>org.apache.amoro:amoro-shade-thrift</include>
+                                    <include>org.apache.amoro:amoro-shade-zookeeper-3</include>
                                     <include>org.apache.curator:curator-framework</include>
                                     <include>org.apache.curator:curator-client</include>
                                     <include>org.apache.curator:curator-recipes</include>
@@ -107,26 +110,12 @@
                                 </excludes>
                             </artifactSet>
                             <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
+                                <filter combine.children="append">
+                                    <artifact>*</artifact>
                                     <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                        <exclude>META-INF/services/javax.*</exclude>
-                                        <exclude>**/*.proto</exclude>
-                                        <exclude>hbase-webapps/**</exclude>
-                                        <exclude>org/codehaus/mojo/animal_sniffer/**</exclude>
                                         <exclude>org/apache/iceberg/spark/extensions/**</exclude>
-                                        <exclude>
-                                            org/apache/hadoop/hive/ql/optimizer/ppr/PartitionExpressionForMetastore**
-                                        </exclude>
-                                        <exclude>
-                                            org/apache/hadoop/hive/ql/security/authorization/AuthorizationPreEventListener**
-                                        </exclude>
                                     </excludes>
                                 </filter>
-
                             </filters>
                             <relocations>
                                 <!-- relocation amoro spark packages -->
@@ -134,19 +123,6 @@
                                     <pattern>org.apache.spark.sql.amoro</pattern>
                                     <shadedPattern>org.apache.amoro.spark.sql</shadedPattern>
                                 </relocation>
-
-                                <relocation>
-                                    <pattern>org.apache.zookeeper</pattern>
-                                    <shadedPattern>org.apache.amoro.shade.org.apache.zookeeper
-                                    </shadedPattern>
-                                </relocation>
-
-                                <relocation>
-                                    <pattern>org.apache.curator</pattern>
-                                    <shadedPattern>org.apache.amoro.shade.org.apache.curator
-                                    </shadedPattern>
-                                </relocation>
-
 
                                 <!-- relocation required dependencies -->
                                 <relocation>
@@ -158,14 +134,6 @@
                                     <pattern>org.apache.avro</pattern>
                                     <shadedPattern>org.apache.amoro.shade.org.apache.avro
                                     </shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.apache.thrift</pattern>
-                                    <shadedPattern>org.apache.amoro.shade.org.apache.thrift
-                                    </shadedPattern>
-                                    <excludes>
-                                        <exclude>org.apache.thrift.TException</exclude>
-                                    </excludes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet.avro</pattern>
@@ -206,7 +174,6 @@
                                     <shadedPattern>org.apache.amoro.shade.parquet.it
                                     </shadedPattern>
                                 </relocation>
-
                                 <relocation>
                                     <pattern>org.apache.parquet.crypto</pattern>
                                     <shadedPattern>

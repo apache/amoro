@@ -22,8 +22,8 @@ import static io.trino.spi.connector.ConnectorCapabilities.NOT_NULL_COLUMN_CONST
 import static io.trino.spi.transaction.IsolationLevel.SERIALIZABLE;
 import static io.trino.spi.transaction.IsolationLevel.checkConnectorSupports;
 import static java.util.Objects.requireNonNull;
-import static org.apache.iceberg.relocated.com.google.common.collect.ImmutableList.toImmutableList;
-import static org.apache.iceberg.relocated.com.google.common.collect.Sets.immutableEnumSet;
+import static org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList.toImmutableList;
+import static org.apache.amoro.shade.guava32.com.google.common.collect.Sets.immutableEnumSet;
 
 import io.airlift.bootstrap.LifeCycleManager;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorMetadata;
@@ -43,8 +43,8 @@ import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.procedure.Procedure;
 import io.trino.spi.session.PropertyMetadata;
 import io.trino.spi.transaction.IsolationLevel;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet;
 
 import javax.inject.Inject;
 

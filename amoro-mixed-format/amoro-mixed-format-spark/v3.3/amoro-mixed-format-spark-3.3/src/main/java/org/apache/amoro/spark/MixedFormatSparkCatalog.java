@@ -23,6 +23,8 @@ import static org.apache.amoro.spark.mixed.SparkSQLProperties.USE_TIMESTAMP_WITH
 import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
 
 import org.apache.amoro.hive.utils.CatalogUtil;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.spark.mixed.MixedSparkCatalogBase;
 import org.apache.amoro.spark.mixed.MixedTableStoreType;
 import org.apache.amoro.spark.table.MixedSparkTable;
@@ -38,8 +40,6 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.spark.Spark3Util;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Types;

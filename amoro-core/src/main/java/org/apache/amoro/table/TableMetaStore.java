@@ -18,6 +18,13 @@
 
 package org.apache.amoro.table;
 
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.base.Charsets;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.hash.Hashing;
+import org.apache.amoro.shade.guava32.com.google.common.io.ByteStreams;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -26,13 +33,6 @@ import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.authentication.util.KerberosName;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.base.Charsets;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.base.Strings;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.hash.Hashing;
-import org.apache.iceberg.relocated.com.google.common.io.ByteStreams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.security.krb5.KrbException;
@@ -344,19 +344,7 @@ public class TableMetaStore implements Serializable {
       if (ugi == null) {
         try {
           if (TableMetaStore.AUTH_METHOD_SIMPLE.equals(authMethod)) {
-            UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
-            if (currentUser == null
-                || !currentUser
-                    .getAuthenticationMethod()
-                    .equals(UserGroupInformation.AuthenticationMethod.valueOf(authMethod))
-                || !currentUser.getUserName().equals(hadoopUsername)) {
-              System.setProperty(HADOOP_USER_PROPERTY, hadoopUsername);
-              UserGroupInformation.setConfiguration(getConfiguration());
-              UserGroupInformation.loginUserFromSubject(null);
-              ugi = UserGroupInformation.getLoginUser();
-            } else {
-              ugi = currentUser;
-            }
+            ugi = UserGroupInformation.createRemoteUser(hadoopUsername);
           } else if (TableMetaStore.AUTH_METHOD_KERBEROS.equals(authMethod)) {
             constructKerberosUgi();
           }

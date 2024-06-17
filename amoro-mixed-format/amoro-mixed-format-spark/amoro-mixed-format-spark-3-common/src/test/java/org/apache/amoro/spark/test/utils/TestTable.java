@@ -20,12 +20,12 @@ package org.apache.amoro.spark.test.utils;
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.hive.utils.HiveSchemaUtil;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
 
 import java.util.Arrays;

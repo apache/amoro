@@ -18,10 +18,10 @@
 
 package org.apache.amoro.flink.util;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.flink.table.expressions.ResolvedExpression;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.flink.FlinkFilters;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
 import java.util.Optional;

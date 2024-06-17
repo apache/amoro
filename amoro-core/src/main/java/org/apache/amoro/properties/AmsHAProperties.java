@@ -18,7 +18,7 @@
 
 package org.apache.amoro.properties;
 
-import org.apache.iceberg.relocated.com.google.common.base.Strings;
+import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
 
 public class AmsHAProperties {
   private static final String ROOT_PATH = "/arctic/ams";

@@ -18,6 +18,11 @@
 
 package org.apache.amoro.spark.command;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.spark.MixedFormatSparkCatalog;
 import org.apache.amoro.spark.MixedFormatSparkSessionCatalog;
 import org.apache.amoro.spark.table.MixedSparkTable;
@@ -32,11 +37,6 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.TableMigrationUtil;
 import org.apache.iceberg.hadoop.Util;
-import org.apache.iceberg.relocated.com.google.common.base.Joiner;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.SparkTableUtil;
 import org.apache.spark.sql.AnalysisException;

@@ -22,6 +22,7 @@ import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.utils.InternalTableUtil;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.LocationProviders;
 import org.apache.iceberg.TableMetadata;
@@ -31,7 +32,6 @@ import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.io.OutputFile;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.Map;
 import java.util.Objects;

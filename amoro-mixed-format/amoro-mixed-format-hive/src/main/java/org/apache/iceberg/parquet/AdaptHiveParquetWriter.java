@@ -18,6 +18,8 @@
 
 package org.apache.iceberg.parquet;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.Metrics;
 import org.apache.iceberg.MetricsConfig;
@@ -27,8 +29,6 @@ import org.apache.iceberg.common.DynMethods;
 import org.apache.iceberg.exceptions.RuntimeIOException;
 import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.io.OutputFile;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.parquet.bytes.ByteBufferAllocator;
 import org.apache.parquet.column.ColumnWriteStore;
 import org.apache.parquet.column.ParquetProperties;

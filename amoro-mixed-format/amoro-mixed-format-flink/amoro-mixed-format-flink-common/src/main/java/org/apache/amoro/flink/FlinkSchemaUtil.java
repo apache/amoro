@@ -28,6 +28,7 @@ import static org.apache.flink.table.descriptors.Schema.SCHEMA_PROCTIME;
 
 import org.apache.amoro.flink.table.FlinkSource;
 import org.apache.amoro.flink.table.MixedFormatDynamicSource;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.commons.collections.CollectionUtils;
@@ -44,7 +45,6 @@ import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.utils.LogicalTypeParser;
 import org.apache.flink.table.types.utils.TypeConversions;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -25,10 +25,10 @@ import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.types.Types;
-import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Test;
 

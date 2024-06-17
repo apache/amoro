@@ -18,7 +18,7 @@
 
 package org.apache.amoro.utils;
 
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkNotNull;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;

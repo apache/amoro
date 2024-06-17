@@ -21,9 +21,9 @@ package org.apache.amoro.table.blocker;
 import org.apache.amoro.AmsClient;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.NoSuchObjectException;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.amoro.table.TableIdentifier;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

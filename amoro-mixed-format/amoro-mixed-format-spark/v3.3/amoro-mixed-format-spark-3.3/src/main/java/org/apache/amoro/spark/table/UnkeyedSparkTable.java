@@ -18,10 +18,10 @@
 
 package org.apache.amoro.spark.table;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.spark.util.MixedFormatSparkUtils;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.source.SparkTable;
 import org.apache.spark.sql.catalyst.InternalRow;

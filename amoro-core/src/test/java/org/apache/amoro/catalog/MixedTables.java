@@ -23,6 +23,8 @@ import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.AuthenticatedFileIOs;
 import org.apache.amoro.io.TableTrashManagers;
 import org.apache.amoro.properties.MetaTableProperties;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.BasicKeyedTable;
 import org.apache.amoro.table.BasicUnkeyedTable;
@@ -41,8 +43,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Tables;
 import org.apache.iceberg.hadoop.HadoopTables;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -296,7 +296,7 @@ public class MixedTables {
       } else {
         String tableLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
         if (fileIO.exists(tableLocation)) {
-          LOG.info("try to delete table directory location is " + tableLocation);
+          LOG.info("try to delete table directory location is {}", tableLocation);
           fileIO.asPrefixFileIO().deletePrefix(tableLocation);
         }
       }

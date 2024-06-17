@@ -33,15 +33,15 @@ import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.api.TableCommitMeta;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.api.TableMeta;
-import org.apache.thrift.TException;
-import org.apache.thrift.TMultiplexedProcessor;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TProtocolFactory;
-import org.apache.thrift.server.TServer;
-import org.apache.thrift.server.TThreadPoolServer;
-import org.apache.thrift.transport.TFramedTransport;
-import org.apache.thrift.transport.TServerSocket;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TMultiplexedProcessor;
+import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocolFactory;
+import org.apache.amoro.shade.thrift.org.apache.thrift.server.TServer;
+import org.apache.amoro.shade.thrift.org.apache.thrift.server.TThreadPoolServer;
+import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TServerSocket;
+import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException;
+import org.apache.amoro.shade.thrift.org.apache.thrift.transport.layered.TFramedTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -179,7 +179,7 @@ public class MockAmoroManagementServer implements Runnable {
                 Thread thread = new Thread(r);
                 String threadName = "ams-pool-" + threadCount.incrementAndGet();
                 thread.setName(threadName);
-                LOG.info("Mock AMS create thread: " + threadName);
+                LOG.info("Mock AMS create thread: {}", threadName);
                 return thread;
               },
               new ThreadPoolExecutor.AbortPolicy());

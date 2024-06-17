@@ -39,7 +39,7 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 
 import java.util.Collections;
 import java.util.List;

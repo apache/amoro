@@ -18,12 +18,12 @@
 
 package org.apache.amoro.client;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.client.ZKClientConfig;
-import org.apache.zookeeper.data.Stat;
+import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
+import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.amoro.shade.zookeeper3.org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.CreateMode;
+import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.client.ZKClientConfig;
+import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.data.Stat;
 
 import java.nio.charset.StandardCharsets;
 

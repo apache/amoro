@@ -26,7 +26,7 @@ import io.airlift.log.Logger;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.DistributedQueryRunner;
 import org.apache.amoro.trino.MixedFormatPlugin;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 
 import java.io.File;
 import java.util.HashMap;

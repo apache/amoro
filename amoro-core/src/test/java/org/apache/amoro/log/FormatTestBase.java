@@ -21,8 +21,8 @@ package org.apache.amoro.log;
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.log.data.LogArrayData;
 import org.apache.amoro.log.data.LogMapData;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 

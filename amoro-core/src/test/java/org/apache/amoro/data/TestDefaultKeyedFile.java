@@ -23,9 +23,9 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.junit.Assert;
 import org.junit.Test;
 
