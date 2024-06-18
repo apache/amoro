@@ -248,6 +248,9 @@ public class TableRuntime extends StatedPersistentBase {
           if (optimizingStatus == OptimizingStatus.PLANNING
               || optimizingStatus == OptimizingStatus.PENDING) {
             updateOptimizingStatus(OptimizingStatus.IDLE);
+            // Update lastOptimizedSnapshotId to currentSnapshotId When there is no task to be
+            // optimized
+            lastOptimizedSnapshotId = currentSnapshotId;
             persistUpdatingRuntime();
             tableHandler.handleTableChanged(this, optimizingStatus);
           }
