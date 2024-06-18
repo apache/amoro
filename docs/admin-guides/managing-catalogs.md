@@ -63,6 +63,6 @@ If you want to add the same table properties to all tables under a catalog, you 
 When a user needs to delete a Catalog, they can go to the details page of the Catalog and click the Remove button at the bottom of the page to perform the deletion.
 
 {{< hint info >}}
-Before deleting a internal catalog, AMS will verify whether there is metadata for tables under that Catalog.
+Before deleting an internal catalog, AMS will verify whether there is metadata for tables under that Catalog.
 If there are still tables under that Catalog, AMS will prompt that the deletion failed.
 {{< /hint >}}
