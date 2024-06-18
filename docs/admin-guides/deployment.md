@@ -140,7 +140,7 @@ AMS provides implementations of `LocalContainer` and `FlinkContainer` by default
 ```yaml
 containers:
   - name: localContainer
-    container-impl: org.apache.amoro.server.optimizer.LocalOptimizerContainer
+    container-impl: org.apache.amoro.server.manager.LocalOptimizerContainer
     properties:
       export.JAVA_HOME: "/opt/java"   # JDK environment
   
