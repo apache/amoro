@@ -1152,6 +1152,36 @@
     </build>
 
     <profiles>
+        <!--
+          We're reusing the apache-release build profile defined in the Apache Parent POM,
+          with one exclusion: do not run the source-release-assembly execution goal.
+          We have our own scripts to create the source release, which correctly excludes
+          binaries from distribution tarball.
+          The script can be found under tools/releasing/create_source_release.sh.
+        -->
+        <profile>
+            <id>apache-release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <configuration>
+                            <quiet>true</quiet>
+                            <doclint>none</doclint>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>hadoop2</id>
             <activation>
