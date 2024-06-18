@@ -31,9 +31,6 @@ FROM eclipse-temurin:8-jdk-jammy as builder
 ADD . /workspace/amoro
 WORKDIR /workspace/amoro
 
-# RUN apt-get update \
-#    && apt-get install -y tar
-
 RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
     && cp amoro-ams/dist/target/*.tar.gz /usr/local \
     && tar -xzvf /usr/local/apache-amoro-${AMORO_VERSION}-bin.tar.gz -C /usr/local \
