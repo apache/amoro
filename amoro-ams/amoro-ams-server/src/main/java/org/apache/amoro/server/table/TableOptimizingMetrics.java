@@ -30,8 +30,8 @@ import org.apache.amoro.api.metrics.MetricKey;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.OptimizingType;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 
 import java.util.List;
 
@@ -174,7 +174,7 @@ public class TableOptimizingMetrics {
 
   private final ServerTableIdentifier identifier;
 
-  private OptimizingStatus optimizingStatus;
+  private OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   private long statusSetTimestamp = System.currentTimeMillis();
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
   private MetricRegistry globalRegistry;

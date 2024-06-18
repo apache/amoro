@@ -19,13 +19,13 @@
 package org.apache.amoro.spark.test.suites.catalog;
 
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.spark.table.MixedSparkTable;
 import org.apache.amoro.spark.test.MixedTableTestBase;
 import org.apache.amoro.spark.test.SparkTestContext;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.apache.spark.sql.connector.catalog.Table;

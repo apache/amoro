@@ -18,9 +18,9 @@
 
 package org.apache.amoro.server.optimizing.flow.view;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.List;
 

@@ -15,6 +15,42 @@
   limitations under the License.
 */}}
 
+{{/*Flink Optimizer Image Pull Secrets*/}}
+{{- define "amoro.optimizer.container.flink.pull.secrets" -}}
+  {{- if .Values.imagePullSecrets -}}
+    {{- $secrets := .Values.imagePullSecrets -}}
+    {{- $secretNames := list -}}
+    {{- range $secrets }}
+      {{- $secretNames = append $secretNames .name -}}
+    {{- end }}
+    {{- join ";" $secretNames -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*Spark Optimizer Image Pull Secrets*/}}
+{{- define "amoro.optimizer.container.spark.pull.secrets" -}}
+  {{- if .Values.imagePullSecrets -}}
+    {{- $secrets := .Values.imagePullSecrets -}}
+    {{- $secretNames := list -}}
+    {{- range $secrets }}
+      {{- $secretNames = append $secretNames .name -}}
+    {{- end }}
+    {{- join "," $secretNames -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*Kubernetes Optimizer Image Pull Secrets*/}}
+{{- define "amoro.optimizer.container.kubernetes.pull.secrets" -}}
+  {{- if .Values.imagePullSecrets -}}
+    {{- $secrets := .Values.imagePullSecrets -}}
+    {{- $secretNames := list -}}
+    {{- range $secrets }}
+      {{- $secretNames = append $secretNames .name -}}
+    {{- end }}
+    {{- join ";" $secretNames -}}
+  {{- end -}}
+{{- end -}}
+
 {{/*Flink Optimizer Image Tag*/}}
 {{- define "amoro.optimizer.container.flink.tag" -}}
 {{- if .Values.optimizer.flink.image.tag -}}
@@ -54,7 +90,11 @@ properties:
   flink-home: /opt/flink
   export.FLINK_HOME: /opt/flink
   flink-conf.kubernetes.container.image: {{ include "amoro.optimizer.container.flink.image" .  | quote }}
+  flink-conf.kubernetes.container.image.pull-policy: {{ .Values.optimizer.flink.image.pullPolicy | quote }}
   flink-conf.kubernetes.service-account: {{ include "amoro.sa.name" . | quote }}
+  {{- if .Values.imagePullSecrets }}
+  flink-conf.kubernetes.container.image.pull-secrets: {{ include "amoro.optimizer.container.flink.pull.secrets" . }}
+  {{- end }}
   {{- with .Values.optimizer.flink.properties -}}
     {{- toYaml . | nindent 2 }}
   {{- end -}}
@@ -68,7 +108,11 @@ properties:
   spark-home: /opt/spark
   export.SPARK_HOME: /opt/spark
   spark-conf.spark.kubernetes.container.image: {{ include "amoro.optimizer.container.spark.image" .  | quote }}
+  spark-conf.spark.kubernetes.container.image.pullPolicy: {{ .Values.optimizer.spark.image.pullPolicy | quote }}
   spark-conf.spark.kubernetes.authenticate.driver.serviceAccountName: {{ include "amoro.sa.name" . | quote }}
+  {{- if .Values.imagePullSecrets }}
+  spark-conf.spark.kubernetes.container.image.pullSecrets: {{ include "amoro.optimizer.container.spark.pull.secrets" . }}
+  {{- end }}
   {{- with .Values.optimizer.spark.properties -}}
     {{- toYaml . | nindent 2 }}
   {{- end -}}
@@ -90,5 +134,8 @@ properties:
   {{- with .Values.optimizer.kubernetes.properties -}}
     {{- toYaml . | nindent 2 }}
   {{- end -}}
+  {{- if .Values.imagePullSecrets }}
+  imagePullSecrets: {{ include "amoro.optimizer.container.kubernetes.pull.secrets" . }}
+  {{- end }}
 {{- end -}}
 

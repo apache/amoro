@@ -22,13 +22,13 @@ import org.apache.amoro.api.ActivePlugin;
 import org.apache.amoro.server.Environments;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.LoadingPluginException;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.amoro.utils.JacksonUtil;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.paimon.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -109,7 +109,8 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
         name -> {
           T plugin = foundedPlugins.get(name);
           if (plugin == null) {
-            throw new LoadingPluginException("Cannot find am implement class for plugin:" + name);
+            throw new LoadingPluginException(
+                "Cannot find an implement class for the plugin:" + name);
           }
           plugin.open(pluginConfig.getProperties());
           exists.set(false);
@@ -188,7 +189,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
               try (ClassLoaderContext ignored = new ClassLoaderContext(plugin)) {
                 visitor.accept(plugin);
               } catch (Throwable throwable) {
-                LOG.error("Error when call plugin: " + plugin.name(), throwable);
+                LOG.error("Error when call plugin: {}", plugin.name(), throwable);
               }
             });
   }
@@ -221,8 +222,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
   protected void findSingleJarExternalPlugins(File pluginJarFile, ClassLoader parentClassLoader) {
     try {
       ClassLoader pluginClassLoader =
-          new URLClassLoader(
-              new URL[] {new URL(pluginJarFile.getAbsolutePath())}, parentClassLoader);
+          new URLClassLoader(new URL[] {pluginJarFile.toURI().toURL()}, parentClassLoader);
       ServiceLoader<T> loader = ServiceLoader.load(pluginType, pluginClassLoader);
       addToFoundedPlugin(loader);
     } catch (MalformedURLException e) {
@@ -260,7 +260,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
           "Failed when load plugin configs from file: " + mangerConfigPath, e);
     }
 
-    LOG.info("initializing plugin configuration for: " + pluginCategory());
+    LOG.info("initializing plugin configuration for: {}", pluginCategory());
     String pluginListKey = pluginCategory();
 
     JsonNode pluginConfigList = yamlConfig != null ? yamlConfig.get(pluginListKey) : null;

@@ -21,8 +21,8 @@ package org.apache.amoro.server.terminal;
 import org.apache.amoro.api.config.ConfigOption;
 import org.apache.amoro.api.config.ConfigOptions;
 import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.List;
 import java.util.Map;

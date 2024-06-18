@@ -20,8 +20,8 @@ package org.apache.amoro.flink.read.hybrid.enumerator;
 
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 
 import java.util.Arrays;
 import java.util.Collection;

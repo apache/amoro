@@ -18,7 +18,6 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.TableTypeUtil;
@@ -30,6 +29,10 @@ import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableSnapshot;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
@@ -38,9 +41,6 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

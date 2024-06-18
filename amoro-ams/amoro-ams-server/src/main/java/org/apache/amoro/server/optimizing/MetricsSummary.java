@@ -20,14 +20,14 @@ package org.apache.amoro.server.optimizing;
 
 import static org.apache.amoro.server.dashboard.utils.AmsUtil.byteToXB;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.server.dashboard.model.FilesStatistics;
 import org.apache.amoro.server.dashboard.utils.FilesStatisticsBuilder;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;

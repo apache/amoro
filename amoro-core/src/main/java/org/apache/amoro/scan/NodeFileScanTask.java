@@ -20,9 +20,9 @@ package org.apache.amoro.scan;
 
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.DataTreeNode;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.FileScanTaskUtil;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

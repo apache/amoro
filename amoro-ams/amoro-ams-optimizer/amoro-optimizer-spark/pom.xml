@@ -115,26 +115,13 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>shade-amoro</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-                            <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                            </transformers>
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.parquet</pattern>
@@ -155,32 +142,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>optimizer.spark3.3</id>
-            <activation>
-                <property>
-                    <name>!optimizer.spark</name>
-                </property>
-            </activation>
-            <properties>
-                <spark-optimizer.spark-version>3.3.3</spark-optimizer.spark-version>
-                <spark-optimizer.scala-version>2.12</spark-optimizer.scala-version>
-            </properties>
-        </profile>
-        <profile>
-            <id>optimizer.spark3.2</id>
-            <activation>
-                <property>
-                    <name>optimizer.spark</name>
-                    <value>3.2</value>
-                </property>
-            </activation>
-            <properties>
-                <spark-optimizer.spark-version>3.2.2</spark-optimizer.spark-version>
-                <spark-optimizer.scala-version>2.12</spark-optimizer.scala-version>
-            </properties>
-        </profile>
-    </profiles>
 </project>

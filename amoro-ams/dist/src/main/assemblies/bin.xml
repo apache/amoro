@@ -21,7 +21,7 @@
         xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
     <id>bin</id>
     <formats>
-        <format>zip</format>
+        <format>tar.gz</format>
     </formats>
 
     <includeBaseDirectory>true</includeBaseDirectory>
@@ -48,7 +48,7 @@
             <source>
                 ../amoro-ams-metrics/amoro-metrics-prometheus/target/amoro-metrics-prometheus-${project.version}-jar-with-dependencies.jar
             </source>
-            <outputDirectory>plugin/metrics-reporter</outputDirectory>
+            <outputDirectory>plugin/metric-reporters</outputDirectory>
             <destName>prometheus-reporter.jar</destName>
             <fileMode>0644</fileMode>
         </file>
@@ -61,6 +61,21 @@
         <file>
             <source>src/main/amoro-bin/conf/config.yaml</source>
             <outputDirectory>conf</outputDirectory>
+            <fileMode>0644</fileMode>
+        </file>
+        <file>
+            <source>../../LICENSE</source>
+            <outputDirectory/>
+            <fileMode>0644</fileMode>
+        </file>
+        <file>
+            <source>../../NOTICE</source>
+            <outputDirectory/>
+            <fileMode>0644</fileMode>
+        </file>
+        <file>
+            <source>../../DISCLAIMER</source>
+            <outputDirectory/>
             <fileMode>0644</fileMode>
         </file>
     </files>

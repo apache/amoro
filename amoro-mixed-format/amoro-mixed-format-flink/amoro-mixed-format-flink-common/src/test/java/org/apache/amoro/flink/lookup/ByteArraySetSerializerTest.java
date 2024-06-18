@@ -82,6 +82,6 @@ public class ByteArraySetSerializerTest {
               new ByteArrayWrapper(sb.toString().getBytes(), sb.toString().getBytes().length)));
     }
     long end = System.currentTimeMillis();
-    LOG.info("contains process time:" + (end - start));
+    LOG.info("contains process time:{}", end - start);
   }
 }

@@ -24,6 +24,7 @@ import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.op.MixedHadoopTableOperations;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.utils.InternalTableUtil;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.MixedCatalogUtil;
@@ -31,7 +32,6 @@ import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 

@@ -23,6 +23,9 @@ import org.apache.amoro.server.AmsEnvironment;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.MixedCatalogUtil;
@@ -38,9 +41,6 @@ import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.hadoop.HadoopCatalog;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.AfterEach;
@@ -74,7 +74,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     if (icebergCatalog != null) {
       icebergCatalog.dropTable(TableIdentifier.of(DATABASE, TABLE), true);
     }
-    if (serverCatalog != null && serverCatalog.exist(DATABASE, TABLE)) {
+    if (serverCatalog != null && serverCatalog.tableExists(DATABASE, TABLE)) {
       serverCatalog.dropTable(DATABASE, TABLE);
     }
   }
@@ -410,7 +410,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
         amsEnv.serviceContainer().getTableService().getServerCatalog(catalog);
     if (serverCatalog instanceof InternalCatalog) {
       this.serverCatalog = (InternalCatalog) serverCatalog;
-      if (!this.serverCatalog.exist(DATABASE)) {
+      if (!this.serverCatalog.databaseExists(DATABASE)) {
         this.serverCatalog.createDatabase(DATABASE);
       }
     }

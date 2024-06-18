@@ -19,7 +19,7 @@
 package org.apache.amoro.server.dashboard.response;
 
 import io.javalin.http.HttpCode;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 
 public class ErrorResponse extends Response {
   private String requestId;

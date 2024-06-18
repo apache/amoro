@@ -18,11 +18,11 @@
 
 package org.apache.amoro.spark.test.utils;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.iceberg.io.ByteBufferInputStream;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.SeekableInputStream;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.io.InputStream;

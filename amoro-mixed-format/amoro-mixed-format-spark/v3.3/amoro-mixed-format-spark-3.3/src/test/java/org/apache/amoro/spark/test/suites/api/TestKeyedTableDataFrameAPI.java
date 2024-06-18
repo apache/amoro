@@ -19,10 +19,10 @@
 package org.apache.amoro.spark.test.suites.api;
 
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.spark.test.MixedTableTestBase;
 import org.apache.amoro.spark.test.extensions.EnableCatalogSelect;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.Dataset;

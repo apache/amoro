@@ -25,6 +25,7 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import org.apache.amoro.io.writer.SortedPosDeleteWriter;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -39,7 +40,6 @@ import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -135,7 +135,7 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
       throw new RuntimeException(e);
     }
     for (String danglingDeleteFile : danglingDeleteFiles) {
-      LOG.info("find dangling delete files " + danglingDeleteFile);
+      LOG.info("find dangling delete files {}", danglingDeleteFile);
     }
     Assert.assertEquals(count, danglingDeleteFiles.size());
   }

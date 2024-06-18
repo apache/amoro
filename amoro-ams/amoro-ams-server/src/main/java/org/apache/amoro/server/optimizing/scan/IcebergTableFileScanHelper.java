@@ -19,12 +19,12 @@
 package org.apache.amoro.server.optimizing.scan;
 
 import org.apache.amoro.server.AmoroServiceConstants;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 public class IcebergTableFileScanHelper implements TableFileScanHelper {
   private final Table table;

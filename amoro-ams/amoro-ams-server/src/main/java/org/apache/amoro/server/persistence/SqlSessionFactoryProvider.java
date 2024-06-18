@@ -28,6 +28,7 @@ import org.apache.amoro.server.persistence.mapper.PlatformFileMapper;
 import org.apache.amoro.server.persistence.mapper.ResourceMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.pool2.impl.BaseObjectPoolConfig;
@@ -39,7 +40,6 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.InputStreamReader;
 import java.net.URI;

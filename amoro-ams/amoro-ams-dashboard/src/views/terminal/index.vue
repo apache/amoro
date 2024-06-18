@@ -121,6 +121,7 @@ import { ICatalogItem, IDebugResult, ILableAndValue, IMap, debugResultBgcMap } f
 import { executeSql, getExampleSqlCode, getJobDebugResult, getLogsResult, getShortcutsList, stopSql, getLastDebugInfo } from '@/services/terminal.service'
 import { getCatalogList } from '@/services/table.service'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
+import { message } from 'ant-design-vue'
 
 interface ISessionInfo {
   sessionId: string
@@ -229,9 +230,12 @@ export default defineComponent({
         showDebug.value = true
         resetResult()
         runStatus.value = 'Running'
+
+        const sqlToExecute = sqlEditorRef.value.getSelection() || sqlSource.value
+
         const res: ISessionInfo = await executeSql({
           catalog: curCatalog.value,
-          sql: sqlSource.value
+          sql: sqlToExecute
         })
         sessionId.value = res.sessionId || '0'
         getLogResult()

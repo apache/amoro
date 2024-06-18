@@ -18,7 +18,7 @@
 
 package org.apache.amoro.spark.util;
 
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.catalog.CatalogManager;
 import org.apache.spark.sql.connector.catalog.CatalogPlugin;

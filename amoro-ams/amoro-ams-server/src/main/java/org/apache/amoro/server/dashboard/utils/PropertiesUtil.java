@@ -19,7 +19,7 @@
 package org.apache.amoro.server.dashboard.utils;
 
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 
 import java.util.Map;
 import java.util.Set;

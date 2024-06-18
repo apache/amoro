@@ -19,6 +19,7 @@
 package org.apache.amoro.io.writer;
 
 import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
@@ -33,7 +34,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Locale;

@@ -18,11 +18,11 @@
 
 package org.apache.amoro.utils;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 public class ContentFiles {
 

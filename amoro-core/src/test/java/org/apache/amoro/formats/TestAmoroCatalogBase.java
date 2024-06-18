@@ -19,8 +19,8 @@
 package org.apache.amoro.formats;
 
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -76,14 +76,14 @@ public abstract class TestAmoroCatalogBase extends AmoroCatalogTestBase {
   @Test
   public void testExistsDatabase() {
     createDatabase(DB1);
-    Assert.assertTrue(amoroCatalog.exist(DB1));
+    Assert.assertTrue(amoroCatalog.databaseExists(DB1));
   }
 
   @Test
   public void testExistsTable() {
     createDatabase(DB1);
     createTable(DB1, TABLE, new HashMap<>());
-    Assert.assertTrue(amoroCatalog.exist(DB1, TABLE));
+    Assert.assertTrue(amoroCatalog.tableExists(DB1, TABLE));
   }
 
   @Test

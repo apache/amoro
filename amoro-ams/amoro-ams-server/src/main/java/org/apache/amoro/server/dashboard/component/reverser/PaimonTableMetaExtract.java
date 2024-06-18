@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.dashboard.component.reverser;
 
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.paimon.schema.SchemaManager;
 import org.apache.paimon.schema.TableSchema;
 import org.apache.paimon.table.DataTable;

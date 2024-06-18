@@ -21,6 +21,12 @@ package org.apache.amoro.io.reader;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.CloseablePredicate;
 import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.hash.BloomFilter;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.amoro.utils.map.StructLikeBaseMap;
 import org.apache.amoro.utils.map.StructLikeCollections;
@@ -43,15 +49,8 @@ import org.apache.iceberg.io.DeleteSchemaUtil;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.Parquet;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.Filter;
-import org.apache.paimon.shade.guava30.com.google.common.hash.BloomFilter;
 import org.roaringbitmap.longlong.Roaring64Bitmap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,6 +117,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     ImmutableList.Builder<DeleteFile> posDeleteBuilder = ImmutableList.builder();
     ImmutableList.Builder<DeleteFile> eqDeleteBuilder = ImmutableList.builder();
     if (rewriteFilesInput.deleteFiles() != null) {
+      String firstDeleteFilePath = null;
       for (ContentFile<?> delete : rewriteFilesInput.deleteFiles()) {
         switch (delete.content()) {
           case POSITION_DELETES:
@@ -126,11 +126,21 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
           case EQUALITY_DELETES:
             if (deleteIds.isEmpty()) {
               deleteIds = ImmutableSet.copyOf(ContentFiles.asDeleteFile(delete).equalityFieldIds());
+              firstDeleteFilePath = delete.path().toString();
             } else {
-              Preconditions.checkArgument(
-                  deleteIds.equals(
-                      ImmutableSet.copyOf(ContentFiles.asDeleteFile(delete).equalityFieldIds())),
-                  "Equality delete files have different delete fields");
+              Set<Integer> currentDeleteIds =
+                  ImmutableSet.copyOf(ContentFiles.asDeleteFile(delete).equalityFieldIds());
+              if (!deleteIds.equals(currentDeleteIds)) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        "Equality delete files have different delete fields, first equality field ids:[%s],"
+                            + " current equality field ids:[%s], first delete file path:[%s], "
+                            + " current delete file path: [%s].",
+                        deleteIds,
+                        currentDeleteIds,
+                        firstDeleteFilePath,
+                        delete.path().toString()));
+              }
             }
             eqDeleteBuilder.add(ContentFiles.asDeleteFile(delete));
             break;

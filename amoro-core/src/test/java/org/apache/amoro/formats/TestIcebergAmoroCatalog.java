@@ -18,13 +18,13 @@
 
 package org.apache.amoro.formats;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

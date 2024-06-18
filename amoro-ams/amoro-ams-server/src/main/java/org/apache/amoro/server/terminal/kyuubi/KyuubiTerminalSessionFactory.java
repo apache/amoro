@@ -24,9 +24,9 @@ import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.server.terminal.SparkContextUtil;
 import org.apache.amoro.server.terminal.TerminalSession;
 import org.apache.amoro.server.terminal.TerminalSessionFactory;
+import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.iceberg.relocated.com.google.common.base.Joiner;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
 import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.Utils;
@@ -37,6 +37,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -123,7 +124,7 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     sessionConf.put("jdbc.url", kyuubiJdbcUrl);
     Properties properties = new Properties();
 
-    if (!metaStore.isKerberosAuthMethod()) {
+    if (!metaStore.isKerberosAuthMethod() && Objects.nonNull(metaStore.getHadoopUsername())) {
       properties.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
       sessionConf.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
     }

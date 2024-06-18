@@ -18,10 +18,10 @@
 
 package org.apache.amoro.io.reader;
 
+import org.apache.amoro.shade.guava32.com.google.common.hash.Funnel;
+import org.apache.amoro.shade.guava32.com.google.common.hash.PrimitiveSink;
 import org.apache.amoro.utils.SerializationUtil;
 import org.apache.iceberg.StructLike;
-import org.apache.paimon.shade.guava30.com.google.common.hash.Funnel;
-import org.apache.paimon.shade.guava30.com.google.common.hash.PrimitiveSink;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.terminal;
 
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 
 import java.util.List;
 

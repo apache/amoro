@@ -29,6 +29,8 @@ import org.apache.amoro.hive.io.HiveDataTestHelpers;
 import org.apache.amoro.hive.utils.HivePartitionUtil;
 import org.apache.amoro.hive.utils.HiveSchemaUtil;
 import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.TableFileUtil;
@@ -42,8 +44,6 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.hadoop.Util;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -117,7 +117,7 @@ public class TestSyncHiveMeta extends TableTestBase {
         .set(HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE, "true")
         .commit();
     List<Record> insertRecords =
-        org.apache.iceberg.relocated.com.google.common.collect.Lists.newArrayList();
+        org.apache.amoro.shade.guava32.com.google.common.collect.Lists.newArrayList();
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
 
     List<DataFile> dataFiles =

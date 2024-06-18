@@ -18,11 +18,11 @@
 
 package org.apache.amoro.client;
 
-import org.apache.curator.utils.ZookeeperFactory;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.admin.ZooKeeperAdmin;
-import org.apache.zookeeper.client.ZKClientConfig;
+import org.apache.amoro.shade.zookeeper3.org.apache.curator.utils.ZookeeperFactory;
+import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.Watcher;
+import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.ZooKeeper;
+import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.admin.ZooKeeperAdmin;
+import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.client.ZKClientConfig;
 
 public class AmoroZookeeperFactory implements ZookeeperFactory {
 

@@ -18,17 +18,20 @@
 
 package org.apache.amoro.server.optimizing.maintainer;
 
+import static org.apache.amoro.shade.guava32.com.google.common.primitives.Longs.min;
 import static org.apache.amoro.utils.MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
-import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 import org.apache.amoro.IcebergFileEntry;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.config.DataExpirationConfig;
 import org.apache.amoro.data.FileNameRules;
-import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.HiveLocationUtil;
-import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.KeyedTable;
@@ -49,10 +52,6 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
@@ -62,7 +61,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,40 +80,13 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   private final BaseTableMaintainer baseMaintainer;
 
-  private final Set<String> changeFiles;
-
-  private final Set<String> baseFiles;
-
-  private final Set<String> hiveFiles;
-
   public MixedTableMaintainer(MixedTable mixedTable) {
     this.mixedTable = mixedTable;
     if (mixedTable.isKeyedTable()) {
-      ChangeTable changeTable = mixedTable.asKeyedTable().changeTable();
-      BaseTable baseTable = mixedTable.asKeyedTable().baseTable();
-      changeMaintainer = new ChangeTableMaintainer(changeTable);
-      baseMaintainer = new BaseTableMaintainer(baseTable);
-      changeFiles =
-          Sets.union(
-              IcebergTableUtil.getAllContentFilePath(changeTable),
-              IcebergTableUtil.getAllStatisticsFilePath(changeTable));
-      baseFiles =
-          Sets.union(
-              IcebergTableUtil.getAllContentFilePath(baseTable),
-              IcebergTableUtil.getAllStatisticsFilePath(baseTable));
+      changeMaintainer = new ChangeTableMaintainer(mixedTable.asKeyedTable().changeTable());
+      baseMaintainer = new BaseTableMaintainer(mixedTable.asKeyedTable().baseTable());
     } else {
       baseMaintainer = new BaseTableMaintainer(mixedTable.asUnkeyedTable());
-      changeFiles = new HashSet<>();
-      baseFiles =
-          Sets.union(
-              IcebergTableUtil.getAllContentFilePath(mixedTable.asUnkeyedTable()),
-              IcebergTableUtil.getAllStatisticsFilePath(mixedTable.asUnkeyedTable()));
-    }
-
-    if (TableTypeUtil.isHive(mixedTable)) {
-      hiveFiles = HiveLocationUtil.getHiveLocation(mixedTable);
-    } else {
-      hiveFiles = new HashSet<>();
     }
   }
 
@@ -314,11 +285,6 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     @Override
-    public Set<String> orphanFileCleanNeedToExcludeFiles() {
-      return Sets.union(changeFiles, Sets.union(baseFiles, hiveFiles));
-    }
-
-    @Override
     @VisibleForTesting
     void expireSnapshots(long mustOlderThan) {
       expireFiles(mustOlderThan);
@@ -342,11 +308,6 @@ public class MixedTableMaintainer implements TableMaintainer {
           now - snapshotsKeepTime(tableRuntime),
           // The latest flink committed snapshot should not be expired for recovering flink job
           fetchLatestFlinkCommittedSnapshotTime(table));
-    }
-
-    @Override
-    protected Set<String> expireSnapshotNeedToExcludeFiles() {
-      return Sets.union(baseFiles, hiveFiles);
     }
 
     @Override
@@ -464,20 +425,30 @@ public class MixedTableMaintainer implements TableMaintainer {
               changeFiles.size());
         }
       } catch (Throwable t) {
-        LOG.error(unkeyedTable.name() + " failed to delete change files, ignore", t);
+        LOG.error("{} failed to delete change files, ignore", unkeyedTable.name(), t);
       }
     }
   }
 
   public class BaseTableMaintainer extends IcebergTableMaintainer {
+    private final Set<String> hiveFiles = Sets.newHashSet();
 
     public BaseTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
+      if (unkeyedTable.format() == TableFormat.MIXED_HIVE) {
+        hiveFiles.addAll(HiveLocationUtil.getHiveLocation(mixedTable));
+      }
     }
 
     @Override
     public Set<String> orphanFileCleanNeedToExcludeFiles() {
-      return Sets.union(changeFiles, Sets.union(baseFiles, hiveFiles));
+      Set<String> baseFiles = super.orphanFileCleanNeedToExcludeFiles();
+      return Sets.union(baseFiles, hiveFiles);
+    }
+
+    @Override
+    protected Set<String> expireSnapshotNeedToExcludeFiles() {
+      return hiveFiles;
     }
 
     @Override
@@ -512,11 +483,6 @@ public class MixedTableMaintainer implements TableMaintainer {
       } else {
         return Long.MAX_VALUE;
       }
-    }
-
-    @Override
-    protected Set<String> expireSnapshotNeedToExcludeFiles() {
-      return Sets.union(changeFiles, hiveFiles);
     }
   }
 

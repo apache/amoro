@@ -27,6 +27,7 @@ import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.amoro.flink.util.IcebergClassUtil;
 import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.util.ProxyUtil;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.MixedTable;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.io.InputFormat;
@@ -50,7 +51,6 @@ import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.source.FlinkInputFormat;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.HashMap;
 import java.util.List;

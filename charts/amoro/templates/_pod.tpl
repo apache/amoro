@@ -66,6 +66,13 @@
   readOnly: true
   subPath: "jvm.properties"
 {{- end -}}
+{{- /* metric-reporters.yaml from config-map*/ -}}
+{{- if or .Values.plugin.metricReporters }}
+- name: conf
+  mountPath: {{ include "amoro.home" . }}/conf/plugins/metric-reporters.yaml
+  readOnly: true
+  subPath: "metric-reporters.yaml"
+{{- end -}}
 {{- /* flink install dir. if flink optimizer container enabled.
 flink distribution package will be installed to here*/ -}}
 {{- if .Values.optimizer.flink.enabled }}

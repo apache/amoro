@@ -26,10 +26,10 @@ import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.UnifiedCatalogLoader;
 import org.apache.amoro.client.AmsThriftUrl;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
@@ -126,7 +126,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
 
   @Override
   public boolean namespaceExists(String[] namespace) {
-    return unifiedCatalog.exist(namespaceToDatabase(namespace));
+    return unifiedCatalog.databaseExists(namespaceToDatabase(namespace));
   }
 
   @Override
@@ -160,7 +160,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
       unifiedCatalog.dropTable(database, id.getIdentifier().getTableName(), true);
     }
     unifiedCatalog.dropDatabase(database);
-    return !unifiedCatalog.exist(database);
+    return !unifiedCatalog.databaseExists(database);
   }
 
   @Override
@@ -215,7 +215,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
 
   @Override
   public boolean tableExists(Identifier ident) {
-    return unifiedCatalog.exist(namespaceToDatabase(ident.namespace()), ident.name());
+    return unifiedCatalog.tableExists(namespaceToDatabase(ident.namespace()), ident.name());
   }
 
   @Override

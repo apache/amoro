@@ -18,13 +18,13 @@
 
 package org.apache.amoro.op;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.UpdateProperties;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import java.util.Map;
 import java.util.Set;

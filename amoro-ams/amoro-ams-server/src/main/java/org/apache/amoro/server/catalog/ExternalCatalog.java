@@ -27,9 +27,9 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.MixedCatalogUtil;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,13 +83,13 @@ public class ExternalCatalog extends ServerCatalog {
   }
 
   @Override
-  public boolean exist(String database) {
-    return doAs(() -> unifiedCatalog.exist(database));
+  public boolean databaseExists(String database) {
+    return doAs(() -> unifiedCatalog.databaseExists(database));
   }
 
   @Override
-  public boolean exist(String database, String tableName) {
-    return doAs(() -> unifiedCatalog.exist(database, tableName));
+  public boolean tableExists(String database, String tableName) {
+    return doAs(() -> unifiedCatalog.tableExists(database, tableName));
   }
 
   @Override

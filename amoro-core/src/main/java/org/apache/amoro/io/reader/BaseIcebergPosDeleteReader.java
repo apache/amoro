@@ -19,6 +19,7 @@
 package org.apache.amoro.io.reader;
 
 import org.apache.amoro.io.AuthenticatedFileIO;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;
@@ -34,7 +35,6 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.Parquet;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
 

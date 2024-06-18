@@ -49,7 +49,10 @@ const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const catalogs = reactive<ICatalogItem[]>([])
-const curCatalog = reactive<ICatalogItem>({})
+const curCatalog = reactive<ICatalogItem>({
+  catalogName: '',
+  catalogType: ''
+})
 const isEdit = ref<boolean>(false)
 const NEW_CATALOG = 'new catalog'
 const loading = ref<boolean>(false)
@@ -72,14 +75,17 @@ async function getCatalogs() {
 }
 function initSelectCatalog() {
   const { catalogname = '', type } = route.query
-  const item: ICatalogItem = {}
+  const item: ICatalogItem = {
+    catalogName: '',
+    catalogType: ''
+  }
   if (decodeURIComponent(catalogname as string) === NEW_CATALOG) {
     addCatalog()
     return
   }
   if (catalogname) {
-    item.catalogName = catalogname
-    item.catalogType = type
+    item.catalogName = catalogname as string
+    item.catalogType = type as string
   } else {
     item.catalogName = catalogs[0]?.catalogName
     item.catalogType = catalogs[0]?.catalogType
@@ -110,7 +116,7 @@ async function selectCatalog(item: ICatalogItem) {
   })
 }
 
-async function updateEdit(val, catalog?) {
+async function updateEdit(val: boolean, catalog?: ICatalogItem | undefined) {
   isEdit.value = val
   if (catalog) {
     await updateCatalogs()
@@ -156,7 +162,7 @@ onMounted(async() => {
   await getCatalogs()
   initSelectCatalog()
 })
-function leaveConfirm(cb?) {
+function leaveConfirm(cb?: () => void) {
   Modal.confirm({
     title: t('leavePageModalTitle'),
     content: t('leavePageModalContent'),
@@ -166,7 +172,7 @@ function leaveConfirm(cb?) {
     }
   })
 }
-onBeforeRouteLeave((to, form, next) => {
+onBeforeRouteLeave((_to, _form, next) => {
   if (isEdit.value) {
     leaveConfirm(() => {
       next()

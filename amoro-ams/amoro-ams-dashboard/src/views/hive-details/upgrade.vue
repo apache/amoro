@@ -59,7 +59,7 @@ limitations under the License.
 
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import schemaField from './components/Field.vue'
 import partitionField from './components/Partition.vue'
 import otherProperties from './components/Properties.vue'
@@ -120,10 +120,8 @@ function onCofirm() {
 async function getParams() {
   pkName.length = 0
   const pkList = schemaFieldRef.value.getPkname()
-  pkList.forEach((ele: DetailColumnItem) => {
-    pkName.push(ele)
-  })
-  propertiesRef.value.getProperties().then((res) => {
+  pkList.forEach((ele: DetailColumnItem) => pkName.push(ele as any))
+  propertiesRef.value.getProperties().then((res: any) => {
     if (res) {
       Object.assign(propertiesObj, res)
       upgradeTable()

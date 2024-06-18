@@ -23,6 +23,7 @@ import org.apache.amoro.flink.shuffle.ShuffleKey;
 import org.apache.amoro.flink.shuffle.ShuffleRulePolicy;
 import org.apache.amoro.flink.table.MixedFormatTableLoader;
 import org.apache.amoro.flink.util.MixedFormatUtils;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.MixedTable;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.annotation.VisibleForTesting;
@@ -36,7 +37,6 @@ import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

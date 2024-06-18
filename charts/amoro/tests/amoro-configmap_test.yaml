@@ -121,3 +121,17 @@ tests:
           pattern:
             |
             - name: local1
+  - it: Amoro configMap should reflect metric reporters
+    set:
+      plugin:
+        metricReporters:
+          - name: prometheus-exporter
+            enabled: true
+            properties:
+              port: 7001
+    asserts:
+      - matchRegex:
+          path: data["metric-reporters.yaml"]
+          pattern:
+            |
+            - name: prometheus-exporter

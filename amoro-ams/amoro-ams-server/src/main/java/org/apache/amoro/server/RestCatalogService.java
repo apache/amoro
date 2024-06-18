@@ -46,6 +46,10 @@ import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.internal.InternalTableCreator;
 import org.apache.amoro.server.table.internal.InternalTableHandler;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.TableMetadata;
@@ -56,10 +60,6 @@ import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.rest.RESTResponse;
 import org.apache.iceberg.rest.RESTSerializers;
 import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
@@ -209,7 +209,7 @@ public class RestCatalogService extends PersistentBase {
           } else {
             checkUnsupported(
                 !ns.contains("."), "multi-level namespace is not supported, parent: " + ns);
-            checkDatabaseExist(catalog.exist(ns), ns);
+            checkDatabaseExist(catalog.databaseExists(ns), ns);
           }
           return ListNamespacesResponse.builder().addAll(nsLists).build();
         });
@@ -224,7 +224,7 @@ public class RestCatalogService extends PersistentBase {
           Namespace ns = request.namespace();
           checkUnsupported(ns.length() == 1, "multi-level namespace is not supported now");
           String database = ns.level(0);
-          checkAlreadyExists(!catalog.exist(database), "Database", database);
+          checkAlreadyExists(!catalog.databaseExists(database), "Database", database);
           catalog.createDatabase(database);
           return CreateNamespaceResponse.builder().withNamespace(Namespace.of(database)).build();
         });
@@ -410,7 +410,7 @@ public class RestCatalogService extends PersistentBase {
           String ns = ctx.pathParam("namespace");
           Preconditions.checkNotNull(ns, "namespace is null");
           checkUnsupported(!ns.contains("."), "multi-level namespace is not supported");
-          checkDatabaseExist(catalog.exist(ns), ns);
+          checkDatabaseExist(catalog.databaseExists(ns), ns);
           return handler.apply(catalog, ns);
         });
   }
