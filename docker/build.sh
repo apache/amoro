@@ -103,18 +103,21 @@ while [ $i -le $j ]; do
     shift 1
     OPTIMIZER_JOB=$1
     i=$((i+2))
+    shift 1
     ;;
 
     "--tag")
     shift 1
     AMORO_TAG=$1
     i=$((i+2))
+    shift 1
     ;;
 
     "--maven-mirror")
     shift 1
     MAVEN_MIRROR=$1
     i=$((i+2))
+    shift 1
     ;;
 
     *)
