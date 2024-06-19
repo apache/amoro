@@ -44,11 +44,6 @@ import static org.apache.amoro.shade.guava32.com.google.common.collect.Immutable
 import static org.apache.amoro.shade.guava32.com.google.common.collect.Sets.intersection;
 import static org.apache.iceberg.types.Conversions.fromByteBuffer;
 
-import org.apache.amoro.data.DataFileType;
-import org.apache.amoro.data.PrimaryKeyedFile;
-import org.apache.amoro.scan.MixedFileScanTask;
-import org.apache.amoro.scan.ChangeTableIncrementalScan;
-import org.apache.amoro.trino.delete.TrinoDeleteFile;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
 import io.trino.filesystem.TrinoFileSystemFactory;
@@ -71,6 +66,17 @@ import io.trino.spi.predicate.Range;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.predicate.ValueSet;
 import io.trino.spi.type.TypeManager;
+import org.apache.amoro.data.DataFileType;
+import org.apache.amoro.data.PrimaryKeyedFile;
+import org.apache.amoro.scan.ChangeTableIncrementalScan;
+import org.apache.amoro.scan.MixedFileScanTask;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.base.Stopwatch;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterators;
+import org.apache.amoro.shade.guava32.com.google.common.io.Closer;
+import org.apache.amoro.trino.delete.TrinoDeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpecParser;
 import org.apache.iceberg.Schema;
@@ -78,12 +84,6 @@ import org.apache.iceberg.TableScan;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
-import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
-import org.apache.amoro.shade.guava32.com.google.common.base.Stopwatch;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Iterators;
-import org.apache.amoro.shade.guava32.com.google.common.io.Closer;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.util.TableScanUtil;
 
@@ -102,8 +102,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 /**
- * Iceberg original IcebergSplitSource has some problems for mixed-format table, such as iceberg version, table
- * type.
+ * Iceberg original IcebergSplitSource has some problems for mixed-format table, such as iceberg
+ * version, table type.
  */
 public class IcebergSplitSource implements ConnectorSplitSource {
   private static final ConnectorSplitBatch EMPTY_BATCH =

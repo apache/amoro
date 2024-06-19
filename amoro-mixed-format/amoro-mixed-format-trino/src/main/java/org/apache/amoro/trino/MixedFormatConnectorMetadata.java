@@ -21,12 +21,6 @@ package org.apache.amoro.trino;
 import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 
-import org.apache.amoro.mixed.MixedFormatCatalog;
-import org.apache.amoro.table.MixedTable;
-import org.apache.amoro.table.TableIdentifier;
-import org.apache.amoro.trino.keyed.KeyedConnectorMetadata;
-import org.apache.amoro.trino.keyed.KeyedTableHandle;
-import org.apache.amoro.trino.unkeyed.IcebergMetadata;
 import io.airlift.slice.Slice;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.BeginTableExecuteResult;
@@ -55,9 +49,15 @@ import io.trino.spi.connector.TableColumnsMetadata;
 import io.trino.spi.expression.ConnectorExpression;
 import io.trino.spi.statistics.ComputedStatistics;
 import io.trino.spi.statistics.TableStatistics;
-import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterators;
+import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.trino.keyed.KeyedConnectorMetadata;
+import org.apache.amoro.trino.keyed.KeyedTableHandle;
+import org.apache.amoro.trino.unkeyed.IcebergMetadata;
+import org.apache.iceberg.exceptions.NoSuchTableException;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -455,7 +455,8 @@ public class MixedFormatConnectorMetadata implements ConnectorMetadata {
 
   public MixedTable getMixedTable(SchemaTableName schemaTableName) {
     return tableCache.computeIfAbsent(
-        schemaTableName, ignore -> mixedFormatCatalog.loadTable(getTableIdentifier(schemaTableName)));
+        schemaTableName,
+        ignore -> mixedFormatCatalog.loadTable(getTableIdentifier(schemaTableName)));
   }
 
   private TableIdentifier getTableIdentifier(SchemaTableName schemaTableName) {

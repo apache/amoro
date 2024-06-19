@@ -25,8 +25,8 @@ import static java.util.Objects.requireNonNull;
 import io.airlift.log.Logger;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.DistributedQueryRunner;
-import org.apache.amoro.trino.MixedFormatPlugin;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.trino.MixedFormatPlugin;
 
 import java.io.File;
 import java.util.HashMap;

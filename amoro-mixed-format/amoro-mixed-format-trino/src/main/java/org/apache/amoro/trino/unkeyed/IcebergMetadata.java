@@ -82,6 +82,14 @@ import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkState;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Verify.verify;
+import static org.apache.amoro.shade.guava32.com.google.common.base.Verify.verifyNotNull;
+import static org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList.toImmutableList;
+import static org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap.toImmutableMap;
+import static org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet.toImmutableSet;
+import static org.apache.amoro.shade.guava32.com.google.common.collect.Maps.transformValues;
 import static org.apache.iceberg.FileContent.POSITION_DELETES;
 import static org.apache.iceberg.ReachableFileUtil.metadataFileLocations;
 import static org.apache.iceberg.ReachableFileUtil.versionHintLocation;
@@ -92,17 +100,8 @@ import static org.apache.iceberg.TableProperties.DELETE_ISOLATION_LEVEL;
 import static org.apache.iceberg.TableProperties.DELETE_ISOLATION_LEVEL_DEFAULT;
 import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
 import static org.apache.iceberg.TableProperties.WRITE_LOCATION_PROVIDER_IMPL;
-import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkArgument;
-import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkState;
-import static org.apache.amoro.shade.guava32.com.google.common.base.Verify.verify;
-import static org.apache.amoro.shade.guava32.com.google.common.base.Verify.verifyNotNull;
-import static org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList.toImmutableList;
-import static org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap.toImmutableMap;
-import static org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet.toImmutableSet;
-import static org.apache.amoro.shade.guava32.com.google.common.collect.Maps.transformValues;
 import static org.apache.iceberg.types.TypeUtil.indexParents;
 
-import org.apache.amoro.table.MixedTable;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
@@ -199,6 +198,15 @@ import io.trino.spi.statistics.TableStatistics;
 import io.trino.spi.statistics.TableStatisticsMetadata;
 import io.trino.spi.type.TypeManager;
 import org.apache.amoro.hive.utils.TableTypeUtil;
+import org.apache.amoro.shade.guava32.com.google.common.base.Splitter;
+import org.apache.amoro.shade.guava32.com.google.common.base.Suppliers;
+import org.apache.amoro.shade.guava32.com.google.common.base.VerifyException;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.table.MixedTable;
 import org.apache.datasketches.theta.CompactSketch;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
@@ -233,14 +241,6 @@ import org.apache.iceberg.UpdateStatistics;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.amoro.shade.guava32.com.google.common.base.Splitter;
-import org.apache.amoro.shade.guava32.com.google.common.base.Suppliers;
-import org.apache.amoro.shade.guava32.com.google.common.base.VerifyException;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.types.Types.IntegerType;
@@ -274,8 +274,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * Iceberg original metadata has some problems for mixed-format table, such as iceberg version, table type. So
- * copy from IcebergMetadata and made some change
+ * Iceberg original metadata has some problems for mixed-format table, such as iceberg version,
+ * table type. So copy from IcebergMetadata and made some change
  */
 public class IcebergMetadata implements ConnectorMetadata {
   private static final Logger log = Logger.get(io.trino.plugin.iceberg.IcebergMetadata.class);

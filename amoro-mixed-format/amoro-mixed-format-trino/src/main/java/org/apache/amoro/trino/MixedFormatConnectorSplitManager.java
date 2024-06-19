@@ -18,9 +18,6 @@
 
 package org.apache.amoro.trino;
 
-import org.apache.amoro.trino.keyed.KeyedConnectorSplitManager;
-import org.apache.amoro.trino.keyed.KeyedTableHandle;
-import org.apache.amoro.trino.unkeyed.IcebergSplitManager;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorSplitSource;
@@ -28,6 +25,9 @@ import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.DynamicFilter;
+import org.apache.amoro.trino.keyed.KeyedConnectorSplitManager;
+import org.apache.amoro.trino.keyed.KeyedTableHandle;
+import org.apache.amoro.trino.unkeyed.IcebergSplitManager;
 
 import javax.inject.Inject;
 

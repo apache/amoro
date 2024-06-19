@@ -49,6 +49,7 @@
         <commons-io.version>2.4</commons-io.version>
         <jol.version>0.16</jol.version>
         <surefire-testng.version>3.2.5</surefire-testng.version>
+        <skip-build-mixed-format-trino>true</skip-build-mixed-format-trino>
     </properties>
 
     <dependencies>
@@ -553,7 +554,7 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.6</version>
                 <configuration>
-                    <skipAssembly>true</skipAssembly>
+                    <skipAssembly>${skip-build-mixed-format-trino}</skipAssembly>
                 </configuration>
                 <executions>
                     <execution>
@@ -575,8 +576,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <skip>true</skip>
-                    <skipMain>true</skipMain>
+                    <skip>${skip-build-mixed-format-trino}</skip>
+                    <skipMain>${skip-build-mixed-format-trino}</skipMain>
                     <verbose>true</verbose>
                     <fork>true</fork>
                     <compilerVersion>17</compilerVersion>
@@ -599,7 +600,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
                 <configuration>
-                    <skip>true</skip>
+                    <skip>${skip-build-mixed-format-trino}</skip>
                 </configuration>
             </plugin>
 
@@ -622,40 +623,9 @@
     <profiles>
         <profile>
             <id>build-mixed-format-trino</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration>
-                            <skip>false</skip>
-                            <skipMain>false</skipMain>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <version>2.6</version>
-                        <configuration>
-                            <skipAssembly>false</skipAssembly>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>make-assembly</id>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                                <phase>package</phase>
-                                <configuration>
-                                    <appendAssemblyId>false</appendAssemblyId>
-                                    <finalName>amoro-mixed-trino-${project.version}</finalName>
-                                    <descriptor>assembly.xml</descriptor>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
+            <properties>
+                <skip-build-mixed-format-trino>false</skip-build-mixed-format-trino>
+            </properties>
         </profile>
         <profile>
             <id>toolchain</id>
@@ -695,7 +665,8 @@
                             <skip>false</skip>
                             <java>
                                 <excludes>
-                                    <exclude>**/org/apache/**/*.java</exclude>
+                                    <exclude>**/org/apache/hadoop/**/*.java</exclude>
+                                    <exclude>**/org/apache/parquet/**/*.java</exclude>
                                     <exclude>**/io/trino/**/*.java</exclude>
                                 </excludes>
                             </java>
