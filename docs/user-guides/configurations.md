@@ -94,18 +94,18 @@ If using Iceberg Format，please refer to [Iceberg configurations](https://icebe
 
 ### Writing configurations
 
-| Key                            | Default         | Description                                                                                                     |
-|--------------------------------|-----------------|-----------------------------------------------------------------------------------------------------------------|
-| base.write.format              | parquet         | File format for the table for BaseStore, applicable to KeyedTable                                               |
-| change.write.format            | parquet         | File format for the table for ChangeStore, applicable to KeyedTable                                             |
-| write.format.default           | parquet         | Default file format for the table, applicable to UnkeyedTable                                                   |
-| base.file-index.hash-bucket    | 4               | Initial number of buckets for BaseStore auto-bucket                                                             |
-| change.file-index.hash-bucket  | 4               | Initial number of buckets for ChangeStore auto-bucket                                                           |
-| write.target-file-size-bytes   | 134217728(128MB) | Target size when writing                                                                                        |
-| write.upsert.enabled           | false           | Enable upsert mode, multiple insert data with the same primary key will be merged if enabled                    |
-| write.distribution-mode        | hash            | Shuffle rules for writing. UnkeyedTable can choose between none and hash, while KeyedTable can only choose hash |
-| write.distribution.hash-mode   | auto            | Auto-bucket mode, which supports primary-key, partition-key, primary-partition-key, and auto                    |
-
+| Key                           | Default          | Description                                                                                                     |
+|-------------------------------|------------------|-----------------------------------------------------------------------------------------------------------------|
+| base.write.format             | parquet          | File format for the table for BaseStore, applicable to KeyedTable                                               |
+| change.write.format           | parquet          | File format for the table for ChangeStore, applicable to KeyedTable                                             |
+| write.format.default          | parquet          | Default file format for the table, applicable to UnkeyedTable                                                   |
+| base.file-index.hash-bucket   | 4                | Initial number of buckets for BaseStore auto-bucket                                                             |
+| change.file-index.hash-bucket | 4                | Initial number of buckets for ChangeStore auto-bucket                                                           |
+| write.target-file-size-bytes  | 134217728(128MB) | Target size when writing                                                                                        |
+| write.upsert.enabled          | false            | Enable upsert mode, multiple insert data with the same primary key will be merged if enabled                    |
+| write.distribution-mode       | hash             | Shuffle rules for writing. UnkeyedTable can choose between none and hash, while KeyedTable can only choose hash |
+| write.distribution.hash-mode  | auto             | Auto-bucket mode, which supports primary-key, partition-key, primary-partition-key, and auto                    |
+| base.refresh-interval         | -1 (Closed)      | The interval for refreshing the BaseStore                                                                       |
 
 ### LogStore configurations
 

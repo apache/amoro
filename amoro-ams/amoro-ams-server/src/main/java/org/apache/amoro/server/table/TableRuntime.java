@@ -241,13 +241,18 @@ public class TableRuntime extends StatedPersistentBase {
         });
   }
 
-  public void cleanPendingInput() {
+  /**
+   * When there is no task to be optimized, clean pendingInput and update `lastOptimizedSnapshotId`
+   * to `currentSnapshotId`.
+   */
+  public void completeEmptyProcess() {
     invokeConsistency(
         () -> {
           pendingInput = null;
           if (optimizingStatus == OptimizingStatus.PLANNING
               || optimizingStatus == OptimizingStatus.PENDING) {
             updateOptimizingStatus(OptimizingStatus.IDLE);
+            lastOptimizedSnapshotId = currentSnapshotId;
             persistUpdatingRuntime();
             tableHandler.handleTableChanged(this, optimizingStatus);
           }
