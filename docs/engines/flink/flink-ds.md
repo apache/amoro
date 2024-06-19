@@ -10,6 +10,22 @@ menu:
 ---
 # Flink DataStream
 
+## Add maven dependency
+To add a dependency on Mixed-format flink connector in Maven, add the following to your pom.xml:
+```xml
+<dependencies>
+  ...
+  <dependency>
+    <groupId>org.apache.amoro</groupId>
+    <!-- For example: amoro-mixed-format-flink-runtime-1.15 -->
+    <artifactId>amoro-mixed-format-flink-runtime-${flink.minor-version}</artifactId>
+    <!-- For example: 0.7.0-incubating -->
+    <version>${amoro-mixed-format-flink.version}</version>
+  </dependency>
+  ...
+</dependencies>
+```
+
 ## Reading with DataStream
 Amoro supports reading data in Batch or Streaming mode through Java API.
 
@@ -20,32 +36,46 @@ Using Batch mode to read the full and incremental data in the FileStore.
 - The primary key table temporarily only supports reading the current full amount and later CDC data.
 
 ```java
-StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
-InternalCatalogBuilder catalogBuilder =
-    InternalCatalogBuilder
-        .builder()
-        .metastoreUrl("thrift://<url>:<port>/<catalog_name>");
+import org.apache.amoro.flink.InternalCatalogBuilder;
+import org.apache.amoro.flink.table.FlinkSource;
+import org.apache.amoro.flink.table.MixedFormatTableLoader;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.data.RowData;
 
-TableIdentifier tableId = TableIdentifier.of("catalog_name", "database_name", "test_table");
-MixedFormatTableLoader tableLoader = MixedFormatTableLoader.of(tableId, catalogBuilder);
+import java.util.HashMap;
+import java.util.Map;
 
-Map<String, String> properties = new HashMap<>();
-//  Default is true.
-properties.put("streaming", "false");
+public class Main {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
+        InternalCatalogBuilder catalogBuilder =
+                InternalCatalogBuilder
+                        .builder()
+                        .metastoreUrl("thrift://<url>:<port>/<catalog_name>");
 
-DataStream<RowData> batch = 
-    FlinkSource.forRowData()
-        .env(env)
-        .tableLoader(tableLoader)
-        // The primary key table only supports reading the current full amount and later CDC data temporarily, without the properties parameter .
-        .properties(properties)
-        .build();
+        TableIdentifier tableId = TableIdentifier.of("catalog_name", "database_name", "test_table");
+        MixedFormatTableLoader tableLoader = MixedFormatTableLoader.of(tableId, catalogBuilder);
 
-// print All data read
-batch.print();
+        Map<String, String> properties = new HashMap<>();
+        // Default is true
+        properties.put("streaming", "false");
 
-// Submit and execute the task
-env.execute("Test Mixed-format Batch Read");
+        DataStream<RowData> batch =
+                FlinkSource.forRowData()
+                        .env(env)
+                        .tableLoader(tableLoader)
+                        .properties(properties)
+                        .build();
+
+        // print all data read
+        batch.print();
+
+        // Submit and execute the task
+        env.execute("Test Mixed-format table batch read");
+    }
+}
 ``` 
 
 The map properties contain below keys, **currently only valid for non-primary key tables**:
@@ -63,84 +93,95 @@ Amoro supports reading incremental data in FileStore or LogStore through Java AP
 
 ### Streaming mode (LogStore)
 ```java 
-StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
-InternalCatalogBuilder catalogBuilder = 
-    InternalCatalogBuilder
-        .builder()
-        .metastoreUrl("thrift://<url>:<port>/<catalog_name>");
+import org.apache.amoro.flink.InternalCatalogBuilder;
+import org.apache.amoro.flink.read.source.log.kafka.LogKafkaSource;
+import org.apache.amoro.flink.table.MixedFormatTableLoader;
+import org.apache.amoro.flink.util.MixedFormatUtils;
+import org.apache.amoro.shade.org.apache.iceberg.Schema;
+import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.data.RowData;
 
-TableIdentifier tableId = TableIdentifier.of("catalog_name", "database_name", "test_table");
-MixedFormatTableLoader tableLoader = MixedFormatTableLoader.of(tableId, catalogBuilder);
 
-AmoroTable table = MixedFormatUtils.loadMixedTable(tableLoader);
-// Read table All fields. If you only read some fields, you can construct the schema yourself, for example: 
-// Schema userSchema = new Schema(new ArrayList<Types.NestedField>() {{
-//   add(Types.NestedField.optional(0, "f_boolean", Types.BooleanType.get()));
-//   add(Types.NestedField.optional(1, "f_int", Types.IntegerType.get()));
-// }});
-Schema schema = table.schema();
+public class Main {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
+        InternalCatalogBuilder catalogBuilder =
+                InternalCatalogBuilder
+                        .builder()
+                        .metastoreUrl("thrift://<url>:<port>/<catalog_name>");
 
-// -----------Hidden Kafka--------------
-LogKafkaSource source = LogKafkaSource.builder(schema, table.properties()).build();
+        TableIdentifier tableId = TableIdentifier.of("catalog_name", "database_name", "test_table");
+        MixedFormatTableLoader tableLoader = MixedFormatTableLoader.of(tableId, catalogBuilder);
 
-or
+        MixedTable table = MixedFormatUtils.loadMixedTable(tableLoader);
+        // Read table All fields. If you only read some fields, you can construct the schema yourself, for example:
+        // Schema userSchema = new Schema(new ArrayList<Types.NestedField>() {{
+        //   add(Types.NestedField.optional(0, "f_boolean", Types.BooleanType.get()));
+        //   add(Types.NestedField.optional(1, "f_int", Types.IntegerType.get()));
+        // }});
+        Schema schema = table.schema();
 
-// -----------Hidden Pulsar--------------
-LogPulsarSource source = LogPulsarSource.builder(schema, table.properties()).build();
+        // -----------Hidden Kafka--------------
+        LogKafkaSource source = LogKafkaSource.builder(schema, table.properties()).build();
 
-DataStream<RowData> stream = env.fromSource(source, WatermarkStrategy.noWatermarks(), "Log Source");
+        DataStream<RowData> stream = env.fromSource(source, WatermarkStrategy.noWatermarks(), "Log Source");
 
-// Print all the read data
-stream.print();
+        // Print all the read data
+        stream.print();
 
-// Submit and execute the task
-env.execute("Test Mixed-format Stream Read");
+        // Submit and execute the task
+        env.execute("Test Mixed-format table streaming read");
+    }
+}
 ```
 
 ### Streaming mode (FileStore)
 ```java 
-StreamExecutionEnvironment env = ...;
-InternalCatalogBuilder catalogBuilder = ...;
-TableIdentifier tableId = ...;
-MixedFormatTableLoader tableLoader = ...;
+import org.apache.amoro.flink.InternalCatalogBuilder;
+import org.apache.amoro.flink.table.FlinkSource;
+import org.apache.amoro.flink.table.MixedFormatTableLoader;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.data.RowData;
 
-Map<String, String> properties = new HashMap<>();
-// default is true 
-properties.put("streaming", "true");
+import java.util.HashMap;
+import java.util.Map;
 
-DataStream<RowData> stream = 
-    FlinkSource.forRowData()
-        .env(env)
-        .tableLoader(tableLoader)
-        // The primary key table only supports reading the current full amount and later CDC data for the time being, without the properties parameter
-        .properties(properties)
-        .build();
 
-// Print All read data 
-stream.print();
+public class Main {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
+        InternalCatalogBuilder catalogBuilder =
+                InternalCatalogBuilder
+                        .builder()
+                        .metastoreUrl("thrift://<url>:<port>/<catalog_name>");
 
-// Submit and execute the task
-env.execute("Test Mixed-format Stream Read");
+        TableIdentifier tableId = TableIdentifier.of("catalog_name", "database_name", "test_table");
+        MixedFormatTableLoader tableLoader = MixedFormatTableLoader.of(tableId, catalogBuilder);
 
-StreamExecutionEnvironment env = ...; 
-InternalCatalogBuilder catalogBuilder = ...; 
-TableIdentifier tableId = ...;
-MixedFormatTableLoader tableLoader = ...; 
-Map properties = new HashMap<>(); 
-// default is true properties.put("streaming", "true"); 
-DataStream stream = 
-    FlinkSource.forRowData() 
-        .env(env) 
-        .tableLoader(tableLoader) 
-        // The primary key table only supports reading the current full amount and later CDC data for the time being, without the properties parameter
-        .properties(properties) 
-        .build(); 
+        Map<String, String> properties = new HashMap<>();
+        // Default value is true
+        properties.put("streaming", "true");
 
-// print All read data 
-stream.print(); 
+        DataStream<RowData> stream =
+                FlinkSource.forRowData()
+                        .env(env)
+                        .tableLoader(tableLoader)
+                        .properties(properties)
+                        .build();
 
-// Submit and execute the task 
-env.execute("Test Mixed-format Stream Read"); 
+        // Print all read data
+        stream.print();
+
+        // Submit and execute the task
+        env.execute("Test Mixed-format table streaming Read");
+    }
+}
 ``` 
 DataStream API supports reading primary key tables and non-primary key tables. The configuration items supported by properties can refer to Querying With SQL [chapter Hint Option](../flink-dml/)
 
@@ -151,56 +192,101 @@ Amoro table supports writing data to LogStore or FileStore through Java API
 Amoro table currently Only supports the existing data in the dynamic Overwrite table of the non-primary key table
 
 ```java
-DataStream<RowData> input = ...;
-InternalCatalogBuilder catalogBuilder = ...;
-TableIdentifier tableId = ...;
-MixedFormatTableLoader tableLoader = ...;
+import org.apache.amoro.flink.InternalCatalogBuilder;
+import org.apache.amoro.flink.table.MixedFormatTableLoader;
+import org.apache.amoro.flink.write.FlinkSink;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.data.RowData;
 
-TableSchema FLINK_SCHEMA = TableSchema.builder()
-    .field("id", DataTypes.INT())
-    .field("name", DataTypes.STRING())
-    .field("op_time", DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE())
-    .build();
 
-FlinkSink
-    .forRowData(input)
-    .tableLoader(tableLoader)
-    .overwrite(true)
-    .flinkSchema(FLINK_SCHEMA)
-    .build();
 
-// Submit and execute the task
-env.execute("Test Mixed-format Overwrite");
-DataStream input = ...; InternalCatalogBuilder catalogBuilder = ...; TableIdentifier tableId = ...; AmoroTableLoader tableLoader = ...; TableSchema FLINK_SCHEMA = TableSchema.builder() .field("id", DataTypes.INT()) .field ("name", DataTypes.STRING()) .field("op_time", DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE()) .build(); FlinkSink .forRowData(input) .tableLoader(tableLoader) .overwrite(true) .flinkSchema(FLINK_SCHEMA) .build(); // Submit and execute the task env.execute(“Test Amoro Overwrite”); 
+public class Main {
+    public static void main(String[] args) throws Exception {
+        // Build your data stream
+        DataStream<RowData> input = null;
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
+        InternalCatalogBuilder catalogBuilder =
+                InternalCatalogBuilder
+                        .builder()
+                        .metastoreUrl("thrift://<url>:<port>/<catalog_name>");
+
+        TableIdentifier tableId = TableIdentifier.of("catalog_name", "database_name", "test_table");
+        MixedFormatTableLoader tableLoader = MixedFormatTableLoader.of(tableId, catalogBuilder);
+
+        TableSchema flinkSchema = TableSchema.builder()
+                .field("id", DataTypes.INT())
+                .field("name", DataTypes.STRING())
+                .field("op_time", DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE())
+                .build();
+
+        FlinkSink
+                .forRowData(input)
+                .tableLoader(tableLoader)
+                .overwrite(true)
+                .flinkSchema(flinkSchema)
+                .build();
+
+        // Submit and execute the task
+        env.execute("Test Mixed-format table overwrite");
+    }
+} 
 ```
 
 ### Appending data
 For the Amoro table, it supports specifying to write data to FileStore or LogStore through Java API.
 
 ```java
-DataStream<RowData> input = ...;
-InternalCatalogBuilder catalogBuilder = ...;
-TableIdentifier tableId = ...;
-MixedFormatTableLoader tableLoader = ...;
+import org.apache.amoro.flink.InternalCatalogBuilder;
+import org.apache.amoro.flink.table.MixedFormatTableLoader;
+import org.apache.amoro.flink.util.MixedFormatUtils;
+import org.apache.amoro.flink.write.FlinkSink;
+import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.data.RowData;
 
-TableSchema FLINK_SCHEMA = TableSchema.builder()
-    .field("id", DataTypes.INT())
-    .field("name", DataTypes.STRING())
-    .field("op_time", DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE())
-    .build();
 
-MixedTable table = MixedFormatUtils.loadMixedTable(tableLoader);
 
-table.properties().put("mixed-format.emit.mode", "log,file");
+public class Main {
+    public static void main(String[] args) throws Exception {
+        // Build your data stream
+        DataStream<RowData> input = null;
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
+        InternalCatalogBuilder catalogBuilder =
+                InternalCatalogBuilder
+                        .builder()
+                        .metastoreUrl("thrift://<url>:<port>/<catalog_name>");
 
-FlinkSink
-    .forRowData(input)
-    .table(table)
-    .tableLoader(tableLoader)
-    .flinkSchema(FLINK_SCHEMA)
-    .build();
+        TableIdentifier tableId = TableIdentifier.of("catalog_name", "database_name", "test_table");
+        MixedFormatTableLoader tableLoader = MixedFormatTableLoader.of(tableId, catalogBuilder);
 
-env.execute("Test Mixed-format Append");
+        TableSchema flinkSchema = TableSchema.builder()
+                .field("id", DataTypes.INT())
+                .field("name", DataTypes.STRING())
+                .field("op_time", DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE())
+                .build();
+
+        MixedTable table = MixedFormatUtils.loadMixedTable(tableLoader);
+
+        table.properties().put("mixed-format.emit.mode", "log,file");
+
+        FlinkSink
+                .forRowData(input)
+                .table(table)
+                .tableLoader(tableLoader)
+                .flinkSchema(flinkSchema)
+                .build();
+
+        env.execute("Test Mixed-format table append");
+    }
+}
 ```
 The DataStream API supports writing to primary key tables and non-primary key tables. The configuration items supported by properties can refer to Writing With SQL [chapter Hint Options](../flink-dml/)
 

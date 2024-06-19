@@ -14,12 +14,10 @@ You can choose to download the stable release package from [download page](../..
 
 ## System requirements
 
-- Java 8 is required. Java 17 is required for Trino.
+- Java 8 is required.
 - Optional: MySQL 5.5 or higher
 - Optional: PostgreSQL 14.x or higher
 - Optional: ZooKeeper 3.4.x or higher
-- Optional: Hive (2.x or 3.x)
-- Optional: Hadoop (2.9.x or 3.x)
 
 ## Download the distribution
 
@@ -32,54 +30,24 @@ Unzip it to create the amoro-x.y.z directory in the same directory, and then go 
 You can build based on the master branch without compiling Trino. The compilation method and the directory of results are described below:
 
 ```shell
-git clone https://github.com/apache/amoro.git
-cd amoro
-base_dir=$(pwd) 
-mvn clean package -DskipTests
-cd amoro-ams/dist/target/
-ls
-apache-amoro-x.y.z-bin.tar.gz # AMS release package
-dist-x.y.z-tests.jar
-dist-x.y.z.jar
-archive-tmp/
-maven-archiver/
+$ git clone https://github.com/apache/amoro.git
+$ cd amoro
+$ base_dir=$(pwd) 
+$ mvn clean package -DskipTests
+$ cd amoro-ams/dist/target/
+$ ls
+amoro-x.y.z-bin.zip # AMS release package
 
-cd ${base_dir}/amoro-mixed-format/amoro-mixed-format-flink/v1.15/amoro-mixed-format-flink-runtime-1.15/target
-ls 
-amoro-mixed-format-flink-runtime-1.15-x.y.z-tests.jar
+$ cd ${base_dir}/amoro-mixed-format/amoro-mixed-format-flink/v1.15/amoro-mixed-format-flink-runtime-1.15/target
+$ ls 
 amoro-mixed-format-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
-original-amoro-mixed-format-flink-runtime-1.15-x.y.z.jar
-maven-archiver/
 
-cd ${base_dir}/amoro-mixed-format/amoro-mixed-format-spark/v3.2/amoro-mixed-format-spark-runtime-3.2/target
-ls
+$ cd ${base_dir}/amoro-mixed-format/amoro-mixed-format-spark/v3.2/amoro-mixed-format-spark-runtime-3.2/target
+$ ls
 amoro-mixed-format-spark-runtime-3.2-x.y.z.jar # Spark v3.2 runtime package)
-amoro-mixed-format-spark-runtime-3.2-x.y.z-tests.jar
-amoro-mixed-format-spark-runtime-3.2-x.y.z-sources.jar
-original-amoro-mixed-format-spark-runtime-3.2-x.y.z.jar
 ```
 
-If the Flink version in the amoro-ams/amoro-ams-optimizer/amoro-optimizer-flink module you compiled is lower than 1.15, you must add the `-Pflink-optimizer-pre-1.15` parameter before mvn.
-for example `mvn clean package -Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=1.14.6 -DskipTests` to compile.
-
-If you need to compile the Trino module at the same time, you need to install jdk17 locally and configure `toolchains.xml` in the user's `${user.home}/.m2/` directory,
-then run `mvn package -Ptoolchain,build-mixed-format-trino` to compile the entire project.
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<toolchains>
-    <toolchain>
-        <type>jdk</type>
-        <provides>
-            <version>17</version>
-            <vendor>sun</vendor>
-        </provides>
-        <configuration>
-            <jdkHome>${YourJDK17Home}</jdkHome>
-        </configuration>
-    </toolchain>
-</toolchains>
-```
+More build guide can be found in the project's [README](https://github.com/apache/amoro?tab=readme-ov-file#building).
 
 ## Configuration
 
@@ -120,13 +88,13 @@ You can use MySQL/PostgreSQL as the system database instead of the default Derby
 If you would like to use MySQL as the system database, you need to manually download the [MySQL JDBC Connector](https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.1.0/mysql-connector-j-8.1.0.jar)
 and move it into the `{AMORO_HOME}/lib/` directory. You can use the following command to complete these operations:
 ```shell
-cd ${AMORO_HOME}
-MYSQL_JDBC_DRIVER_VERSION=8.0.30
-wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_JDBC_DRIVER_VERSION}/mysql-connector-java-${MYSQL_JDBC_DRIVER_VERSION}.jar
-mv mysql-connector-java-${MYSQL_JDBC_DRIVER_VERSION}.jar lib
+$ cd ${AMORO_HOME}
+$ MYSQL_JDBC_DRIVER_VERSION=8.0.30
+$ wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_JDBC_DRIVER_VERSION}/mysql-connector-java-${MYSQL_JDBC_DRIVER_VERSION}.jar
+$ mv mysql-connector-java-${MYSQL_JDBC_DRIVER_VERSION}.jar lib
 ```
 
-Create an empty database in MySQL/PostgreSQL, then AMS will automatically create table structures in this MySQL/PostgreSQL database when it first started.
+Create an empty database in MySQL/PostgreSQL, then AMS will automatically create tables in this MySQL/PostgreSQL database when it first started.
 
 One thing you need to do is Adding MySQL/PostgreSQL configuration under `config.yaml` of Ams:
 
@@ -172,19 +140,32 @@ AMS provides implementations of `LocalContainer` and `FlinkContainer` by default
 ```yaml
 containers:
   - name: localContainer
-    container-impl: org.apache.amoro.optimizer.LocalOptimizerContainer
+    container-impl: org.apache.amoro.server.manager.LocalOptimizerContainer
     properties:
       export.JAVA_HOME: "/opt/java"   # JDK environment
   
   - name: flinkContainer
-    container-impl: org.apache.amoro.optimizer.FlinkOptimizerContainer
+    container-impl: org.apache.amoro.server.manager.FlinkOptimizerContainer
     properties:
       flink-home: "/opt/flink/"                                     # The installation directory of Flink
       export.JVM_ARGS: "-Djava.security.krb5.conf=/opt/krb5.conf"   # Submitting Flink jobs with Java parameters, such as Kerberos parameters.
       export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"                   # Hadoop configuration file directory
       export.HADOOP_USER_NAME: "hadoop"                             # Hadoop user
       export.FLINK_CONF_DIR: "/etc/hadoop/conf/"                    # Flink configuration file directory
+
+  - name: sparkContainer
+    container-impl: org.apache.amoro.server.manager.SparkOptimizerContainer
+    properties:
+      spark-home: /opt/spark/                                     # Spark install home
+      master: yarn                                                # The cluster manager to connect to. See the list of https://spark.apache.org/docs/latest/submitting-applications.html#master-urls.
+      deploy-mode: cluster                                        # Spark deploy mode, client or cluster
+      export.JVM_ARGS: -Djava.security.krb5.conf=/opt/krb5.conf   # Spark launch jvm args, like kerberos config when ues kerberos
+      export.HADOOP_CONF_DIR: /etc/hadoop/conf/                   # Hadoop config dir
+      export.HADOOP_USER_NAME: hadoop                             # Hadoop user submit on yarn
+      export.SPARK_CONF_DIR: /opt/spark/conf/                     # Spark config dir
 ```
+
+More optimizer container configurations can be found in [managing optimizers](../managing-optimizers/).
 
 ### Configure terminal
 
@@ -200,6 +181,16 @@ ams:
     # When the catalog type is Hive, it automatically uses the Spark session catalog to access Hive tables.
     local.using-session-catalog-for-hive: true
 ```
+
+More properties the terminal supports including:
+
+| Key                      | Default | Description                                                                                       |
+|--------------------------|---------|---------------------------------------------------------------------------------------------------|
+| terminal.backend         | local   | Terminal backend implementation. local, kyuubi and custom are valid values.                       |
+| terminal.factory         | -       | Session factory implement of terminal, `terminal.backend` must be `custom` if this is set.        |
+| terminal.result.limit    | 1000    | Row limit of result-set                                                                           |
+| terminal.stop-on-error   | false   | When a statement fails to execute, stop execution or continue executing the remaining statements. |
+| terminal.session.timeout | 30      | Session timeout in minutes.                                                                       |
 
 ### Configure metric reporter
 
@@ -266,26 +257,13 @@ The following JVM options could be set in `${AMORO_CONF_DIR}/jvm.properties`.
 | jmx.remote.port | "-Dcom.sun.management.jmxremote.port=${value}  | Enable remote debug      |
 | extra.options   | "JAVA_OPTS="${JAVA_OPTS} ${JVM_EXTRA_CONFIG}"  | The addition jvm options |
 
-### Terminal configurations
-
-Terminal support local and kyuubi, the default is local. If the user uses local to run in the spark local context, you can set the **spark.*** configuration, and if you use kyuubi, you can set the **kyuubi.*** configuration
-
-| Key                      | Default | Description                                                                                       |
-|--------------------------|---------|---------------------------------------------------------------------------------------------------|
-| terminal.backend         | local   | Terminal backend implementation. local, kyuubi and custom are valid values.                       |
-| terminal.factory         | -       | Session factory implement of terminal, `terminal.backend` must be `custom` if this is set.        |
-| terminal.result.limit    | 1000    | Row limit of result-set                                                                           |
-| terminal.stop-on-error   | false   | When a statement fails to execute, stop execution or continue executing the remaining statements. |
-| terminal.session.timeout | 30      | Session timeout in minutes.                                                                       |
-
-
 ## Start AMS
 
 Enter the directory amoro-x.y.z and execute bin/ams.sh start to start AMS.
 
 ```shell
-cd amoro-x.y.z
-bin/ams.sh start
+$ cd amoro-x.y.z
+$ bin/ams.sh start
 ```
 
 Then, access http://localhost:1630 through a browser to see the login page. If it appears, it means that the startup is
@@ -294,7 +272,8 @@ successful. The default username and password for login are both "admin".
 You can also restart/stop AMS with the following command:
 
 ```shell
-bin/ams.sh restart/stop
+$ bin/ams.sh restart
+$ bin/ams.sh stop
 ```
 
 ## Upgrade AMS
@@ -313,7 +292,7 @@ Replace all contents in the original `{AMORO_HOME}/plugin` directory with the co
 Backup the old content before replacing it, so that you can roll back the upgrade operation if necessary.
 {{< /hint >}}
 
-### Configure new parameters
+### Configure new properties
 
 The old configuration file `{AMORO_HOME}/conf/config.yaml` is usually compatible with the new version, but the new version may introduce new parameters. Try to compare the configuration files of the old and new versions, and reconfigure the parameters if necessary.
 
