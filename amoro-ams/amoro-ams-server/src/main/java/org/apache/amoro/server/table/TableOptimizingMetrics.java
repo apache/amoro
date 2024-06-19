@@ -27,11 +27,13 @@ import org.apache.amoro.api.metrics.Gauge;
 import org.apache.amoro.api.metrics.Metric;
 import org.apache.amoro.api.metrics.MetricDefine;
 import org.apache.amoro.api.metrics.MetricKey;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.primitives.Longs;
 
 import java.util.List;
 
@@ -163,6 +165,37 @@ public class TableOptimizingMetrics {
           .withTags("catalog", "database", "table")
           .build();
 
+  public static final MetricDefine TABLE_OPTIMIZING_MINOR_SINCE_LAST_COMPLETION =
+      defineGauge("table_optimizing_minor_since_last_completion_mills")
+          .withDescription("Duration in milliseconds after last minor optimizing")
+          .withTags("catalog", "database", "table")
+          .build();
+
+  public static final MetricDefine TABLE_OPTIMIZING_MAJOR_SINCE_LAST_COMPLETION =
+      defineGauge("table_optimizing_major_since_last_completion_mills")
+          .withDescription("Duration in milliseconds after last major optimizing")
+          .withTags("catalog", "database", "table")
+          .build();
+
+  public static final MetricDefine TABLE_OPTIMIZING_FULL_SINCE_LAST_COMPLETION =
+      defineGauge("table_optimizing_full_since_last_completion_mills")
+          .withDescription("Duration in milliseconds after last full optimizing")
+          .withTags("catalog", "database", "table")
+          .build();
+
+  public static final MetricDefine TABLE_LAST_OPTIMIZING_DURATION =
+      defineGauge("table_last_optimizing_duration_mills")
+          .withDescription("Duration in milliseconds after last optimizing")
+          .withTags("catalog", "database", "table")
+          .build();
+
+  public static final MetricDefine TABLE_OPTIMIZING_LAG_DURATION =
+      defineGauge("table_optimizing_lag_duration_mills")
+          .withDescription(
+              "Interval in milliseconds between last self-optimizing process and current refreshed snapshot")
+          .withTags("catalog", "database", "table")
+          .build();
+
   private final Counter processTotalCount = new Counter();
   private final Counter processFailedCount = new Counter();
   private final Counter minorTotalCount = new Counter();
@@ -176,6 +209,8 @@ public class TableOptimizingMetrics {
 
   private OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   private long statusSetTimestamp = System.currentTimeMillis();
+  private long lastMinorTime, lastMajorTime, lastFullTime;
+  private long refreshedChangeSnapshotTime, refreshedBaseSnapshotTime;
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
   private MetricRegistry globalRegistry;
 
@@ -241,6 +276,38 @@ public class TableOptimizingMetrics {
       registerMetric(registry, TABLE_OPTIMIZING_FULL_TOTAL_COUNT, fullTotalCount);
       registerMetric(registry, TABLE_OPTIMIZING_FULL_FAILED_COUNT, fullFailedCount);
 
+      // register last optimizing duration metrics
+      registerMetric(
+          registry,
+              TABLE_OPTIMIZING_MINOR_SINCE_LAST_COMPLETION,
+          new LastOptimizingDurationGauge(OptimizingType.MINOR));
+      registerMetric(
+          registry,
+              TABLE_OPTIMIZING_MAJOR_SINCE_LAST_COMPLETION,
+          new LastOptimizingDurationGauge(OptimizingType.MAJOR));
+      registerMetric(
+          registry,
+              TABLE_OPTIMIZING_FULL_SINCE_LAST_COMPLETION,
+          new LastOptimizingDurationGauge(OptimizingType.FULL));
+      registerMetric(
+          registry,
+          TABLE_LAST_OPTIMIZING_DURATION,
+          (Gauge<Long>)
+              () ->
+                  System.currentTimeMillis()
+                      - Longs.max(lastMinorTime, lastMajorTime, lastFullTime));
+
+      registerMetric(
+          registry,
+              TABLE_OPTIMIZING_LAG_DURATION,
+          (Gauge<Long>)
+              () -> {
+                long lastOptimizedTime = Longs.max(lastMinorTime, lastMajorTime, lastFullTime);
+                long latestSnapshotTime =
+                    Longs.max(refreshedChangeSnapshotTime, refreshedBaseSnapshotTime);
+                return latestSnapshotTime - lastOptimizedTime;
+              });
+
       globalRegistry = registry;
     }
   }
@@ -263,12 +330,37 @@ public class TableOptimizingMetrics {
   }
 
   /**
+   * Handle table self optimizing process complete event.
+   *
+   * @param processType optimizing process type.
+   * @param lastTime last optimizing timestamp.
+   */
+  public void lastOptimizingTime(OptimizingType processType, long lastTime) {
+    switch (processType) {
+      case MINOR:
+        this.lastMinorTime = lastTime;
+        break;
+      case MAJOR:
+        this.lastMajorTime = lastTime;
+        break;
+      case FULL:
+        this.lastFullTime = lastTime;
+        break;
+    }
+  }
+
+  public void refreshedSnapshotTime(long changeSnapshotTime, long baseSnapshotTime) {
+    this.refreshedChangeSnapshotTime = changeSnapshotTime;
+    this.refreshedBaseSnapshotTime = baseSnapshotTime;
+  }
+
+  /**
    * Handle table self optimizing process completed event.
    *
    * @param processType optimizing process type.
    * @param success is optimizing process success.
    */
-  public void processComplete(OptimizingType processType, boolean success) {
+  public void processComplete(OptimizingType processType, boolean success, long planTime) {
     processTotalCount.inc();
     Counter totalCounter = null;
     Counter failedCounter = null;
@@ -285,6 +377,9 @@ public class TableOptimizingMetrics {
         totalCounter = fullTotalCount;
         failedCounter = fullFailedCount;
         break;
+    }
+    if (success) {
+      lastOptimizingTime(processType, planTime);
     }
     if (totalCounter != null) {
       totalCounter.inc();
@@ -331,6 +426,34 @@ public class TableOptimizingMetrics {
 
     private Long statusDuration() {
       return System.currentTimeMillis() - statusSetTimestamp;
+    }
+  }
+
+  class LastOptimizingDurationGauge implements Gauge<Long> {
+    final OptimizingType optimizingType;
+
+    LastOptimizingDurationGauge(OptimizingType optimizingType) {
+      this.optimizingType = optimizingType;
+    }
+
+    @Override
+    public Long getValue() {
+      switch (optimizingType) {
+        case MINOR:
+          return optimizingInterval(lastMinorTime);
+        case MAJOR:
+          return optimizingInterval(lastMajorTime);
+        case FULL:
+          return optimizingInterval(lastFullTime);
+        default:
+          return AmoroServiceConstants.INVALID_TIME;
+      }
+    }
+
+    private long optimizingInterval(long lastOptimizedTime) {
+      return lastOptimizedTime > 0
+          ? System.currentTimeMillis() - lastOptimizedTime
+          : AmoroServiceConstants.INVALID_TIME;
     }
   }
 
