@@ -23,7 +23,7 @@ create table test_db.test_log_store(
   name string,
   op_time timestamp,
   primary key(id)
-) using arctic
+) using mixed_iceberg
 partitioned by(days(op_time))
 tblproperties(
   'log-store.enable' = 'true',
