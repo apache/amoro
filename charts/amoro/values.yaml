@@ -137,6 +137,12 @@ jvmOptions: ~
 ## AMS configurations files
 ##
 amoroConf:
+  ## AMS Dashboard username and password
+  ##
+  ams:
+    adminUsername: admin
+    adminPassword: admin
+
   ## AMS database properties, default value is derby. For production environment, suggest to use mysql
   ##
   database:
