@@ -20,6 +20,7 @@ package org.apache.amoro.trino.delete;
 
 import static java.util.Objects.requireNonNull;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.CombinedScanTask;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataTask;
@@ -29,7 +30,6 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 
 import java.nio.ByteBuffer;
 import java.util.List;

@@ -25,19 +25,20 @@ import static org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects.
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.amoro.data.DataFileType;
-import org.apache.amoro.trino.delete.TrinoDeleteFile;
 import io.trino.plugin.iceberg.IcebergFileFormat;
 import io.trino.spi.HostAddress;
 import io.trino.spi.connector.ConnectorSplit;
+import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.trino.delete.TrinoDeleteFile;
 import org.openjdk.jol.info.ClassLayout;
 
 import java.util.List;
 
 /**
- * Iceberg original IcebergSplit has some problems for mixed-format table, such as iceberg version, table type.
+ * Iceberg original IcebergSplit has some problems for mixed-format table, such as iceberg version,
+ * table type.
  */
 public class IcebergSplit implements ConnectorSplit {
   private static final int INSTANCE_SIZE =

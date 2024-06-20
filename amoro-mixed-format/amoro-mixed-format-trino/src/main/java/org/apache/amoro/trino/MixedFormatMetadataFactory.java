@@ -20,14 +20,14 @@ package org.apache.amoro.trino;
 
 import static java.util.Objects.requireNonNull;
 
-import org.apache.amoro.trino.unkeyed.IcebergMetadata;
-import org.apache.amoro.trino.keyed.KeyedConnectorMetadata;
 import io.airlift.json.JsonCodec;
 import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.plugin.iceberg.CommitTaskData;
 import io.trino.plugin.iceberg.TableStatisticsWriter;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
 import io.trino.spi.type.TypeManager;
+import org.apache.amoro.trino.keyed.KeyedConnectorMetadata;
+import org.apache.amoro.trino.unkeyed.IcebergMetadata;
 
 import javax.inject.Inject;
 

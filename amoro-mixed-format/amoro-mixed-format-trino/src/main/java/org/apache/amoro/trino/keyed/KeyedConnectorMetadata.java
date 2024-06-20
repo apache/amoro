@@ -30,12 +30,6 @@ import static org.apache.amoro.shade.guava32.com.google.common.collect.Immutable
 import static org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap.toImmutableMap;
 import static org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet.toImmutableSet;
 
-import org.apache.amoro.mixed.MixedFormatCatalog;
-import org.apache.amoro.table.MixedTable;
-import org.apache.amoro.table.KeyedTable;
-import org.apache.amoro.table.TableIdentifier;
-import org.apache.amoro.trino.MixedFormatSessionProperties;
-import org.apache.amoro.trino.util.ObjectSerializerUtil;
 import io.trino.plugin.hive.HiveApplyProjectionUtil;
 import io.trino.plugin.iceberg.ColumnIdentity;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
@@ -61,15 +55,21 @@ import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.statistics.TableStatistics;
 import io.trino.spi.type.TypeManager;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.trino.MixedFormatSessionProperties;
+import org.apache.amoro.trino.util.ObjectSerializerUtil;
 import org.apache.iceberg.PartitionSpecParser;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SchemaParser;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.exceptions.NotFoundException;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -448,8 +448,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
                   typeManager,
                   session,
                   withSnapshotId(
-                      handle,
-                      mixedTable.asKeyedTable().baseTable().currentSnapshot().snapshotId()),
+                      handle, mixedTable.asKeyedTable().baseTable().currentSnapshot().snapshotId()),
                   mixedTable.asKeyedTable().baseTable());
           return baseTableStatistics;
         });
