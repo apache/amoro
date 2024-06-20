@@ -27,7 +27,7 @@ export function getOptimizerTableList(
     optimizerGroup: string
     page: number
     pageSize: number
-  }
+  },
 ) {
   const { optimizerGroup, page, pageSize } = params
   return request.get(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/tables`, { params: { page, pageSize } })
@@ -38,14 +38,14 @@ export function getOptimizerResourceList(
     optimizerGroup: string
     page: number
     pageSize: number
-  }
+  },
 ) {
   const { optimizerGroup, page, pageSize } = params
   return request.get(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/optimizers`, { params: { page, pageSize } })
 }
 
 export function getQueueResourceInfo(
-  optimizerGroup: string
+  optimizerGroup: string,
 ) {
   return request.get(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/info`)
 }
@@ -54,7 +54,7 @@ export function scaleoutResource(
   params: {
     optimizerGroup: string
     parallelism: number
-  }
+  },
 ) {
   const { optimizerGroup, parallelism } = params
   return request.post(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/optimizers`, { parallelism })
@@ -64,7 +64,7 @@ export function releaseResource(
   params: {
     optimizerGroup: string
     jobId: string
-  }
+  },
 ) {
   const { optimizerGroup, jobId } = params
   return request.delete(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/optimizers/${jobId}`)
@@ -75,23 +75,23 @@ export async function getResourceGroupsListAPI() {
   return result
 }
 
-export const getGroupContainerListAPI = async() => {
+export async function getGroupContainerListAPI() {
   const result = await request.get('ams/v1/optimize/containers/get')
   return result
 }
 
-export const addResourceGroupsAPI = (params: {name: string; container: string; properties: {[prop: string]: string}}) => {
+export function addResourceGroupsAPI(params: { name: string, container: string, properties: { [prop: string]: string } }) {
   return request.post('ams/v1/optimize/resourceGroups', params)
 }
 
-export const updateResourceGroupsAPI = (params: {name: string; container: string; properties: {[prop: string]: string}}) => {
+export function updateResourceGroupsAPI(params: { name: string, container: string, properties: { [prop: string]: string } }) {
   return request.put('ams/v1/optimize/resourceGroups', params)
 }
 
-export const groupDeleteCheckAPI = (params: {name: string}) => {
+export function groupDeleteCheckAPI(params: { name: string }) {
   return request.get(`/ams/v1/optimize/resourceGroups/${params.name}/delete/check`)
 }
 
-export const groupDeleteAPI = (params: {name: string}) => {
+export function groupDeleteAPI(params: { name: string }) {
   return request.delete(`/ams/v1/optimize/resourceGroups/${params.name}`)
 }

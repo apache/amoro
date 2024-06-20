@@ -16,7 +16,7 @@
   * limitations under the License.
   */
 
-import { IMap } from '@/types/common.type'
+import type { IMap } from '@/types/common.type'
 import request from '@/utils/request'
 
 export function getCatalogsTypes() {

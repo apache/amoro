@@ -16,4 +16,26 @@
   * limitations under the License.
   */
 
-module.exports = { extends: ['@commitlint/config-conventional'] }
+import antfu from '@antfu/eslint-config'
+
+export default antfu({
+  stylistic: {
+    indent: 2,
+    quotes: 'single',
+  },
+
+  typescript: true,
+  vue: true,
+
+  jsonc: false,
+  yaml: false,
+
+  ignores: [
+    '**/fixtures',
+    '**/node_modules',
+    '**/dist',
+    'mock',
+    '**/src/main',
+    '**/license.node.js',
+  ],
+})

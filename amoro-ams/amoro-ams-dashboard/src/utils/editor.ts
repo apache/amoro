@@ -20,11 +20,10 @@
  * Keywords and formatting configuration in sql editor
  */
 import * as monaco from 'monaco-editor'
+import * as sqlFormatter from 'sql-formatter'
 import { language as sqlLanguage } from './sql'
 
-import sqlFormatter from 'sql-formatter'
-
-const registerSql = () => {
+function registerSql() {
   // SQL keyword hints
   monaco.languages.registerCompletionItemProvider('sql', {
     provideCompletionItems: (model, position) => {
@@ -32,7 +31,7 @@ const registerSql = () => {
         startLineNumber: position.lineNumber,
         startColumn: 1,
         endLineNumber: position.lineNumber,
-        endColumn: position.column
+        endColumn: position.column,
       })
       const match = textUntilPosition.match(/(\S+)$/)
       const suggestions: monaco.languages.CompletionItem[] = []
@@ -43,7 +42,7 @@ const registerSql = () => {
             suggestions.push({
               label: item,
               kind: monaco.languages.CompletionItemKind.Keyword,
-              insertText: item
+              insertText: item,
             } as monaco.languages.CompletionItem)
           }
         })
@@ -52,7 +51,7 @@ const registerSql = () => {
             suggestions.push({
               label: item,
               kind: monaco.languages.CompletionItemKind.Operator,
-              insertText: item
+              insertText: item,
             } as monaco.languages.CompletionItem)
           }
         })
@@ -61,15 +60,15 @@ const registerSql = () => {
             suggestions.push({
               label: item,
               kind: monaco.languages.CompletionItemKind.Function,
-              insertText: item
+              insertText: item,
             } as monaco.languages.CompletionItem)
           }
         })
       }
       return {
-        suggestions: Array.from(new Set(suggestions))
+        suggestions: Array.from(new Set(suggestions)),
       }
-    }
+    },
   })
 
   // format SQL
@@ -78,9 +77,9 @@ const registerSql = () => {
       const formatted = sqlFormatter.format(model.getValue())
       return [{
         range: model.getFullModelRange(),
-        text: formatted.replace(/\s-\s/g, '-')
+        text: formatted.replace(/\s-\s/g, '-'),
       }]
-    }
+    },
   })
 
   const themeData: any = {
@@ -93,38 +92,38 @@ const registerSql = () => {
       'editor.selectionBackground': '#D5D5EF',
       'editorLineNumber.foreground': '#999999',
       'editorSuggestWidget.background': '#FFFFFF',
-      'editorSuggestWidget.selectedBackground': '#EFF8FF'
+      'editorSuggestWidget.selectedBackground': '#EFF8FF',
     },
     rules: [{
       token: 'comment',
-      foreground: '8E908C'
+      foreground: '8E908C',
     }, {
       token: 'comments',
-      foreground: '8E908C'
+      foreground: '8E908C',
     }, {
       token: 'keyword',
-      foreground: '8959A8'
+      foreground: '8959A8',
     }, {
       token: 'predefined',
-      foreground: '11B7BE'
+      foreground: '11B7BE',
     }, {
       token: 'doubleString',
-      foreground: 'AB1010'
+      foreground: 'AB1010',
     }, {
       token: 'singleString',
-      foreground: 'AB1010'
+      foreground: 'AB1010',
     }, {
       token: 'number',
-      foreground: 'AB1010'
+      foreground: 'AB1010',
     }, {
       token: 'string.sql',
-      foreground: '718C00'
-    }]
+      foreground: '718C00',
+    }],
   }
   monaco.editor.defineTheme('arcticSql', themeData)
 }
 
-const registerLogLanguage = () => {
+function registerLogLanguage() {
   monaco.languages.register({ id: 'logLanguage' })
 
   monaco.languages.setMonarchTokensProvider('logLanguage', {
@@ -134,16 +133,16 @@ const registerLogLanguage = () => {
         [/ERROR.*/, 'custom-error'],
         [/WARN.*/, 'custom-warn'],
         [/DEBUG.*/, 'custom-debug'],
-        [/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2},\d{3}/, 'custom-date']
-      ]
-    }
+        [/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2},\d{3}/, 'custom-date'],
+      ],
+    },
   })
 
   const themeData: monaco.editor.IStandaloneThemeData = {
     base: 'vs',
     inherit: false,
     colors: {
-      'editor.background': '#f6f7f8'
+      'editor.background': '#f6f7f8',
     },
     rules: [
       { token: 'custom-info', foreground: '808080' },
@@ -151,8 +150,8 @@ const registerLogLanguage = () => {
       { token: 'custom-warn', foreground: 'ffa500' },
       { token: 'custom-debug', foreground: 'ffa500' },
       { token: 'custom-date', foreground: '008800' },
-      { token: '', background: '#f6f7f8' }
-    ]
+      { token: '', background: '#f6f7f8' },
+    ],
   }
   monaco.editor.defineTheme('logTheme', themeData)
 }

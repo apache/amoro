@@ -14,22 +14,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- /-->
-
-<template>
-  <div class="layout">
-    <!-- sidebar -->
-    <side-bar />
-    <div class="right-content">
-      <!-- topbar -->
-      <top-bar v-if="showTopBar" />
-      <!-- content -->
-      <div class="content">
-        <router-view />
-      </div>
-    </div>
-  </div>
-</template>
+ / -->
 
 <script lang="ts">
 import { defineComponent } from 'vue'
@@ -40,20 +25,35 @@ export default defineComponent({
   name: 'Layout',
   components: {
     SideBar,
-    TopBar
+    TopBar,
   },
   props: {
     menus: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     showTopBar: {
       type: Boolean,
-      default: true
-    }
-  }
+      default: true,
+    },
+  },
 })
 </script>
+
+<template>
+  <div class="layout">
+    <!-- sidebar -->
+    <SideBar />
+    <div class="right-content">
+      <!-- topbar -->
+      <TopBar v-if="showTopBar" />
+      <!-- content -->
+      <div class="content">
+        <router-view />
+      </div>
+    </div>
+  </div>
+</template>
 
 <style lang="less" scoped>
 .layout {

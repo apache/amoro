@@ -62,6 +62,16 @@ spec: {{/* TODO If Support Replica can be use more than 1 */}}
                   name: {{ include "common.names.fullname" . }}
                   key: password
             {{- end }}
+            - name: "AMS_ADMIN__USERNAME"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "common.names.fullname" . }}
+                  key: username
+            - name: "AMS_ADMIN__PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "common.names.fullname" . }}
+                  key: password
             {{- with .Values.env }}
             {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}

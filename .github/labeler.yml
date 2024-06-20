@@ -32,7 +32,6 @@
 
 "type:build":
   - ".dockerignore"
-  - ".rat-excludes"
   - ".scalafmt"
   - "**/*pom.xml"
   - "amoro-ams/dist/**/*"

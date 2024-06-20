@@ -55,7 +55,7 @@ containers:
   - name: KubernetesContainer
     container-impl: org.apache.amoro.server.manager.KubernetesOptimizerContainer
     properties:
-      kube-config-path: ～/.kube/config
+      kube-config-path: ~/.kube/config
       image: apache/amoro:{version}
       pullPolicy: IfNotPresent
 ```

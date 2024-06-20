@@ -20,15 +20,6 @@ package org.apache.amoro.trino.keyed;
 
 import static io.trino.plugin.iceberg.ExpressionConverter.toIcebergExpression;
 
-import org.apache.amoro.scan.MixedFileScanTask;
-import org.apache.amoro.scan.CombinedScanTask;
-import org.apache.amoro.scan.KeyedTableScan;
-import org.apache.amoro.scan.KeyedTableScanTask;
-import org.apache.amoro.table.KeyedTable;
-import org.apache.amoro.trino.MixedFormatSessionProperties;
-import org.apache.amoro.trino.MixedFormatTransactionManager;
-import org.apache.amoro.trino.util.MetricUtil;
-import org.apache.amoro.trino.util.ObjectSerializerUtil;
 import io.trino.plugin.iceberg.IcebergTableHandle;
 import io.trino.plugin.iceberg.PartitionData;
 import io.trino.spi.classloader.ThreadContextClassLoader;
@@ -42,6 +33,15 @@ import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.connector.FixedSplitSource;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.connector.TableNotFoundException;
+import org.apache.amoro.scan.CombinedScanTask;
+import org.apache.amoro.scan.KeyedTableScan;
+import org.apache.amoro.scan.KeyedTableScanTask;
+import org.apache.amoro.scan.MixedFileScanTask;
+import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.trino.MixedFormatSessionProperties;
+import org.apache.amoro.trino.MixedFormatTransactionManager;
+import org.apache.amoro.trino.util.MetricUtil;
+import org.apache.amoro.trino.util.ObjectSerializerUtil;
 import org.apache.iceberg.PartitionSpecParser;
 import org.apache.iceberg.io.CloseableIterable;
 

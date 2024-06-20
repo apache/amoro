@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,32 +14,24 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
-
-<template>
-  <div class="border-wrap">
-    <div class="optimize-wrap">
-      <List curGroupName="all" type="tables" />
-    </div>
-  </div>
-</template>
+/ -->
 
 <script lang="ts">
-import { IGroupItem, IGroupItemInfo, ILableAndValue, IMap } from '@/types/common.type'
 import { computed, defineComponent, nextTick, onMounted, reactive, shallowReactive, toRefs, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import List from './components/List.vue'
+import type { IGroupItem, IGroupItemInfo, ILableAndValue, IMap } from '@/types/common.type'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { usePagination } from '@/hooks/usePagination'
 import { getOptimizerGroups, getQueueResourceInfo } from '@/services/optimize.service'
 // import ScaleOutModal from './components/ScaleOut.vue'
-import List from './components/List.vue'
 import { mbToSize } from '@/utils'
 
 export default defineComponent({
   name: 'Optimize',
   components: {
-    List
+    List,
   },
   setup() {
     const { t } = useI18n()
@@ -48,7 +39,7 @@ export default defineComponent({
     const route = useRoute()
     const tabConfig: ILableAndValue[] = shallowReactive([
       { label: t('optimizers'), value: 'optimizers' },
-      { label: t('tables'), value: 'tables' }
+      { label: t('tables'), value: 'tables' },
     ])
     const placeholder = reactive(usePlaceholder())
     const pagination = reactive(usePagination())
@@ -57,65 +48,63 @@ export default defineComponent({
       groupList: [
         {
           label: t('allGroups'),
-          value: 'all'
-        }
+          value: 'all',
+        },
       ] as IMap<string | number>[],
       groupInfo: {
         occupationCore: 0,
         occupationMemory: 0,
-        unit: ''
+        unit: '',
       } as IGroupItemInfo,
       activeTab: 'tables' as string,
       showScaleOutModal: false as boolean,
-      showTab: false as boolean
+      showTab: false as boolean,
     })
 
     const isTableTab = computed(() => {
       return (state.activeTab === 'tables')
     })
 
-    watch(() => route.query,
-      (value) => {
-        state.activeTab = (value.tab as string) || 'tables'
-      }, {
-        immediate: true
-      }
-    )
+    watch(() => route.query, (value) => {
+      state.activeTab = (value.tab as string) || 'tables'
+    }, {
+      immediate: true,
+    })
 
-    const onChangeGroup = () => {
+    function onChangeGroup() {
       getCurGroupInfo()
     }
 
-    const refreshCurGroupInfo = () => {
+    function refreshCurGroupInfo() {
       getCurGroupInfo()
     }
 
-    const getCompactQueues = async() => {
+    async function getCompactQueues() {
       const result = await getOptimizerGroups();
       (result || []).forEach((item: IGroupItem) => {
         state.groupList.push({
           label: item.optimizerGroupName,
-          value: item.optimizerGroupName
+          value: item.optimizerGroupName,
         })
       })
     }
 
-    const getCurGroupInfo = async() => {
+    async function getCurGroupInfo() {
       const result = await getQueueResourceInfo(state.curGroupName || '')
       const memory = mbToSize(result.occupationMemory || 0)
       const memoryArr = memory.split(' ')
       state.groupInfo = {
         occupationCore: result.occupationCore,
         occupationMemory: memoryArr[0],
-        unit: memoryArr[1] || ''
+        unit: memoryArr[1] || '',
       }
     }
 
-    const expansionJob = () => {
+    function expansionJob() {
       state.showScaleOutModal = true
     }
 
-    const refreshOptimizersTab = () => {
+    function refreshOptimizersTab() {
       onChangeTab('optimizers')
       state.showTab = false
       nextTick(() => {
@@ -124,7 +113,7 @@ export default defineComponent({
       getCurGroupInfo()
     }
 
-    const onChangeTab = (key: string) => {
+    function onChangeTab(key: string) {
       const query = { ...route.query }
       query.tab = key
       router.replace({ query: { ...query } })
@@ -146,12 +135,19 @@ export default defineComponent({
       refreshCurGroupInfo,
       expansionJob,
       refreshOptimizersTab,
-      onChangeTab
+      onChangeTab,
     }
-  }
+  },
 })
-
 </script>
+
+<template>
+  <div class="border-wrap">
+    <div class="optimize-wrap">
+      <List cur-group-name="all" type="tables" />
+    </div>
+  </div>
+</template>
 
 <style lang="less" scoped>
 .border-wrap {

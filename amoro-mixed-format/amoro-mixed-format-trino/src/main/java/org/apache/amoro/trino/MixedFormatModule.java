@@ -27,10 +27,6 @@ import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
 import com.google.inject.multibindings.Multibinder;
-import org.apache.amoro.trino.unkeyed.IcebergPageSourceProvider;
-import org.apache.amoro.trino.unkeyed.IcebergSplitManager;
-import org.apache.amoro.trino.keyed.KeyedConnectorSplitManager;
-import org.apache.amoro.trino.keyed.KeyedPageSourceProvider;
 import io.airlift.configuration.ConfigBinder;
 import io.trino.hdfs.HdfsConfig;
 import io.trino.hdfs.HdfsConfiguration;
@@ -64,6 +60,10 @@ import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.procedure.Procedure;
 import io.trino.spi.type.TypeManager;
+import org.apache.amoro.trino.keyed.KeyedConnectorSplitManager;
+import org.apache.amoro.trino.keyed.KeyedPageSourceProvider;
+import org.apache.amoro.trino.unkeyed.IcebergPageSourceProvider;
+import org.apache.amoro.trino.unkeyed.IcebergSplitManager;
 import org.weakref.jmx.guice.ExportBinder;
 
 /** Mixed-format table module of Trino */
@@ -87,7 +87,10 @@ public class MixedFormatModule implements Module {
         .bind(MixedFormatCatalogFactory.class)
         .to(DefaultMixedFormatCatalogFactory.class)
         .in(Scopes.SINGLETON);
-    binder.bind(TrinoCatalogFactory.class).to(MixedFormatTrinoCatalogFactory.class).in(Scopes.SINGLETON);
+    binder
+        .bind(TrinoCatalogFactory.class)
+        .to(MixedFormatTrinoCatalogFactory.class)
+        .in(Scopes.SINGLETON);
     binder.bind(MixedFormatTransactionManager.class).in(Scopes.SINGLETON);
     binder.bind(MixedFormatMetadataFactory.class).in(Scopes.SINGLETON);
     binder.bind(TableStatisticsWriter.class).in(Scopes.SINGLETON);
@@ -154,8 +157,14 @@ public class MixedFormatModule implements Module {
 
     // hdfs
     ConfigBinder.configBinder(binder).bindConfig(HdfsConfig.class);
-    binder.bind(HdfsConfiguration.class).to(MixedFormatHdfsConfiguration.class).in(Scopes.SINGLETON);
-    binder.bind(HdfsAuthentication.class).to(MixedFormatHdfsAuthentication.class).in(Scopes.SINGLETON);
+    binder
+        .bind(HdfsConfiguration.class)
+        .to(MixedFormatHdfsConfiguration.class)
+        .in(Scopes.SINGLETON);
+    binder
+        .bind(HdfsAuthentication.class)
+        .to(MixedFormatHdfsAuthentication.class)
+        .in(Scopes.SINGLETON);
     binder.bind(HdfsEnvironment.class).in(Scopes.SINGLETON);
     binder.bind(NamenodeStats.class).in(Scopes.SINGLETON);
     ExportBinder.newExporter(binder).export(NamenodeStats.class).withGeneratedName();

@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,15 +14,75 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
+/ -->
+
+<script lang="ts">
+import { message } from 'ant-design-vue'
+import { computed, defineComponent, onMounted, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import loginService from '@/services/login.service'
+import { usePlaceholder } from '@/hooks/usePlaceholder'
+import useStore from '@/store'
+
+interface FormState {
+  username: string
+  password: string
+}
+
+export default defineComponent({
+  name: 'Login',
+  setup() {
+    const router = useRouter()
+    const formState = reactive<FormState>({
+      username: '',
+      password: '',
+    })
+    const placeholder = reactive(usePlaceholder())
+    const onFinish = async (values: FormState) => {
+      try {
+        const store = useStore()
+        const res = await loginService.login({
+          user: values.username,
+          password: values.password,
+        })
+        if (res.code !== 200) {
+          message.error(res.message)
+          return
+        }
+        const { path, query } = store.historyPathInfo
+        router.replace({
+          path: path || '/',
+          query,
+        })
+      }
+      catch (error) {
+        message.error((error as Error).message)
+      }
+    }
+
+    const disabled = computed(() => {
+      return !(formState.username && formState.password)
+    })
+    onMounted(() => {})
+    return {
+      placeholder,
+      formState,
+      onFinish,
+      disabled,
+    }
+  },
+})
+</script>
 
 <template>
   <div class="login-wrap g-flex-jc">
     <div class="login-content">
       <div class="img-logo">
-        <img src="@/assets/images/logo-all1.svg" class="arctic-logo" alt="" />
+        <img src="@/assets/images/logo-all1.svg" class="arctic-logo" alt="">
       </div>
-      <div class="content-title">Lakehouse management system</div>
+      <div class="content-title">
+        Lakehouse management system
+      </div>
       <a-form
         :model="formState"
         name="normal_login"
@@ -75,63 +134,6 @@ limitations under the License.
     <!-- <p class="desc">{{$t('welecomeTip')}}</p> -->
   </div>
 </template>
-
-<script lang="ts">
-import { message } from 'ant-design-vue'
-import { computed, defineComponent, onMounted, reactive } from 'vue'
-import loginService from '@/services/login.service'
-import { useRouter } from 'vue-router'
-import { usePlaceholder } from '@/hooks/usePlaceholder'
-import useStore from '@/store'
-
-interface FormState {
-  username: string;
-  password: string;
-}
-
-export default defineComponent({
-  name: 'Login',
-  setup() {
-    const router = useRouter()
-    const formState = reactive<FormState>({
-      username: '',
-      password: ''
-    })
-    const placeholder = reactive(usePlaceholder())
-    const onFinish = async (values: FormState) => {
-      try {
-        const store = useStore()
-        const res = await loginService.login({
-          user: values.username,
-          password: values.password
-        })
-        if (res.code !== 200) {
-          message.error(res.message)
-          return
-        }
-        const { path, query } = store.historyPathInfo
-        router.replace({
-          path: path || '/',
-          query
-        })
-      } catch (error) {
-        message.error((error as Error).message)
-      }
-    }
-
-    const disabled = computed(() => {
-      return !(formState.username && formState.password)
-    })
-    onMounted(() => {})
-    return {
-      placeholder,
-      formState,
-      onFinish,
-      disabled
-    }
-  }
-})
-</script>
 
 <style lang="less" scoped>
 .login-wrap {

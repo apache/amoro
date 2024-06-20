@@ -14,30 +14,11 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- /-->
-
-<template>
-  <div class="custom-top-bar">
-    <div class="version-info">
-      <span class="g-mr-8">{{`${$t('version')}:  ${verInfo.version}`}}</span>
-      <span class="g-mr-8">{{`${$t('commitTime')}:  ${verInfo.commitTime}`}}</span>
-    </div>
-    <a-tooltip placement="bottomRight" arrow-point-at-center overlayClassName="topbar-tooltip">
-      <template #title>{{$t('userGuide')}}</template>
-      <question-circle-outlined class="question-icon" @click="goDocs" />
-    </a-tooltip>
-    <a-tooltip>
-      <template #title>{{$t('logout')}}</template>
-      <a-button class='logout-button' @click="handleLogout">
-        <LogoutOutlined style="font-size: 1.2em"></LogoutOutlined>
-      </a-button>
-    </a-tooltip>
-  </div>
-</template>
+ / -->
 
 <script lang="ts">
 import { defineComponent, onMounted, reactive } from 'vue'
-import { Modal } from 'ant-design-vue';
+import { Modal } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 
 import useStore from '@/store'
@@ -54,12 +35,12 @@ export default defineComponent ({
   setup() {
     const verInfo = reactive<IVersion>({
       version: '',
-      commitTime: ''
+      commitTime: '',
     })
 
     const { t } = useI18n()
 
-    const getVersion = async() => {
+    const getVersion = async () => {
       const res = await getVersionInfo()
       if (res) {
         verInfo.version = res.version
@@ -75,17 +56,18 @@ export default defineComponent ({
         cancelText: '',
         onOk: async () => {
           try {
-            const res = await loginService.logout()
-            console.log(res.code)
-          } catch (error) {
-          } finally {
+            await loginService.logout()
+          }
+          catch (error) {
+          }
+          finally {
             const store = useStore()
             store.updateUserInfo({
-              userName: ''
+              userName: '',
             })
             window.location.href = '/login'
           }
-        }
+        },
       })
     }
 
@@ -100,11 +82,34 @@ export default defineComponent ({
     return {
       verInfo,
       goDocs,
-      handleLogout
+      handleLogout,
     }
-  }
+  },
 })
 </script>
+
+<template>
+  <div class="custom-top-bar">
+    <div class="version-info">
+      <span class="g-mr-8">{{ `${$t('version')}:  ${verInfo.version}` }}</span>
+      <span class="g-mr-8">{{ `${$t('commitTime')}:  ${verInfo.commitTime}` }}</span>
+    </div>
+    <a-tooltip placement="bottomRight" arrow-point-at-center overlay-class-name="topbar-tooltip">
+      <template #title>
+        {{ $t('userGuide') }}
+      </template>
+      <question-circle-outlined class="question-icon" @click="goDocs" />
+    </a-tooltip>
+    <a-tooltip>
+      <template #title>
+        {{ $t('logout') }}
+      </template>
+      <a-button class="logout-button" @click="handleLogout">
+        <LogoutOutlined style="font-size: 1.2em" />
+      </a-button>
+    </a-tooltip>
+  </div>
+</template>
 
 <style lang="less">
   .custom-top-bar {

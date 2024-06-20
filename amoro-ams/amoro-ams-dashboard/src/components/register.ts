@@ -16,9 +16,9 @@
   * limitations under the License.
   */
 
-import { App } from 'vue'
+import type { App } from 'vue'
 import ULoading from './loading'
 
-export default function Register (app: App<Element>): void {
+export default function Register(app: App<Element>): void {
   app.use(ULoading)
 }

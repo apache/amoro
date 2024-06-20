@@ -21,11 +21,11 @@ package org.apache.amoro.trino.keyed;
 import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
 import static org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList.toImmutableList;
 
+import io.trino.plugin.iceberg.IcebergColumnHandle;
+import org.apache.amoro.hive.io.reader.AdaptHiveMixedDeleteFilter;
 import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.trino.delete.TrinoRow;
-import io.trino.plugin.iceberg.IcebergColumnHandle;
-import org.apache.amoro.hive.io.reader.AdaptHiveMixedDeleteFilter;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.FileIO;

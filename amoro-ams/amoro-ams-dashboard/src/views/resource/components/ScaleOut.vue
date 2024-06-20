@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,13 +14,67 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
+/ -->
+
+<script lang="ts" setup>
+import { onMounted, reactive, ref } from 'vue'
+import { Modal as AModal } from 'ant-design-vue'
+import { usePlaceholder } from '@/hooks/usePlaceholder'
+import type { IIOptimizeGroupItem } from '@/types/common.type'
+import { scaleoutResource } from '@/services/optimize.service'
+
+interface FormState {
+  resourceGroup: undefined | string
+  parallelism: number
+}
+
+const props = defineProps<{ groupRecord: IIOptimizeGroupItem }>()
+
+const emit = defineEmits<{
+  (e: 'cancel'): void
+  (e: 'refresh'): void
+}>()
+
+const confirmLoading = ref<boolean>(false)
+const placeholder = reactive(usePlaceholder())
+const formRef = ref()
+const formState: FormState = reactive({
+  resourceGroup: props.groupRecord?.name || '',
+  parallelism: 1,
+})
+
+function handleOk() {
+  formRef.value
+    .validateFields()
+    .then(async () => {
+      confirmLoading.value = true
+      await scaleoutResource({
+        optimizerGroup: formState.resourceGroup || '',
+        parallelism: Number(formState.parallelism),
+      })
+      formRef.value.resetFields()
+      emit('cancel')
+      emit('refresh')
+      confirmLoading.value = false
+    })
+    .catch(() => {
+      confirmLoading.value = false
+    })
+}
+
+function handleCancel() {
+  formRef.value.resetFields()
+  emit('cancel')
+}
+onMounted(() => {
+})
+</script>
 
 <template>
-  <a-modal
+  <AModal
     :open="true"
     :title="$t('scaleOut')"
-    :confirmLoading="confirmLoading"
+    :confirm-loading="confirmLoading"
     :closable="false"
     @ok="handleOk"
     @cancel="handleCancel"
@@ -42,58 +95,5 @@ limitations under the License.
         />
       </a-form-item>
     </a-form>
-  </a-modal>
+  </AModal>
 </template>
-<script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue'
-import { usePlaceholder } from '@/hooks/usePlaceholder'
-import { IIOptimizeGroupItem } from '@/types/common.type'
-import { scaleoutResource } from '@/services/optimize.service'
-
-import { Modal as AModal } from 'ant-design-vue'
-
-interface FormState {
-  resourceGroup: undefined | string;
-  parallelism: number;
-}
-
-const emit = defineEmits<{
-  (e: 'cancel'): void;
-  (e: 'refresh'): void;
-}>()
-
-const props = defineProps<{ groupRecord: IIOptimizeGroupItem }>()
-const confirmLoading = ref<boolean>(false)
-const placeholder = reactive(usePlaceholder())
-const formRef = ref()
-const formState: FormState = reactive({
-  resourceGroup: props.groupRecord?.name || '',
-  parallelism: 1
-})
-
-function handleOk() {
-  formRef.value
-    .validateFields()
-    .then(async () => {
-      confirmLoading.value = true
-      await scaleoutResource({
-        optimizerGroup: formState.resourceGroup || '',
-        parallelism: Number(formState.parallelism)
-      })
-      formRef.value.resetFields()
-      emit('cancel')
-      emit('refresh')
-      confirmLoading.value = false
-    })
-    .catch(() => {
-      confirmLoading.value = false
-    })
-}
-
-function handleCancel() {
-  formRef.value.resetFields()
-  emit('cancel')
-}
-onMounted(() => {
-})
-</script>

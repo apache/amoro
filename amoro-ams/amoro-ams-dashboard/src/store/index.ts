@@ -16,26 +16,28 @@
   * limitations under the License.
   */
 
-import { GlobalState, IHistoryPathInfoItem, UserInfo } from '@/types/common.type'
 import { defineStore } from 'pinia'
+import type { GlobalState, IHistoryPathInfoItem, UserInfo } from '@/types/common.type'
 
-const state = (): GlobalState => ({
-  userInfo: {
-    userName: ''
+function state(): GlobalState {
+  return {
+    userInfo: {
+      userName: '',
     // token: ''
-  } as UserInfo,
-  isShowTablesMenu: false,
-  historyPathInfo: {
-    path: '',
-    query: {}
+    } as UserInfo,
+    isShowTablesMenu: false,
+    historyPathInfo: {
+      path: '',
+      query: {},
+    },
   }
-})
+}
 
 const getters = {
   // necessary to display the secondary navigation of tables
   getShowTablesMenu(state: GlobalState): boolean {
     return state.isShowTablesMenu
-  }
+  },
 }
 
 export default defineStore('datalake', {
@@ -50,6 +52,6 @@ export default defineStore('datalake', {
     },
     setHistoryPath(data: IHistoryPathInfoItem): void {
       this.historyPathInfo = data
-    }
-  }
+    },
+  },
 })

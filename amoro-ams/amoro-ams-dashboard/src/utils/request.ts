@@ -16,7 +16,8 @@
   * limitations under the License.
   */
 
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
+import type { AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios from 'axios'
 import { message } from 'ant-design-vue'
 import useStore from '@/store'
 import router from '@/router'
@@ -27,7 +28,6 @@ export const baseURL = import.meta.env.MODE === 'mock' ? '/mock' : '/'
 // Used to store request identification information whose current status is pending
 export const pendingRequest: {
   name: string
-  // eslint-disable-next-line @typescript-eslint/ban-types
   cancel: Function // request cancel function
   routeChangeCancel: boolean // Whether to cancel the request when the route is switched
 }[] = []
@@ -60,11 +60,11 @@ function addToken(config: CustomAxiosRequestConfig) {
 }
 
 const DEFAULT_CONFIG = {
-  baseURL: baseURL,
+  baseURL,
   timeout: 45000,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 }
 
 const DEFAULT_OPTIONS = {
@@ -73,7 +73,7 @@ const DEFAULT_OPTIONS = {
   handleError: true,
   returnCode: false,
   supportCancel: false,
-  routeChangeCancel: false
+  routeChangeCancel: false,
 }
 
 const instance = axios.create(DEFAULT_CONFIG)
@@ -82,8 +82,8 @@ const instance = axios.create(DEFAULT_CONFIG)
  * Cleared in pendingRequest queue when request is completed or cancelled
  * @param config config
  */
-const clearRequest = (config: CustomAxiosRequestConfig) => {
-  const markIndex = pendingRequest.findIndex((r) => r.name === config.requestMark)
+function clearRequest(config: CustomAxiosRequestConfig) {
+  const markIndex = pendingRequest.findIndex(r => r.name === config.requestMark)
   markIndex > -1 && pendingRequest.splice(markIndex, 1)
 }
 
@@ -92,7 +92,8 @@ instance.interceptors.response.use(
     clearRequest(response.config as CustomAxiosRequestConfig)
     if (response.status === 200 && response.data) {
       return response
-    } else {
+    }
+    else {
       return Promise.reject(new Error('Network error'))
     }
   },
@@ -105,24 +106,24 @@ instance.interceptors.response.use(
       return new Promise(() => {}) // Returns a Promise object in the "pending" state, if it is not passed down, it may cause memory leaks
     }
     return Promise.reject(error)
-  }
+  },
 )
 
 interface WrapperRequest {
   (options: CustomAxiosRequestConfig): Promise<any>
-  get(url: string, options?: CustomAxiosRequestConfig): Promise<any>
-  delete(url: string, options?: CustomAxiosRequestConfig): Promise<any>
-  post(url: string, data?: Record<string, any>, options?: CustomAxiosRequestConfig): Promise<any>
-  put(url: string, data?: Record<string, any>, options?: CustomAxiosRequestConfig): Promise<any>
+  get: (url: string, options?: CustomAxiosRequestConfig) => Promise<any>
+  delete: (url: string, options?: CustomAxiosRequestConfig) => Promise<any>
+  post: (url: string, data?: Record<string, any>, options?: CustomAxiosRequestConfig) => Promise<any>
+  put: (url: string, data?: Record<string, any>, options?: CustomAxiosRequestConfig) => Promise<any>
 }
 
-const request = function (options: CustomAxiosRequestConfig) {
+const request: any = function (options: CustomAxiosRequestConfig) {
   const requestConfig = Object.assign({}, DEFAULT_OPTIONS, options)
   const requestMark = `${requestConfig.method}-${(requestConfig.url || '').split('?')[0]}`
   requestConfig.requestMark = requestMark
   // Whether to cancel the last repeat or similar request
   if (requestConfig.supportCancel) {
-    const markIndex = pendingRequest.findIndex((r) => r.name === requestMark)
+    const markIndex = pendingRequest.findIndex(r => r.name === requestMark)
     if (markIndex > -1) {
       pendingRequest[markIndex].cancel() // Cancel the last repeat request
       pendingRequest.splice(markIndex, 1) // delete request id
@@ -134,7 +135,7 @@ const request = function (options: CustomAxiosRequestConfig) {
   pendingRequest.push({
     name: requestMark,
     cancel: source.cancel,
-    routeChangeCancel: requestConfig.routeChangeCancel
+    routeChangeCancel: requestConfig.routeChangeCancel,
   })
 
   // Add global parameters
@@ -157,13 +158,13 @@ const request = function (options: CustomAxiosRequestConfig) {
       if (code === 403) {
         const store = useStore()
         store.updateUserInfo({
-          userName: ''
+          userName: '',
         })
         if (requestConfig.handleError) {
           message.error(msg || 'need login')
         }
         return router.push({
-          path: '/login'
+          path: '/login',
         })
       }
       return Promise.reject(new Error(msg || 'error'))
@@ -177,26 +178,24 @@ const request = function (options: CustomAxiosRequestConfig) {
     })
 }
 ;['get', 'delete'].forEach((method) => {
-  // @ts-ignore
   request[method] = function (url: string, options: CustomAxiosRequestConfig = {}) {
     options = Object.assign({}, options, {
       url,
-      method
+      method,
     })
     return request(options)
   }
 })
 ;['post', 'put'].forEach((method) => {
-  // @ts-ignore
   request[method] = function (
     url: string,
     data: Record<string, any> = {},
-    options: CustomAxiosRequestConfig = {}
+    options: CustomAxiosRequestConfig = {},
   ) {
     options = Object.assign({}, options, {
       url,
       method,
-      data
+      data,
     })
     return request(options)
   }
@@ -210,7 +209,8 @@ const request = function (options: CustomAxiosRequestConfig) {
 export function download(url: string, _blank = true) {
   if (_blank) {
     window.open(url)
-  } else {
+  }
+  else {
     const a = document.createElement('a')
     a.style.display = 'none'
     a.href = url
