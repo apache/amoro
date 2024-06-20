@@ -18,9 +18,6 @@
 
 package org.apache.amoro.trino;
 
-import org.apache.amoro.trino.unkeyed.IcebergPageSourceProvider;
-import org.apache.amoro.trino.keyed.KeyedPageSourceProvider;
-import org.apache.amoro.trino.keyed.KeyedTableHandle;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
@@ -29,14 +26,17 @@ import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.DynamicFilter;
+import org.apache.amoro.trino.keyed.KeyedPageSourceProvider;
+import org.apache.amoro.trino.keyed.KeyedTableHandle;
+import org.apache.amoro.trino.unkeyed.IcebergPageSourceProvider;
 
 import javax.inject.Inject;
 
 import java.util.List;
 
 /**
- * {@link MixedFormatPageSourceProvider} is a Union {@link ConnectorPageSourceProvider} contain {@link
- * KeyedPageSourceProvider} and {@link IcebergPageSourceProvider}. This is final {@link
+ * {@link MixedFormatPageSourceProvider} is a Union {@link ConnectorPageSourceProvider} contain
+ * {@link KeyedPageSourceProvider} and {@link IcebergPageSourceProvider}. This is final {@link
  * ConnectorPageSourceProvider} provided to Trino
  */
 public class MixedFormatPageSourceProvider implements ConnectorPageSourceProvider {

@@ -24,19 +24,22 @@ import static org.apache.amoro.table.TableProperties.CHANGE_FILE_FORMAT;
 import static org.apache.amoro.table.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.apache.amoro.MockAmoroManagementServer;
-import org.apache.amoro.data.ChangeAction;
-import org.apache.amoro.table.MixedTable;
-import org.apache.amoro.table.BaseLocationKind;
-import org.apache.amoro.table.ChangeLocationKind;
-import org.apache.amoro.table.LocationKind;
-import org.apache.amoro.table.TableIdentifier;
-import org.apache.amoro.table.TableProperties;
 import io.trino.sql.query.QueryAssertions;
 import io.trino.testing.QueryRunner;
+import org.apache.amoro.MockAmoroManagementServer;
+import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import org.apache.amoro.hive.table.HiveLocationKind;
 import org.apache.amoro.hive.table.KeyedHiveTable;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.table.BaseLocationKind;
+import org.apache.amoro.table.ChangeLocationKind;
+import org.apache.amoro.table.LocationKind;
+import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Files;
@@ -49,9 +52,6 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
@@ -66,13 +66,19 @@ import java.util.stream.Collectors;
 public class TestHiveTable extends TestHiveTableBaseForTrino {
 
   private final String TEST_HIVE_TABLE_FULL_NAME =
-      MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX + HIVE_TABLE_ID.getDatabase() + "." + HIVE_TABLE_ID.getTableName();
+      MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX
+          + HIVE_TABLE_ID.getDatabase()
+          + "."
+          + HIVE_TABLE_ID.getTableName();
 
   private final String TEST_HIVE_PK_TABLE_FULL_NAME =
-          MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX + HIVE_PK_TABLE_ID.getDatabase() + "." + HIVE_PK_TABLE_ID.getTableName();
+      MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX
+          + HIVE_PK_TABLE_ID.getDatabase()
+          + "."
+          + HIVE_PK_TABLE_ID.getTableName();
 
   private final String TEST_HIVE_PK_TABLE_FULL_NAME_BASE =
-          MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX
+      MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX
           + HIVE_PK_TABLE_ID.getDatabase()
           + "."
           + "\""
@@ -80,19 +86,19 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
           + "#base\"";
 
   private final String TEST_UN_PARTITION_HIVE_TABLE_FULL_NAME =
-          MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX
+      MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX
           + UN_PARTITION_HIVE_TABLE_ID.getDatabase()
           + "."
           + UN_PARTITION_HIVE_TABLE_ID.getTableName();
 
   private final String TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME =
-          MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX
+      MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX
           + UN_PARTITION_HIVE_PK_TABLE_ID.getDatabase()
           + "."
           + UN_PARTITION_HIVE_PK_TABLE_ID.getTableName();
 
   private final String TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME_BASE =
-          MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX
+      MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX
           + UN_PARTITION_HIVE_PK_TABLE_ID.getDatabase()
           + "."
           + "\""
@@ -106,10 +112,16 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
       TableIdentifier.of(TEST_CATALOG_NAME, HIVE_DB_NAME, "test_pk_hive_table_parquet");
 
   private final String TEST_HIVE_PK_TABLE_ORC_FULL_NAME =
-          MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX + HIVE_PK_TABLE_ID.getDatabase() + "." + HIVE_PK_TABLE_ORC_ID.getTableName();
+      MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX
+          + HIVE_PK_TABLE_ID.getDatabase()
+          + "."
+          + HIVE_PK_TABLE_ORC_ID.getTableName();
 
   private final String TEST_HIVE_PK_TABLE_PARQUET_FULL_NAME =
-          MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX + HIVE_PK_TABLE_ID.getDatabase() + "." + HIVE_PK_TABLE_PARQUET_ID.getTableName();
+      MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX
+          + HIVE_PK_TABLE_ID.getDatabase()
+          + "."
+          + HIVE_PK_TABLE_PARQUET_ID.getTableName();
 
   private KeyedHiveTable testKeyedHiveTableOrc;
   private KeyedHiveTable testKeyedHiveTableParquet;
@@ -334,13 +346,13 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
   }
 
   private void write(
-          MixedTable table, LocationKind locationKind, List<Record> records, ChangeAction changeAction)
+      MixedTable table, LocationKind locationKind, List<Record> records, ChangeAction changeAction)
       throws IOException {
     write(table, locationKind, records, changeAction, null);
   }
 
   private void write(
-          MixedTable table, LocationKind locationKind, List<Record> records, FileFormat fileFormat)
+      MixedTable table, LocationKind locationKind, List<Record> records, FileFormat fileFormat)
       throws IOException {
     write(table, locationKind, records, ChangeAction.INSERT, fileFormat);
   }

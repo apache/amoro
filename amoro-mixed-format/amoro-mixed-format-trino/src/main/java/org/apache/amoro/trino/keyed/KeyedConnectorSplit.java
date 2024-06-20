@@ -20,11 +20,11 @@ package org.apache.amoro.trino.keyed;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.trino.spi.HostAddress;
+import io.trino.spi.connector.ConnectorSplit;
 import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.scan.NodeFileScanTask;
 import org.apache.amoro.trino.util.ObjectSerializerUtil;
-import io.trino.spi.HostAddress;
-import io.trino.spi.connector.ConnectorSplit;
 
 import java.util.Collections;
 import java.util.List;

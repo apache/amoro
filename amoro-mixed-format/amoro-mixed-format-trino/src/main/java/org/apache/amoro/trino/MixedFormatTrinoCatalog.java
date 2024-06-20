@@ -22,9 +22,6 @@ import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 import static java.util.Locale.ENGLISH;
 
-import org.apache.amoro.mixed.MixedFormatCatalog;
-import org.apache.amoro.table.MixedTable;
-import org.apache.amoro.table.TableIdentifier;
 import io.trino.plugin.hive.util.HiveUtil;
 import io.trino.plugin.iceberg.ColumnIdentity;
 import io.trino.plugin.iceberg.catalog.TrinoCatalog;
@@ -35,11 +32,14 @@ import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorViewDefinition;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.security.TrinoPrincipal;
+import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 
 import java.util.Collections;
 import java.util.List;
@@ -156,7 +156,9 @@ public class MixedFormatTrinoCatalog implements TrinoCatalog {
   public void dropTable(ConnectorSession session, SchemaTableName schemaTableName) {
     mixedFormatCatalog.dropTable(
         TableIdentifier.of(
-            mixedFormatCatalog.name(), schemaTableName.getSchemaName(), schemaTableName.getTableName()),
+            mixedFormatCatalog.name(),
+            schemaTableName.getSchemaName(),
+            schemaTableName.getTableName()),
         true);
   }
 

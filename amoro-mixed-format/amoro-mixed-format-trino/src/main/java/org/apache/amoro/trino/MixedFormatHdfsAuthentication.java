@@ -18,11 +18,11 @@
 
 package org.apache.amoro.trino;
 
-import org.apache.amoro.table.TableMetaStore;
 import io.trino.hdfs.authentication.GenericExceptionAction;
 import io.trino.hdfs.authentication.HdfsAuthentication;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.security.ConnectorIdentity;
+import org.apache.amoro.table.TableMetaStore;
 
 import javax.inject.Inject;
 
@@ -35,7 +35,7 @@ public class MixedFormatHdfsAuthentication implements HdfsAuthentication {
 
   @Inject
   public MixedFormatHdfsAuthentication(
-          MixedFormatCatalogFactory mixedFormatCatalogFactory, MixedFormatConfig mixedFormatConfig) {
+      MixedFormatCatalogFactory mixedFormatCatalogFactory, MixedFormatConfig mixedFormatConfig) {
     this.tableMetaStore = mixedFormatCatalogFactory.getTableMetastore();
     this.mixedFormatConfig = mixedFormatConfig;
   }

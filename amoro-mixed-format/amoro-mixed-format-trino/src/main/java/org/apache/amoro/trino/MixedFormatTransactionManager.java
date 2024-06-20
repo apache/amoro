@@ -44,7 +44,8 @@ public class MixedFormatTransactionManager {
     this(metadataFactory, Thread.currentThread().getContextClassLoader());
   }
 
-  public MixedFormatTransactionManager(MixedFormatMetadataFactory metadataFactory, ClassLoader classLoader) {
+  public MixedFormatTransactionManager(
+      MixedFormatMetadataFactory metadataFactory, ClassLoader classLoader) {
     this.metadataFactory = requireNonNull(metadataFactory, "metadataFactory is null");
     this.classLoader = requireNonNull(classLoader, "classLoader is null");
   }
