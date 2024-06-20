@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,47 +14,23 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
-
-<template>
-  <div class="hive-tables-wrap">
-    <div v-if="!isSecondaryNav" class="tables-content">
-      <div class="g-flex-jsb table-top">
-        <span :title="tableName" class="table-name g-text-nowrap">{{tableName}}</span>
-        <div class="right-btn">
-          <a-button type="primary" :disabled="status === upgradeStatus.upgrading" @click="upgradeTable">{{displayStatus}}</a-button>
-          <p v-if="status === upgradeStatus.failed" @click="showErrorMsg = true" class="fail-msg">{{$t('lastUpgradingFailed')}}</p>
-        </div>
-      </div>
-      <div class="content">
-        <a-tabs v-model:activeKey="activeKey">
-          <a-tab-pane key="Details" tab="Details">
-            <u-details :partitionColumnList="partitionColumnList" :schema="schema" />
-          </a-tab-pane>
-        </a-tabs>
-      </div>
-    </div>
-    <u-loading v-if="loading" />
-    <!-- upgrade table secondary page -->
-    <router-view v-if="isSecondaryNav" @goBack="goBack" @refresh="refresh"></router-view>
-    <error-msg v-if="showErrorMsg" :msg="errorMessage" @cancle="showErrorMsg = false" />
-  </div>
-</template>
+/ -->
 
 <script lang="ts">
 import { computed, defineComponent, onBeforeUnmount, onMounted, reactive, ref, toRefs, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import UDetails from './components/Details.vue'
 import errorMsg from './components/ErrorMsg.vue'
-import { useRoute, useRouter } from 'vue-router'
-import { DetailColumnItem, upgradeStatusMap } from '@/types/common.type'
+import type { DetailColumnItem } from '@/types/common.type'
+import { upgradeStatusMap } from '@/types/common.type'
 import { getHiveTableDetail, getUpgradeStatus } from '@/services/table.service'
-import { useI18n } from 'vue-i18n'
 
 export default defineComponent({
   name: 'Tables',
   components: {
     UDetails,
-    errorMsg
+    ErrorMsg: errorMsg,
   },
   setup() {
     const upgradeStatus = upgradeStatusMap
@@ -65,7 +40,7 @@ export default defineComponent({
     const { t } = useI18n()
 
     const isSecondaryNav = computed(() => {
-      return !!(route.path.indexOf('upgrade') > -1)
+      return !!(route.path.includes('upgrade'))
     })
 
     const state = reactive({
@@ -77,7 +52,7 @@ export default defineComponent({
       errorMessage: '',
       tableName: 'tableName',
       partitionColumnList: [] as DetailColumnItem[],
-      schema: [] as DetailColumnItem[]
+      schema: [] as DetailColumnItem[],
     })
 
     const goBack = () => {
@@ -86,11 +61,11 @@ export default defineComponent({
 
     const params = computed(() => {
       return {
-        ...route.query
+        ...route.query,
       }
     })
 
-    const getTableUpgradeStatus = async(hideLoading = false) => {
+    const getTableUpgradeStatus = async (hideLoading = false) => {
       try {
         statusInterval.value && clearTimeout(statusInterval.value)
         const { catalog, db, table } = params.value
@@ -99,7 +74,7 @@ export default defineComponent({
         }
         !hideLoading && (state.loading = true)
         const result = await getUpgradeStatus({
-          ...params.value
+          ...params.value,
         })
         const { status, errorMessage } = result
         state.status = status
@@ -109,26 +84,30 @@ export default defineComponent({
           statusInterval.value = setTimeout(() => {
             getTableUpgradeStatus(true)
           }, 1500)
-        } else {
+        }
+        else {
           if (status === upgradeStatusMap.none) {
             getHiveTableDetails()
-          } else if (status === upgradeStatusMap.success) {
+          }
+          else if (status === upgradeStatusMap.success) {
             router.replace({
               path: '/tables',
               query: {
-                ...route.query
-              }
+                ...route.query,
+              },
             })
-          } else if (status === upgradeStatusMap.failed) {
+          }
+          else if (status === upgradeStatusMap.failed) {
             getHiveTableDetails()
           }
         }
-      } finally {
+      }
+      finally {
         !hideLoading && (state.loading = false)
       }
     }
 
-    const getHiveTableDetails = async() => {
+    async function getHiveTableDetails() {
       try {
         const { catalog, db, table } = params.value
         if (!catalog || !db || !table) {
@@ -136,7 +115,7 @@ export default defineComponent({
         }
         state.loading = true
         const result = await getHiveTableDetail({
-          ...params.value
+          ...params.value,
         })
         const { partitionColumnList = [], schema, tableIdentifier } = result
 
@@ -144,25 +123,27 @@ export default defineComponent({
 
         state.partitionColumnList = partitionColumnList || []
         state.schema = schema || []
-      } catch (error) {
-      } finally {
+      }
+      catch (error) {
+      }
+      finally {
         state.loading = false
       }
     }
 
-    const init = async() => {
+    async function init() {
       await getTableUpgradeStatus()
     }
 
-    const upgradeTable = () => {
+    function upgradeTable() {
       router.push({
         path: '/hive-tables/upgrade',
         query: {
-          ...route.query
-        }
+          ...route.query,
+        },
       })
     }
-    const refresh = () => {
+    function refresh() {
       init()
     }
 
@@ -173,7 +154,7 @@ export default defineComponent({
         if (route.path === '/hive-tables' && (catalog !== old.catalog || db !== old.db || table !== old.table)) {
           init()
         }
-      }
+      },
     )
 
     onBeforeUnmount(() => {
@@ -190,12 +171,40 @@ export default defineComponent({
       upgradeStatus,
       upgradeTable,
       goBack,
-      refresh
+      refresh,
     }
-  }
+  },
 })
-
 </script>
+
+<template>
+  <div class="hive-tables-wrap">
+    <div v-if="!isSecondaryNav" class="tables-content">
+      <div class="g-flex-jsb table-top">
+        <span :title="tableName" class="table-name g-text-nowrap">{{ tableName }}</span>
+        <div class="right-btn">
+          <a-button type="primary" :disabled="status === upgradeStatus.upgrading" @click="upgradeTable">
+            {{ displayStatus }}
+          </a-button>
+          <p v-if="status === upgradeStatus.failed" class="fail-msg" @click="showErrorMsg = true">
+            {{ $t('lastUpgradingFailed') }}
+          </p>
+        </div>
+      </div>
+      <div class="content">
+        <a-tabs v-model:activeKey="activeKey">
+          <a-tab-pane key="Details" tab="Details">
+            <UDetails :partition-column-list="partitionColumnList" :schema="schema" />
+          </a-tab-pane>
+        </a-tabs>
+      </div>
+    </div>
+    <u-loading v-if="loading" />
+    <!-- upgrade table secondary page -->
+    <router-view v-if="isSecondaryNav" @go-back="goBack" @refresh="refresh" />
+    <ErrorMsg v-if="showErrorMsg" :msg="errorMessage" @cancle="showErrorMsg = false" />
+  </div>
+</template>
 
 <style lang="less" scoped>
 .hive-tables-wrap {

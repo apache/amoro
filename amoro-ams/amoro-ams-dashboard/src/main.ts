@@ -19,6 +19,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
+import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
 import App from './App.vue'
 import router from './router'
 import useStore from './store'
@@ -29,10 +30,9 @@ import RegisterComponents from './components/register'
 import './styles/index.less'
 import './utils/editor'
 import './assets/icons'
-import SvgIcon from '@/components/svg-icon.vue'
 import loginService from './services/login.service'
-import { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
 import { getQueryString } from './utils'
+import SvgIcon from '@/components/svg-icon.vue'
 
 import 'virtual:svg-icons-register'
 
@@ -48,15 +48,15 @@ RegisterComponents(app);
 
     const fromPath = window.location.pathname
     const fromQuery = window.location.search
-    if (!store.historyPathInfo.path && fromPath!='/login') {
+    if (!store.historyPathInfo.path && fromPath !== '/login') {
       const queryParams = new URLSearchParams(fromQuery)
       const queryObj: Record<string, string> = {}
       for (const [key, value] of queryParams.entries()) {
-          queryObj[key as string] = value
+        queryObj[key as string] = value
       }
       store.setHistoryPath({
         path: fromPath,
-        query: queryObj
+        query: queryObj,
       })
     }
 
@@ -64,10 +64,11 @@ RegisterComponents(app);
     const res = await loginService.getCurUserInfo(token)
     if (res) {
       store.updateUserInfo({
-        userName: res.userName
+        userName: res.userName,
       })
     }
-  } finally {
+  }
+  finally {
     const store = useStore()
     router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
       if (to.fullPath === '/login') {
@@ -76,7 +77,7 @@ RegisterComponents(app);
         }
         store.setHistoryPath({
           path: from.path,
-          query: { ...from.query }
+          query: { ...from.query },
         })
       }
       next()

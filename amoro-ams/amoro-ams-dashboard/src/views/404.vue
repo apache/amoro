@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,18 +14,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
-
-<template>
-  <div class="g-flex-center">
-    <div class="g-flex-col container">
-      <p class="title">404 - Not Found</p>
-      <router-link to="/" style="text-align: center">
-        <a-button class="button g-mt-32">{{$t('backHome')}}</a-button>
-      </router-link>
-    </div>
-  </div>
-</template>
+/ -->
 
 <script lang="ts">
 import { defineComponent } from 'vue'
@@ -35,6 +23,21 @@ export default defineComponent({
   name: 'Page404',
 })
 </script>
+
+<template>
+  <div class="g-flex-center">
+    <div class="g-flex-col container">
+      <p class="title">
+        404 - Not Found
+      </p>
+      <router-link to="/" style="text-align: center">
+        <a-button class="button g-mt-32">
+          {{ $t('backHome') }}
+        </a-button>
+      </router-link>
+    </div>
+  </div>
+</template>
 
 <style lang="less" scoped>
 .container {

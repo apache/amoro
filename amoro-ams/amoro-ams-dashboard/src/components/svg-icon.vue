@@ -14,23 +14,16 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- /-->
-
-<template>
-  <svg :class="svgClass" aria-hidden="true" @click="handleClick" :stroke="stroke" @mouseover="onMouseover" @mouseout="onMouseout">
-    <use :xlink:href="iconName"></use>
-  </svg>
-</template>
+ / -->
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
 
-const isHover = ref<boolean>(false)
 const props = defineProps<{ iconClass?: string, className?: string, isStroke?: boolean, disabled?: boolean }>()
 const emit = defineEmits<{
- (e: 'click'): void
+  (e: 'click'): void
 }>()
-
+const isHover = ref<boolean>(false)
 const stroke = computed(() => {
   if (props.isStroke) {
     if (props.disabled) {
@@ -38,7 +31,8 @@ const stroke = computed(() => {
     }
     if (isHover.value) {
       return '#1890ff'
-    } else {
+    }
+    else {
       return '#333'
     }
   }
@@ -74,8 +68,13 @@ function onMouseover() {
 function onMouseout() {
   isHover.value = false
 }
-
 </script>
+
+<template>
+  <svg :class="svgClass" aria-hidden="true" :stroke="stroke" @click="handleClick" @mouseover="onMouseover" @mouseout="onMouseout">
+    <use :xlink:href="iconName" />
+  </svg>
+</template>
 
 <style scoped lang="less">
 .svg-icon {

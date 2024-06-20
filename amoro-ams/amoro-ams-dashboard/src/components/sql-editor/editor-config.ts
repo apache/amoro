@@ -29,7 +29,7 @@ export const DIFF_EDITOR_OPTIPONS: any = {
   scrollBeyondLastLine: false,
   contextmenu: false,
   readOnly: true,
-  fixedOverflowWidgets: true
+  fixedOverflowWidgets: true,
 }
 
 export const EDITOR_OPTIONS = Object.assign({}, DIFF_EDITOR_OPTIPONS, {
@@ -43,10 +43,10 @@ export const EDITOR_OPTIONS = Object.assign({}, DIFF_EDITOR_OPTIPONS, {
   wordWrap: 'on',
   renderLineHighlight: 'all',
   minimap: {
-    enabled: false
+    enabled: false,
   },
   contextmenu: false,
   automaticLayout: true,
-  scrollBeyondLastLine: false
+  scrollBeyondLastLine: false,
   // rulers: [100]
 })

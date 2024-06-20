@@ -19,32 +19,46 @@
 /**
  * Convert units to B KB MB G T
  */
-export const bytesToSize = (size: number | null): string => {
-  if (size === 0) { return '0' }
-  if (size === null || size === undefined) { return 'unknown' }
+export function bytesToSize(size: number | null): string {
+  if (size === 0)
+    return '0'
+  if (size === null || size === undefined)
+    return 'unknown'
+
   const num = 1024 // byte
-  if (size < num) { return size + ' B' }
-  if (size < Math.pow(num, 2)) { return (size / num).toFixed(2) + ' KB' } // kb
-  if (size < Math.pow(num, 3)) { return (size / Math.pow(num, 2)).toFixed(2) + ' MB' } // M
-  if (size < Math.pow(num, 4)) { return (size / Math.pow(num, 3)).toFixed(2) + ' G' } // G
-  return (size / Math.pow(num, 4)).toFixed(2) + ' T' // T
+  if (size < num)
+    return `${size} B`
+  if (size < num ** 2)
+    return `${(size / num).toFixed(2)} KB`
+  if (size < num ** 3)
+    return `${(size / num ** 2).toFixed(2)} MB`
+  if (size < num ** 4)
+    return `${(size / num ** 3).toFixed(2)} G`
+
+  return `${(size / num ** 4).toFixed(2)} T` // T
 }
 
 /**
  * Convert MB to MB G T
  */
-export const mbToSize = (size: number): string => {
-  if (size === 0) { return '0' }
+export function mbToSize(size: number): string {
+  if (size === 0)
+    return '0'
+
   const num = 1024 // byte
-  if (size < num) { return size + ' MB' }
-  if (size < Math.pow(num, 2)) { return (size / num).toFixed() + ' G' } // G
-  return (size / Math.pow(num, 2)).toFixed() + ' T' // T
+  if (size < num)
+    return `${size} MB`
+
+  if (size < num ** 2)
+    return `${(size / num).toFixed()} G`
+
+  return `${(size / num ** 2).toFixed()} T` // T
 }
 /**
  * Convert ms to d h min s
  */
-export const formatMS2Time = (time: number, fromHour?: boolean): string => {
-  if (time === null || time === undefined || isNaN(time)) {
+export function formatMS2Time(time: number, fromHour?: boolean): string {
+  if (time === null || time === undefined || Number.isNaN(time)) {
     return '-'
   }
   // 3h 34min 12s
@@ -56,37 +70,38 @@ export const formatMS2Time = (time: number, fromHour?: boolean): string => {
     return '0 ms'
   }
   if (time < Second) {
-    return fromHour ? '0 min ' : time + ' ms'
+    return fromHour ? '0 min ' : `${time} ms`
   }
   if (time >= Second && time < Minute) {
     const s = Math.floor(time / Second)
     if (fromHour) {
       return '0 min'
     }
-    return s ? s + ' s' : ''
+    return s ? `${s} s` : ''
   }
   if (time >= Minute && time < Hour) {
     const calcMin = Math.floor(time / Minute)
     const s = Math.floor((time - calcMin * Minute) / Second)
     if (fromHour) {
-      return calcMin + ' min'
-    } else {
-      return time % Minute === 0 ? time / Minute + ' min' : calcMin + ' min ' + (s ? s + ' s' : '')
+      return `${calcMin} min`
+    }
+    else {
+      return time % Minute === 0 ? `${time / Minute} min` : `${calcMin} min ${s ? `${s} s` : ''}`
     }
   }
   if (time % Hour === 0) {
-    return time / Hour + ' h'
+    return `${time / Hour} h`
   }
   if (time >= Hour && time < Day) {
     const calcHour = Math.floor(time / Hour)
-    return calcHour + ' h ' + formatMS2Time(time - calcHour * Hour, true)
+    return `${calcHour} h ${formatMS2Time(time - calcHour * Hour, true)}`
   }
   if (time % Day === 0) {
-    return time / Day + ' d'
+    return `${time / Day} d`
   }
 
   const calcDay = Math.floor(time / Day)
-  return calcDay + ' d ' + formatMS2Time(time - calcDay * Day, true)
+  return `${calcDay} d ${formatMS2Time(time - calcDay * Day, true)}`
 }
 /**
  * Convert milliseconds to d h min s format
@@ -95,8 +110,8 @@ export const formatMS2Time = (time: number, fromHour?: boolean): string => {
  * 1440min<x≤7200h display hourly values, like 45h；
  * more than 30d display >30d
  */
-export const formatMS2DisplayTime = (time: number): string => {
-  if (time === null || time === undefined || isNaN(time)) {
+export function formatMS2DisplayTime(time: number): string {
+  if (time === null || time === undefined || Number.isNaN(time)) {
     return ''
   }
   const Second = 1000
@@ -118,7 +133,7 @@ export const formatMS2DisplayTime = (time: number): string => {
   return '>30 d'
 }
 
-export const timeConversion = (millisec: number) => {
+export function timeConversion(millisec: number) {
   const seconds = (millisec / 1000).toFixed(1)
 
   const minutes = (millisec / (1000 * 60)).toFixed(1)
@@ -128,52 +143,51 @@ export const timeConversion = (millisec: number) => {
   const days = (millisec / (1000 * 60 * 60 * 24)).toFixed(1)
 
   if (+seconds < 60) {
-    return seconds + ' s'
-  } else if (+minutes < 60) {
-    return minutes + ' min'
-  } else if (+hours < 24) {
-    return hours + ' h'
-  } else {
-    return days + ' day'
+    return `${seconds} s`
+  }
+  else if (+minutes < 60) {
+    return `${minutes} min`
+  }
+  else if (+hours < 24) {
+    return `${hours} h`
+  }
+  else {
+    return `${days} day`
   }
 }
 
 export const dateFormat = (() => {
-  const padZero = function(val: string) {
+  const padZero = function (val: string) {
     const value = val || ''
     return value.length < 2 ? `0${value}` : value
   }
-  const MAPS = {
+  const MAPS: any = {
     yyyy: (date: { getFullYear: () => number }) => date.getFullYear(),
     MM: (date: { getMonth: () => number }) => padZero(String(date.getMonth() + 1)),
     dd: (date: { getDate: () => number }) => padZero(String(date.getDate())),
     HH: (date: { getHours: () => number }) => padZero(String(date.getHours())),
     mm: (date: { getMinutes: () => number }) => padZero(String(date.getMinutes())),
-    ss: (date: { getSeconds: () => number }) => padZero(String(date.getSeconds()))
+    ss: (date: { getSeconds: () => number }) => padZero(String(date.getSeconds())),
   }
 
   const trunk = new RegExp(Object.keys(MAPS).join('|'), 'g')
 
-  return function(val: string | number, format = 'yyyy-MM-dd  HH:mm:ss') {
+  return function (val: string | number, format = 'yyyy-MM-dd  HH:mm:ss') {
     if (!val) {
       return ''
     }
     let value: number | Date = +val
     value = new Date(value)
-    // @ts-ignore
     return format.replace(trunk, capture => MAPS[capture](value))
   }
 })()
 
-// @ts-ignore
-export function debounce (func: any, timeout = 300) {
+export function debounce(func: any, timeout = 300) {
   let timer: number | undefined
-  // @ts-ignore
   return (...args: any) => {
     clearTimeout(timer)
     timer = setTimeout(() => {
-      // @ts-ignore
-      func.apply(this, args)
+      func && func(args)
     }, timeout)
   }
 }
@@ -185,8 +199,8 @@ export function getUUid() {
 /**
  * get url query
  */
-export const getQueryString = (name: string, url?: string) => {
-  const reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)', 'i')
+export function getQueryString(name: string, url?: string) {
+  const reg = new RegExp(`(^|&)${name}=([^&]*)(&|$)`, 'i')
   const paramsUrl = url ? new URL(url) : window.location
   const r = paramsUrl.search.substr(1).match(reg)
   if (r != null) {
