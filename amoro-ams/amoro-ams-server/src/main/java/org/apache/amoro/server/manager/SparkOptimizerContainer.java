@@ -157,8 +157,6 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
 
     if (deployedOnKubernetes()) {
       addKubernetesProperties(resource, resourceSparkConf);
-    } else {
-      addYarnProperties(resourceSparkConf);
     }
     String sparkOptions = resourceSparkConf.toConfOptions();
     String proxyUser =
@@ -222,16 +220,6 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
         "spark-native-kubernetes");
     sparkConf.putToOptions(
         SparkConfKeys.KUBERNETES_EXECUTOR_LABEL_PREFIX + "optimizer-id", resource.getResourceId());
-  }
-
-  private void addYarnProperties(SparkOptimizerContainer.SparkConf sparkConf) {
-    // Load optimizer jar first
-    sparkConf.putToOptions(
-        SparkConfKeys.DRIVER_CLASSPATH_INCLUDE_USER_JAR,
-        SparkOptimizerContainer.SparkConfKeys.CLASSPATH_INCLUDE_USER_JAR_DEFAULT);
-    sparkConf.putToOptions(
-        SparkConfKeys.EXECUTOR_CLASSPATH_INCLUDE_USER_JAR,
-        SparkOptimizerContainer.SparkConfKeys.CLASSPATH_INCLUDE_USER_JAR_DEFAULT);
   }
 
   private <T> T fetchCommandOutput(Process exec, Function<String, T> commandReader) {
@@ -337,11 +325,6 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
   }
 
   public static class SparkConfKeys {
-    public static final String DRIVER_CLASSPATH_INCLUDE_USER_JAR =
-        "spark.driver.userClassPathFirst";
-    public static final String EXECUTOR_CLASSPATH_INCLUDE_USER_JAR =
-        "spark.executor.userClassPathFirst";
-    public static final String CLASSPATH_INCLUDE_USER_JAR_DEFAULT = "true";
     public static final String KUBERNETES_IMAGE_REF = "spark.kubernetes.container.image";
     public static final String KUBERNETES_DRIVER_NAME = "spark.kubernetes.driver.pod.name";
     public static final String KUBERNETES_NAMESPACE = "spark.kubernetes.namespace";

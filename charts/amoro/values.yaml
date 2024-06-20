@@ -266,7 +266,7 @@ optimizer:
       pullPolicy: "IfNotPresent"
   extra: []
 
-## Configure the plugin that allows you to access the metric reporters and events listeners.
+## Configure the plugin that allows you to access the metric reporters and event listeners.
 ##
 plugin:
   ##
