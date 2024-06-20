@@ -83,7 +83,7 @@
                             <descriptors>
                                 <descriptor>src/main/assemblies/bin.xml</descriptor>
                             </descriptors>
-                            <finalName>amoro-${project.version}-bin</finalName>
+                            <finalName>apache-amoro-${project.version}-bin</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
                         </configuration>
                     </execution>

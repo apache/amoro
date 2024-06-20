@@ -14,8 +14,8 @@ Amoro build a metrics system to measure the behaviours of table management proce
 
 There are two types of metrics provided in the Amoro metric system: Gauge and Counter.
 
-Gauge: Provides a value of any type at a point in time.
-Counter: Used to count values by incrementing and decrementing.
+* Gauge: Provides a value of any type at a point in time.
+* Counter: Used to count values by incrementing and decrementing.
 
 Amoro has supported built-in metrics to measure status of table self-optimizing processes and optimizer resources, which can be [reported to external metric system like Prometheus etc](../deployment/#configure-metric-reporter).
 
