@@ -75,7 +75,7 @@ public class HudiHiveCatalog implements FormatCatalog {
   }
 
   @Override
-  public boolean exist(String database) {
+  public boolean databaseExists(String database) {
     try {
       hiveClientPool.run(client -> client.getDatabase(database));
       return true;
@@ -87,7 +87,7 @@ public class HudiHiveCatalog implements FormatCatalog {
   }
 
   @Override
-  public boolean exist(String database, String table) {
+  public boolean tableExists(String database, String table) {
     return loadHoodieHiveTable(database, table).isPresent();
   }
 
@@ -210,9 +210,11 @@ public class HudiHiveCatalog implements FormatCatalog {
     }
   }
 
+  static final String SPARK_SOURCE_PROVIDER = "spark.sql.sources.provider";
+  static final String FLINK_CONNECTOR = "connector";
+
   private boolean isHoodieTable(Table table) {
-    final String SPARK_SOURCE_PROVIDER = "spark.sql.sources.provider";
-    final String FLINK_CONNECTOR = "connector";
+
     return "hudi".equalsIgnoreCase(table.getParameters().getOrDefault(SPARK_SOURCE_PROVIDER, ""))
         || "hudi".equalsIgnoreCase(table.getParameters().getOrDefault(FLINK_CONNECTOR, ""));
   }
