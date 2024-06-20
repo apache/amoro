@@ -23,6 +23,7 @@ import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.NoSuchDatabaseException;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClient;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.MixedCatalogUtil;
@@ -37,7 +38,6 @@ import org.apache.hudi.common.config.HoodieMetadataConfig;
 import org.apache.hudi.common.fs.FSUtils;
 import org.apache.hudi.config.HoodieWriteConfig;
 import org.apache.hudi.table.HoodieJavaTable;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 
 import java.util.Collections;
