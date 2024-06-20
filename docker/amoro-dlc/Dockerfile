@@ -4,6 +4,9 @@ FROM csighub.tencentyun.com/dlchub/dlc-base-maven:tlinux4.0-rc0 AS builder
 ADD . /workspace/amoro
 WORKDIR /workspace/amoro
 
+RUN cd amoro \
+    && ls -al
+
 RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
     && cp amoro-ams/dist/target/*.tar.gz /usr/local \
     && tar -xzvf /usr/local/apache-amoro-${AMORO_VERSION}-bin.tar.gz -C /usr/local \
