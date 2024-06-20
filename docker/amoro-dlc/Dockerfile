@@ -10,6 +10,8 @@ RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.
     && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/flink -rf \
     && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/spark -rf \
     && mv /usr/local/amoro-${AMORO_VERSION} /usr/local/amoro \
+    && cp /usr/local/amoro-${AMORO_VERSION} /usr/local/amoro \
+    && cp /docker/amoro/entrypoint.sh /usr/local/amoro \
     && rm -rf /workspace/amoro
 
 RUN cd /usr/local/amoro/lib \
