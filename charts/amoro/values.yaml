@@ -255,7 +255,7 @@ optimizer:
     enabled: true
     properties:
       namespace: "default"
-      kube-config-path: "～/.kube/config"
+      kube-config-path: "~/.kube/config"
       image: "apache/amoro:latest"
       pullPolicy: "IfNotPresent"
   extra: []
