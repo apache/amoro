@@ -14,63 +14,46 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
-
-<template>
-  <a-modal :visible="true" :title="edit ? $t('editgroup') : $t('addgroup')" :confirmLoading="confirmLoading"
-    :closable="false" class="group-modal" @ok="handleOk" @cancel="handleCancel">
-    <a-form ref="formRef" :model="formState" class="label-120">
-      <a-form-item name="name" :label="$t('name')" :rules="[{ required: true, message: `${placeholder.groupNamePh}` }]">
-        <a-input v-model:value="formState.name" :placeholder="placeholder.groupNamePh" :disabled="edit" />
-      </a-form-item>
-      <a-form-item name="container" :label="$t('container')"
-        :rules="[{ required: true, message: `${placeholder.groupContainer}` }]">
-        <a-select v-model:value="formState.container" :showSearch="true" :options="selectList.containerList"
-          :placeholder="placeholder.groupContainer" />
-      </a-form-item>
-      <a-form-item :label="$t('properties')"> </a-form-item>
-      <a-form-item>
-        <Properties :propertiesObj="formState.properties" :isEdit="true" ref="propertiesRef" />
-      </a-form-item>
-    </a-form>
-  </a-modal>
-</template>
+/ -->
 
 <script lang="ts" setup>
 import { onMounted, reactive, ref } from 'vue'
+import { Modal as AModal, message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
-import { IIOptimizeGroupItem } from '@/types/common.type'
+import type { IIOptimizeGroupItem } from '@/types/common.type'
 import {
-  getGroupContainerListAPI,
   addResourceGroupsAPI,
-  updateResourceGroupsAPI
+  getGroupContainerListAPI,
+  updateResourceGroupsAPI,
 } from '@/services/optimize.service'
 import Properties from '@/views/catalogs/Properties.vue'
 
-import { message, Modal as AModal } from 'ant-design-vue'
+const props = defineProps<{
+  edit: boolean
+  editRecord: IIOptimizeGroupItem | null
+}>()
 
-import { useI18n } from 'vue-i18n'
+const emit = defineEmits<{
+  (e: 'cancel'): void
+  (e: 'refresh'): void
+}>()
 
 const { t } = useI18n()
 
 interface FormState {
-  name: string;
-  container: undefined | string;
-  properties: { [prop: string]: string };
+  name: string
+  container: undefined | string
+  properties: { [prop: string]: string }
 }
 
 const placeholder = reactive(usePlaceholder())
-const props = defineProps<{
-  edit: boolean;
-  editRecord: IIOptimizeGroupItem | null;
-}>()
-
 const selectList = ref<{ containerList: any }>({ containerList: [] })
 async function getContainerList() {
   const result = await getGroupContainerListAPI()
   const list = (result || []).map((item: string) => ({
     label: item,
-    value: item
+    value: item,
   }))
   selectList.value.containerList = list
 }
@@ -78,38 +61,35 @@ async function getContainerList() {
 const formState: FormState = reactive({
   name: '',
   container: undefined,
-  properties: {}
+  properties: {},
 })
 
 const confirmLoading = ref<boolean>(false)
-const emit = defineEmits<{
-  (e: 'cancel'): void;
-  (e: 'refresh'): void;
-}>()
-
-const handleCancel = () => {
+function handleCancel() {
   emit('cancel')
 }
 
 const formRef = ref()
 const propertiesRef = ref()
-const handleOk = () => {
+function handleOk() {
   formRef.value.validateFields().then(async () => {
     try {
       const properties = await propertiesRef.value.getProperties()
       const params = {
         name: formState.name,
         container: formState.container as string,
-        properties
+        properties,
       }
       if (props.edit) {
         await updateResourceGroupsAPI(params)
-      } else {
+      }
+      else {
         await addResourceGroupsAPI(params)
       }
       message.success(`${t('save')} ${t('success')}`)
       emit('refresh')
-    } catch (error) {
+    }
+    catch (error) {
       message.error(`${t('save')} ${t('failed')}`)
     }
   })
@@ -121,11 +101,37 @@ onMounted(() => {
     formState.name = props.editRecord?.name as string
     formState.container = props.editRecord?.container
     formState.properties = props.editRecord?.resourceGroup.properties as {
-      [props: string]: string;
+      [props: string]: string
     }
   }
 })
 </script>
+
+<template>
+  <AModal
+    :visible="true" :title="edit ? $t('editgroup') : $t('addgroup')" :confirm-loading="confirmLoading"
+    :closable="false" class="group-modal" @ok="handleOk" @cancel="handleCancel"
+  >
+    <a-form ref="formRef" :model="formState" class="label-120">
+      <a-form-item name="name" :label="$t('name')" :rules="[{ required: true, message: `${placeholder.groupNamePh}` }]">
+        <a-input v-model:value="formState.name" :placeholder="placeholder.groupNamePh" :disabled="edit" />
+      </a-form-item>
+      <a-form-item
+        name="container" :label="$t('container')"
+        :rules="[{ required: true, message: `${placeholder.groupContainer}` }]"
+      >
+        <a-select
+          v-model:value="formState.container" :show-search="true" :options="selectList.containerList"
+          :placeholder="placeholder.groupContainer"
+        />
+      </a-form-item>
+      <a-form-item :label="$t('properties')" />
+      <a-form-item>
+        <Properties ref="propertiesRef" :properties-obj="formState.properties" :is-edit="true" />
+      </a-form-item>
+    </a-form>
+  </AModal>
+</template>
 
 <style lang="less">
 .group-modal {

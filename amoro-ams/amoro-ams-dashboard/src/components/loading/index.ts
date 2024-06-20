@@ -16,11 +16,11 @@
   * limitations under the License.
   */
 
-import { App } from 'vue'
+import type { App } from 'vue'
 import ULoding from './loading.vue'
 
 export default {
   install(app: App) {
     app.component('ULoading', ULoding)
-  }
+  },
 }

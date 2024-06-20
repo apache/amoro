@@ -14,7 +14,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- /-->
+ / -->
 
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue'
@@ -22,23 +22,22 @@ import { onBeforeUnmount, ref } from 'vue'
 const props = defineProps({
   loadingText: {
     type: String,
-    default: 'Loading'
+    default: 'Loading',
   },
   fullscreen: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 const visible = ref<boolean>(true)
 
 onBeforeUnmount(() => {
-  visible.value = false;
+  visible.value = false
 })
-
 </script>
 
 <template>
-  <div v-show="visible" v-if="visible" ref="loadingRef" class="u-loading" :class="{ 'fullscreen': props.fullscreen }">
+  <div v-show="visible" v-if="visible" class="u-loading" :class="{ fullscreen: props.fullscreen }">
     <a-spin :tip="props.loadingText" />
   </div>
 </template>
@@ -71,4 +70,5 @@ onBeforeUnmount(() => {
     user-select: none;
     color: #fff;
   }
-}</style>
+}
+</style>

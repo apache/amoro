@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,58 +14,24 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
-
-<template>
-  <div class="table-operations">
-    <a-table
-      rowKey="partiton"
-      :columns="columns"
-      :data-source="dataSource"
-      :pagination="pagination"
-      @change="change"
-      :loading="loading"
-    >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.dataIndex === 'operation'">
-          <span class="text-active g-max-line-3" @click="viewDetail(record)">
-            {{ record.operation }}
-          </span>
-        </template>
-      </template>
-    </a-table>
-  </div>
-  <a-modal
-    :visible="visible"
-    :width="560"
-    :title="`${$t('operationDetails')}`"
-    @cancel="cancle"
-    class="operation-wrap"
-    >
-    {{ activeCopyText }}
-    <template #footer>
-      <a-button type="primary" @click="onCopy">{{ $t('copy') }}</a-button>
-    </template>
-  </a-modal>
-</template>
+/ -->
 
 <script lang="ts" setup>
 import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { usePagination } from '@/hooks/usePagination'
-import { IColumns, OperationItem } from '@/types/common.type'
-import { getOperations } from '@/services/table.service'
 import { useRoute } from 'vue-router'
-import { dateFormat } from '@/utils'
 import useClipboard from 'vue-clipboard3'
-
-import { message, Modal as AModal } from 'ant-design-vue'
+import { Modal as AModal, message } from 'ant-design-vue'
+import { usePagination } from '@/hooks/usePagination'
+import type { IColumns, OperationItem } from '@/types/common.type'
+import { getOperations } from '@/services/table.service'
+import { dateFormat } from '@/utils'
 
 const { toClipboard } = useClipboard()
 const { t } = useI18n()
 const columns: IColumns[] = shallowReactive([
   { title: t('time'), dataIndex: 'ts', width: '30%' },
-  { title: t('operation'), dataIndex: 'operation', scopedSlots: { customRender: 'operation' } }
+  { title: t('operation'), dataIndex: 'operation', scopedSlots: { customRender: 'operation' } },
 ])
 const visible = ref<boolean>(false)
 const activeCopyText = ref<string>('')
@@ -81,7 +46,7 @@ const sourceData = reactive({
   catalog: '',
   db: '',
   table: '',
-  ...query
+  ...query,
 })
 
 async function getOperationInfo() {
@@ -91,7 +56,7 @@ async function getOperationInfo() {
     const result = await getOperations({
       ...sourceData,
       page: pagination.current,
-      pageSize: pagination.pageSize
+      pageSize: pagination.pageSize,
     })
     const { total, list } = result
     pagination.total = total;
@@ -99,8 +64,10 @@ async function getOperationInfo() {
       ele.ts = ele.ts ? dateFormat(ele.ts) : ''
       dataSource.push(ele)
     })
-  } catch (error) {
-  } finally {
+  }
+  catch (error) {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -128,14 +95,49 @@ async function onCopy() {
     await toClipboard(activeCopyText.value)
     message.success(t('copySuccess'))
     cancle()
-  } catch (error) {}
+  }
+  catch (error) {}
 }
 
 onMounted(() => {
   getOperationInfo()
 })
-
 </script>
+
+<template>
+  <div class="table-operations">
+    <a-table
+      row-key="partiton"
+      :columns="columns"
+      :data-source="dataSource"
+      :pagination="pagination"
+      :loading="loading"
+      @change="change"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.dataIndex === 'operation'">
+          <span class="text-active g-max-line-3" @click="viewDetail(record)">
+            {{ record.operation }}
+          </span>
+        </template>
+      </template>
+    </a-table>
+  </div>
+  <AModal
+    :visible="visible"
+    :width="560"
+    :title="`${$t('operationDetails')}`"
+    class="operation-wrap"
+    @cancel="cancle"
+  >
+    {{ activeCopyText }}
+    <template #footer>
+      <a-button type="primary" @click="onCopy">
+        {{ $t('copy') }}
+      </a-button>
+    </template>
+  </AModal>
+</template>
 
 <style lang="less">
 .table-operations {

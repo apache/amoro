@@ -28,7 +28,7 @@ export function usePagination() {
     pageSizeOptions: _pageSizeOptions,
     showQuickJumper: true,
     showSizeChanger: true,
-    hideOnSinglePage: false
+    hideOnSinglePage: false,
     // showTotal: (total: number) => `total ${total} records`
   }
 }

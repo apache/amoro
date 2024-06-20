@@ -24,8 +24,8 @@ import static org.apache.amoro.shade.guava32.com.google.common.base.Precondition
 
 import io.trino.spi.Page;
 import io.trino.spi.type.Type;
-import org.apache.iceberg.StructLike;
 import org.apache.amoro.shade.guava32.com.google.common.collect.AbstractIterator;
+import org.apache.iceberg.StructLike;
 
 import javax.annotation.Nullable;
 

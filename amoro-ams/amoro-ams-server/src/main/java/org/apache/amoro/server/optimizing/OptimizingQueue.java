@@ -264,7 +264,7 @@ public class OptimizingQueue extends PersistentBase {
       if (planner.isNecessary()) {
         return new TableOptimizingProcess(planner);
       } else {
-        tableRuntime.cleanPendingInput();
+        tableRuntime.completeEmptyProcess();
         return null;
       }
     } catch (Throwable throwable) {

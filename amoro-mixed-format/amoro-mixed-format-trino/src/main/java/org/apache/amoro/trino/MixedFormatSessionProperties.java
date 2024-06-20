@@ -31,38 +31,37 @@ import javax.inject.Inject;
 
 import java.util.List;
 
-/** Session properties provider for mixed-format table.  */
+/** Session properties provider for mixed-format table. */
 public final class MixedFormatSessionProperties implements SessionPropertiesProvider {
 
   private static final String MIXED_STATISTICS_ENABLED = "mixed_table_statistics_enabled";
 
-  private static final String MIXED_SPLIT_TASK_BY_DELETE_RATIO =
-      "mixed_split_task_by_delete_ratio";
+  private static final String MIXED_SPLIT_TASK_BY_DELETE_RATIO = "mixed_split_task_by_delete_ratio";
   private static final String MIXED_ENABLE_SPLIT_TASK_BY_DELETE_RATIO =
       "mixed_enable_split_task_by_delete_ratio";
   private final List<PropertyMetadata<?>> sessionProperties;
 
   @Inject
   public MixedFormatSessionProperties(
-          MixedFormatConfig mixedFormatConfig, IcebergSessionProperties icebergSessionProperties) {
+      MixedFormatConfig mixedFormatConfig, IcebergSessionProperties icebergSessionProperties) {
     sessionProperties =
         ImmutableList.<PropertyMetadata<?>>builder()
             .addAll(icebergSessionProperties.getSessionProperties())
             .add(
                 booleanProperty(
-                        MIXED_STATISTICS_ENABLED,
+                    MIXED_STATISTICS_ENABLED,
                     "Expose table statistics for mixed-format table",
                     mixedFormatConfig.isTableStatisticsEnabled(),
                     false))
             .add(
                 doubleProperty(
-                        MIXED_SPLIT_TASK_BY_DELETE_RATIO,
+                    MIXED_SPLIT_TASK_BY_DELETE_RATIO,
                     "If task delete ratio less than this value will be split to more task",
                     mixedFormatConfig.getSplitTaskByDeleteRatio(),
                     false))
             .add(
                 booleanProperty(
-                        MIXED_ENABLE_SPLIT_TASK_BY_DELETE_RATIO,
+                    MIXED_ENABLE_SPLIT_TASK_BY_DELETE_RATIO,
                     "Enable task split by ratio",
                     mixedFormatConfig.isEnableSplitTaskByDeleteRatio(),
                     false))

@@ -14,40 +14,13 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
-
-
-<template>
-  <div class="config-properties">
-    <div v-if="isEdit">
-      <div class="config-header g-flex">
-        <div class="td g-flex-ac">{{ $t('key') }}</div>
-        <div class="td g-flex-ac bd-left">{{ $t('value') }}</div>
-      </div>
-      <a-form ref="propertiesFormRef" layout="inline" :model="propertiesForm" class="g-mt-12">
-        <div class="config-row" v-for="(item, index) in propertiesForm.data" :key="item.uuid">
-          <!-- validator: validateUnique -->
-          <a-form-item :name="['data', index, 'key']" :rules="rules">
-            <a-input v-model:value="item.key" style="width: 100%" />
-          </a-form-item>
-          <a-form-item :name="['data', index, 'value']" :rules="rules">
-            <a-input v-model:value="item.value" style="width: 100%" />
-          </a-form-item>
-          <close-outlined class="icon-close" @click="removeRule(item)" />
-        </div>
-      </a-form>
-      <a-button class="config-btn" @click="addRule">+</a-button>
-    </div>
-    <a-table v-if="!isEdit" rowKey="uuid" :columns="propertiesColumns" :data-source="propertiesForm.data"
-      :pagination="false"></a-table>
-  </div>
-</template>
+/ -->
 
 <script setup lang="ts">
 import { computed, reactive, ref, shallowReactive, watch } from 'vue'
-import { IMap } from '@/types/common.type'
-import { getUUid } from '@/utils/index'
 import { useI18n } from 'vue-i18n'
+import type { IMap } from '@/types/common.type'
+import { getUUid } from '@/utils/index'
 
 interface Propertie {
   key: string
@@ -55,20 +28,20 @@ interface Propertie {
   uuid: string
 }
 
-const { t } = useI18n()
 const props = defineProps<{ propertiesObj: IMap<string>, isEdit: boolean }>()
+const { t } = useI18n()
 const propertiesColumns = shallowReactive([
   { dataIndex: 'key', title: t('key'), width: 284, ellipsis: true },
-  { dataIndex: 'value', title: t('value'), ellipsis: true }
+  { dataIndex: 'value', title: t('value'), ellipsis: true },
 ])
 const propertiesFormRef = ref()
 const propertiesForm = reactive<{ data: Propertie[] }>({
-  data: []
+  data: [],
 })
 
 const rules = [{
   required: true,
-  message: ``
+  message: ``,
 }]
 
 const isEdit = computed(() => props.isEdit)
@@ -77,16 +50,16 @@ watch(() => props.propertiesObj, () => {
   initPropertiesArray()
 }, {
   immediate: true,
-  deep: true
+  deep: true,
 })
 
 function initPropertiesArray() {
   propertiesForm.data.length = 0
-  Object.keys(props.propertiesObj).forEach(key => {
+  Object.keys(props.propertiesObj).forEach((key) => {
     propertiesForm.data.push({
-      key: key,
+      key,
       value: props.propertiesObj[key],
-      uuid: getUUid()
+      uuid: getUUid(),
     })
   })
 }
@@ -102,7 +75,7 @@ function addRule() {
   propertiesForm.data.push({
     key: '',
     value: '',
-    uuid: getUUid()
+    uuid: getUUid(),
   })
 }
 
@@ -119,7 +92,7 @@ function addRule() {
 defineExpose({
   getPropertiesWithoputValidation() {
     const propObj: IMap<string> = {}
-    propertiesForm.data.forEach(e => {
+    propertiesForm.data.forEach((e) => {
       propObj[e.key] = e.value
     })
     return Promise.resolve(propObj)
@@ -129,7 +102,7 @@ defineExpose({
       .validateFields()
       .then(() => {
         const propObj: IMap<string> = {}
-        propertiesForm.data.forEach(e => {
+        propertiesForm.data.forEach((e) => {
           propObj[e.key] = e.value
         })
         return Promise.resolve(propObj)
@@ -137,10 +110,43 @@ defineExpose({
       .catch(() => {
         return false
       })
-  }
+  },
 })
-
 </script>
+
+<template>
+  <div class="config-properties">
+    <div v-if="isEdit">
+      <div class="config-header g-flex">
+        <div class="td g-flex-ac">
+          {{ $t('key') }}
+        </div>
+        <div class="td g-flex-ac bd-left">
+          {{ $t('value') }}
+        </div>
+      </div>
+      <a-form ref="propertiesFormRef" layout="inline" :model="propertiesForm" class="g-mt-12">
+        <div v-for="(item, index) in propertiesForm.data" :key="item.uuid" class="config-row">
+          <!-- validator: validateUnique -->
+          <a-form-item :name="['data', index, 'key']" :rules="rules">
+            <a-input v-model:value="item.key" style="width: 100%" />
+          </a-form-item>
+          <a-form-item :name="['data', index, 'value']" :rules="rules">
+            <a-input v-model:value="item.value" style="width: 100%" />
+          </a-form-item>
+          <close-outlined class="icon-close" @click="removeRule(item)" />
+        </div>
+      </a-form>
+      <a-button class="config-btn" @click="addRule">
+        +
+      </a-button>
+    </div>
+    <a-table
+      v-if="!isEdit" row-key="uuid" :columns="propertiesColumns" :data-source="propertiesForm.data"
+      :pagination="false"
+    />
+  </div>
+</template>
 
 <style lang="less">
 .config-properties {

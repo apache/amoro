@@ -37,7 +37,6 @@ spark/spark-warehouse/
 # vscode/eclipse files
 .classpath
 .project
-.settings
 bin/
 
 # Hive/metastore files

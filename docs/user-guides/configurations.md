@@ -8,6 +8,22 @@ menu:
         parent: User Guides
         weight: 300
 ---
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
 # Table Configurations
 
 ## Multi-level configuration management
@@ -94,18 +110,18 @@ If using Iceberg Format，please refer to [Iceberg configurations](https://icebe
 
 ### Writing configurations
 
-| Key                            | Default         | Description                                                                                                     |
-|--------------------------------|-----------------|-----------------------------------------------------------------------------------------------------------------|
-| base.write.format              | parquet         | File format for the table for BaseStore, applicable to KeyedTable                                               |
-| change.write.format            | parquet         | File format for the table for ChangeStore, applicable to KeyedTable                                             |
-| write.format.default           | parquet         | Default file format for the table, applicable to UnkeyedTable                                                   |
-| base.file-index.hash-bucket    | 4               | Initial number of buckets for BaseStore auto-bucket                                                             |
-| change.file-index.hash-bucket  | 4               | Initial number of buckets for ChangeStore auto-bucket                                                           |
-| write.target-file-size-bytes   | 134217728(128MB) | Target size when writing                                                                                        |
-| write.upsert.enabled           | false           | Enable upsert mode, multiple insert data with the same primary key will be merged if enabled                    |
-| write.distribution-mode        | hash            | Shuffle rules for writing. UnkeyedTable can choose between none and hash, while KeyedTable can only choose hash |
-| write.distribution.hash-mode   | auto            | Auto-bucket mode, which supports primary-key, partition-key, primary-partition-key, and auto                    |
-
+| Key                           | Default          | Description                                                                                                     |
+|-------------------------------|------------------|-----------------------------------------------------------------------------------------------------------------|
+| base.write.format             | parquet          | File format for the table for BaseStore, applicable to KeyedTable                                               |
+| change.write.format           | parquet          | File format for the table for ChangeStore, applicable to KeyedTable                                             |
+| write.format.default          | parquet          | Default file format for the table, applicable to UnkeyedTable                                                   |
+| base.file-index.hash-bucket   | 4                | Initial number of buckets for BaseStore auto-bucket                                                             |
+| change.file-index.hash-bucket | 4                | Initial number of buckets for ChangeStore auto-bucket                                                           |
+| write.target-file-size-bytes  | 134217728(128MB) | Target size when writing                                                                                        |
+| write.upsert.enabled          | false            | Enable upsert mode, multiple insert data with the same primary key will be merged if enabled                    |
+| write.distribution-mode       | hash             | Shuffle rules for writing. UnkeyedTable can choose between none and hash, while KeyedTable can only choose hash |
+| write.distribution.hash-mode  | auto             | Auto-bucket mode, which supports primary-key, partition-key, primary-partition-key, and auto                    |
+| base.refresh-interval         | -1 (Closed)      | The interval for refreshing the BaseStore                                                                       |
 
 ### LogStore configurations
 

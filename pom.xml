@@ -96,7 +96,7 @@
         <iceberg.version>1.4.3</iceberg.version>
         <paimon.version>0.8.0</paimon.version>
         <hive.version>3.1.1</hive.version>
-        <hadoop.version>3.2.4</hadoop.version>
+        <hadoop.version>3.4.0</hadoop.version>
         <kerby.version>2.0.3</kerby.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
@@ -1037,7 +1037,41 @@
                                 <familyName>Apache License 2.0</familyName>
                             </licenseFamily>
                         </licenseFamilies>
-                        <excludesFile>tools/maven/rat-excludes</excludesFile>
+                        <excludes>
+                            <!-- Additional files like .gitignore etc.-->
+                            <exclude>**/.*/**</exclude>
+                            <exclude>**/*.prefs</exclude>
+                            <exclude>**/*.log</exclude>
+                            <exclude>tools/maven/scalafmt.conf</exclude>
+                            <!-- Administrative files in the main trunk. -->
+                            <exclude>**/README.md</exclude>
+                            <exclude>**/CODE_OF_CONDUCT.md</exclude>
+                            <exclude>.github/**</exclude>
+                            <!-- IDE files. -->
+                            <exclude>**/*.iml</exclude>
+                            <exclude>**/.idea/**</exclude>
+                            <!-- Generated content -->
+                            <exclude>**/target/**</exclude>
+                            <exclude>**/scalastyle-output.xml</exclude>
+                            <exclude>docs/resources/**</exclude>
+                            <exclude>docs/public/**</exclude>
+                            <exclude>docs/themes/book/**</exclude>
+                            <exclude>docs/assets/github.css</exclude>
+                            <exclude>docs/static/js/anchor.min.js</exclude>
+                            <exclude>**/*.svg</exclude>
+                            <exclude>**/dependency-reduced-pom.xml</exclude>
+                            <exclude>**/gen-antlr/**</exclude>
+                            <exclude>**/node_modules/**</exclude>
+                            <exclude>**/src/main/resources/static/**</exclude>
+                            <exclude>**/amoro_krb_conf/**</exclude>
+                            <exclude>**/metastore_db/**</exclude>
+                            <exclude>**/unit_test_base_tmp/**</exclude>
+                            <exclude>**/pnpm-lock.yaml</exclude>
+                            <exclude>**/components.d.ts</exclude>
+                            <exclude>**/Chart.lock</exclude>
+                            <!-- artifacts created during release process -->
+                            <exclude>release/**</exclude>
+                        </excludes>
                     </configuration>
                     <executions>
                         <execution>
@@ -1160,6 +1194,55 @@
     </build>
 
     <profiles>
+        <!--
+          We're reusing the apache-release build profile defined in the Apache Parent POM,
+          with one exclusion: do not run the source-release-assembly execution goal.
+          We have our own scripts to create the source release, which correctly excludes
+          binaries from distribution tarball.
+          The script can be found under tools/releasing/create_source_release.sh.
+        -->
+        <profile>
+            <id>apache-release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.apache.apache.resources</groupId>
+                                <artifactId>apache-source-release-assembly-descriptor</artifactId>
+                                <version>1.0.6</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <id>source-release-assembly</id>
+                                <!-- disable the execution -->
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <configuration>
+                            <quiet>true</quiet>
+                            <doclint>none</doclint>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>hadoop2</id>
             <activation>
@@ -1186,71 +1269,10 @@
             <properties>
                 <guava.version>32.1.1-jre</guava.version>
                 <hive.version>3.1.1</hive.version>
-                <hadoop.version>3.2.4</hadoop.version>
+                <hadoop.version>3.4.0</hadoop.version>
                 <terminal.spark.version>3.3.2</terminal.spark.version>
                 <terminal.spark.major.version>3.3</terminal.spark.major.version>
             </properties>
-        </profile>
-        <profile>
-            <id>deploy-maven-central</id>
-            <distributionManagement>
-                <repository>
-                    <id>ossrh</id>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                </repository>
-                <snapshotRepository>
-                    <id>ossrh</id>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-                </snapshotRepository>
-            </distributionManagement>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <version>${maven-source-plugin-version}</version>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${maven-gpg-plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>sign-release-artifacts</id>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                                <phase>verify</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven-javadoc-plugin.version}</version>
-                        <configuration>
-                            <quiet>true</quiet>
-                            <doclint>none</doclint>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>
 </project>

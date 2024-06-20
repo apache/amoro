@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,35 +14,17 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
-
-<template>
-  <div class="catalogs-wrap g-flex">
-    <div class="catalog-list-left">
-      <div class="catalog-header">{{`${$t('catalog')} ${$t('list')}`}}</div>
-      <ul v-if="catalogs.length && !loading" class="catalog-list">
-        <li v-for="item in catalogs" :key="item.catalogName" class="catalog-item g-text-nowrap" :class="{'active': item.catalogName === curCatalog.catalogName}" @click="handleClick(item)">
-          {{ item.catalogName }}
-        </li>
-      </ul>
-      <a-button @click="addCatalog" :disabled="curCatalog.catalogName === NEW_CATALOG" class="add-btn">+</a-button>
-    </div>
-    <div class="catalog-detail">
-      <a-empty v-if="!catalogs.length && !loading" :image="simpleImage" class="detail-empty"></a-empty>
-      <Detail v-else :isEdit="isEdit" @updateEdit="updateEdit" @updateCatalogs="updateCatalogs" />
-    </div>
-  </div>
-</template>
+/ -->
 
 <script lang="ts" setup>
 import { onMounted, reactive, ref } from 'vue'
-import { ICatalogItem } from '@/types/common.type'
-import { getCatalogList } from '@/services/table.service'
-import Detail from './Detail.vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 
-import { Modal, Empty as AEmpty } from 'ant-design-vue'
+import { Empty as AEmpty, Modal } from 'ant-design-vue'
+import Detail from './Detail.vue'
+import { getCatalogList } from '@/services/table.service'
+import type { ICatalogItem } from '@/types/common.type'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -51,7 +32,7 @@ const route = useRoute()
 const catalogs = reactive<ICatalogItem[]>([])
 const curCatalog = reactive<ICatalogItem>({
   catalogName: '',
-  catalogType: ''
+  catalogType: '',
 })
 const isEdit = ref<boolean>(false)
 const NEW_CATALOG = 'new catalog'
@@ -66,10 +47,11 @@ async function getCatalogs() {
     (res || []).forEach((ele: ICatalogItem) => {
       catalogs.push({
         catalogName: ele.catalogName,
-        catalogType: ele.catalogType
+        catalogType: ele.catalogType,
       })
     })
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -77,7 +59,7 @@ function initSelectCatalog() {
   const { catalogname = '', type } = route.query
   const item: ICatalogItem = {
     catalogName: '',
-    catalogType: ''
+    catalogType: '',
   }
   if (decodeURIComponent(catalogname as string) === NEW_CATALOG) {
     addCatalog()
@@ -86,7 +68,8 @@ function initSelectCatalog() {
   if (catalogname) {
     item.catalogName = catalogname as string
     item.catalogType = type as string
-  } else {
+  }
+  else {
     item.catalogName = catalogs[0]?.catalogName
     item.catalogType = catalogs[0]?.catalogType
   }
@@ -99,7 +82,8 @@ function handleClick(item: ICatalogItem) {
       isEdit.value = false
       updateEdit(false)
     })
-  } else {
+  }
+  else {
     selectCatalog(item)
   }
 }
@@ -111,8 +95,8 @@ async function selectCatalog(item: ICatalogItem) {
     path: '/catalogs',
     query: {
       catalogname: encodeURIComponent(curCatalog.catalogName),
-      type: curCatalog.catalogType
-    }
+      type: curCatalog.catalogType,
+    },
   })
 }
 
@@ -130,7 +114,7 @@ async function updateEdit(val: boolean, catalog?: ICatalogItem | undefined) {
     catalogs.splice(index)
     const item: ICatalogItem = {
       catalogName: catalogs[0]?.catalogName,
-      catalogType: catalogs[0]?.catalogType
+      catalogType: catalogs[0]?.catalogType,
     }
     selectCatalog(item)
     return
@@ -145,20 +129,21 @@ function addCatalog() {
     leaveConfirm(() => {
       addNewCatalog()
     })
-  } else {
+  }
+  else {
     addNewCatalog()
   }
 }
 async function addNewCatalog() {
   const item: ICatalogItem = {
     catalogName: NEW_CATALOG,
-    catalogType: ''
+    catalogType: '',
   }
   await selectCatalog(item)
   catalogs.push(item)
   isEdit.value = true
 }
-onMounted(async() => {
+onMounted(async () => {
   await getCatalogs()
   initSelectCatalog()
 })
@@ -167,9 +152,9 @@ function leaveConfirm(cb?: () => void) {
     title: t('leavePageModalTitle'),
     content: t('leavePageModalContent'),
     okText: t('leave'),
-    onOk: async() => {
+    onOk: async () => {
       cb && await cb()
-    }
+    },
   })
 }
 onBeforeRouteLeave((_to, _form, next) => {
@@ -177,12 +162,34 @@ onBeforeRouteLeave((_to, _form, next) => {
     leaveConfirm(() => {
       next()
     })
-  } else {
+  }
+  else {
     next()
   }
 })
-
 </script>
+
+<template>
+  <div class="catalogs-wrap g-flex">
+    <div class="catalog-list-left">
+      <div class="catalog-header">
+        {{ `${$t('catalog')} ${$t('list')}` }}
+      </div>
+      <ul v-if="catalogs.length && !loading" class="catalog-list">
+        <li v-for="item in catalogs" :key="item.catalogName" class="catalog-item g-text-nowrap" :class="{ active: item.catalogName === curCatalog.catalogName }" @click="handleClick(item)">
+          {{ item.catalogName }}
+        </li>
+      </ul>
+      <a-button :disabled="curCatalog.catalogName === NEW_CATALOG" class="add-btn" @click="addCatalog">
+        +
+      </a-button>
+    </div>
+    <div class="catalog-detail">
+      <AEmpty v-if="!catalogs.length && !loading" :image="simpleImage" class="detail-empty" />
+      <Detail v-else :is-edit="isEdit" @update-edit="updateEdit" @update-catalogs="updateCatalogs" />
+    </div>
+  </div>
+</template>
 
 <style lang="less" scoped>
 .catalogs-wrap {

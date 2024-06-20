@@ -14,51 +14,45 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- /-->
+ / -->
 
-<template>
-  <a-spin :spinning="loading" class="echarts-loading">
-    <div ref="echart" :style="{ width: width, height: height }" class="timeline-echarts"></div>
-  </a-spin>
-</template>
 <script lang="ts">
-import { defineComponent, onMounted, onBeforeUnmount, watch, ref, toRefs, reactive } from 'vue'
+import { defineComponent, onBeforeUnmount, onMounted, ref, toRefs, watch } from 'vue'
 import echarts from './index'
 
 export default defineComponent({
   props: {
     width: {
       type: String,
-      default: 'auto'
+      default: 'auto',
     },
     height: {
       type: String,
-      default: '350px'
+      default: '350px',
     },
     loading: {
       type: Boolean,
-      default: false
+      default: false,
     },
     options: {
       type: Object,
-      default: () => {}
-    }
+      default: () => {},
+    },
   },
   setup(props) {
     let echartsInst: any = null
     const { options } = toRefs(props)
-    const state = reactive({
-      echart: ref()
-    })
+    const echart = ref()
+
     const echartsInit = () => {
-      echartsInst = echarts.init(state.echart)
+      echartsInst = echarts.init(echart.value)
       echartsInst.setOption({
-        ...options.value
+        ...options.value,
       })
     }
     const echartsOptionsUpdate = () => {
       echartsInst.setOption({
-        ...options.value
+        ...options.value,
       })
       echartsInst.resize()
     }
@@ -73,9 +67,10 @@ export default defineComponent({
       () => options.value,
       (value) => {
         value && echartsOptionsUpdate()
-      }, {
-        deep: true
-      }
+      },
+      {
+        deep: true,
+      },
     )
 
     onBeforeUnmount(() => {
@@ -88,11 +83,18 @@ export default defineComponent({
     })
 
     return {
-      ...toRefs(state)
+      echart,
     }
-  }
+  },
 })
 </script>
+
+<template>
+  <a-spin :spinning="loading" class="echarts-loading">
+    <div ref="echart" :style="{ width, height }" class="timeline-echarts" />
+  </a-spin>
+</template>
+
 <style lang="less">
 .echarts-loading {
   width: 100% !important;

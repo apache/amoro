@@ -18,27 +18,28 @@
 
 // Introduce on demand
 import * as echarts from 'echarts/core'
-import {
-  BarChart,
+import type {
   // define suffix: SeriesOption
   BarSeriesOption,
-  LineChart,
-  LineSeriesOption
+  LineSeriesOption,
 } from 'echarts/charts'
 import {
-  TitleComponent,
-  // define suffix: ComponentOption
-  TitleComponentOption,
-  TooltipComponent,
-  TooltipComponentOption,
-  GridComponent,
-  GridComponentOption,
-  // data set component
-  DatasetComponent,
+  BarChart,
+  LineChart,
+} from 'echarts/charts'
+import type {
   DatasetComponentOption,
-  // built in component (filter, sort)
+  GridComponentOption,
+  TitleComponentOption,
+  TooltipComponentOption,
+} from 'echarts/components'
+import {
+  DatasetComponent,
+  GridComponent,
+  LegendComponent,
+  TitleComponent,
+  TooltipComponent,
   TransformComponent,
-  LegendComponent
 } from 'echarts/components'
 import { LabelLayout, UniversalTransition } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -51,7 +52,7 @@ export type ECOption = echarts.ComposeOption<
   | TooltipComponentOption
   | GridComponentOption
   | DatasetComponentOption
->;
+>
 
 // Register required components
 echarts.use([
@@ -65,7 +66,7 @@ echarts.use([
   LabelLayout,
   UniversalTransition,
   CanvasRenderer,
-  LegendComponent
+  LegendComponent,
 ])
 
 export default echarts

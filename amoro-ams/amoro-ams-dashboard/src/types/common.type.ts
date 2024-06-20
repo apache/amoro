@@ -17,13 +17,13 @@
   */
 
 export interface IOption {
-  [propName: string]: any;
+  [propName: string]: any
 }
 export interface IHttpResponse {
-  code: number;
-  msg: string;
-  result?: IOption;
-  data?: IOption;
+  code: number
+  msg: string
+  result?: IOption
+  data?: IOption
 }
 export interface UserInfo {
   userName: string
@@ -51,7 +51,7 @@ export interface ILableAndValue {
   value: string
 }
 export interface IMap<T> {
-  [key: string]: T;
+  [key: string]: T
 }
 
 export interface IKeyAndValue {
@@ -70,7 +70,7 @@ export interface IBaseDetailInfo {
 }
 
 export interface DetailColumnItem {
-  checked?: unknown;
+  checked?: unknown
   field: string
   type: string
   required: boolean
@@ -91,11 +91,11 @@ export interface PartitionColumnItem {
 }
 
 export interface IDetailsInfo {
-  pkList: DetailColumnItem[],
-  partitionColumnList: PartitionColumnItem[],
-  properties: IMap<string>[],
-  metrics: IMap<string | number>[],
-  schema: DetailColumnItem[],
+  pkList: DetailColumnItem[]
+  partitionColumnList: PartitionColumnItem[]
+  properties: IMap<string>[]
+  metrics: IMap<string | number>[]
+  schema: DetailColumnItem[]
 }
 export interface ICompMap {
   Details: string
@@ -207,9 +207,9 @@ export interface ICatalogItem {
   catalogType: string
 }
 export interface IDebugResult {
-  status: string;
-  columns: string[];
-  rowData: (string | null)[][];
+  status: string
+  columns: string[]
+  rowData: (string | null)[][]
   id: string
 }
 
@@ -249,20 +249,20 @@ export interface IOptimizeTableItem {
 
 export interface IIOptimizeGroupItem {
   resourceGroup: {
-    name: string;
-    container: string;
-    properties: {[prop: string]: string};
+    name: string
+    container: string
+    properties: { [prop: string]: string }
   }
-  occupationCore: number;
-  occupationMemory: number;
-  name: string;
-  container: string;
+  occupationCore: number
+  occupationMemory: number
+  name: string
+  container: string
   resourceOccupation: string
 }
 
 export interface IOptimizeResourceTableItem {
-  touchTime: string;
-  startTime: string;
+  touchTime: string
+  startTime: string
   index: number
   jobId: number
   jobStatus: string
@@ -287,9 +287,9 @@ export interface IOverviewSummary {
   totalMemoryUnit?: string
 }
 export interface ITimeInfo {
-  yTitle: string;
-  colors: string[];
-  name: string[];
+  yTitle: string
+  colors: string[]
+  name: string[]
 }
 
 export interface IChartLineData {
@@ -336,14 +336,15 @@ export enum debugResultBgcMap {
   Created = '#f5f5f5',
   Failed = '#fff2f0',
   Finished = '#f6ffed',
-  Canceled = '#f5f5f5'
+  // eslint-disable-next-line ts/no-duplicate-enum-values
+  Canceled = '#f5f5f5',
 }
 
 export enum upgradeStatusMap {
   failed = 'FAILED',
   upgrading = 'UPGRADING',
   success = 'SUCCESS',
-  none = 'NONE' // can upgrade
+  none = 'NONE', // can upgrade
 }
 
 export enum tableTypeIconMap {
@@ -351,23 +352,23 @@ export enum tableTypeIconMap {
   ARCTIC = 'amoro',
   HIVE = 'hive',
   PAIMON = 'paimon',
-  HUDI = 'hudi'
+  HUDI = 'hudi',
 }
 
 export type ILineChartOriginalData = Record<string, Record<string, number>>
 
 export enum branchTypeMap {
   BRANCH = 'branch',
-  TAG = 'tag'
+  TAG = 'tag',
 }
 
-export type IBranchItem = {
+export interface IBranchItem {
   value: string
   label: string
   type: branchTypeMap
 }
 
-export type IServiceBranchItem = {
+export interface IServiceBranchItem {
   name: string
   snapshotId: number
   minSnapshotsToKeep: number | null
@@ -379,5 +380,5 @@ export type IServiceBranchItem = {
 export enum operationMap {
   ALL = 'all',
   OPTIMIZING = 'optimizing',
-  NONOPTIMIZING = 'non-optimizing'
+  NONOPTIMIZING = 'non-optimizing',
 }

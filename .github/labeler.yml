@@ -28,12 +28,9 @@
   - "NOTICE-binary"
   - "codecov.yml"
   - "dev/**/*"
-  - "style/**/*"
+  - "tools/**/*"
 
 "type:build":
-  - ".dockerignore"
-  - ".rat-excludes"
-  - ".scalafmt"
   - "**/*pom.xml"
   - "amoro-ams/dist/**/*"
   - "docker/**/*"
@@ -47,8 +44,8 @@
   - "amoro-core/**/*"
 
 "module:ams-server":
-  - "amoro-ams/api/**/*"
-  - "amoro-ams/server/**/*"
+  - "amoro-ams/amoro-ams-api/**/*"
+  - "amoro-ams/amoro-ams-server/**/*"
 
 "module:ams-dashboard":
   - "amoro-ams/amoro-ams-dashboard/**/*"

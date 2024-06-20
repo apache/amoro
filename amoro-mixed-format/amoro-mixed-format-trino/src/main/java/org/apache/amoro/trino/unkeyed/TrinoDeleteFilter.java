@@ -22,9 +22,9 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList.toImmutableList;
 import static org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet.toImmutableSet;
 
+import io.trino.plugin.iceberg.IcebergColumnHandle;
 import org.apache.amoro.io.reader.DeleteFilter;
 import org.apache.amoro.trino.delete.TrinoRow;
-import io.trino.plugin.iceberg.IcebergColumnHandle;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
@@ -38,8 +38,8 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Iceberg original TrinoDeleteFilter has some problems for mixed-format table, such as iceberg version, table
- * type.
+ * Iceberg original TrinoDeleteFilter has some problems for mixed-format table, such as iceberg
+ * version, table type.
  */
 public class TrinoDeleteFilter extends DeleteFilter<TrinoRow> {
   private final FileIO fileIO;

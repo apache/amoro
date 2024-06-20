@@ -173,7 +173,7 @@ export default {
   remove: 'Remove',
   edit: 'Edit',
   deleteCatalogModalTitle: 'Remove this catalog？',
-  cannotDeleteModalTitle: "Can't remove this catalog.",
+  cannotDeleteModalTitle: 'Can\'t remove this catalog.',
   cannotDeleteModalContent: 'This catalog has been used.',
   success: 'Success',
   optimzeGroup: 'Optimize Group',
@@ -184,7 +184,7 @@ export default {
   invalidInput: 'Invalid input',
   addgroup: 'Add Group',
   editgroup: 'Edit Group',
-  cannotDeleteGroupModalTitle: "Can't remove this group.",
+  cannotDeleteGroupModalTitle: 'Can\'t remove this group.',
   cannotDeleteGroupModalContent: 'This group has been used.',
   deleteGroupModalTitle: 'Remove this group',
   processId: 'Process ID',
@@ -202,5 +202,5 @@ export default {
   nothingToShow: 'Nothing to show',
   filterBranchesOrTags: 'Filter branches/tags',
   findATag: 'Find a tag',
-  fileSearchPlaceholder: 'Filter partitions'
+  fileSearchPlaceholder: 'Filter partitions',
 }

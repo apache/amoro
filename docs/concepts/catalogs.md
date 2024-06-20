@@ -8,6 +8,22 @@ menu:
         parent: Concepts
         weight: 100
 ---
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
 # Catalogs
 
 ## Introduce multi-catalog
@@ -40,18 +56,7 @@ multi-catalog management functionality of AMS without introducing any Amoro depe
 
 Amoro v0.4 introduced the catalog management feature, where table creation is performed under a catalog. Users can create, edit, and delete catalogs
 in the catalogs module, which requires configuration of metastore, table format, and environment information upon creation. For more information,
-please refer to the documentation: [Managing catalogs](../managing-catalogs/)
-
-In practice, it is recommended to create a catalog as follows:
-
-- If you want to collaborate with HMS, it is recommended to choose Hive as the `Metastore`, and choose Mixed-Hive or Iceberg as the `Format`
-according to your needs.
-- If you want to use the Mixed-Iceberg Format provided by Amoro, it is recommended to choose Amoro as the `Metastore`.
-
-Currently, only one table format can be selected when creating an Amoro catalog. This is mainly because the engine will parse the catalog into a
-specific data source when using it, and a one-to-one format is intuitive. On the other hand, this limitation can be bypassed when using HMS directly,
-such as the SessionCatalog implementation provided by the Iceberg community. In the future, Amoro will consider providing users with more flexible
-management methods.
+please refer to the documentation: [Managing catalogs](../managing-catalogs/).
 
 ## Future work
 

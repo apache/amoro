@@ -137,6 +137,12 @@ jvmOptions: ~
 ## AMS configurations files
 ##
 amoroConf:
+  ## AMS Dashboard username and password
+  ##
+  ams:
+    adminUsername: admin
+    adminPassword: admin
+
   ## AMS database properties, default value is derby. For production environment, suggest to use mysql
   ##
   database:
@@ -255,12 +261,12 @@ optimizer:
     enabled: true
     properties:
       namespace: "default"
-      kube-config-path: "～/.kube/config"
+      kube-config-path: "~/.kube/config"
       image: "apache/amoro:latest"
       pullPolicy: "IfNotPresent"
   extra: []
 
-## Configure the plugin that allows you to access the metric reporters and events listeners.
+## Configure the plugin that allows you to access the metric reporters and event listeners.
 ##
 plugin:
   ##

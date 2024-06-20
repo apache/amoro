@@ -19,15 +19,15 @@
 package org.apache.amoro.trino;
 
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.io.AuthenticatedFileIO;
+import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.op.UpdatePartitionProperties;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
-import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.BasicUnkeyedTable;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MetadataColumns;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableBuilder;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;

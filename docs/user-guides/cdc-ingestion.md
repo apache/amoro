@@ -8,6 +8,22 @@ menu:
         parent: User Guides
         weight: 400
 ---
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
 # CDC Ingestion
 CDC stands for Change Data Capture, which is a broad concept, as long as it can capture the change data, it can be called CDC. [Flink CDC](https://github.com/ververica/flink-cdc-connectors) is a Log message-based data capture tool, all the inventory and incremental data can be captured. Taking MySQL as an example, it can easily capture Binlog data through Debezium and process the calculations in real time to send them to the data lake. The data lake can then be queried by other engines.
 
@@ -314,18 +330,18 @@ Please add [Flink Connector MySQL CDC](https://mvnrepository.com/artifact/com.ve
 
 ```java
 import org.apache.amoro.flink.InternalCatalogBuilder;
-import org.apache.amoro.flink.table.AmoroTableLoader;
-import org.apache.amoro.flink.util.AmoroUtils;
+import org.apache.amoro.flink.table.MixedFormatTableLoader;
+import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.flink.write.FlinkSink;
 import org.apache.amoro.table.TableIdentifier;
-import com.ververica.cdc.connectors.mysql.source.MySqlSource;
-import com.ververica.cdc.connectors.mysql.table.MySqlDeserializationConverterFactory;
-import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
-import com.ververica.cdc.debezium.table.MetadataConverter;
-import com.ververica.cdc.debezium.table.RowDataDebeziumDeserializeSchema;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.cdc.connectors.mysql.source.MySqlSource;
+import org.apache.flink.cdc.connectors.mysql.table.MySqlDeserializationConverterFactory;
+import org.apache.flink.cdc.debezium.DebeziumDeserializationSchema;
+import org.apache.flink.cdc.debezium.table.MetadataConverter;
+import org.apache.flink.cdc.debezium.table.RowDataDebeziumDeserializeSchema;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
@@ -344,18 +360,18 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.ververica.cdc.connectors.mysql.table.MySqlReadableMetadata.DATABASE_NAME;
-import static com.ververica.cdc.connectors.mysql.table.MySqlReadableMetadata.TABLE_NAME;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.flink.cdc.connectors.mysql.table.MySqlReadableMetadata.DATABASE_NAME;
+import static org.apache.flink.cdc.connectors.mysql.table.MySqlReadableMetadata.TABLE_NAME;
 
-public class MySqlCDC2AmoroExample {
+public class MySqlCDC2MixedIcebergExample {
     public static void main(String[] args) throws Exception {
         List<Tuple2<ObjectPath, ResolvedCatalogTable>> pathAndTable = initSourceTables();
         Map<String, RowDataDebeziumDeserializeSchema> debeziumDeserializeSchemas = getDebeziumDeserializeSchemas(
                 pathAndTable);
         MySqlSource<RowData> mySqlSource = MySqlSource.<RowData>builder()
                 .hostname("yourHostname")
-                .port(yourPort)
+                .port(3306)
                 .databaseList("test_db")
                 // setting up tables to be captured
                 .tableList("test_db.user", "test_db.product")
@@ -389,12 +405,12 @@ public class MySqlCDC2AmoroExample {
         for (Map.Entry<String, TableSchema> entry : sinkTableSchemas.entrySet()) {
             TableIdentifier tableId =
                     TableIdentifier.of("yourCatalogName", "yourDatabaseName", entry.getKey());
-            AmoroTableLoader tableLoader = AmoroTableLoader.of(tableId, catalogBuilder);
+            MixedFormatTableLoader tableLoader = MixedFormatTableLoader.of(tableId, catalogBuilder);
 
             FlinkSink.forRowData(process.getSideOutput(new OutputTag<RowData>(entry.getKey()) {
                     }))
                     .flinkSchema(entry.getValue())
-                    .table(AmoroUtils.loadAmoroTable(tableLoader))
+                    .table(MixedFormatUtils.loadMixedTable(tableLoader))
                     .tableLoader(tableLoader).build();
         }
 

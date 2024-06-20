@@ -23,14 +23,14 @@ import org.apache.amoro.io.writer.GenericBaseTaskWriter;
 import org.apache.amoro.io.writer.GenericChangeTaskWriter;
 import org.apache.amoro.io.writer.GenericTaskWriters;
 import org.apache.amoro.io.writer.SortedPosDeleteWriter;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 
 import java.io.IOException;
 import java.time.LocalDateTime;

@@ -117,7 +117,7 @@ tests:
             valueFrom:
               secretKeyRef:
                 name: test
-                key: username
+                key: DatabaseUsername
       - contains:
           path: spec.template.spec.containers[?(@.name == "amoro-ams")].env
           content:
@@ -125,7 +125,7 @@ tests:
             valueFrom:
               secretKeyRef:
                 name: test
-                key: password
+                key: DatabasePassword
   - it: Amoro Deployment should add env if database type is set to postgres
     template: amoro-deployment.yaml
     set:
@@ -141,7 +141,7 @@ tests:
             valueFrom:
               secretKeyRef:
                 name: test
-                key: username
+                key: DatabaseUsername
       - contains:
           path: spec.template.spec.containers[?(@.name == "amoro-ams")].env
           content:
@@ -149,7 +149,7 @@ tests:
             valueFrom:
               secretKeyRef:
                 name: test
-                key: password
+                key: DatabasePassword
   - it: Amoro Deployment should add env if set
     template: amoro-deployment.yaml
     set:

@@ -14,43 +14,14 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- /-->
-
-<template>
-  <div :class="{'side-bar-collapsed': collapsed}" class="side-bar">
-    <div :class="{'logo-collapsed': collapsed}" @mouseenter="toggleTablesMenu(false)" @click="viewIntroduce" class="logo g-flex-ae">
-      <img src="../assets/images/logo1.svg" class="logo-img" alt="">
-      <img v-show="!collapsed" src="../assets/images/arctic-dashboard1.svg" class="arctic-name" alt="">
-    </div>
-    <a-menu
-      v-model:selectedKeys="selectedKeys"
-      mode="inline"
-      theme="dark"
-      :inline-collapsed="collapsed"
-    >
-      <a-menu-item v-for="item in menuList" :key="item.key" @click="navClick(item)" @mouseenter="mouseenter(item)" :class="{'active-color': (store.isShowTablesMenu && item.key === 'tables'), 'table-item-tab': item.key === 'tables'}">
-        <template #icon>
-          <svg-icon :iconClass="item.icon" class="svg-icon" />
-        </template>
-        <span>{{ $t(item.title) }}</span>
-      </a-menu-item>
-    </a-menu>
-    <a-button type="link" @click="toggleCollapsed" class="toggle-btn">
-      <MenuUnfoldOutlined v-if="collapsed" />
-      <MenuFoldOutlined v-else />
-    </a-button>
-    <div @click.self="toggleTablesMenu(false)" v-if="store.isShowTablesMenu && !hasToken" @mouseleave="toggleTablesMenu(false)" @mouseenter="toggleTablesMenu(true)" :class="{'collapsed-sub-menu': collapsed}" class="tables-menu-wrap">
-      <TableMenu @goCreatePage="goCreatePage" />
-    </div>
-  </div>
-</template>
+ / -->
 
 <script lang="ts">
 import { computed, defineComponent, nextTick, reactive, ref, toRefs, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import useStore from '@/store/index'
 import TableMenu from '@/components/tables-sub-menu/TablesMenu.vue'
-import { useI18n } from 'vue-i18n'
 import { getQueryString } from '@/utils'
 
 interface MenuItem {
@@ -64,7 +35,7 @@ export default defineComponent({
   components: {
     TableMenu,
   },
-  setup () {
+  setup() {
     const { t } = useI18n()
     const router = useRouter()
     const route = useRoute()
@@ -72,7 +43,7 @@ export default defineComponent({
 
     const state = reactive({
       collapsed: false,
-      selectedKeys: [] as string[]
+      selectedKeys: [] as string[],
     })
     const hasToken = computed(() => {
       return !!(getQueryString('token') || '')
@@ -83,35 +54,35 @@ export default defineComponent({
         {
           key: 'tables',
           title: t('tables'),
-          icon: 'TableOutlined'
-        }
+          icon: 'TableOutlined',
+        },
       ]
-      const allMenu : MenuItem[] = [
+      const allMenu: MenuItem[] = [
         {
           key: 'tables',
           title: t('tables'),
-          icon: 'tables'
+          icon: 'tables',
         },
         {
           key: 'catalogs',
           title: t('catalogs'),
-          icon: 'catalogs'
+          icon: 'catalogs',
         },
         {
           key: 'optimizing',
           title: t('Optimizing'),
-          icon: 'optimizers'
+          icon: 'optimizers',
         },
         {
           key: 'terminal',
           title: t('terminal'),
-          icon: 'terminal'
+          icon: 'terminal',
         },
         {
           key: 'settings',
           title: t('settings'),
-          icon: 'settings'
-        }
+          icon: 'settings',
+        },
         // {
         //   key: 'resource',
         //   title: t('resource'),
@@ -139,7 +110,7 @@ export default defineComponent({
       }, 300)
     }
 
-    const navClick = (item:MenuItem) => {
+    const navClick = (item: MenuItem) => {
       if (item.key === 'tables') {
         nextTick(() => {
           setCurMenu()
@@ -147,25 +118,25 @@ export default defineComponent({
         return
       }
       router.replace({
-        path: `/${item.key}`
+        path: `/${item.key}`,
       })
       nextTick(() => {
         setCurMenu()
       })
     }
 
-    const mouseenter = (item:MenuItem) => {
+    const mouseenter = (item: MenuItem) => {
       toggleTablesMenu(item.key === 'tables')
     }
 
     const goCreatePage = () => {
       toggleTablesMenu(false)
       router.push({
-        path: '/tables/create'
+        path: '/tables/create',
       })
     }
 
-    const toggleTablesMenu = (flag = false) => {
+    function toggleTablesMenu(flag = false) {
       if (hasToken.value) {
         return
       }
@@ -178,7 +149,7 @@ export default defineComponent({
 
     const viewIntroduce = () => {
       router.push({
-        path: '/introduce'
+        path: '/introduce',
       })
     }
 
@@ -192,11 +163,40 @@ export default defineComponent({
       store,
       toggleTablesMenu,
       goCreatePage,
-      viewIntroduce
+      viewIntroduce,
     }
-  }
+  },
 })
 </script>
+
+<template>
+  <div :class="{ 'side-bar-collapsed': collapsed }" class="side-bar">
+    <div :class="{ 'logo-collapsed': collapsed }" class="logo g-flex-ae" @mouseenter="toggleTablesMenu(false)" @click="viewIntroduce">
+      <img src="../assets/images/logo1.svg" class="logo-img" alt="">
+      <img v-show="!collapsed" src="../assets/images/arctic-dashboard1.svg" class="arctic-name" alt="">
+    </div>
+    <a-menu
+      v-model:selectedKeys="selectedKeys"
+      mode="inline"
+      theme="dark"
+      :inline-collapsed="collapsed"
+    >
+      <a-menu-item v-for="item in menuList" :key="item.key" :class="{ 'active-color': (store.isShowTablesMenu && item.key === 'tables'), 'table-item-tab': item.key === 'tables' }" @click="navClick(item)" @mouseenter="mouseenter(item)">
+        <template #icon>
+          <svg-icon :icon-class="item.icon" class="svg-icon" />
+        </template>
+        <span>{{ $t(item.title) }}</span>
+      </a-menu-item>
+    </a-menu>
+    <a-button type="link" class="toggle-btn" @click="toggleCollapsed">
+      <MenuUnfoldOutlined v-if="collapsed" />
+      <MenuFoldOutlined v-else />
+    </a-button>
+    <div v-if="store.isShowTablesMenu && !hasToken" :class="{ 'collapsed-sub-menu': collapsed }" class="tables-menu-wrap" @click.self="toggleTablesMenu(false)" @mouseleave="toggleTablesMenu(false)" @mouseenter="toggleTablesMenu(true)">
+      <TableMenu @go-create-page="goCreatePage" />
+    </div>
+  </div>
+</template>
 
 <style lang="less" scoped>
   .side-bar {

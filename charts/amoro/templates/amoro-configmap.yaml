@@ -40,8 +40,6 @@ data:
   ## Helm chart provided Amoro configurations
   config.yaml: |
     ams:
-      admin-username: admin
-      admin-password: admin
       server-bind-host: "0.0.0.0"
       server-expose-host: "127.0.0.1"
 
@@ -94,10 +92,6 @@ data:
         type: {{ .Values.amoroConf.database.type }}
         jdbc-driver-class: {{ .Values.amoroConf.database.driver | quote }}
         url: {{ .Values.amoroConf.database.url }}
-        {{- if or (eq .Values.amoroConf.database.type "mysql") (eq .Values.amoroConf.database.type "postgres") }}
-        username: {{ .Values.amoroConf.database.username | quote }}
-        password: {{ .Values.amoroConf.database.password | quote }}
-        {{- end }}
         connection-pool-max-total: 20
         connection-pool-max-idle: 16
         connection-pool-max-wait-millis: 1000

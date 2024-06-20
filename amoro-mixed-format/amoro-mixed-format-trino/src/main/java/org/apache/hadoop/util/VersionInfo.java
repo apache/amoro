@@ -178,5 +178,4 @@ public class VersionInfo {
   public static String getProtocVersion() {
     return COMMON_VERSION_INFO._getProtocVersion();
   }
-
 }

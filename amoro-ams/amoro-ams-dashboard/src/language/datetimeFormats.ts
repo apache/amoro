@@ -16,10 +16,14 @@
   * limitations under the License.
   */
 
-export const datetimeFormats = {
+import type { I18nOptions } from 'vue-i18n'
+
+export const datetimeFormats: I18nOptions['datetimeFormats'] = {
   en: {
     short: {
-      year: 'numeric', month: '2-digit', day: '2-digit'
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
     },
     long: {
       year: 'numeric',
@@ -28,12 +32,14 @@ export const datetimeFormats = {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      hour12: false
-    }
+      hour12: false,
+    },
   },
   zh: {
     short: {
-      year: 'numeric', month: '2-digit', day: '2-digit'
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
     },
     long: {
       year: 'numeric',
@@ -42,7 +48,7 @@ export const datetimeFormats = {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      hour12: false
-    }
-  }
+      hour12: false,
+    },
+  },
 }

@@ -130,8 +130,6 @@ export default [
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": true }),
   },
-
-
   {
     url: '/mock/ams/v1/catalog/metastore/types',
     method: 'get',
@@ -161,5 +159,35 @@ export default [
         }
       ]
     }),
-  }
+  },
+  {
+    url: '/mock/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/optimizing-processes/:processesId/tasks',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": [
+        {
+          "value": "ams",
+          "display": "Arctic Metastore"
+        },
+        {
+          "value": "hive",
+          "display": "Hive Metastore"
+        },
+        {
+          "value": "hadoop",
+          "display": "Hadoop"
+        },
+        {
+          "value": "glue",
+          "display": "Glue"
+        },
+        {
+          "value": "custom",
+          "display": "Custom"
+        }
+      ]
+    }),
+  },
 ]

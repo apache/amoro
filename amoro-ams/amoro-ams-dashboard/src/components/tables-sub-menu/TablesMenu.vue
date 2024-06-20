@@ -14,84 +14,15 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- /-->
-
-<template>
-  <div class="tables-menu">
-    <div class="select-catalog g-flex-ac">
-      <span class="label">{{$t('catalog')}}</span>
-      <a-select
-        v-model:value="curCatalog"
-        :options="catalogOptions"
-        @change="catalogChange"
-        :loading="catalogLoading"
-        :getPopupContainer="getPopupContainer"
-        class="theme-dark"
-        />
-    </div>
-    <div class="tables-wrap g-flex">
-      <div class="database-list">
-        <div class="list-wrap">
-          <div class="add g-flex-jsb">
-            <span class="label">{{$t('database', 2)}}</span>
-            <!-- <plus-outlined @click="addDatabase" class="icon" /> -->
-          </div>
-          <div class="filter-wrap">
-            <a-input-search
-              v-model:value="DBSearchInput"
-              :placeholder="placeholder.filterDBPh"
-              @change="() => handleSearch('db')"
-              class="theme-dark"
-            >
-              <template #prefix>
-                <SearchOutlined />
-              </template>
-              <template #suffix v-if="DBSearchInput">
-                <CloseCircleOutlined @click="clearSearch('db')" class="input-clear-icon" />
-              </template>
-            </a-input-search>
-          </div>
-          <u-loading v-if="loading" />
-          <virtual-recycle-scroller :loading="loading" :items="databaseList" :activeItem="database" :itemSize="40" @handleClickTable="handleClickDb" iconName="database" />
-        </div>
-      </div>
-      <div class="table-list">
-        <div class="list-wrap">
-          <div class="add g-flex-jsb">
-            <span class="label">{{$t('table', 2)}}</span>
-            <!-- <plus-outlined @click="createTable" class="icon" /> -->
-          </div>
-          <div class="filter-wrap">
-            <a-input-search
-              v-model:value="tableSearchInput"
-              :placeholder="placeholder.filterTablePh"
-              @change="() => handleSearch('table')"
-              class="theme-dark"
-            >
-              <template #prefix>
-                <SearchOutlined />
-              </template>
-              <template #suffix v-if="tableSearchInput">
-                <CloseCircleOutlined @click="clearSearch('table')" class="input-clear-icon" />
-              </template>
-            </a-input-search>
-          </div>
-          <u-loading v-if="tableLoading" />
-          <virtual-recycle-scroller :loading="tableLoading" :items="tableList" :activeItem="tableName" :itemSize="40" @handleClickTable="handleClickTable" iconName="tableOutlined" />
-        </div>
-      </div>
-    </div>
-  </div>
-  <createDB-modal :visible="showCreateDBModal" :catalogOptions="catalogOptions" @cancel="cancel"></createDB-modal>
-</template>
+ / -->
 
 <script lang="ts">
-import { defineComponent, onBeforeMount, reactive, toRefs, computed } from 'vue'
-import CreateDBModal from './CreateDB.vue'
+import { computed, defineComponent, onBeforeMount, reactive, toRefs } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import CreateDBModal from './CreateDB.vue'
 import useStore from '@/store/index'
 import { getCatalogList, getDatabaseList, getTableList } from '@/services/table.service'
-import { ICatalogItem, ILableAndValue, IMap } from '@/types/common.type'
+import type { ICatalogItem, ILableAndValue, IMap } from '@/types/common.type'
 import { debounce } from '@/utils/index'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import virtualRecycleScroller from '@/components/VirtualRecycleScroller.vue'
@@ -109,7 +40,7 @@ export default defineComponent({
   name: 'TablesMenu',
   components: {
     CreateDBModal,
-    virtualRecycleScroller,
+    VirtualRecycleScroller: virtualRecycleScroller,
   },
   emits: ['goCreatePage'],
   setup(_, { emit }) {
@@ -131,7 +62,7 @@ export default defineComponent({
       databaseList: [] as IMap<string>[],
       tableList: [] as IMap<string>[],
       allDatabaseListLoaded: [] as IMap<string>[],
-      allTableListLoaded: [] as IMap<string>[]
+      allTableListLoaded: [] as IMap<string>[],
     })
     const storageTableKey = 'easylake-menu-catalog-db-table'
     const storageCataDBTable = JSON.parse(localStorage.getItem(storageTableKey) || '{}')
@@ -156,28 +87,34 @@ export default defineComponent({
 
     const placeholder = reactive(usePlaceholder())
 
-    const handleSearch = (type: string) => {
+    function handleSearch(type: string) {
       type === 'table' ? getSearchTableList() : getSearchDBList()
     }
-    const clearSearch = (type: string) => {
+
+    function clearSearch(type: string) {
       if (type === 'table') {
         state.tableSearchInput = ''
         getSearchTableList()
-      } else {
+      }
+      else {
         state.DBSearchInput = ''
         getSearchDBList()
       }
     }
 
-    const getSearchTableList = debounce(() => {
-      getAllTableList()
-    })
+    function getSearchTableList() {
+      debounce(() => {
+        getAllTableList()
+      })
+    }
 
-    const getSearchDBList = debounce(() => {
-      getAllDatabaseList(true)
-    })
+    function getSearchDBList() {
+      debounce(() => {
+        getAllDatabaseList(true)
+      })
+    }
 
-    const handleClickDb = (item: IDatabaseItem) => {
+    function handleClickDb(item: IDatabaseItem) {
       if (state.database === item.id) {
         return
       }
@@ -187,14 +124,14 @@ export default defineComponent({
       getAllTableList()
     }
 
-    const getPopupContainer = (triggerNode: Element) => {
+    function getPopupContainer(triggerNode: Element) {
       return triggerNode.parentNode
     }
 
-    const clickDatabase = () => {
-
+    function clickDatabase() {
     }
-    const catalogChange = (value: string) => {
+
+    function catalogChange(value: string) {
       state.curCatalog = value
       state.databaseList.length = 0
       state.tableList.length = 0
@@ -202,22 +139,24 @@ export default defineComponent({
       state.allTableListLoaded.length = 0
       getAllDatabaseList()
     }
-    const addDatabase = () => {
+
+    function addDatabase() {
       state.showCreateDBModal = true
     }
-    const cancel = () => {
+
+    function cancel() {
       state.showCreateDBModal = false
     }
-    const createTable = () => {
+    function createTable() {
       emit('goCreatePage')
     }
-    const handleClickTable = (item: IMap<string>) => {
+    function handleClickTable(item: IMap<string>) {
       state.tableName = item.label
       state.type = item.type
       localStorage.setItem(storageTableKey, JSON.stringify({
         catalog: state.curCatalog,
         database: state.database,
-        tableName: item.label
+        tableName: item.label,
       }))
       store.updateTablesMenu(false)
       const path = item.type === 'HIVE' ? '/hive-tables' : '/tables'
@@ -227,17 +166,17 @@ export default defineComponent({
           catalog: state.curCatalog,
           db: state.database,
           table: state.tableName,
-          type: state.type
-        }
+          type: state.type,
+        },
       }
-      if (route.path.indexOf('tables') > -1) {
+      if (route.path.includes('tables')) {
         router.replace(pathQuery)
         return
       }
       router.push(pathQuery)
     }
 
-    const getCatalogOps = () => {
+    function getCatalogOps() {
       state.catalogLoading = true
       getCatalogList().then((res: ICatalogItem[]) => {
         if (!res) {
@@ -245,7 +184,7 @@ export default defineComponent({
         }
         state.catalogOptions = (res || []).map((ele: ICatalogItem) => ({
           value: ele.catalogName,
-          label: ele.catalogName
+          label: ele.catalogName,
         }))
         if (state.catalogOptions.length) {
           const index = state.catalogOptions.findIndex(ele => ele.value === storageCataDBTable.catalog)
@@ -258,7 +197,7 @@ export default defineComponent({
       })
     }
 
-    const getAllDatabaseList = (isSearch = false) => {
+    function getAllDatabaseList(isSearch = false) {
       if (!state.curCatalog) {
         return
       }
@@ -270,11 +209,11 @@ export default defineComponent({
       state.loading = true
       getDatabaseList({
         catalog: state.curCatalog,
-        keywords: state.DBSearchInput
+        keywords: state.DBSearchInput,
       }).then((res: string[]) => {
         state.databaseList = (res || []).map((ele: string) => ({
           id: ele,
-          label: ele
+          label: ele,
         }))
         if (!isSearch) {
           state.allDatabaseListLoaded = [...state.databaseList]
@@ -290,7 +229,7 @@ export default defineComponent({
       })
     }
 
-    const getAllTableList = () => {
+    function getAllTableList() {
       if (!state.curCatalog || !state.database) {
         return
       }
@@ -304,12 +243,12 @@ export default defineComponent({
       getTableList({
         catalog: state.curCatalog,
         db: state.database,
-        keywords: state.tableSearchInput
+        keywords: state.tableSearchInput,
       }).then((res: ITableItem[]) => {
         state.tableList = (res || []).map((ele: ITableItem) => ({
           id: ele.name,
           label: ele.name,
-          type: ele.type
+          type: ele.type,
         }))
         if (state.tableSearchInput === '') {
           state.allTableListLoaded = [...state.tableList]
@@ -338,11 +277,80 @@ export default defineComponent({
       createTable,
       handleClickTable,
       handleSearch,
-      clearSearch
+      clearSearch,
     }
-  }
+  },
 })
 </script>
+
+<template>
+  <div class="tables-menu">
+    <div class="select-catalog g-flex-ac">
+      <span class="label">{{ $t('catalog') }}</span>
+      <a-select
+        v-model:value="curCatalog"
+        :options="catalogOptions"
+        :loading="catalogLoading"
+        :get-popup-container="getPopupContainer"
+        class="theme-dark"
+        @change="catalogChange"
+      />
+    </div>
+    <div class="tables-wrap g-flex">
+      <div class="database-list">
+        <div class="list-wrap">
+          <div class="add g-flex-jsb">
+            <span class="label">{{ $t('database', 2) }}</span>
+            <!-- <plus-outlined @click="addDatabase" class="icon" /> -->
+          </div>
+          <div class="filter-wrap">
+            <a-input-search
+              v-model:value="DBSearchInput"
+              :placeholder="placeholder.filterDBPh"
+              class="theme-dark"
+              @change="() => handleSearch('db')"
+            >
+              <template #prefix>
+                <SearchOutlined />
+              </template>
+              <template v-if="DBSearchInput" #suffix>
+                <CloseCircleOutlined class="input-clear-icon" @click="clearSearch('db')" />
+              </template>
+            </a-input-search>
+          </div>
+          <u-loading v-if="loading" />
+          <VirtualRecycleScroller :loading="loading" :items="databaseList" :active-item="database" :item-size="40" icon-name="database" @handle-click-table="handleClickDb" />
+        </div>
+      </div>
+      <div class="table-list">
+        <div class="list-wrap">
+          <div class="add g-flex-jsb">
+            <span class="label">{{ $t('table', 2) }}</span>
+            <!-- <plus-outlined @click="createTable" class="icon" /> -->
+          </div>
+          <div class="filter-wrap">
+            <a-input-search
+              v-model:value="tableSearchInput"
+              :placeholder="placeholder.filterTablePh"
+              class="theme-dark"
+              @change="() => handleSearch('table')"
+            >
+              <template #prefix>
+                <SearchOutlined />
+              </template>
+              <template v-if="tableSearchInput" #suffix>
+                <CloseCircleOutlined class="input-clear-icon" @click="clearSearch('table')" />
+              </template>
+            </a-input-search>
+          </div>
+          <u-loading v-if="tableLoading" />
+          <VirtualRecycleScroller :loading="tableLoading" :items="tableList" :active-item="tableName" :item-size="40" icon-name="tableOutlined" @handle-click-table="handleClickTable" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <CreateDBModal :visible="showCreateDBModal" :catalog-options="catalogOptions" @cancel="cancel" />
+</template>
 
 <style lang="less" scoped>
   .tables-menu {

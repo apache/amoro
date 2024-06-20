@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,7 +14,23 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
+/ -->
+
+<script lang="ts" setup>
+import { shallowReactive } from 'vue'
+import { useI18n } from 'vue-i18n'
+import type { DetailColumnItem } from '@/types/common.type'
+
+const props = defineProps<{ partitionFields: DetailColumnItem[], loading: boolean }>()
+
+const { t } = useI18n()
+
+const partitionFieldsColumns = shallowReactive([
+  { dataIndex: 'field', title: t('field'), ellipsis: true },
+  { dataIndex: 'type', title: t('type'), ellipsis: true },
+  { dataIndex: 'comment', title: t('description'), ellipsis: true },
+])
+</script>
 
 <template>
   <div class="partition-field-wrap">
@@ -25,23 +40,6 @@ limitations under the License.
       :columns="partitionFieldsColumns"
       :data-source="props.partitionFields"
       :pagination="false"
-      >
-    </a-table>
+    />
   </div>
 </template>
-<script lang="ts" setup>
-import { shallowReactive } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { DetailColumnItem } from '@/types/common.type'
-
-const { t } = useI18n()
-
-const props = defineProps<{ partitionFields: DetailColumnItem[], loading: boolean }>()
-
-const partitionFieldsColumns = shallowReactive([
-  { dataIndex: 'field', title: t('field'), ellipsis: true },
-  { dataIndex: 'type', title: t('type'), ellipsis: true },
-  { dataIndex: 'comment', title: t('description'), ellipsis: true }
-])
-
-</script>

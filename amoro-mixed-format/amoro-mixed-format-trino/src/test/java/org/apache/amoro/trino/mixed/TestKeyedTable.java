@@ -21,20 +21,22 @@ package org.apache.amoro.trino.mixed;
 import static org.apache.amoro.MockAmoroManagementServer.TEST_CATALOG_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.trino.testing.QueryRunner;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TestedCatalogs;
 import org.apache.amoro.catalog.CatalogTestHelper;
-import io.trino.testing.QueryRunner;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
 public class TestKeyedTable extends TableTestBaseWithInitDataForTrino {
 
-  private static final String CATALOG_DATABASE_NAME = MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX + "test_db.";
+  private static final String CATALOG_DATABASE_NAME =
+      MixedFormatQueryRunner.MIXED_FORMAT_CATALOG_PREFIX + "test_db.";
   private static final String PK_TABLE_FULL_NAME = CATALOG_DATABASE_NAME + "test_pk_table";
   private static final String PK_TABLE_BASE_NAME = CATALOG_DATABASE_NAME + "\"test_pk_table#base\"";
-  private static final String PK_TABLE_CHANGE_NAME = CATALOG_DATABASE_NAME + "\"test_pk_table#change\"";
+  private static final String PK_TABLE_CHANGE_NAME =
+      CATALOG_DATABASE_NAME + "\"test_pk_table#change\"";
 
   @Override
   protected QueryRunner createQueryRunner() throws Exception {
@@ -88,7 +90,9 @@ public class TestKeyedTable extends TableTestBaseWithInitDataForTrino {
   @Test
   public void baseQueryWhenTableNameContainCatalogAndDataBase() {
     assertQuery(
-        "select id from " + CATALOG_DATABASE_NAME + "\"test_mixed_format_catalog.test_db.test_pk_table#base\"",
+        "select id from "
+            + CATALOG_DATABASE_NAME
+            + "\"test_mixed_format_catalog.test_db.test_pk_table#base\"",
         "VALUES 1, 2, 3");
   }
 
@@ -96,7 +100,7 @@ public class TestKeyedTable extends TableTestBaseWithInitDataForTrino {
   public void baseQueryWhenTableNameContainDataBase() {
     assertQuery(
         "select id from " + CATALOG_DATABASE_NAME + "\"test_db.test_pk_table#base\"",
-            "VALUES 1, 2, 3");
+        "VALUES 1, 2, 3");
   }
 
   @Test
@@ -111,7 +115,9 @@ public class TestKeyedTable extends TableTestBaseWithInitDataForTrino {
   @Test
   public void changeQueryWhenTableNameContainCatalogAndDataBase() {
     assertQuery(
-        "select * from " + CATALOG_DATABASE_NAME + "\"test_mixed_format_catalog.test_db.test_pk_table#change\"",
+        "select * from "
+            + CATALOG_DATABASE_NAME
+            + "\"test_mixed_format_catalog.test_db.test_pk_table#change\"",
         "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT'),"
             + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT'),"
             + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
