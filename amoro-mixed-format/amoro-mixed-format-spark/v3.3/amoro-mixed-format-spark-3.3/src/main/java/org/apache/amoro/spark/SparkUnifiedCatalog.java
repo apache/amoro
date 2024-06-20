@@ -36,21 +36,6 @@ public class SparkUnifiedCatalog extends SparkUnifiedCatalogBase
     implements TableCatalog, SupportsNamespaces, ProcedureCatalog, FunctionCatalog {
 
   /**
-   * Return a default namespace for the catalog.
-   *
-   * <p>When this catalog is set as the current catalog, the namespace returned by this method will
-   * be set as the current namespace.
-   *
-   * <p>The namespace returned by this method is not required to exist.
-   *
-   * @return a multi-part namespace
-   */
-  @Override
-  public String[] defaultNamespace() {
-    return super.defaultNamespace();
-  }
-
-  /**
    * List the functions in a namespace from the catalog.
    *
    * <p>If there are no functions in the namespace, implementations should return an empty array.
@@ -151,7 +136,7 @@ public class SparkUnifiedCatalog extends SparkUnifiedCatalogBase
   public Table loadTable(Identifier ident, long timestamp) throws NoSuchTableException {
     TableCatalog tableCatalog = tableCatalog(TableFormat.ICEBERG);
     if (tableCatalog == null) {
-      throw new UnsupportedOperationException("Doesn't support iceberg table catalog");
+      throw new UnsupportedOperationException("Only support iceberg format now!");
     }
     return tableCatalog.loadTable(ident, timestamp);
   }

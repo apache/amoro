@@ -21,8 +21,10 @@ package org.apache.amoro.spark;
 import org.apache.amoro.TableFormat;
 import org.apache.iceberg.spark.functions.SparkFunctions;
 import org.apache.spark.sql.catalyst.analysis.NoSuchFunctionException;
+import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
+import org.apache.spark.sql.catalyst.analysis.NonEmptyNamespaceException;
 import org.apache.spark.sql.connector.catalog.FunctionCatalog;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
@@ -75,6 +77,21 @@ public class SparkUnifiedSessionCatalog<
     }
   }
 
+  /**
+   * List the functions in a namespace from the catalog.
+   *
+   * <p>If there are no functions in the namespace, implementations should return an empty array.
+   *
+   * @param namespace a multi-part namespace
+   * @return an array of Identifiers for functions
+   * @throws NoSuchNamespaceException If the namespace does not exist (optional).
+   */
+  @Override
+  public Identifier[] listFunctions(String[] namespace) throws NoSuchNamespaceException {
+    SparkUnifiedCatalog catalog = (SparkUnifiedCatalog) getTargetCatalog();
+    return catalog.listFunctions(namespace);
+  }
+
   @Override
   public UnboundFunction loadFunction(Identifier ident) throws NoSuchFunctionException {
     String[] namespace = ident.namespace();
@@ -102,5 +119,26 @@ public class SparkUnifiedSessionCatalog<
   public Procedure loadProcedure(Identifier ident) throws NoSuchProcedureException {
     SparkUnifiedCatalogBase catalog = (SparkUnifiedCatalogBase) getTargetCatalog();
     return catalog.loadProcedure(ident);
+  }
+
+  /**
+   * Drop a namespace from the catalog with cascade mode, recursively dropping all objects within
+   * the namespace if cascade is true.
+   *
+   * <p>If the catalog implementation does not support this operation, it may throw {@link
+   * UnsupportedOperationException}.
+   *
+   * @param namespace a multi-part namespace
+   * @param cascade When true, deletes all objects under the namespace
+   * @return true if the namespace was dropped
+   * @throws NoSuchNamespaceException If the namespace does not exist (optional)
+   * @throws NonEmptyNamespaceException If the namespace is non-empty and cascade is false
+   * @throws UnsupportedOperationException If drop is not a supported operation
+   */
+  @Override
+  public boolean dropNamespace(String[] namespace, boolean cascade)
+      throws NoSuchNamespaceException, NonEmptyNamespaceException {
+    SparkUnifiedCatalog catalog = (SparkUnifiedCatalog) getTargetCatalog();
+    return catalog.dropNamespace(namespace, cascade);
   }
 }

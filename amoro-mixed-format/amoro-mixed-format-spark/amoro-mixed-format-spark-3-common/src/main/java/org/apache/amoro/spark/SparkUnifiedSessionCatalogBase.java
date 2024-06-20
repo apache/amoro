@@ -27,26 +27,13 @@ import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.iceberg.catalog.Procedure;
 import org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog;
-import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 import java.util.Map;
-import java.util.ServiceLoader;
 
-public class SparkUnifiedSessionCatalogBase<T extends TableCatalog & SupportsNamespaces>
+public abstract class SparkUnifiedSessionCatalogBase<T extends TableCatalog & SupportsNamespaces>
     extends SessionCatalogBase<T> implements ProcedureCatalog {
 
   protected final Map<TableFormat, SparkTableFormat> tableFormats = Maps.newConcurrentMap();
-
-  @Override
-  protected TableCatalog buildTargetCatalog(String name, CaseInsensitiveStringMap options) {
-    SparkUnifiedCatalogBase sparkUnifiedCatalogBase = new SparkUnifiedCatalogBase();
-    sparkUnifiedCatalogBase.initialize(name, options);
-    ServiceLoader<SparkTableFormat> sparkTableFormats = ServiceLoader.load(SparkTableFormat.class);
-    for (SparkTableFormat format : sparkTableFormats) {
-      tableFormats.put(format.format(), format);
-    }
-    return sparkUnifiedCatalogBase;
-  }
 
   @Override
   protected boolean isManagedTable(Table table) {

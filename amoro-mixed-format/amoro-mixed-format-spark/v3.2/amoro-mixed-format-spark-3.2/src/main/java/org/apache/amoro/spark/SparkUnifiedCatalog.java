@@ -31,22 +31,6 @@ import org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog;
 /** @Auth: hzwangtao6 @Time: 2024/5/24 14:27 @Description: */
 public class SparkUnifiedCatalog extends SparkUnifiedCatalogBase
     implements TableCatalog, SupportsNamespaces, ProcedureCatalog, FunctionCatalog {
-
-  /**
-   * Return a default namespace for the catalog.
-   *
-   * <p>When this catalog is set as the current catalog, the namespace returned by this method will
-   * be set as the current namespace.
-   *
-   * <p>The namespace returned by this method is not required to exist.
-   *
-   * @return a multi-part namespace
-   */
-  @Override
-  public String[] defaultNamespace() {
-    return super.defaultNamespace();
-  }
-
   /**
    * List the functions in a namespace from the catalog.
    *
