@@ -212,11 +212,11 @@ Currently, there is only one reporter is available.
 
 #### Prometheus Exporter
 
-By enable the `prometheus` plugin, the AMS will start a prometheus http exporter server.
+By enable the `prometheus-exporter` plugin, the AMS will start a prometheus http exporter server.
 
 ```yaml
 metric-reporters:
-  - name: prometheus            # configs for prometheus exporter
+  - name: prometheus-exporter            # configs for prometheus exporter
     enabled: true
     properties:
        port: 9090                        # the port that the prometheus-exporter listens on.

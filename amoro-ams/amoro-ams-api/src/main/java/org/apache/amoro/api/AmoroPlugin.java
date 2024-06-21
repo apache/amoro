@@ -23,13 +23,6 @@ package org.apache.amoro.api;
  */
 public interface AmoroPlugin {
 
-  /**
-   * Get the plugin name. Besides, the plugin name should be unique and less than 15 characters in
-   * kubernetes. Because the plugin name will be used as the kubernetes service name which is hereby
-   * normatively defined as <a
-   * href="RFC-6335">https://datatracker.ietf.org/doc/html/rfc6335#section-5.1</a>
-   *
-   * @return plugin name
-   */
+  /** @return plugin name */
   String name();
 }

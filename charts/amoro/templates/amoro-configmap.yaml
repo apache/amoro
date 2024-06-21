@@ -30,12 +30,10 @@ data:
   ## Helm chart provided metric reporters configurations
   metric-reporters.yaml: |
     metric-reporters:
-     {{- range . }}
-      - name: {{ .name }}
-        enabled: {{ .enabled }}
+      - name: {{ .prometheusExporter.name }}
+        enabled: {{ .prometheusExporter.enabled }}
         properties:
-          {{ .properties | toYaml | nindent 10 | trim}}
-    {{- end }}
+          {{ .prometheusExporter.properties | toYaml | nindent 10 | trim }}
     {{- end }}
   ## Helm chart provided Amoro configurations
   config.yaml: |

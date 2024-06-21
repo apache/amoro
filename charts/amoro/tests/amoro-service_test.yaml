@@ -268,7 +268,7 @@ tests:
       fullnameOverride: test
       plugin:
         metricReporters:
-          - name: prometheus
+          - name: prometheus-exporter
             enabled: true
             properties:
               port: 7001
@@ -285,16 +285,16 @@ tests:
       - contains:
           path: spec.ports
           content:
-            name: prometheus
+            name: prometheus-exporter
             port: 7002
             targetPort: 7001
         documentSelector:
           path: metadata.name
-          value: test-prometheus
+          value: test-prometheus-exporter
       - isSubset:
           path: metadata.annotations
           content:
             prometheus.io/port: "7002"
         documentSelector:
           path: metadata.name
-          value: test-prometheus
+          value: test-prometheus-exporter

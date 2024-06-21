@@ -125,13 +125,14 @@ tests:
     set:
       plugin:
         metricReporters:
-          - name: prometheus
+          prometheusExporter:
+            name: prometheus-exporter
             enabled: true
-            properties:
-              port: 7001
+            port: 7001
+            properties: ~
     asserts:
       - matchRegex:
           path: data["metric-reporters.yaml"]
           pattern:
             |
-            - name: prometheus
+              name: prometheus-exporter
