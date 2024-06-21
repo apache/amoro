@@ -43,7 +43,8 @@ public class SparkUnifiedSessionCatalog<
     extends SparkUnifiedSessionCatalogBase<T> {
 
   @Override
-  public TableCatalog buildTargetCatalog(String name, CaseInsensitiveStringMap options) {
+  protected SparkUnifiedCatalogBase createUnifiedCatalog(
+      String name, CaseInsensitiveStringMap options) {
     SparkUnifiedCatalog sparkUnifiedCatalog = new SparkUnifiedCatalog();
     sparkUnifiedCatalog.initialize(name, options);
     return sparkUnifiedCatalog;
