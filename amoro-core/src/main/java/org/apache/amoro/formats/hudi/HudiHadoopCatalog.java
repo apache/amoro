@@ -87,7 +87,7 @@ public class HudiHadoopCatalog implements FormatCatalog {
   }
 
   @Override
-  public boolean exist(String database) {
+  public boolean databaseExists(String database) {
     return metaStore.doAs(
         () -> {
           FileSystem fs = fs();
@@ -96,7 +96,7 @@ public class HudiHadoopCatalog implements FormatCatalog {
   }
 
   @Override
-  public boolean exist(String database, String table) {
+  public boolean tableExists(String database, String table) {
     try {
       loadTableLocation(database, table);
       return true;
