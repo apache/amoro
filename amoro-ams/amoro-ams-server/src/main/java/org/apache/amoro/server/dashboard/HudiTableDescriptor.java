@@ -42,13 +42,20 @@ import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.utils.HudiTableUtil;
 import org.apache.avro.Schema;
+import org.apache.hudi.avro.model.HoodieClusteringGroup;
+import org.apache.hudi.avro.model.HoodieClusteringPlan;
+import org.apache.hudi.avro.model.HoodieClusteringStrategy;
 import org.apache.hudi.avro.model.HoodieCompactionOperation;
 import org.apache.hudi.avro.model.HoodieCompactionPlan;
+import org.apache.hudi.avro.model.HoodieCompactionStrategy;
+import org.apache.hudi.avro.model.HoodieRequestedReplaceMetadata;
+import org.apache.hudi.avro.model.HoodieSliceInfo;
 import org.apache.hudi.common.model.FileSlice;
 import org.apache.hudi.common.model.HoodieBaseFile;
 import org.apache.hudi.common.model.HoodieCommitMetadata;
 import org.apache.hudi.common.model.HoodieTableType;
 import org.apache.hudi.common.model.HoodieWriteStat;
+import org.apache.hudi.common.model.WriteOperationType;
 import org.apache.hudi.common.table.HoodieTableConfig;
 import org.apache.hudi.common.table.HoodieTableMetaClient;
 import org.apache.hudi.common.table.TableSchemaResolver;
@@ -384,31 +391,31 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     }
     long startTime = parseHoodieCommitTime(request.getStateTransitionTime());
     processInfo.setStartTime(startTime);
-
     Option<byte[]> detail = timeline.getInstantDetails(request);
-    HoodieCompactionPlan compactionPlan =
-        TimelineMetadataUtils.deserializeCompactionPlan(detail.get());
-    int inputFileCount = 0;
-    long inputFileSize = 0;
-    for (HoodieCompactionOperation operation : compactionPlan.getOperations()) {
-      if (StringUtils.nonEmpty(operation.getDataFilePath())) {
-        inputFileCount += 1;
-      }
-      inputFileCount += operation.getDeltaFilePaths().size();
-      inputFileSize += operation.getMetrics().getOrDefault("TOTAL_LOG_FILES_SIZE", 0.0);
+    if (!detail.isPresent()) {
+      return null;
     }
-    processInfo.setInputFiles(FilesStatistics.build(inputFileCount, inputFileSize));
-    int tasks = compactionPlan.getOperations().size();
-    processInfo.setTotalTasks(tasks);
-    processInfo.setSuccessTasks(tasks);
-    processInfo.setOptimizingType(OptimizingType.MINOR);
+    processInfo.setSummary(Maps.newHashMap());
+    if (HoodieTimeline.COMPACTION_ACTION.equals(request.getAction())) {
+      fillCompactProcessInfo(processInfo, detail.get());
+    } else if (HoodieTimeline.REPLACE_COMMIT_ACTION.equals(request.getAction())) {
+      processInfo = fillClusterProcessInfo(processInfo, detail.get());
+    } else {
+      return null;
+    }
+    if (processInfo == null) {
+      // replace commit is a insert_overwrite
+      return null;
+    }
 
     HoodieInstant commit =
         instantMap.get(instantTimestamp + "_" + HoodieInstant.State.COMPLETED.name());
 
     if (commit != null) {
+      processInfo.setSuccessTasks(processInfo.getTotalTasks());
       long commitTimestamp = parseHoodieCommitTime(commit.getStateTransitionTime());
       processInfo.setDuration(commitTimestamp - startTime);
+      processInfo.setFinishTime(commitTimestamp);
       processInfo.setStatus(OptimizingProcess.Status.SUCCESS);
       Option<byte[]> commitDetail = timeline.getInstantDetails(commit);
       HoodieCommitMetadata commitMetadata =
@@ -430,6 +437,63 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
       if (inf != null) {
         processInfo.setStatus(OptimizingProcess.Status.RUNNING);
       }
+    }
+    return processInfo;
+  }
+
+  private void fillCompactProcessInfo(OptimizingProcessInfo processInfo, byte[] requestDetails)
+      throws IOException {
+    HoodieCompactionPlan compactionPlan =
+        TimelineMetadataUtils.deserializeCompactionPlan(requestDetails);
+    int inputFileCount = 0;
+    long inputFileSize = 0;
+    for (HoodieCompactionOperation operation : compactionPlan.getOperations()) {
+      if (StringUtils.nonEmpty(operation.getDataFilePath())) {
+        inputFileCount += 1;
+      }
+      inputFileCount += operation.getDeltaFilePaths().size();
+      inputFileSize += operation.getMetrics().getOrDefault("TOTAL_LOG_FILES_SIZE", 0.0);
+    }
+    processInfo.setInputFiles(FilesStatistics.build(inputFileCount, inputFileSize));
+    int tasks = compactionPlan.getOperations().size();
+    processInfo.setTotalTasks(tasks);
+    HoodieCompactionStrategy strategy = compactionPlan.getStrategy();
+    if (strategy != null) {
+      processInfo.getSummary().put("strategy", strategy.getCompactorClassName());
+      processInfo.getSummary().putAll(strategy.getStrategyParams());
+    }
+    processInfo.setOptimizingType(OptimizingType.MINOR);
+  }
+
+  private OptimizingProcessInfo fillClusterProcessInfo(
+      OptimizingProcessInfo processInfo, byte[] requestDetails) throws IOException {
+    HoodieRequestedReplaceMetadata requestedReplaceMetadata =
+        TimelineMetadataUtils.deserializeRequestedReplaceMetadata(requestDetails);
+    String operationType = requestedReplaceMetadata.getOperationType();
+    if (!WriteOperationType.CLUSTER.name().equalsIgnoreCase(operationType)) {
+      return null;
+    }
+    HoodieClusteringPlan plan = requestedReplaceMetadata.getClusteringPlan();
+    int inputFileCount = 0;
+    long inputFileSize = 0;
+    for (HoodieClusteringGroup group : plan.getInputGroups()) {
+      for (HoodieSliceInfo slice : group.getSlices()) {
+        inputFileCount++;
+        if (slice.getDeltaFilePaths() != null) {
+          inputFileCount += slice.getDeltaFilePaths().size();
+        }
+      }
+      inputFileSize += group.getMetrics().getOrDefault("TOTAL_LOG_FILES_SIZE", 0.0);
+    }
+    processInfo.setInputFiles(FilesStatistics.build(inputFileCount, inputFileSize));
+    int tasks = plan.getInputGroups().size();
+    processInfo.setTotalTasks(tasks);
+    processInfo.setOptimizingType(OptimizingType.MAJOR);
+
+    HoodieClusteringStrategy strategy = plan.getStrategy();
+    if (strategy != null) {
+      processInfo.getSummary().put("strategy", strategy.getStrategyClassName());
+      processInfo.getSummary().putAll(strategy.getStrategyParams());
     }
     return processInfo;
   }
@@ -456,63 +520,170 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     }
     long startTime = parseHoodieCommitTime(request.getStateTransitionTime());
     long endTime = AmoroServiceConstants.INVALID_TIME;
-    Option<byte[]> detail = timeline.getInstantDetails(request);
+    long costTime = AmoroServiceConstants.INVALID_TIME;
     TaskRuntime.Status status = TaskRuntime.Status.ACKED;
-    Map<String, FilesStatistics> outputFileStatistic = Maps.newHashMap();
+    Option<byte[]> requestDetails = timeline.getInstantDetails(request);
+    if (!requestDetails.isPresent()) {
+      return Lists.newArrayList();
+    }
+    byte[] commitDetails = null;
     if (complete != null) {
       status = TaskRuntime.Status.SUCCESS;
       endTime = parseHoodieCommitTime(complete.getStateTransitionTime());
+      costTime = endTime - startTime;
       Option<byte[]> commitDetail = timeline.getInstantDetails(complete);
-      try {
-        HoodieCommitMetadata commitMetadata =
-            HoodieCommitMetadata.fromBytes(commitDetail.get(), HoodieCommitMetadata.class);
-        Map<String, List<HoodieWriteStat>> commitInfo = commitMetadata.getPartitionToWriteStats();
+      if (commitDetail.isPresent()) {
+        commitDetails = commitDetail.get();
+      }
+    }
 
-        for (String partition : commitInfo.keySet()) {
-          List<HoodieWriteStat> writeStats = commitInfo.get(partition);
-          for (HoodieWriteStat stat : writeStats) {
-            FilesStatistics fs = new FilesStatistics(1, stat.getFileSizeInBytes());
-            outputFileStatistic.put(stat.getFileId(), fs);
-          }
+    List<OptimizingTaskInfo> tasks = Lists.newArrayList();
+
+    try {
+      if (HoodieTimeline.COMPACTION_ACTION.equalsIgnoreCase(request.getAction())) {
+        tasks = getCompactTasks(requestDetails.get(), commitDetails);
+      } else if (HoodieTimeline.REPLACE_COMMIT_ACTION.equalsIgnoreCase(request.getAction())) {
+        tasks = getClusterTasks(requestDetails.get(), commitDetails);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("", e);
+    }
+    for (OptimizingTaskInfo task : tasks) {
+      task.setStartTime(startTime);
+      task.setEndTime(endTime);
+      task.setStatus(status);
+      task.setCostTime(costTime);
+    }
+    return tasks;
+  }
+
+  private List<OptimizingTaskInfo> getCompactTasks(byte[] requestDetails, byte[] commitDetails)
+      throws IOException {
+    Map<String, Pair<String, FilesStatistics>> inputFileStatistic =
+        getCompactInputTaskStatistics(requestDetails);
+    Map<String, FilesStatistics> outputFileStatistic = Maps.newHashMap();
+    if (commitDetails != null) {
+      HoodieCommitMetadata commitMetadata =
+          HoodieCommitMetadata.fromBytes(commitDetails, HoodieCommitMetadata.class);
+      Map<String, List<HoodieWriteStat>> commitInfo = commitMetadata.getPartitionToWriteStats();
+      for (String partition : commitInfo.keySet()) {
+        List<HoodieWriteStat> writeStats = commitInfo.get(partition);
+        for (HoodieWriteStat stat : writeStats) {
+          FilesStatistics fs = new FilesStatistics(1, stat.getFileSizeInBytes());
+          outputFileStatistic.put(stat.getFileId(), fs);
         }
-      } catch (IOException e) {
-        throw new RuntimeException("Failed to read commit metadata", e);
       }
     }
     List<OptimizingTaskInfo> results = Lists.newArrayList();
-    try {
-      HoodieCompactionPlan compactionPlan =
-          TimelineMetadataUtils.deserializeCompactionPlan(detail.get());
-      int taskId = 0;
-      for (HoodieCompactionOperation operation : compactionPlan.getOperations()) {
-        int inputFileCount = operation.getDeltaFilePaths().size();
-        long inputFileSize =
-            operation.getMetrics().getOrDefault("TOTAL_LOG_FILES_SIZE", 0.0).longValue();
-        OptimizingTaskInfo task =
-            new OptimizingTaskInfo(
-                -1L,
-                processId,
-                taskId++,
-                operation.getPartitionPath(),
-                status,
-                0,
-                "",
-                0,
-                startTime,
-                endTime,
-                0,
-                "",
-                new FilesStatistics(inputFileCount, inputFileSize),
-                outputFileStatistic.get(operation.getFileId()),
-                Maps.newHashMap(),
-                Maps.newHashMap());
-        results.add(task);
+    int taskId = 0;
+    for (String fileGroupId : inputFileStatistic.keySet()) {
+      FilesStatistics input = inputFileStatistic.get(fileGroupId).second();
+      String partition = inputFileStatistic.get(fileGroupId).first();
+      OptimizingTaskInfo task =
+          new OptimizingTaskInfo(
+              -1L,
+              null,
+              taskId++,
+              partition,
+              null,
+              0,
+              "",
+              0,
+              0,
+              0,
+              0,
+              "",
+              input,
+              outputFileStatistic.get(fileGroupId),
+              Maps.newHashMap(),
+              Maps.newHashMap());
+      results.add(task);
+    }
+    return results;
+  }
+
+  private Map<String, Pair<String, FilesStatistics>> getCompactInputTaskStatistics(
+      byte[] requestDetails) throws IOException {
+    HoodieCompactionPlan compactionPlan =
+        TimelineMetadataUtils.deserializeCompactionPlan(requestDetails);
+    Map<String, Pair<String, FilesStatistics>> inputFileGroups = Maps.newHashMap();
+    for (HoodieCompactionOperation operation : compactionPlan.getOperations()) {
+      int inputFileCount = operation.getDeltaFilePaths().size();
+      long inputFileSize =
+          operation.getMetrics().getOrDefault("TOTAL_LOG_FILES_SIZE", 0.0).longValue();
+      FilesStatistics statistics = FilesStatistics.build(inputFileCount, inputFileSize);
+      inputFileGroups.put(operation.getFileId(), Pair.of(operation.getPartitionPath(), statistics));
+    }
+    return inputFileGroups;
+  }
+
+  private List<OptimizingTaskInfo> getClusterTasks(byte[] requestDetails, byte[] commitDetails)
+      throws IOException {
+    HoodieRequestedReplaceMetadata requestedReplaceMetadata =
+        TimelineMetadataUtils.deserializeRequestedReplaceMetadata(requestDetails);
+    String operationType = requestedReplaceMetadata.getOperationType();
+    if (!WriteOperationType.CLUSTER.name().equalsIgnoreCase(operationType)) {
+      return Lists.newArrayList();
+    }
+    Map<String, FilesStatistics> outputStatisticMap = Maps.newHashMap();
+    if (commitDetails != null) {
+      HoodieCommitMetadata commitMetadata =
+          HoodieCommitMetadata.fromBytes(commitDetails, HoodieCommitMetadata.class);
+      Map<String, List<HoodieWriteStat>> commitInfo = commitMetadata.getPartitionToWriteStats();
+      for (String partition : commitInfo.keySet()) {
+        List<HoodieWriteStat> writeStats = commitInfo.get(partition);
+        int fileCount = 0;
+        long fileSize = 0;
+        for (HoodieWriteStat stat : writeStats) {
+          fileCount += 1;
+          fileSize += stat.getFileSizeInBytes();
+        }
+        outputStatisticMap.put(partition, FilesStatistics.build(fileCount, fileSize));
       }
-    } catch (IOException e) {
-      throw new IllegalStateException("Failed to get optimizing task info", e);
     }
 
-    return results;
+    List<OptimizingTaskInfo> taskInfoList = Lists.newArrayList();
+    HoodieClusteringPlan plan = requestedReplaceMetadata.getClusteringPlan();
+    int taskId = 0;
+    for (HoodieClusteringGroup group : plan.getInputGroups()) {
+      FilesStatistics inputStatistic = getClusterGroupStatistic(group);
+      String partition = group.getSlices().get(0).getPartitionPath();
+      FilesStatistics outputStatistic = outputStatisticMap.get(partition);
+      OptimizingTaskInfo task =
+          new OptimizingTaskInfo(
+              -1L,
+              null,
+              taskId++,
+              partition,
+              null,
+              0,
+              "",
+              0,
+              0,
+              0,
+              0,
+              "",
+              inputStatistic,
+              outputStatistic,
+              Maps.newHashMap(),
+              Maps.newHashMap());
+      taskInfoList.add(task);
+    }
+
+    return taskInfoList;
+  }
+
+  private FilesStatistics getClusterGroupStatistic(HoodieClusteringGroup group) {
+    int inputFileCount = 0;
+    long inputFileSize = 0;
+    for (HoodieSliceInfo slice : group.getSlices()) {
+      inputFileCount++;
+      if (slice.getDeltaFilePaths() != null) {
+        inputFileCount += slice.getDeltaFilePaths().size();
+      }
+    }
+    inputFileSize += group.getMetrics().getOrDefault("TOTAL_LOG_FILES_SIZE", 0.0);
+    return FilesStatistics.build(inputFileCount, inputFileSize);
   }
 
   @Override
