@@ -34,8 +34,6 @@ import org.apache.spark.sql.connector.catalog.functions.UnboundFunction;
 import org.apache.spark.sql.connector.iceberg.catalog.Procedure;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-import java.util.ServiceLoader;
-
 /**
  * For TableCatalog in spark 3.3 is different with spark 3.2。 so we define it seperately 1、 we
  * support the grammar feature of time travel. 2、 support FunctionCatalog
@@ -45,14 +43,10 @@ public class SparkUnifiedSessionCatalog<
     extends SparkUnifiedSessionCatalogBase<T> {
 
   @Override
-  protected TableCatalog buildTargetCatalog(String name, CaseInsensitiveStringMap options) {
-    SparkUnifiedCatalogBase sparkUnifiedCatalogBase = new SparkUnifiedCatalogBase();
-    sparkUnifiedCatalogBase.initialize(name, options);
-    ServiceLoader<SparkTableFormat> sparkTableFormats = ServiceLoader.load(SparkTableFormat.class);
-    for (SparkTableFormat format : sparkTableFormats) {
-      tableFormats.put(format.format(), format);
-    }
-    return sparkUnifiedCatalogBase;
+  public TableCatalog buildTargetCatalog(String name, CaseInsensitiveStringMap options) {
+    SparkUnifiedCatalog sparkUnifiedCatalog = new SparkUnifiedCatalog();
+    sparkUnifiedCatalog.initialize(name, options);
+    return sparkUnifiedCatalog;
   }
 
   @Override

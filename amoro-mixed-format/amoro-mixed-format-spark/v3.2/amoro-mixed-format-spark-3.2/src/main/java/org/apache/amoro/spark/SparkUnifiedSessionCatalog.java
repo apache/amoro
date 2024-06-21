@@ -26,21 +26,15 @@ import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.iceberg.catalog.Procedure;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-import java.util.ServiceLoader;
-
 /** @Auth: hzwangtao6 @Time: 2024/5/24 14:04 @Description: */
 public class SparkUnifiedSessionCatalog<
         T extends TableCatalog & SupportsNamespaces & FunctionCatalog>
     extends SparkUnifiedSessionCatalogBase<T> {
 
   @Override
-  protected TableCatalog buildTargetCatalog(String name, CaseInsensitiveStringMap options) {
+  public TableCatalog buildTargetCatalog(String name, CaseInsensitiveStringMap options) {
     SparkUnifiedCatalog sparkUnifiedCatalog = new SparkUnifiedCatalog();
     sparkUnifiedCatalog.initialize(name, options);
-    ServiceLoader<SparkTableFormat> sparkTableFormats = ServiceLoader.load(SparkTableFormat.class);
-    for (SparkTableFormat format : sparkTableFormats) {
-      tableFormats.put(format.format(), format);
-    }
     return sparkUnifiedCatalog;
   }
 
