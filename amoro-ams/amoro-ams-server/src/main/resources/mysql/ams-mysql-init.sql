@@ -82,7 +82,7 @@ CREATE TABLE `table_identifier`
     `format`          VARCHAR(32)  NOT NULL COMMENT 'Table Format',
     PRIMARY KEY (`table_id`),
     UNIQUE KEY `table_name_index` (`catalog_name`,`db_name`,`table_name`)
-);
+) ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE `table_metadata`
 (
@@ -131,7 +131,7 @@ CREATE TABLE `table_runtime`
     `pending_input`                 mediumtext,
     PRIMARY KEY (`table_id`),
     UNIQUE KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize running information of each table';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize running information of each table' ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE `table_optimizing_process`
 (
@@ -221,4 +221,4 @@ CREATE TABLE `table_blocker` (
   `properties` mediumtext COMMENT 'Blocker properties',
   PRIMARY KEY (`blocker_id`),
   KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Table blockers';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Table blockers' ROW_FORMAT=DYNAMIC;
