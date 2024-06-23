@@ -70,8 +70,8 @@ export default defineComponent({
         },
         {
           key: 'optimizing',
-          title: t('Optimizing'),
-          icon: 'optimizers',
+          title: t('optimizing'),
+          icon: 'optimizers'
         },
         {
           key: 'terminal',

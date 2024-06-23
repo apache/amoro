@@ -126,7 +126,6 @@ export default {
   password: 'Password',
   pause: 'Pause',
   run: 'Run',
-  maximize: 'Maximize',
   format: 'Format',
   fullscreen: 'Full screen',
   recovery: 'Recovery',
