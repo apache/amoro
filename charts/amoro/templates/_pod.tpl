@@ -108,3 +108,20 @@ spark distribution package will be installed to here*/ -}}
 {{- end -}}
 {{- end -}}
 {{- /* define "amoro.pod.volumes" end */ -}}
+
+{{- /* define ports for each pod */ -}}
+{{- define "amoro.pod.container.ports" -}}
+- name: rest
+  containerPort: {{ .Values.server.rest.port }}
+- name: table
+  containerPort: {{ .Values.server.table.port }}
+- name: optimizing
+  containerPort: {{ .Values.server.optimizing.port }}
+{{- if .Values.plugin.metricReporters }}
+{{- if .Values.plugin.metricReporters.prometheusExporter.enabled }}
+- name: prometheus
+  containerPort: {{ .Values.plugin.metricReporters.prometheusExporter.port }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- /* define amoro.pod.container.ports end */ -}}

@@ -30,12 +30,10 @@ data:
   ## Helm chart provided metric reporters configurations
   metric-reporters.yaml: |
     metric-reporters:
-     {{- range . }}
-      - name: {{ .name }}
-        enabled: {{ .enabled }}
+      - name: {{ .prometheusExporter.name }}
+        enabled: {{ .prometheusExporter.enabled }}
         properties:
-          {{ .properties | toYaml | nindent 10 | trim}}
-    {{- end }}
+          {{ .prometheusExporter.properties | toYaml | nindent 10 | trim }}
     {{- end }}
   ## Helm chart provided Amoro configurations
   config.yaml: |
@@ -92,10 +90,6 @@ data:
         type: {{ .Values.amoroConf.database.type }}
         jdbc-driver-class: {{ .Values.amoroConf.database.driver | quote }}
         url: {{ .Values.amoroConf.database.url }}
-        {{- if or (eq .Values.amoroConf.database.type "mysql") (eq .Values.amoroConf.database.type "postgres") }}
-        username: {{ .Values.amoroConf.database.username | quote }}
-        password: {{ .Values.amoroConf.database.password | quote }}
-        {{- end }}
         connection-pool-max-total: 20
         connection-pool-max-idle: 16
         connection-pool-max-wait-millis: 1000

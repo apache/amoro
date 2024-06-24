@@ -49,18 +49,6 @@ tests:
           pattern:
             |
             bind-port: 1260
-  - it: Amoro configMap should reflect database.username if type is set to mysql
-    set:
-      amoroConf:
-        database:
-          type: mysql
-          username: aaa
-    asserts:
-      - matchRegex:
-          path: data["config.yaml"]
-          pattern:
-            |
-            username: "aaa"
   - it: Amoro configMap should reflect terminal iceberg params if terminal.backend is set to local
     set:
       amoroConf:
@@ -125,13 +113,14 @@ tests:
     set:
       plugin:
         metricReporters:
-          - name: prometheus-exporter
+          prometheusExporter:
+            name: prometheus-exporter
             enabled: true
-            properties:
-              port: 7001
+            port: 7001
+            properties: ~
     asserts:
       - matchRegex:
           path: data["metric-reporters.yaml"]
           pattern:
             |
-            - name: prometheus-exporter
+              name: prometheus-exporter

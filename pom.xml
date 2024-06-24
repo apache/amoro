@@ -1042,8 +1042,6 @@
                             <!-- IDE files. -->
                             <exclude>**/*.iml</exclude>
                             <exclude>**/.idea/**</exclude>
-                            <!-- Docs -->
-                            <exclude>docs/**</exclude>
                             <!-- Generated content -->
                             <exclude>**/target/**</exclude>
                             <exclude>**/scalastyle-output.xml</exclude>

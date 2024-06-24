@@ -55,23 +55,23 @@ spec: {{/* TODO If Support Replica can be use more than 1 */}}
               valueFrom:
                 secretKeyRef:
                   name: {{ include "common.names.fullname" . }}
-                  key: username
+                  key: DatabaseUsername
             - name: "AMS_DATABASE_PASSWORD"
               valueFrom:
                 secretKeyRef:
                   name: {{ include "common.names.fullname" . }}
-                  key: password
+                  key: DatabasePassword
             {{- end }}
             - name: "AMS_ADMIN__USERNAME"
               valueFrom:
                 secretKeyRef:
                   name: {{ include "common.names.fullname" . }}
-                  key: username
+                  key: AdminUsername
             - name: "AMS_ADMIN__PASSWORD"
               valueFrom:
                 secretKeyRef:
                   name: {{ include "common.names.fullname" . }}
-                  key: password
+                  key: AdminPassword
             {{- with .Values.env }}
             {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}
@@ -79,12 +79,7 @@ spec: {{/* TODO If Support Replica can be use more than 1 */}}
           {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
           ports:
-            - name: rest
-              containerPort: {{ .Values.server.rest.port }}
-            - name: table
-              containerPort: {{ .Values.server.table.port }}
-            - name: optimizing
-              containerPort: {{ .Values.server.optimizing.port }}
+            {{- include "amoro.pod.container.ports" . | nindent 12 }}
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             httpGet:
