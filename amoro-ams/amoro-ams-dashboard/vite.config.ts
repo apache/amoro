@@ -16,11 +16,12 @@
   * limitations under the License.
   */
 
+import path from 'node:path'
+import process from 'node:process'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { vitePluginFakeServer } from 'vite-plugin-fake-server'
-import path from 'node:path'
-import {createSvgIconsPlugin} from 'vite-plugin-svg-icons'
+import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import ViteComponents from 'unplugin-vue-components/vite'
 import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers'
 
@@ -39,11 +40,11 @@ const css = {
         'font-size-base': '14px',
         'dark-gray-color': '#2b354a',
         'dark-bg-color': '#202a40',
-        'dark-bg-primary-color': '#1a2232'
+        'dark-bg-primary-color': '#1a2232',
       },
-      javascriptEnabled: true
-    }
-  }
+      javascriptEnabled: true,
+    },
+  },
 }
 
 // https://vitejs.dev/config/
@@ -52,14 +53,28 @@ export default defineConfig({
   base: './',
   build: {
     outDir: './src/main/resources/static',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vue: ['vue', 'vue-i18n', 'vue-router', 'vue-virtual-scroller'],
+          dayjs: ['dayjs'],
+          axios: ['axios'],
+          antd: ['ant-design-vue', '@ant-design/icons-vue'],
+          pinia: ['pinia'],
+          echarts: ['echarts'],
+          monaco: ['monaco-editor'],
+          sql: ['sql-formatter'],
+        },
+      },
+    },
   },
   plugins: [
     vue(),
     vitePluginFakeServer({
       logger: false,
-      include: "mock",
+      include: 'mock',
       infixName: false,
-      enableProd: true
+      enableProd: true,
     }),
     createSvgIconsPlugin({
       iconDirs: [path.resolve(process.cwd(), 'src/assets/icons/svg')],
@@ -68,10 +83,10 @@ export default defineConfig({
       resolvers: [
         AntDesignVueResolver({
           importStyle: false,
-          resolveIcons: true
-        })
-      ]
-    })
+          resolveIcons: true,
+        }),
+      ],
+    }),
   ],
   server: {
     port: 8080,
@@ -101,7 +116,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src') // Path alias
-    }
-  }
+      '@': path.resolve(__dirname, './src'), // Path alias
+    },
+  },
 })
