@@ -42,11 +42,13 @@ public abstract class SparkUnifiedSessionCatalogBase<T extends TableCatalog & Su
 
   @Override
   protected TableCatalog buildTargetCatalog(String name, CaseInsensitiveStringMap options) {
+    SparkUnifiedCatalogBase sparkUnifiedCatalog = createUnifiedCatalog(name, options);
+    sparkUnifiedCatalog.initialize(name, options);
     ServiceLoader<SparkTableFormat> sparkTableFormats = ServiceLoader.load(SparkTableFormat.class);
     for (SparkTableFormat format : sparkTableFormats) {
       tableFormats.put(format.format(), format);
     }
-    return createUnifiedCatalog(name, options);
+    return sparkUnifiedCatalog;
   }
 
   @Override

@@ -22,7 +22,6 @@ import org.apache.amoro.TableFormat;
 import org.apache.iceberg.spark.functions.SparkFunctions;
 import org.apache.spark.sql.catalyst.analysis.NoSuchFunctionException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
-import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.apache.spark.sql.catalyst.analysis.NonEmptyNamespaceException;
 import org.apache.spark.sql.connector.catalog.FunctionCatalog;
@@ -31,7 +30,6 @@ import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.catalog.functions.UnboundFunction;
-import org.apache.spark.sql.connector.iceberg.catalog.Procedure;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 /**
@@ -45,9 +43,7 @@ public class SparkUnifiedSessionCatalog<
   @Override
   protected SparkUnifiedCatalogBase createUnifiedCatalog(
       String name, CaseInsensitiveStringMap options) {
-    SparkUnifiedCatalog sparkUnifiedCatalog = new SparkUnifiedCatalog();
-    sparkUnifiedCatalog.initialize(name, options);
-    return sparkUnifiedCatalog;
+    return new SparkUnifiedCatalog();
   }
 
   @Override
@@ -108,12 +104,6 @@ public class SparkUnifiedSessionCatalog<
 
   private static boolean isSystemNamespace(String[] namespace) {
     return namespace.length == 1 && namespace[0].equalsIgnoreCase("system");
-  }
-
-  @Override
-  public Procedure loadProcedure(Identifier ident) throws NoSuchProcedureException {
-    SparkUnifiedCatalogBase catalog = (SparkUnifiedCatalogBase) getTargetCatalog();
-    return catalog.loadProcedure(ident);
   }
 
   /**

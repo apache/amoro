@@ -71,17 +71,6 @@ public class SparkUnifiedCatalog extends SparkUnifiedCatalogBase
   }
 
   /**
-   * Returns true if the function exists, false otherwise.
-   *
-   * @param ident
-   * @since 3.3.0
-   */
-  @Override
-  public boolean functionExists(Identifier ident) {
-    return FunctionCatalog.super.functionExists(ident);
-  }
-
-  /**
    * Drop a namespace from the catalog with cascade mode, recursively dropping all objects within
    * the namespace if cascade is true.
    *

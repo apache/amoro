@@ -18,12 +18,9 @@
 
 package org.apache.amoro.spark;
 
-import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
 import org.apache.spark.sql.connector.catalog.FunctionCatalog;
-import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
-import org.apache.spark.sql.connector.iceberg.catalog.Procedure;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 /** @Auth: hzwangtao6 @Time: 2024/5/24 14:04 @Description: */
@@ -34,14 +31,6 @@ public class SparkUnifiedSessionCatalog<
   @Override
   protected SparkUnifiedCatalogBase createUnifiedCatalog(
       String name, CaseInsensitiveStringMap options) {
-    SparkUnifiedCatalog sparkUnifiedCatalog = new SparkUnifiedCatalog();
-    sparkUnifiedCatalog.initialize(name, options);
-    return sparkUnifiedCatalog;
-  }
-
-  @Override
-  public Procedure loadProcedure(Identifier ident) throws NoSuchProcedureException {
-    SparkUnifiedCatalog catalog = (SparkUnifiedCatalog) getTargetCatalog();
-    return catalog.loadProcedure(ident);
+    return new SparkUnifiedCatalog();
   }
 }
