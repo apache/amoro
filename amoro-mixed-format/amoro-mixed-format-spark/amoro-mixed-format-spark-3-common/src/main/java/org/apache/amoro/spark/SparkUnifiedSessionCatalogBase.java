@@ -32,14 +32,17 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
-public class SparkUnifiedSessionCatalog<T extends TableCatalog & SupportsNamespaces>
+public abstract class SparkUnifiedSessionCatalogBase<T extends TableCatalog & SupportsNamespaces>
     extends SessionCatalogBase<T> implements ProcedureCatalog {
 
-  private final Map<TableFormat, SparkTableFormat> tableFormats = Maps.newConcurrentMap();
+  protected final Map<TableFormat, SparkTableFormat> tableFormats = Maps.newConcurrentMap();
+
+  protected abstract SparkUnifiedCatalogBase createUnifiedCatalog(
+      String name, CaseInsensitiveStringMap options);
 
   @Override
   protected TableCatalog buildTargetCatalog(String name, CaseInsensitiveStringMap options) {
-    SparkUnifiedCatalog sparkUnifiedCatalog = new SparkUnifiedCatalog();
+    SparkUnifiedCatalogBase sparkUnifiedCatalog = createUnifiedCatalog(name, options);
     sparkUnifiedCatalog.initialize(name, options);
     ServiceLoader<SparkTableFormat> sparkTableFormats = ServiceLoader.load(SparkTableFormat.class);
     for (SparkTableFormat format : sparkTableFormats) {
@@ -80,7 +83,7 @@ public class SparkUnifiedSessionCatalog<T extends TableCatalog & SupportsNamespa
 
   @Override
   public Procedure loadProcedure(Identifier ident) throws NoSuchProcedureException {
-    SparkUnifiedCatalog catalog = (SparkUnifiedCatalog) getTargetCatalog();
+    SparkUnifiedCatalogBase catalog = (SparkUnifiedCatalogBase) getTargetCatalog();
     return catalog.loadProcedure(ident);
   }
 }
