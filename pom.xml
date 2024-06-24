@@ -1035,6 +1035,7 @@
                             <exclude>**/*.prefs</exclude>
                             <exclude>**/*.log</exclude>
                             <exclude>tools/maven/scalafmt.conf</exclude>
+                            <exclude>**/licenses/**</exclude>
                             <!-- Administrative files in the main trunk. -->
                             <exclude>**/README.md</exclude>
                             <exclude>**/CODE_OF_CONDUCT.md</exclude>
