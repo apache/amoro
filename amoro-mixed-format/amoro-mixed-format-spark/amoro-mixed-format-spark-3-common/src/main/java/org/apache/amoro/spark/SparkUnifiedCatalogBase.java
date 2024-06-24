@@ -57,9 +57,9 @@ import java.util.Map;
 import java.util.ServiceLoader;
 
 /** Unified catalog implement for spark engine. */
-public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, ProcedureCatalog {
+public class SparkUnifiedCatalogBase implements TableCatalog, SupportsNamespaces, ProcedureCatalog {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SparkUnifiedCatalog.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SparkUnifiedCatalogBase.class);
   private static final Map<TableFormat, String> defaultTableCatalogImplMap =
       ImmutableMap.of(
           TableFormat.ICEBERG, "org.apache.iceberg.spark.SparkCatalog",
@@ -272,7 +272,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
     return procedureCatalog.loadProcedure(ident);
   }
 
-  private TableCatalog tableCatalog(TableFormat format) {
+  protected TableCatalog tableCatalog(TableFormat format) {
     return tableCatalogs.computeIfAbsent(format, this::initializeTableCatalog);
   }
 

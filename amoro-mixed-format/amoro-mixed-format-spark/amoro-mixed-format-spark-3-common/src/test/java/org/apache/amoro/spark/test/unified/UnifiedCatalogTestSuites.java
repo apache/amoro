@@ -25,8 +25,10 @@ import org.apache.amoro.UnifiedCatalogLoader;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.apache.amoro.spark.SparkUnifiedSessionCatalog;
 import org.apache.amoro.spark.test.SparkTestBase;
+import org.apache.amoro.spark.test.TestIdentifier;
+import org.apache.iceberg.SnapshotRef;
+import org.apache.iceberg.Table;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.junit.jupiter.api.Assertions;
@@ -34,6 +36,7 @@ import org.junit.jupiter.params.provider.Arguments;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class UnifiedCatalogTestSuites extends SparkTestBase {
 
@@ -41,7 +44,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
   protected Map<String, String> sparkSessionConfig() {
     return ImmutableMap.of(
         "spark.sql.catalog.spark_catalog",
-        SparkUnifiedSessionCatalog.class.getName(),
+        "org.apache.amoro.spark.SparkUnifiedSessionCatalog",
         "spark.sql.catalog.spark_catalog.uri",
         CONTEXT.amsCatalogUrl(null));
   }
@@ -64,7 +67,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
         "CREATE TABLE "
             + target()
             + " ( "
-            + "id int, "
+            + "id int not null, "
             + "data string, "
             + "pt string"
             + pkDDL(format)
@@ -93,6 +96,13 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
 
     // call procedure
     testCallProcedure(format);
+
+    // alter table test
+    testIcebergAlterTable(format, target(), "id");
+    testIcebergUpdate(format, target());
+    testIcebergDeleteInSubQuery(format, target());
+    testIcebergDropPartitionField(format, target(), "pt");
+    testIcebergMetadata(format, target());
 
     sql("DROP TABLE " + target() + " PURGE");
     Assertions.assertFalse(unifiedCatalog().tableExists(target().database, target().table));
@@ -176,5 +186,124 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     if (!unifiedCatalog().databaseExists(database())) {
       unifiedCatalog.createDatabase(database());
     }
+  }
+
+  private void testIcebergAlterTable(
+      TableFormat format, TestIdentifier targetTable, String fieldName) {
+    if (TableFormat.ICEBERG != format) {
+      // only tests for iceberg
+      return;
+    }
+    // set identifier fields
+    String sqlText =
+        String.format("alter table %s set identifier fields  %s", targetTable, fieldName);
+    Dataset<Row> rs = sql(sqlText);
+    Assertions.assertTrue(rs.columns().length == 0);
+
+    AmoroTable<?> icebergTable =
+        unifiedCatalog().loadTable(targetTable.database, targetTable.table);
+    Table table = (Table) icebergTable.originalTable();
+    Assertions.assertTrue(table.schema().identifierFieldNames().contains(fieldName));
+
+    // drop identifier fields/
+    sqlText = String.format("alter table %s DROP IDENTIFIER FIELDS  %s", targetTable, fieldName);
+    rs = sql(sqlText);
+    Assertions.assertTrue(rs.columns().length == 0);
+
+    icebergTable = unifiedCatalog().loadTable(targetTable.database, targetTable.table);
+    table = (Table) icebergTable.originalTable();
+    Assertions.assertFalse(table.schema().identifierFieldNames().contains(fieldName));
+  }
+
+  private void testIcebergUpdate(TableFormat format, TestIdentifier targetTable) {
+    if (TableFormat.ICEBERG != format) {
+      // only tests for iceberg
+      return;
+    }
+    String afterValue = "update-xxx";
+    // set identifier fields
+    String sqlText = String.format("update %s set data='%s' where id=1", targetTable, afterValue);
+    Dataset<Row> rs = sql(sqlText);
+    Assertions.assertTrue(rs.columns().length == 0);
+
+    // drop identifier fields/
+    sqlText = String.format("select * from  %s where id=1", targetTable);
+    rs = sql(sqlText);
+    Assertions.assertTrue(rs.columns().length == 3 && rs.head().getString(1).equals(afterValue));
+  }
+
+  private void testIcebergDeleteInSubQuery(TableFormat format, TestIdentifier targetTable) {
+    if (TableFormat.ICEBERG != format) {
+      // only tests for iceberg
+      return;
+    }
+    // set identifier fields
+    String sqlText = String.format("select min(id) from %s", targetTable);
+    Dataset<Row> rs = sql(sqlText);
+    Assertions.assertTrue(rs.columns().length == 1);
+    Integer minId = rs.head().getInt(0);
+
+    // set identifier fields
+    sqlText =
+        String.format(
+            "delete from %s where id=(select min(id) from %s);", targetTable, targetTable);
+    rs = sql(sqlText);
+    Assertions.assertTrue(rs.columns().length == 0);
+
+    // drop identifier fields/
+    sqlText = String.format("select * from  %s where id=%d", targetTable, minId);
+    rs = sql(sqlText);
+    Assertions.assertTrue(rs.count() == 0);
+  }
+
+  private void testIcebergDropPartitionField(
+      TableFormat format, TestIdentifier targetTable, String fieldName) {
+    if (TableFormat.ICEBERG != format) {
+      // only tests for iceberg
+      return;
+    }
+    // drop partition field
+    String sqlText =
+        String.format("alter table %s drop partition field  %s", targetTable, fieldName);
+    Dataset<Row> rs = sql(sqlText);
+    Assertions.assertTrue(rs.columns().length == 0);
+
+    AmoroTable<?> icebergTable =
+        unifiedCatalog().loadTable(targetTable.database, targetTable.table);
+    Table table = (Table) icebergTable.originalTable();
+    Assertions.assertTrue(
+        Optional.empty()
+            .equals(
+                table.spec().fields().stream()
+                    .filter(item -> item.name().equals(fieldName))
+                    .findAny()));
+  }
+
+  private void testIcebergMetadata(TableFormat format, TestIdentifier targetTable) {
+    if (TableFormat.ICEBERG != format) {
+      // only tests for iceberg
+      return;
+    }
+    // drop partition field
+    String tagKey = "tag-unittest";
+    String sqlText =
+        String.format("alter table %s create tag if not exists `%s`", targetTable, tagKey);
+    Dataset<Row> rs = sql(sqlText);
+    Assertions.assertTrue(rs.columns().length == 0);
+
+    AmoroTable<?> icebergTable =
+        unifiedCatalog().loadTable(targetTable.database, targetTable.table);
+    Table table = (Table) icebergTable.originalTable();
+    Map<String, SnapshotRef> refs = table.refs();
+    Assertions.assertTrue(refs != null && refs.containsKey(tagKey));
+
+    sqlText = String.format("alter table %s drop tag `%s`", targetTable, tagKey);
+    rs = sql(sqlText);
+    Assertions.assertTrue(rs.columns().length == 0);
+
+    icebergTable = unifiedCatalog().loadTable(targetTable.database, targetTable.table);
+    table = (Table) icebergTable.originalTable();
+    refs = table.refs();
+    Assertions.assertTrue(refs != null && !refs.containsKey(tagKey));
   }
 }
