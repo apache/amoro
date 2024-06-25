@@ -24,7 +24,6 @@ export default {
   optimizing: '优化',
   terminal: '终端',
   settings: '设置',
-  resource: '资源',
   optimizergroup: '优化器组',
   systemSetting: '系统设置',
   containerSetting: '容器设置',

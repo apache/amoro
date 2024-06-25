@@ -71,7 +71,7 @@ export default defineComponent({
         {
           key: 'optimizing',
           title: t('optimizing'),
-          icon: 'optimizers'
+          icon: 'optimizers',
         },
         {
           key: 'terminal',
@@ -83,11 +83,6 @@ export default defineComponent({
           title: t('settings'),
           icon: 'settings',
         },
-        // {
-        //   key: 'resource',
-        //   title: t('resource'),
-        //   icon: 'settings'
-        // }
       ]
       return hasToken.value ? menu : allMenu
     })

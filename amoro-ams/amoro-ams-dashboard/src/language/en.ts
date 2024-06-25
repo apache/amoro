@@ -24,7 +24,6 @@ export default {
   optimizing: 'Optimizing',
   terminal: 'Terminal',
   settings: 'Settings',
-  resource: 'Resource',
   optimizergroup: 'Optimizer Groups',
   systemSetting: 'System Settings',
   containerSetting: 'Container Settings',
