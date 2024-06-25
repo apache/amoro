@@ -39,7 +39,9 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.thrift.TException;
 import org.junit.rules.TemporaryFolder;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SparkTestContext {
 
@@ -131,7 +133,11 @@ public class SparkTestContext {
     CatalogMeta allFormats =
         HiveCatalogTestHelper.build(hiveConf, TableFormat.values()[0])
             .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
-    String formats = Joiner.on(',').join(TableFormat.values());
+    // spark unified catalog doesn't support hudi.
+    String formats = Joiner.on(',').join(
+        Arrays.stream(TableFormat.values())
+            .filter(f -> TableFormat.HUDI != f)
+            .collect(Collectors.toList()));
     allFormats.putToCatalogProperties(CatalogMetaProperties.TABLE_FORMATS, formats);
     allFormats.setCatalogName(AMS_ALL_FORMAT_CATALOG_NAME);
     ams.getAmsHandler().createCatalog(allFormats);
