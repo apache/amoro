@@ -605,14 +605,6 @@
             </plugin>
 
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <skip>${skip-build-mixed-format-trino}</skip>
-                </configuration>
-            </plugin>
-
-            <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
                 <configuration>
@@ -678,6 +670,20 @@
                                     <exclude>**/io/trino/**/*.java</exclude>
                                 </excludes>
                             </java>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>apache-release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <configuration>
+                            <skip>${skip-build-mixed-format-trino}</skip>
                         </configuration>
                     </plugin>
                 </plugins>
