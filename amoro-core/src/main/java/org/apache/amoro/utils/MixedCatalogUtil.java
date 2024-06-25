@@ -179,26 +179,22 @@ public class MixedCatalogUtil {
     }
 
     // cover auth configs from ams with auth configs in properties
-    String authType =
-        catalogMeta.getCatalogProperties().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
+    String authType = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
     if (StringUtils.isNotEmpty(authType)) {
       LOG.info("TableMetaStore use auth config in properties, authType is {}", authType);
       if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equalsIgnoreCase(authType)) {
         String hadoopUsername =
             catalogMeta
-                .getCatalogProperties()
+                .getAuthConfigs()
                 .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
         builder.withSimpleAuth(hadoopUsername);
       } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS.equalsIgnoreCase(
           authType)) {
-        String krb5 =
-            catalogMeta.getCatalogProperties().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
+        String krb5 = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
         String keytab =
-            catalogMeta.getCatalogProperties().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
+            catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
         String principal =
-            catalogMeta
-                .getCatalogProperties()
-                .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
+            catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
         builder.withBase64KrbAuth(keytab, krb5, principal);
       }
     }
