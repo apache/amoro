@@ -22,7 +22,7 @@ import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.catalyst.analysis.{AlignedRowLevelIcebergCommandCheck, AlignRowLevelCommandAssignments, CheckMergeIntoTableConditions, MergeIntoIcebergTableResolutionCheck, ProcedureArgumentCoercion, ResolveMergeIntoTableReferences, ResolveProcedures, RewriteDeleteFromTable, RewriteMergeIntoTable, RewriteUpdateTable}
 import org.apache.spark.sql.catalyst.optimizer._
 import org.apache.spark.sql.catalyst.parser.extensions.IcebergSparkSqlExtensionsParser
-import org.apache.spark.sql.execution.datasources.v2.{ExtendedDataSourceV2Strategy, ExtendedV2Writes, OptimizeMetadataOnlyDeleteFromTable, ReplaceRewrittenRowLevelCommand, RowLevelCommandScanRelationPushDown}
+import org.apache.spark.sql.execution.datasources.v2.{ExtendedDataSourceV2Strategy, ExtendedV2Writes, MixedFormatExtendedDataSourceV2Strategy, OptimizeMetadataOnlyDeleteFromTable, ReplaceRewrittenRowLevelCommand, RowLevelCommandScanRelationPushDown}
 import org.apache.spark.sql.execution.dynamicpruning.RowLevelCommandDynamicPruning
 
 import org.apache.amoro.spark.sql.catalyst.analysis._
@@ -71,7 +71,7 @@ class MixedFormatSparkExtensions extends (SparkSessionExtensions => Unit) {
     extensions.injectPreCBORule { _ => ReplaceRewrittenRowLevelCommand }
 
     // planner extensions
-    extensions.injectPlannerStrategy { spark => ExtendedDataSourceV2Strategy(spark) }
+    extensions.injectPlannerStrategy { spark => MixedFormatExtendedDataSourceV2Strategy(spark) }
     // mixed-format optimizer rules
     extensions.injectPreCBORule(OptimizeWriteRule)
 

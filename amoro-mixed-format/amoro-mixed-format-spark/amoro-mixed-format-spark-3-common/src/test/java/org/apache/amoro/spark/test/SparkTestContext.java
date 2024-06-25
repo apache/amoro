@@ -27,7 +27,6 @@ import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.apache.amoro.spark.SparkUnifiedCatalog;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
@@ -52,7 +51,7 @@ public class SparkTestContext {
       "org.apache.amoro.spark.MixedFormatSparkExtensions"
           + ",org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions";
 
-  public static final String UNIFIED_CATALOG_IMP = SparkUnifiedCatalog.class.getName();
+  public static final String UNIFIED_CATALOG_IMP = "org.apache.amoro.spark.SparkUnifiedCatalog";
 
   final TemporaryFolder warehouse = new TemporaryFolder();
   public static final String AMS_ALL_FORMAT_CATALOG_NAME = "all_formats";

@@ -401,6 +401,17 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-aws</artifactId>
                 <version>${hadoop.version}</version>
+                <!-- Exclude aws bundles, we have declared the dependencies of AWS separately. -->
+                <exclusions>
+                    <exclusion>
+                        <groupId>software.amazon.awssdk</groupId>
+                        <artifactId>bundle</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.amazonaws</groupId>
+                        <artifactId>aws-java-sdk-bundle</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -1043,6 +1054,7 @@
                             <exclude>**/*.prefs</exclude>
                             <exclude>**/*.log</exclude>
                             <exclude>tools/maven/scalafmt.conf</exclude>
+                            <exclude>**/licenses/**</exclude>
                             <!-- Administrative files in the main trunk. -->
                             <exclude>**/README.md</exclude>
                             <exclude>**/CODE_OF_CONDUCT.md</exclude>
@@ -1162,6 +1174,22 @@
                         </transformers>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <configuration>
+                        <quiet>true</quiet>
+                        <doclint>none</doclint>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -1227,18 +1255,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <configuration>
-                            <quiet>true</quiet>
-                            <doclint>none</doclint>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>
