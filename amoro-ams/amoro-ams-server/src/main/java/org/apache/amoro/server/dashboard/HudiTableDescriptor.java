@@ -263,6 +263,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) {
+    // hudi doesn't support schema version track.
     return Lists.newArrayList();
   }
 
@@ -688,6 +689,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable) {
+    // hudi doesn't support tags and branch
     return Collections.emptyList();
   }
 

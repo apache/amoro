@@ -110,6 +110,7 @@
         <curator.version>5.6.0</curator.version>
         <mockito.version>4.11.0</mockito.version>
         <parquet-avro.version>1.13.1</parquet-avro.version>
+        <mysql-jdbc.version>8.0.33</mysql-jdbc.version>
         <orc-core.version>1.8.3</orc-core.version>
         <awssdk.version>2.24.12</awssdk.version>
         <terminal.spark.version>3.3.2</terminal.spark.version>
@@ -558,6 +559,12 @@
                 <groupId>org.apache.derby</groupId>
                 <artifactId>derby</artifactId>
                 <version>${derby-jdbc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${mysql-jdbc.version}</version>
             </dependency>
 
             <dependency>
