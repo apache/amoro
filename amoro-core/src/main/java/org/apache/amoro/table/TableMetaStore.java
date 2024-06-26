@@ -541,6 +541,8 @@ public class TableMetaStore implements Serializable {
     private byte[] krbKeyTab;
     private byte[] krbConf;
     private String krbPrincipal;
+    private String accessKey;
+    private String secretKey;
     private boolean disableAuth = true;
     private final Map<String, String> properties = Maps.newHashMap();
     private Configuration configuration;
@@ -599,6 +601,13 @@ public class TableMetaStore implements Serializable {
       this.disableAuth = false;
       this.authMethod = AUTH_METHOD_SIMPLE;
       this.hadoopUsername = hadoopUsername;
+      return this;
+    }
+
+    public Builder withAkSkAuth(String accessKey, String secretKey) {
+      this.disableAuth = false;
+      this.accessKey = accessKey;
+      this.secretKey = secretKey;
       return this;
     }
 
