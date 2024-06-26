@@ -133,10 +133,12 @@ public class SparkTestContext {
         HiveCatalogTestHelper.build(hiveConf, TableFormat.values()[0])
             .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
     // spark unified catalog doesn't support hudi.
-    String formats = Joiner.on(',').join(
-        Arrays.stream(TableFormat.values())
-            .filter(f -> TableFormat.HUDI != f)
-            .collect(Collectors.toList()));
+    String formats =
+        Joiner.on(',')
+            .join(
+                Arrays.stream(TableFormat.values())
+                    .filter(f -> TableFormat.HUDI != f)
+                    .collect(Collectors.toList()));
     allFormats.putToCatalogProperties(CatalogMetaProperties.TABLE_FORMATS, formats);
     allFormats.setCatalogName(AMS_ALL_FORMAT_CATALOG_NAME);
     ams.getAmsHandler().createCatalog(allFormats);
