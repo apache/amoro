@@ -30,29 +30,10 @@
                     pattern="%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n"/>
         </Console>
         <!--*********************File Log***********************-->
-        <!--Logs with a grade of debug-->
-        <RollingFile name="debugFileAppender"
-                     fileName="${LOG_HOME}/ams-debug.log"
-                     filePattern="${LOG_HOME}/history/ams-debug-%i.log.gz">
-            <!--Set log format-->
-            <PatternLayout>
-                <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
-            </PatternLayout>
-            <Policies>
-                <!--Set log file slice parameters-->
-                <!--<OnStartupTriggeringPolicy/>-->
-                <!--Set the log base file size to trigger rolling log file updates if the size is exceeded-->
-                <SizeBasedTriggeringPolicy size="2048MB"/>
-            </Policies>
-            <!--Set the maximum number of files in the log, the default is 7 if not set, it will be overwritten when
-             it exceeds the size; depends on %i in filePattern-->
-            <DefaultRolloverStrategy max="25"/>
-        </RollingFile>
-
         <!--Logs with a grade of info-->
-        <RollingFile name="infoFileAppender"
-                     fileName="${LOG_HOME}/ams-info.log"
-                     filePattern="${LOG_HOME}/history/ams-info-%d{yyyy-MM-dd}-%i.log.gz">
+        <RollingFile name="logFileAppender"
+                     fileName="${LOG_HOME}/ams-log.log"
+                     filePattern="${LOG_HOME}/history/ams-log-%d{yyyy-MM-dd}-%i.log.gz">
             <!--Set log format-->
             <PatternLayout>
                 <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
@@ -72,25 +53,6 @@
                     <IfAccumulatedFileSize exceeds="20GB" />
                 </Delete>
             </DefaultRolloverStrategy>
-        </RollingFile>
-
-        <!--Logs with a grade of error-->
-        <RollingFile name="errorFileAppender"
-                     fileName="${LOG_HOME}/ams-error.log"
-                     filePattern="${LOG_HOME}/history/ams-error-%i.log.gz">
-            <!--Set log format-->
-            <PatternLayout>
-                <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
-            </PatternLayout>
-            <Policies>
-                <!--Set log file slice parameters-->
-                <!--<OnStartupTriggeringPolicy/>-->
-                <!--Set the log base file size to trigger rolling log file updates if the size is exceeded-->
-                <SizeBasedTriggeringPolicy size="64MB"/>
-            </Policies>
-            <!--Set the maximum number of files in the log, the default is 7 if not set, it will be overwritten when
-             it exceeds the size; depends on %i in filePattern-->
-            <DefaultRolloverStrategy max="7"/>
         </RollingFile>
 
         <!--Logs for iceberg metrics report -->
@@ -114,10 +76,7 @@
         </logger>
 
         <Root level="debug">
-            <!--By default, debug logs are not printed-->
-<!--            <AppenderRef ref="debugFileAppender" level="debug"/>-->
-            <AppenderRef ref="infoFileAppender" level="info"/>
-            <AppenderRef ref="errorFileAppender" level="error"/>
+            <AppenderRef ref="logFileAppender" level="info"/>
             <!-- SET CONSOLE_LOG_LEVEL=info to print console logger in docker -->
             <AppenderRef ref="consoleAppender" level="${CONSOLE_LEVEL}" />
         </Root>
