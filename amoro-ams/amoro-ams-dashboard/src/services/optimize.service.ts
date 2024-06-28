@@ -25,12 +25,14 @@ export function getOptimizerGroups() {
 export function getOptimizerTableList(
   params: {
     optimizerGroup: string
+    dbSearchInput: string
+    tableSearchInput: string
     page: number
     pageSize: number
   },
 ) {
-  const { optimizerGroup, page, pageSize } = params
-  return request.get(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/tables`, { params: { page, pageSize } })
+  const { optimizerGroup, dbSearchInput, tableSearchInput, page, pageSize } = params
+  return request.get(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/tables`, { params: {dbSearchInput, tableSearchInput, page, pageSize } })
 }
 
 export function getOptimizerResourceList(

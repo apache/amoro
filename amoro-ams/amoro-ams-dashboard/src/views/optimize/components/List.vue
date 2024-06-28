@@ -24,6 +24,7 @@ import { Modal } from 'ant-design-vue'
 import type { IIOptimizeGroupItem, ILableAndValue, IOptimizeResourceTableItem, IOptimizeTableItem } from '@/types/common.type'
 import { getOptimizerTableList, getResourceGroupsListAPI, releaseResource } from '@/services/optimize.service'
 import { usePagination } from '@/hooks/usePagination'
+import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { bytesToSize, formatMS2DisplayTime, formatMS2Time } from '@/utils'
 
 const { t } = useI18n()
@@ -57,6 +58,9 @@ const columns = shallowReactive([
 const pagination = reactive(usePagination())
 const dataSource = reactive<IOptimizeTableItem[]>([])
 const optimizerGroup = ref<ILableAndValue>()
+const dbSearchInput = ref<ILableAndValue>()
+const tableSearchInput = ref<ILableAndValue>()
+const placeholder = reactive(usePlaceholder())
 
 async function getOptimizerGroupList() {
   const res = await getResourceGroupsListAPI()
@@ -77,6 +81,8 @@ async function getTableList() {
     loading.value = true
     const params = {
       optimizerGroup: optimizerGroup.value || 'all',
+      dbSearchInput: dbSearchInput.value || '',
+      tableSearchInput: tableSearchInput.value || '',
       page: pagination.current,
       pageSize: pagination.pageSize,
     }
@@ -157,6 +163,20 @@ onMounted(() => {
         v-model:value="optimizerGroup" allow-clear placeholder="Optimizer group" :options="optimizerGroupList"
         style="min-width: 150px;" @change="refresh"
       />
+
+      <a-input
+        v-model:value="dbSearchInput"
+        :placeholder="placeholder.filterDBPh"
+        @change="refresh"
+      >
+      </a-input>
+
+      <a-input
+          v-model:value="tableSearchInput"
+          :placeholder="placeholder.filterTablePh"
+          @change="refresh"
+        >
+        </a-input>
     </a-space>
     <a-table
       class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"

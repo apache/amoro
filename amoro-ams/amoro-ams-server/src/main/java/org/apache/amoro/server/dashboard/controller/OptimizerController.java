@@ -36,6 +36,7 @@ import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.ws.rs.BadRequestException;
 
@@ -60,6 +61,8 @@ public class OptimizerController {
   /** Get optimize tables. * @return List of {@link TableOptimizingInfo} */
   public void getOptimizerTables(Context ctx) {
     String optimizerGroup = ctx.pathParam("optimizerGroup");
+    String dbFilterStr = ctx.queryParam("dbSearchInput");
+    String tableFilterStr = ctx.queryParam("tableSearchInput");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
     int offset = (page - 1) * pageSize;
@@ -71,8 +74,12 @@ public class OptimizerController {
       if (tableRuntime == null) {
         continue;
       }
-      if (ALL_GROUP.equals(optimizerGroup)
-          || tableRuntime.getOptimizerGroup().equals(optimizerGroup)) {
+      if ((ALL_GROUP.equals(optimizerGroup)
+              || tableRuntime.getOptimizerGroup().equals(optimizerGroup))
+          && (StringUtils.isEmpty(dbFilterStr)
+              || StringUtils.containsIgnoreCase(identifier.getDatabase(), dbFilterStr))
+          && (StringUtils.isEmpty(tableFilterStr)
+              || StringUtils.containsIgnoreCase(identifier.getTableName(), tableFilterStr))) {
         tableRuntimes.add(tableRuntime);
       }
     }
