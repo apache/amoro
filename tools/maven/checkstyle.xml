@@ -116,11 +116,6 @@ This file is based on the checkstyle file of Apache Beam.
         </module>
 
         <module name="IllegalImport">
-            <property name="illegalPkgs" value="org.apache.iceberg.relocated.com.google.common"/>
-            <message key="import.illegal" value="{0}; Use amoro shaded guava instead."/>
-        </module>
-
-        <module name="IllegalImport">
             <property name="illegalPkgs" value="org.apache.paimon.shade.guava30.com.google.common"/>
             <message key="import.illegal" value="{0}; Use amoro shaded guava instead."/>
         </module>
