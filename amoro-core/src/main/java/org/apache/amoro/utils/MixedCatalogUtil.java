@@ -174,6 +174,10 @@ public class MixedCatalogUtil {
           String keytab = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
           String principal = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
           builder.withBase64KrbAuth(keytab, krb5, principal);
+        } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_AK_SK.equalsIgnoreCase(authType)) {
+          String accessKey = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_ACCESS_KEY);
+          String secretKey = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_SECRET_KEY);
+          builder.withAkSkAuth(accessKey, secretKey);
         }
       }
     }
@@ -200,6 +204,16 @@ public class MixedCatalogUtil {
                 .getCatalogProperties()
                 .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
         builder.withBase64KrbAuth(keytab, krb5, principal);
+      } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_AK_SK.equalsIgnoreCase(authType)) {
+        String accessKey =
+            catalogMeta
+                .getCatalogProperties()
+                .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_ACCESS_KEY);
+        String secretKey =
+            catalogMeta
+                .getCatalogProperties()
+                .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_SECRET_KEY);
+        builder.withAkSkAuth(accessKey, secretKey);
       }
     }
     return builder.build();

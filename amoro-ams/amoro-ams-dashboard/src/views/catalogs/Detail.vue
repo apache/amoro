@@ -366,8 +366,11 @@ const storageConfigTypeOps = computed(() => {
   else if (type === 'glue') {
     return storageConfigTypeS3
   }
-  else if (type === 'hive' || type === 'hadoop') {
+  else if (type === 'hive') {
     return storageConfigTypeHadoop
+  }
+  else if (type === 'hadoop') {
+    return storageConfigTypeHadoopS3
   }
   else {
     return null
