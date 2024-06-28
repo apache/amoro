@@ -48,13 +48,20 @@ import org.apache.flink.table.connector.ProviderContext;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.source.FlinkInputFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SCAN_STARTUP_MODE_LATEST;
 
 /** An util class create mixed-format source data stream. */
 public class FlinkSource {
@@ -66,6 +73,7 @@ public class FlinkSource {
 
   public static final class Builder {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Builder.class);
     private static final String MIXED_FORMAT_FILE_TRANSFORMATION = "mixed-format-file";
     private ProviderContext context;
     private StreamExecutionEnvironment env;
@@ -148,7 +156,8 @@ public class FlinkSource {
       loadTableIfNeeded();
 
       if (mixedTable.isUnkeyedTable()) {
-        return buildUnkeyedTableSource();
+        String scanStartupMode = properties.get(MixedFormatValidator.SCAN_STARTUP_MODE.key());
+        return buildUnkeyedTableSource(scanStartupMode);
       }
 
       boolean dimTable =
@@ -214,8 +223,19 @@ public class FlinkSource {
       properties.putAll(mixedTable.properties());
     }
 
-    public DataStream<RowData> buildUnkeyedTableSource() {
-      DataStream<RowData> origin =
+    public DataStream<RowData> buildUnkeyedTableSource(String scanStartupMode) {
+      scanStartupMode = scanStartupMode == null ? null : scanStartupMode.toLowerCase();
+      Preconditions.checkArgument(
+          Objects.isNull(scanStartupMode)
+              || Objects.equals(scanStartupMode, MixedFormatValidator.SCAN_STARTUP_MODE_EARLIEST)
+              || Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_LATEST),
+          String.format(
+              "only support %s, %s when %s is %s",
+              MixedFormatValidator.SCAN_STARTUP_MODE_EARLIEST,
+              SCAN_STARTUP_MODE_LATEST,
+              MixedFormatValidator.MIXED_FORMAT_READ_MODE,
+              MixedFormatValidator.MIXED_FORMAT_READ_FILE));
+      org.apache.iceberg.flink.source.FlinkSource.Builder builder =
           org.apache.iceberg.flink.source.FlinkSource.forRowData()
               .env(env)
               .project(org.apache.amoro.flink.FlinkSchemaUtil.filterWatermark(projectedSchema))
@@ -223,8 +243,20 @@ public class FlinkSource {
               .filters(filters)
               .properties(properties)
               .flinkConf(flinkConf)
-              .limit(limit)
-              .build();
+              .limit(limit);
+      if (SCAN_STARTUP_MODE_LATEST.equalsIgnoreCase(scanStartupMode)) {
+        Optional<Snapshot> startSnapshotOptional =
+            Optional.ofNullable(tableLoader.loadTable().currentSnapshot());
+        if (startSnapshotOptional.isPresent()) {
+          Snapshot snapshot = startSnapshotOptional.get();
+          LOG.info(
+              "Get starting snapshot id {} based on scan startup mode {}",
+              snapshot.snapshotId(),
+              scanStartupMode);
+          builder.startSnapshotId(snapshot.snapshotId());
+        }
+      }
+      DataStream<RowData> origin = builder.build();
       return wrapKrb(origin).assignTimestampsAndWatermarks(watermarkStrategy);
     }
 

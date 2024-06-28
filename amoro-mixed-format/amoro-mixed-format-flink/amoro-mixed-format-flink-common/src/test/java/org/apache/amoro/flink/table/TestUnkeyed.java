@@ -18,12 +18,6 @@
 
 package org.apache.amoro.flink.table;
 
-import static org.apache.amoro.MockAmoroManagementServer.TEST_CATALOG_NAME;
-import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
-import static org.apache.amoro.table.TableProperties.ENABLE_LOG_STORE;
-import static org.apache.amoro.table.TableProperties.LOG_STORE_ADDRESS;
-import static org.apache.amoro.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
-
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
@@ -72,6 +66,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.apache.amoro.MockAmoroManagementServer.TEST_CATALOG_NAME;
+import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
+import static org.apache.amoro.table.TableProperties.ENABLE_LOG_STORE;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_ADDRESS;
+import static org.apache.amoro.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 
 @RunWith(Parameterized.class)
 public class TestUnkeyed extends FlinkTestBase {
@@ -352,12 +352,6 @@ public class TestUnkeyed extends FlinkTestBase {
     sql("CREATE TABLE IF NOT EXISTS mixed_catalog." + db + "." + TABLE + "(id INT, name STRING)");
 
     sql("insert into mixed_catalog." + db + "." + TABLE + " select * from input");
-    sql("insert into mixed_catalog." + db + "." + TABLE + " select * from input");
-
-    MixedTable table = mixedFormatCatalog.loadTable(TableIdentifier.of(catalog, db, TABLE));
-
-    Iterable<Snapshot> snapshots = table.asUnkeyedTable().snapshots();
-    Snapshot s = snapshots.iterator().next();
 
     TableResult result =
         exec(
@@ -366,10 +360,9 @@ public class TestUnkeyed extends FlinkTestBase {
                 + "."
                 + TABLE
                 + "/*+ OPTIONS("
-                + "'mixed-format.read.mode'='file'"
-                + ", 'start-snapshot-id'='"
-                + s.snapshotId()
-                + "'"
+                + "'streaming'='true'"
+                + ", 'mixed-format.read.mode'='file'"
+                + ", 'scan.startup.mode'='earliest'"
                 + ")*/");
 
     Set<Row> actual = new HashSet<>();
