@@ -18,6 +18,8 @@
 
 package org.apache.amoro.flink.table;
 
+import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SCAN_STARTUP_MODE_LATEST;
+
 import org.apache.amoro.flink.interceptor.ProxyFactory;
 import org.apache.amoro.flink.read.MixedFormatSource;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
@@ -60,8 +62,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
-import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SCAN_STARTUP_MODE_LATEST;
 
 /** An util class create mixed-format source data stream. */
 public class FlinkSource {
