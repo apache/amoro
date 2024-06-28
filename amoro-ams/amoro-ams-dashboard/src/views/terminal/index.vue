@@ -447,11 +447,6 @@ export default defineComponent({
               class="tab-item" @click="operationActive = item.id"
             >{{ item.id }}</span>
           </div>
-          <!-- <div v-if="!fullscreen" class="operation">
-            <a-tooltip placement="bottom" :title="$t('maximize')">
-              <span @click="resultFull"><svg-icon :isStroke="true" className="icon-svg" :icon-class="resultFullscreen ? 'sqlinit' : 'sqlmax'" :disabled="false" /></span>
-            </a-tooltip>
-          </div> -->
         </div>
         <div class="debug-result">
           <SqlLog v-show="operationActive === 'log'" ref="sqlLogRef" />
