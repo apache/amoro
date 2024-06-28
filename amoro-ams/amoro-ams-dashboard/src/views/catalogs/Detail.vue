@@ -196,7 +196,23 @@ function initData() {
 async function getOptimizerGroupList() {
   const res = await getResourceGroupsListAPI()
   const list = (res || []).map((item: IIOptimizeGroupItem) => ({ lable: item.resourceGroup.name, value: item.resourceGroup.name }))
-  optimizerGroupList.value = list
+
+  if (list.length === 0) {
+    Modal.confirm({
+      title: t('noResourceGroupsTitle'),
+      content: t('noResourceGroupsContent'),
+      okText: t('goToButtonText'),
+      onOk: async () => {
+        try {
+          window.location.href = '/optimizing?tab=optimizergroup'
+        } catch (error) {
+          console.error('Forward error:', error)
+        }
+      },
+    })
+  } else {
+    optimizerGroupList.value = list
+  }
 }
 async function getCatalogTypeOps() {
   const res = await getCatalogsTypes();

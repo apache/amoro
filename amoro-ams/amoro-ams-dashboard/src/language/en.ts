@@ -201,4 +201,7 @@ export default {
   filterBranchesOrTags: 'Filter branches/tags',
   findATag: 'Find a tag',
   fileSearchPlaceholder: 'Filter partitions',
+  noResourceGroupsTitle: 'No resource groups available.',
+  noResourceGroupsContent: 'Must create an optimizer group first.',
+  goToButtonText: 'Go'
 }
