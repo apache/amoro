@@ -23,6 +23,7 @@ import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.KAFKA_CO
 import static org.apache.amoro.table.TableProperties.ENABLE_LOG_STORE;
 import static org.apache.amoro.table.TableProperties.LOG_STORE_ADDRESS;
 import static org.apache.amoro.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
+
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
