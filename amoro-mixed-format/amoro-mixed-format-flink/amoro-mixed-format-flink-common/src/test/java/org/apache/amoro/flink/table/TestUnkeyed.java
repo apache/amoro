@@ -23,7 +23,6 @@ import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.KAFKA_CO
 import static org.apache.amoro.table.TableProperties.ENABLE_LOG_STORE;
 import static org.apache.amoro.table.TableProperties.LOG_STORE_ADDRESS;
 import static org.apache.amoro.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
-
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
@@ -353,7 +352,8 @@ public class TestUnkeyed extends FlinkTestBase {
 
     sql("insert into mixed_catalog." + db + "." + TABLE + " select * from input");
 
-    TableResult result =
+    // verify in earliest scan-startup-mode file read
+    TableResult resultWithEarliestPosition =
         exec(
             "select * from mixed_catalog."
                 + db
@@ -363,16 +363,61 @@ public class TestUnkeyed extends FlinkTestBase {
                 + "'streaming'='true'"
                 + ", 'mixed-format.read.mode'='file'"
                 + ", 'scan.startup.mode'='earliest'"
+                + ", 'monitor-interval'='1s'"
                 + ")*/");
 
     Set<Row> actual = new HashSet<>();
-    try (CloseableIterator<Row> iterator = result.collect()) {
+    try (CloseableIterator<Row> iterator = resultWithEarliestPosition.collect()) {
       for (int i = 0; i < data.size(); i++) {
         actual.add(iterator.next());
       }
     }
-    result.getJobClient().ifPresent(TestUtil::cancelJob);
+    resultWithEarliestPosition.getJobClient().ifPresent(TestUtil::cancelJob);
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
+
+    // verify in latest scan-startup-mode file read
+    TableResult resultWithLatestPosition =
+        exec(
+            "select * from mixed_catalog."
+                + db
+                + "."
+                + TABLE
+                + "/*+ OPTIONS("
+                + "'streaming'='true'"
+                + ", 'mixed-format.read.mode'='file'"
+                + ", 'scan.startup.mode'='latest'"
+                + ", 'monitor-interval'='1s'"
+                + ")*/");
+
+    List<Object[]> appendData = new LinkedList<>();
+    appendData.add(new Object[] {2000004, "a"});
+    appendData.add(new Object[] {2000015, "b"});
+    appendData.add(new Object[] {2000011, "c"});
+    appendData.add(new Object[] {2000014, "d"});
+    appendData.add(new Object[] {2000021, "d"});
+    appendData.add(new Object[] {2000007, "e"});
+
+    List<ApiExpression> appendRows = DataUtil.toRows(appendData);
+
+    Table appendInput =
+        getTableEnv()
+            .fromValues(
+                DataTypes.ROW(
+                    DataTypes.FIELD("id", DataTypes.INT()),
+                    DataTypes.FIELD("name", DataTypes.STRING())),
+                appendRows);
+    getTableEnv().createTemporaryView("appendInput", appendInput);
+
+    actual.clear();
+    try (CloseableIterator<Row> iterator = resultWithLatestPosition.collect()) {
+      sql("insert into mixed_catalog." + db + "." + TABLE + " select * from appendInput");
+      for (int i = 0; i < appendData.size(); i++) {
+        Assert.assertTrue("Should have more records", iterator.hasNext());
+        actual.add(iterator.next());
+      }
+    }
+    resultWithLatestPosition.getJobClient().ifPresent(TestUtil::cancelJob);
+    Assert.assertEquals(DataUtil.toRowSet(appendData), actual);
   }
 
   @Test
