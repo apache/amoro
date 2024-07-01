@@ -68,6 +68,7 @@
         <maven.compiler.target>8</maven.compiler.target>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.build.outputTimestamp>2024-06-27T08:00:00Z</project.build.outputTimestamp>
         <java.version>1.8</java.version>
         <root.dir>${project.basedir}</root.dir>
         <jacoco.flink.skip>false</jacoco.flink.skip>
@@ -152,36 +153,43 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!-- tests will have log4j as the default logging framework available -->
@@ -984,18 +992,6 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>${maven-jar-plugin-version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>test-jar</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
                     <version>${maven-spotless-plugin.version}</version>
@@ -1053,10 +1049,12 @@
                             <exclude>**/*.log</exclude>
                             <exclude>tools/maven/scalafmt.conf</exclude>
                             <exclude>**/licenses/**</exclude>
+                            <exclude>**/licenses-binary/**</exclude>
                             <!-- Administrative files in the main trunk. -->
                             <exclude>**/README.md</exclude>
                             <exclude>**/CODE_OF_CONDUCT.md</exclude>
                             <exclude>.github/**</exclude>
+                            <exclude>**/NOTICE-binary*</exclude>
                             <!-- IDE files. -->
                             <exclude>**/*.iml</exclude>
                             <exclude>**/.idea/**</exclude>
@@ -1185,6 +1183,23 @@
                             <goals>
                                 <goal>jar</goal>
                             </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-remote-resources-plugin</artifactId>
+                    <version>1.7.0</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>process</goal>
+                            </goals>
+                            <configuration>
+                                <resourceBundles>
+                                    <resourceBundle>org.apache.apache.resources:apache-incubator-disclaimer-resource-bundle:1.5</resourceBundle>
+                                </resourceBundles>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
