@@ -79,12 +79,7 @@ spec: {{/* TODO If Support Replica can be use more than 1 */}}
           {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
           ports:
-            - name: rest
-              containerPort: {{ .Values.server.rest.port }}
-            - name: table
-              containerPort: {{ .Values.server.table.port }}
-            - name: optimizing
-              containerPort: {{ .Values.server.optimizing.port }}
+            {{- include "amoro.pod.container.ports" . | nindent 12 }}
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             httpGet:
