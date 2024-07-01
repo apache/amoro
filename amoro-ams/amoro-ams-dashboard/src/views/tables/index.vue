@@ -53,9 +53,11 @@ export default defineComponent({
       activeKey: 'Details',
       isSecondaryNav: false,
       baseInfo: {
+        optimizingStatus: '',
         tableType: '',
         tableName: '',
         createTime: '',
+        lastCommitTime: '',
         size: '',
         file: '',
         averageFile: '',
@@ -141,9 +143,20 @@ export default defineComponent({
         <div class="g-flex-col">
           <div class="g-flex">
             <span :title="baseInfo.tableName" class="table-name g-text-nowrap">{{ baseInfo.tableName }}</span>
-            <span v-if="!isIceberg" class="create-time">{{ `${$t('createTime')}: ${baseInfo.createTime}` }}</span>
           </div>
           <div class="table-info g-flex-ac">
+            <p>{{ $t('optimizeStatus') }}:  <span class="text-color">{{ baseInfo.optimizingStatus }}</span></p>
+            <a-divider type="vertical" />
+            <p>{{ $t('records') }}:  <span class="text-color">{{ baseInfo.records }}</span></p>
+            <a-divider type="vertical" />
+            <p>{{ $t('lastCommitTime') }}:  <span class="text-color">{{ baseInfo.lastCommitTime }}</span></p>
+            <a-divider type="vertical" />
+            <template v-if="!isIceberg">
+              <p>{{ $t('createTime') }}: <span class="text-color">{{ baseInfo.createTime }}</span></p>
+              <a-divider type="vertical" />
+            </template>
+
+
             <p>{{ `${$t('table')}${$t('size')}` }}: <span class="text-color">{{ baseInfo.size }}</span></p>
             <a-divider type="vertical" />
             <p>{{ $t('file') }}:  <span class="text-color">{{ baseInfo.file }}</span></p>
@@ -194,7 +207,7 @@ export default defineComponent({
     font-size: 24px;
     line-height: 1.5;
     margin-right: 16px;
-    max-width: 400px;
+    max-width: 600px;
     padding-left: 24px;
   }
   .table-info {
