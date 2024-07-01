@@ -18,6 +18,7 @@
 
 package org.apache.amoro.table;
 
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Charsets;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -78,6 +79,7 @@ public class TableMetaStore implements Serializable {
   public static final String AUTH_METHOD = "auth.method";
   public static final String KEYTAB_LOGIN_USER = "krb.principal";
   public static final String SIMPLE_USER_NAME = "simple.user.name";
+  public static final String AUTH_METHOD_AK_SK = "ak/sk";
   public static final String AUTH_METHOD_SIMPLE = "SIMPLE";
   public static final String AUTH_METHOD_KERBEROS = "KERBEROS";
 
@@ -126,6 +128,10 @@ public class TableMetaStore implements Serializable {
   private transient RuntimeContext runtimeContext;
   private transient String authInformation;
 
+  private String accessKey;
+
+  private String secretKey;
+
   public static Builder builder() {
     return new Builder();
   }
@@ -139,11 +145,14 @@ public class TableMetaStore implements Serializable {
       byte[] krbKeyTab,
       byte[] krbConf,
       String krbPrincipal,
+      String accessKey,
+      String secretKey,
       boolean disableAuth) {
     Preconditions.checkArgument(
         authMethod == null
             || AUTH_METHOD_SIMPLE.equals(authMethod)
-            || AUTH_METHOD_KERBEROS.equals(authMethod),
+            || AUTH_METHOD_KERBEROS.equals(authMethod)
+            || AUTH_METHOD_AK_SK.equals(authMethod),
         "Error auth method:%s",
         authMethod);
     this.metaStoreSite = metaStoreSite;
@@ -155,6 +164,8 @@ public class TableMetaStore implements Serializable {
     this.krbConf = krbConf;
     this.krbPrincipal = krbPrincipal;
     this.disableAuth = disableAuth;
+    this.accessKey = accessKey;
+    this.secretKey = secretKey;
   }
 
   public byte[] getMetaStoreSite() {
@@ -185,6 +196,14 @@ public class TableMetaStore implements Serializable {
     return authMethod;
   }
 
+  public String getAccessKey() {
+    return accessKey;
+  }
+
+  public String getSecretKey() {
+    return secretKey;
+  }
+
   public boolean isKerberosAuthMethod() {
     return AUTH_METHOD_KERBEROS.equalsIgnoreCase(authMethod);
   }
@@ -203,7 +222,8 @@ public class TableMetaStore implements Serializable {
 
   public <T> T doAs(Callable<T> callable) {
     // if disableAuth, use process ugi to execute
-    if (disableAuth) {
+    if (disableAuth
+        || CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_AK_SK.equalsIgnoreCase(authMethod)) {
       return call(callable);
     }
     return Objects.requireNonNull(getUGI()).doAs((PrivilegedAction<T>) () -> call(callable));
@@ -541,6 +561,9 @@ public class TableMetaStore implements Serializable {
     private byte[] krbKeyTab;
     private byte[] krbConf;
     private String krbPrincipal;
+
+    private String accessKey;
+    private String secretKey;
     private boolean disableAuth = true;
     private final Map<String, String> properties = Maps.newHashMap();
     private Configuration configuration;
@@ -592,6 +615,14 @@ public class TableMetaStore implements Serializable {
     public Builder withBase64CoreSite(String encodedCoreSite) {
       this.coreSite =
           StringUtils.isBlank(encodedCoreSite) ? null : Base64.getDecoder().decode(encodedCoreSite);
+      return this;
+    }
+
+    public Builder withAkSkAuth(String accessKey, String secretKey) {
+      this.disableAuth = false;
+      this.authMethod = AUTH_METHOD_AK_SK;
+      this.accessKey = accessKey;
+      this.secretKey = secretKey;
       return this;
     }
 
@@ -715,7 +746,7 @@ public class TableMetaStore implements Serializable {
 
     public TableMetaStore build() {
       readProperties();
-      if (!disableAuth) {
+      if (!disableAuth & !AUTH_METHOD_AK_SK.equals(authMethod)) {
         Preconditions.checkNotNull(hdfsSite);
         Preconditions.checkNotNull(coreSite);
       }
@@ -725,6 +756,9 @@ public class TableMetaStore implements Serializable {
         Preconditions.checkNotNull(krbConf);
         Preconditions.checkNotNull(krbKeyTab);
         Preconditions.checkNotNull(krbPrincipal);
+      } else if (AUTH_METHOD_AK_SK.equals(authMethod)) {
+        Preconditions.checkNotNull(accessKey);
+        Preconditions.checkNotNull(secretKey);
       } else if (authMethod != null) {
         throw new IllegalArgumentException("Unsupported auth method:" + authMethod);
       }
@@ -743,6 +777,8 @@ public class TableMetaStore implements Serializable {
           krbKeyTab,
           krbConf,
           krbPrincipal,
+          accessKey,
+          secretKey,
           disableAuth);
     }
 
@@ -759,6 +795,8 @@ public class TableMetaStore implements Serializable {
               krbKeyTab,
               krbConf,
               krbPrincipal,
+              accessKey,
+              secretKey,
               disableAuth);
       tableMetaStore.getRuntimeContext().setConfiguration(configuration);
       return tableMetaStore;
