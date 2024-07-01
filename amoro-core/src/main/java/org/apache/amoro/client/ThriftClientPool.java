@@ -18,6 +18,7 @@
 
 package org.apache.amoro.client;
 
+import org.apache.amoro.shade.thrift.org.apache.thrift.TConfiguration;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TSocket;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransport;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException;
@@ -165,6 +166,8 @@ public class ThriftClientPool<
     }
 
     TTransport transport = null;
+    TConfiguration configuration = new TConfiguration();
+    configuration.setMaxFrameSize(maxMessageSize);
     if (poolConfig.getTimeout() > 0) {
       transport =
           new TFramedTransport(
