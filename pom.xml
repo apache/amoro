@@ -1060,10 +1060,12 @@
                             <exclude>**/*.log</exclude>
                             <exclude>tools/maven/scalafmt.conf</exclude>
                             <exclude>**/licenses/**</exclude>
+                            <exclude>**/licenses-binary/**</exclude>
                             <!-- Administrative files in the main trunk. -->
                             <exclude>**/README.md</exclude>
                             <exclude>**/CODE_OF_CONDUCT.md</exclude>
                             <exclude>.github/**</exclude>
+                            <exclude>**/NOTICE-binary*</exclude>
                             <!-- IDE files. -->
                             <exclude>**/*.iml</exclude>
                             <exclude>**/.idea/**</exclude>
