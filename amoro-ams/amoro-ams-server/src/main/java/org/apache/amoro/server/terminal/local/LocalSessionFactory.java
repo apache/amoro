@@ -132,6 +132,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
       sparkconf.set(
           "spark.sql.extensions",
           SparkContextUtil.MIXED_FORMAT_EXTENSION + "," + SparkContextUtil.ICEBERG_EXTENSION);
+      sparkconf.set("spark.cleaner.referenceTracking", "false");
 
       for (String key : this.conf.keySet()) {
         if (key.startsWith(SPARK_CONF_PREFIX)) {
