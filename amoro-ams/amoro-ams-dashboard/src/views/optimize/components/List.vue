@@ -168,15 +168,13 @@ onMounted(() => {
         v-model:value="dbSearchInput"
         :placeholder="placeholder.filterDBPh"
         @change="refresh"
-      >
-      </a-input>
+      />
 
       <a-input
-          v-model:value="tableSearchInput"
-          :placeholder="placeholder.filterTablePh"
-          @change="refresh"
-        >
-        </a-input>
+        v-model:value="tableSearchInput"
+        :placeholder="placeholder.filterTablePh"
+        @change="refresh"
+      />
     </a-space>
     <a-table
       class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"

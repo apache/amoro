@@ -32,7 +32,7 @@ export function getOptimizerTableList(
   },
 ) {
   const { optimizerGroup, dbSearchInput, tableSearchInput, page, pageSize } = params
-  return request.get(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/tables`, { params: {dbSearchInput, tableSearchInput, page, pageSize } })
+  return request.get(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/tables`, { params: { dbSearchInput, tableSearchInput, page, pageSize } })
 }
 
 export function getOptimizerResourceList(
