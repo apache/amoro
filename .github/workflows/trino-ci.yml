@@ -42,7 +42,7 @@ jobs:
         run: mvn validate -P trino-spotless
 
       - name: Build trino module with Maven
-        run: mvn clean install -pl 'amoro-mixed-format/amoro-mixed-format-trino' -Dhadoop=v2 -am -B -P trino-spotless,build-mixed-format-trino
+        run: mvn clean install -pl 'amoro-mixed-format/amoro-mixed-format-trino' -am -B -P hadoop2,trino-spotless,build-mixed-format-trino
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
