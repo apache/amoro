@@ -66,9 +66,6 @@ const state = reactive({
     tableType: '',
     tableName: '',
     createTime: '',
-    size: '',
-    file: '',
-    averageFile: '',
     tableFormat: '',
     hasPartition: false, // Whether there is a partition, if there is no partition, the file list will be displayed
   } as IBaseDetailInfo,
@@ -96,7 +93,6 @@ async function getTableDetails() {
       tableType,
       tableName: `${tableIdentifier?.catalog || ''}.${tableIdentifier?.database || ''}.${tableIdentifier?.tableName || ''}`,
       createTime: createTime ? dateFormat(createTime) : '',
-      lastCommitTime: dateFormat(changeMetrics?.lastCommitTime || baseMetrics?.lastCommitTime),
       hasPartition: !!(partitionColumnList?.length),
     }
 
