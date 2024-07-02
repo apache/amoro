@@ -57,7 +57,6 @@ export default defineComponent({
         tableType: '',
         tableName: '',
         createTime: '',
-        lastCommitTime: '',
         size: '',
         file: '',
         averageFile: '',
@@ -149,20 +148,10 @@ export default defineComponent({
             <a-divider type="vertical" />
             <p>{{ $t('records') }}:  <span class="text-color">{{ baseInfo.records }}</span></p>
             <a-divider type="vertical" />
-            <p>{{ $t('lastCommitTime') }}:  <span class="text-color">{{ baseInfo.lastCommitTime }}</span></p>
-            <a-divider type="vertical" />
             <template v-if="!isIceberg">
               <p>{{ $t('createTime') }}: <span class="text-color">{{ baseInfo.createTime }}</span></p>
               <a-divider type="vertical" />
             </template>
-
-
-            <p>{{ `${$t('table')}${$t('size')}` }}: <span class="text-color">{{ baseInfo.size }}</span></p>
-            <a-divider type="vertical" />
-            <p>{{ $t('file') }}:  <span class="text-color">{{ baseInfo.file }}</span></p>
-            <a-divider type="vertical" />
-            <p>{{ $t('averageFileSize') }}: <span class="text-color">{{ baseInfo.averageFile }}</span></p>
-            <a-divider type="vertical" />
             <p>{{ $t('tableFormat') }}: <span class="text-color">{{ baseInfo.tableFormat }}</span></p>
           </div>
         </div>

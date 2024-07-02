@@ -66,7 +66,6 @@ const state = reactive({
     tableType: '',
     tableName: '',
     createTime: '',
-    lastCommitTime: '',
     size: '',
     file: '',
     averageFile: '',
@@ -95,7 +94,7 @@ async function getTableDetails() {
     state.baseDetailInfo = {
       ...tableSummary,
       tableType,
-      tableName: `${tableIdentifier?.database || ''}.${tableIdentifier?.tableName || ''}`,
+      tableName: `${tableIdentifier?.catalog || ''}.${tableIdentifier?.database || ''}.${tableIdentifier?.tableName || ''}`,
       createTime: createTime ? dateFormat(createTime) : '',
       lastCommitTime: dateFormat(changeMetrics?.lastCommitTime || baseMetrics?.lastCommitTime),
       hasPartition: !!(partitionColumnList?.length),
