@@ -19,6 +19,7 @@
 package org.apache.amoro.optimizer.common;
 
 import org.apache.amoro.api.OptimizerProperties;
+import org.apache.amoro.optimizer.util.TaskClassLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +55,7 @@ public class Optimizer {
 
   public void startOptimizing() {
     LOG.info("Starting optimizer with configuration:{}", config);
+    Thread.currentThread().setContextClassLoader(new TaskClassLoader());
     Arrays.stream(executors)
         .forEach(
             optimizerExecutor -> {
