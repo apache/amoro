@@ -200,6 +200,9 @@ export default {
   nothingToShow: '无内容可展示',
   filterBranchesOrTags: '过滤分支/标签',
   findATag: '查找标签',
-  fileSearchPlaceholder: '过滤分区'
+  fileSearchPlaceholder: '过滤分区',
+  noResourceGroupsTitle: '没有任何优化组',
+  noResourceGroupsContent: '需要首先创建一个默认优化组',
+  goToButtonText: '前往'
 }
 
