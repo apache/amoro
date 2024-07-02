@@ -206,12 +206,14 @@ async function getOptimizerGroupList() {
       onOk: async () => {
         try {
           router.push({ path: '/optimizing', query: { tab: 'optimizergroup' } })
-        } catch (error) {
+        }
+        catch (error) {
           console.error('Navigation error:', error)
         }
       },
     })
-  } else {
+  }
+  else {
     optimizerGroupList.value = list
   }
 }
@@ -533,9 +535,15 @@ async function deleteCatalogModal() {
   Modal.confirm({
     title: t('deleteCatalogModalTitle'),
     onOk: async () => {
-      await delCatalog(formState.catalog.name || '')
-      message.success(`${t('remove')} ${t('success')}`)
-      emit('updateEdit', false)
+      try {
+        await delCatalog(formState.catalog.name || '')
+        message.success(`${t('remove')} ${t('success')}`, 1, () => {
+          router.replace({ path: '/catalogs', query: {} }).then(() => router.go(0))
+        })
+      }
+      catch (error) {
+        message.error(`${t('remove')} ${t('failed')}`)
+      }
     },
   })
 }
