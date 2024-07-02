@@ -39,9 +39,15 @@ const ResourceUsageRandomData = (length: number) => {
   }));
 };
 
+const cardsData = [
+     { title: 'Catalog', data: 3, precision: 0, suffix: '' },
+     { title: 'Table', data: 243, precision: 0, suffix: '' },
+     { title: 'Data', data: 300.00, precision: 2, suffix: 'GB' },
+   ];
+
 const multipleData = ref([
-  { subtitle: 'CPU', data: 50 },
-  { subtitle: 'Memory', data: 60 }
+  { subtitle: 'CPU', data: 50, precision: 0, suffix: '%' },
+  { subtitle: 'Memory', data: 60, precision: 0, suffix: '%' }
 ]);
 
 const resourceUsageData = ref(ResourceUsageRandomData(30));
@@ -65,24 +71,25 @@ const sortedTables = ref([
 <template>
   <div :style="{ background: '#F8F7F8', padding: '24px', minHeight: '900px' }" class="overview-content">
     <a-row :gutter="[16,8]">
+      <a-col v-for="(card, index) in cardsData" :key="index" :span="6">
+       <SingleDataCard
+         :title="card.title"
+         :data="card.data"
+         :precision="card.precision"
+         :suffix="card.suffix"
+       />
+     </a-col>
       <a-col :span=6>
-        <single-data-card title="Catalog" :data=3 />
+        <MultipleDataCard title="Resource" :items=multipleData />
       </a-col>
-      <a-col :span=6>
-        <single-data-card title="Table" :data=243 />
-      </a-col>
-      <a-col :span=6>
-        <single-data-card title="Data" :data="300.00" />
-      </a-col>
-      <a-col :span=6>
-        <multiple-data-card title="Catalog" :items=multipleData />
+
+      <a-col :span=12>
+        <ResourceUsageCard :data=resourceUsageData />
       </a-col>
       <a-col :span=12>
-        <resource-usage-card :data=resourceUsageData />
+        <OptimizingTablesCard title="Optimizing Tables" :tables=optimizingTables />
       </a-col>
-      <a-col :span=12>
-        <optimizing-tables-card title="Optimizing Tables" :tables=optimizingTables />
-      </a-col>
+
       <a-col :span=12>
         <DataSizeCard title="Data Size" :data="dataSizeData" />
       </a-col>
