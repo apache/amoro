@@ -38,7 +38,7 @@ export default defineComponent ({
       commitTime: '',
     })
 
-    const { t } = useI18n()
+    const { t, locale } = useI18n()
 
     const getVersion = async () => {
       const res = await getVersionInfo()
@@ -75,6 +75,12 @@ export default defineComponent ({
       window.open('https://amoro.apache.org/docs/latest/')
     }
 
+    const setLocale = ({ key }: { key: string }) => {
+      if(locale.value !== key) {
+        locale.value = key
+      }
+    };
+
     onMounted(() => {
       getVersion()
     })
@@ -83,6 +89,7 @@ export default defineComponent ({
       verInfo,
       goDocs,
       handleLogout,
+      setLocale,
     }
   },
 })
@@ -100,6 +107,15 @@ export default defineComponent ({
       </template>
       <question-circle-outlined class="question-icon" @click="goDocs" />
     </a-tooltip>
+    <a-dropdown>
+      <TranslationOutlined class="g-ml-8" />
+      <template #overlay>
+        <a-menu @click="setLocale">
+          <a-menu-item key="en">English</a-menu-item>
+          <a-menu-item key="zh">中文</a-menu-item>
+        </a-menu>
+      </template>
+    </a-dropdown>
     <a-tooltip>
       <template #title>
         {{ $t('logout') }}
@@ -132,7 +148,7 @@ export default defineComponent ({
     font-size: 12px;
   }
   .logout-button.ant-btn {
-      border: none;
+    border: none;
   }
   .logout-button:hover {
     border-color: unset;
