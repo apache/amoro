@@ -19,7 +19,7 @@ limitations under the License.
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type {
   UploadChangeParam,
   UploadFile,
@@ -83,6 +83,7 @@ const formState: FormState = reactive({
 })
 
 const { t } = useI18n()
+const router = useRouter()
 const route = useRoute()
 const placeholder = reactive(usePlaceholder())
 const metastoreType = ref<string>('')
@@ -204,9 +205,9 @@ async function getOptimizerGroupList() {
       okText: t('goToButtonText'),
       onOk: async () => {
         try {
-          window.location.href = '/optimizing?tab=optimizergroup'
+          router.push({ path: '/optimizing', query: { tab: 'optimizergroup' } })
         } catch (error) {
-          console.error('Forward error:', error)
+          console.error('Navigation error:', error)
         }
       },
     })
