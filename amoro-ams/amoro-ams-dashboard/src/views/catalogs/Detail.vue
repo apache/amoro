@@ -526,7 +526,7 @@ function handleSave() {
     .catch(() => {
     })
 }
-function handleCancle() {
+function handleCancel() {
   formRef.value.resetFields()
   emit('updateEdit', false)
   getConfigInfo()
@@ -778,7 +778,7 @@ onMounted(() => {
       <a-button type="primary" class="save-btn g-mr-12" @click="handleSave">
         {{ $t('save') }}
       </a-button>
-      <a-button @click="handleCancle">
+      <a-button @click="handleCancel">
         {{ $t('cancel') }}
       </a-button>
     </div>
