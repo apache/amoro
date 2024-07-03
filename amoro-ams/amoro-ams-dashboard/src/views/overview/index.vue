@@ -23,7 +23,7 @@ import MultipleDataCard from './components/MultipleDataCard.vue';
 import ResourceUsageCard from './components/ResourceUsageCard.vue';
 import OptimizingTablesCard from './components/OptimizingTablesCard.vue';
 import DataSizeCard from './components/DataSizeCard.vue';
-// import SortedTablesCard from './components/SortedTablesCard.vue';
+// import Top10TablesCard from './components/Top10TablesCard.vue';
 
 const sizeRandomData = (length: number, type: string) => {
   return Array.from({ length }, (_, index) => ({
@@ -52,12 +52,6 @@ const multipleData = ref([
 
 const resourceUsageData = ref(ResourceUsageRandomData(30));
 
-const optimizingTables = ref([
-  { name: 'Table 1', status: 'Optimizing', duration: '1h 20m' },
-  { name: 'Table 2', status: 'Idle', duration: '0h 45m' },
-]);
-
-const dataSizeData = ref(sizeRandomData(30, 'size'));
 const sortedTables = ref([
   { rank: 1, name: 'Table A', size: 500, files: 20 },
   { rank: 2, name: 'Table B', size: 450, files: 18 },
@@ -87,14 +81,14 @@ const sortedTables = ref([
         <ResourceUsageCard :data=resourceUsageData />
       </a-col>
       <a-col :span=12>
-        <OptimizingTablesCard title="Optimizing Tables" :tables=optimizingTables />
+        <OptimizingTablesCard/>
       </a-col>
 
       <a-col :span=12>
-        <DataSizeCard title="Data Size" :data="dataSizeData" />
+        <DataSizeCard/>
       </a-col>
       <a-col :span=12>
-        <!-- <sorted-tables-card title="Top 10 Tables" :tables=sortedTables /> -->
+        <!-- <Top10TablesCard/> -->
       </a-col>
     </a-row>
 
