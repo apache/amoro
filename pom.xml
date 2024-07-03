@@ -68,6 +68,7 @@
         <maven.compiler.target>8</maven.compiler.target>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.build.outputTimestamp>2024-06-27T08:00:00Z</project.build.outputTimestamp>
         <java.version>1.8</java.version>
         <root.dir>${project.basedir}</root.dir>
         <jacoco.flink.skip>false</jacoco.flink.skip>
@@ -138,6 +139,7 @@
         <amoro-shade-zookeeper.version>3.9.1</amoro-shade-zookeeper.version>
         <amoro-shade-thrift.version>0.20.0</amoro-shade-thrift.version>
         <annotation-api.version>1.3.2</annotation-api.version>
+        <guava.version>32.1.1-jre</guava.version>
     </properties>
 
     <dependencies>
@@ -152,36 +154,43 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!-- tests will have log4j as the default logging framework available -->
@@ -984,18 +993,6 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>${maven-jar-plugin-version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>test-jar</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
                     <version>${maven-spotless-plugin.version}</version>
@@ -1053,10 +1050,12 @@
                             <exclude>**/*.log</exclude>
                             <exclude>tools/maven/scalafmt.conf</exclude>
                             <exclude>**/licenses/**</exclude>
+                            <exclude>**/licenses-binary/**</exclude>
                             <!-- Administrative files in the main trunk. -->
                             <exclude>**/README.md</exclude>
                             <exclude>**/CODE_OF_CONDUCT.md</exclude>
                             <exclude>.github/**</exclude>
+                            <exclude>**/NOTICE-binary*</exclude>
                             <!-- IDE files. -->
                             <exclude>**/*.iml</exclude>
                             <exclude>**/.idea/**</exclude>
@@ -1188,6 +1187,23 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-remote-resources-plugin</artifactId>
+                    <version>1.7.0</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>process</goal>
+                            </goals>
+                            <configuration>
+                                <resourceBundles>
+                                    <resourceBundle>org.apache.apache.resources:apache-incubator-disclaimer-resource-bundle:1.5</resourceBundle>
+                                </resourceBundles>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -1259,33 +1275,12 @@
         </profile>
         <profile>
             <id>hadoop2</id>
-            <activation>
-                <property>
-                    <name>hadoop</name>
-                    <value>v2</value>
-                </property>
-            </activation>
             <properties>
                 <guava.version>14.0.1</guava.version>
                 <hive.version>2.3.9</hive.version>
                 <hadoop.version>2.10.2</hadoop.version>
                 <terminal.spark.version>3.2.4</terminal.spark.version>
                 <terminal.spark.major.version>3.2</terminal.spark.major.version>
-            </properties>
-        </profile>
-        <profile>
-            <id>hadoop3</id>
-            <activation>
-                <property>
-                    <name>!hadoop</name>
-                </property>
-            </activation>
-            <properties>
-                <guava.version>32.1.1-jre</guava.version>
-                <hive.version>3.1.1</hive.version>
-                <hadoop.version>3.4.0</hadoop.version>
-                <terminal.spark.version>3.3.2</terminal.spark.version>
-                <terminal.spark.major.version>3.3</terminal.spark.major.version>
             </properties>
         </profile>
     </profiles>
