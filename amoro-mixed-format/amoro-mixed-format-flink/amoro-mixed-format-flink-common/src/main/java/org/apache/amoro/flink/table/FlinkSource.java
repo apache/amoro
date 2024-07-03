@@ -18,8 +18,6 @@
 
 package org.apache.amoro.flink.table;
 
-import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.SCAN_STARTUP_MODE_LATEST;
-
 import org.apache.amoro.flink.interceptor.ProxyFactory;
 import org.apache.amoro.flink.read.MixedFormatSource;
 import org.apache.amoro.flink.read.hybrid.reader.RowDataReaderFunction;
@@ -228,11 +226,11 @@ public class FlinkSource {
       Preconditions.checkArgument(
           Objects.isNull(scanStartupMode)
               || Objects.equals(scanStartupMode, MixedFormatValidator.SCAN_STARTUP_MODE_EARLIEST)
-              || Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_LATEST),
+              || Objects.equals(scanStartupMode, MixedFormatValidator.SCAN_STARTUP_MODE_LATEST),
           String.format(
               "only support %s, %s when %s is %s",
               MixedFormatValidator.SCAN_STARTUP_MODE_EARLIEST,
-              SCAN_STARTUP_MODE_LATEST,
+              MixedFormatValidator.SCAN_STARTUP_MODE_LATEST,
               MixedFormatValidator.MIXED_FORMAT_READ_MODE,
               MixedFormatValidator.MIXED_FORMAT_READ_FILE));
       org.apache.iceberg.flink.source.FlinkSource.Builder builder =
@@ -244,7 +242,7 @@ public class FlinkSource {
               .properties(properties)
               .flinkConf(flinkConf)
               .limit(limit);
-      if (SCAN_STARTUP_MODE_LATEST.equalsIgnoreCase(scanStartupMode)) {
+      if (MixedFormatValidator.SCAN_STARTUP_MODE_LATEST.equalsIgnoreCase(scanStartupMode)) {
         Optional<Snapshot> startSnapshotOptional =
             Optional.ofNullable(tableLoader.loadTable().currentSnapshot());
         if (startSnapshotOptional.isPresent()) {
