@@ -134,6 +134,7 @@ export default {
   ready: '就绪',
   running: '运行中',
   cancel: '取消',
+  confirm: '确认',
   cancelProcess: '取消进程',
   finish: '完成',
   fail: '失败',

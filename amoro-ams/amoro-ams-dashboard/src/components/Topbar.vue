@@ -20,6 +20,7 @@
 import { defineComponent, onMounted, reactive } from 'vue'
 import { Modal } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 import useStore from '@/store'
 import { getVersionInfo } from '@/services/global.service'
@@ -39,6 +40,7 @@ export default defineComponent ({
     })
 
     const { t, locale } = useI18n()
+    const router = useRouter()
 
     const getVersion = async () => {
       const res = await getVersionInfo()
@@ -48,12 +50,15 @@ export default defineComponent ({
       }
     }
 
+    const goLoginPage = () => {
+      router.push({ path: '/login' })
+    }
+
     const handleLogout = async () => {
       Modal.confirm({
         title: t('logoutModalTitle'),
-        content: '',
-        okText: '',
-        cancelText: '',
+        okText: t('confirm'),
+        cancelText: t('cancel'),
         onOk: async () => {
           try {
             await loginService.logout()
@@ -65,7 +70,7 @@ export default defineComponent ({
             store.updateUserInfo({
               userName: '',
             })
-            window.location.href = '/login'
+            goLoginPage()
           }
         },
       })

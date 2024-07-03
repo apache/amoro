@@ -134,6 +134,7 @@ export default {
   ready: 'Ready',
   running: 'Running',
   cancel: 'Cancel',
+  confirm: 'Confirm',
   cancelProcess: 'Cancel Process',
   finish: 'Finish',
   fail: 'Fail',
