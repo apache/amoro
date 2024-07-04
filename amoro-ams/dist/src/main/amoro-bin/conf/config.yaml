@@ -87,7 +87,7 @@ ams:
   database:
     type: derby
     jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
-    url: jdbc:derby:/tmp/amoro/derby;create=true
+    url: jdbc:derby:/root/amoro/derby-persistent;create=true
     connection-pool-max-total: 20
     connection-pool-max-idle: 16
     connection-pool-max-wait-millis: 1000

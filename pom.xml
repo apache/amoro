@@ -1283,5 +1283,23 @@
                 <terminal.spark.major.version>3.2</terminal.spark.major.version>
             </properties>
         </profile>
+        <profile>
+            <id>tencent-dlc</id>
+            <repositories>
+                <repository>
+                    <id>dlc-repo</id>
+                    <name>dlc-repo</name>
+                    <url>https://mirrors.tencent.com/repository/maven/dlc</url>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <updatePolicy>daily</updatePolicy>
+                    </snapshots>
+                </repository>
+            </repositories>
+
+            <properties>
+                <hadoop.version>3.2.0</hadoop.version>
+            </properties>
+        </profile>
     </profiles>
 </project>
