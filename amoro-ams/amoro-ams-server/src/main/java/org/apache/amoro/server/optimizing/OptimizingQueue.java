@@ -389,10 +389,10 @@ public class OptimizingQueue extends PersistentBase {
       if (tableRuntimeMeta.getToSequence() != null) {
         toSequence = tableRuntimeMeta.getToSequence();
       }
-      loadTaskRuntimes(this);
       if (this.status != OptimizingProcess.Status.CLOSED) {
         tableRuntimeMeta.getTableRuntime().recover(this);
       }
+      loadTaskRuntimes(this);
     }
 
     @Override

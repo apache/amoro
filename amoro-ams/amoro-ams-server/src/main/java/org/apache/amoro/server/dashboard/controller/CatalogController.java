@@ -133,6 +133,8 @@ public class CatalogController {
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_HADOOP, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, PAIMON));
     VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_HADOOP, STORAGE_CONFIGS_VALUE_TYPE_S3, PAIMON));
+    VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_GLUE, STORAGE_CONFIGS_VALUE_TYPE_S3, ICEBERG));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_GLUE, STORAGE_CONFIGS_VALUE_TYPE_S3, MIXED_ICEBERG));
@@ -193,7 +195,7 @@ public class CatalogController {
     String displayKey = "display";
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_AMS, displayKey, "Amoro Metastore"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HIVE, displayKey, "Hive Metastore"));
-    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HADOOP, displayKey, "Hadoop"));
+    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HADOOP, displayKey, "Filesystem"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_GLUE, displayKey, "Glue"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_CUSTOM, displayKey, "Custom"));
     ctx.json(OkResponse.of(catalogTypes));
@@ -239,6 +241,11 @@ public class CatalogController {
             AUTH_CONFIGS_KEY_PRINCIPAL, serverAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
         break;
       case AUTH_CONFIGS_VALUE_TYPE_AK_SK:
+        metaAuthConfig.put(
+            AUTH_CONFIGS_KEY_ACCESS_KEY, serverAuthConfig.get(AUTH_CONFIGS_KEY_ACCESS_KEY));
+        metaAuthConfig.put(
+            AUTH_CONFIGS_KEY_SECRET_KEY, serverAuthConfig.get(AUTH_CONFIGS_KEY_SECRET_KEY));
+
         MixedCatalogUtil.copyProperty(
             serverAuthConfig,
             catalogMeta.getCatalogProperties(),

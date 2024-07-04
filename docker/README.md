@@ -40,6 +40,7 @@ You can speed up image building via
 ./build.sh \
   --apache-archive https://mirrors.aliyun.com/apache \
   --debian-mirror https://mirrors.aliyun.com  \
+  --maven-mirror https://maven.aliyun.com/repository/public  \
   amoro-flink-optimizer
 ```
 
