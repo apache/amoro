@@ -147,7 +147,8 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
 
       OptimizingExecutor executor = factory.createExecutor(input);
       TableOptimizing.OptimizingOutput output = executor.execute();
-      ByteBuffer outputByteBuffer = SerializationUtil.simpleSerialize(output);
+      ByteBuffer outputByteBuffer =
+          ByteBuffer.wrap(SerializationUtil.simpleSerialize(output).array());
       OptimizingTaskResult result = new OptimizingTaskResult(task.getTaskId(), threadId);
       result.setTaskOutput(outputByteBuffer);
       result.setSummary(output.summary());
@@ -160,10 +161,9 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       return result;
     } catch (Throwable t) {
       logger.error(
-          "Optimizer executor[{}] executed task[{}]({}) failed and cost {}",
+          "Optimizer executor[{}] executed task[{}] failed and cost {}",
           threadId,
           task.getTaskId(),
-          input,
           System.currentTimeMillis() - startTime,
           t);
       OptimizingTaskResult errorResult = new OptimizingTaskResult(task.getTaskId(), threadId);
