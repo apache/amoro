@@ -172,7 +172,7 @@ export default {
   remove: '移除',
   edit: '编辑',
   deleteCatalogModalTitle: '移除此目录？',
-  cannotDeleteModalTitle: "不能移除这个目录",
+  cannotDeleteModalTitle: '不能移除这个目录',
   cannotDeleteModalContent: '这个目录已被使用',
   success: '成功',
   optimzeGroup: '优化组',
@@ -183,7 +183,7 @@ export default {
   invalidInput: '非法输入',
   addgroup: '添加组',
   editgroup: '编辑组',
-  cannotDeleteGroupModalTitle: "不能移除这个组",
+  cannotDeleteGroupModalTitle: '不能移除这个组',
   cannotDeleteGroupModalContent: '这个组已被使用',
   deleteGroupModalTitle: '移除这个组',
   processId: '进程 ID',
@@ -204,6 +204,5 @@ export default {
   fileSearchPlaceholder: '过滤分区',
   noResourceGroupsTitle: '没有任何优化组',
   noResourceGroupsContent: '需要首先创建一个默认优化组',
-  goToButtonText: '前往'
+  goToButtonText: '前往',
 }
-
