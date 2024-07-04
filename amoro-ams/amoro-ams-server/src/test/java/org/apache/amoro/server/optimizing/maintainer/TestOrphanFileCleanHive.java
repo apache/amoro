@@ -20,8 +20,6 @@ package org.apache.amoro.server.optimizing.maintainer;
 
 import static org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintainer.DATA_FOLDER_NAME;
 
-import java.io.File;
-import java.io.IOException;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.api.ServerTableIdentifier;
@@ -38,6 +36,9 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.io.File;
+import java.io.IOException;
 
 @RunWith(Parameterized.class)
 public class TestOrphanFileCleanHive extends TestOrphanFileClean {
