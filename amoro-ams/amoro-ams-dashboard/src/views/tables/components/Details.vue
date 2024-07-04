@@ -62,7 +62,7 @@ const changeMetricsMap: IMap<string | number> = {
 const state = reactive({
   detailLoading: false,
   baseDetailInfo: {
-    optimizingStatus: '',
+    status: '',
     tableType: '',
     tableName: '',
     createTime: '',

@@ -142,7 +142,7 @@ public class TableController {
             TableIdentifier.of(catalog, database, tableName).buildTableIdentifier());
     Map<String, Object> tableSummary = serverTableMeta.getTableSummary();
     tableSummary.put(
-        "optimizingStatus", tableService.getRuntime(serverTableIdentifier).getOptimizingStatus());
+        "status", tableService.getRuntime(serverTableIdentifier).getOptimizingStatus());
 
     ctx.json(OkResponse.of(serverTableMeta));
   }
