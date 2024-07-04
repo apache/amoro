@@ -245,14 +245,16 @@ public class MixedTableMaintainer implements TableMaintainer {
     throw new UnsupportedOperationException("Mixed table doesn't support auto create tags");
   }
 
-  protected void cleanContentFiles(long lastTime, TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics) {
+  protected void cleanContentFiles(
+      long lastTime, TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics) {
     if (changeMaintainer != null) {
       changeMaintainer.cleanContentFiles(lastTime, orphanFilesCleaningMetrics);
     }
     baseMaintainer.cleanContentFiles(lastTime, orphanFilesCleaningMetrics);
   }
 
-  protected void cleanMetadata(long lastTime, TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics) {
+  protected void cleanMetadata(
+      long lastTime, TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics) {
     if (changeMaintainer != null) {
       changeMaintainer.cleanMetadata(lastTime, orphanFilesCleaningMetrics);
     }
