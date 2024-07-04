@@ -29,6 +29,7 @@ import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.optimizer.standalone.StandaloneOptimizer;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.DefaultTableService;
@@ -193,7 +194,8 @@ public class AmsEnvironment {
   }
 
   public boolean tableExist(TableIdentifier tableIdentifier) {
-    return tableService.tableExist(tableIdentifier.buildTableIdentifier());
+    ServerCatalog catalog = tableService.getServerCatalog(tableIdentifier.getCatalog());
+    return catalog.tableExists(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 
   public HMSMockServer getTestHMS() {

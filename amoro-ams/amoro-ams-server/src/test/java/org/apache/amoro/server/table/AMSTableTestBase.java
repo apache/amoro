@@ -32,6 +32,7 @@ import org.apache.amoro.hive.catalog.MixedHiveCatalog;
 import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.ConvertStructUtil;
@@ -140,11 +141,10 @@ public class AMSTableTestBase extends TableServiceTestBase {
 
   protected void createDatabase() {
     if (externalCatalog == null) {
-      if (!tableService()
-          .listDatabases(TableTestHelper.TEST_CATALOG_NAME)
-          .contains(TableTestHelper.TEST_DB_NAME)) {
-        tableService()
-            .createDatabase(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME);
+      InternalCatalog catalog =
+          tableService().getInternalCatalog(TableTestHelper.TEST_CATALOG_NAME);
+      if (!catalog.listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
+        catalog.createDatabase(TableTestHelper.TEST_DB_NAME);
       }
     } else {
       List<String> databases = externalCatalog.listDatabases();
@@ -156,7 +156,9 @@ public class AMSTableTestBase extends TableServiceTestBase {
 
   protected void dropDatabase() {
     if (externalCatalog == null) {
-      tableService().dropDatabase(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME);
+      InternalCatalog catalog =
+          tableService().getInternalCatalog(TableTestHelper.TEST_CATALOG_NAME);
+      catalog.dropDatabase(TableTestHelper.TEST_DB_NAME);
     } else {
       externalCatalog.dropDatabase(TableTestHelper.TEST_DB_NAME);
     }
