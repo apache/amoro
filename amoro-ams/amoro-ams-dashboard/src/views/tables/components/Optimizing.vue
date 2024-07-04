@@ -124,9 +124,8 @@ async function refreshOptimizingProcesses() {
 async function cancel() {
   Modal.confirm({
     title: t('cancelOptimizingProcessOptModalTitle'),
-    content: '',
-    okText: '',
-    cancelText: '',
+    okText: t('ok'),
+    cancelText: t('cancel'),
     onOk: async () => {
       try {
         loading.value = true
