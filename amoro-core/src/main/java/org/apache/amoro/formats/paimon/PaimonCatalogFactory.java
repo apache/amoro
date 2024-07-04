@@ -38,6 +38,10 @@ import java.util.Map;
 import java.util.Optional;
 
 public class PaimonCatalogFactory implements FormatCatalogFactory {
+
+  public static final String PAIMON_S3_ACCESS_KEY = "s3.access-key";
+  public static final String PAIMON_S3_SECRET_KEY = "s3.secret-key";
+
   @Override
   public PaimonCatalog create(
       String name, String metastoreType, Map<String, String> properties, TableMetaStore metaStore) {
@@ -49,8 +53,18 @@ public class PaimonCatalogFactory implements FormatCatalogFactory {
         url ->
             catalogProperties.put(
                 HiveCatalogOptions.HIVE_CONF_DIR.key(), new File(url.getPath()).getParent()));
-    Catalog catalog = paimonCatalog(catalogProperties, metaStore.getConfiguration());
-    return new PaimonCatalog(catalog, name);
+
+    if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_AK_SK.equalsIgnoreCase(
+        metaStore.getAuthMethod())) {
+      // s3.access-key, s3.secret-key
+      catalogProperties.put(PAIMON_S3_ACCESS_KEY, metaStore.getAccessKey());
+      catalogProperties.put(PAIMON_S3_SECRET_KEY, metaStore.getSecretKey());
+      Catalog catalog = paimonCatalog(catalogProperties, new Configuration());
+      return new PaimonCatalog(catalog, name);
+    } else {
+      Catalog catalog = paimonCatalog(catalogProperties, metaStore.getConfiguration());
+      return new PaimonCatalog(catalog, name);
+    }
   }
 
   public static Catalog paimonCatalog(Map<String, String> properties, Configuration configuration) {

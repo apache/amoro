@@ -64,13 +64,15 @@
             <fileMode>0644</fileMode>
         </file>
         <file>
-            <source>../../LICENSE</source>
+            <source>../../LICENSE-binary</source>
             <outputDirectory/>
+            <destName>LICENSE</destName>
             <fileMode>0644</fileMode>
         </file>
         <file>
-            <source>../../NOTICE</source>
+            <source>../../NOTICE-binary</source>
             <outputDirectory/>
+            <destName>NOTICE</destName>
             <fileMode>0644</fileMode>
         </file>
         <file>
@@ -80,6 +82,11 @@
         </file>
     </files>
     <fileSets>
+        <fileSet>
+            <directory>../../licenses-binary</directory>
+            <outputDirectory>licenses</outputDirectory>
+            <fileMode>0644</fileMode>
+        </fileSet>
         <fileSet>
             <directory>src/main/amoro-bin/bin</directory>
             <outputDirectory>bin</outputDirectory>

@@ -24,7 +24,6 @@ export default {
   optimizing: 'Optimizing',
   terminal: 'Terminal',
   settings: 'Settings',
-  resource: 'Resource',
   optimizergroup: 'Optimizer Groups',
   systemSetting: 'System Settings',
   containerSetting: 'Container Settings',
@@ -126,7 +125,6 @@ export default {
   password: 'Password',
   pause: 'Pause',
   run: 'Run',
-  maximize: 'Maximize',
   format: 'Format',
   fullscreen: 'Full screen',
   recovery: 'Recovery',
@@ -136,6 +134,7 @@ export default {
   ready: 'Ready',
   running: 'Running',
   cancel: 'Cancel',
+  confirm: 'Confirm',
   cancelProcess: 'Cancel Process',
   finish: 'Finish',
   fail: 'Fail',
@@ -203,4 +202,7 @@ export default {
   filterBranchesOrTags: 'Filter branches/tags',
   findATag: 'Find a tag',
   fileSearchPlaceholder: 'Filter partitions',
+  noResourceGroupsTitle: 'No resource groups available.',
+  noResourceGroupsContent: 'Please create an optimizer group first.',
+  goToButtonText: 'Go'
 }
