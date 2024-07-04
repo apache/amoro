@@ -21,6 +21,7 @@ package org.apache.amoro.catalog;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableBuilder;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.MixedCatalogUtil;
