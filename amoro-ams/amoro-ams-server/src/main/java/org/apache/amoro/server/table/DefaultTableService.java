@@ -139,6 +139,12 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
+  public InternalCatalog getInternalCatalog(String catalogName) {
+    return Optional.ofNullable(internalCatalogMap.get(catalogName))
+        .orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
+  }
+
+  @Override
   public void createCatalog(CatalogMeta catalogMeta) {
     checkStarted();
     if (catalogExist(catalogMeta.getCatalogName())) {
@@ -182,20 +188,26 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public TableMetadata loadTableMetadata(TableIdentifier tableIdentifier) {
-    validateTableExists(tableIdentifier);
-    InternalCatalog internalCatalog = getInternalCatalog(tableIdentifier.getCatalog());
-    return internalCatalog.loadTableMetadata(
-        tableIdentifier.getDatabase(), tableIdentifier.getTableName());
-  }
-
-  @Override
   public void dropTableMetadata(TableIdentifier tableIdentifier, boolean deleteData) {
     checkStarted();
-    validateTableExists(tableIdentifier);
-    ServerTableIdentifier serverTableIdentifier =
-        getInternalCatalog(tableIdentifier.getCatalog())
-            .dropTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+    if (StringUtils.isBlank(tableIdentifier.getTableName())) {
+      throw new IllegalMetadataException("table name is blank");
+    }
+    if (StringUtils.isBlank(tableIdentifier.getCatalog())) {
+      throw new IllegalMetadataException("catalog is blank");
+    }
+    if (StringUtils.isBlank(tableIdentifier.getDatabase())) {
+      throw new IllegalMetadataException("database is blank");
+    }
+
+    InternalCatalog internalCatalog = getInternalCatalog(tableIdentifier.getCatalog());
+    String database = tableIdentifier.getDatabase();
+    String table = tableIdentifier.getTableName();
+    if (!internalCatalog.tableExists(database, table)) {
+      throw new ObjectNotExistsException(tableIdentifier);
+    }
+
+    ServerTableIdentifier serverTableIdentifier = internalCatalog.dropTable(database, table);
     Optional.ofNullable(tableRuntimeMap.remove(serverTableIdentifier))
         .ifPresent(
             tableRuntime -> {
@@ -209,18 +221,16 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   @Override
   public void createTable(String catalogName, TableMetadata tableMetadata) {
     checkStarted();
-    validateTableNotExists(tableMetadata.getTableIdentifier().getIdentifier());
-
     InternalCatalog catalog = getInternalCatalog(catalogName);
+    String database = tableMetadata.getTableIdentifier().getDatabase();
+    String table = tableMetadata.getTableIdentifier().getTableName();
+    if (catalog.tableExists(database, table)) {
+      throw new AlreadyExistsException(tableMetadata.getTableIdentifier().getIdentifier());
+    }
+
     TableMetadata metadata = catalog.createTable(tableMetadata);
 
     triggerTableAdded(catalog, metadata.getTableIdentifier());
-  }
-
-  @Override
-  public List<String> listDatabases(String catalogName) {
-    checkStarted();
-    return getServerCatalog(catalogName).listDatabases();
   }
 
   @Override
@@ -230,55 +240,10 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public List<ServerTableIdentifier> listManagedTables(String catalogName) {
-    checkStarted();
-    return getAs(
-        TableMetaMapper.class, mapper -> mapper.selectTableIdentifiersByCatalog(catalogName));
-  }
-
-  @Override
-  public List<TableIDWithFormat> listTables(String catalogName, String dbName) {
-    checkStarted();
-    return getServerCatalog(catalogName).listTables(dbName);
-  }
-
-  @Override
-  public void createDatabase(String catalogName, String dbName) {
-    checkStarted();
-    getInternalCatalog(catalogName).createDatabase(dbName);
-  }
-
-  @Override
-  public void dropDatabase(String catalogName, String dbName) {
-    checkStarted();
-    getInternalCatalog(catalogName).dropDatabase(dbName);
-  }
-
-  @Override
   public AmoroTable<?> loadTable(ServerTableIdentifier tableIdentifier) {
     checkStarted();
     return getServerCatalog(tableIdentifier.getCatalog())
         .loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
-  }
-
-  @Override
-  public List<TableMetadata> listTableMetas() {
-    checkStarted();
-    return getAs(TableMetaMapper.class, TableMetaMapper::selectTableMetas);
-  }
-
-  @Override
-  public List<TableMetadata> listTableMetas(String catalogName, String database) {
-    checkStarted();
-    return getAs(
-        TableMetaMapper.class, mapper -> mapper.selectTableMetasByDb(catalogName, database));
-  }
-
-  @Override
-  public boolean tableExist(TableIdentifier tableIdentifier) {
-    checkStarted();
-    return getServerCatalog(tableIdentifier.getCatalog())
-        .tableExists(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 
   @Override
@@ -314,11 +279,6 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     return getAndCheckExist(getOrSyncServerTableIdentifier(tableIdentifier)).getBlockers().stream()
         .map(TableBlocker::buildBlocker)
         .collect(Collectors.toList());
-  }
-
-  private InternalCatalog getInternalCatalog(String catalogName) {
-    return Optional.ofNullable(internalCatalogMap.get(catalogName))
-        .orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
   }
 
   @Override
@@ -566,32 +526,6 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
     long end = System.currentTimeMillis();
     LOG.info("Syncing external catalogs took {} ms.", end - start);
-  }
-
-  private void validateTableIdentifier(TableIdentifier tableIdentifier) {
-    if (StringUtils.isBlank(tableIdentifier.getTableName())) {
-      throw new IllegalMetadataException("table name is blank");
-    }
-    if (StringUtils.isBlank(tableIdentifier.getCatalog())) {
-      throw new IllegalMetadataException("catalog is blank");
-    }
-    if (StringUtils.isBlank(tableIdentifier.getDatabase())) {
-      throw new IllegalMetadataException("database is blank");
-    }
-  }
-
-  private void validateTableNotExists(TableIdentifier tableIdentifier) {
-    validateTableIdentifier(tableIdentifier);
-    if (tableExist(tableIdentifier)) {
-      throw new AlreadyExistsException(tableIdentifier);
-    }
-  }
-
-  private void validateTableExists(TableIdentifier tableIdentifier) {
-    validateTableIdentifier(tableIdentifier);
-    if (!tableExist(tableIdentifier)) {
-      throw new ObjectNotExistsException(tableIdentifier);
-    }
   }
 
   private void validateCatalogUpdate(CatalogMeta oldMeta, CatalogMeta newMeta) {

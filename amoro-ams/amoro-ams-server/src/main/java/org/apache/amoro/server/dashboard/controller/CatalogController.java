@@ -581,7 +581,7 @@ public class CatalogController {
         StringUtils.isNotEmpty(ctx.pathParam("catalogName")), "Catalog name is empty!");
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalogName);
     if (serverCatalog instanceof InternalCatalog) {
-      ctx.json(OkResponse.of(tableService.listManagedTables(catalogName).size() == 0));
+      ctx.json(OkResponse.of(serverCatalog.listTables().size() == 0));
     } else {
       ctx.json(OkResponse.of(true));
     }
