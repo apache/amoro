@@ -26,6 +26,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.TestedCatalogs;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.IllegalMetadataException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
@@ -55,46 +56,34 @@ public class TestDatabaseService extends AMSTableTestBase {
 
   @Test
   public void testCreateAndDropDatabase() {
+    InternalCatalog catalog = tableService().getInternalCatalog(TEST_CATALOG_NAME);
     // test create database
-    tableService().createDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
+    catalog.createDatabase(TEST_DB_NAME);
 
     // test create duplicate database
-    Assert.assertThrows(
-        AlreadyExistsException.class,
-        () -> tableService().createDatabase(TEST_CATALOG_NAME, TEST_DB_NAME));
+    Assert.assertThrows(AlreadyExistsException.class, () -> catalog.createDatabase(TEST_DB_NAME));
 
     // test list database
-    Assert.assertEquals(
-        Lists.newArrayList(TEST_DB_NAME), tableService().listDatabases(TEST_CATALOG_NAME));
+    Assert.assertEquals(Lists.newArrayList(TEST_DB_NAME), catalog.listDatabases());
 
     // test drop database
-    tableService().dropDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
-    Assert.assertEquals(Lists.newArrayList(), tableService().listDatabases(TEST_CATALOG_NAME));
+    catalog.dropDatabase(TEST_DB_NAME);
+    Assert.assertEquals(Lists.newArrayList(), catalog.listDatabases());
 
     // test drop unknown database
-    Assert.assertThrows(
-        ObjectNotExistsException.class,
-        () -> tableService().dropDatabase(TEST_CATALOG_NAME, TEST_DB_NAME));
-
-    // test create database in not existed catalog
-    Assert.assertThrows(
-        ObjectNotExistsException.class,
-        () -> tableService().createDatabase("unknown", TEST_DB_NAME));
-
-    // test drop database in not existed catalog
-    Assert.assertThrows(
-        ObjectNotExistsException.class, () -> tableService().dropDatabase("unknown", TEST_DB_NAME));
+    Assert.assertThrows(ObjectNotExistsException.class, () -> catalog.dropDatabase(TEST_DB_NAME));
   }
 
   @Test
   public void testDropDatabaseWithTable() {
     Assume.assumeTrue(catalogTestHelper().tableFormat().equals(TableFormat.MIXED_ICEBERG));
-    tableService().createDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
+    Assume.assumeTrue(catalogTestHelper().isInternalCatalog());
+    InternalCatalog catalog = tableService().getInternalCatalog(TEST_CATALOG_NAME);
+    catalog.createDatabase(TEST_DB_NAME);
+
     createTable();
-    Assert.assertThrows(
-        IllegalMetadataException.class,
-        () -> tableService().dropDatabase(TEST_CATALOG_NAME, TEST_DB_NAME));
+    Assert.assertThrows(IllegalMetadataException.class, () -> catalog.dropDatabase(TEST_DB_NAME));
     dropTable();
-    tableService().dropDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
+    catalog.dropDatabase(TEST_DB_NAME);
   }
 }
