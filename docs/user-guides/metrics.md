@@ -71,6 +71,15 @@ Amoro has supported built-in metrics to measure status of table self-optimizing 
 | optimizer_group_memory_bytes_allocated | Gauge  | group | Memory bytes allocated in optimizer group        |
 | optimizer_group_threads                | Gauge  | group | Number of total threads in optimizer group       |
 
+## Orphan Files Cleaning metrics
+
+| Metric Name                                      | Type    | Tags                     | Description                                                                  |
+|--------------------------------------------------|---------|--------------------------|------------------------------------------------------------------------------|
+| table_orphan_content_cleaning_count              | Counter | catalog, database, table | Count of orphan content files cleaned in the table since ams started         |
+| table_orphan_metadata_file_cleaning_count        | Counter | catalog, database, table | Count of orphan metadata files cleaned in the table since ams started        |
+| table_slated_orphan_content_file_cleaning_count  | Counter | catalog, database, table | Slated Count of orphan content files cleaned in the table since ams started  |
+| table_slated_orphan_metadata_file_cleaning_count | Counter | catalog, database, table | Slated Count of orphan metadata files cleaned in the table since ams started |
+
 
 ## Ams service metrics
 | Metric Name                                            | Type   |     Tags        | Description                                                      |
