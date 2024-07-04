@@ -2,12 +2,13 @@
 title: "Metrics"
 url: metrics
 aliases:
-    - "user-guides/metrics"
+  - "user-guides/metrics"
 menu:
-    main:
-        parent: User Guides
-        weight: 500
+  main:
+    parent: User Guides
+    weight: 500
 ---
+
 <!--
  - Licensed to the Apache Software Foundation (ASF) under one or more
  - contributor license agreements.  See the NOTICE file distributed with
@@ -24,16 +25,19 @@ menu:
  - See the License for the specific language governing permissions and
  - limitations under the License.
  -->
+
 # Metrics
 
-Amoro build a metrics system to measure the behaviours of table management processes, like how long has it been since a table last performed self-optimizing process, and how much resources does a optimizer group currently has?
+Amoro build a metrics system to measure the behaviours of table management processes, like how long has it been since a
+table last performed self-optimizing process, and how much resources does a optimizer group currently has?
 
 There are two types of metrics provided in the Amoro metric system: Gauge and Counter.
 
 * Gauge: Provides a value of any type at a point in time.
 * Counter: Used to count values by incrementing and decrementing.
 
-Amoro has supported built-in metrics to measure status of table self-optimizing processes and optimizer resources, which can be [reported to external metric system like Prometheus etc](../deployment/#configure-metric-reporter).
+Amoro has supported built-in metrics to measure status of table self-optimizing processes and optimizer resources, which
+can be [reported to external metric system like Prometheus etc](../deployment/#configure-metric-reporter).
 
 ## Self-optimizing metrics
 
@@ -60,13 +64,22 @@ Amoro has supported built-in metrics to measure status of table self-optimizing 
 
 ## Optimizer Group metrics
 
-| Metric Name                            | Type   | Tags  | Description                                      |
-|----------------------------------------|--------|-------|--------------------------------------------------|
-| optimizer_group_pending_tasks          | Gauge  | group | Number of pending tasks in optimizer group       |
-| optimizer_group_executing_tasks        | Gauge  | group | Number of executing tasks in optimizer group     |
-| optimizer_group_planing_tables         | Gauge  | group | Number of planing tables in optimizer group      |
-| optimizer_group_pending_tables         | Gauge  | group | Number of pending tables in optimizer group      |
-| optimizer_group_executing_tables       | Gauge  | group | Number of executing tables in optimizer group    |
-| optimizer_group_optimizer_instances    | Gauge  | group | Number of optimizer instances in optimizer group |
-| optimizer_group_memory_bytes_allocated | Gauge  | group | Memory bytes allocated in optimizer group        |
-| optimizer_group_threads                | Gauge  | group | Number of total threads in optimizer group       |
+| Metric Name                            | Type  | Tags  | Description                                      |
+|----------------------------------------|-------|-------|--------------------------------------------------|
+| optimizer_group_pending_tasks          | Gauge | group | Number of pending tasks in optimizer group       |
+| optimizer_group_executing_tasks        | Gauge | group | Number of executing tasks in optimizer group     |
+| optimizer_group_planing_tables         | Gauge | group | Number of planing tables in optimizer group      |
+| optimizer_group_pending_tables         | Gauge | group | Number of pending tables in optimizer group      |
+| optimizer_group_executing_tables       | Gauge | group | Number of executing tables in optimizer group    |
+| optimizer_group_optimizer_instances    | Gauge | group | Number of optimizer instances in optimizer group |
+| optimizer_group_memory_bytes_allocated | Gauge | group | Memory bytes allocated in optimizer group        |
+| optimizer_group_threads                | Gauge | group | Number of total threads in optimizer group       |
+
+## Orphan Files Cleaning metrics
+
+| Metric Name                                      | Type    | Tags                     | Description                                                                  |
+|--------------------------------------------------|---------|--------------------------|------------------------------------------------------------------------------|
+| table_orphan_content_cleaning_count              | Counter | catalog, database, table | Count of orphan content files cleaned in the table since ams started         |
+| table_orphan_metadata_file_cleaning_count        | Counter | catalog, database, table | Count of orphan metadata files cleaned in the table since ams started        |
+| table_slated_orphan_content_file_cleaning_count  | Counter | catalog, database, table | Slated Count of orphan content files cleaned in the table since ams started  |
+| table_slated_orphan_metadata_file_cleaning_count | Counter | catalog, database, table | Slated Count of orphan metadata files cleaned in the table since ams started |
