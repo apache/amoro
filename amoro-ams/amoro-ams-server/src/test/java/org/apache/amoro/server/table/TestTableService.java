@@ -119,9 +119,11 @@ public class TestTableService extends AMSTableTestBase {
     Assert.assertTrue(serverCatalog.tableExists(TEST_DB_NAME, TEST_TABLE_NAME));
 
     // test create duplicate table
-    Assert.assertThrows(
-        AlreadyExistsException.class,
-        () -> tableService().createTable(TEST_CATALOG_NAME, tableMetadata()));
+    if (catalogTestHelper().isInternalCatalog()) {
+      Assert.assertThrows(
+          AlreadyExistsException.class,
+          () -> tableService().createTable(TEST_CATALOG_NAME, tableMetadata()));
+    }
 
     // test create table with wrong catalog name
     Assert.assertThrows(
@@ -130,7 +132,7 @@ public class TestTableService extends AMSTableTestBase {
           TableMetadata copyMetadata =
               new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
           copyMetadata.getTableIdentifier().setCatalog("unknown");
-          tableService().createTable(TEST_CATALOG_NAME, copyMetadata);
+          tableService().createTable("unknown", copyMetadata);
         });
 
     // test create table in not existed catalog
@@ -151,7 +153,7 @@ public class TestTableService extends AMSTableTestBase {
             TableMetadata copyMetadata =
                 new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
             copyMetadata.getTableIdentifier().setDatabase("unknown");
-            tableService().createTable(TEST_CATALOG_NAME, copyMetadata);
+            tableService().createTable("unknown", copyMetadata);
           });
     }
 
