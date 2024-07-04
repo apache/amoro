@@ -139,6 +139,7 @@
         <amoro-shade-zookeeper.version>3.9.1</amoro-shade-zookeeper.version>
         <amoro-shade-thrift.version>0.20.0</amoro-shade-thrift.version>
         <annotation-api.version>1.3.2</annotation-api.version>
+        <guava.version>32.1.1-jre</guava.version>
     </properties>
 
     <dependencies>
@@ -1274,12 +1275,6 @@
         </profile>
         <profile>
             <id>hadoop2</id>
-            <activation>
-                <property>
-                    <name>hadoop</name>
-                    <value>v2</value>
-                </property>
-            </activation>
             <properties>
                 <guava.version>14.0.1</guava.version>
                 <hive.version>2.3.9</hive.version>
@@ -1288,22 +1283,6 @@
                 <terminal.spark.major.version>3.2</terminal.spark.major.version>
             </properties>
         </profile>
-        <profile>
-            <id>hadoop3</id>
-            <activation>
-                <property>
-                    <name>!hadoop</name>
-                </property>
-            </activation>
-            <properties>
-                <guava.version>32.1.1-jre</guava.version>
-                <hive.version>3.1.1</hive.version>
-                <hadoop.version>3.4.0</hadoop.version>
-                <terminal.spark.version>3.3.2</terminal.spark.version>
-                <terminal.spark.major.version>3.3</terminal.spark.major.version>
-            </properties>
-        </profile>
-
         <profile>
             <id>tencent-dlc</id>
             <repositories>
