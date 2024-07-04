@@ -61,6 +61,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Stores hadoop config files for {@link MixedTable} */
 public class TableMetaStore implements Serializable {
+  private static final long serialVersionUID = 1L;
+
   private static final Logger LOG = LoggerFactory.getLogger(TableMetaStore.class);
 
   // Share runtime context with same configuration as context is expensive to construct

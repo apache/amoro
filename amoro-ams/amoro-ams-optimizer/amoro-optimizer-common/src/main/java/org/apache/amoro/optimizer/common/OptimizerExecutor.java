@@ -20,13 +20,13 @@ package org.apache.amoro.optimizer.common;
 
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskResult;
-import org.apache.amoro.optimizer.util.SerializationUtil;
 import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.amoro.optimizing.OptimizingExecutorFactory;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.TableOptimizing;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.utils.ExceptionUtil;
+import org.apache.amoro.utils.SerializationUtil;
 import org.apache.iceberg.common.DynConstructors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -147,7 +147,8 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
 
       OptimizingExecutor executor = factory.createExecutor(input);
       TableOptimizing.OptimizingOutput output = executor.execute();
-      ByteBuffer outputByteBuffer = SerializationUtil.simpleSerialize(output);
+      ByteBuffer outputByteBuffer =
+          ByteBuffer.wrap(SerializationUtil.simpleSerialize(output).array());
       OptimizingTaskResult result = new OptimizingTaskResult(task.getTaskId(), threadId);
       result.setTaskOutput(outputByteBuffer);
       result.setSummary(output.summary());
@@ -160,10 +161,9 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       return result;
     } catch (Throwable t) {
       logger.error(
-          "Optimizer executor[{}] executed task[{}]({}) failed and cost {}",
+          "Optimizer executor[{}] executed task[{}] failed and cost {}",
           threadId,
           task.getTaskId(),
-          input,
           System.currentTimeMillis() - startTime,
           t);
       OptimizingTaskResult errorResult = new OptimizingTaskResult(task.getTaskId(), threadId);
