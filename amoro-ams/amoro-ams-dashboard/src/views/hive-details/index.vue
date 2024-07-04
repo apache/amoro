@@ -202,7 +202,7 @@ export default defineComponent({
     <u-loading v-if="loading" />
     <!-- upgrade table secondary page -->
     <router-view v-if="isSecondaryNav" @go-back="goBack" @refresh="refresh" />
-    <ErrorMsg v-if="showErrorMsg" :msg="errorMessage" @cancle="showErrorMsg = false" />
+    <ErrorMsg v-if="showErrorMsg" :msg="errorMessage" @cancel="showErrorMsg = false" />
   </div>
 </template>
 

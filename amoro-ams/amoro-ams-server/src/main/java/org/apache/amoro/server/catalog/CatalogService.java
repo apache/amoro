@@ -55,6 +55,14 @@ public interface CatalogService {
   ServerCatalog getServerCatalog(String catalogName);
 
   /**
+   * Retrieves the InternalCatalog with the given catalog name.
+   *
+   * @param catalogName the name of the ServerCatalog to retrieve
+   * @return the InternalCatalog object matching the catalogName, or null if no catalog exists
+   */
+  InternalCatalog getInternalCatalog(String catalogName);
+
+  /**
    * Creates a catalog based on the provided catalog meta information. The catalog name is obtained
    * from the catalog meta.
    *

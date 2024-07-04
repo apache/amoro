@@ -25,6 +25,7 @@ import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.IllegalMetadataException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
@@ -125,12 +126,12 @@ public class TestCatalogService extends TableServiceTestBase {
     Assume.assumeTrue(catalogTestHelper.tableFormat().equals(TableFormat.MIXED_ICEBERG));
     CatalogMeta catalogMeta = catalogTestHelper.buildCatalogMeta("/tmp");
     tableService().createCatalog(catalogMeta);
-
-    tableService().createDatabase(catalogMeta.getCatalogName(), "test_db");
+    InternalCatalog catalog = tableService().getInternalCatalog(catalogMeta.getCatalogName());
+    catalog.createDatabase("test_db");
     Assert.assertThrows(
         IllegalMetadataException.class,
         () -> tableService().dropCatalog(catalogMeta.getCatalogName()));
-    tableService().dropDatabase(catalogMeta.getCatalogName(), "test_db");
+    catalog.dropDatabase("test_db");
     tableService().dropCatalog(catalogMeta.getCatalogName());
   }
 }

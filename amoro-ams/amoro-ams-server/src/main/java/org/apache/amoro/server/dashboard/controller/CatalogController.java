@@ -53,6 +53,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.catalog.CatalogService;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.dashboard.PlatformFileManager;
@@ -147,7 +148,7 @@ public class CatalogController {
   }
 
   private final PlatformFileManager platformFileInfoService;
-  private final TableService tableService;
+  private final CatalogService tableService;
 
   public CatalogController(TableService tableService, PlatformFileManager platformFileInfoService) {
     this.tableService = tableService;
@@ -588,7 +589,7 @@ public class CatalogController {
         StringUtils.isNotEmpty(ctx.pathParam("catalogName")), "Catalog name is empty!");
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalogName);
     if (serverCatalog instanceof InternalCatalog) {
-      ctx.json(OkResponse.of(tableService.listManagedTables(catalogName).size() == 0));
+      ctx.json(OkResponse.of(serverCatalog.listTables().size() == 0));
     } else {
       ctx.json(OkResponse.of(true));
     }

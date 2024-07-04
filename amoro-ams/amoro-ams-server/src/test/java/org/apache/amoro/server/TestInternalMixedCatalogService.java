@@ -357,8 +357,7 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
       Assertions.assertEquals(results.size(), scanHistorical.size());
 
       // TODO: there is bug in unkeyed-table.location.
-      String location =
-          tableService.loadTableMetadata(tableIdentifier.buildTableIdentifier()).getTableLocation();
+      String location = getTableMetadata(tableIdentifier).getTableLocation();
       AuthenticatedFileIO io = historicalTable.io();
       // drop table through rest-catalog
       catalog.dropTable(tableIdentifier, true);
