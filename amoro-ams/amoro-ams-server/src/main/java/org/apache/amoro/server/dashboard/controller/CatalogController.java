@@ -53,6 +53,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.catalog.CatalogService;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.dashboard.PlatformFileManager;
@@ -145,7 +146,7 @@ public class CatalogController {
   }
 
   private final PlatformFileManager platformFileInfoService;
-  private final TableService tableService;
+  private final CatalogService tableService;
 
   public CatalogController(TableService tableService, PlatformFileManager platformFileInfoService) {
     this.tableService = tableService;
