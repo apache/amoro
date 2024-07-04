@@ -204,5 +204,5 @@ export default {
   fileSearchPlaceholder: 'Filter partitions',
   noResourceGroupsTitle: 'No resource groups available.',
   noResourceGroupsContent: 'Please create an optimizer group first.',
-  goToButtonText: 'Go'
+  goToButtonText: 'Go',
 }

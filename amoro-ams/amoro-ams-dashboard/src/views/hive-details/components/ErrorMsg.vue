@@ -22,7 +22,7 @@ import { ref } from 'vue'
 
 const props = defineProps<{ msg: string }>()
 const emit = defineEmits<{
-  (e: 'cancle'): void
+  (e: 'cancel'): void
 }>()
 const open = ref(true)
 </script>
@@ -34,7 +34,7 @@ const open = ref(true)
     :title="`${$t('errorMessage')}`"
     :footer="null"
     class="upgrade-error"
-    @cancel="emit('cancle')"
+    @cancel="emit('cancel')"
   >
     <p class="msg">
       {{ props.msg }}
