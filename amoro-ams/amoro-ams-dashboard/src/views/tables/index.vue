@@ -141,9 +141,9 @@ export default defineComponent({
             <span :title="baseInfo.tableName" class="table-name g-text-nowrap">{{ baseInfo.tableName }}</span>
           </div>
           <div class="table-info g-flex-ac">
-            <p>{{ $t('optimizingStatus') }}:  <span class="text-color">{{ baseInfo.optimizingStatus }}</span></p>
+            <p>{{ $t('optimizingStatus') }}: <span class="text-color">{{ baseInfo.optimizingStatus }}</span></p>
             <a-divider type="vertical" />
-            <p>{{ $t('records') }}:  <span class="text-color">{{ baseInfo.records }}</span></p>
+            <p>{{ $t('records') }}: <span class="text-color">{{ baseInfo.records }}</span></p>
             <a-divider type="vertical" />
             <template v-if="!isIceberg">
               <p>{{ $t('createTime') }}: <span class="text-color">{{ baseInfo.createTime }}</span></p>
