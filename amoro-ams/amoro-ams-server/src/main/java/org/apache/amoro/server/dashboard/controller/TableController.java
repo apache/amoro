@@ -499,7 +499,7 @@ public class TableController {
         };
 
     List<TableMeta> tables =
-        tableService.listTables(catalog, db).stream()
+        serverCatalog.listTables(db).stream()
             .map(
                 idWithFormat ->
                     new TableMeta(
@@ -548,7 +548,7 @@ public class TableController {
     String keywords = ctx.queryParam("keywords");
 
     List<String> dbList =
-        tableService.listDatabases(catalog).stream()
+        tableService.getServerCatalog(catalog).listDatabases().stream()
             .filter(item -> StringUtils.isBlank(keywords) || item.contains(keywords))
             .collect(Collectors.toList());
     ctx.json(OkResponse.of(dbList));

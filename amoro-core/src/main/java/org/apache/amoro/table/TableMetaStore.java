@@ -510,8 +510,12 @@ public class TableMetaStore implements Serializable {
 
     private Configuration buildConfiguration(TableMetaStore metaStore) {
       Configuration configuration = new Configuration();
-      configuration.addResource(new ByteArrayInputStream(metaStore.getCoreSite()));
-      configuration.addResource(new ByteArrayInputStream(metaStore.getHdfsSite()));
+      if (!ArrayUtils.isEmpty(metaStore.getCoreSite())) {
+        configuration.addResource(new ByteArrayInputStream(metaStore.getCoreSite()));
+      }
+      if (!ArrayUtils.isEmpty(metaStore.getHdfsSite())) {
+        configuration.addResource(new ByteArrayInputStream(metaStore.getHdfsSite()));
+      }
       if (!ArrayUtils.isEmpty(metaStore.getMetaStoreSite())) {
         configuration.addResource(new ByteArrayInputStream(metaStore.getMetaStoreSite()));
       }
