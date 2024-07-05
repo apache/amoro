@@ -109,15 +109,8 @@ onMounted(() => {
 
 <template>
   <AModal
-    :visible="true" 
-    :title="edit ? $t('editgroup') : $t('addgroup')" 
-    :confirm-loading="confirmLoading"
-    :closable="false"
-    :ok-text="$t('ok')"
-    :cancel-text="$t('cancel')"
-    lass="group-modal" 
-    @ok="handleOk" 
-    @cancel="handleCancel"
+    :visible="true" :title="edit ? $t('editgroup') : $t('addgroup')" :confirm-loading="confirmLoading"
+    :closable="false" class="group-modal" @ok="handleOk" @cancel="handleCancel"
   >
     <a-form ref="formRef" :model="formState" class="label-120">
       <a-form-item name="name" :label="$t('name')" :rules="[{ required: true, message: `${placeholder.groupNamePh}` }]">

@@ -76,8 +76,6 @@ onMounted(() => {
     :title="$t('scaleOut')"
     :confirm-loading="confirmLoading"
     :closable="false"
-    :ok-text="$t('ok')"
-    :cancel-text="$t('cancel')"
     @ok="handleOk"
     @cancel="handleCancel"
   >

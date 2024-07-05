@@ -44,9 +44,9 @@ export default defineComponent({
     const detailRef = ref()
 
     const tabConfigs = shallowReactive([
-      { key: 'Snapshots', label: 'snapshots' },
-      { key: 'Optimizing', label: 'optimizing' },
-      { key: 'Operations', label: 'operations' },
+      { key: 'Snapshots', label: 'Snapshots' },
+      { key: 'Optimizing', label: 'Optimizing' },
+      { key: 'Operations', label: 'Operations' },
     ])
 
     const state = reactive({
@@ -156,13 +156,13 @@ export default defineComponent({
       </div>
       <div class="content">
         <a-tabs v-model:activeKey="activeKey" destroy-inactive-tab-pane @change="onChangeTab">
-          <a-tab-pane key="Details" :tab="$t('details')" force-render>
+          <a-tab-pane key="Details" tab="Details" force-render>
             <UDetails ref="detailRef" @set-base-detail-info="setBaseDetailInfo" />
           </a-tab-pane>
-          <a-tab-pane v-if="detailLoaded" key="Files" :tab="$t('files')">
+          <a-tab-pane v-if="detailLoaded" key="Files" tab="Files">
             <UFiles :has-partition="baseInfo.hasPartition" />
           </a-tab-pane>
-          <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="$t(tab.label)">
+          <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="`${tab.label}`">
             <component :is="`U${tab.key}`" />
           </a-tab-pane>
         </a-tabs>

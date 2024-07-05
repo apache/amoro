@@ -152,7 +152,6 @@ function leaveConfirm(cb?: () => void) {
     title: t('leavePageModalTitle'),
     content: t('leavePageModalContent'),
     okText: t('leave'),
-    cancelText: t('cancel'),
     onOk: async () => {
       cb && await cb()
     },

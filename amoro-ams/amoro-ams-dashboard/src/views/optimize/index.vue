@@ -25,6 +25,7 @@ import type { IGroupItem, IGroupItemInfo, ILableAndValue, IMap } from '@/types/c
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { usePagination } from '@/hooks/usePagination'
 import { getOptimizerGroups, getQueueResourceInfo } from '@/services/optimize.service'
+// import ScaleOutModal from './components/ScaleOut.vue'
 import { mbToSize } from '@/utils'
 
 export default defineComponent({
