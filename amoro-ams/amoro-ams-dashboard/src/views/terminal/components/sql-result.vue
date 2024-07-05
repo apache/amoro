@@ -30,7 +30,6 @@ const isEmpty = computed(() => {
 </script>
 
 <template>
-  <!-- :style="{width: `${innerWidth}px`}" -->
   <div class="sql-result-wrap">
     <div class="result-status" :style="{ background: debugResultBgcMap[status as keyof typeof debugResultBgcMap] }">
       <template v-if="status === 'Running'">
