@@ -27,13 +27,6 @@ const isEmpty = computed(() => {
   return !props.info || !props.info?.columns
 })
 
-const status = computed(() => {
-  return props.info?.status
-})
-
-// const innerWidth = computed(() => {
-//   return window.innerWidth - 220 - 34
-// })
 </script>
 
 <template>
