@@ -85,16 +85,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <AModal 
-    :visible="props.visible" 
-    :title="$t('scaleOut')" 
-    :confirm-loading="confirmLoading" 
-    :closable="false" 
-    :ok-text="$t('ok')"
-    :cancel-text="$t('cancel')"
-    @ok="handleOk" 
-    @cancel="handleCancel"
-  >
+  <AModal :visible="props.visible" :title="$t('scaleOut')" :confirm-loading="confirmLoading" :closable="false" @ok="handleOk" @cancel="handleCancel">
     <a-form ref="formRef" :model="formState" class="label-120">
       <a-form-item name="resourceGroup" :label="$t('resourceGroup')" :rules="[{ required: true, message: `${placeholder.resourceGroupPh}` }]">
         <a-select

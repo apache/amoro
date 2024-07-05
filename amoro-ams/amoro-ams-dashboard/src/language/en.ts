@@ -205,7 +205,4 @@ export default {
   noResourceGroupsTitle: 'No resource groups available.',
   noResourceGroupsContent: 'Please create an optimizer group first.',
   goToButtonText: 'Go',
-  snapshots: 'Snapshots',
-  details: 'Details',
-  operations: 'Operations',
 }
