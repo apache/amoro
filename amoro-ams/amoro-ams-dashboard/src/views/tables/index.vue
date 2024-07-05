@@ -53,7 +53,7 @@ export default defineComponent({
       activeKey: 'Details',
       isSecondaryNav: false,
       baseInfo: {
-        status: '',
+        optimizingStatus: '',
         tableType: '',
         tableName: '',
         createTime: '',
@@ -141,7 +141,7 @@ export default defineComponent({
             <span :title="baseInfo.tableName" class="table-name g-text-nowrap">{{ baseInfo.tableName }}</span>
           </div>
           <div class="table-info g-flex-ac">
-            <p>{{ $t('status') }}:  <span class="text-color">{{ baseInfo.status }}</span></p>
+            <p>{{ $t('optimizingStatus') }}:  <span class="text-color">{{ baseInfo.optimizingStatus }}</span></p>
             <a-divider type="vertical" />
             <p>{{ $t('records') }}:  <span class="text-color">{{ baseInfo.records }}</span></p>
             <a-divider type="vertical" />
