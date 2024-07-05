@@ -74,14 +74,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal 
-    v-model:open="$props.visible" 
-    :title="$t('createDatabase')" 
-    :ok-text="$t('ok')"
-    :cancel-text="$t('cancel')" 
-    @ok="handleOk" 
-    @cancel="handleCancel"
-  >
+  <a-modal v-model:open="$props.visible" :title="$t('createDatabase')" @ok="handleOk" @cancel="handleCancel">
     <a-form ref="formRef" :model="formState" class="label-120">
       <a-form-item name="catalog" :label="$t('catalog')" :rules="[{ required: true, message: `${placeholder.selectClPh}` }]">
         <a-select

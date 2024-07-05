@@ -203,7 +203,6 @@ async function getOptimizerGroupList() {
       title: t('noResourceGroupsTitle'),
       content: t('noResourceGroupsContent'),
       okText: t('goToButtonText'),
-      cancelText: t('cancel'),
       onOk: async () => {
         try {
           router.push({ path: '/optimizing', query: { tab: 'optimizergroup' } })
@@ -458,7 +457,6 @@ async function handleRemove() {
     title: t('cannotDeleteModalTitle'),
     content: t('cannotDeleteModalContent'),
     wrapClassName: 'not-delete-modal',
-    okText: t('ok'),
   })
 }
 async function validatorName(_: any, value: string) {
@@ -536,8 +534,6 @@ function handleCancel() {
 async function deleteCatalogModal() {
   Modal.confirm({
     title: t('deleteCatalogModalTitle'),
-    okText: t('ok'),
-    cancelText: t('cancel'),
     onOk: async () => {
       try {
         await delCatalog(formState.catalog.name || '')
