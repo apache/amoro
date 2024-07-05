@@ -96,9 +96,8 @@ function releaseModal(record: any) {
   }
   Modal.confirm({
     title: t('releaseOptModalTitle'),
-    content: '',
-    okText: '',
-    cancelText: '',
+    okText: t('confirm'),
+    cancelText: t('cancel'),
     onOk: () => {
       releaseJob(record)
     },
@@ -174,6 +173,8 @@ async function removeGroup(record: IIOptimizeGroupItem) {
   if (res) {
     Modal.confirm({
       title: t('deleteGroupModalTitle'),
+      okText: t('ok'),
+      cancelText: t('cancel'),
       onOk: async () => {
         await groupDeleteAPI({ name: record.name })
         message.success(`${t('remove')} ${t('success')}`)
@@ -185,6 +186,7 @@ async function removeGroup(record: IIOptimizeGroupItem) {
   Modal.warning({
     title: t('cannotDeleteGroupModalTitle'),
     content: t('cannotDeleteGroupModalContent'),
+    okText: t('ok'),
   })
 }
 
