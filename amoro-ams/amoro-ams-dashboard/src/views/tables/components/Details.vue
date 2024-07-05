@@ -62,12 +62,10 @@ const changeMetricsMap: IMap<string | number> = {
 const state = reactive({
   detailLoading: false,
   baseDetailInfo: {
+    optimizingStatus: '',
     tableType: '',
     tableName: '',
     createTime: '',
-    size: '',
-    file: '',
-    averageFile: '',
     tableFormat: '',
     hasPartition: false, // Whether there is a partition, if there is no partition, the file list will be displayed
   } as IBaseDetailInfo,
@@ -93,7 +91,7 @@ async function getTableDetails() {
     state.baseDetailInfo = {
       ...tableSummary,
       tableType,
-      tableName: tableIdentifier?.tableName || '',
+      tableName: `${tableIdentifier?.catalog || ''}.${tableIdentifier?.database || ''}.${tableIdentifier?.tableName || ''}`,
       createTime: createTime ? dateFormat(createTime) : '',
       hasPartition: !!(partitionColumnList?.length),
     }
