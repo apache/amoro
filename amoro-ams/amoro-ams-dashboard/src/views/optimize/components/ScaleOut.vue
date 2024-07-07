@@ -86,7 +86,7 @@ onMounted(() => {
 
 <template>
   <AModal 
-    :visible="props.visible" 
+    :open="props.visible" 
     :title="$t('scaleOut')" 
     :confirm-loading="confirmLoading" 
     :closable="false" 

@@ -109,11 +109,11 @@ onMounted(() => {
 
 <template>
   <AModal
-    :visible="true" 
+    :open="true" 
     :title="edit ? $t('editgroup') : $t('addgroup')" 
     :confirm-loading="confirmLoading"
     :closable="false"
-    lass="group-modal" 
+    class="group-modal" 
     @ok="handleOk" 
     @cancel="handleCancel"
   >

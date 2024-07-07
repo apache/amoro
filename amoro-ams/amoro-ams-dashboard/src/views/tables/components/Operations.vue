@@ -124,7 +124,7 @@ onMounted(() => {
     </a-table>
   </div>
   <AModal
-    :visible="visible"
+    :open="visible"
     :width="560"
     :title="$t('operationDetails')"
     class="operation-wrap"

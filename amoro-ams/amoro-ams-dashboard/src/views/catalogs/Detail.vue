@@ -203,7 +203,6 @@ async function getOptimizerGroupList() {
       title: t('noResourceGroupsTitle'),
       content: t('noResourceGroupsContent'),
       okText: t('goToButtonText'),
-      cancelText: t('cancel'),
       onOk: async () => {
         try {
           router.push({ path: '/optimizing', query: { tab: 'optimizergroup' } })
