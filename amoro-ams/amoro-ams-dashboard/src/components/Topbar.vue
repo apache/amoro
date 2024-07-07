@@ -16,8 +16,8 @@
   limitations under the License.
  / -->
 
-<script lang="ts">
-import { defineComponent, onMounted, reactive } from 'vue'
+<script setup lang="ts">
+import { onMounted, reactive } from 'vue'
 import { Modal } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -31,72 +31,59 @@ interface IVersion {
   commitTime: string
 }
 
-export default defineComponent ({
-  name: 'Topbar',
-  setup() {
-    const verInfo = reactive<IVersion>({
-      version: '',
-      commitTime: '',
-    })
 
-    const { t, locale } = useI18n()
-    const router = useRouter()
+const verInfo = reactive<IVersion>({
+  version: '',
+  commitTime: '',
+})
 
-    const getVersion = async () => {
-      const res = await getVersionInfo()
-      if (res) {
-        verInfo.version = res.version
-        verInfo.commitTime = res.commitTime
+const { t, locale } = useI18n()
+const router = useRouter()
+
+const getVersion = async () => {
+  const res = await getVersionInfo()
+  if (res) {
+    verInfo.version = res.version
+    verInfo.commitTime = res.commitTime
+  }
+}
+
+const goLoginPage = () => {
+  router.push({ path: '/login' })
+}
+
+const handleLogout = async () => {
+  Modal.confirm({
+    title: t('logoutModalTitle'),
+    onOk: async () => {
+      try {
+        await loginService.logout()
       }
-    }
-
-    const goLoginPage = () => {
-      router.push({ path: '/login' })
-    }
-
-    const handleLogout = async () => {
-      Modal.confirm({
-        title: t('logoutModalTitle'),
-        okText: t('confirm'),
-        cancelText: t('cancel'),
-        onOk: async () => {
-          try {
-            await loginService.logout()
-          }
-          catch (error) {
-          }
-          finally {
-            const store = useStore()
-            store.updateUserInfo({
-              userName: '',
-            })
-            goLoginPage()
-          }
-        },
-      })
-    }
-
-    const goDocs = () => {
-      window.open('https://amoro.apache.org/docs/latest/')
-    }
-
-    const setLocale = ({ key }: { key: string }) => {
-      if(locale.value !== key) {
-        locale.value = key
+      catch (error) {
       }
-    };
+      finally {
+        const store = useStore()
+        store.updateUserInfo({
+          userName: '',
+        })
+        goLoginPage()
+      }
+    },
+  })
+}
 
-    onMounted(() => {
-      getVersion()
-    })
+const goDocs = () => {
+  window.open('https://amoro.apache.org/docs/latest/')
+}
 
-    return {
-      verInfo,
-      goDocs,
-      handleLogout,
-      setLocale,
-    }
-  },
+const setLocale = ({ key }: { key: string }) => {
+  if(locale.value !== key) {
+    locale.value = key
+  }
+}
+
+onMounted(() => {
+  getVersion()
 })
 </script>
 
