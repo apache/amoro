@@ -205,4 +205,12 @@ export default {
   noResourceGroupsTitle: '没有任何优化组',
   noResourceGroupsContent: '需要首先创建一个默认优化组',
   goToButtonText: '前往',
+  snapshots: '快照',
+  details: '详情',
+  operations: '操作',
+  Running: '运行中',
+  Canceled: '已取消',
+  Failed: '已失败',
+  Finished: '已结束',
+  Created: '已创建',
 }

@@ -126,7 +126,7 @@ onMounted(() => {
   <AModal
     :visible="visible"
     :width="560"
-    :title="`${$t('operationDetails')}`"
+    :title="$t('operationDetails')"
     class="operation-wrap"
     @cancel="cancel"
   >
