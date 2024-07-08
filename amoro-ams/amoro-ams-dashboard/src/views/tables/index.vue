@@ -44,21 +44,19 @@ export default defineComponent({
     const detailRef = ref()
 
     const tabConfigs = shallowReactive([
-      { key: 'Snapshots', label: 'Snapshots' },
-      { key: 'Optimizing', label: 'Optimizing' },
-      { key: 'Operations', label: 'Operations' },
+      { key: 'Snapshots', label: 'snapshots' },
+      { key: 'Optimizing', label: 'optimizing' },
+      { key: 'Operations', label: 'operations' },
     ])
 
     const state = reactive({
       activeKey: 'Details',
       isSecondaryNav: false,
       baseInfo: {
+        optimizingStatus: '',
         tableType: '',
         tableName: '',
         createTime: '',
-        size: '',
-        file: '',
-        averageFile: '',
         tableFormat: '',
         hasPartition: false,
       } as IBaseDetailInfo,
@@ -141,28 +139,29 @@ export default defineComponent({
         <div class="g-flex-col">
           <div class="g-flex">
             <span :title="baseInfo.tableName" class="table-name g-text-nowrap">{{ baseInfo.tableName }}</span>
-            <span v-if="!isIceberg" class="create-time">{{ `${$t('createTime')}: ${baseInfo.createTime}` }}</span>
           </div>
           <div class="table-info g-flex-ac">
-            <p>{{ `${$t('table')}${$t('size')}` }}: <span class="text-color">{{ baseInfo.size }}</span></p>
+            <p>{{ $t('optimizingStatus') }}: <span class="text-color">{{ baseInfo.optimizingStatus }}</span></p>
             <a-divider type="vertical" />
-            <p>{{ $t('file') }}:  <span class="text-color">{{ baseInfo.file }}</span></p>
+            <p>{{ $t('records') }}: <span class="text-color">{{ baseInfo.records }}</span></p>
             <a-divider type="vertical" />
-            <p>{{ $t('averageFileSize') }}: <span class="text-color">{{ baseInfo.averageFile }}</span></p>
-            <a-divider type="vertical" />
+            <template v-if="!isIceberg">
+              <p>{{ $t('createTime') }}: <span class="text-color">{{ baseInfo.createTime }}</span></p>
+              <a-divider type="vertical" />
+            </template>
             <p>{{ $t('tableFormat') }}: <span class="text-color">{{ baseInfo.tableFormat }}</span></p>
           </div>
         </div>
       </div>
       <div class="content">
         <a-tabs v-model:activeKey="activeKey" destroy-inactive-tab-pane @change="onChangeTab">
-          <a-tab-pane key="Details" tab="Details" force-render>
+          <a-tab-pane key="Details" :tab="$t('details')" force-render>
             <UDetails ref="detailRef" @set-base-detail-info="setBaseDetailInfo" />
           </a-tab-pane>
-          <a-tab-pane v-if="detailLoaded" key="Files" tab="Files">
+          <a-tab-pane v-if="detailLoaded" key="Files" :tab="$t('files')">
             <UFiles :has-partition="baseInfo.hasPartition" />
           </a-tab-pane>
-          <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="`${tab.label}`">
+          <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="$t(tab.label)">
             <component :is="`U${tab.key}`" />
           </a-tab-pane>
         </a-tabs>
@@ -194,7 +193,7 @@ export default defineComponent({
     font-size: 24px;
     line-height: 1.5;
     margin-right: 16px;
-    max-width: 400px;
+    max-width: 600px;
     padding-left: 24px;
   }
   .table-info {

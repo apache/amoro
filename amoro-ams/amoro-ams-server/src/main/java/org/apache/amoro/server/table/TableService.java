@@ -18,7 +18,6 @@
 
 package org.apache.amoro.server.table;
 
-import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.Blocker;
 import org.apache.amoro.api.ServerTableIdentifier;
@@ -41,27 +40,12 @@ public interface TableService extends CatalogService, TableManager {
   void createTable(String catalogName, TableMetadata tableMeta);
 
   /**
-   * load the table metadata
-   *
-   * @param tableIdentifier table id
-   * @return table metadata info
-   */
-  TableMetadata loadTableMetadata(TableIdentifier tableIdentifier);
-
-  /**
    * delete the table metadata
    *
    * @param tableIdentifier table id
    * @param deleteData if delete the external table
    */
   void dropTableMetadata(TableIdentifier tableIdentifier, boolean deleteData);
-
-  /**
-   * load databases names
-   *
-   * @return databases name list
-   */
-  List<String> listDatabases(String catalogName);
 
   /**
    * Load all managed tables. Managed tables means the tables which are managed by AMS, AMS will
@@ -72,53 +56,11 @@ public interface TableService extends CatalogService, TableManager {
   List<ServerTableIdentifier> listManagedTables();
 
   /**
-   * Load all managed tables. Managed tables means the tables which are managed by AMS, AMS will
-   * watch their change and make them health.
-   *
-   * @return {@link ServerTableIdentifier} list
-   */
-  List<ServerTableIdentifier> listManagedTables(String catalogName);
-
-  /**
-   * Load table identifiers by server catalog
-   *
-   * @return {@link TableIdentifier} list
-   */
-  List<TableIDWithFormat> listTables(String catalogName, String dbName);
-
-  /**
    * Get the ServerTableIdentifier instance of the specified table identifier
    *
    * @return the {@link ServerTableIdentifier} instance
    */
   ServerTableIdentifier getServerTableIdentifier(TableIdentifier id);
-
-  /** create database */
-  void createDatabase(String catalogName, String dbName);
-
-  /** drop database */
-  void dropDatabase(String catalogName, String dbName);
-
-  /**
-   * load all table metadata
-   *
-   * @return table metadata list
-   */
-  List<TableMetadata> listTableMetas();
-
-  /**
-   * load table metadata
-   *
-   * @return table metadata list
-   */
-  List<TableMetadata> listTableMetas(String catalogName, String database);
-
-  /**
-   * check the table is existed
-   *
-   * @return True when the table is existed.
-   */
-  boolean tableExist(TableIdentifier tableIdentifier);
 
   /**
    * blocker operations

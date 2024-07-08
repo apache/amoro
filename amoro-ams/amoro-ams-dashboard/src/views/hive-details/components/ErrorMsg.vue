@@ -22,7 +22,7 @@ import { ref } from 'vue'
 
 const props = defineProps<{ msg: string }>()
 const emit = defineEmits<{
-  (e: 'cancle'): void
+  (e: 'cancel'): void
 }>()
 const open = ref(true)
 </script>
@@ -31,10 +31,10 @@ const open = ref(true)
   <AModal
     v-model:open="open"
     :width="560"
-    :title="`${$t('errorMessage')}`"
+    :title="$t('errorMessage')"
     :footer="null"
     class="upgrade-error"
-    @cancel="emit('cancle')"
+    @cancel="emit('cancel')"
   >
     <p class="msg">
       {{ props.msg }}
