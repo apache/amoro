@@ -42,14 +42,15 @@ public interface TableBlockerMapper {
           + "expiration_time,properties FROM "
           + TABLE_NAME
           + " "
-          + "WHERE catalog_name = #{tableIdentifier.catalog} AND db_name = #{tableIdentifier.database} "
-          + "AND table_name = #{tableIdentifier.tableName} "
+          + "WHERE catalog_name = #{catalog} "
+          + "AND db_name = #{database} "
+          + "AND table_name = #{tableName} "
           + "AND expiration_time > #{now, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}")
   @Results({
     @Result(property = "blockerId", column = "blocker_id"),
-    @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
-    @Result(property = "tableIdentifier.database", column = "db_name"),
-    @Result(property = "tableIdentifier.tableName", column = "table_name"),
+    @Result(property = "catalog", column = "catalog_name"),
+    @Result(property = "database", column = "db_name"),
+    @Result(property = "tableName", column = "table_name"),
     @Result(
         property = "operations",
         column = "operations",
@@ -62,7 +63,10 @@ public interface TableBlockerMapper {
     @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
   })
   List<TableBlocker> selectBlockers(
-      @Param("tableIdentifier") ServerTableIdentifier tableIdentifier, @Param("now") long now);
+      @Param("catalog") String catalog,
+      @Param("database") String database,
+      @Param("tableName") String tableName,
+      @Param("now") long now);
 
   @Select(
       "SELECT blocker_id,catalog_name,db_name,table_name,operations,create_time,"
@@ -73,9 +77,9 @@ public interface TableBlockerMapper {
           + "AND expiration_time > #{now, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}")
   @Results({
     @Result(property = "blockerId", column = "blocker_id"),
-    @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
-    @Result(property = "tableIdentifier.database", column = "db_name"),
-    @Result(property = "tableIdentifier.tableName", column = "table_name"),
+    @Result(property = "catalog", column = "catalog_name"),
+    @Result(property = "database", column = "db_name"),
+    @Result(property = "tableName", column = "table_name"),
     @Result(
         property = "operations",
         column = "operations",
@@ -89,31 +93,61 @@ public interface TableBlockerMapper {
   })
   TableBlocker selectBlocker(@Param("blockerId") long blockerId, @Param("now") long now);
 
+  @Update(
+      "UPDATE "
+          + TABLE_NAME
+          + "SET "
+          + "expiration_time = #{expiration, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}"
+          + "WHERE blocker_id = #{blockerId} "
+          + "AND expiration_time > #{now, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}")
+  int renewBlocker(
+      @Param("blockerId") long blockerId,
+      @Param("now") long now,
+      @Param("expiration") long expiration);
+
   @Insert(
       "INSERT INTO "
           + TABLE_NAME
-          + " (catalog_name,db_name,table_name,operations,create_time,"
-          + "expiration_time,properties) VALUES ("
-          + "#{blocker.tableIdentifier.catalog},"
-          + "#{blocker.tableIdentifier.database},"
-          + "#{blocker.tableIdentifier.tableName},"
+          + " (catalog_name,db_name,table_name,operations,create_time,expiration_time,properties) "
+          + "SELECT "
+          + "#{blocker.catalog},"
+          + "#{blocker.database},"
+          + "#{blocker.tableName},"
           + "#{blocker.operations,typeHandler=org.apache.amoro.server.persistence.converter.List2StringConverter},"
           + "#{blocker.createTime,typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
           + "#{blocker.expirationTime,typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
           + "#{blocker.properties,typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}"
-          + ")")
-  @Options(useGeneratedKeys = true, keyProperty = "blocker.blockerId")
-  void insertBlocker(@Param("blocker") TableBlocker blocker);
-
-  @Update(
-      "UPDATE "
+          + ") FROM "
           + TABLE_NAME
-          + " SET "
-          + "expiration_time = #{expirationTime, "
-          + "typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter} "
-          + "WHERE blocker_id = #{blockerId}")
-  void updateBlockerExpirationTime(
-      @Param("blockerId") long blockerId, @Param("expirationTime") long expirationTime);
+          + " WHERE NOT EXISTS (SELECT 1 FROM "
+          + TABLE_NAME
+          + " WHERE "
+          + "catalog_name = #{blocker.tableIdentifier.catalog} AND db_name = #{blocker.tableIdentifier.database} "
+          + "table_name = #{blocker.tableIdentifier.tableName})")
+  @Options(useGeneratedKeys = true, keyProperty = "blocker.blockerId")
+  int insertWhenNotExists(@Param("blocker") TableBlocker blocker);
+
+  @Insert(
+      "INSERT INTO "
+          + TABLE_NAME
+          + "(catalog_name,db_name,table_name,operations,create_time,expiration_time,properties)"
+          + "SELECT "
+          + "#{blocker.catalog},"
+          + "#{blocker.database},"
+          + "#{blocker.tableName},"
+          + "#{blocker.operations,typeHandler=org.apache.amoro.server.persistence.converter.List2StringConverter},"
+          + "#{blocker.createTime,typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
+          + "#{blocker.expirationTime,typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
+          + "#{blocker.properties,typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter} "
+          + "FROM "
+          + TABLE_NAME
+          + " WHERE (SELECT max(blocker_id) FROM "
+          + TABLE_NAME
+          + " WHERE "
+          + "catalog_name = #{blocker.tableIdentifier.catalog} AND db_name = #{blocker.tableIdentifier.database} "
+          + "table_name = #{blocker.tableIdentifier.tableName}) = #{maxId}")
+  @Options(useGeneratedKeys = true, keyProperty = "blocker.blockerId")
+  int insertWithMaxBlockerId(@Param("blocker") TableBlocker blocker, @Param("maxId") Long maxId);
 
   @Delete("DELETE FROM " + TABLE_NAME + " " + "WHERE blocker_id = #{blockerId}")
   void deleteBlocker(@Param("blockerId") long blockerId);
@@ -122,8 +156,8 @@ public interface TableBlockerMapper {
       "DELETE FROM "
           + TABLE_NAME
           + " "
-          + "WHERE catalog_name = #{tableIdentifier.catalog} AND db_name = #{tableIdentifier.database} "
-          + "AND table_name = #{tableIdentifier.tableName} "
+          + "WHERE catalog_name = #{catalog} AND db_name = #{database} "
+          + "AND table_name = #{tableName} "
           + "AND expiration_time <= #{now, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}")
   int deleteExpiredBlockers(
       @Param("tableIdentifier") ServerTableIdentifier tableIdentifier, @Param("now") long now);
@@ -132,7 +166,7 @@ public interface TableBlockerMapper {
       "DELETE FROM "
           + TABLE_NAME
           + " "
-          + "WHERE catalog_name = #{tableIdentifier.catalog} AND db_name = #{tableIdentifier.database} "
-          + "AND table_name = #{tableIdentifier.tableName}")
+          + "WHERE catalog_name = #{catalog} AND db_name = #{database} "
+          + "AND table_name = #{tableName}")
   int deleteBlockers(@Param("tableIdentifier") ServerTableIdentifier tableIdentifier);
 }

@@ -55,14 +55,14 @@ public class TestBlockerExpiringExecutor extends TableServiceTestBase {
   public void testExpireBlocker() {
     BlockerExpiringExecutor blockerExpiringExecutor = new BlockerExpiringExecutor(tableManager);
     TableBlocker tableBlocker = new TableBlocker();
-    tableBlocker.setTableIdentifier(tableIdentifier);
+    tableBlocker.setTableIdentifier(tableIdentifier.getIdentifier());
     tableBlocker.setExpirationTime(System.currentTimeMillis() - 10);
     tableBlocker.setCreateTime(System.currentTimeMillis() - 20);
     tableBlocker.setOperations(Collections.singletonList(BlockableOperation.OPTIMIZE.name()));
     persistency.insertTableBlocker(tableBlocker);
 
     TableBlocker tableBlocker2 = new TableBlocker();
-    tableBlocker2.setTableIdentifier(tableIdentifier);
+    tableBlocker2.setTableIdentifier(tableIdentifier.getIdentifier());
     tableBlocker2.setExpirationTime(System.currentTimeMillis() + 100000);
     tableBlocker2.setCreateTime(System.currentTimeMillis() - 20);
     tableBlocker2.setOperations(Collections.singletonList(BlockableOperation.BATCH_WRITE.name()));
@@ -83,11 +83,18 @@ public class TestBlockerExpiringExecutor extends TableServiceTestBase {
 
   private static class Persistency extends PersistentBase {
     public void insertTableBlocker(TableBlocker tableBlocker) {
-      doAs(TableBlockerMapper.class, mapper -> mapper.insertBlocker(tableBlocker));
+      doAs(TableBlockerMapper.class, mapper -> mapper.insertWhenNotExists(tableBlocker));
     }
 
     public List<TableBlocker> selectTableBlockers(ServerTableIdentifier tableIdentifier) {
-      return getAs(TableBlockerMapper.class, mapper -> mapper.selectBlockers(tableIdentifier, 1));
+      return getAs(
+          TableBlockerMapper.class,
+          mapper ->
+              mapper.selectBlockers(
+                  tableIdentifier.getCatalog(),
+                  tableIdentifier.getDatabase(),
+                  tableIdentifier.getTableName(),
+                  1));
     }
 
     public void deleteBlockers(ServerTableIdentifier tableIdentifier) {

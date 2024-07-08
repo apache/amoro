@@ -20,31 +20,87 @@ package org.apache.amoro.server.table.blocker;
 
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.Blocker;
-import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.blocker.RenewableBlocker;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class TableBlocker {
-  private ServerTableIdentifier tableIdentifier;
+  private String catalog;
+  private String database;
+  private String tableName;
   private long blockerId;
   private List<String> operations;
   private long createTime;
   private long expirationTime;
   private Map<String, String> properties;
 
-  public TableBlocker() {}
-
-  public ServerTableIdentifier getTableIdentifier() {
-    return tableIdentifier;
+  public static boolean conflict(
+      List<BlockableOperation> blockableOperations, List<TableBlocker> blockers) {
+    return blockableOperations.stream().anyMatch(operation -> conflict(operation, blockers));
   }
 
-  public void setTableIdentifier(ServerTableIdentifier tableIdentifier) {
-    this.tableIdentifier = tableIdentifier;
+  public static boolean conflict(
+      BlockableOperation blockableOperation, List<TableBlocker> blockers) {
+    return blockers.stream()
+        .anyMatch(blocker -> blocker.getOperations().contains(blockableOperation.name()));
+  }
+
+  public static TableBlocker buildTableBlocker(
+      TableIdentifier tableIdentifier,
+      List<BlockableOperation> operations,
+      Map<String, String> properties,
+      long now,
+      long blockerTimeout) {
+    TableBlocker tableBlocker = new TableBlocker();
+    tableBlocker.setCatalog(tableIdentifier.getCatalog());
+    tableBlocker.setDatabase(tableIdentifier.getDatabase());
+    tableBlocker.setTableName(tableIdentifier.getTableName());
+    tableBlocker.setCreateTime(now);
+    tableBlocker.setExpirationTime(now + blockerTimeout);
+    tableBlocker.setOperations(
+        operations.stream().map(BlockableOperation::name).collect(Collectors.toList()));
+    HashMap<String, String> propertiesOfTableBlocker = new HashMap<>(properties);
+    propertiesOfTableBlocker.put(RenewableBlocker.BLOCKER_TIMEOUT, blockerTimeout + "");
+    tableBlocker.setProperties(propertiesOfTableBlocker);
+    return tableBlocker;
+  }
+
+  public TableBlocker() {}
+
+  public String getCatalog() {
+    return catalog;
+  }
+
+  public void setCatalog(String catalog) {
+    this.catalog = catalog;
+  }
+
+  public String getDatabase() {
+    return database;
+  }
+
+  public void setDatabase(String database) {
+    this.database = database;
+  }
+
+  public String getTableName() {
+    return tableName;
+  }
+
+  public void setTableName(String tableName) {
+    this.tableName = tableName;
+  }
+
+  public void setTableIdentifier(TableIdentifier tableIdentifier) {
+    this.catalog = tableIdentifier.getCatalog();
+    this.database = tableIdentifier.getDatabase();
+    this.tableName = tableIdentifier.getTableName();
   }
 
   public long getBlockerId() {
@@ -99,7 +155,9 @@ public class TableBlocker {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("tableIdentifier", tableIdentifier)
+        .add("catalog", catalog)
+        .add("database", database)
+        .add("tableName", tableName)
         .add("blockerId", blockerId)
         .add("operations", operations)
         .add("createTime", createTime)
