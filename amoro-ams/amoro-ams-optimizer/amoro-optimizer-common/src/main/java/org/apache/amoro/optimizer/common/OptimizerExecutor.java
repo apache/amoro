@@ -147,8 +147,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
 
       OptimizingExecutor executor = factory.createExecutor(input);
       TableOptimizing.OptimizingOutput output = executor.execute();
-      ByteBuffer outputByteBuffer =
-          ByteBuffer.wrap(SerializationUtil.simpleSerialize(output).array());
+      ByteBuffer outputByteBuffer = SerializationUtil.simpleSerialize(output);
       OptimizingTaskResult result = new OptimizingTaskResult(task.getTaskId(), threadId);
       result.setTaskOutput(outputByteBuffer);
       result.setSummary(output.summary());
