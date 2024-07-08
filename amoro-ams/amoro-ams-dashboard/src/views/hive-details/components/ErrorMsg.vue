@@ -31,7 +31,7 @@ const open = ref(true)
   <AModal
     v-model:open="open"
     :width="560"
-    :title="`${$t('errorMessage')}`"
+    :title="$t('errorMessage')"
     :footer="null"
     class="upgrade-error"
     @cancel="emit('cancel')"

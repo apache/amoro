@@ -16,8 +16,8 @@
   limitations under the License.
  / -->
 
-<script lang="ts">
-import { defineComponent, onMounted, reactive } from 'vue'
+<script setup lang="ts">
+import { onMounted, reactive } from 'vue'
 import { Modal } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -25,78 +25,67 @@ import { useRouter } from 'vue-router'
 import useStore from '@/store'
 import { getVersionInfo } from '@/services/global.service'
 import loginService from '@/services/login.service'
+import { DownOutlined, QuestionCircleOutlined, LogoutOutlined, TranslationOutlined } from '@ant-design/icons-vue'
 
 interface IVersion {
   version: string
   commitTime: string
 }
 
-export default defineComponent ({
-  name: 'Topbar',
-  setup() {
-    const verInfo = reactive<IVersion>({
-      version: '',
-      commitTime: '',
-    })
+const verInfo = reactive<IVersion>({
+  version: '',
+  commitTime: '',
+})
 
-    const { t, locale } = useI18n()
-    const router = useRouter()
+const { t, locale } = useI18n()
+const router = useRouter()
+const store = useStore()
 
-    const getVersion = async () => {
-      const res = await getVersionInfo()
-      if (res) {
-        verInfo.version = res.version
-        verInfo.commitTime = res.commitTime
+const getVersion = async () => {
+  const res = await getVersionInfo()
+  if (res) {
+    verInfo.version = res.version
+    verInfo.commitTime = res.commitTime
+  }
+}
+
+const goLoginPage = () => {
+  router.push({ path: '/login' })
+}
+
+const handleLogout = async () => {
+  Modal.confirm({
+    title: t('logoutModalTitle'),
+    onOk: async () => {
+      try {
+        await loginService.logout()
       }
-    }
-
-    const goLoginPage = () => {
-      router.push({ path: '/login' })
-    }
-
-    const handleLogout = async () => {
-      Modal.confirm({
-        title: t('logoutModalTitle'),
-        okText: t('confirm'),
-        cancelText: t('cancel'),
-        onOk: async () => {
-          try {
-            await loginService.logout()
-          }
-          catch (error) {
-          }
-          finally {
-            const store = useStore()
-            store.updateUserInfo({
-              userName: '',
-            })
-            goLoginPage()
-          }
-        },
-      })
-    }
-
-    const goDocs = () => {
-      window.open('https://amoro.apache.org/docs/latest/')
-    }
-
-    const setLocale = ({ key }: { key: string }) => {
-      if(locale.value !== key) {
-        locale.value = key
+      catch (error) {
       }
-    };
+      finally {
+        store.updateUserInfo({
+          userName: '',
+        })
+        goLoginPage()
+      }
+    },
+  })
+}
 
-    onMounted(() => {
-      getVersion()
-    })
+const goDocs = () => {
+  window.open('https://amoro.apache.org/docs/latest/')
+}
 
-    return {
-      verInfo,
-      goDocs,
-      handleLogout,
-      setLocale,
-    }
-  },
+const setLocale = () => {
+  if(locale.value === 'zh') {
+    locale.value = 'en'
+  } else {
+    locale.value = 'zh'
+  }
+}
+
+onMounted(() => {
+  getVersion()
 })
 </script>
 
@@ -106,29 +95,22 @@ export default defineComponent ({
       <span class="g-mr-8">{{ `${$t('version')}:  ${verInfo.version}` }}</span>
       <span class="g-mr-8">{{ `${$t('commitTime')}:  ${verInfo.commitTime}` }}</span>
     </div>
-    <a-tooltip placement="bottomRight" arrow-point-at-center overlay-class-name="topbar-tooltip">
-      <template #title>
-        {{ $t('userGuide') }}
-      </template>
-      <question-circle-outlined class="question-icon" @click="goDocs" />
-    </a-tooltip>
     <a-dropdown>
-      <TranslationOutlined class="g-ml-8" />
+      <span>{{ store.userInfo.userName}} <DownOutlined /></span>
       <template #overlay>
-        <a-menu @click="setLocale">
-          <a-menu-item key="en">English</a-menu-item>
-          <a-menu-item key="zh">中文</a-menu-item>
+        <a-menu>
+          <a-menu-item key="userGuide" @click="goDocs">
+            <question-circle-outlined /> {{ $t('userGuide') }}
+          </a-menu-item>
+          <a-menu-item key="locale" @click="setLocale">
+            <translation-outlined /> {{ locale === 'zh' ? '切换至英文' : 'Switch To Chinese' }}
+          </a-menu-item>
+          <a-menu-item key="logout" @click="handleLogout">
+            <logout-outlined /> {{ $t('logout') }}
+          </a-menu-item>
         </a-menu>
       </template>
     </a-dropdown>
-    <a-tooltip>
-      <template #title>
-        {{ $t('logout') }}
-      </template>
-      <a-button class="logout-button" @click="handleLogout">
-        <LogoutOutlined style="font-size: 1.2em" />
-      </a-button>
-    </a-tooltip>
   </div>
 </template>
 
