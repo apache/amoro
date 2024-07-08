@@ -137,6 +137,12 @@ public class TableController {
     ServerTableMeta serverTableMeta =
         tableDescriptor.getTableDetail(
             TableIdentifier.of(catalog, database, tableName).buildTableIdentifier());
+    ServerTableIdentifier serverTableIdentifier =
+        tableService.getServerTableIdentifier(
+            TableIdentifier.of(catalog, database, tableName).buildTableIdentifier());
+    Map<String, Object> tableSummary = serverTableMeta.getTableSummary();
+    tableSummary.put(
+        "optimizingStatus", tableService.getRuntime(serverTableIdentifier).getOptimizingStatus());
 
     ctx.json(OkResponse.of(serverTableMeta));
   }
@@ -493,7 +499,7 @@ public class TableController {
         };
 
     List<TableMeta> tables =
-        tableService.listTables(catalog, db).stream()
+        serverCatalog.listTables(db).stream()
             .map(
                 idWithFormat ->
                     new TableMeta(
@@ -542,7 +548,7 @@ public class TableController {
     String keywords = ctx.queryParam("keywords");
 
     List<String> dbList =
-        tableService.listDatabases(catalog).stream()
+        tableService.getServerCatalog(catalog).listDatabases().stream()
             .filter(item -> StringUtils.isBlank(keywords) || item.contains(keywords))
             .collect(Collectors.toList());
     ctx.json(OkResponse.of(dbList));

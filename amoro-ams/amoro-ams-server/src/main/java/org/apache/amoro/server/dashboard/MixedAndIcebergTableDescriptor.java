@@ -155,6 +155,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     tableSummary.put("file", tableFileCnt);
     tableSummary.put(
         "averageFile", AmsUtil.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
+
+    tableSummary.put("records", getRecordsOfTable(table));
     tableSummary.put("tableFormat", tableFormat);
     serverTableMeta.setTableSummary(tableSummary);
     return serverTableMeta;
@@ -171,6 +173,28 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       sb.append(")");
     }
     return sb.toString();
+  }
+
+  private long getRecordsOfTable(MixedTable mixedTable) {
+    long totalRecords;
+    if (mixedTable.isKeyedTable()) {
+      Snapshot changeSnapshot =
+          SnapshotUtil.latestSnapshot(mixedTable.asKeyedTable().changeTable(), null);
+      Snapshot baseSnapshot =
+          SnapshotUtil.latestSnapshot(mixedTable.asKeyedTable().baseTable(), null);
+      totalRecords =
+          PropertyUtil.propertyAsLong(
+                  changeSnapshot.summary(), SnapshotSummary.TOTAL_RECORDS_PROP, 0L)
+              + PropertyUtil.propertyAsLong(
+                  baseSnapshot.summary(), SnapshotSummary.TOTAL_RECORDS_PROP, 0L);
+    } else {
+      totalRecords =
+          PropertyUtil.propertyAsLong(
+              SnapshotUtil.latestSnapshot(mixedTable.asUnkeyedTable(), null).summary(),
+              SnapshotSummary.TOTAL_RECORDS_PROP,
+              0L);
+    }
+    return totalRecords;
   }
 
   private Long snapshotIdOfTableRef(Table table, String ref) {

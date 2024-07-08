@@ -20,9 +20,11 @@
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
 import enUS from 'ant-design-vue/es/locale/en_US'
 import dayjs from 'dayjs'
-import { ref, watch } from 'vue'
+import { watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import 'dayjs/locale/zh-cn';
 
-const locale = ref(enUS.locale)
+const { locale } = useI18n()
 dayjs.locale('en')
 
 watch(locale, (val) => {
