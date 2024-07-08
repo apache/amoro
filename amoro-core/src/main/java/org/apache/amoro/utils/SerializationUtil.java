@@ -27,7 +27,6 @@ import com.esotericsoftware.kryo.io.Output;
 import org.apache.avro.util.Utf8;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
-import org.apache.iceberg.util.ByteBuffers;
 import org.apache.iceberg.util.StructLikeWrapper;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
@@ -55,11 +54,6 @@ public class SerializationUtil {
     } catch (IOException e) {
       throw new IllegalArgumentException("serialization error of " + obj, e);
     }
-  }
-
-  public static <T> T simpleDeserialize(ByteBuffer buffer) {
-    byte[] bytes = ByteBuffers.toByteArray(buffer);
-    return simpleDeserialize(bytes);
   }
 
   public static <T> T simpleDeserialize(byte[] bytes) {
