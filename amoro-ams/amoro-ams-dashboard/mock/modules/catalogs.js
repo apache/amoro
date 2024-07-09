@@ -131,7 +131,7 @@ export default [
     response: () => ({ "message": "success", "code": 200, "result": true }),
   },
   {
-    url: '/mock/ams/v1/catalog/metastore/types',
+    url: '/mock/ams/v1/catalogs/metastore/types',
     method: 'get',
     response: () => ({
       "message": "success",
