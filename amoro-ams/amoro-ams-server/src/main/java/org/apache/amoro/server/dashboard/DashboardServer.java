@@ -39,6 +39,7 @@ import org.apache.amoro.server.dashboard.controller.CatalogController;
 import org.apache.amoro.server.dashboard.controller.HealthCheckController;
 import org.apache.amoro.server.dashboard.controller.LoginController;
 import org.apache.amoro.server.dashboard.controller.OptimizerController;
+import org.apache.amoro.server.dashboard.controller.OverviewController;
 import org.apache.amoro.server.dashboard.controller.PlatformFileInfoController;
 import org.apache.amoro.server.dashboard.controller.SettingController;
 import org.apache.amoro.server.dashboard.controller.TableController;
@@ -78,6 +79,7 @@ public class DashboardServer {
   private final TableController tableController;
   private final TerminalController terminalController;
   private final VersionController versionController;
+  private final OverviewController overviewController;
 
   private final String authType;
   private final String basicAuthUser;
@@ -99,6 +101,7 @@ public class DashboardServer {
     this.tableController = new TableController(tableService, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
+    this.overviewController = new OverviewController(tableService);
 
     this.authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
     this.basicAuthUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
@@ -291,6 +294,9 @@ public class DashboardServer {
 
             // version controller
             get("/versionInfo", versionController::getVersionInfo);
+
+            // overview controller
+            get("/overview/serverStat", overviewController::getServerStat);
           });
       // for open api
       path(
