@@ -51,7 +51,6 @@ import org.apache.amoro.server.exception.SignatureCheckException;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
-import org.apache.amoro.utils.JacksonUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +59,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
@@ -110,25 +110,29 @@ public class DashboardServer {
   private String indexHtml = "";
 
   // read index.html content
-  public String getIndexFileContent() throws IOException {
-    if ("".equals(indexHtml)) {
-      try (InputStream fileName =
-          DashboardServer.class.getClassLoader().getResourceAsStream("static/index.html")) {
-        Preconditions.checkNotNull(fileName, "Cannot find index file.");
-        try (InputStreamReader isr =
-                new InputStreamReader(fileName, StandardCharsets.UTF_8.newDecoder());
-            BufferedReader br = new BufferedReader(isr)) {
-          StringBuilder sb = new StringBuilder();
-          String line;
-          while ((line = br.readLine()) != null) {
-            // process the line
-            sb.append(line);
+  public String getIndexFileContent() {
+    try {
+      if ("".equals(indexHtml)) {
+        try (InputStream fileName =
+            DashboardServer.class.getClassLoader().getResourceAsStream("static/index.html")) {
+          Preconditions.checkNotNull(fileName, "Cannot find index file.");
+          try (InputStreamReader isr =
+                  new InputStreamReader(fileName, StandardCharsets.UTF_8.newDecoder());
+              BufferedReader br = new BufferedReader(isr)) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+              // process the line
+              sb.append(line);
+            }
+            indexHtml = sb.toString();
           }
-          indexHtml = sb.toString();
         }
       }
+      return indexHtml;
+    } catch (IOException e) {
+      throw new UncheckedIOException("Load index html filed", e);
     }
-    return indexHtml;
   }
 
   public Consumer<StaticFileConfig> configStaticFiles() {
@@ -164,9 +168,10 @@ public class DashboardServer {
                   if (fileName.endsWith("ico")) {
                     ctx.contentType(ContentType.IMAGE_ICO);
                     ctx.result(
-                        Objects.requireNonNull(DashboardServer.class
-                            .getClassLoader()
-                            .getResourceAsStream("static/" + fileName)));
+                        Objects.requireNonNull(
+                            DashboardServer.class
+                                .getClassLoader()
+                                .getResourceAsStream("static/" + fileName)));
                   } else {
                     ctx.html(getIndexFileContent());
                   }
@@ -183,112 +188,134 @@ public class DashboardServer {
             post("/login", loginController::login);
             post("/logout", loginController::logout);
           });
-      path("ams/v1",
-          apiGroup());
+      path("ams/v1", apiGroup());
 
       // for open api
-      path(
-          "/api/ams/v1",
-          apiGroup());
+      path("/api/ams/v1", apiGroup());
     };
   }
 
   private EndpointGroup apiGroup() {
     return () -> {
       // table apis
-      path("/tables", () -> {
-        get("/catalogs/{catalog}/dbs/{db}/tables/{table}/details",
-            tableController::getTableDetail);
-        get("/catalogs/{catalog}/dbs/{db}/tables/{table}/hive/details",
-            tableController::getHiveTableDetail);
-        post("/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade",
-            tableController::upgradeHiveTable);
-        get("/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status",
-            tableController::getUpgradeStatus);
-        get("/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
-            tableController::getOptimizingProcesses);
-        get("/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/tasks",
-            tableController::getOptimizingProcessTasks);
-        get("/catalogs/{catalog}/dbs/{db}/tables/{table}/snapshots",
-            tableController::getTableSnapshots);
-        get("/catalogs/{catalog}/dbs/{db}/tables/{table}/snapshots/{snapshotId}/detail",
-            tableController::getSnapshotDetail);
-        get("/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions",
-            tableController::getTablePartitions);
-        get("/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
-            tableController::getPartitionFileListInfo);
-        get("/catalogs/{catalog}/dbs/{db}/tables/{table}/operations",
-            tableController::getTableOperations);
-        get("/catalogs/{catalog}/dbs/{db}/tables/{table}/tags",
-            tableController::getTableTags);
-        get("/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
-            tableController::getTableBranches);
-        post("/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/cancel",
-            tableController::cancelOptimizingProcess);
-      });
+      path(
+          "/tables",
+          () -> {
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/details",
+                tableController::getTableDetail);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/hive/details",
+                tableController::getHiveTableDetail);
+            post(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade",
+                tableController::upgradeHiveTable);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status",
+                tableController::getUpgradeStatus);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
+                tableController::getOptimizingProcesses);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/tasks",
+                tableController::getOptimizingProcessTasks);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/snapshots",
+                tableController::getTableSnapshots);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/snapshots/{snapshotId}/detail",
+                tableController::getSnapshotDetail);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions",
+                tableController::getTablePartitions);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
+                tableController::getPartitionFileListInfo);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/operations",
+                tableController::getTableOperations);
+            get("/catalogs/{catalog}/dbs/{db}/tables/{table}/tags", tableController::getTableTags);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
+                tableController::getTableBranches);
+            post(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/cancel",
+                tableController::cancelOptimizingProcess);
+          });
       get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
 
       // catalog apis
-      path("/catalogs", () -> {
-        get("/{catalog}/databases/{db}/tables", tableController::getTableList);
-        get("/{catalog}/databases", tableController::getDatabaseList);
-        get("", tableController::getCatalogs);
-        post("", catalogController::createCatalog);
-        get("metastore/types", catalogController::getCatalogTypeList);
-        get("/{catalogName}", catalogController::getCatalogDetail);
-        delete("/{catalogName}", catalogController::deleteCatalog);
-        put("/{catalogName}", catalogController::updateCatalog);
-        get("/{catalogName}/delete/check", catalogController::catalogDeleteCheck);
-        get("/{catalogName}/config/{type}/{key}",
-            catalogController::getCatalogConfFileContent);
-      });
-
+      path(
+          "/catalogs",
+          () -> {
+            get("/{catalog}/databases/{db}/tables", tableController::getTableList);
+            get("/{catalog}/databases", tableController::getDatabaseList);
+            get("", tableController::getCatalogs);
+            post("", catalogController::createCatalog);
+            get("metastore/types", catalogController::getCatalogTypeList);
+            get("/{catalogName}", catalogController::getCatalogDetail);
+            delete("/{catalogName}", catalogController::deleteCatalog);
+            put("/{catalogName}", catalogController::updateCatalog);
+            get("/{catalogName}/delete/check", catalogController::catalogDeleteCheck);
+            get("/{catalogName}/config/{type}/{key}", catalogController::getCatalogConfFileContent);
+          });
 
       // optimizing api
-      path("/optimize", () -> {
-        get("/optimizerGroups/{optimizerGroup}/tables",
-            optimizerController::getOptimizerTables);
-        get("/optimizerGroups/{optimizerGroup}/optimizers",
-            optimizerController::getOptimizers);
-        get("/optimizerGroups", optimizerController::getOptimizerGroups);
-        get("/optimizerGroups/{optimizerGroup}/info",
-            optimizerController::getOptimizerGroupInfo);
-        delete("/optimizerGroups/{optimizerGroup}/optimizers/{jobId}",
-            optimizerController::releaseOptimizer);
-        post("/optimizerGroups/{optimizerGroup}/optimizers",
-            optimizerController::scaleOutOptimizer);
-        get("/resourceGroups", optimizerController::getResourceGroup);
-        post("/resourceGroups", optimizerController::createResourceGroup);
-        put("/resourceGroups", optimizerController::updateResourceGroup);
-        delete("/resourceGroups/{resourceGroupName}",
-            optimizerController::deleteResourceGroup);
-        get("/resourceGroups/{resourceGroupName}/delete/check",
-            optimizerController::deleteCheckResourceGroup);
-        get("/containers/get", optimizerController::getContainers);
-      });
+      path(
+          "/optimize",
+          () -> {
+            get(
+                "/optimizerGroups/{optimizerGroup}/tables",
+                optimizerController::getOptimizerTables);
+            get("/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::getOptimizers);
+            get("/optimizerGroups", optimizerController::getOptimizerGroups);
+            get(
+                "/optimizerGroups/{optimizerGroup}/info",
+                optimizerController::getOptimizerGroupInfo);
+            delete(
+                "/optimizerGroups/{optimizerGroup}/optimizers/{jobId}",
+                optimizerController::releaseOptimizer);
+            post(
+                "/optimizerGroups/{optimizerGroup}/optimizers",
+                optimizerController::scaleOutOptimizer);
+            get("/resourceGroups", optimizerController::getResourceGroup);
+            post("/resourceGroups", optimizerController::createResourceGroup);
+            put("/resourceGroups", optimizerController::updateResourceGroup);
+            delete("/resourceGroups/{resourceGroupName}", optimizerController::deleteResourceGroup);
+            get(
+                "/resourceGroups/{resourceGroupName}/delete/check",
+                optimizerController::deleteCheckResourceGroup);
+            get("/containers/get", optimizerController::getContainers);
+          });
 
       // console apis
-      path("/terminal", () -> {
-        get("/examples", terminalController::getExamples);
-        get("/examples/{exampleName}", terminalController::getSqlExamples);
-        post("/catalogs/{catalog}/execute", terminalController::executeScript);
-        get("/{sessionId}/logs", terminalController::getLogs);
-        get("/{sessionId}/result", terminalController::getSqlResult);
-        put("/{sessionId}/stop", terminalController::stopSql);
-        get("/latestInfos/", terminalController::getLatestInfo);
-      });
+      path(
+          "/terminal",
+          () -> {
+            get("/examples", terminalController::getExamples);
+            get("/examples/{exampleName}", terminalController::getSqlExamples);
+            post("/catalogs/{catalog}/execute", terminalController::executeScript);
+            get("/{sessionId}/logs", terminalController::getLogs);
+            get("/{sessionId}/result", terminalController::getSqlResult);
+            put("/{sessionId}/stop", terminalController::stopSql);
+            get("/latestInfos/", terminalController::getLatestInfo);
+          });
 
       // file apis
-      path("/files", () -> {
-        post("", platformFileInfoController::uploadFile);
-        get("/{fileId}", platformFileInfoController::downloadFile);
-      });
+      path(
+          "/files",
+          () -> {
+            post("", platformFileInfoController::uploadFile);
+            get("/{fileId}", platformFileInfoController::downloadFile);
+          });
 
       // setting apis
-      path("/settings", () -> {
-        get("/containers", settingController::getContainerSetting);
-        get("/system", settingController::getSystemSetting);
-      });
+      path(
+          "/settings",
+          () -> {
+            get("/containers", settingController::getContainerSetting);
+            get("/system", settingController::getSystemSetting);
+          });
 
       // health api
       get("/health/status", healthCheckController::healthCheck);
@@ -306,45 +333,36 @@ public class DashboardServer {
         if (!(basicAuthUser.equals(cred.component1())
             && basicAuthPassword.equals(cred.component2()))) {
           LOG.debug(
-              String.format(
-                  "Failed to authenticate via basic authentication.  Request url: %s %s.",
-                  ctx.req.getMethod(), uriPath));
+              "Failed to authenticate via basic authentication.  Request url: {} {}.",
+              ctx.req.getMethod(),
+              uriPath);
           throw new SignatureCheckException();
         }
       } else {
         checkApiToken(
-            ctx.method(),
-            ctx.url(),
-            ctx.queryParam("apiKey"),
-            ctx.queryParam("signature"),
-            ctx.queryParamMap());
+            ctx.url(), ctx.queryParam("apiKey"), ctx.queryParam("signature"), ctx.queryParamMap());
       }
     } else if (needLoginCheck(uriPath)) {
       if (null == ctx.sessionAttribute("user")) {
-        LOG.info("session info: {}", JacksonUtil.toJSONString(ctx.sessionAttributeMap()));
-        throw new ForbiddenException();
+        throw new ForbiddenException("User session attribute is missed for url: " + uriPath);
       }
     }
   }
 
   public void handleException(Exception e, Context ctx) {
     if (e instanceof ForbiddenException) {
-      try {
-        // request doesn't start with /ams is  page request. we return index.html
-        if (!ctx.req.getRequestURI().startsWith("/ams")) {
-          ctx.html(getIndexFileContent());
-        } else {
-          ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "need login before request", ""));
-        }
-      } catch (Exception fe) {
-        LOG.error("Failed to handle request", fe);
+      // request doesn't start with /ams is  page request. we return index.html
+      if (!ctx.req.getRequestURI().startsWith("/ams")) {
+        ctx.html(getIndexFileContent());
+      } else {
+        ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Please login first", ""));
       }
     } else if (e instanceof SignatureCheckException) {
-      ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature Exception  before request", ""));
+      ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature check failed", ""));
     } else {
-      LOG.error("Failed to handle request", e);
       ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, e.getMessage(), ""));
     }
+    LOG.error("An error occurred while processing the url:{}", ctx.url(), e);
   }
 
   private static final String[] urlWhiteList = {
@@ -386,22 +404,16 @@ public class DashboardServer {
   }
 
   private void checkApiToken(
-      String requestMethod,
-      String requestUrl,
-      String apiKey,
-      String signature,
-      Map<String, List<String>> params) {
+      String requestUrl, String apiKey, String signature, Map<String, List<String>> params) {
     String plainText;
     String encryptString;
     String signCal;
-    LOG.debug("[{}] url: {}, ", requestMethod, requestUrl);
 
-    long receive = System.currentTimeMillis();
     APITokenManager apiTokenService = new APITokenManager();
     try {
-      String secrete = apiTokenService.getSecretByKey(apiKey);
+      String secret = apiTokenService.getSecretByKey(apiKey);
 
-      if (secrete == null) {
+      if (secret == null) {
         throw new SignatureCheckException();
       }
 
@@ -420,27 +432,24 @@ public class DashboardServer {
         encryptString = paramString;
       }
 
-      plainText = String.format("%s%s%s", apiKey, encryptString, secrete);
+      plainText = String.format("%s%s%s", apiKey, encryptString, secret);
       signCal = ParamSignatureCalculator.getMD5(plainText);
-      LOG.info(
-          "calculate:  plainText:{}, signCal:{}, signFromRequest: {}",
+      LOG.debug(
+          "Calculated signature for url:{}, plain text:{}, calculated signature:{}, signature in request: {}",
+          requestUrl,
           plainText,
           signCal,
           signature);
 
       if (!signature.equals(signCal)) {
-        LOG.error(String.format("Signature Check Failed!!, req:%s, cal:%s", signature, signCal));
-        throw new SignatureCheckException();
+        throw new SignatureCheckException(
+            String.format(
+                "Check signature for url:%s failed,"
+                    + " calculated signature:%s, signature in request:%s",
+                requestUrl, signCal, signature));
       }
     } catch (Exception e) {
-      LOG.error("api doFilter error.", e);
-      throw new SignatureCheckException();
-    } finally {
-      LOG.debug(
-          "[finish] in {} ms, [{}] {}",
-          System.currentTimeMillis() - receive,
-          requestMethod,
-          requestUrl);
+      throw new SignatureCheckException("Check url signature failed", e);
     }
   }
 }
