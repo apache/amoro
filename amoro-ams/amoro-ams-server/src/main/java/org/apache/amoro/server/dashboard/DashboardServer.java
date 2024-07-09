@@ -71,6 +71,8 @@ public class DashboardServer {
 
   public static final Logger LOG = LoggerFactory.getLogger(DashboardServer.class);
 
+  private static final String AUTH_TYPE_BASIC = "basic";
+
   private final CatalogController catalogController;
   private final HealthCheckController healthCheckController;
   private final LoginController loginController;
@@ -328,15 +330,12 @@ public class DashboardServer {
   public void preHandleRequest(Context ctx) {
     String uriPath = ctx.path();
     if (needApiKeyCheck(uriPath)) {
-      if ("basic".equalsIgnoreCase(authType)) {
+      if (AUTH_TYPE_BASIC.equalsIgnoreCase(authType)) {
         BasicAuthCredentials cred = ctx.basicAuthCredentials();
         if (!(basicAuthUser.equals(cred.component1())
             && basicAuthPassword.equals(cred.component2()))) {
-          LOG.debug(
-              "Failed to authenticate via basic authentication.  Request url: {} {}.",
-              ctx.req.getMethod(),
-              uriPath);
-          throw new SignatureCheckException();
+          throw new SignatureCheckException(
+              "Failed to authenticate via basic authentication for url:" + uriPath);
         }
       } else {
         checkApiToken(
