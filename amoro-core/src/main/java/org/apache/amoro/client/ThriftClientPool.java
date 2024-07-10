@@ -44,7 +44,7 @@ public class ThriftClientPool<
   // for thrift connects
   private static final int retries = 5;
   private static final int retryInterval = 2000;
-  private static final int maxMessageSize = 100 * 1024 * 1024;
+  private static final int maxMessageSize = 1000 * 1024 * 1024;
   private final ThriftClientFactory clientFactory;
   private final ThriftPingFactory pingFactory;
   private final GenericObjectPool<ThriftClient<T>> pool;
