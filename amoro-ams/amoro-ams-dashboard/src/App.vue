@@ -22,7 +22,7 @@ import enUS from 'ant-design-vue/es/locale/en_US'
 import dayjs from 'dayjs'
 import { watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import 'dayjs/locale/zh-cn';
+import 'dayjs/locale/zh-cn'
 
 const { locale } = useI18n()
 dayjs.locale('en')
