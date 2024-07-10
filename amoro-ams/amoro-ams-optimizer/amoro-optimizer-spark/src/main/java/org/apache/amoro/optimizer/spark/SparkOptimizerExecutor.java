@@ -52,8 +52,8 @@ public class SparkOptimizerExecutor extends OptimizerExecutor {
   protected OptimizingTaskResult executeTask(OptimizingTask task) {
     OptimizingTaskResult result;
     String threadName = Thread.currentThread().getName();
+    long startTime = System.currentTimeMillis();
     try {
-      long startTime = System.currentTimeMillis();
       ImmutableList<OptimizingTask> of = ImmutableList.of(task);
       jsc.setJobDescription(jobDescription(task));
       SparkOptimizingTaskFunction taskFunction =
@@ -68,7 +68,11 @@ public class SparkOptimizerExecutor extends OptimizerExecutor {
       return result;
     } catch (Throwable r) {
       LOG.error(
-          "Optimizer executor[{}] executed task[{}] failed, and cost {}", threadName, task, r);
+          "Optimizer executor[{}] executed task[{}] failed, and cost {}",
+          threadName,
+          task.getTaskId(),
+          (System.currentTimeMillis() - startTime),
+          r);
       result = new OptimizingTaskResult(task.getTaskId(), threadId);
       result.setErrorMessage(ExceptionUtil.getErrorMessage(r, 4000));
       return result;

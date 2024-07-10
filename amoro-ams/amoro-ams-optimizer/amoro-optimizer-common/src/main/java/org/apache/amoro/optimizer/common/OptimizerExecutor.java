@@ -160,10 +160,9 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       return result;
     } catch (Throwable t) {
       logger.error(
-          "Optimizer executor[{}] executed task[{}]({}) failed and cost {}",
+          "Optimizer executor[{}] executed task[{}] failed and cost {}",
           threadId,
           task.getTaskId(),
-          input,
           System.currentTimeMillis() - startTime,
           t);
       OptimizingTaskResult errorResult = new OptimizingTaskResult(task.getTaskId(), threadId);
