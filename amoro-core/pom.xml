@@ -150,13 +150,11 @@
         <dependency>
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
-            <scope>provided</scope>
         </dependency>
 
         <!-- test dependencies -->
@@ -232,23 +230,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>enable-disk-storage</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.rocksdb</groupId>
-                    <artifactId>rocksdbjni</artifactId>
-                    <scope>compile</scope>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.apache.lucene</groupId>
-                    <artifactId>lucene-core</artifactId>
-                    <scope>compile</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
 </project>
