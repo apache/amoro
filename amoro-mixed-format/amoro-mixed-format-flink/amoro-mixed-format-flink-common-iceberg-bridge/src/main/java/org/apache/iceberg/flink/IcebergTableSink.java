@@ -18,6 +18,7 @@
 
 package org.apache.iceberg.flink;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
@@ -32,7 +33,6 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.flink.sink.FlinkSink;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
 import java.util.List;
 import java.util.Map;

@@ -22,11 +22,6 @@ import org.apache.iceberg.flink.util.ProxyUtil;
 
 import java.io.Serializable;
 
-/**
- * Create proxy in runtime to avoid 'ClassNotFoundException: XXX$$EnhancerByCglib'
- *
- * @param <T> The Object to proxy
- */
 public class ProxyFactory<T> implements Serializable {
   private static final long serialVersionUID = 1L;
   private final Class<T> clazz;

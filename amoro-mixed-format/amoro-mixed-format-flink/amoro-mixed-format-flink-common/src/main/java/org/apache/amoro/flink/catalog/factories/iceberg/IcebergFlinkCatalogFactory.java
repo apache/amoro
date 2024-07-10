@@ -18,6 +18,7 @@
 
 package org.apache.amoro.flink.catalog.factories.iceberg;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.util.Preconditions;
@@ -27,7 +28,6 @@ import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.flink.CatalogLoader;
 import org.apache.iceberg.flink.FlinkCatalogFactory;
-import org.apache.iceberg.relocated.com.google.common.base.Strings;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

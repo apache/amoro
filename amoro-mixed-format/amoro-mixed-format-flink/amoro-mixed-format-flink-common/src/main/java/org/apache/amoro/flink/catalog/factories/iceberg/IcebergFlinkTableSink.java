@@ -18,6 +18,7 @@
 
 package org.apache.amoro.flink.catalog.factories.iceberg;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -30,7 +31,6 @@ import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.flink.IcebergTableSink;
 import org.apache.iceberg.flink.TableLoader;
 import org.apache.iceberg.flink.sink.FlinkSink;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
 import java.util.List;
 import java.util.Map;

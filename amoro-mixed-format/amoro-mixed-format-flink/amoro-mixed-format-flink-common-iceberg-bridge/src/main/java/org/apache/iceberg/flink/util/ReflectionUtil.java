@@ -18,7 +18,7 @@
 
 package org.apache.iceberg.flink.util;
 
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;

@@ -18,6 +18,7 @@
 
 package org.apache.iceberg.flink.source;
 
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.flink.api.common.io.DefaultInputSplitAssigner;
 import org.apache.flink.api.common.io.InputFormat;
@@ -33,7 +34,6 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.flink.TableLoader;
 import org.apache.iceberg.io.FileIO;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.util.ThreadPools;
 
 import java.io.IOException;
