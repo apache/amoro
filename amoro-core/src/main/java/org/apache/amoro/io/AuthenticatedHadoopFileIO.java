@@ -47,7 +47,6 @@ public class AuthenticatedHadoopFileIO extends HadoopFileIO
     implements AuthenticatedFileIO, SupportsPrefixOperations, SupportsFileSystemOperations {
 
   private final TableMetaStore tableMetaStore;
-  private boolean fileRecycleEnabled;
 
   AuthenticatedHadoopFileIO(TableMetaStore tableMetaStore) {
     super(tableMetaStore.getConfiguration());
