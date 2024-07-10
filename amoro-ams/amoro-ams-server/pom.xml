@@ -292,19 +292,6 @@
             </exclusions>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.paimon</groupId>
-            <artifactId>paimon-spark-common</artifactId>
-            <version>${paimon.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.paimon</groupId>
-            <artifactId>paimon-s3</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- runtime dependencies -->
         <dependency>
             <groupId>org.apache.amoro</groupId>
@@ -317,6 +304,19 @@
             <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-optimizer-standalone</artifactId>
             <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.paimon</groupId>
+            <artifactId>paimon-s3</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.paimon</groupId>
+            <artifactId>paimon-spark-common</artifactId>
+            <version>${paimon.version}</version>
             <scope>runtime</scope>
         </dependency>
 

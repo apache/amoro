@@ -146,7 +146,6 @@
             <version>${iceberg.version}</version>
         </dependency>
 
-        <!--  -->
         <dependency>
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
