@@ -19,6 +19,7 @@
 package org.apache.amoro.server.utils;
 
 import org.apache.amoro.IcebergFileEntry;
+import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.table.BasicTableSnapshot;
@@ -93,6 +94,11 @@ public class IcebergTableUtil {
     List<Snapshot> snapshots = Lists.newArrayList(table.snapshots());
     Collections.reverse(snapshots);
     return Optional.ofNullable(Iterables.tryFind(snapshots, predicate).orNull());
+  }
+
+  public static Optional<Snapshot> findLatestOptimizingSnapshot(Table table) {
+    return IcebergTableUtil.findFirstMatchSnapshot(
+        table, snapshot -> snapshot.summary().containsValue(CommitMetaProducer.OPTIMIZE.name()));
   }
 
   public static Set<String> getAllContentFilePath(Table internalTable) {

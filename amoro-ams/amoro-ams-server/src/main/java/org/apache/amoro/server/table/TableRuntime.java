@@ -40,7 +40,10 @@ import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.table.BaseTable;
+import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.Snapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -321,23 +324,14 @@ public class TableRuntime extends StatedPersistentBase {
     MixedTable table = (MixedTable) amoroTable.originalTable();
 
     long lastSnapshotId = currentSnapshotId;
-    long currentSnapshotTime = AmoroServiceConstants.INVALID_TIME;
     if (table.isKeyedTable()) {
       long changeSnapshotId = currentChangeSnapshotId;
-      long currentChangeSnapshotTime = AmoroServiceConstants.INVALID_TIME;
-      Snapshot currentSnapshot =
-          IcebergTableUtil.getSnapshot(table.asKeyedTable().baseTable(), false);
-      if (currentSnapshot != null) {
-        currentSnapshotId = currentSnapshot.snapshotId();
-        currentSnapshotTime = currentSnapshot.timestampMillis();
-      }
-      Snapshot currentChangeSnapshot =
-          IcebergTableUtil.getSnapshot(table.asKeyedTable().changeTable(), false);
-      if (currentChangeSnapshot != null) {
-        currentChangeSnapshotId = currentChangeSnapshot.snapshotId();
-        currentChangeSnapshotTime = currentChangeSnapshot.timestampMillis();
-      }
-      optimizingMetrics.refreshedSnapshotTime(currentSnapshotTime, currentChangeSnapshotTime);
+      ChangeTable changeTable = table.asKeyedTable().changeTable();
+      BaseTable baseTable = table.asKeyedTable().baseTable();
+
+      currentChangeSnapshotId = doRefreshSnapshots(changeTable);
+      currentSnapshotId = doRefreshSnapshots(baseTable);
+
       if (currentSnapshotId != lastSnapshotId || currentChangeSnapshotId != changeSnapshotId) {
         LOG.info(
             "Refreshing table {} with base snapshot id {} and change snapshot id {}",
@@ -347,13 +341,7 @@ public class TableRuntime extends StatedPersistentBase {
         return true;
       }
     } else {
-      Snapshot currentSnapshot = table.asUnkeyedTable().currentSnapshot();
-      if (currentSnapshot != null) {
-        currentSnapshotId = currentSnapshot.snapshotId();
-        currentSnapshotTime = currentSnapshot.timestampMillis();
-      }
-      optimizingMetrics.refreshedSnapshotTime(
-          currentSnapshotTime, AmoroServiceConstants.INVALID_TIME);
+      currentSnapshotId = doRefreshSnapshots((UnkeyedTable) table);
       if (currentSnapshotId != lastSnapshotId) {
         LOG.info(
             "Refreshing table {} with base snapshot id {}", tableIdentifier, currentSnapshotId);
@@ -361,6 +349,26 @@ public class TableRuntime extends StatedPersistentBase {
       }
     }
     return false;
+  }
+
+  /**
+   * Refresh snapshots for table.
+   *
+   * @param table - table
+   * @return refreshed snapshotId
+   */
+  private long doRefreshSnapshots(UnkeyedTable table) {
+    long currentSnapshotId = AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+    Snapshot currentSnapshot = IcebergTableUtil.getSnapshot(table, false);
+    if (currentSnapshot != null) {
+      currentSnapshotId = currentSnapshot.snapshotId();
+    }
+
+    optimizingMetrics.refreshedSnapshotTime(currentSnapshot);
+    optimizingMetrics.lastOptimizingSnapshotTime(
+        IcebergTableUtil.findLatestOptimizingSnapshot(table).orElse(null));
+
+    return currentSnapshotId;
   }
 
   public OptimizingEvaluator.PendingInput getPendingInput() {
