@@ -65,14 +65,14 @@ export default [
     url: '/mock/ams/v1/catalogs/test_catalog/databases',
     method: 'get',
     response: () => {
-      return { "message": "success", "code": 200, "result": ["db"] }
+      return { "message": "success", "code": 200, "result": ["db", "test", "acc"] }
     },
   },
   {
     url: '/mock/ams/v1/catalogs/test_catalog/databases/db/tables',
     method: 'get',
     response: () => {
-      return { "message": "success", "code": 200, "result": [{ "name": "user", "type": "ICEBERG" }] };
+      return { "message": "success", "code": 200, "result": [{ "name": "user", "type": "ICEBERG" },{ "name": "wf", "type": "ICEBERG" }, { "name": "xcvz", "type": "ICEBERG" }] };
     },
   },
   {
@@ -131,7 +131,7 @@ export default [
     response: () => ({ "message": "success", "code": 200, "result": true }),
   },
   {
-    url: '/mock/ams/v1/catalog/metastore/types',
+    url: '/mock/ams/v1/catalogs/metastore/types',
     method: 'get',
     response: () => ({
       "message": "success",
