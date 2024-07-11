@@ -193,7 +193,7 @@ public class TableOptimizingMetrics {
   public static final MetricDefine TABLE_OPTIMIZING_LAG_DURATION =
       defineGauge("table_optimizing_lag_duration_mills")
           .withDescription(
-              "Interval in milliseconds between last self-optimizing snapshot and current refreshed snapshot")
+              "Duration in milliseconds between last self-optimizing snapshot and current refreshed snapshot")
           .withTags("catalog", "database", "table")
           .build();
 
