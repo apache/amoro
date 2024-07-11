@@ -166,34 +166,34 @@ public class TableOptimizingMetrics {
           .withTags("catalog", "database", "table")
           .build();
 
-  public static final MetricDefine TABLE_OPTIMIZING_MINOR_SINCE_LAST_COMPLETION =
-      defineGauge("table_optimizing_minor_since_last_completion_mills")
-          .withDescription("Duration in milliseconds after last minor optimizing")
+  public static final MetricDefine TABLE_OPTIMIZING_SINCE_LAST_MINOR_OPTIMIZATION =
+      defineGauge("table_optimizing_since_last_minor_optimization_mills")
+          .withDescription("Duration in milliseconds since last successful minor optimization")
           .withTags("catalog", "database", "table")
           .build();
 
-  public static final MetricDefine TABLE_OPTIMIZING_MAJOR_SINCE_LAST_COMPLETION =
-      defineGauge("table_optimizing_major_since_last_completion_mills")
-          .withDescription("Duration in milliseconds after last major optimizing")
+  public static final MetricDefine TABLE_OPTIMIZING_SINCE_LAST_MAJOR_OPTIMIZATION =
+      defineGauge("table_optimizing_since_last_major_optimization_mills")
+          .withDescription("Duration in milliseconds since last successful major optimization")
           .withTags("catalog", "database", "table")
           .build();
 
-  public static final MetricDefine TABLE_OPTIMIZING_FULL_SINCE_LAST_COMPLETION =
-      defineGauge("table_optimizing_full_since_last_completion_mills")
-          .withDescription("Duration in milliseconds after last full optimizing")
+  public static final MetricDefine TABLE_OPTIMIZING_SINCE_LAST_FULL_OPTIMIZATION =
+      defineGauge("table_optimizing_since_last_full_optimization_mills")
+          .withDescription("Duration in milliseconds since last successful full optimization")
           .withTags("catalog", "database", "table")
           .build();
 
-  public static final MetricDefine TABLE_LAST_OPTIMIZING_DURATION =
-      defineGauge("table_last_optimizing_duration_mills")
-          .withDescription("Duration in milliseconds after last optimizing")
+  public static final MetricDefine TABLE_OPTIMIZING_SINCE_LAST_OPTIMIZATION =
+      defineGauge("table_optimizing_since_last_optimization_mills")
+          .withDescription("Duration in milliseconds since last successful optimization")
           .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_LAG_DURATION =
       defineGauge("table_optimizing_lag_duration_mills")
           .withDescription(
-              "Duration in milliseconds between last self-optimizing snapshot and current refreshed snapshot")
+              "Duration in milliseconds between last self-optimizing snapshot and refreshed snapshot")
           .withTags("catalog", "database", "table")
           .build();
 
@@ -281,19 +281,19 @@ public class TableOptimizingMetrics {
       // register last optimizing duration metrics
       registerMetric(
           registry,
-          TABLE_OPTIMIZING_MINOR_SINCE_LAST_COMPLETION,
+          TABLE_OPTIMIZING_SINCE_LAST_MINOR_OPTIMIZATION,
           new LastOptimizingDurationGauge(OptimizingType.MINOR));
       registerMetric(
           registry,
-          TABLE_OPTIMIZING_MAJOR_SINCE_LAST_COMPLETION,
+          TABLE_OPTIMIZING_SINCE_LAST_MAJOR_OPTIMIZATION,
           new LastOptimizingDurationGauge(OptimizingType.MAJOR));
       registerMetric(
           registry,
-          TABLE_OPTIMIZING_FULL_SINCE_LAST_COMPLETION,
+          TABLE_OPTIMIZING_SINCE_LAST_FULL_OPTIMIZATION,
           new LastOptimizingDurationGauge(OptimizingType.FULL));
       registerMetric(
           registry,
-          TABLE_LAST_OPTIMIZING_DURATION,
+          TABLE_OPTIMIZING_SINCE_LAST_OPTIMIZATION,
           (Gauge<Long>) () -> System.currentTimeMillis() - lastOptimizingTime);
       registerMetric(
           registry,
