@@ -57,6 +57,7 @@ import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
+import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Function;
@@ -80,6 +81,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -137,13 +139,18 @@ public class TableController {
     ServerTableMeta serverTableMeta =
         tableDescriptor.getTableDetail(
             TableIdentifier.of(catalog, database, tableName).buildTableIdentifier());
-    ServerTableIdentifier serverTableIdentifier =
-        tableService.getServerTableIdentifier(
-            TableIdentifier.of(catalog, database, tableName).buildTableIdentifier());
     Map<String, Object> tableSummary = serverTableMeta.getTableSummary();
-    tableSummary.put(
-        "optimizingStatus", tableService.getRuntime(serverTableIdentifier).getOptimizingStatus());
-
+    Optional<ServerTableIdentifier> serverTableIdentifier =
+        Optional.ofNullable(
+            tableService.getServerTableIdentifier(
+                TableIdentifier.of(catalog, database, tableName).buildTableIdentifier()));
+    if (serverTableIdentifier.isPresent()) {
+      tableSummary.put(
+          "optimizingStatus",
+          tableService.getRuntime(serverTableIdentifier.get()).getOptimizingStatus());
+    } else {
+      tableSummary.put("optimizingStatus", OptimizingStatus.IDLE);
+    }
     ctx.json(OkResponse.of(serverTableMeta));
   }
 
