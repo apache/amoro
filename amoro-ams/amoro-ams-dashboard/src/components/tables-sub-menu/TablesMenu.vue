@@ -105,13 +105,13 @@ export default defineComponent({
     function getSearchTableList() {
       debounce(() => {
         getAllTableList()
-      })
+      })()
     }
 
     function getSearchDBList() {
       debounce(() => {
         getAllDatabaseList(true)
-      })
+      })()
     }
 
     function handleClickDb(item: IDatabaseItem) {
@@ -308,7 +308,7 @@ export default defineComponent({
               v-model:value="DBSearchInput"
               :placeholder="placeholder.filterDBPh"
               class="theme-dark"
-              @change="() => handleSearch('db')"
+              @change="handleSearch('db')"
             >
               <template #prefix>
                 <SearchOutlined />
@@ -333,7 +333,7 @@ export default defineComponent({
               v-model:value="tableSearchInput"
               :placeholder="placeholder.filterTablePh"
               class="theme-dark"
-              @change="() => handleSearch('table')"
+              @change="handleSearch('table')"
             >
               <template #prefix>
                 <SearchOutlined />
