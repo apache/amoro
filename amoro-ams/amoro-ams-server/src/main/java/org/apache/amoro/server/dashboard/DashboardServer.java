@@ -18,12 +18,6 @@
 
 package org.apache.amoro.server.dashboard;
 
-import static io.javalin.apibuilder.ApiBuilder.delete;
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.path;
-import static io.javalin.apibuilder.ApiBuilder.post;
-import static io.javalin.apibuilder.ApiBuilder.put;
-
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.core.security.BasicAuthCredentials;
 import io.javalin.http.ContentType;
@@ -35,16 +29,7 @@ import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.RestCatalogService;
-import org.apache.amoro.server.dashboard.controller.CatalogController;
-import org.apache.amoro.server.dashboard.controller.HealthCheckController;
-import org.apache.amoro.server.dashboard.controller.LoginController;
-import org.apache.amoro.server.dashboard.controller.OptimizerController;
-import org.apache.amoro.server.dashboard.controller.OverviewController;
-import org.apache.amoro.server.dashboard.controller.PlatformFileInfoController;
-import org.apache.amoro.server.dashboard.controller.SettingController;
-import org.apache.amoro.server.dashboard.controller.TableController;
-import org.apache.amoro.server.dashboard.controller.TerminalController;
-import org.apache.amoro.server.dashboard.controller.VersionController;
+import org.apache.amoro.server.dashboard.controller.*;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.ParamSignatureCalculator;
 import org.apache.amoro.server.exception.ForbiddenException;
@@ -65,6 +50,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import static io.javalin.apibuilder.ApiBuilder.*;
 
 public class DashboardServer {
 
@@ -101,7 +88,7 @@ public class DashboardServer {
     this.tableController = new TableController(tableService, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
-    this.overviewController = new OverviewController(tableService);
+    this.overviewController = new OverviewController(tableService, tableDescriptor);
 
     this.authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
     this.basicAuthUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);

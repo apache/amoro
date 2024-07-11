@@ -18,40 +18,74 @@
 
 package org.apache.amoro.server.dashboard.controller;
 
-
 import io.javalin.http.Context;
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.server.catalog.ServerCatalog;
+import org.apache.amoro.server.dashboard.ServerTableDescriptor;
 import org.apache.amoro.server.dashboard.model.ServerStatistics;
+import org.apache.amoro.server.dashboard.model.TableStatistics;
 import org.apache.amoro.server.dashboard.response.OkResponse;
+import org.apache.amoro.server.dashboard.utils.AmsUtil;
+import org.apache.amoro.server.dashboard.utils.TableStatCollector;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.table.MixedTable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 /** The controller that handles overview page requests. */
 public class OverviewController {
 
-    private final TableService tableService;
+  private static final Logger log = LoggerFactory.getLogger(OverviewController.class);
+  private final TableService tableService;
+  private final ServerTableDescriptor tableDescriptor;
 
-    public OverviewController(TableService tableService) {
-        this.tableService = tableService;
+  public OverviewController(TableService tableService, ServerTableDescriptor tableDescriptor) {
+    this.tableService = tableService;
+    this.tableDescriptor = tableDescriptor;
+  }
+
+  public void getServerStat(Context ctx) {
+    List<ServerTableIdentifier> tables = tableService.listManagedTables();
+
+    List<CatalogMeta> catalogMetaList = tableService.listCatalogMetas();
+    int totalTableCnt = 0;
+    long sumTableSizeInBytes = 0;
+    for (CatalogMeta catalogMeta : catalogMetaList) {
+      ServerCatalog catalog = tableService.getServerCatalog(catalogMeta.getCatalogName());
+      catalog.listDatabases();
+      List<TableIDWithFormat> listTables = catalog.listTables();
+      // table count
+      totalTableCnt += listTables.size();
+
+      // get sum of tables sizes
+      for (TableIDWithFormat tableIDWithFormat : listTables) {
+        sumTableSizeInBytes += getTotalTableSize(tableIDWithFormat, catalog);
+      }
     }
 
-    public void getServerStat(Context ctx){
-        List<ServerTableIdentifier> tables = tableService.listManagedTables();
+    ServerStatistics serverStatistics =
+        new ServerStatistics(
+            catalogMetaList.size(), totalTableCnt, AmsUtil.byteToXB(sumTableSizeInBytes), 96, 256);
+    ctx.json(OkResponse.of(serverStatistics));
+  }
 
-        List<CatalogMeta> catalogMetaList = tableService.listCatalogMetas();
-        int totalTableCnt = 0;
-        for (CatalogMeta catalogMeta : catalogMetaList) {
-            ServerCatalog serverCatalog = tableService.getServerCatalog(catalogMeta.getCatalogName());
-            List<TableIDWithFormat> listTables = serverCatalog.listTables();
-            totalTableCnt += listTables.size();
-        }
-
-        ServerStatistics serverStatistics = new ServerStatistics(catalogMetaList.size(), totalTableCnt, 0, 96, 256);
-        ctx.json(OkResponse.of(serverStatistics));
+  private static long getTotalTableSize(
+      TableIDWithFormat tableIDWithFormat, ServerCatalog catalog) {
+    AmoroTable<?> amoroTable =
+        catalog.loadTable(tableIDWithFormat.database(), tableIDWithFormat.table());
+    MixedTable table = (MixedTable) amoroTable.originalTable();
+    TableStatistics tableBaseInfo;
+    if (table.isUnkeyedTable()) {
+      tableBaseInfo = new TableStatistics();
+      TableStatCollector.fillTableStatistics(tableBaseInfo, table.asUnkeyedTable(), table);
+    } else {
+      tableBaseInfo = TableStatCollector.collectBaseTableInfo(table.asKeyedTable());
     }
-
+    return tableBaseInfo.getTotalFilesStat().getTotalSize();
+  }
 }

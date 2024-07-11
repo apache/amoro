@@ -22,68 +22,69 @@ import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 
 public class ServerStatistics {
 
-    private int catalogCnt;
-    private int tableCnt;
-    private int totalDataSizeInBytes;
-    private int totalCpuCores;
-    private int totalMemoryInGB;
+  private int catalogCnt;
+  private int tableCnt;
+  private String totalDataSize;
+  private int totalCpuCores;
+  private int totalMemoryInGB;
 
-    public ServerStatistics(int catalogCnt, int tableCnt, int totalDataSizeInBytes, int totalCpuCores, int totalMemoryInGB) {
-        this.catalogCnt = catalogCnt;
-        this.tableCnt = tableCnt;
-        this.totalDataSizeInBytes = totalDataSizeInBytes;
-        this.totalCpuCores = totalCpuCores;
-        this.totalMemoryInGB = totalMemoryInGB;
-    }
+  public ServerStatistics(
+      int catalogCnt, int tableCnt, String totalDataSize, int totalCpuCores, int totalMemoryInGB) {
+    this.catalogCnt = catalogCnt;
+    this.tableCnt = tableCnt;
+    this.totalDataSize = totalDataSize;
+    this.totalCpuCores = totalCpuCores;
+    this.totalMemoryInGB = totalMemoryInGB;
+  }
 
-    public int getCatalogCnt() {
-        return catalogCnt;
-    }
+  public int getCatalogCnt() {
+    return catalogCnt;
+  }
 
-    public void setCatalogCnt(int catalogCnt) {
-        this.catalogCnt = catalogCnt;
-    }
+  public void setCatalogCnt(int catalogCnt) {
+    this.catalogCnt = catalogCnt;
+  }
 
-    public int getTableCnt() {
-        return tableCnt;
-    }
+  public int getTableCnt() {
+    return tableCnt;
+  }
 
-    public void setTableCnt(int tableCnt) {
-        this.tableCnt = tableCnt;
-    }
+  public void setTableCnt(int tableCnt) {
+    this.tableCnt = tableCnt;
+  }
 
-    public int getTotalDataSizeInBytes() {
-        return totalDataSizeInBytes;
-    }
+  public String getTotalDataSize() {
+    return totalDataSize;
+  }
 
-    public void setTotalDataSizeInBytes(int totalDataSizeInBytes) {
-        this.totalDataSizeInBytes = totalDataSizeInBytes;
-    }
+  public void setTotalDataSize(String totalDataSize) {
+    this.totalDataSize = totalDataSize;
+  }
 
-    public int getTotalCpuCores() {
-        return totalCpuCores;
-    }
+  public int getTotalCpuCores() {
+    return totalCpuCores;
+  }
 
-    public void setTotalCpuCores(int totalCpuCores) {
-        this.totalCpuCores = totalCpuCores;
-    }
+  public void setTotalCpuCores(int totalCpuCores) {
+    this.totalCpuCores = totalCpuCores;
+  }
 
-    public int getTotalMemoryInGB() {
-        return totalMemoryInGB;
-    }
+  public int getTotalMemoryInGB() {
+    return totalMemoryInGB;
+  }
 
-    public void setTotalMemoryInGB(int totalMemoryInGB) {
-        this.totalMemoryInGB = totalMemoryInGB;
-    }
+  public void setTotalMemoryInGB(int totalMemoryInGB) {
+    this.totalMemoryInGB = totalMemoryInGB;
+  }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("catalogCnt", catalogCnt)
-                .add("tableCnt", tableCnt)
-                .add("totalDataSizeInBytes", totalDataSizeInBytes)
-                .add("totalCpuCores", totalCpuCores)
-                .add("totalMemoryInGB", totalMemoryInGB)
-                .toString();
-    }
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("catalogCnt", catalogCnt)
+        .add("tableCnt", tableCnt)
+        .add("totalDataSizeInBytes", totalDataSize)
+        .add("totalCpuCores", totalCpuCores)
+        .add("totalMemoryInGB", totalMemoryInGB)
+        .toString();
+  }
 }
