@@ -110,8 +110,13 @@ public abstract class RestCatalogServiceTestBase {
   }
 
   protected ServerTableIdentifier getServerTableIdentifier(TableIdentifier identifier) {
-    TableMetadata metadata = tableService.loadTableMetadata(identifier.buildTableIdentifier());
+    TableMetadata metadata = getTableMetadata(identifier);
     return metadata.getTableIdentifier();
+  }
+
+  protected TableMetadata getTableMetadata(TableIdentifier identifier) {
+    InternalCatalog internalCatalog = tableService.getInternalCatalog(identifier.getCatalog());
+    return internalCatalog.loadTableMetadata(identifier.getDatabase(), identifier.getTableName());
   }
 
   protected TableRuntime getTableRuntime(TableIdentifier identifier) {

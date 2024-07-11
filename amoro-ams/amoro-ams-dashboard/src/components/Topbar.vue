@@ -16,11 +16,13 @@
   limitations under the License.
  / -->
 
-<script lang="ts">
-import { defineComponent, onMounted, reactive } from 'vue'
+<script setup lang="ts">
+import { onMounted, reactive } from 'vue'
 import { Modal } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
+import { DownOutlined, LogoutOutlined, QuestionCircleOutlined, TranslationOutlined } from '@ant-design/icons-vue'
 import useStore from '@/store'
 import { getVersionInfo } from '@/services/global.service'
 import loginService from '@/services/login.service'
@@ -30,61 +32,61 @@ interface IVersion {
   commitTime: string
 }
 
-export default defineComponent ({
-  name: 'Topbar',
-  setup() {
-    const verInfo = reactive<IVersion>({
-      version: '',
-      commitTime: '',
-    })
+const verInfo = reactive<IVersion>({
+  version: '',
+  commitTime: '',
+})
 
-    const { t } = useI18n()
+const { t, locale } = useI18n()
+const router = useRouter()
+const store = useStore()
 
-    const getVersion = async () => {
-      const res = await getVersionInfo()
-      if (res) {
-        verInfo.version = res.version
-        verInfo.commitTime = res.commitTime
+async function getVersion() {
+  const res = await getVersionInfo()
+  if (res) {
+    verInfo.version = res.version
+    verInfo.commitTime = res.commitTime
+  }
+}
+
+function goLoginPage() {
+  router.push({ path: '/login' })
+}
+
+async function handleLogout() {
+  Modal.confirm({
+    title: t('logoutModalTitle'),
+    onOk: async () => {
+      try {
+        await loginService.logout()
       }
-    }
+      catch (error) {
+      }
+      finally {
+        store.updateUserInfo({
+          userName: '',
+        })
+        goLoginPage()
+      }
+    },
+  })
+}
 
-    const handleLogout = async () => {
-      Modal.confirm({
-        title: t('logoutModalTitle'),
-        content: '',
-        okText: '',
-        cancelText: '',
-        onOk: async () => {
-          try {
-            await loginService.logout()
-          }
-          catch (error) {
-          }
-          finally {
-            const store = useStore()
-            store.updateUserInfo({
-              userName: '',
-            })
-            window.location.href = '/login'
-          }
-        },
-      })
-    }
+function goDocs() {
+  window.open('https://amoro.apache.org/docs/latest/')
+}
 
-    const goDocs = () => {
-      window.open('https://amoro.apache.org/docs/latest/')
-    }
+function setLocale() {
+  if (locale.value === 'zh') {
+    locale.value = 'en'
+  }
+  else {
+    locale.value = 'zh'
+  }
+}
 
-    onMounted(() => {
-      getVersion()
-    })
-
-    return {
-      verInfo,
-      goDocs,
-      handleLogout,
-    }
-  },
+onMounted(() => {
+  getVersion()
 })
 </script>
 
@@ -94,20 +96,22 @@ export default defineComponent ({
       <span class="g-mr-8">{{ `${$t('version')}:  ${verInfo.version}` }}</span>
       <span class="g-mr-8">{{ `${$t('commitTime')}:  ${verInfo.commitTime}` }}</span>
     </div>
-    <a-tooltip placement="bottomRight" arrow-point-at-center overlay-class-name="topbar-tooltip">
-      <template #title>
-        {{ $t('userGuide') }}
+    <a-dropdown>
+      <span>{{ store.userInfo.userName }} <DownOutlined /></span>
+      <template #overlay>
+        <a-menu>
+          <a-menu-item key="userGuide" @click="goDocs">
+            <QuestionCircleOutlined /> {{ $t('userGuide') }}
+          </a-menu-item>
+          <a-menu-item key="locale" @click="setLocale">
+            <TranslationOutlined /> {{ locale === 'zh' ? '切换至英文' : 'Switch To Chinese' }}
+          </a-menu-item>
+          <a-menu-item key="logout" @click="handleLogout">
+            <LogoutOutlined /> {{ $t('logout') }}
+          </a-menu-item>
+        </a-menu>
       </template>
-      <question-circle-outlined class="question-icon" @click="goDocs" />
-    </a-tooltip>
-    <a-tooltip>
-      <template #title>
-        {{ $t('logout') }}
-      </template>
-      <a-button class="logout-button" @click="handleLogout">
-        <LogoutOutlined style="font-size: 1.2em" />
-      </a-button>
-    </a-tooltip>
+    </a-dropdown>
   </div>
 </template>
 
@@ -132,7 +136,7 @@ export default defineComponent ({
     font-size: 12px;
   }
   .logout-button.ant-btn {
-      border: none;
+    border: none;
   }
   .logout-button:hover {
     border-color: unset;

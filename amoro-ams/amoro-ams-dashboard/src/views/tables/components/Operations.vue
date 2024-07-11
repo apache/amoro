@@ -86,7 +86,7 @@ function viewDetail(record: OperationItem) {
   activeCopyText.value = record.operation
 }
 
-function cancle() {
+function cancel() {
   visible.value = false
 }
 
@@ -94,7 +94,7 @@ async function onCopy() {
   try {
     await toClipboard(activeCopyText.value)
     message.success(t('copySuccess'))
-    cancle()
+    cancel()
   }
   catch (error) {}
 }
@@ -124,11 +124,11 @@ onMounted(() => {
     </a-table>
   </div>
   <AModal
-    :visible="visible"
+    :open="visible"
     :width="560"
-    :title="`${$t('operationDetails')}`"
+    :title="$t('operationDetails')"
     class="operation-wrap"
-    @cancel="cancle"
+    @cancel="cancel"
   >
     {{ activeCopyText }}
     <template #footer>

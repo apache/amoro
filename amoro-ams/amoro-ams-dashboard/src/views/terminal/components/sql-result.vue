@@ -30,10 +30,6 @@ const isEmpty = computed(() => {
 const status = computed(() => {
   return props.info?.status
 })
-
-// const innerWidth = computed(() => {
-//   return window.innerWidth - 220 - 34
-// })
 </script>
 
 <template>
@@ -52,7 +48,7 @@ const status = computed(() => {
       <template v-if="status === 'Created'">
         <close-circle-outlined style="color:#333" />
       </template>
-      <span class="g-ml-8">{{ status }}</span>
+      <span class="g-ml-8">{{ $t(status) }}</span>
     </div>
     <div v-if="isEmpty" class="empty">
       {{ $t('noResult') }}

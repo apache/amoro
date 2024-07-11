@@ -180,7 +180,7 @@ export default defineComponent({
         <template #icon>
           <svg-icon :icon-class="item.icon" class="svg-icon" />
         </template>
-        <span>{{ $t(item.title) }}</span>
+        <span>{{ item.title }}</span>
       </a-menu-item>
     </a-menu>
     <a-button type="link" class="toggle-btn" @click="toggleCollapsed">
