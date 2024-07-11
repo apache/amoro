@@ -34,6 +34,7 @@ import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.primitives.Longs;
+import org.apache.iceberg.Snapshot;
 
 import java.util.List;
 
@@ -192,7 +193,7 @@ public class TableOptimizingMetrics {
   public static final MetricDefine TABLE_OPTIMIZING_LAG_DURATION =
       defineGauge("table_optimizing_lag_duration_mills")
           .withDescription(
-              "Interval in milliseconds between last self-optimizing process and current refreshed snapshot")
+              "Interval in milliseconds between last self-optimizing snapshot and current refreshed snapshot")
           .withTags("catalog", "database", "table")
           .build();
 
@@ -210,7 +211,8 @@ public class TableOptimizingMetrics {
   private OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   private long statusSetTimestamp = System.currentTimeMillis();
   private long lastMinorTime, lastMajorTime, lastFullTime;
-  private long refreshedChangeSnapshotTime, refreshedBaseSnapshotTime;
+  private long latestSnapshotTime = AmoroServiceConstants.INVALID_TIME;
+  private long lastOptimizingTime = AmoroServiceConstants.INVALID_TIME;
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
   private MetricRegistry globalRegistry;
 
@@ -279,34 +281,24 @@ public class TableOptimizingMetrics {
       // register last optimizing duration metrics
       registerMetric(
           registry,
-              TABLE_OPTIMIZING_MINOR_SINCE_LAST_COMPLETION,
+          TABLE_OPTIMIZING_MINOR_SINCE_LAST_COMPLETION,
           new LastOptimizingDurationGauge(OptimizingType.MINOR));
       registerMetric(
           registry,
-              TABLE_OPTIMIZING_MAJOR_SINCE_LAST_COMPLETION,
+          TABLE_OPTIMIZING_MAJOR_SINCE_LAST_COMPLETION,
           new LastOptimizingDurationGauge(OptimizingType.MAJOR));
       registerMetric(
           registry,
-              TABLE_OPTIMIZING_FULL_SINCE_LAST_COMPLETION,
+          TABLE_OPTIMIZING_FULL_SINCE_LAST_COMPLETION,
           new LastOptimizingDurationGauge(OptimizingType.FULL));
       registerMetric(
           registry,
           TABLE_LAST_OPTIMIZING_DURATION,
-          (Gauge<Long>)
-              () ->
-                  System.currentTimeMillis()
-                      - Longs.max(lastMinorTime, lastMajorTime, lastFullTime));
-
+          (Gauge<Long>) () -> System.currentTimeMillis() - lastOptimizingTime);
       registerMetric(
           registry,
-              TABLE_OPTIMIZING_LAG_DURATION,
-          (Gauge<Long>)
-              () -> {
-                long lastOptimizedTime = Longs.max(lastMinorTime, lastMajorTime, lastFullTime);
-                long latestSnapshotTime =
-                    Longs.max(refreshedChangeSnapshotTime, refreshedBaseSnapshotTime);
-                return latestSnapshotTime - lastOptimizedTime;
-              });
+          TABLE_OPTIMIZING_LAG_DURATION,
+          (Gauge<Long>) () -> latestSnapshotTime - lastOptimizingTime);
 
       globalRegistry = registry;
     }
@@ -349,9 +341,20 @@ public class TableOptimizingMetrics {
     }
   }
 
-  public void refreshedSnapshotTime(long changeSnapshotTime, long baseSnapshotTime) {
-    this.refreshedChangeSnapshotTime = changeSnapshotTime;
-    this.refreshedBaseSnapshotTime = baseSnapshotTime;
+  public void refreshedSnapshotTime(Snapshot snapshot) {
+    if (snapshot == null) {
+      return;
+    }
+
+    this.latestSnapshotTime = Longs.max(latestSnapshotTime, snapshot.timestampMillis());
+  }
+
+  public void lastOptimizingSnapshotTime(Snapshot snapshot) {
+    if (snapshot == null) {
+      return;
+    }
+
+    this.lastOptimizingTime = Longs.max(lastOptimizingTime, snapshot.timestampMillis());
   }
 
   /**
