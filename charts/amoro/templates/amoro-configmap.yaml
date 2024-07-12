@@ -98,6 +98,7 @@ data:
         backend: {{ .Values.amoroConf.terminal.backend }}
         {{- if eq .Values.amoroConf.terminal.backend "local" }}
         local.spark.sql.iceberg.handle-timestamp-without-timezone: {{ .Values.amoroConf.terminal.icebergHandleTimestampWithoutTimezone }}
+        local.spark.cleaner.referenceTracking: false
         {{- end }}
         {{- if eq .Values.amoroConf.terminal.backend "kyuubi" }}
         kyuubi.jdbc.url: {{ .Values.amoroConf.terminal.kyuubiJdbcUrl | quote  }}

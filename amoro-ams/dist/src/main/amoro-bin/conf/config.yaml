@@ -117,6 +117,7 @@ ams:
   terminal:
     backend: local
     local.spark.sql.iceberg.handle-timestamp-without-timezone: false
+    local.spark.cleaner.referenceTracking: false
 
 #  Kyuubi terminal backend configuration.
 #  terminal:
