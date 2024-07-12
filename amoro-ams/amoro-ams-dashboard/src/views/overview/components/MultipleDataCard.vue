@@ -29,19 +29,14 @@ fetchData();
 </script>
 
 <template>
-  <a-card class="multiple-data" :loading="loading">
+  <a-card class="multiple-data" :loading="loading" :body-style="{ paddingTop: '0px' }">
     <template #title>
       <span class="card-title">{{ props.title }}</span>
     </template>
     <a-row>
       <a-col :span=12 v-for="item in props.items" :key="item.subtitle">
-        <a-statistic 
-        :title="item.subtitle" 
-        :value="item.data" 
-        :precision="item.precision" 
-        :suffix="item.suffix"
-        :value-style="{ color: '#07A7F0', fontSize: '28px' }" 
-        style="margin-right: 50px"/>
+        <a-statistic :title="item.subtitle" :value="item.data" :precision="item.precision" :suffix="item.suffix"
+          :value-style="{ color: '#07A7F0', fontSize: '28px' }" style="margin-right: 20px;" />
       </a-col>
     </a-row>
   </a-card>
@@ -53,6 +48,7 @@ fetchData();
 }
 
 .multiple-data {
+  padding-top: 0px;
   height: 150px;
 }
 </style>

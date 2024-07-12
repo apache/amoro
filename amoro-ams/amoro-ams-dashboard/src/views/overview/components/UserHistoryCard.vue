@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -18,60 +17,79 @@ limitations under the License.
 /-->
 
 <template>
-    <a-card class="user-history" title="DDL History">
-      <a-table :columns="columns" :dataSource="data" :pagination="false" />
-    </a-card>
-  </template>
-  
-  <script lang="ts" setup>
-  import { ref } from 'vue';
+  <a-card class="operations-card" title="Latest Operations">
+    <a-table :columns="columns" :dataSource="data" :pagination="false"  rowKey="key" >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'table'">
+          <a>
+            {{ record.table }}
+          </a>
+        </template>
+
+        <!-- <template v-else-if="column.key === 'status'">
+        <span>
+          <a-tag
+            :color="record.status == 'Optimizing' ? 'green' : 'geekblue'"
+          >
+            {{ record.status.toUpperCase() }}
+          </a-tag>
+        </span>
+        </template> -->
+      </template>
+    </a-table>
+  </a-card>
+</template>
+
+<script lang="ts" setup>
+import { ref } from 'vue';
 //   import { Tooltip } from 'ant-design-vue';
-  
-  interface DataSource {
-    key: string;
-    username: string;
-    action: string;
-    time: string;
-  }
-  
-  const columns = [
-    {
-      title: 'User',
-      dataIndex: 'username',
-    },
-    {
-      title: 'DDL',
-      dataIndex: 'action',
-      customRender: ({ text }: { text: string }) => {
-        return (
-            text
-        //   <Tooltip placement="top" title={text}>
-        //     <span>{text.slice(0, 10)}...</span>
-        //   </Tooltip>
-        );
-      },
-    },
-    {
-      title: 'Action Time',
-      dataIndex: 'time',
-    },
-  ];
-  
-  const data = ref<DataSource[]>([
-    { key: '1', username: 'User1', action: 'Created new table named Table1', time: '2024-07-11 10:00' },
-    { key: '2', username: 'User2', action: 'Deleted database DB2', time: '2024-07-11 11:00' },
-    { key: '2', username: 'User2', action: 'Deleted database DB2', time: '2024-07-11 11:00' },
-    { key: '2', username: 'User2', action: 'Deleted database DB2', time: '2024-07-11 11:00' },
-    { key: '2', username: 'User2', action: 'Deleted database DB2', time: '2024-07-11 11:00' },
-    { key: '2', username: 'User2', action: 'Deleted database DB2', time: '2024-07-11 11:00' },
-    { key: '2', username: 'User2', action: 'Deleted database DB2', time: '2024-07-11 11:00' },
-    { key: '2', username: 'User2', action: 'Deleted database DB2', time: '2024-07-11 11:00' },
-    // Add more data here
-  ]);
-  </script>
-  
-  <style scoped>
-      .user-history{
-        height: 450px;
-    }
-  </style>
+
+interface DataSource {
+  key: string;
+  table: string;
+  operation: string;
+  time: string;
+}
+
+const columns = [
+  {
+    title: 'Table',
+    dataIndex: 'table',
+    key: 'table',
+  },
+  {
+    title: 'Operation',
+    dataIndex: 'operation',
+    ellipsis: true,
+  },
+  {
+    title: 'Time',
+    dataIndex: 'time',
+  },
+];
+
+const data = ref<DataSource[]>([
+  {
+    key: '1', table: 'test_catalog.db.school', operation: `create external table school
+(
+    school_id   int,
+    school_name string,
+    school_code string,
+    school_note string
+)
+    row format delimited
+        fields terminated by '|'
+    stored as textfile
+    location '/edu1/school`, time: '2024-07-10 10:53'
+  },
+  { key: '2', table: 'test_catalog.db.teacher', operation: 'drop table if exists teacher;', time: '2024-07-11 11:00' },
+  { key: '3', table: 'test_catalog.db.video', operation: 'drop table if exists video;', time: '2024-07-11 12:00' },
+  // Add more data here
+]);
+</script>
+
+<style scoped>
+.operations-card {
+  height: 350px;
+}
+</style>

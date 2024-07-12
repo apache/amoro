@@ -51,25 +51,21 @@ const multipleData = ref([
 const resourceUsageData = ref(ResourceUsageRandomData(30));
 
 const tableFormatData = ref([
-  { value: 40, name: 'Type A' },
-  { value: 20, name: 'Type B' },
-  { value: 30, name: 'Type C' },
-  { value: 10, name: 'Type D' }
+  { value: 70, name: 'Iceberg format' },
+  { value: 20, name: 'Mixed-Iceberg' },
+  { value: 10, name: 'Mixed-Hive format' }
 ]);
 
 const OptimizingStatusData = ref([
-  { value: 40, name: 'Type A' },
-  { value: 20, name: 'Type B' },
-  { value: 30, name: 'Type C' },
-  { value: 10, name: 'Type D' }
+  { value: 40, name: 'Full Optimizing' },
+  { value: 20, name: 'Major Optimizing' },
+  { value: 30, name: 'Minor Optimizing' },
+  { value: 10, name: 'Committing' },
+  { value: 2, name: 'Planning' },
+  { value: 3, name: 'Pending' },
+  { value: 50, name: 'Idle' }
 ]);
 
-// const sortedTables = ref([
-//   { rank: 1, name: 'Table A', size: 500, files: 20 },
-//   { rank: 2, name: 'Table B', size: 450, files: 18 },
-//   { rank: 3, name: 'Table C', size: 400, files: 15 },
-//   // Add more entries as needed
-// ]);
 
 </script>
 
@@ -84,17 +80,16 @@ const OptimizingStatusData = ref([
       </a-col>
 
       <a-col :span=12>
-        <TableHealthCard />
-      </a-col>
-      <a-col :span=12>
-        <UserHistoryCard/>
-      </a-col>
-
-      <a-col :span=12>
         <PieChartCard title="Table Format" :data="tableFormatData"/>
       </a-col>
       <a-col :span=12>
         <PieChartCard title="Optimizing Status" :data="OptimizingStatusData"/>
+      </a-col>
+      <a-col :span=12>
+        <TableHealthCard />
+      </a-col>
+      <a-col :span=12>
+        <UserHistoryCard/>
       </a-col>
     </a-row>
 
