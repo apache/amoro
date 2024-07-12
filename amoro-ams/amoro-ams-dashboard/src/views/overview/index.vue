@@ -17,20 +17,18 @@ limitations under the License.
 / -->
 
 <script lang="ts" setup>
-import {ref } from 'vue'
+import { ref } from 'vue'
 import SingleDataCard from './components/SingleDataCard.vue';
 import MultipleDataCard from './components/MultipleDataCard.vue';
-import ResourceUsageCard from './components/ResourceUsageCard.vue';
-import OptimizingTablesCard from './components/OptimizingTablesCard.vue';
-import DataSizeCard from './components/DataSizeCard.vue';
+import TableHealthCard from './components/TableHealthCard.vue';
+import UserHistoryCard from './components/UserHistoryCard.vue';
+import PieChartCard from './components/PieChartCard.vue';
+
+// import ResourceUsageCard from './components/ResourceUsageCard.vue';
+// import OptimizingTablesCard from './components/OptimizingTablesCard.vue';
+// import DataSizeCard from './components/DataSizeCard.vue';
 // import Top10TablesCard from './components/Top10TablesCard.vue';
 
-const sizeRandomData = (length: number, type: string) => {
-  return Array.from({ length }, (_, index) => ({
-    time: new Date(Date.now() - index * 60000).toISOString().slice(11, 19),
-    size: Math.random() * 100,
-  }));
-};
 const ResourceUsageRandomData = (length: number) => {
   return Array.from({ length }, (_, index) => ({
     time: new Date(Date.now() - index * 60000).toISOString().slice(11, 19),
@@ -40,55 +38,63 @@ const ResourceUsageRandomData = (length: number) => {
 };
 
 const cardsData = [
-     { title: 'Catalog', data: 3, precision: 0, suffix: '' },
-     { title: 'Table', data: 243, precision: 0, suffix: '' },
-     { title: 'Data', data: 300.00, precision: 2, suffix: 'GB' },
-   ];
+  { title: 'Catalog', data: 3, precision: 0, suffix: '' },
+  { title: 'Table', data: 234, precision: 0, suffix: '' },
+  { title: 'Data', data: 300.00, precision: 2, suffix: 'GB' },
+];
 
 const multipleData = ref([
-  { subtitle: 'CPU', data: 50, precision: 0, suffix: '%' },
-  { subtitle: 'Memory', data: 60, precision: 0, suffix: '%' }
+  { subtitle: 'CPU', data: 96, precision: 0, suffix: 'Core' },
+  { subtitle: 'Memory', data: 129, precision: 0, suffix: 'GB' }
 ]);
 
 const resourceUsageData = ref(ResourceUsageRandomData(30));
 
-const sortedTables = ref([
-  { rank: 1, name: 'Table A', size: 500, files: 20 },
-  { rank: 2, name: 'Table B', size: 450, files: 18 },
-  { rank: 3, name: 'Table C', size: 400, files: 15 },
-  // Add more entries as needed
+const tableFormatData = ref([
+  { value: 40, name: 'Type A' },
+  { value: 20, name: 'Type B' },
+  { value: 30, name: 'Type C' },
+  { value: 10, name: 'Type D' }
 ]);
 
+const OptimizingStatusData = ref([
+  { value: 40, name: 'Type A' },
+  { value: 20, name: 'Type B' },
+  { value: 30, name: 'Type C' },
+  { value: 10, name: 'Type D' }
+]);
+
+// const sortedTables = ref([
+//   { rank: 1, name: 'Table A', size: 500, files: 20 },
+//   { rank: 2, name: 'Table B', size: 450, files: 18 },
+//   { rank: 3, name: 'Table C', size: 400, files: 15 },
+//   // Add more entries as needed
+// ]);
 
 </script>
 
 <template>
   <div :style="{ background: '#F8F7F8', padding: '24px', minHeight: '900px' }" class="overview-content">
-    <a-row :gutter="[16,8]">
+    <a-row :gutter="[16, 8]">
       <a-col v-for="(card, index) in cardsData" :key="index" :span="6">
-       <SingleDataCard
-         :title="card.title"
-         :data="card.data"
-         :precision="card.precision"
-         :suffix="card.suffix"
-       />
-     </a-col>
+        <SingleDataCard :title="card.title" :data="card.data" :precision="card.precision" :suffix="card.suffix" />
+      </a-col>
       <a-col :span=6>
         <MultipleDataCard title="Resource" :items=multipleData />
       </a-col>
 
       <a-col :span=12>
-        <ResourceUsageCard :data=resourceUsageData />
+        <TableHealthCard />
       </a-col>
       <a-col :span=12>
-        <OptimizingTablesCard/>
+        <UserHistoryCard/>
       </a-col>
 
       <a-col :span=12>
-        <DataSizeCard/>
+        <PieChartCard title="Table Format" :data="tableFormatData"/>
       </a-col>
       <a-col :span=12>
-        <!-- <Top10TablesCard/> -->
+        <PieChartCard title="Optimizing Status" :data="OptimizingStatusData"/>
       </a-col>
     </a-row>
 
@@ -101,10 +107,12 @@ const sortedTables = ref([
   display: flex;
   justify-content: center;
   background-color: #fff;
+
   .content {
     width: 100%;
     max-width: 1182px;
     padding: 64px 30px;
+
     .img {
       max-width: 100%;
     }
@@ -119,29 +127,35 @@ const sortedTables = ref([
   text-align: center;
   margin-bottom: 40px;
 }
+
 .home-feature {
   background: #f5f6fa;
   margin: 0 auto;
   display: flex;
   justify-content: center;
+
   .content {
     width: 100%;
     max-width: 1182px;
     padding: 64px 41px 80px;
+
     .title {
       font-size: 32px;
     }
+
     .features {
       display: grid;
       grid-row-gap: 24px;
       grid-column-gap: 24px;
       max-width: 1100px;
       grid-template-columns: auto auto;
+
       .feature-item {
         background-color: #fff;
         padding: 32px;
         border-radius: 5px;
         position: relative;
+
         .fix-icon {
           position: absolute;
           top: 0px;

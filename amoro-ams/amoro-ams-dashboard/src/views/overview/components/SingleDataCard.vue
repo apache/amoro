@@ -30,7 +30,7 @@ fetchData();
 </script>
 
 <template>
-  <a-card :loading="loading">
+  <a-card class="single-data" :loading="loading">
     <template #title>
       <span class="card-title">{{ props.title }}</span>
     </template>
@@ -38,15 +38,16 @@ fetchData();
             :value="props.data"
             :precision="props.precision"
             :suffix="props.suffix"
-            :value-style="{ color: '#07A7F0' }"
-            style="margin-right: 50px"
-          >
-          </a-statistic>
+            :value-style="{ color: '#07A7F0', fontSize: '28px' }"
+            style="margin-right: 50px"/>
   </a-card>
 </template>
 
 <style scoped>
 .card-title {
   font-size: 28px;
+}
+.single-data{
+  height: 150px;
 }
 </style>
