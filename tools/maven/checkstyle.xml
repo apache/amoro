@@ -110,6 +110,16 @@ This file is based on the checkstyle file of Apache Beam.
             <message key="import.illegal" value="{0}; Use amoro shaded guava instead."/>
         </module>
 
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="org.apache.iceberg.relocated.com.google.common"/>
+            <message key="import.illegal" value="{0}; Use amoro shaded guava instead."/>
+        </module>
+
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="org.apache.paimon.shade.guava30.com.google.common"/>
+            <message key="import.illegal" value="{0}; Use amoro shaded guava instead."/>
+        </module>
+
         <module name="Regexp">
             <property name="format" value="import com\.fasterxml\.jackson"/>
             <property name="illegalPattern" value="true"/>
@@ -154,6 +164,16 @@ This file is based on the checkstyle file of Apache Beam.
         -->
         <module name="RegexpSinglelineJava">
             <property name="format" value="^import com.google.common.base.Preconditions;$"/>
+            <property name="message" value="Use amoro shaded guava instead."/>
+        </module>
+
+        <module name="RegexpSinglelineJava">
+            <property name="format" value="^import org.apache.iceberg.relocated.com.google.common.base.Preconditions;$"/>
+            <property name="message" value="Use amoro shaded guava instead."/>
+        </module>
+
+        <module name="RegexpSinglelineJava">
+            <property name="format" value="^org.apache.paimon.shade.guava30.com.google.common.base.Preconditions;$"/>
             <property name="message" value="Use amoro shaded guava instead."/>
         </module>
 

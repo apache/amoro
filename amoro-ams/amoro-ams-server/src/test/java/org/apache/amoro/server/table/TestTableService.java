@@ -19,6 +19,7 @@
 package org.apache.amoro.server.table;
 
 import static org.apache.amoro.TableTestHelper.TEST_DB_NAME;
+import static org.apache.amoro.TableTestHelper.TEST_TABLE_NAME;
 import static org.apache.amoro.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
 
 import org.apache.amoro.BasicTableTestHelper;
@@ -33,6 +34,8 @@ import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.catalog.InternalCatalog;
+import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.BlockerConflictException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
@@ -46,6 +49,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
 public class TestTableService extends AMSTableTestBase {
@@ -70,21 +74,27 @@ public class TestTableService extends AMSTableTestBase {
 
   @Test
   public void testCreateAndDropTable() {
+    ServerCatalog serverCatalog = tableService().getServerCatalog(TEST_CATALOG_NAME);
+    InternalCatalog internalCatalog =
+        catalogTestHelper().isInternalCatalog() ? (InternalCatalog) serverCatalog : null;
+
     if (catalogTestHelper().isInternalCatalog()) {
-      tableService().createDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
+      assert internalCatalog != null;
+      internalCatalog.createDatabase(TEST_DB_NAME);
     }
 
     // test create table
     createTable();
     if (catalogTestHelper().isInternalCatalog()) {
+      assert internalCatalog != null;
       Assert.assertEquals(
           tableMeta(),
-          tableService().loadTableMetadata(tableMeta().getTableIdentifier()).buildTableMeta());
+          internalCatalog.loadTableMetadata(TEST_DB_NAME, TEST_TABLE_NAME).buildTableMeta());
     }
 
     // test list tables
     List<TableIDWithFormat> tableIdentifierList =
-        tableService().listTables(TEST_CATALOG_NAME, TEST_DB_NAME);
+        tableService().getServerCatalog(TEST_CATALOG_NAME).listTables(TEST_DB_NAME);
     Assert.assertEquals(1, tableIdentifierList.size());
     Assert.assertEquals(
         tableMeta().getTableIdentifier(),
@@ -92,21 +102,28 @@ public class TestTableService extends AMSTableTestBase {
 
     // test list table metadata
     if (catalogTestHelper().isInternalCatalog()) {
-      List<TableMetadata> tableMetadataList = tableService().listTableMetas();
+      assert internalCatalog != null;
+      List<TableMetadata> tableMetadataList =
+          internalCatalog.listTables().stream()
+              .map(i -> internalCatalog.loadTableMetadata(i.database(), i.table()))
+              .collect(Collectors.toList());
+
       Assert.assertEquals(1, tableMetadataList.size());
       Assert.assertEquals(tableMeta(), tableMetadataList.get(0).buildTableMeta());
-      tableMetadataList = tableService().listTableMetas(TEST_CATALOG_NAME, TEST_DB_NAME);
+      tableMetadataList = internalCatalog.listTableMetadataInDatabase(TEST_DB_NAME);
       Assert.assertEquals(1, tableMetadataList.size());
       Assert.assertEquals(tableMeta(), tableMetadataList.get(0).buildTableMeta());
     }
 
     // test table exist
-    Assert.assertTrue(tableService().tableExist(tableMeta().getTableIdentifier()));
+    Assert.assertTrue(serverCatalog.tableExists(TEST_DB_NAME, TEST_TABLE_NAME));
 
     // test create duplicate table
-    Assert.assertThrows(
-        AlreadyExistsException.class,
-        () -> tableService().createTable(TEST_CATALOG_NAME, tableMetadata()));
+    if (catalogTestHelper().isInternalCatalog()) {
+      Assert.assertThrows(
+          AlreadyExistsException.class,
+          () -> tableService().createTable(TEST_CATALOG_NAME, tableMetadata()));
+    }
 
     // test create table with wrong catalog name
     Assert.assertThrows(
@@ -115,7 +132,7 @@ public class TestTableService extends AMSTableTestBase {
           TableMetadata copyMetadata =
               new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
           copyMetadata.getTableIdentifier().setCatalog("unknown");
-          tableService().createTable(TEST_CATALOG_NAME, copyMetadata);
+          tableService().createTable("unknown", copyMetadata);
         });
 
     // test create table in not existed catalog
@@ -136,17 +153,20 @@ public class TestTableService extends AMSTableTestBase {
             TableMetadata copyMetadata =
                 new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
             copyMetadata.getTableIdentifier().setDatabase("unknown");
-            tableService().createTable(TEST_CATALOG_NAME, copyMetadata);
+            tableService().createTable("unknown", copyMetadata);
           });
     }
 
     // test drop table
     dropTable();
     Assert.assertEquals(0, tableService().listManagedTables().size());
-    Assert.assertEquals(0, tableService().listTables(TEST_CATALOG_NAME, TEST_DB_NAME).size());
-    Assert.assertEquals(0, tableService().listTableMetas().size());
-    Assert.assertEquals(0, tableService().listTableMetas(TEST_CATALOG_NAME, TEST_DB_NAME).size());
-    Assert.assertFalse(tableService().tableExist(tableMeta().getTableIdentifier()));
+    Assert.assertEquals(0, serverCatalog.listTables(TEST_DB_NAME).size());
+    Assert.assertEquals(0, serverCatalog.listTables().size());
+    if (catalogTestHelper().isInternalCatalog()) {
+      assert internalCatalog != null;
+      Assert.assertEquals(0, internalCatalog.listTableMetadataInDatabase(TEST_DB_NAME).size());
+    }
+    Assert.assertFalse(serverCatalog.tableExists(TEST_DB_NAME, TEST_TABLE_NAME));
 
     // test drop not existed table
     Assert.assertThrows(

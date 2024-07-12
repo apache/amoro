@@ -56,16 +56,18 @@ mkdir -p ${RELEASE_DIR}
 
 # build maven package, create Flink distribution, generate signature
 make_binary_release() {
-  local HADOOP_PROFILE="hadoop3"
+  local HADOOP_PROFILE=""
+  local HADOOP_VERSION="hadoop3"
   if [[ $# -eq 1 ]]; then
-    HADOOP_PROFILE=$1
+    HADOOP_VERSION=$1
+    HADOOP_PROFILE="-P$1"
   fi
-  echo "Creating ${HADOOP_PROFILE} binary release"
+  echo "Creating ${HADOOP_VERSION} binary release"
 
   # enable release profile here (to check for the maven version)
-  $MVN clean package -P${HADOOP_PROFILE} -pl ':dist' -am -Dgpg.skip -Dcheckstyle.skip=true -DskipTests
+  $MVN clean package ${HADOOP_PROFILE} -Pno-extended-disk-storage -pl ':dist' -am -Dgpg.skip -Dcheckstyle.skip=true -DskipTests
 
-  local TARGET_FILE="apache-amoro-${RELEASE_VERSION}-bin-${HADOOP_PROFILE}.tar.gz"
+  local TARGET_FILE="apache-amoro-${RELEASE_VERSION}-bin-${HADOOP_VERSION}.tar.gz"
   cp amoro-ams/dist/target/apache-amoro-${RELEASE_VERSION}-bin.tar.gz ${RELEASE_DIR}/${TARGET_FILE}
   cd ${RELEASE_DIR}
 

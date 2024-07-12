@@ -20,7 +20,7 @@ import type { IMap } from '@/types/common.type'
 import request from '@/utils/request'
 
 export function getCatalogsTypes() {
-  return request.get('ams/v1/catalog/metastore/types')
+  return request.get('ams/v1/catalogs/metastore/types')
 }
 export function getCatalogsSetting(catalogName: string) {
   return request.get(`ams/v1/catalogs/${catalogName}`)

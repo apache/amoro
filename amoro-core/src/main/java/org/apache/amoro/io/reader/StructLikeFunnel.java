@@ -24,8 +24,6 @@ import org.apache.amoro.utils.SerializationUtil;
 import org.apache.iceberg.StructLike;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-
 public enum StructLikeFunnel implements Funnel<StructLike> {
   INSTANCE;
 
@@ -34,10 +32,6 @@ public enum StructLikeFunnel implements Funnel<StructLike> {
   @Override
   public void funnel(@NotNull StructLike structLike, PrimitiveSink primitiveSink) {
     StructLike copy = SerializationUtil.StructLikeCopy.copy(structLike);
-    try {
-      primitiveSink.putBytes(SerializationUtil.kryoSerialize(copy));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    primitiveSink.putBytes(SerializationUtil.kryoSerialize(copy));
   }
 }
