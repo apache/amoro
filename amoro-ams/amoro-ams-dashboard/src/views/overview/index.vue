@@ -18,43 +18,28 @@ limitations under the License.
 
 <script lang="ts" setup>
 import { ref } from 'vue'
-import SingleDataCard from './components/SingleDataCard.vue';
-import MultipleDataCard from './components/MultipleDataCard.vue';
-import TableHealthCard from './components/TableHealthCard.vue';
-import UserHistoryCard from './components/UserHistoryCard.vue';
-import PieChartCard from './components/PieChartCard.vue';
-
-// import ResourceUsageCard from './components/ResourceUsageCard.vue';
-// import OptimizingTablesCard from './components/OptimizingTablesCard.vue';
-// import DataSizeCard from './components/DataSizeCard.vue';
-// import Top10TablesCard from './components/Top10TablesCard.vue';
-
-const ResourceUsageRandomData = (length: number) => {
-  return Array.from({ length }, (_, index) => ({
-    time: new Date(Date.now() - index * 60000).toISOString().slice(11, 19),
-    memory: Math.random(),
-    cpu: Math.random()
-  }));
-};
+import SingleDataCard from './components/SingleDataCard.vue'
+import MultipleDataCard from './components/MultipleDataCard.vue'
+import UnhealthTablesCard from './components/UnhealthTablesCard.vue'
+import OperationsCard from './components/OperationsCard.vue'
+import PieChartCard from './components/PieChartCard.vue'
 
 const cardsData = [
   { title: 'Catalog', data: 3, precision: 0, suffix: '' },
   { title: 'Table', data: 234, precision: 0, suffix: '' },
   { title: 'Data', data: 300.00, precision: 2, suffix: 'GB' },
-];
+]
 
 const multipleData = ref([
   { subtitle: 'CPU', data: 96, precision: 0, suffix: 'Core' },
-  { subtitle: 'Memory', data: 129, precision: 0, suffix: 'GB' }
-]);
-
-const resourceUsageData = ref(ResourceUsageRandomData(30));
+  { subtitle: 'Memory', data: 129, precision: 0, suffix: 'GB' },
+])
 
 const tableFormatData = ref([
   { value: 70, name: 'Iceberg format' },
   { value: 20, name: 'Mixed-Iceberg' },
-  { value: 10, name: 'Mixed-Hive format' }
-]);
+  { value: 10, name: 'Mixed-Hive format' },
+])
 
 const OptimizingStatusData = ref([
   { value: 40, name: 'Full Optimizing' },
@@ -63,10 +48,8 @@ const OptimizingStatusData = ref([
   { value: 10, name: 'Committing' },
   { value: 2, name: 'Planning' },
   { value: 3, name: 'Pending' },
-  { value: 50, name: 'Idle' }
-]);
-
-
+  { value: 50, name: 'Idle' },
+])
 </script>
 
 <template>
@@ -75,24 +58,22 @@ const OptimizingStatusData = ref([
       <a-col v-for="(card, index) in cardsData" :key="index" :span="6">
         <SingleDataCard :title="card.title" :data="card.data" :precision="card.precision" :suffix="card.suffix" />
       </a-col>
-      <a-col :span=6>
-        <MultipleDataCard title="Resource" :items=multipleData />
+      <a-col :span="6">
+        <MultipleDataCard title="Resource" :items="multipleData" />
       </a-col>
-
-      <a-col :span=12>
-        <PieChartCard title="Table Format" :data="tableFormatData"/>
+      <a-col :span="12">
+        <PieChartCard title="Table Format" :data="tableFormatData" />
       </a-col>
-      <a-col :span=12>
-        <PieChartCard title="Optimizing Status" :data="OptimizingStatusData"/>
+      <a-col :span="12">
+        <PieChartCard title="Optimizing Status" :data="OptimizingStatusData" />
       </a-col>
-      <a-col :span=12>
-        <TableHealthCard />
+      <a-col :span="12">
+        <UnhealthTablesCard />
       </a-col>
-      <a-col :span=12>
-        <UserHistoryCard/>
+      <a-col :span="12">
+        <OperationsCard />
       </a-col>
     </a-row>
-
   </div>
 </template>
 

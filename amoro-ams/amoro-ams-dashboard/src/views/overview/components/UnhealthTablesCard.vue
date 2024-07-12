@@ -1,49 +1,18 @@
-<template>
-  <a-card class="unhealth-tables-card" title="Unhealth Tables">
-    <a-table 
-    :columns="columns" 
-    :data-source="data" 
-    @change="handleChange"
-    rowKey="table"
-    >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'table'">
-          <a>
-            {{ record.table }}
-          </a>
-        </template>
-
-        <!-- <template v-else-if="column.key === 'status'">
-        <span>
-          <a-tag
-            :color="record.status == 'Optimizing' ? 'green' : 'geekblue'"
-          >
-            {{ record.status.toUpperCase() }}
-          </a-tag>
-        </span>
-        </template> -->
-      </template>
-
-    </a-table>
-
-  </a-card>
-</template>
-
 <script lang="ts" setup>
-import { ref } from 'vue';
-import type { TableProps } from 'ant-design-vue';
+import { ref } from 'vue'
+import type { TableProps } from 'ant-design-vue'
 
 interface DataItem {
-  key: string;
-  table: string;
-  healthScore: string;
-  size: string;
-  fileCount: string;
-  averageFileSize: string;
+  key: string
+  table: string
+  healthScore: string
+  size: string
+  fileCount: string
+  averageFileSize: string
 }
 
-const filteredInfo = ref();
-const sortedInfo = ref();
+const filteredInfo = ref()
+const sortedInfo = ref()
 
 const columns: TableProps['columns'] = [
   {
@@ -66,7 +35,7 @@ const columns: TableProps['columns'] = [
       },
     ],
     filterMode: 'tree',
-    onFilter: (value, record: DataItem) => record.table == value,
+    onFilter: (value, record: DataItem) => record.table === value,
   },
   {
     title: 'Health Score',
@@ -88,21 +57,39 @@ const columns: TableProps['columns'] = [
     dataIndex: 'averageFileSize',
     sorter: true,
   },
-];
+]
 
 const data = ref<DataItem[]>([
   { key: '1', table: 'test_catalog.db.school', healthScore: '47', size: '10 MB', fileCount: '10', averageFileSize: '1 MB' },
   { key: '2', table: 'test_catalog.db.course', healthScore: '70', size: '20 MB', fileCount: '2', averageFileSize: '10 MB' },
   { key: '3', table: 'test_catalog.db.viedo', healthScore: '88', size: '50 MB', fileCount: '5', averageFileSize: '10 MB' },
   // Add more data here
-]);
+])
 
-const handleChange: TableProps['onChange'] = (pagination, filters, sorter) => {
-  console.log('Various parameters', pagination, filters, sorter);
-  filteredInfo.value = filters;
-  sortedInfo.value = sorter;
-};
+const handleChange: TableProps['onChange'] = (filters, sorter) => {
+  filteredInfo.value = filters
+  sortedInfo.value = sorter
+}
 </script>
+
+<template>
+  <a-card class="unhealth-tables-card" title="Unhealth Tables">
+    <a-table
+      :columns="columns"
+      :data-source="data"
+      row-key="table"
+      @change="handleChange"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'table'">
+          <a>
+            {{ record.table }}
+          </a>
+        </template>
+      </template>
+    </a-table>
+  </a-card>
+</template>
 
 <style scoped>
 .unhealth-tables-card {

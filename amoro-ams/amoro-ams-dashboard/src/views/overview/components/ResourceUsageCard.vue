@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,30 +14,27 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
+/ -->
 
 <script lang="ts" setup>
-import { ref, onMounted, watch } from 'vue';
-import * as echarts from 'echarts';
+import { onMounted, ref, watch } from 'vue'
+import * as echarts from 'echarts'
 
-const props = defineProps({
-  title: String,
-});
-const chart = ref(null);
-const timeRange = ref('24');
+const chart = ref(null)
+const timeRange = ref('24')
 
-const updateData = () => {
+function updateData() {
   // This is where you'd fetch and update the chart data based on `timeRange`
-};
+}
 
 onMounted(() => {
-  const chartInstance = echarts.init(chart.value);
+  const chartInstance = echarts.init(chart.value)
   const option = {
     tooltip: {
       trigger: 'axis',
-      formatter: params => {
-        const mem = params[0];
-        const cpu = params[1];
+      formatter: (params) => {
+        const mem = params[0]
+        const cpu = params[1]
         return `
           ${mem.seriesName}<br/>
           比例: ${mem.value[1]}%<br/>
@@ -46,16 +42,16 @@ onMounted(() => {
           ${cpu.seriesName}<br/>
           比例: ${cpu.value[1]}%<br/>
           当前: ${cpu.value[2]} / 总: ${cpu.value[3]}
-        `;
-      }
+        `
+      },
     },
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: ['00:00', '00:10', '00:20', '00:30', '00:40', '00:50']
+      data: ['00:00', '00:10', '00:20', '00:30', '00:40', '00:50'],
     },
     yAxis: {
-      type: 'value'
+      type: 'value',
     },
     series: [
       {
@@ -65,7 +61,7 @@ onMounted(() => {
           ['00:00', 20, '4GB', '16GB'],
           ['00:10', 30, '4.8GB', '16GB'],
           // more data...
-        ]
+        ],
       },
       {
         name: 'CPU',
@@ -74,13 +70,13 @@ onMounted(() => {
           ['00:00', 10, '2核', '8核'],
           ['00:10', 15, '2.4核', '8核'],
           // more data...
-        ]
-      }
-    ]
-  };
-  chartInstance.setOption(option);
-  watch(timeRange, updateData);
-});
+        ],
+      },
+    ],
+  }
+  chartInstance.setOption(option)
+  watch(timeRange, updateData)
+})
 </script>
 
 <template>
@@ -89,17 +85,25 @@ onMounted(() => {
       <a-row justify="space-between">
         <span class="card-title">Resource Usage(%)</span>
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <a-select v-model:value="timeRange" @change="updateData" style="width: 120px">
-            <a-select-option value="0.5">Last 30 min</a-select-option>
-            <a-select-option value="8">Last 8 h</a-select-option>
-            <a-select-option value="24">Last 24 h</a-select-option>
-            <a-select-option value="168">Last 7 day</a-select-option>
+          <a-select v-model:value="timeRange" style="width: 120px" @change="updateData">
+            <a-select-option value="0.5">
+              Last 30 min
+            </a-select-option>
+            <a-select-option value="8">
+              Last 8 h
+            </a-select-option>
+            <a-select-option value="24">
+              Last 24 h
+            </a-select-option>
+            <a-select-option value="168">
+              Last 7 day
+            </a-select-option>
           </a-select>
         </div>
       </a-row>
-      </template>
-    
-    <div ref="chart" style="height: 300px;"></div>
+    </template>
+
+    <div ref="chart" style="height: 300px;" />
   </a-card>
 </template>
 

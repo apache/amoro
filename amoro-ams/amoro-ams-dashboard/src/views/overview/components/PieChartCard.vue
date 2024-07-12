@@ -1,30 +1,24 @@
-<template>
-  <a-card :title="title">
-    <div ref="pieChart" style="width: 100%; height: 300px;"></div>
-  </a-card>
-</template>
-
 <script lang="ts" setup>
-import { ref, onMounted, watch } from 'vue';
-import * as echarts from 'echarts';
+import { onMounted, ref, watch } from 'vue'
+import * as echarts from 'echarts'
 
 interface PieData {
-  value: number;
-  name: string;
+  value: number
+  name: string
 }
 
 interface Props {
-  title: string;
-  data: PieData[];
+  title: string
+  data: PieData[]
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
-const pieChart = ref<HTMLDivElement | null>(null);
+const pieChart = ref<HTMLDivElement | null>(null)
 
-const renderChart = () => {
+function renderChart() {
   if (pieChart.value) {
-    const chart = echarts.init(pieChart.value,null,{height:300});
+    const chart = echarts.init(pieChart.value, null, { height: 300 })
     const option = {
       tooltip: {
         trigger: 'item',
@@ -48,14 +42,20 @@ const renderChart = () => {
           },
         },
       ],
-    };
-    chart.setOption(option);
+    }
+    chart.setOption(option)
   }
-};
+}
 
-onMounted(renderChart);
-watch(() => props.data, renderChart);
+onMounted(renderChart)
+watch(() => props.data, renderChart)
 </script>
+
+<template>
+  <a-card :title="title">
+    <div ref="pieChart" style="width: 100%; height: 300px;" />
+  </a-card>
+</template>
 
 <style scoped>
 </style>

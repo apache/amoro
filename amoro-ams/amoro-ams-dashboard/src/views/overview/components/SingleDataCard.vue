@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,18 +14,18 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
+/ -->
 
 <script setup lang="ts">
-import { defineProps, ref } from 'vue';
-const props = defineProps<{ title: string; data: number; precision:number; suffix: string }>();
+import { defineProps, ref } from 'vue'
 
-const loading = ref(true);
-const fetchData = () => {
-  loading.value = false;
-};
-fetchData();
+const props = defineProps<{ title: string, data: number, precision: number, suffix: string }>()
 
+const loading = ref(true)
+function fetchData() {
+  loading.value = false
+}
+fetchData()
 </script>
 
 <template>
@@ -35,11 +34,12 @@ fetchData();
       <span class="card-title">{{ props.title }}</span>
     </template>
     <a-statistic
-            :value="props.data"
-            :precision="props.precision"
-            :suffix="props.suffix"
-            :value-style="{ color: '#07A7F0', fontSize: '28px' }"
-            style="margin-right: 50px"/>
+      :value="props.data"
+      :precision="props.precision"
+      :suffix="props.suffix"
+      :value-style="{ color: '#07A7F0', fontSize: '28px' }"
+      style="margin-right: 50px"
+    />
   </a-card>
 </template>
 

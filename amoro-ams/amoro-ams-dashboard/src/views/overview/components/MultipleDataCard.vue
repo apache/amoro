@@ -14,18 +14,18 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
+/ -->
 
 <script setup lang="ts">
-import { defineProps, ref } from 'vue';
-const props = defineProps<{ title: string; items: { subtitle: string; data: number; precision: number; suffix: string }[] }>();
+import { defineProps, ref } from 'vue'
 
-const loading = ref(true);
-const fetchData = () => {
-  loading.value = false;
-};
-fetchData();
+const props = defineProps<{ title: string, items: { subtitle: string, data: number, precision: number, suffix: string }[] }>()
 
+const loading = ref(true)
+function fetchData() {
+  loading.value = false
+}
+fetchData()
 </script>
 
 <template>
@@ -34,9 +34,11 @@ fetchData();
       <span class="card-title">{{ props.title }}</span>
     </template>
     <a-row>
-      <a-col :span=12 v-for="item in props.items" :key="item.subtitle">
-        <a-statistic :title="item.subtitle" :value="item.data" :precision="item.precision" :suffix="item.suffix"
-          :value-style="{ color: '#07A7F0', fontSize: '28px' }" style="margin-right: 20px;" />
+      <a-col v-for="item in props.items" :key="item.subtitle" :span="12">
+        <a-statistic
+          :title="item.subtitle" :value="item.data" :precision="item.precision" :suffix="item.suffix"
+          :value-style="{ color: '#07A7F0', fontSize: '28px' }" style="margin-right: 20px;"
+        />
       </a-col>
     </a-row>
   </a-card>
