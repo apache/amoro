@@ -59,7 +59,8 @@ public class TestBlockerExpiringExecutor extends TableServiceTestBase {
     tableBlocker.setExpirationTime(System.currentTimeMillis() - 10);
     tableBlocker.setCreateTime(System.currentTimeMillis() - 20);
     tableBlocker.setOperations(Collections.singletonList(BlockableOperation.OPTIMIZE.name()));
-    persistency.insertTableBlocker(tableBlocker);
+    int insert = persistency.insertTableBlocker(tableBlocker);
+    Assert.assertEquals(1, insert);
 
     TableBlocker tableBlocker2 = new TableBlocker();
     tableBlocker2.setTableIdentifier(tableIdentifier.getIdentifier());
@@ -82,8 +83,8 @@ public class TestBlockerExpiringExecutor extends TableServiceTestBase {
   }
 
   private static class Persistency extends PersistentBase {
-    public void insertTableBlocker(TableBlocker tableBlocker) {
-      doAs(TableBlockerMapper.class, mapper -> mapper.insertWhenNotExists(tableBlocker));
+    public int insertTableBlocker(TableBlocker tableBlocker) {
+      return getAs(TableBlockerMapper.class, mapper -> mapper.insertWhenNotExists(tableBlocker, System.currentTimeMillis()));
     }
 
     public List<TableBlocker> selectTableBlockers(ServerTableIdentifier tableIdentifier) {

@@ -116,16 +116,17 @@ public interface TableBlockerMapper {
           + "#{blocker.operations,typeHandler=org.apache.amoro.server.persistence.converter.List2StringConverter},"
           + "#{blocker.createTime,typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
           + "#{blocker.expirationTime,typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
-          + "#{blocker.properties,typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}"
-          + ") FROM "
+          + "#{blocker.properties,typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter} "
+          + "FROM "
           + TABLE_NAME
           + " WHERE NOT EXISTS (SELECT 1 FROM "
           + TABLE_NAME
           + " WHERE "
-          + "catalog_name = #{blocker.tableIdentifier.catalog} AND db_name = #{blocker.tableIdentifier.database} "
-          + "table_name = #{blocker.tableIdentifier.tableName})")
-  @Options(useGeneratedKeys = true, keyProperty = "blocker.blockerId")
-  int insertWhenNotExists(@Param("blocker") TableBlocker blocker);
+          + "catalog_name = #{blocker.catalog} "
+          + "AND db_name = #{blocker.database} "
+          + "AND table_name = #{blocker.tableName} "
+          + "AND expiration_time > #{now, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter})")
+  int insertWhenNotExists(@Param("blocker") TableBlocker blocker, @Param("now") long now);
 
   @Insert(
       "INSERT INTO "

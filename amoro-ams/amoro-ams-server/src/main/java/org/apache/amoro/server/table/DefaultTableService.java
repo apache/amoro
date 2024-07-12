@@ -283,7 +283,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
       int effectRow = 0;
       if (!maxBlockerOpt.isPresent()) {
         effectRow =
-            getAs(TableBlockerMapper.class, mapper -> mapper.insertWhenNotExists(tableBlocker));
+            getAs(TableBlockerMapper.class, mapper -> mapper.insertWhenNotExists(tableBlocker, now));
       } else {
         effectRow =
             getAs(
