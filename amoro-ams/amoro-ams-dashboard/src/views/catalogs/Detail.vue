@@ -19,7 +19,7 @@ limitations under the License.
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type {
   UploadChangeParam,
   UploadFile,
@@ -83,6 +83,7 @@ const formState: FormState = reactive({
 })
 
 const { t } = useI18n()
+const router = useRouter()
 const route = useRoute()
 const placeholder = reactive(usePlaceholder())
 const metastoreType = ref<string>('')
@@ -196,7 +197,25 @@ function initData() {
 async function getOptimizerGroupList() {
   const res = await getResourceGroupsListAPI()
   const list = (res || []).map((item: IIOptimizeGroupItem) => ({ lable: item.resourceGroup.name, value: item.resourceGroup.name }))
-  optimizerGroupList.value = list
+
+  if (list.length === 0) {
+    Modal.confirm({
+      title: t('noResourceGroupsTitle'),
+      content: t('noResourceGroupsContent'),
+      okText: t('goToButtonText'),
+      onOk: async () => {
+        try {
+          router.push({ path: '/optimizing', query: { tab: 'optimizergroup' } })
+        }
+        catch (error) {
+          console.error('Navigation error:', error)
+        }
+      },
+    })
+  }
+  else {
+    optimizerGroupList.value = list
+  }
 }
 async function getCatalogTypeOps() {
   const res = await getCatalogsTypes();
@@ -366,8 +385,11 @@ const storageConfigTypeOps = computed(() => {
   else if (type === 'glue') {
     return storageConfigTypeS3
   }
-  else if (type === 'hive' || type === 'hadoop') {
+  else if (type === 'hive') {
     return storageConfigTypeHadoop
+  }
+  else if (type === 'hadoop') {
+    return storageConfigTypeHadoopS3
   }
   else {
     return null
@@ -504,7 +526,7 @@ function handleSave() {
     .catch(() => {
     })
 }
-function handleCancle() {
+function handleCancel() {
   formRef.value.resetFields()
   emit('updateEdit', false)
   getConfigInfo()
@@ -513,9 +535,15 @@ async function deleteCatalogModal() {
   Modal.confirm({
     title: t('deleteCatalogModalTitle'),
     onOk: async () => {
-      await delCatalog(formState.catalog.name || '')
-      message.success(`${t('remove')} ${t('success')}`)
-      emit('updateEdit', false)
+      try {
+        await delCatalog(formState.catalog.name || '')
+        message.success(`${t('remove')} ${t('success')}`, 1, () => {
+          router.replace({ path: '/catalogs', query: {} }).then(() => router.go(0))
+        })
+      }
+      catch (error) {
+        message.error(`${t('remove')} ${t('failed')}`)
+      }
     },
   })
 }
@@ -750,7 +778,7 @@ onMounted(() => {
       <a-button type="primary" class="save-btn g-mr-12" @click="handleSave">
         {{ $t('save') }}
       </a-button>
-      <a-button @click="handleCancle">
+      <a-button @click="handleCancel">
         {{ $t('cancel') }}
       </a-button>
     </div>

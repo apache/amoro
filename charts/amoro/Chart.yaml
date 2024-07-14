@@ -25,9 +25,3 @@ home: https://amoro.apache.org/
 icon: https://amoro.apache.org/img/amoro-logo-icon.png
 sources:
   - https://github.com/apache/amoro
-dependencies:
-  - name: common
-    repository: oci://registry-1.docker.io/bitnamicharts
-    tags:
-      - bitnami-common
-    version: 2.11.1

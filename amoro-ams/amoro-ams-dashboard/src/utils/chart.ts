@@ -67,6 +67,8 @@ export function generateLineChartOption(titleText: string, data: ILineChartOrigi
     grid: {
       top: 40,
       bottom: 50,
+      left: '1%',
+      containLabel: true,
     },
   }
   titleText && (option.title = {

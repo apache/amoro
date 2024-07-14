@@ -68,6 +68,7 @@
         <maven.compiler.target>8</maven.compiler.target>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.build.outputTimestamp>2024-06-27T08:00:00Z</project.build.outputTimestamp>
         <java.version>1.8</java.version>
         <root.dir>${project.basedir}</root.dir>
         <jacoco.flink.skip>false</jacoco.flink.skip>
@@ -138,6 +139,10 @@
         <amoro-shade-zookeeper.version>3.9.1</amoro-shade-zookeeper.version>
         <amoro-shade-thrift.version>0.20.0</amoro-shade-thrift.version>
         <annotation-api.version>1.3.2</annotation-api.version>
+        <guava.version>32.1.1-jre</guava.version>
+
+        <rocksdb-dependency-scope>compile</rocksdb-dependency-scope>
+        <lucene-dependency-scope>compile</lucene-dependency-scope>
     </properties>
 
     <dependencies>
@@ -152,36 +157,43 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!-- tests will have log4j as the default logging framework available -->
@@ -400,6 +412,17 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-aws</artifactId>
                 <version>${hadoop.version}</version>
+                <!-- Exclude aws bundles, we have declared the dependencies of AWS separately. -->
+                <exclusions>
+                    <exclusion>
+                        <groupId>software.amazon.awssdk</groupId>
+                        <artifactId>bundle</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.amazonaws</groupId>
+                        <artifactId>aws-java-sdk-bundle</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -471,18 +494,6 @@
             </dependency>
 
             <dependency>
-                <groupId>io.prometheus</groupId>
-                <artifactId>simpleclient</artifactId>
-                <version>${prometheus.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.prometheus</groupId>
-                <artifactId>simpleclient_httpserver</artifactId>
-                <version>${prometheus.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>dynamodb</artifactId>
                 <version>${awssdk.version}</version>
@@ -501,6 +512,18 @@
             </dependency>
 
             <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>simpleclient</artifactId>
+                <version>${prometheus.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>simpleclient_httpserver</artifactId>
+                <version>${prometheus.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-core</artifactId>
                 <version>${dropwizard.metrics.version}</version>
@@ -509,6 +532,12 @@
             <dependency>
                 <groupId>org.apache.paimon</groupId>
                 <artifactId>paimon-bundle</artifactId>
+                <version>${paimon.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.paimon</groupId>
+                <artifactId>paimon-s3</artifactId>
                 <version>${paimon.version}</version>
             </dependency>
 
@@ -588,6 +617,7 @@
                 <groupId>org.rocksdb</groupId>
                 <artifactId>rocksdbjni</artifactId>
                 <version>${rocksdb.version}</version>
+                <scope>${rocksdb-dependency-scope}</scope>
             </dependency>
 
             <dependency>
@@ -754,6 +784,7 @@
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
                 <version>${lucene.version}</version>
+                <scope>${lucene-dependency-scope}</scope>
             </dependency>
 
             <!-- flink dependencies -->
@@ -967,18 +998,6 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>${maven-jar-plugin-version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>test-jar</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
                     <version>${maven-spotless-plugin.version}</version>
@@ -1036,10 +1055,12 @@
                             <exclude>**/*.log</exclude>
                             <exclude>tools/maven/scalafmt.conf</exclude>
                             <exclude>**/licenses/**</exclude>
+                            <exclude>**/licenses-binary/**</exclude>
                             <!-- Administrative files in the main trunk. -->
                             <exclude>**/README.md</exclude>
                             <exclude>**/CODE_OF_CONDUCT.md</exclude>
                             <exclude>.github/**</exclude>
+                            <exclude>**/NOTICE-binary*</exclude>
                             <!-- IDE files. -->
                             <exclude>**/*.iml</exclude>
                             <exclude>**/.idea/**</exclude>
@@ -1155,6 +1176,39 @@
                         </transformers>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <configuration>
+                        <quiet>true</quiet>
+                        <doclint>none</doclint>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-remote-resources-plugin</artifactId>
+                    <version>1.7.0</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>process</goal>
+                            </goals>
+                            <configuration>
+                                <resourceBundles>
+                                    <resourceBundle>org.apache.apache.resources:apache-incubator-disclaimer-resource-bundle:1.5</resourceBundle>
+                                </resourceBundles>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -1220,30 +1274,12 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <configuration>
-                            <quiet>true</quiet>
-                            <doclint>none</doclint>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>
         </profile>
         <profile>
             <id>hadoop2</id>
-            <activation>
-                <property>
-                    <name>hadoop</name>
-                    <value>v2</value>
-                </property>
-            </activation>
             <properties>
                 <guava.version>14.0.1</guava.version>
                 <hive.version>2.3.9</hive.version>
@@ -1253,18 +1289,10 @@
             </properties>
         </profile>
         <profile>
-            <id>hadoop3</id>
-            <activation>
-                <property>
-                    <name>!hadoop</name>
-                </property>
-            </activation>
+            <id>no-extended-disk-storage</id>
             <properties>
-                <guava.version>32.1.1-jre</guava.version>
-                <hive.version>3.1.1</hive.version>
-                <hadoop.version>3.4.0</hadoop.version>
-                <terminal.spark.version>3.3.2</terminal.spark.version>
-                <terminal.spark.major.version>3.3</terminal.spark.major.version>
+                <rocksdb-dependency-scope>provided</rocksdb-dependency-scope>
+                <lucene-dependency-scope>provided</lucene-dependency-scope>
             </properties>
         </profile>
     </profiles>
