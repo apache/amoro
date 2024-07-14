@@ -82,7 +82,7 @@ CREATE TABLE `table_identifier`
     `format`          VARCHAR(32)  NOT NULL COMMENT 'Table Format',
     PRIMARY KEY (`table_id`),
     UNIQUE KEY `table_name_index` (`catalog_name`,`db_name`,`table_name`)
-) ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table identifier for AMS' ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE `table_metadata`
 (
