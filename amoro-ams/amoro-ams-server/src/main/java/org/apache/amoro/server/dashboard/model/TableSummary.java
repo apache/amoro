@@ -24,13 +24,16 @@ public class TableSummary {
   private String size;
   private String averageFile;
   private String tableFormat;
+  private long records;
 
   public TableSummary() {}
 
-  public TableSummary(long file, String size, String averageFile, String tableFormat) {
+  public TableSummary(
+      long file, String size, String averageFile, long records, String tableFormat) {
     this.file = file;
     this.size = size;
     this.averageFile = averageFile;
+    this.records = records;
     this.tableFormat = tableFormat;
   }
 
@@ -52,5 +55,10 @@ public class TableSummary {
   /** Total file nums. */
   public long getFile() {
     return file;
+  }
+
+  /** Total records of table. */
+  public long getRecords() {
+    return records;
   }
 }

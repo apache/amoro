@@ -148,7 +148,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
       String averageFileSize = AmsUtil.byteToXB(fileCount == 0 ? 0 : fileSize / fileCount);
 
-      tableSummary = new TableSummary(fileCount, totalSize, averageFileSize, "paimon");
+      tableSummary =
+          new TableSummary(
+              fileCount, totalSize, averageFileSize, snapshotsOfTable.getRecords(), "paimon");
 
       baseMetric.put("totalSize", totalSize);
       baseMetric.put("fileCount", fileCount);
@@ -159,7 +161,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         baseMetric.put("baseWatermark", watermark);
       }
     } else {
-      tableSummary = new TableSummary(0, "0", "0", "paimon");
+      tableSummary = new TableSummary(0, "0", "0", 0, "paimon");
 
       baseMetric.put("totalSize", 0);
       baseMetric.put("fileCount", 0);
