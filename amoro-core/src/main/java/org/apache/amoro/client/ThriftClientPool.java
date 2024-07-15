@@ -153,7 +153,8 @@ public class ThriftClientPool<
     if (serviceInfo == null) {
       throw new NoBackendServiceException();
     }
-
+    TConfiguration configuration = new TConfiguration();
+    configuration.setMaxMessageSize(poolConfig.getMaxMessageSize());
     return new TFramedTransport(
         new TSocket(
             new TConfiguration(),
