@@ -96,6 +96,10 @@
                     <groupId>org.apache.zookeeper</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.rocksdb</groupId>
+                    <artifactId>rocksdbjni</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -119,6 +123,10 @@
                 <exclusion>
                     <groupId>org.apache.orc</groupId>
                     <artifactId>orc-mapreduce</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.rocksdb</groupId>
+                    <artifactId>rocksdbjni</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -215,26 +223,22 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <scope>compile</scope>
         </dependency>
 
         <dependency>
             <!-- API bridge between log4j 1 and 2 -->
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-1.2-api</artifactId>
-            <scope>compile</scope>
         </dependency>
 
         <dependency>
@@ -281,12 +285,17 @@
         <!-- flink dependencies -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-clients</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.flink</groupId>
             <artifactId>flink-runtime-web</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.flink</groupId>
+                    <artifactId>flink-rpc-akka-loader</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.flink</groupId>
+                    <artifactId>flink-shaded-zookeeper-3</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!--  apache hudi dependencies -->
@@ -314,21 +323,22 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.paimon</groupId>
-            <artifactId>paimon-spark-common</artifactId>
-            <version>${paimon.version}</version>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-optimizer-standalone</artifactId>
+            <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.paimon</groupId>
             <artifactId>paimon-s3</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-optimizer-standalone</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.apache.paimon</groupId>
+            <artifactId>paimon-spark-common</artifactId>
+            <version>${paimon.version}</version>
             <scope>runtime</scope>
         </dependency>
 
