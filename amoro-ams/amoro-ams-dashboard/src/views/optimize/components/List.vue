@@ -110,9 +110,6 @@ function releaseModal(record: any) {
   }
   Modal.confirm({
     title: t('releaseOptModalTitle'),
-    content: '',
-    okText: '',
-    cancelText: '',
     onOk: () => {
       releaseJob(record)
     },
