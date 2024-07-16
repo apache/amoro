@@ -19,7 +19,7 @@ limitations under the License.
 <script setup lang="ts">
 import { defineProps, ref } from 'vue'
 
-const props = defineProps<{ title: string, data: number, precision: number, suffix: string }>()
+const props = defineProps<{ title: string, data: string, precision: number, suffix: string }>()
 
 const loading = ref(true)
 function fetchData() {

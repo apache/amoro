@@ -17,45 +17,50 @@ limitations under the License.
 / -->
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import SingleDataCard from './components/SingleDataCard.vue'
 import MultipleDataCard from './components/MultipleDataCard.vue'
 import UnhealthTablesCard from './components/UnhealthTablesCard.vue'
 import OperationsCard from './components/OperationsCard.vue'
 import PieChartCard from './components/PieChartCard.vue'
+import { getOverviewFormat, getOverviewOptimizingStatus, getOverviewSummary } from '@/services/overview.service'
+import { bytesToSize } from '@/utils'
 
-const cardsData = [
-  { title: 'Catalog', data: 3, precision: 0, suffix: '' },
-  { title: 'Table', data: 234, precision: 0, suffix: '' },
-  { title: 'Data', data: 300.00, precision: 2, suffix: 'GB' },
-]
+interface SingleData {
+  title: string
+  data: string
+  precision: number
+  suffix: string
+}
 
-const multipleData = ref([
-  { subtitle: 'CPU', data: 96, precision: 0, suffix: 'Core' },
-  { subtitle: 'Memory', data: 129, precision: 0, suffix: 'GB' },
-])
+const singleData = ref<SingleData[]>([])
+const multipleData = ref<SingleData[]>([])
+const tableFormatData = ref<{ value: number, name: string }[]>([])
+const optimizingStatusData = ref<{ value: number, name: string }[]>([])
 
-const tableFormatData = ref([
-  { value: 70, name: 'Iceberg format' },
-  { value: 20, name: 'Mixed-Iceberg' },
-  { value: 10, name: 'Mixed-Hive format' },
-])
+async function getCurOverviewData() {
+  const summaryResult = await getOverviewSummary()
+  const tableSize = bytesToSize(summaryResult.tableTotalSize)
+  const memorySize = bytesToSize(summaryResult.totalMemory)
+  singleData.value.push({ title: 'Catalog', data: summaryResult.catalogCnt, precision: 0, suffix: '' })
+  singleData.value.push({ title: 'Table', data: summaryResult.tableCnt, precision: 0, suffix: '' })
+  singleData.value.push({ title: 'Data', data: tableSize, precision: 0, suffix: '' })
+  multipleData.value.push({ title: 'CPU', data: summaryResult.totalCpu, precision: 0, suffix: '' })
+  multipleData.value.push({ title: 'Memory', data: memorySize, precision: 0, suffix: '' })
 
-const OptimizingStatusData = ref([
-  { value: 40, name: 'Full Optimizing' },
-  { value: 20, name: 'Major Optimizing' },
-  { value: 30, name: 'Minor Optimizing' },
-  { value: 10, name: 'Committing' },
-  { value: 2, name: 'Planning' },
-  { value: 3, name: 'Pending' },
-  { value: 50, name: 'Idle' },
-])
+  tableFormatData.value = await getOverviewFormat()
+  optimizingStatusData.value = await getOverviewOptimizingStatus()
+}
+
+onMounted(() => {
+  getCurOverviewData()
+})
 </script>
 
 <template>
   <div :style="{ background: '#F8F7F8', padding: '24px', minHeight: '900px' }" class="overview-content">
     <a-row :gutter="[16, 8]">
-      <a-col v-for="(card, index) in cardsData" :key="index" :span="6">
+      <a-col v-for="(card, index) in singleData" :key="index" :span="6">
         <SingleDataCard :title="card.title" :data="card.data" :precision="card.precision" :suffix="card.suffix" />
       </a-col>
       <a-col :span="6">
@@ -65,7 +70,7 @@ const OptimizingStatusData = ref([
         <PieChartCard title="Table Format" :data="tableFormatData" />
       </a-col>
       <a-col :span="12">
-        <PieChartCard title="Optimizing Status" :data="OptimizingStatusData" />
+        <PieChartCard title="Optimizing Status" :data="optimizingStatusData" />
       </a-col>
       <a-col :span="12">
         <UnhealthTablesCard />

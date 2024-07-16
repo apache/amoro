@@ -34,7 +34,6 @@ const Introduce = () => import('@/views/introduce/index.vue')
 const Resource = () => import('@/views/resource/index.vue')
 const Overview = () => import('@/views/overview/index.vue')
 
-
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
