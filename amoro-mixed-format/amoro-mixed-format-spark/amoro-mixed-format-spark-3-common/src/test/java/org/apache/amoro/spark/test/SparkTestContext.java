@@ -121,6 +121,9 @@ public class SparkTestContext {
     }
     HiveConf hiveConf = hms.getHiveConf();
     for (TableFormat format : TableFormat.values()) {
+      if (format == TableFormat.HUDI) {
+        continue;
+      }
       // create catalog for all formats in AMS with hive metastore.
       CatalogMeta hiveCatalogMeta =
           HiveCatalogTestHelper.build(hiveConf, format)
