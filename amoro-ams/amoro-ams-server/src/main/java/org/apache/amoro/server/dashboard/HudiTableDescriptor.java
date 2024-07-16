@@ -41,6 +41,9 @@ import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.utils.HudiTableUtil;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.avro.Schema;
 import org.apache.hudi.avro.model.HoodieClusteringGroup;
 import org.apache.hudi.avro.model.HoodieClusteringPlan;
@@ -70,9 +73,6 @@ import org.apache.hudi.common.util.Option;
 import org.apache.hudi.common.util.StringUtils;
 import org.apache.hudi.metadata.HoodieTableMetadata;
 import org.apache.hudi.table.HoodieJavaTable;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -193,7 +193,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     String tableFormat = "Hudi(" + tableType + ")";
     TableSummary tableSummary =
         new TableSummary(
-            totalFileCount, AmsUtil.byteToXB(totalFileSize), averageFileSize, tableFormat);
+            totalFileCount, AmsUtil.byteToXB(totalFileSize), averageFileSize, 0, tableFormat);
     meta.setTableSummary(tableSummary);
 
     Map<String, Object> baseSummary = new HashMap<>();
