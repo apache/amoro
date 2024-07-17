@@ -63,9 +63,7 @@ public class TableSummary {
     return records;
   }
 
-  /**
-   * Current table optimizing status
-   */
+  /** Current table optimizing status */
   public String getOptimizingStatus() {
     return optimizingStatus;
   }
