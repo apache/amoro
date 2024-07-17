@@ -29,7 +29,16 @@ import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.RestCatalogService;
-import org.apache.amoro.server.dashboard.controller.*;
+import org.apache.amoro.server.dashboard.controller.CatalogController;
+import org.apache.amoro.server.dashboard.controller.HealthCheckController;
+import org.apache.amoro.server.dashboard.controller.LoginController;
+import org.apache.amoro.server.dashboard.controller.OptimizerController;
+import org.apache.amoro.server.dashboard.controller.OverviewController;
+import org.apache.amoro.server.dashboard.controller.PlatformFileInfoController;
+import org.apache.amoro.server.dashboard.controller.SettingController;
+import org.apache.amoro.server.dashboard.controller.TableController;
+import org.apache.amoro.server.dashboard.controller.TerminalController;
+import org.apache.amoro.server.dashboard.controller.VersionController;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.ParamSignatureCalculator;
 import org.apache.amoro.server.exception.ForbiddenException;
@@ -51,7 +60,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static io.javalin.apibuilder.ApiBuilder.*;
+import static io.javalin.apibuilder.ApiBuilder.delete;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.path;
+import static io.javalin.apibuilder.ApiBuilder.post;
+import static io.javalin.apibuilder.ApiBuilder.put;
 
 public class DashboardServer {
 
