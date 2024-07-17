@@ -20,21 +20,21 @@ package org.apache.amoro.server.dashboard.model;
 
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 
-public class ServerStatistics {
+public class OverviewSummary {
 
   private int catalogCnt;
   private int tableCnt;
-  private String totalDataSize;
-  private int totalCpuCores;
-  private int totalMemoryInGB;
+  private long tableTotalSize;
+  private int totalCpu;
+  private long totalMemory;
 
-  public ServerStatistics(
-      int catalogCnt, int tableCnt, String totalDataSize, int totalCpuCores, int totalMemoryInGB) {
+  public OverviewSummary(
+      int catalogCnt, int tableCnt, long tableTotalSize, int totalCpu, long totalMemory) {
     this.catalogCnt = catalogCnt;
     this.tableCnt = tableCnt;
-    this.totalDataSize = totalDataSize;
-    this.totalCpuCores = totalCpuCores;
-    this.totalMemoryInGB = totalMemoryInGB;
+    this.tableTotalSize = tableTotalSize;
+    this.totalCpu = totalCpu;
+    this.totalMemory = totalMemory;
   }
 
   public int getCatalogCnt() {
@@ -53,28 +53,28 @@ public class ServerStatistics {
     this.tableCnt = tableCnt;
   }
 
-  public String getTotalDataSize() {
-    return totalDataSize;
+  public long getTableTotalSize() {
+    return tableTotalSize;
   }
 
-  public void setTotalDataSize(String totalDataSize) {
-    this.totalDataSize = totalDataSize;
+  public void setTableTotalSize(long tableTotalSize) {
+    this.tableTotalSize = tableTotalSize;
   }
 
-  public int getTotalCpuCores() {
-    return totalCpuCores;
+  public int getTotalCpu() {
+    return totalCpu;
   }
 
-  public void setTotalCpuCores(int totalCpuCores) {
-    this.totalCpuCores = totalCpuCores;
+  public void setTotalCpu(int totalCpu) {
+    this.totalCpu = totalCpu;
   }
 
-  public int getTotalMemoryInGB() {
-    return totalMemoryInGB;
+  public long getTotalMemory() {
+    return totalMemory;
   }
 
-  public void setTotalMemoryInGB(int totalMemoryInGB) {
-    this.totalMemoryInGB = totalMemoryInGB;
+  public void setTotalMemory(long totalMemory) {
+    this.totalMemory = totalMemory;
   }
 
   @Override
@@ -82,9 +82,9 @@ public class ServerStatistics {
     return MoreObjects.toStringHelper(this)
         .add("catalogCnt", catalogCnt)
         .add("tableCnt", tableCnt)
-        .add("totalDataSizeInBytes", totalDataSize)
-        .add("totalCpuCores", totalCpuCores)
-        .add("totalMemoryInGB", totalMemoryInGB)
+        .add("tableTotalSize", tableTotalSize)
+        .add("totalCpu", totalCpu)
+        .add("totalMemory", totalMemory)
         .toString();
   }
 }
