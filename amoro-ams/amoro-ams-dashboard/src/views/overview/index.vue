@@ -24,7 +24,7 @@ import UnhealthTablesCard from './components/UnhealthTablesCard.vue'
 import OperationsCard from './components/OperationsCard.vue'
 import PieChartCard from './components/PieChartCard.vue'
 import { getOverviewFormat, getOverviewOptimizingStatus, getOverviewSummary } from '@/services/overview.service'
-import { bytesToSize } from '@/utils'
+import { bytesToSize, mbToSize } from '@/utils'
 
 interface SingleData {
   title: string
@@ -41,7 +41,7 @@ const optimizingStatusData = ref<{ value: number, name: string }[]>([])
 async function getCurOverviewData() {
   const summaryResult = await getOverviewSummary()
   const tableSize = bytesToSize(summaryResult.tableTotalSize)
-  const memorySize = bytesToSize(summaryResult.totalMemory)
+  const memorySize = mbToSize(summaryResult.totalMemory)
   singleData.value.push({ title: 'Catalog', data: summaryResult.catalogCnt, precision: 0, suffix: '' })
   singleData.value.push({ title: 'Table', data: summaryResult.tableCnt, precision: 0, suffix: '' })
   singleData.value.push({ title: 'Data', data: tableSize, precision: 0, suffix: '' })
