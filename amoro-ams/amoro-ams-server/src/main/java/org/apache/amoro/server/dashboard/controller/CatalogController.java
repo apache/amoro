@@ -53,6 +53,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.catalog.CatalogService;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.dashboard.PlatformFileManager;
@@ -132,6 +133,8 @@ public class CatalogController {
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_HADOOP, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, PAIMON));
     VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_HADOOP, STORAGE_CONFIGS_VALUE_TYPE_S3, PAIMON));
+    VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_GLUE, STORAGE_CONFIGS_VALUE_TYPE_S3, ICEBERG));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_GLUE, STORAGE_CONFIGS_VALUE_TYPE_S3, MIXED_ICEBERG));
@@ -145,7 +148,7 @@ public class CatalogController {
   }
 
   private final PlatformFileManager platformFileInfoService;
-  private final TableService tableService;
+  private final CatalogService tableService;
 
   public CatalogController(TableService tableService, PlatformFileManager platformFileInfoService) {
     this.tableService = tableService;
@@ -192,7 +195,7 @@ public class CatalogController {
     String displayKey = "display";
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_AMS, displayKey, "Amoro Metastore"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HIVE, displayKey, "Hive Metastore"));
-    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HADOOP, displayKey, "Hadoop"));
+    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HADOOP, displayKey, "Filesystem"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_GLUE, displayKey, "Glue"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_CUSTOM, displayKey, "Custom"));
     ctx.json(OkResponse.of(catalogTypes));
@@ -238,6 +241,11 @@ public class CatalogController {
             AUTH_CONFIGS_KEY_PRINCIPAL, serverAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
         break;
       case AUTH_CONFIGS_VALUE_TYPE_AK_SK:
+        metaAuthConfig.put(
+            AUTH_CONFIGS_KEY_ACCESS_KEY, serverAuthConfig.get(AUTH_CONFIGS_KEY_ACCESS_KEY));
+        metaAuthConfig.put(
+            AUTH_CONFIGS_KEY_SECRET_KEY, serverAuthConfig.get(AUTH_CONFIGS_KEY_SECRET_KEY));
+
         MixedCatalogUtil.copyProperty(
             serverAuthConfig,
             catalogMeta.getCatalogProperties(),
@@ -581,7 +589,7 @@ public class CatalogController {
         StringUtils.isNotEmpty(ctx.pathParam("catalogName")), "Catalog name is empty!");
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalogName);
     if (serverCatalog instanceof InternalCatalog) {
-      ctx.json(OkResponse.of(tableService.listManagedTables(catalogName).size() == 0));
+      ctx.json(OkResponse.of(serverCatalog.listTables().size() == 0));
     } else {
       ctx.json(OkResponse.of(true));
     }

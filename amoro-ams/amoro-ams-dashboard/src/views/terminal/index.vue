@@ -399,21 +399,6 @@ export default defineComponent({
                 }"
               />
             </div>
-            <div v-if="runStatus" class="run-status" :style="{ background: bgcMap[runStatus] }">
-              <template v-if="runStatus === 'Running' || runStatus === 'Canceling'">
-                <loading-outlined style="color: #1890ff" />
-              </template>
-              <template v-if="runStatus === 'Canceled' || runStatus === 'Failed'">
-                <close-circle-outlined style="color: #ff4d4f" />
-              </template>
-              <template v-if="runStatus === 'Finished'">
-                <check-circle-outlined style="color: #52c41a" />
-              </template>
-              <template v-if="runStatus === 'Created'">
-                <close-circle-outlined style="color:#333" />
-              </template>
-              <span class="g-ml-12">{{ $t(runStatus) }}</span>
-            </div>
           </div>
         </div>
         <div class="sql-shortcuts">
@@ -430,6 +415,23 @@ export default defineComponent({
           </a-button>
         </div>
       </div>
+
+      <div v-if="runStatus" class="run-status" :style="{ background: bgcMap[runStatus] }">
+        <template v-if="runStatus === 'Running' || runStatus === 'Canceling'">
+          <loading-outlined style="color: #1890ff" />
+        </template>
+        <template v-if="runStatus === 'Canceled' || runStatus === 'Failed'">
+          <close-circle-outlined style="color: #ff4d4f" />
+        </template>
+        <template v-if="runStatus === 'Finished'">
+          <check-circle-outlined style="color: #52c41a" />
+        </template>
+        <template v-if="runStatus === 'Created'">
+          <close-circle-outlined style="color:#333" />
+        </template>
+        <span class="g-ml-12">{{ $t(runStatus) }}</span>
+      </div>
+
       <!-- sql result -->
       <div
         class="sql-result" :style="{ height: `calc(100% - ${sqlResultHeight}px)` }"
@@ -447,11 +449,6 @@ export default defineComponent({
               class="tab-item" @click="operationActive = item.id"
             >{{ item.id }}</span>
           </div>
-          <!-- <div v-if="!fullscreen" class="operation">
-            <a-tooltip placement="bottom" :title="$t('maximize')">
-              <span @click="resultFull"><svg-icon :isStroke="true" className="icon-svg" :icon-class="resultFullscreen ? 'sqlinit' : 'sqlmax'" :disabled="false" /></span>
-            </a-tooltip>
-          </div> -->
         </div>
         <div class="debug-result">
           <SqlLog v-show="operationActive === 'log'" ref="sqlLogRef" />
@@ -643,13 +640,14 @@ export default defineComponent({
   }
 
   .run-status {
-    padding: 6px 12px;
-    position: absolute;
+    padding: 8px 0px;
+    position: flex;
     left: 0;
     bottom: 0;
     width: 100%;
     z-index: 2;
     background-color: #fff;
+    border-top: 1px solid #e5e5e5;
   }
 
   .tab-operation {

@@ -42,6 +42,8 @@ RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.
 
 FROM eclipse-temurin:8-jdk-jammy
 
+ARG MAVEN_MIRROR=https://repo.maven.apache.org/maven2
+
 ENV AMORO_HOME /usr/local/amoro
 ENV AMORO_CONF_DIR ${AMORO_HOME}/conf
 ENV LOG_LEVEL info
@@ -54,7 +56,7 @@ COPY --from=builder "/usr/local/amoro" "/usr/local/amoro"
 WORKDIR ${AMORO_HOME}
 
 RUN cd ${AMORO_HOME}/lib \
-    && wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.30/mysql-connector-java-8.0.30.jar
+    && wget ${MAVEN_MIRROR}/mysql/mysql-connector-java/8.0.30/mysql-connector-java-8.0.30.jar
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["help"]

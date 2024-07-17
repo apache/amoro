@@ -59,6 +59,11 @@ export default defineComponent({
       ]
       const allMenu: MenuItem[] = [
         {
+          key: 'overview',
+          title: t('overview'),
+          icon: 'overview',
+        },
+        {
           key: 'tables',
           title: t('tables'),
           icon: 'tables',
@@ -70,7 +75,7 @@ export default defineComponent({
         },
         {
           key: 'optimizing',
-          title: t('Optimizing'),
+          title: t('optimizing'),
           icon: 'optimizers',
         },
         {
@@ -83,11 +88,6 @@ export default defineComponent({
           title: t('settings'),
           icon: 'settings',
         },
-        // {
-        //   key: 'resource',
-        //   title: t('resource'),
-        //   icon: 'settings'
-        // }
       ]
       return hasToken.value ? menu : allMenu
     })
@@ -185,7 +185,7 @@ export default defineComponent({
         <template #icon>
           <svg-icon :icon-class="item.icon" class="svg-icon" />
         </template>
-        <span>{{ $t(item.title) }}</span>
+        <span>{{ item.title }}</span>
       </a-menu-item>
     </a-menu>
     <a-button type="link" class="toggle-btn" @click="toggleCollapsed">

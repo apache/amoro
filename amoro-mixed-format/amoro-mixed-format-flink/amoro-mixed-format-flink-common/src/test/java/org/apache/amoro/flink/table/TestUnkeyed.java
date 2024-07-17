@@ -352,34 +352,73 @@ public class TestUnkeyed extends FlinkTestBase {
     sql("CREATE TABLE IF NOT EXISTS mixed_catalog." + db + "." + TABLE + "(id INT, name STRING)");
 
     sql("insert into mixed_catalog." + db + "." + TABLE + " select * from input");
-    sql("insert into mixed_catalog." + db + "." + TABLE + " select * from input");
 
-    MixedTable table = mixedFormatCatalog.loadTable(TableIdentifier.of(catalog, db, TABLE));
-
-    Iterable<Snapshot> snapshots = table.asUnkeyedTable().snapshots();
-    Snapshot s = snapshots.iterator().next();
-
-    TableResult result =
+    // verify in earliest scan-startup-mode file read
+    TableResult resultWithEarliestPosition =
         exec(
             "select * from mixed_catalog."
                 + db
                 + "."
                 + TABLE
                 + "/*+ OPTIONS("
-                + "'mixed-format.read.mode'='file'"
-                + ", 'start-snapshot-id'='"
-                + s.snapshotId()
-                + "'"
+                + "'streaming'='true'"
+                + ", 'mixed-format.read.mode'='file'"
+                + ", 'scan.startup.mode'='earliest'"
+                + ", 'monitor-interval'='1s'"
                 + ")*/");
 
     Set<Row> actual = new HashSet<>();
-    try (CloseableIterator<Row> iterator = result.collect()) {
+    try (CloseableIterator<Row> iterator = resultWithEarliestPosition.collect()) {
       for (int i = 0; i < data.size(); i++) {
         actual.add(iterator.next());
       }
     }
-    result.getJobClient().ifPresent(TestUtil::cancelJob);
+    resultWithEarliestPosition.getJobClient().ifPresent(TestUtil::cancelJob);
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
+
+    // verify in latest scan-startup-mode file read
+    TableResult resultWithLatestPosition =
+        exec(
+            "select * from mixed_catalog."
+                + db
+                + "."
+                + TABLE
+                + "/*+ OPTIONS("
+                + "'streaming'='true'"
+                + ", 'mixed-format.read.mode'='file'"
+                + ", 'scan.startup.mode'='latest'"
+                + ", 'monitor-interval'='1s'"
+                + ")*/");
+
+    List<Object[]> appendData = new LinkedList<>();
+    appendData.add(new Object[] {2000004, "a"});
+    appendData.add(new Object[] {2000015, "b"});
+    appendData.add(new Object[] {2000011, "c"});
+    appendData.add(new Object[] {2000014, "d"});
+    appendData.add(new Object[] {2000021, "d"});
+    appendData.add(new Object[] {2000007, "e"});
+
+    List<ApiExpression> appendRows = DataUtil.toRows(appendData);
+
+    Table appendInput =
+        getTableEnv()
+            .fromValues(
+                DataTypes.ROW(
+                    DataTypes.FIELD("id", DataTypes.INT()),
+                    DataTypes.FIELD("name", DataTypes.STRING())),
+                appendRows);
+    getTableEnv().createTemporaryView("appendInput", appendInput);
+
+    actual.clear();
+    try (CloseableIterator<Row> iterator = resultWithLatestPosition.collect()) {
+      sql("insert into mixed_catalog." + db + "." + TABLE + " select * from appendInput");
+      for (int i = 0; i < appendData.size(); i++) {
+        Assert.assertTrue("Should have more records", iterator.hasNext());
+        actual.add(iterator.next());
+      }
+    }
+    resultWithLatestPosition.getJobClient().ifPresent(TestUtil::cancelJob);
+    Assert.assertEquals(DataUtil.toRowSet(appendData), actual);
   }
 
   @Test

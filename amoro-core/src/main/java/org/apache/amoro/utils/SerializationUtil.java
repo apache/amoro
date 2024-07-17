@@ -27,7 +27,6 @@ import com.esotericsoftware.kryo.io.Output;
 import org.apache.avro.util.Utf8;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
-import org.apache.iceberg.util.ByteBuffers;
 import org.apache.iceberg.util.StructLikeWrapper;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
@@ -57,11 +56,6 @@ public class SerializationUtil {
     }
   }
 
-  public static <T> T simpleDeserialize(ByteBuffer buffer) {
-    byte[] bytes = ByteBuffers.toByteArray(buffer);
-    return simpleDeserialize(bytes);
-  }
-
   public static <T> T simpleDeserialize(byte[] bytes) {
     if (bytes == null) {
       return null;
@@ -75,7 +69,7 @@ public class SerializationUtil {
     }
   }
 
-  public static byte[] kryoSerialize(final Object obj) throws IOException {
+  public static byte[] kryoSerialize(final Object obj) {
     return KRYO_SERIALIZER.get().serialize(obj);
   }
 
@@ -185,11 +179,7 @@ public class SerializationUtil {
     public byte[] serialize(StructLikeWrapper structLikeWrapper) {
       checkNotNull(structLikeWrapper);
       StructLike copy = SerializationUtil.StructLikeCopy.copy(structLikeWrapper.get());
-      try {
-        return SerializationUtil.kryoSerialize(copy);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
+      return SerializationUtil.kryoSerialize(copy);
     }
 
     @Override
@@ -208,12 +198,8 @@ public class SerializationUtil {
 
     @Override
     public byte[] serialize(T t) {
-      try {
-        checkNotNull(t);
-        return SerializationUtil.kryoSerialize(t);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
+      checkNotNull(t);
+      return SerializationUtil.kryoSerialize(t);
     }
 
     @Override

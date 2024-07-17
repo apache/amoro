@@ -209,6 +209,10 @@ public abstract class InternalCatalog extends ServerCatalog {
                     org.apache.amoro.table.TableIdentifier.of(name(), database, table).toString()));
   }
 
+  public List<TableMetadata> listTableMetadataInDatabase(String database) {
+    return getAs(TableMetaMapper.class, mapper -> mapper.selectTableMetasByDb(name(), database));
+  }
+
   private String getDatabaseDesc(String database) {
     return name() + '.' + database;
   }

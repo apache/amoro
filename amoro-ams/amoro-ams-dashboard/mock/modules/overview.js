@@ -33,6 +33,36 @@ export default [
     }),
   },
   {
+    url: '/mock/ams/v1/overview/format',
+    method: 'get',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: [
+        { value: 70, name: 'Iceberg format' },
+        { value: 20, name: 'Mixed-Iceberg' },
+        { value: 10, name: 'Mixed-Hive format' },
+      ]
+    }),
+  },
+  {
+    url: '/mock/ams/v1/overview/optimizing',
+    method: 'get',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: [
+        { value: 40, name: 'Full Optimizing' },
+        { value: 20, name: 'Major Optimizing' },
+        { value: 30, name: 'Minor Optimizing' },
+        { value: 10, name: 'Committing' },
+        { value: 2, name: 'Planning' },
+        { value: 3, name: 'Pending' },
+        { value: 50, name: 'Idle' },
+      ]
+    }),
+  },
+  {
     url: '/mock/ams/v1/overview/top/tables',
     method: 'get',
     response: () => ({
