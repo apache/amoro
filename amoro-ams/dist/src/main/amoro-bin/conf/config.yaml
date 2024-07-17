@@ -92,27 +92,27 @@ ams:
     connection-pool-max-idle: 16
     connection-pool-max-wait-millis: 1000
 
-#    MySQL database configuration.
-#    database:
-#      type: mysql
-#      jdbc-driver-class: com.mysql.cj.jdbc.Driver
-#      url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&allowPublicKeyRetrieval=true&useSSL=false
-#      username: root
-#      password: root
-#      connection-pool-max-total: 20
-#      connection-pool-max-idle: 16
-#      connection-pool-max-wait-millis: 1000
+#  MySQL database configuration.
+#  database:
+#    type: mysql
+#    jdbc-driver-class: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&allowPublicKeyRetrieval=true&useSSL=false
+#    username: root
+#    password: root
+#    connection-pool-max-total: 20
+#    connection-pool-max-idle: 16
+#    connection-pool-max-wait-millis: 1000
 
-  #  Postgres database configuration.
-  #  database:
-  #    type: postgres
-  #    jdbc-driver-class: org.postgresql.Driver
-  #    url: jdbc:postgresql://127.0.0.1:5432/db
-  #    username: user
-  #    password: passwd
-  #    connection-pool-max-total: 20
-  #    connection-pool-max-idle: 16
-  #    connection-pool-max-wait-millis: 1000
+#  Postgres database configuration.
+#  database:
+#    type: postgres
+#    jdbc-driver-class: org.postgresql.Driver
+#    url: jdbc:postgresql://127.0.0.1:5432/db
+#    username: user
+#    password: passwd
+#    connection-pool-max-total: 20
+#    connection-pool-max-idle: 16
+#    connection-pool-max-wait-millis: 1000
 
   terminal:
     backend: local

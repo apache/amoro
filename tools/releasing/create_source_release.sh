@@ -68,10 +68,10 @@ rsync -a \
   --exclude "*/dependency-reduced-pom.xml" \
   . amoro-$RELEASE_VERSION
 
-tar czf ${RELEASE_DIR}/apache-amoro-${RELEASE_VERSION}-src.tgz amoro-$RELEASE_VERSION
-gpg --armor --detach-sig ${RELEASE_DIR}/apache-amoro-$RELEASE_VERSION-src.tgz
+tar czf ${RELEASE_DIR}/apache-amoro-${RELEASE_VERSION}-src.tar.gz amoro-$RELEASE_VERSION
+gpg --armor --detach-sig ${RELEASE_DIR}/apache-amoro-$RELEASE_VERSION-src.tar.gz
 cd ${RELEASE_DIR}
-$SHASUM apache-amoro-$RELEASE_VERSION-src.tgz > apache-amoro-$RELEASE_VERSION-src.tgz.sha512
+$SHASUM apache-amoro-$RELEASE_VERSION-src.tar.gz > apache-amoro-$RELEASE_VERSION-src.tar.gz.sha512
 
 cd ${CURR_DIR}
 rm -rf ${CLONE_DIR}
