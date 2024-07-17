@@ -292,13 +292,8 @@ public class TableOptimizingMetrics {
           TABLE_OPTIMIZING_SINCE_LAST_FULL_OPTIMIZATION,
           new LastOptimizingDurationGauge(OptimizingType.FULL));
       registerMetric(
-          registry,
-          TABLE_OPTIMIZING_SINCE_LAST_OPTIMIZATION,
-          (Gauge<Long>) () -> System.currentTimeMillis() - lastOptimizingTime);
-      registerMetric(
-          registry,
-          TABLE_OPTIMIZING_LAG_DURATION,
-          (Gauge<Long>) () -> latestSnapshotTime - lastOptimizingTime);
+          registry, TABLE_OPTIMIZING_SINCE_LAST_OPTIMIZATION, new LastOptimizingDurationGauge());
+      registerMetric(registry, TABLE_OPTIMIZING_LAG_DURATION, new OptimizingLagDurationGauge());
 
       globalRegistry = registry;
     }
@@ -354,7 +349,11 @@ public class TableOptimizingMetrics {
       return;
     }
 
-    this.lastOptimizingTime = Longs.max(lastOptimizingTime, snapshot.timestampMillis());
+    this.lastOptimizingTime =
+        Longs.max(
+            lastOptimizingTime,
+            snapshot.timestampMillis(),
+            Longs.max(lastMinorTime, lastMajorTime, lastFullTime));
   }
 
   /**
@@ -439,8 +438,16 @@ public class TableOptimizingMetrics {
       this.optimizingType = optimizingType;
     }
 
+    LastOptimizingDurationGauge() {
+      optimizingType = null;
+    }
+
     @Override
     public Long getValue() {
+      if (optimizingType == null) {
+        return optimizingInterval(lastOptimizingTime);
+      }
+
       switch (optimizingType) {
         case MINOR:
           return optimizingInterval(lastMinorTime);
@@ -457,6 +464,18 @@ public class TableOptimizingMetrics {
       return lastOptimizedTime > 0
           ? System.currentTimeMillis() - lastOptimizedTime
           : AmoroServiceConstants.INVALID_TIME;
+    }
+  }
+
+  class OptimizingLagDurationGauge implements Gauge<Long> {
+    @Override
+    public Long getValue() {
+      if (latestSnapshotTime == AmoroServiceConstants.INVALID_TIME
+          || lastOptimizingTime == AmoroServiceConstants.INVALID_TIME) {
+        return AmoroServiceConstants.INVALID_TIME;
+      } else {
+        return latestSnapshotTime - lastOptimizingTime;
+      }
     }
   }
 
