@@ -28,9 +28,9 @@ import org.apache.amoro.server.dashboard.model.OverviewSummary;
 import org.apache.amoro.server.dashboard.model.TableStatistics;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.dashboard.utils.TableStatCollector;
-import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.TableMetadata;
+import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.table.MixedTable;
 import org.slf4j.Logger;
@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /** The controller that handles overview page requests. */
 public class OverviewController {
@@ -55,7 +56,7 @@ public class OverviewController {
 
   public void getSummary(Context ctx) {
     long sumTableSizeInBytes = 0;
-    long sumMemorySizeInBytes = 0;
+    long sumMemorySizeInMb = 0;
     int totalCpu = 0;
 
     // table info
@@ -73,7 +74,7 @@ public class OverviewController {
     // resource info
     List<OptimizerInstance> optimizers = optimizerManager.listOptimizers();
     for (OptimizerInstance optimizer : optimizers) {
-      sumMemorySizeInBytes += mb2Bytes(optimizer.getMemoryMb());
+      sumMemorySizeInMb += optimizer.getMemoryMb();
       totalCpu += optimizer.getThreadCount();
     }
 
@@ -83,12 +84,8 @@ public class OverviewController {
             tableMetadata.size(),
             sumTableSizeInBytes,
             totalCpu,
-            sumMemorySizeInBytes);
+            sumMemorySizeInMb);
     ctx.json(OkResponse.of(overviewSummary));
-  }
-
-  private long mb2Bytes(long memoryMb) {
-    return memoryMb * 1024 * 1024;
   }
 
   private static long getTotalTableSize(
@@ -107,22 +104,40 @@ public class OverviewController {
   }
 
   public void getTableFormat(Context ctx) {
-    List<OverviewBaseData> tableFormats = new ArrayList<>();
-    tableFormats.add(new OverviewBaseData(70, "Iceberg format"));
-    tableFormats.add(new OverviewBaseData(20, "Mixed-Iceberg"));
-    tableFormats.add(new OverviewBaseData(10, "Mixed-Hive format"));
+    List<TableMetadata> tableMetadata = tableService.listTableMetas();
+    List<OverviewBaseData> tableFormats =
+        tableMetadata.stream()
+            .map(TableMetadata::getFormat)
+            .collect(
+                Collectors.groupingBy(tableFormat -> tableFormat.name(), Collectors.counting()))
+            .entrySet()
+            .stream()
+            .map(format -> new OverviewBaseData(format.getKey(), format.getValue()))
+            .collect(Collectors.toList());
     ctx.json(OkResponse.of(tableFormats));
   }
 
   public void getOptimizingStatus(Context ctx) {
-    List<OverviewBaseData> optimizingStatusList = new ArrayList<>();
-    optimizingStatusList.add(new OverviewBaseData(40, OptimizingStatus.FULL_OPTIMIZING.name()));
-    optimizingStatusList.add(new OverviewBaseData(20, OptimizingStatus.MAJOR_OPTIMIZING.name()));
-    optimizingStatusList.add(new OverviewBaseData(30, OptimizingStatus.MINOR_OPTIMIZING.name()));
-    optimizingStatusList.add(new OverviewBaseData(10, OptimizingStatus.COMMITTING.name()));
-    optimizingStatusList.add(new OverviewBaseData(2, OptimizingStatus.PLANNING.name()));
-    optimizingStatusList.add(new OverviewBaseData(3, OptimizingStatus.PENDING.name()));
-    optimizingStatusList.add(new OverviewBaseData(50, OptimizingStatus.IDLE.name()));
+    // optimizing status info
+    List<TableRuntime> tableRuntimes = new ArrayList<>();
+    List<ServerTableIdentifier> tables = tableService.listManagedTables();
+    for (ServerTableIdentifier identifier : tables) {
+      TableRuntime tableRuntime = tableService.getRuntime(identifier);
+      if (tableRuntime == null) {
+        continue;
+      }
+      tableRuntimes.add(tableRuntime);
+    }
+
+    // group by
+    List<OverviewBaseData> optimizingStatusList =
+        tableRuntimes.stream()
+            .map(TableRuntime::getOptimizingStatus)
+            .collect(Collectors.groupingBy(status -> status.name(), Collectors.counting()))
+            .entrySet()
+            .stream()
+            .map(status -> new OverviewBaseData(status.getKey(), status.getValue()))
+            .collect(Collectors.toList());
     ctx.json(OkResponse.of(optimizingStatusList));
   }
 }

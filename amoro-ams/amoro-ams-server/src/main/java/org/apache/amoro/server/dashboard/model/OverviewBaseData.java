@@ -21,19 +21,11 @@ package org.apache.amoro.server.dashboard.model;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 
 public class OverviewBaseData {
-  private int value;
   private String name;
+  private Long value;
 
-  public OverviewBaseData(int value, String name) {
-    this.value = value;
+  public OverviewBaseData(String name, Long value) {
     this.name = name;
-  }
-
-  public int getValue() {
-    return value;
-  }
-
-  public void setValue(int value) {
     this.value = value;
   }
 
@@ -45,8 +37,16 @@ public class OverviewBaseData {
     this.name = name;
   }
 
+  public Long getValue() {
+    return value;
+  }
+
+  public void setValue(Long value) {
+    this.value = value;
+  }
+
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("value", value).add("name", name).toString();
+    return MoreObjects.toStringHelper(this).add("name", name).add("value", value).toString();
   }
 }
