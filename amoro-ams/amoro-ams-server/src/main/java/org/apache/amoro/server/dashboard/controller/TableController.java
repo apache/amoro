@@ -49,6 +49,7 @@ import org.apache.amoro.server.dashboard.model.PartitionFileBaseInfo;
 import org.apache.amoro.server.dashboard.model.ServerTableMeta;
 import org.apache.amoro.server.dashboard.model.TableMeta;
 import org.apache.amoro.server.dashboard.model.TableOperation;
+import org.apache.amoro.server.dashboard.model.TableSummary;
 import org.apache.amoro.server.dashboard.model.TagOrBranchInfo;
 import org.apache.amoro.server.dashboard.model.UpgradeHiveMeta;
 import org.apache.amoro.server.dashboard.model.UpgradeRunningInfo;
@@ -139,17 +140,16 @@ public class TableController {
     ServerTableMeta serverTableMeta =
         tableDescriptor.getTableDetail(
             TableIdentifier.of(catalog, database, tableName).buildTableIdentifier());
-    Map<String, Object> tableSummary = serverTableMeta.getTableSummary();
+    TableSummary tableSummary = serverTableMeta.getTableSummary();
     Optional<ServerTableIdentifier> serverTableIdentifier =
         Optional.ofNullable(
             tableService.getServerTableIdentifier(
                 TableIdentifier.of(catalog, database, tableName).buildTableIdentifier()));
     if (serverTableIdentifier.isPresent()) {
-      tableSummary.put(
-          "optimizingStatus",
-          tableService.getRuntime(serverTableIdentifier.get()).getOptimizingStatus());
+      TableRuntime tableRuntime = tableService.getRuntime(serverTableIdentifier.get());
+      tableSummary.setOptimizingStatus(tableRuntime.getOptimizingStatus().name());
     } else {
-      tableSummary.put("optimizingStatus", OptimizingStatus.IDLE);
+      tableSummary.setOptimizingStatus(OptimizingStatus.IDLE.name());
     }
     ctx.json(OkResponse.of(serverTableMeta));
   }

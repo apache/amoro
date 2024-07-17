@@ -25,6 +25,7 @@ public class TableSummary {
   private String averageFile;
   private String tableFormat;
   private long records;
+  private String optimizingStatus;
 
   public TableSummary() {}
 
@@ -60,5 +61,16 @@ public class TableSummary {
   /** Total records of table. */
   public long getRecords() {
     return records;
+  }
+
+  /**
+   * Current table optimizing status
+   */
+  public String getOptimizingStatus() {
+    return optimizingStatus;
+  }
+
+  public void setOptimizingStatus(String optimizingStatus) {
+    this.optimizingStatus = optimizingStatus;
   }
 }
