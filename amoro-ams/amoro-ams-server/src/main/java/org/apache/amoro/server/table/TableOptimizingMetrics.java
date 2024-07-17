@@ -298,7 +298,15 @@ public class TableOptimizingMetrics {
       registerMetric(
           registry,
           TABLE_OPTIMIZING_LAG_DURATION,
-          (Gauge<Long>) () -> latestSnapshotTime - lastOptimizingTime);
+          (Gauge<Long>)
+              () -> {
+                if (latestSnapshotTime == AmoroServiceConstants.INVALID_TIME
+                    || lastOptimizingTime == AmoroServiceConstants.INVALID_TIME) {
+                  return AmoroServiceConstants.INVALID_TIME;
+                } else {
+                  return latestSnapshotTime - lastOptimizingTime;
+                }
+              });
 
       globalRegistry = registry;
     }
@@ -354,7 +362,11 @@ public class TableOptimizingMetrics {
       return;
     }
 
-    this.lastOptimizingTime = Longs.max(lastOptimizingTime, snapshot.timestampMillis());
+    this.lastOptimizingTime =
+        Longs.max(
+            lastOptimizingTime,
+            snapshot.timestampMillis(),
+            Longs.max(lastMinorTime, lastMajorTime, lastFullTime));
   }
 
   /**
