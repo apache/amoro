@@ -368,6 +368,7 @@ public class DashboardServer {
     "/ams/v1/versionInfo",
     "/ams/v1/login",
     "/ams/v1/health/status",
+    "/ams/v1/login/current",
     "/",
     "/overview",
     "/introduce",
