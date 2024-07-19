@@ -34,6 +34,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
@@ -101,7 +102,7 @@ public class IcebergTableUtil {
         table,
         snapshot ->
             snapshot.summary().containsValue(CommitMetaProducer.OPTIMIZE.name())
-                || snapshot.summary().containsValue(CommitMetaProducer.DATA_EXPIRATION.name()));
+                && DataOperations.REPLACE.equals(snapshot.operation()));
   }
 
   public static Set<String> getAllContentFilePath(Table internalTable) {
