@@ -61,6 +61,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Stores hadoop config files for {@link MixedTable} */
 public class TableMetaStore implements Serializable {
+  private static final long serialVersionUID = 1L;
+
   private static final Logger LOG = LoggerFactory.getLogger(TableMetaStore.class);
 
   // Share runtime context with same configuration as context is expensive to construct
@@ -510,8 +512,12 @@ public class TableMetaStore implements Serializable {
 
     private Configuration buildConfiguration(TableMetaStore metaStore) {
       Configuration configuration = new Configuration();
-      configuration.addResource(new ByteArrayInputStream(metaStore.getCoreSite()));
-      configuration.addResource(new ByteArrayInputStream(metaStore.getHdfsSite()));
+      if (!ArrayUtils.isEmpty(metaStore.getCoreSite())) {
+        configuration.addResource(new ByteArrayInputStream(metaStore.getCoreSite()));
+      }
+      if (!ArrayUtils.isEmpty(metaStore.getHdfsSite())) {
+        configuration.addResource(new ByteArrayInputStream(metaStore.getHdfsSite()));
+      }
       if (!ArrayUtils.isEmpty(metaStore.getMetaStoreSite())) {
         configuration.addResource(new ByteArrayInputStream(metaStore.getMetaStoreSite()));
       }

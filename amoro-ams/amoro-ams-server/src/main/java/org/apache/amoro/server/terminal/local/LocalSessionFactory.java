@@ -22,6 +22,7 @@ import org.apache.amoro.api.config.ConfigOption;
 import org.apache.amoro.api.config.ConfigOptions;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.catalog.CatalogType;
 import org.apache.amoro.server.dashboard.utils.DesensitizationUtil;
 import org.apache.amoro.server.terminal.SparkContextUtil;
 import org.apache.amoro.server.terminal.TerminalSession;
@@ -79,7 +80,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
 
     Map<String, String> finallyConf = configuration.toMap();
     catalogs.stream()
-        .filter(c -> isExternalConnector(c, configuration))
+        .filter(c -> isExternalConnector(c, configuration) || isExternalMetastore(c, configuration))
         .forEach(c -> setHadoopConfigToSparkSession(c, session, metaStore));
 
     for (String key : sparkConf.keySet()) {
@@ -91,6 +92,12 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     }
 
     return new LocalTerminalSession(catalogs, session, initializeLogs, finallyConf);
+  }
+
+  private boolean isExternalMetastore(String catalog, Configurations configurations) {
+    String metastoreType =
+        configurations.get(SessionConfigOptions.catalogConnector(catalog)).toLowerCase();
+    return !metastoreType.equalsIgnoreCase(CatalogType.AMS.name());
   }
 
   private boolean isExternalConnector(String catalog, Configurations configurations) {

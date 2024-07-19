@@ -51,7 +51,7 @@ public class ParamSignatureCalculator {
         str[k++] = hexDigits[byte0 & 0xf];
       }
     } catch (Exception e) {
-      LOG.error("failed", e);
+      throw new RuntimeException("Calculate md5 value failed", e);
     }
     return new String(str);
   }
@@ -63,13 +63,7 @@ public class ParamSignatureCalculator {
    * @return the MD5 hash of the given value as a string
    */
   public static String getMD5(String value) {
-    String result = "";
-    try {
-      result = getMD5(value.getBytes(StandardCharsets.UTF_8));
-    } catch (Exception e) {
-      LOG.error("get MD5 Error!!", e);
-    }
-    return result;
+    return getMD5(value.getBytes(StandardCharsets.UTF_8));
   }
 
   /**
@@ -95,8 +89,7 @@ public class ParamSignatureCalculator {
                     ? ""
                     : entry.getKey() + URLDecoder.decode(sortedValues.get(0), "utf-8");
               } catch (UnsupportedEncodingException e) {
-                LOG.error("Failed to calculate signature", e);
-                return null;
+                throw new RuntimeException("Calculate signature failed", e);
               }
             })
         .collect(Collectors.joining());
@@ -120,7 +113,7 @@ public class ParamSignatureCalculator {
                 try {
                   return key + URLDecoder.decode(map.get(key), "UTF-8");
                 } catch (UnsupportedEncodingException e) {
-                  LOG.error("Failed to decode url value: {}", map.get(key), e);
+                  throw new RuntimeException("Calculate signature failed", e);
                 }
               }
               return null;

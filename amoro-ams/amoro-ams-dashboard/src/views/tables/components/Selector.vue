@@ -88,11 +88,11 @@ onMounted(() => {
       <template #overlay>
         <div>
           <div class="branch-selector-search">
-            <a-input v-show="tabActiveKey === branchTypeMap.BRANCH" v-model:value="branchSearchKey" :placeholder="$t('Filter branches/tags')" @click="onClickInput" />
-            <a-input v-show="tabActiveKey === branchTypeMap.TAG" v-model:value="tagSearchKey" :placeholder="$t('Filter branches/tags')" @click="onClickInput" />
+            <a-input v-show="tabActiveKey === branchTypeMap.BRANCH" v-model:value="branchSearchKey" :placeholder="$t('filterBranchesOrTags')" @click="onClickInput" />
+            <a-input v-show="tabActiveKey === branchTypeMap.TAG" v-model:value="tagSearchKey" :placeholder="$t('filterBranchesOrTags')" @click="onClickInput" />
           </div>
           <a-tabs v-model:activeKey="tabActiveKey" type="card">
-            <a-tab-pane :key="branchTypeMap.BRANCH" tab="Branches">
+            <a-tab-pane :key="branchTypeMap.BRANCH" :tab="$t('branches')">
               <template v-if="!!actualBranchList.length">
                 <div v-for="(item, key) in actualBranchList" :key="key" class="branch-selector-item" @click="selectObject(item)">
                   <div class="item-icon">
@@ -103,7 +103,7 @@ onMounted(() => {
               </template>
               <span v-else class="empty-tips">{{ $t('nothingToShow') }}</span>
             </a-tab-pane>
-            <a-tab-pane :key="branchTypeMap.TAG" tab="Tags">
+            <a-tab-pane :key="branchTypeMap.TAG" :tab="$t('tags')">
               <template v-if="!!actualTagList.length">
                 <div v-for="(item, key) in actualTagList" :key="key" class="branch-selector-item" @click="selectObject(item)">
                   <div class="item-icon">

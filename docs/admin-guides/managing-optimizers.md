@@ -183,7 +183,13 @@ To better utilize the resources of Spark Optimizer, the DRA(Dynamic Resource All
 If you don't want this feature, you can use these settings:
 * Set `spark-conf.spark.dynamicAllocation.enabled` to `false` as you need allocate proper driver/executor resources Using [Spark Configuration Options](https://spark.apache.org/docs/latest/configuration.html).
 * Set `spark-conf.spark.dynamicAllocation.maxExecutors` to `10` as optimizer parallelism can only affect parallelism polling optimizing tasks from AMS.
-  {{< /hint >}}
+{{< /hint >}}
+
+{{< hint info >}}
+The spark optimizer may fail due to class conflicts sometimes, you can try to fix by following the steps below：
+* Set `spark-conf.spark.driver.userClassPathFirst` to `true`.
+* Set `spark-conf.spark.executor.userClassPathFirst` to `true`.
+{{< /hint >}}
 
 An example for yarn client mode:
 

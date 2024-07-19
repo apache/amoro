@@ -39,10 +39,10 @@ jobs:
           cache: maven
 
       - name: Validate checkstyle first
-        run: mvn validate -P trino-spotless
+        run: mvn validate -P format-mixed-format-trino
 
       - name: Build trino module with Maven
-        run: mvn clean install -pl 'amoro-mixed-format/amoro-mixed-format-trino' -am -B -P hadoop2,trino-spotless,build-mixed-format-trino
+        run: mvn clean install -pl 'amoro-mixed-format/amoro-mixed-format-trino' -am -B -P hadoop2,format-mixed-format-trino,build-mixed-format-trino
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

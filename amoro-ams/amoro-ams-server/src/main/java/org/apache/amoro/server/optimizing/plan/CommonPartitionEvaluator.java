@@ -263,11 +263,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public long getCost() {
     if (cost < 0) {
-      // We estimate that the cost of writing is 3 times that of reading.
+      // We estimate that the cost of writing is the same as reading.
       // When rewriting the Position delete file, only the primary key field of the segment file
       // will be read, so only one-tenth of the size is calculated based on the size.
       cost =
-          (fragmentFileSize + rewriteSegmentFileSize + undersizedSegmentFileSize) * 4
+          (fragmentFileSize + rewriteSegmentFileSize + undersizedSegmentFileSize) * 2
               + rewritePosSegmentFileSize / 10
               + posDeleteFileSize
               + equalityDeleteFileSize;

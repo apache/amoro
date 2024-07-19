@@ -42,6 +42,9 @@
     "vite-plugin-svg-icons": "^2.0.1",
     "vue-tsc": "^2.0.21"
   },
+  "engines": {
+    "node": ">=18.18.0"
+  },
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"

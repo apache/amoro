@@ -41,7 +41,6 @@ const columns: IColumns[] = shallowReactive([
 const breadcrumbColumns = shallowReactive([
   { title: t('operation'), dataIndex: 'operation', width: 120, ellipsis: true },
   { title: t('file'), dataIndex: 'file', ellipsis: true },
-  // { title: t('fsn'), dataIndex: 'fsn' },
   { title: t('partition'), dataIndex: 'partition', width: 120 },
   { title: t('fileType'), dataIndex: 'fileType', width: 120, ellipsis: true },
   { title: t('size'), dataIndex: 'size', width: 120 },
@@ -172,7 +171,6 @@ function toggleBreadcrumb(record: SnapshotItem) {
 
 onMounted(() => {
   hasBreadcrumb.value = false
-  // getTableInfo()
 })
 </script>
 

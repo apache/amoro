@@ -20,7 +20,7 @@ This is the Dashboard frontend for Amoro Management Service (AMS).
 
 ## Requirements
 
-- node >= `16.x`
+- node >= `18.18.0`
 - pnpm
 
 ## Installing Dependencies

@@ -59,7 +59,7 @@ CREATE TABLE `table_identifier`
     `table_name`      varchar(128) NOT NULL COMMENT 'Table name',
     PRIMARY KEY (`table_id`),
     UNIQUE KEY `table_name_index` (`catalog_name`,`db_name`,`table_name`)
-);
+) ROW_FORMAT=DYNAMIC;
 INSERT INTO `table_identifier` (`catalog_name`, `db_name`, `table_name`) SELECT `catalog_name`, `db_name`, `table_name` FROM `table_metadata`;
 
 -- table_metadata
@@ -126,7 +126,7 @@ CREATE TABLE `table_runtime`
     `optimizing_config`             mediumtext,
     `pending_input`                 mediumtext,
     PRIMARY KEY (`table_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize running information of each table';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize running information of each table' ROW_FORMAT=DYNAMIC;
 
 
 

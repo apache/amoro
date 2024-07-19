@@ -73,7 +73,7 @@ async function getDetails() {
   }
 }
 
-function onCofirm() {
+function onConfirm() {
   getParams()
 }
 
@@ -158,7 +158,7 @@ onMounted(() => {
         </a-form>
       </div>
       <div class="footer-btn">
-        <a-button type="primary" :loading="loading" class="btn g-mr-12" @click="onCofirm">
+        <a-button type="primary" :loading="loading" class="btn g-mr-12" @click="onConfirm">
           {{ $t('ok') }}
         </a-button>
         <a-button type="ghost" class="btn" @click="cancel">

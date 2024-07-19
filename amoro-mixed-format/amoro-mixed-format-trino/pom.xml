@@ -655,7 +655,7 @@
             </build>
         </profile>
         <profile>
-            <id>trino-spotless</id>
+            <id>format-mixed-format-trino</id>
             <build>
                 <plugins>
                     <plugin>

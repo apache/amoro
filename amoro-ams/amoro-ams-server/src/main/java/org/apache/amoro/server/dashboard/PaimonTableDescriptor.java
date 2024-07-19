@@ -151,6 +151,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
       tableSummary.put("averageFile", averageFileSize);
       tableSummary.put("file", fileCount);
       tableSummary.put("size", totalSize);
+      tableSummary.put("records", snapshotsOfTable.getRecords());
 
       baseMetric.put("totalSize", totalSize);
       baseMetric.put("fileCount", fileCount);
