@@ -20,17 +20,13 @@ limitations under the License.
 import { onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
 
-interface PieData {
-  value: number
-  name: string
-}
-
-interface Props {
+const props = defineProps<{
   title: string
-  data: PieData[]
-}
-
-const props = defineProps<Props>()
+  data: {
+    value: number
+    name: string
+  }[]
+}>()
 
 const pieChart = ref<HTMLDivElement | null>(null)
 
@@ -47,7 +43,7 @@ function renderChart() {
       },
       series: [
         {
-          name: '数据类型占比',
+          name: props.title,
           type: 'pie',
           radius: '50%',
           data: props.data,
@@ -75,5 +71,4 @@ watch(() => props.data, renderChart)
   </a-card>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

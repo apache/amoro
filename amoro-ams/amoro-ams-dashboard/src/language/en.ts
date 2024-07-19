@@ -18,6 +18,7 @@
 
 export default {
   overview: 'Overview',
+  healthScore: 'Health Score',
   catalogs: 'Catalogs',
   catalog: 'Catalog',
   tables: 'Tables',

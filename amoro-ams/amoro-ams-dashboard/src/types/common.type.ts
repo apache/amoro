@@ -69,6 +69,15 @@ export interface IBaseDetailInfo {
   hasPartition: boolean
 }
 
+export interface UnhealthTableItem {
+  tableIdentifier: ITableIdentifier
+  tableName: string
+  healthScore: string
+  size: string
+  file: string
+  averageFile: string
+}
+
 export interface DetailColumnItem {
   checked?: unknown
   field: string
@@ -184,6 +193,13 @@ export interface SnapshotItem {
   summary: SnapshotItemSummary
   filesSummaryForChart: Record<string, number>
   recordsSummaryForChart: Record<string, number>
+}
+
+export interface OverviwOperationItem {
+  tableName: string
+  tableIdentifier: ITableIdentifier
+  operation: string
+  ts: number | string
 }
 
 export interface OperationItem {

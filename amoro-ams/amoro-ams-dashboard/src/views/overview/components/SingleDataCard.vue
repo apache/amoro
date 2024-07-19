@@ -19,7 +19,7 @@ limitations under the License.
 <script setup lang="ts">
 import { defineProps, ref } from 'vue'
 
-const props = defineProps<{ title: string, data: string, precision: number, suffix: string }>()
+const props = defineProps<{ title: string, data: string }>()
 
 const loading = ref(true)
 function fetchData() {
@@ -35,8 +35,6 @@ fetchData()
     </template>
     <a-statistic
       :value="props.data"
-      :precision="props.precision"
-      :suffix="props.suffix"
       :value-style="{ color: '#07A7F0', fontSize: '28px' }"
       style="margin-right: 50px"
     />

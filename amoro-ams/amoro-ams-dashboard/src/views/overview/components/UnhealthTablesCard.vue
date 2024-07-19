@@ -17,100 +17,142 @@ limitations under the License.
 / -->
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, onMounted, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+import { usePagination } from '@/hooks/usePagination'
 import type { TableProps } from 'ant-design-vue'
+import type { UnhealthTableItem } from '@/types/common.type'
+import { getUnhealthTableList } from '@/services/overview.service'
 
-interface DataItem {
-  key: string
-  table: string
-  healthScore: string
-  size: string
-  fileCount: string
-  averageFileSize: string
+const { t } = useI18n()
+const router = useRouter()
+const pagination = reactive(usePagination())
+const loading = ref<boolean>(false)
+const catalogs = reactive<string[]>([])
+const catalogFilter = reactive<{ text: string, value: string }[]>([])
+const dataSource = reactive<UnhealthTableItem[]>([])
+
+const columns: TableProps['columns'] = [
+  {
+    title: t('table'),
+    dataIndex: 'tableName',
+    filterSearch: true,
+    filters: catalogFilter,
+    filterMode: 'tree',
+    onFilter: (value, record: UnhealthTableItem) => record.tableIdentifier.catalog === value,
+  },
+  {
+    title: t('healthScore'),
+    dataIndex: 'healthScore',
+    sorter: true,
+  },
+  {
+    title: t('size'),
+    dataIndex: 'size',
+    sorter: true,
+  },
+  {
+    title: t('fileCount'),
+    dataIndex: 'file',
+    sorter: true,
+  },
+  {
+    title: t('averageFileSize'),
+    dataIndex: 'averageFile',
+    sorter: true,
+  },
+]
+
+function goTableDetail(record: UnhealthTableItem) {
+  const { catalog, database, tableName } = record.tableIdentifier
+  router.push({
+    path: '/tables',
+    query: {
+      catalog,
+      db: database,
+      table: tableName,
+    },
+  })
+}
+
+async function getUnhealthTables() {
+  try {
+    loading.value = true
+    dataSource.length = 0
+    const result = await getUnhealthTableList({
+      page: pagination.current,
+      pageSize: pagination.pageSize,
+    })
+    const { total, list } = result
+    pagination.total = total;
+    (list || []).forEach((ele: UnhealthTableItem) => {
+      if (!catalogs.includes(ele.tableIdentifier.catalog)) {
+        catalogs.push(ele.tableIdentifier.catalog)
+      }
+      dataSource.push(ele)
+    })
+    catalogs.forEach(catalog => {
+      catalogFilter.push({ text: catalog, value: catalog })
+    });
+  }
+  catch (error) {
+  }
+  finally {
+    loading.value = false
+  }
 }
 
 const filteredInfo = ref()
 const sortedInfo = ref()
 
-const columns: TableProps['columns'] = [
-  {
-    title: 'Table',
-    dataIndex: 'table',
-    key: 'table',
-    filterSearch: true,
-    filters: [
-      {
-        text: 'test_catalog',
-        value: 'test_catalog.db.school',
-      },
-      {
-        text: 'test_catalog2',
-        value: 'test_catalog.db.course',
-      },
-      {
-        text: 'test_catalog3',
-        value: 'test_catalog.db.viedo',
-      },
-    ],
-    filterMode: 'tree',
-    onFilter: (value, record: DataItem) => record.table === value,
-  },
-  {
-    title: 'Health Score',
-    dataIndex: 'healthScore',
-    sorter: true,
-  },
-  {
-    title: 'Size',
-    dataIndex: 'size',
-    sorter: true,
-  },
-  {
-    title: 'File Count',
-    dataIndex: 'fileCount',
-    sorter: true,
-  },
-  {
-    title: 'Average File Size',
-    dataIndex: 'averageFileSize',
-    sorter: true,
-  },
-]
-
-const data = ref<DataItem[]>([
-  { key: '1', table: 'test_catalog.db.school', healthScore: '47', size: '10 MB', fileCount: '10', averageFileSize: '1 MB' },
-  { key: '2', table: 'test_catalog.db.course', healthScore: '70', size: '20 MB', fileCount: '2', averageFileSize: '10 MB' },
-  { key: '3', table: 'test_catalog.db.viedo', healthScore: '88', size: '50 MB', fileCount: '5', averageFileSize: '10 MB' },
-  // Add more data here
-])
-
 const handleChange: TableProps['onChange'] = (filters, sorter) => {
   filteredInfo.value = filters
   sortedInfo.value = sorter
 }
+
+onMounted(() => {
+  getUnhealthTables()
+})
 </script>
 
 <template>
   <a-card class="unhealth-tables-card" title="Unhealth Tables">
-    <a-table
-      :columns="columns"
-      :data-source="data"
-      row-key="table"
-      @change="handleChange"
-    >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'table'">
-          <a>
-            {{ record.table }}
-          </a>
+    <div class="list-wrap">
+      <a-table class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"
+      :loading="loading" @change="handleChange">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'tableName'">
+            <span :title="record.tableName" class="primary-link" @click="goTableDetail(record)">
+              {{ record.tableName }}
+            </span>
+          </template>
         </template>
-      </template>
-    </a-table>
+      </a-table>
+    </div>
   </a-card>
 </template>
 
-<style scoped>
+<style lang="less" scoped>
 .unhealth-tables-card {
   height: 350px;
+}
+
+.list-wrap {
+  .primary-link {
+    color: @primary-color;
+
+    &:hover {
+      cursor: pointer;
+    }
+
+    &.disabled {
+      color: #999;
+
+      &:hover {
+        cursor: not-allowed;
+      }
+    }
+  }
 }
 </style>

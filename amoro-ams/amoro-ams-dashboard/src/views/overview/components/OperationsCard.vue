@@ -17,71 +17,94 @@ limitations under the License.
 / -->
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, shallowReactive, onMounted, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+import type { OverviwOperationItem } from '@/types/common.type'
+import { getOverviewOperations } from '@/services/overview.service'
+import { dateFormat } from '@/utils'
 
-interface DataSource {
-  key: string
-  table: string
-  operation: string
-  time: string
+const { t } = useI18n()
+const router = useRouter()
+const loading = ref<boolean>(false)
+const dataSource = reactive<OverviwOperationItem[]>([])
+function goTableDetail(record: OverviwOperationItem) {
+  const { catalog, database, tableName } = record.tableIdentifier
+  router.push({
+    path: '/tables',
+    query: {
+      catalog,
+      db: database,
+      table: tableName,
+    },
+  })
 }
 
-const columns = [
-  {
-    title: 'Table',
-    dataIndex: 'table',
-    key: 'table',
-  },
-  {
-    title: 'Operation',
-    dataIndex: 'operation',
-    ellipsis: true,
-  },
-  {
-    title: 'Time',
-    dataIndex: 'time',
-  },
-]
+async function getOperationInfo() {
+  try {
+    loading.value = true
+    dataSource.length = 0
+    const result = await getOverviewOperations();
+    (result || []).forEach((ele: OverviwOperationItem) => {
+      ele.ts = ele.ts ? dateFormat(ele.ts) : ''
+      dataSource.push(ele)
+    })
+  }
+  catch (error) {
+  }
+  finally {
+    loading.value = false
+  }
+}
 
-const data = ref<DataSource[]>([
-  {
-    key: '1',
-    table: 'test_catalog.db.school',
-    operation: `create external table school
-(
-    school_id   int,
-    school_name string,
-    school_code string,
-    school_note string
-)
-    row format delimited
-        fields terminated by '|'
-    stored as textfile
-    location '/edu1/school`,
-    time: '2024-07-10 10:53',
-  },
-  { key: '2', table: 'test_catalog.db.teacher', operation: 'drop table if exists teacher;', time: '2024-07-11 11:00' },
-  { key: '3', table: 'test_catalog.db.video', operation: 'drop table if exists video;', time: '2024-07-11 12:00' },
-  // Add more data here
+const columns = shallowReactive([
+  { dataIndex: 'tableName', title: t('table'), ellipsis: true },
+  { dataIndex: 'operation', title: t('operation'), width: '50%', ellipsis: true},
+  { dataIndex: 'ts', title: t('time'), width: '25%', ellipsis: true },
 ])
+
+onMounted(() => {
+  getOperationInfo()
+})
 </script>
 
 <template>
   <a-card class="operations-card" title="Latest Operations">
-    <a-table :columns="columns" :data-source="data" :pagination="false" row-key="key">
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'table'">
-          <a>
-            {{ record.table }}
-          </a>
+    <div class="list-wrap">
+      <a-table class="ant-table-common" :loading="loading" :columns="columns" :data-source="dataSource" :pagination="false">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'tableName'">
+            <span :title="record.tableName" class="primary-link" @click="goTableDetail(record)">
+              {{ record.tableName }}
+            </span>
+          </template>
         </template>
-      </template>
-    </a-table>
+      </a-table>
+    </div>
   </a-card>
 </template>
 
-<style scoped>
+<style lang="less" scoped>
 .operations-card {
   height: 350px;
 }
+
+.list-wrap {
+  .primary-link {
+    color: @primary-color;
+
+    &:hover {
+      cursor: pointer;
+    }
+
+    &.disabled {
+      color: #999;
+
+      &:hover {
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
 </style>

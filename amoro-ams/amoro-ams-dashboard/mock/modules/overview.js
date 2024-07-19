@@ -63,6 +63,51 @@ export default [
     }),
   },
   {
+    url: '/mock/ams/v1/overview/operations',
+    method: 'get',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: [
+        {
+          tableIdentifier: {
+            catalog: 'test_catalog',
+            database: 'db',
+            tableName: 'user',
+            id: 1
+          },
+          tableName: 'test_catalog.db.user',
+          operation: `create external table user
+          (
+              user_id   int,
+              user_name string,
+              user_code string,
+              user_note string
+          )
+          row format delimited
+              fields terminated by '|'
+          stored as textfile
+          location '/db/user`,
+          ts: '1721353678000',
+        },
+      ]
+    }),
+  },
+  {
+    url: '/mock/ams/v1/overview/unhealth',
+    method: 'get',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: {
+        "list": [
+          { tableIdentifier: { id: 1, catalog: 'test_catalog', database: 'db', tableName: 'user' }, tableName: 'test_catalog.db.user', healthScore: '47', size: '10 MB', file: '10', averageFile: '1 MB' },
+        ],
+        "total": 1
+      }
+    }),
+  },
+  {
     url: '/mock/ams/v1/overview/top/tables',
     method: 'get',
     response: () => ({

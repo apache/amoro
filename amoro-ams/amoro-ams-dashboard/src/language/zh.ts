@@ -18,6 +18,7 @@
 
 export default {
   overview: '总览',
+  healthScore: '健康度',
   catalogs: '目录',
   catalog: '目录',
   tables: '表',

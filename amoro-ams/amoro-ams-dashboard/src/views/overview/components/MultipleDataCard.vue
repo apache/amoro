@@ -19,7 +19,7 @@ limitations under the License.
 <script setup lang="ts">
 import { defineProps, ref } from 'vue'
 
-const props = defineProps<{ title: string, items: { title: string, data: string, precision: number, suffix: string }[] }>()
+const props = defineProps<{ title: string, data: { title: string, data: string }[] }>()
 
 const loading = ref(true)
 function fetchData() {
@@ -34,9 +34,9 @@ fetchData()
       <span class="card-title">{{ props.title }}</span>
     </template>
     <a-row>
-      <a-col v-for="item in props.items" :key="item.title" :span="12">
+      <a-col v-for="item in props.data" :key="item.title" :span="12">
         <a-statistic
-          :title="item.title" :value="item.data" :precision="item.precision" :suffix="item.suffix"
+          :title="item.title" :value="item.data"
           :value-style="{ color: '#07A7F0', fontSize: '28px' }" style="margin-right: 20px;"
         />
       </a-col>

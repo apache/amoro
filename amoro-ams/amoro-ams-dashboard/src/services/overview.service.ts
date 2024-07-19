@@ -29,3 +29,18 @@ export function getOverviewFormat() {
 export function getOverviewOptimizingStatus() {
   return request.get('ams/v1/overview/optimizing')
 }
+
+export function getOverviewOperations() {
+  return request.get('ams/v1/overview/operations')
+}
+
+export function getUnhealthTableList(
+  params: {
+    page: number
+    pageSize: number
+  },
+) {
+  const { page, pageSize } = params
+  return request.get(`ams/v1/overview/unhealth`, { params: { page, pageSize } })
+}
+
