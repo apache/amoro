@@ -19,6 +19,8 @@
 export default {
   overview: '总览',
   healthScore: '健康度',
+  unhealthTables: '非健康表',
+  latestOperations: '最近操作',
   catalogs: '目录',
   catalog: '目录',
   tables: '表',
@@ -153,6 +155,7 @@ export default {
   duplicateKey: '重复键',
   lastUpgradingFailed: '上次升级失败',
   data: '数据',
+  resource: '资源',
   resourceCpu: 'CPU 使用情况',
   resourceMemory: '内存使用情况',
   resourceUsage: '资源使用情况',

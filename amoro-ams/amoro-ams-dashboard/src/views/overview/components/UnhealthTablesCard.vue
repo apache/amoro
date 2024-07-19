@@ -17,17 +17,20 @@ limitations under the License.
 / -->
 
 <script lang="ts" setup>
-import { ref, onMounted, reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { usePagination } from '@/hooks/usePagination'
 import type { TableProps } from 'ant-design-vue'
+import { usePagination } from '@/hooks/usePagination'
 import type { UnhealthTableItem } from '@/types/common.type'
 import { getUnhealthTableList } from '@/services/overview.service'
+import { bytesToSize } from '@/utils'
 
 const { t } = useI18n()
 const router = useRouter()
 const pagination = reactive(usePagination())
+pagination.pageSize = 10
+pagination.pageSizeOptions = ['10', '25', '50', '100']
 const loading = ref<boolean>(false)
 const catalogs = reactive<string[]>([])
 const catalogFilter = reactive<{ text: string, value: string }[]>([])
@@ -45,22 +48,18 @@ const columns: TableProps['columns'] = [
   {
     title: t('healthScore'),
     dataIndex: 'healthScore',
-    sorter: true,
   },
   {
     title: t('size'),
     dataIndex: 'size',
-    sorter: true,
   },
   {
     title: t('fileCount'),
     dataIndex: 'file',
-    sorter: true,
   },
   {
     title: t('averageFileSize'),
     dataIndex: 'averageFile',
-    sorter: true,
   },
 ]
 
@@ -74,6 +73,15 @@ function goTableDetail(record: UnhealthTableItem) {
       table: tableName,
     },
   })
+}
+
+function change({ current = 1, pageSize = 10 }) {
+  pagination.current = current
+  if (pageSize !== pagination.pageSize) {
+    pagination.current = 1
+  }
+  pagination.pageSize = pageSize
+  getUnhealthTables()
 }
 
 async function getUnhealthTables() {
@@ -92,9 +100,9 @@ async function getUnhealthTables() {
       }
       dataSource.push(ele)
     })
-    catalogs.forEach(catalog => {
+    catalogs.forEach((catalog) => {
       catalogFilter.push({ text: catalog, value: catalog })
-    });
+    })
   }
   catch (error) {
   }
@@ -103,29 +111,29 @@ async function getUnhealthTables() {
   }
 }
 
-const filteredInfo = ref()
-const sortedInfo = ref()
-
-const handleChange: TableProps['onChange'] = (filters, sorter) => {
-  filteredInfo.value = filters
-  sortedInfo.value = sorter
-}
-
 onMounted(() => {
   getUnhealthTables()
 })
 </script>
 
 <template>
-  <a-card class="unhealth-tables-card" title="Unhealth Tables">
+  <a-card class="unhealth-tables-card" :title="t('unhealthTables')">
     <div class="list-wrap">
-      <a-table class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"
-      :loading="loading" @change="handleChange">
+      <a-table
+        class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"
+        :loading="loading" @change="change"
+      >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'tableName'">
             <span :title="record.tableName" class="primary-link" @click="goTableDetail(record)">
               {{ record.tableName }}
             </span>
+          </template>
+          <template v-if="column.dataIndex === 'size'">
+            {{ bytesToSize(record.size) }}
+          </template>
+          <template v-if="column.dataIndex === 'averageFile'">
+            {{ bytesToSize(record.averageFile) }}
           </template>
         </template>
       </a-table>
@@ -135,7 +143,7 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .unhealth-tables-card {
-  height: 350px;
+  height: 500px;
 }
 
 .list-wrap {

@@ -43,4 +43,3 @@ export function getUnhealthTableList(
   const { page, pageSize } = params
   return request.get(`ams/v1/overview/unhealth`, { params: { page, pageSize } })
 }
-

@@ -17,25 +17,18 @@ limitations under the License.
 / -->
 
 <script setup lang="ts">
-import { defineProps, ref } from 'vue'
+import { defineProps } from 'vue'
 
-const props = defineProps<{ title: string, data: string }>()
-
-const loading = ref(true)
-function fetchData() {
-  loading.value = false
-}
-fetchData()
+const props = defineProps<{ title: string, value: string }>()
 </script>
 
 <template>
-  <a-card class="single-data" :loading="loading">
+  <a-card class="single-data">
     <template #title>
       <span class="card-title">{{ props.title }}</span>
     </template>
     <a-statistic
-      :value="props.data"
-      :value-style="{ color: '#07A7F0', fontSize: '28px' }"
+      :value="props.value" :value-style="{ color: '#07A7F0', fontSize: '28px' }"
       style="margin-right: 50px"
     />
   </a-card>
@@ -45,7 +38,8 @@ fetchData()
 .card-title {
   font-size: 28px;
 }
-.single-data{
+
+.single-data {
   height: 150px;
 }
 </style>

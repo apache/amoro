@@ -72,10 +72,10 @@ export interface IBaseDetailInfo {
 export interface UnhealthTableItem {
   tableIdentifier: ITableIdentifier
   tableName: string
-  healthScore: string
-  size: string
-  file: string
-  averageFile: string
+  healthScore: number
+  size: number
+  file: number
+  averageFile: number
 }
 
 export interface DetailColumnItem {

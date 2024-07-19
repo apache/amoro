@@ -17,7 +17,7 @@ limitations under the License.
 / -->
 
 <script lang="ts" setup>
-import { ref, shallowReactive, onMounted, reactive } from 'vue'
+import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import type { OverviwOperationItem } from '@/types/common.type'
@@ -59,7 +59,7 @@ async function getOperationInfo() {
 
 const columns = shallowReactive([
   { dataIndex: 'tableName', title: t('table'), ellipsis: true },
-  { dataIndex: 'operation', title: t('operation'), width: '50%', ellipsis: true},
+  { dataIndex: 'operation', title: t('operation'), width: '50%', ellipsis: true },
   { dataIndex: 'ts', title: t('time'), width: '25%', ellipsis: true },
 ])
 
@@ -69,7 +69,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <a-card class="operations-card" title="Latest Operations">
+  <a-card class="operations-card" :title="t('latestOperations')">
     <div class="list-wrap">
       <a-table class="ant-table-common" :loading="loading" :columns="columns" :data-source="dataSource" :pagination="false">
         <template #bodyCell="{ column, record }">
@@ -86,7 +86,7 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .operations-card {
-  height: 350px;
+  height: 500px;
 }
 
 .list-wrap {
@@ -106,5 +106,4 @@ onMounted(() => {
     }
   }
 }
-
 </style>

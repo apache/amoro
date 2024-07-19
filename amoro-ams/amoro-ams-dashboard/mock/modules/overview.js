@@ -101,7 +101,8 @@ export default [
       msg: 'success',
       result: {
         "list": [
-          { tableIdentifier: { id: 1, catalog: 'test_catalog', database: 'db', tableName: 'user' }, tableName: 'test_catalog.db.user', healthScore: '47', size: '10 MB', file: '10', averageFile: '1 MB' },
+          { tableIdentifier: { id: 1, catalog: 'test_catalog', database: 'db', tableName: 'user' }, tableName: 'test_catalog.db.user', healthScore: '47', size: '4585900', file: '10', averageFile: '458590' },
+          { tableIdentifier: { id: 2, catalog: 'test_catalog', database: 'db', tableName: 'device' }, tableName: 'test_catalog.db.device', healthScore: '68', size: '6585900', file: '10', averageFile: '658590' },
         ],
         "total": 1
       }
