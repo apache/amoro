@@ -26,7 +26,7 @@ import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.table.MixedTable;
 
-/** Service for expiring tables periodically. */
+/** Executor that refreshes table runtimes and evaluates optimizing status periodically. */
 public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   // 1 minutes
@@ -56,6 +56,8 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
             tableRuntime.getTableIdentifier(),
             pendingInput);
         tableRuntime.setPendingInput(pendingInput);
+      } else {
+        tableRuntime.optimizingNotNecessary();
       }
     }
   }

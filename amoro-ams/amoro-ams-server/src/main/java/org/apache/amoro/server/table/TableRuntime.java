@@ -253,8 +253,20 @@ public class TableRuntime extends StatedPersistentBase {
               || optimizingStatus == OptimizingStatus.PENDING) {
             updateOptimizingStatus(OptimizingStatus.IDLE);
             lastOptimizedSnapshotId = currentSnapshotId;
+            lastOptimizedChangeSnapshotId = currentChangeSnapshotId;
             persistUpdatingRuntime();
             tableHandler.handleTableChanged(this, optimizingStatus);
+          }
+        });
+  }
+
+  public void optimizingNotNecessary() {
+    invokeConsistency(
+        () -> {
+          if (optimizingStatus == OptimizingStatus.IDLE) {
+            lastOptimizedSnapshotId = currentSnapshotId;
+            lastOptimizedChangeSnapshotId = currentChangeSnapshotId;
+            persistUpdatingRuntime();
           }
         });
   }

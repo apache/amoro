@@ -109,12 +109,12 @@ onMounted(() => {
 
 <template>
   <AModal
-    :open="true" 
-    :title="edit ? $t('editgroup') : $t('addgroup')" 
+    :open="true"
+    :title="edit ? $t('editgroup') : $t('addgroup')"
     :confirm-loading="confirmLoading"
     :closable="false"
-    class="group-modal" 
-    @ok="handleOk" 
+    class="group-modal"
+    @ok="handleOk"
     @cancel="handleCancel"
   >
     <a-form ref="formRef" :model="formState" class="label-120">
