@@ -22,11 +22,14 @@ import static org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintain
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.hive.table.SupportHive;
+import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -82,7 +85,15 @@ public class TestOrphanFileCleanHive extends TestOrphanFileClean {
     Assert.assertTrue(getMixedTable().io().exists(hiveOrphanFilePath));
 
     MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable());
-    maintainer.cleanContentFiles(System.currentTimeMillis());
+    TableIdentifier tableIdentifier = getMixedTable().id();
+    TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics =
+        new TableOrphanFilesCleaningMetrics(
+            ServerTableIdentifier.of(
+                tableIdentifier.getCatalog(),
+                tableIdentifier.getDatabase(),
+                tableIdentifier.getTableName(),
+                getTestFormat()));
+    maintainer.cleanContentFiles(System.currentTimeMillis(), orphanFilesCleaningMetrics);
     Assert.assertTrue(getMixedTable().io().exists(hiveOrphanFilePath));
   }
 }
