@@ -93,6 +93,7 @@ public class AmoroServiceContainer {
   private TServer tableManagementServer;
   private TServer optimizingServiceServer;
   private Javalin httpServer;
+  private AmsServiceMetrics amsServiceMetrics;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
@@ -156,6 +157,7 @@ public class AmoroServiceContainer {
 
     initHttpService();
     startHttpService();
+    registerAmsServiceMetric();
   }
 
   private void addHandlerChain(RuntimeHandlerChain chain) {
@@ -183,6 +185,10 @@ public class AmoroServiceContainer {
       terminalManager = null;
     }
     optimizingService = null;
+
+    if (amsServiceMetrics != null) {
+      amsServiceMetrics.unregister();
+    }
 
     EventsManager.dispose();
     MetricManager.dispose();
@@ -275,6 +281,11 @@ public class AmoroServiceContainer {
             + "      https://amoro.apache.org/       \n");
 
     LOG.info("Http server start at {}.", port);
+  }
+
+  private void registerAmsServiceMetric() {
+    amsServiceMetrics = new AmsServiceMetrics(MetricManager.getInstance().getGlobalRegistry());
+    amsServiceMetrics.register();
   }
 
   private void initThriftService() throws TTransportException {
