@@ -11,7 +11,8 @@ package org.apache.amoro.api;
 public enum CommitMetaProducer implements org.apache.amoro.shade.thrift.org.apache.thrift.TEnum {
   OPTIMIZE(0),
   INGESTION(1),
-  DATA_EXPIRATION(2);
+  DATA_EXPIRATION(2),
+  CLEAN_DANGLING_DELETE(3);
 
   private final int value;
 
@@ -40,6 +41,8 @@ public enum CommitMetaProducer implements org.apache.amoro.shade.thrift.org.apac
         return INGESTION;
       case 2:
         return DATA_EXPIRATION;
+      case 3:
+        return CLEAN_DANGLING_DELETE;
       default:
         return null;
     }
