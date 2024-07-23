@@ -16,18 +16,36 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.server.dashboard.model;
 
-/** SignatureCheckException */
-public class SignatureCheckException extends AmoroRuntimeException {
+public class ConsumerInfo {
 
-  public SignatureCheckException() {}
+  public static final String CONSUMER_ID = "consumer_id";
+  public static final String NEXT_SNAPSHOT_ID = "next_snapshot_id";
 
-  public SignatureCheckException(String message) {
-    super(message);
+  private String consumerId;
+  private long nextSnapshotId;
+
+  public ConsumerInfo() {}
+
+  public ConsumerInfo(String consumerId, long nextSnapshotId) {
+    this.consumerId = consumerId;
+    this.nextSnapshotId = nextSnapshotId;
   }
 
-  public SignatureCheckException(String message, Throwable throwable) {
-    super(message, throwable);
+  public String getConsumerId() {
+    return consumerId;
+  }
+
+  public void setConsumerId(String consumerId) {
+    this.consumerId = consumerId;
+  }
+
+  public long getNextSnapshotId() {
+    return nextSnapshotId;
+  }
+
+  public void setNextSnapshotId(long nextSnapshotId) {
+    this.nextSnapshotId = nextSnapshotId;
   }
 }
