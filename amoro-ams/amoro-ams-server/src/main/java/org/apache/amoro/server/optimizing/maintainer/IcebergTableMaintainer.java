@@ -103,6 +103,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
   public static final String EXPIRE_TIMESTAMP_MS = "TIMESTAMP_MS";
   public static final String EXPIRE_TIMESTAMP_S = "TIMESTAMP_S";
 
+  public static final Set<String> AMORO_MAINTAIN_COMMITS =
+      Sets.newHashSet(
+          CommitMetaProducer.OPTIMIZE.name(),
+          CommitMetaProducer.DATA_EXPIRATION.name(),
+          CommitMetaProducer.CLEAN_DANGLING_DELETE.name());
+
   protected Table table;
 
   public IcebergTableMaintainer(Table table) {
@@ -499,14 +505,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
    * @return the latest non-optimized snapshot timestamp
    */
   public static long fetchLatestNonOptimizedSnapshotTime(Table table) {
-    Set<String> amoroCommits =
-        Sets.newHashSet(
-            CommitMetaProducer.OPTIMIZE.name(),
-            CommitMetaProducer.DATA_EXPIRATION.name(),
-            CommitMetaProducer.CLEAN_DANGLING_DELETE.name());
     Optional<Snapshot> snapshot =
         IcebergTableUtil.findFirstMatchSnapshot(
-            table, s -> s.summary().values().stream().noneMatch(amoroCommits::contains));
+            table, s -> s.summary().values().stream().noneMatch(AMORO_MAINTAIN_COMMITS::contains));
     return snapshot.map(Snapshot::timestampMillis).orElse(Long.MAX_VALUE);
   }
 
