@@ -33,10 +33,17 @@ The optimizer is the execution unit for performing self-optimizing tasks on a ta
 * Optimizer: The specific unit that performs optimizing tasks, usually with multiple concurrent units.
 
 ## Optimizer container
-Before using self-optimizing, you need to configure the container information in the configuration file. Optimizer container represents a specific set of runtime environment configuration, and the scheduling scheme of optimizer in that runtime environment. The container includes three types: flink, local, and external.
+Before start exploring self-optimizing, you need to configure the container information in the configuration file. Optimizer container represents a specific set of runtime environment configuration. The supported container types include: local, kubernetes, flink, spark, and external.
 
 ### Local container
 Local container is a way to start Optimizer by local process and supports multi-threaded execution of Optimizer tasks. It is recommended to be used only in demo or local deployment scenarios. If the environment variable for jdk is not configured, the user can configure java_home to point to the jdk root directory. If already configured, this configuration item can be ignored.
+
+Local container support the following properties:
+
+| Property Name         | Required | Default Value | Description                                                                                                   |
+|-----------------------|----------|---------------|---------------------------------------------------------------------------------------------------------------|
+| ams-optimizing-uri    | false    | N/A           | URI of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available |
+| export.JAVA_HOME      | false    | N/A           | Java runtime location                                                                                         |
 
 ```yaml
 containers:
@@ -46,13 +53,27 @@ containers:
       export.JAVA_HOME: "/opt/java"   # JDK environment
 ```
 
+The format for optimizing URI is `thrift://{host}:{port}?parameter1=value2&parameter2=value2`.
+The supported parameters include:
+
+| Parameter Name | efault Value      | Description                                                |
+|----------------|-------------------|------------------------------------------------------------|
+| autoReconnect  | true              | If reconnect the server when the connection is broken      |
+| maxReconnects  | 5                 | Retry times when reconnecting                              |
+| connectTimeout | 0 (Forever)       | Timeout in milliseconds when connecting the server         |
+| socketTimeout  | 0 (Forever)       | Timeout in milliseconds when communicating with the server |
+| maxMessageSize | 104856600 (100MB) | Max message size when communicating with the server        |
+| maxMessageSize | 104856600 (100MB) | Max message size when communicating with the server        |
+| minIdle        | 0                 | Minimal idle clients in the pool                           |
+| maxIdle        | 5                 | Maximal idle clients in the pool                           |
+
 ### Kubernetes container
 
-Kubernetes Optimizer Container is a way to start Optimizer On K8s with standalone Optimizer.
+Kubernetes container is a way to start Optimizer On K8s with standalone Optimizer.
 To use flink container, you need to add a new container configuration. 
 with container-impl as `org.apache.amoro.server.manager.KubernetesOptimizerContainer`
 
-KubernetesOptimizerContainer support the following properties:
+Kubernetes container support the following properties:
 
 
 | Property Name             | Required | Default Value | Description                                                                                                   |
@@ -81,7 +102,7 @@ Flink container is a way to start Optimizer through Flink jobs. With Flink, you 
 on yarn clusters or kubernetes clusters to support large-scale data scenarios. To use flink container, 
 you need to add a new container configuration. with container-impl as `org.apache.amoro.server.manager.FlinkOptimizerContainer`
 
-FlinkOptimizerContainer support the following properties:
+Flink container support the following properties:
 
 | Property Name             | Required | Default Value    | Description                                                                                                                                                                                                                                                                           |
 |---------------------------|----------|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -161,7 +182,7 @@ Spark container is another way to start Optimizer through Spark jobs. With Spark
 on yarn clusters or kubernetes clusters to support large-scale data scenarios. To use spark container,
 you need to add a new container configuration. with container-impl as `org.apache.amoro.server.manager.SparkOptimizerContainer`
 
-SparkOptimizerContainer support the following properties:
+Spark container support the following properties:
 
 | Property Name           | Required | Default Value | Description                                                                                                                                                                                                                                                                          |
 |-------------------------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
