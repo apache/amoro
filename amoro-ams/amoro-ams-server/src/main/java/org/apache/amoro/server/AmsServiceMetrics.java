@@ -35,7 +35,7 @@ import java.util.List;
 public class AmsServiceMetrics {
   public static final MetricDefine AMS_STATUS_JVM_CPU_LOAD =
       defineGauge("ams_status_jvm_cpu_load")
-          .withDescription("The recent CPU usage of the AMS.")
+          .withDescription("The recent CPU usage of the AMS")
           .build();
   public static final MetricDefine AMS_STATUS_JVM_CPU_TIME =
       defineGauge("ams_status_jvm_cpu_time")
@@ -44,24 +44,24 @@ public class AmsServiceMetrics {
 
   public static final MetricDefine AMS_STATUS_JVM_MEMORY_HEAP_USED =
       defineGauge("ams_status_jvm_memory_heap_used")
-          .withDescription("The amount of heap memory currently used (in bytes) by the AMS.")
+          .withDescription("The amount of heap memory currently used (in bytes) by the AMS")
           .build();
 
   public static final MetricDefine AMS_STATUS_JVM_MEMORY_HEAP_COMMITTED =
       defineGauge("ams_status_jvm_memory_heap_committed")
           .withDescription(
-              "The amount of memory in the heap that is committed for the JVM to use (in bytes).")
+              "The amount of memory in the heap that is committed for the JVM to use (in bytes)")
           .build();
 
   public static final MetricDefine AMS_STATUS_JVM_MEMORY_HEAP_MAX =
       defineGauge("ams_status_jvm_memory_heap_max")
           .withDescription(
-              "The maximum amount of memory in the heap (in bytes), It's equal to the value specified through -Xmx.")
+              "The maximum amount of memory in the heap (in bytes), It's equal to the value specified through -Xmx")
           .build();
 
   public static final MetricDefine AMS_STATUS_JVM_THREADS_COUNT =
       defineGauge("ams_status_jvm_threads_count")
-          .withDescription("The total number of live threads used by the AMS.")
+          .withDescription("The total number of live threads used by the AMS")
           .build();
 
   public static final String AMS_STATUS_JVM_GARBAGE_COLLECTOR = "ams_status_jvm_GarbageCollector";
@@ -149,7 +149,7 @@ public class AmsServiceMetrics {
                 + garbageCollector.replaceAll("\\s", "_")
                 + "_"
                 + identify)
-        .withDescription("The " + identify + " of the JVM's Garbage Collector.")
+        .withDescription("The " + identify + " of the JVM's Garbage Collector")
         .build();
   }
 

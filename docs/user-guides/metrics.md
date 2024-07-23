@@ -70,3 +70,16 @@ Amoro has supported built-in metrics to measure status of table self-optimizing 
 | optimizer_group_optimizer_instances    | Gauge  | group | Number of optimizer instances in optimizer group |
 | optimizer_group_memory_bytes_allocated | Gauge  | group | Memory bytes allocated in optimizer group        |
 | optimizer_group_threads                | Gauge  | group | Number of total threads in optimizer group       |
+
+
+## Ams service metrics
+| Metric Name                                                   | Type   | Tags  | Description                                                      |
+|---------------------------------------------------------------|--------|-------|------------------------------------------------------------------|
+| ams_status_jvm_cpu_load                                       | Gauge  |       | The recent CPU usage of the AMS                                  |
+| ams_status_jvm_cpu_time                                       | Gauge  |       | The CPU time used by the AMS                                     |
+| ams_status_jvm_memory_heap_used                               | Gauge  |       | The amount of heap memory currently used (in bytes) by the AMS   |
+| ams_status_jvm_memory_heap_committed                          | Gauge  |       | The amount of memory in the heap committed for JVM use (bytes)   |
+| ams_status_jvm_memory_heap_max                                | Gauge  |       | The maximum heap memory (bytes), set by -Xmx JVM argument        |
+| ams_status_jvm_threads_count                                  | Gauge  |       | The total number of live threads used by the AMS                 |
+| ams_status_jvm_GarbageCollector_`{GarbageCollector}`_count    | Gauge  |       | The count of the JVM's Garbage Collector,such as G1 Young        |
+| ams_status_jvm_GarbageCollector_`{GarbageCollector}`_time     | Gauge  |       | The time spent by the JVM's Garbage Collector,such as G1 Young   |
