@@ -174,7 +174,11 @@ public class AmoroServiceContainer {
       optimizingServiceServer.stop();
     }
     if (httpServer != null) {
-      httpServer.stop();
+      try {
+        httpServer.close();
+      } catch (Exception e) {
+        LOG.error("Error stopping http server", e);
+      }
     }
     if (tableService != null) {
       tableService.dispose();
