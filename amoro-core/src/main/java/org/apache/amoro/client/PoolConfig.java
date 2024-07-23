@@ -18,47 +18,85 @@
 
 package org.apache.amoro.client;
 
+import org.apache.amoro.shade.thrift.org.apache.thrift.TServiceClient;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.apache.http.client.utils.URLEncodedUtils;
 
-public class PoolConfig extends GenericObjectPoolConfig {
+import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.time.Duration;
 
-  private int timeout = 0;
+public class PoolConfig<T extends TServiceClient> extends GenericObjectPoolConfig<ThriftClient<T>> {
 
-  private boolean failover = false;
+  private static final int MIN_IDLE_DEFAULT = 0;
+  private static final int MAX_IDLE_DEFAULT = 5;
+  private static final int MAX_WAIT_MS_DEFAULT = 5000;
 
-  /**
-   * get default connection socket timeout (default 0, means not timeout)
-   *
-   * @return
-   */
-  public int getTimeout() {
-    return timeout;
+  private int connectTimeout = 0;
+  private int socketTimeout = 0;
+  private int maxMessageSize = 100 * 1024 * 1024; // 100MB
+  private boolean autoReconnect = true;
+  private int maxReconnects = 5;
+
+  public PoolConfig() {
+    setMinIdle(MIN_IDLE_DEFAULT);
+    setMaxIdle(MAX_IDLE_DEFAULT);
+    setMaxWait(Duration.ofMillis(MAX_WAIT_MS_DEFAULT));
   }
 
-  /**
-   * set default connection socket timeout
-   *
-   * @param timeout timeout millis
-   */
-  public void setTimeout(int timeout) {
-    this.timeout = timeout;
+  public int getConnectTimeout() {
+    return connectTimeout;
   }
 
-  /**
-   * get connect to next service if one service fail(default false)
-   *
-   * @return
-   */
-  public boolean isFailover() {
-    return failover;
+  public void setConnectTimeout(int connectTimeout) {
+    this.connectTimeout = connectTimeout;
   }
 
-  /**
-   * set connect to next service if one service fail
-   *
-   * @param failover
-   */
-  public void setFailover(boolean failover) {
-    this.failover = failover;
+  public int getSocketTimeout() {
+    return socketTimeout;
+  }
+
+  public void setSocketTimeout(int socketTimeout) {
+    this.socketTimeout = socketTimeout;
+  }
+
+  public int getMaxMessageSize() {
+    return maxMessageSize;
+  }
+
+  public void setMaxMessageSize(int maxMessageSize) {
+    this.maxMessageSize = maxMessageSize;
+  }
+
+  public boolean isAutoReconnect() {
+    return autoReconnect;
+  }
+
+  public void setAutoReconnect(boolean autoReconnect) {
+    this.autoReconnect = autoReconnect;
+  }
+
+  public int getMaxReconnects() {
+    return maxReconnects;
+  }
+
+  public void setMaxReconnects(int maxReconnects) {
+    this.maxReconnects = maxReconnects;
+  }
+
+  public static PoolConfig<?> forUrl(String url) {
+    PoolConfig<?> poolConfig = new PoolConfig<>();
+    URLEncodedUtils.parse(URI.create(url), String.valueOf(Charset.defaultCharset()))
+        .forEach(
+            pair -> {
+              try {
+                BeanUtils.setProperty(poolConfig, pair.getName(), pair.getValue());
+              } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException("Parse url parameters failed", e);
+              }
+            });
+    return poolConfig;
   }
 }

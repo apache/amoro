@@ -32,39 +32,24 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
-import java.util.List;
-import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 public class ThriftClientPool<
     T extends org.apache.amoro.shade.thrift.org.apache.thrift.TServiceClient> {
-
   private static final Logger LOG = LoggerFactory.getLogger(ThriftClientPool.class);
-  // for thrift connects
-  private static final int retries = 5;
-  private static final int retryInterval = 2000;
-  private static final int maxMessageSize = 1000 * 1024 * 1024;
+  private static final int RECONNECT_INTERVAL = 2000;
+  private static final int BORROW_ATTEMPTS = 5;
   private final ThriftClientFactory clientFactory;
   private final ThriftPingFactory pingFactory;
   private final GenericObjectPool<ThriftClient<T>> pool;
-  private final PoolConfig poolConfig;
-  private final String serviceName;
-  private final String url;
-  private final boolean serviceReset = false;
+  private final PoolConfig<T> poolConfig;
 
-  /**
-   * Construct a new pool using
-   *
-   * @param url
-   * @param factory
-   * @param config
-   */
   public ThriftClientPool(
       String url,
       ThriftClientFactory factory,
       ThriftPingFactory pingFactory,
-      PoolConfig config,
+      PoolConfig<T> config,
       String serviceName) {
     if (url == null || url.isEmpty()) {
       throw new IllegalArgumentException("url is empty!");
@@ -76,14 +61,12 @@ public class ThriftClientPool<
       throw new IllegalArgumentException("config is empty!");
     }
 
-    this.url = url;
     this.clientFactory = factory;
     this.pingFactory = pingFactory;
     this.poolConfig = config;
     // test if config change
     this.poolConfig.setTestOnReturn(true);
     this.poolConfig.setTestOnBorrow(true);
-    this.serviceName = serviceName;
     this.pool =
         new GenericObjectPool<>(
             new BasePooledObjectFactory<ThriftClient<T>>() {
@@ -100,48 +83,53 @@ public class ThriftClientPool<
                   transport.open();
                 } catch (TTransportException e) {
                   LOG.warn(
-                      "transport open fail service: host={}, port={}",
+                      "Transport open failed, service address: {}:{}",
                       serviceInfo.getHost(),
                       serviceInfo.getPort());
-                  if (poolConfig.isFailover()) {
-                    for (int i = 0; i < 5; i++) {
+                  if (poolConfig.isAutoReconnect() && poolConfig.getMaxReconnects() > 0) {
+                    for (int i = 0; i < poolConfig.getMaxReconnects(); i++) {
                       try {
                         amsThriftUrl = AmsThriftUrl.parse(url, serviceName);
                         serviceInfo.setHost(amsThriftUrl.host());
                         serviceInfo.setPort(amsThriftUrl.port());
                         transport = getTransport(serviceInfo); // while break here
                         LOG.info(
-                            "failover to next service host={}, port={}",
+                            "Reconnecting service address: {}:{}",
                             serviceInfo.getHost(),
                             serviceInfo.getPort());
                         transport.open();
                         break;
                       } catch (TTransportException e2) {
                         LOG.warn(
-                            "transport open fail service: host={}, port={}",
+                            "Reconnected service address: {}:{} failed",
                             serviceInfo.getHost(),
-                            serviceInfo.getPort());
+                            serviceInfo.getPort(),
+                            e2);
                       }
-                      Thread.sleep(retryInterval);
+                      TimeUnit.MILLISECONDS.sleep(RECONNECT_INTERVAL);
                     }
                     if (!transport.isOpen()) {
                       throw new ConnectionFailException(
-                          "connect error after try 5 times, last connect is: host="
-                              + serviceInfo.getHost()
-                              + ", ip="
-                              + serviceInfo.getPort(),
+                          String.format(
+                              "Connected error after %d retries, last address: %s:%d",
+                              poolConfig.getMaxReconnects(),
+                              serviceInfo.getHost(),
+                              serviceInfo.getPort()),
                           e);
                     }
                   } else {
                     throw new ConnectionFailException(
-                        "host=" + serviceInfo.getHost() + ", ip=" + serviceInfo.getPort(), e);
+                        String.format(
+                            "Connected error, address: %s:%d",
+                            serviceInfo.getHost(), serviceInfo.getPort()),
+                        e);
                   }
                 }
 
                 ThriftClient<T> client =
                     new ThriftClient<>(clientFactory.createClient(transport), pool, serviceInfo);
 
-                LOG.debug("create new object for pool {}", client);
+                LOG.debug("created new thrift pool for url:{}", url);
                 return client;
               }
 
@@ -164,48 +152,20 @@ public class ThriftClientPool<
     if (serviceInfo == null) {
       throw new NoBackendServiceException();
     }
-
-    TTransport transport = null;
     TConfiguration configuration = new TConfiguration();
-    configuration.setMaxFrameSize(maxMessageSize);
-    if (poolConfig.getTimeout() > 0) {
-      transport =
-          new TFramedTransport(
-              new TSocket(serviceInfo.getHost(), serviceInfo.getPort(), poolConfig.getTimeout()),
-              maxMessageSize);
-    } else {
-      transport =
-          new TFramedTransport(
-              new TSocket(serviceInfo.getHost(), serviceInfo.getPort()), maxMessageSize);
-    }
-    return transport;
+    configuration.setMaxMessageSize(poolConfig.getMaxMessageSize());
+    return new TFramedTransport(
+        new TSocket(
+            new TConfiguration(),
+            serviceInfo.getHost(),
+            serviceInfo.getPort(),
+            poolConfig.getConnectTimeout(),
+            poolConfig.getSocketTimeout()),
+        poolConfig.getMaxMessageSize());
   }
 
   /**
-   * get a random service
-   *
-   * @param serviceList
-   * @return
-   */
-  private ServiceInfo getRandomService(List<ServiceInfo> serviceList) {
-    if (serviceList == null || serviceList.size() == 0) {
-      return null;
-    }
-    return serviceList.get(new Random().nextInt(serviceList.size()));
-  }
-
-  private List<ServiceInfo> removeFailService(List<ServiceInfo> list, ServiceInfo serviceInfo) {
-    LOG.info(
-        "remove service from current service list: host={}, port={}",
-        serviceInfo.getHost(),
-        serviceInfo.getPort());
-    return list.stream() //
-        .filter(si -> !serviceInfo.equals(si)) //
-        .collect(Collectors.toList());
-  }
-
-  /**
-   * get a client's IFace from pool
+   * Get a client's IFace from pool
    *
    * <ul>
    *   <li><span style="color:red">Important: Iface is totally generated by thrift, a
@@ -213,11 +173,10 @@ public class ThriftClientPool<
    *   <li><span style="color:red">Limitation: The return object can only used once.</span>
    * </ul>
    *
-   * @return
-   * @throws ThriftException
-   * @throws NoBackendServiceException if {@link PoolConfig#setFailover(boolean)} is set and no
+   * @return thrift service interface
+   * @throws NoBackendServiceException if {@link PoolConfig#setAutoReconnect(boolean)} is set and no
    *     service can connect to
-   * @throws ConnectionFailException if {@link PoolConfig#setFailover(boolean)} not set and
+   * @throws ConnectionFailException if {@link PoolConfig#setAutoReconnect(boolean)} not set and
    *     connection fail
    * @throws IllegalStateException if call method on return object twice
    */
@@ -225,14 +184,14 @@ public class ThriftClientPool<
   public <X> X iface() {
     ThriftClient<T> client = null;
     int attempt;
-    for (attempt = 0; attempt < retries; ++attempt) {
+    for (attempt = 0; attempt < BORROW_ATTEMPTS; ++attempt) {
       try {
         client = pool.borrowObject();
         if (client.isDisConnected() || !pingFactory.ping(client.iface())) {
           if (attempt > 1) {
             // if attempt > 1, it means the server is maybe restarting, so we should wait a while
-            LOG.warn("maybe server is restarting, wait a while");
-            Thread.sleep(retryInterval);
+            LOG.warn("Maybe server is restarting, wait a while");
+            Thread.sleep(RECONNECT_INTERVAL);
           }
           pool.invalidateObject(client);
           pool.clear();
@@ -243,10 +202,10 @@ public class ThriftClientPool<
         if (e instanceof ThriftException) {
           throw (ThriftException) e;
         }
-        throw new ThriftException("Get client from pool failed.", e);
+        throw new ThriftException("Get client from pool failed", e);
       }
     }
-    if (attempt >= retries) {
+    if (attempt >= BORROW_ATTEMPTS) {
       throw new ThriftException("Client can not connect.");
     }
     AtomicBoolean returnToPool = new AtomicBoolean(false);
@@ -257,7 +216,7 @@ public class ThriftClientPool<
             finalClient.iface().getClass().getInterfaces(),
             (proxy, method, args) -> {
               if (returnToPool.get()) {
-                throw new IllegalStateException("Object returned via iface can only used once!");
+                throw new IllegalStateException("Client borrowed from pool can only used once!");
               }
               boolean success = false;
               try {
