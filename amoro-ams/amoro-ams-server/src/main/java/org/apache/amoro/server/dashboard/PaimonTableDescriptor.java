@@ -525,14 +525,24 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public List<ConsumerInfo> getTableConsumerInfos(AmoroTable<?> amoroTable) {
     FileStoreTable table = getTable(amoroTable);
+    FileStore<?> store = table.store();
     ConsumerManager consumerManager = new ConsumerManager(table.fileIO(), table.location());
     List<ConsumerInfo> consumerInfos = new ArrayList<>();
     try {
       consumerManager
           .consumers()
           .forEach(
-              (consumerId, nextSnapshot) ->
-                  consumerInfos.add(new ConsumerInfo(consumerId, nextSnapshot)));
+              (consumerId, nextSnapshotId) -> {
+                long currentSnapshotId = nextSnapshotId;
+                if (!table.snapshotManager().snapshotExists(currentSnapshotId)) {
+                  // if not exits,maybe steaming scan is running,so need to nextSnapshotId -1
+                  currentSnapshotId = nextSnapshotId - 1;
+                }
+                Snapshot snapshot = table.snapshotManager().snapshot(currentSnapshotId);
+                AmoroSnapshotsOfTable amoroSnapshotsOfTable = getSnapshotsOfTable(store, snapshot);
+                consumerInfos.add(
+                    new ConsumerInfo(consumerId, nextSnapshotId, amoroSnapshotsOfTable));
+              });
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
