@@ -39,6 +39,7 @@ import org.apache.amoro.server.dashboard.ServerTableDescriptor;
 import org.apache.amoro.server.dashboard.ServerTableProperties;
 import org.apache.amoro.server.dashboard.model.AMSColumnInfo;
 import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;
+import org.apache.amoro.server.dashboard.model.ConsumerInfo;
 import org.apache.amoro.server.dashboard.model.DDLInfo;
 import org.apache.amoro.server.dashboard.model.HiveTableInfo;
 import org.apache.amoro.server.dashboard.model.OperationType;
@@ -612,6 +613,20 @@ public class TableController {
     putMainBranchFirst(partitionBaseInfos);
     int offset = (page - 1) * pageSize;
     PageResult<TagOrBranchInfo> amsPageResult = PageResult.of(partitionBaseInfos, offset, pageSize);
+    ctx.json(OkResponse.of(amsPageResult));
+  }
+
+  public void getTableConsumerInfos(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String database = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
+    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    List<ConsumerInfo> consumerInfos =
+        tableDescriptor.getTableConsumersInfos(
+            TableIdentifier.of(catalog, database, table).buildTableIdentifier());
+    int offset = (page - 1) * pageSize;
+    PageResult<ConsumerInfo> amsPageResult = PageResult.of(consumerInfos, offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
   }
 

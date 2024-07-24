@@ -240,6 +240,9 @@ public class DashboardServer {
             get(
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
                 tableController::getTableBranches);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/consumers",
+                tableController::getTableConsumerInfos);
             post(
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/cancel",
                 tableController::cancelOptimizingProcess);

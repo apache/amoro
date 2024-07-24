@@ -28,6 +28,7 @@ import org.apache.amoro.server.dashboard.component.reverser.IcebergTableMetaExtr
 import org.apache.amoro.server.dashboard.model.AMSColumnInfo;
 import org.apache.amoro.server.dashboard.model.AMSPartitionField;
 import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;
+import org.apache.amoro.server.dashboard.model.ConsumerInfo;
 import org.apache.amoro.server.dashboard.model.DDLInfo;
 import org.apache.amoro.server.dashboard.model.FilesStatistics;
 import org.apache.amoro.server.dashboard.model.OperationType;
@@ -480,6 +481,11 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   @Override
   public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
     return getTableTagsOrBranches(amoroTable, SnapshotRef::isBranch);
+  }
+
+  @Override
+  public List<ConsumerInfo> getTableConsumerInfos(AmoroTable<?> amoroTable) {
+    return Collections.emptyList();
   }
 
   @Override
