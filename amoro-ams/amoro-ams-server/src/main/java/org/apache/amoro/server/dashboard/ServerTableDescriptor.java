@@ -24,6 +24,7 @@ import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;
+import org.apache.amoro.server.dashboard.model.ConsumerInfo;
 import org.apache.amoro.server.dashboard.model.DDLInfo;
 import org.apache.amoro.server.dashboard.model.OperationType;
 import org.apache.amoro.server.dashboard.model.OptimizingProcessInfo;
@@ -115,6 +116,12 @@ public class ServerTableDescriptor extends PersistentBase {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getTableBranches(amoroTable);
+  }
+
+  public List<ConsumerInfo> getTableConsumersInfos(TableIdentifier tableIdentifier) {
+    AmoroTable<?> amoroTable = loadTable(tableIdentifier);
+    FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
+    return formatTableDescriptor.getTableConsumerInfos(amoroTable);
   }
 
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(

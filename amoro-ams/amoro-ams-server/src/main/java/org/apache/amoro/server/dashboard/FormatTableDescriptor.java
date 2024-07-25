@@ -21,6 +21,7 @@ package org.apache.amoro.server.dashboard;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;
+import org.apache.amoro.server.dashboard.model.ConsumerInfo;
 import org.apache.amoro.server.dashboard.model.DDLInfo;
 import org.apache.amoro.server.dashboard.model.OperationType;
 import org.apache.amoro.server.dashboard.model.OptimizingProcessInfo;
@@ -71,4 +72,7 @@ public interface FormatTableDescriptor {
 
   /** Get the branch information of the {@link AmoroTable}. */
   List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable);
+
+  /** Get the consumer information of the {@link AmoroTable}. */
+  List<ConsumerInfo> getTableConsumerInfos(AmoroTable<?> amoroTable);
 }

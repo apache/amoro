@@ -30,10 +30,6 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol;
 /** Client pool cache for different ams server, sharing in jvm. */
 public class AmsClientPools {
 
-  private static final int CLIENT_POOL_MIN_IDLE = 0;
-  private static final int CLIENT_POOL_MAX_IDLE = 5;
-  private static final int CLIENT_POOL_MAX_WAIT_MS = 5000;
-
   private static final LoadingCache<String, ThriftClientPool<AmoroTableMetastore.Client>>
       CLIENT_POOLS = Caffeine.newBuilder().build(AmsClientPools::buildClientPool);
 
@@ -45,20 +41,16 @@ public class AmsClientPools {
     CLIENT_POOLS.cleanUp();
   }
 
+  @SuppressWarnings("unchecked")
   private static ThriftClientPool<AmoroTableMetastore.Client> buildClientPool(String url) {
-    PoolConfig poolConfig = new PoolConfig();
-    poolConfig.setFailover(true);
-    poolConfig.setMinIdle(CLIENT_POOL_MIN_IDLE);
-    poolConfig.setMaxIdle(CLIENT_POOL_MAX_IDLE);
-    poolConfig.setMaxWaitMillis(CLIENT_POOL_MAX_WAIT_MS);
+    PoolConfig<AmoroTableMetastore.Client> poolConfig =
+        (PoolConfig<AmoroTableMetastore.Client>) PoolConfig.forUrl(url);
     return new ThriftClientPool<>(
         url,
         s -> {
           TProtocol protocol = new TBinaryProtocol(s);
-          AmoroTableMetastore.Client tableMetastore =
-              new AmoroTableMetastore.Client(
-                  new TMultiplexedProtocol(protocol, Constants.THRIFT_TABLE_SERVICE_NAME));
-          return tableMetastore;
+          return new AmoroTableMetastore.Client(
+              new TMultiplexedProtocol(protocol, Constants.THRIFT_TABLE_SERVICE_NAME));
         },
         c -> {
           try {

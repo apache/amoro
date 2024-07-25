@@ -56,6 +56,8 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
             tableRuntime.getTableIdentifier(),
             pendingInput);
         tableRuntime.setPendingInput(pendingInput);
+      } else {
+        tableRuntime.optimizingNotNecessary();
       }
     }
   }
