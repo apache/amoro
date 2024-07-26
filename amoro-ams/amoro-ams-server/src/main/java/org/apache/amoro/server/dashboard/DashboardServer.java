@@ -244,6 +244,9 @@ public class DashboardServer {
             get(
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
                 tableController::getTableBranches);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/consumers",
+                tableController::getTableConsumerInfos);
             post(
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/cancel",
                 tableController::cancelOptimizingProcess);
@@ -383,6 +386,7 @@ public class DashboardServer {
     "/ams/v1/versionInfo",
     "/ams/v1/login",
     "/ams/v1/health/status",
+    "/ams/v1/login/current",
     "/",
     "/overview",
     "/introduce",

@@ -69,7 +69,7 @@ public class TerminalManager {
   private final Object sessionMapLock = new Object();
   private final Map<String, TerminalSessionContext> sessionMap = Maps.newHashMap();
   private final Thread gcThread;
-  private boolean stop = false;
+  private volatile boolean running = true;
 
   private final ThreadPoolExecutor executionPool =
       new ThreadPoolExecutor(
@@ -237,7 +237,10 @@ public class TerminalManager {
   }
 
   public void dispose() {
-    stop = true;
+    if (!running) {
+      return;
+    }
+    running = false;
     if (gcThread != null) {
       gcThread.interrupt();
     }
@@ -399,7 +402,7 @@ public class TerminalManager {
       LOG.info(
           "Terminal Session Clean Task, check interval: " + SESSION_TIMEOUT_CHECK_INTERVAL + " ms");
       LOG.info("Terminal Session Timeout: {} minutes", sessionTimeout);
-      while (!stop) {
+      while (running) {
         try {
           List<TerminalSessionContext> sessionToRelease = checkIdleSession();
           sessionToRelease.forEach(this::releaseSession);
