@@ -24,6 +24,7 @@ import org.apache.amoro.api.metrics.Metric;
 import org.apache.amoro.api.metrics.MetricDefine;
 import org.apache.amoro.api.metrics.MetricKey;
 import org.apache.amoro.server.metrics.MetricRegistry;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 
 import java.lang.management.GarbageCollectorMXBean;
@@ -31,40 +32,49 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class AmsServiceMetrics {
-  public static final MetricDefine AMS_STATUS_JVM_CPU_LOAD =
-      defineGauge("ams_status_jvm_cpu_load")
-          .withDescription("The recent CPU usage of the AMS")
-          .build();
-  public static final MetricDefine AMS_STATUS_JVM_CPU_TIME =
-      defineGauge("ams_status_jvm_cpu_time")
-          .withDescription("The CPU time used by the AMS")
-          .build();
+  public static final String GARBAGE_COLLECTOR_TAG = "garbage_collector";
+  public static final MetricDefine AMS_JVM_CPU_LOAD =
+      defineGauge("ams_jvm_cpu_load").withDescription("The recent CPU usage of the AMS").build();
+  public static final MetricDefine AMS_JVM_CPU_TIME =
+      defineGauge("ams_jvm_cpu_time").withDescription("The CPU time used by the AMS").build();
 
-  public static final MetricDefine AMS_STATUS_JVM_MEMORY_HEAP_USED =
-      defineGauge("ams_status_jvm_memory_heap_used")
+  public static final MetricDefine AMS_JVM_MEMORY_HEAP_USED =
+      defineGauge("ams_jvm_memory_heap_used")
           .withDescription("The amount of heap memory currently used (in bytes) by the AMS")
           .build();
 
-  public static final MetricDefine AMS_STATUS_JVM_MEMORY_HEAP_COMMITTED =
-      defineGauge("ams_status_jvm_memory_heap_committed")
+  public static final MetricDefine AMS_JVM_MEMORY_HEAP_COMMITTED =
+      defineGauge("ams_jvm_memory_heap_committed")
           .withDescription(
               "The amount of memory in the heap that is committed for the JVM to use (in bytes)")
           .build();
 
-  public static final MetricDefine AMS_STATUS_JVM_MEMORY_HEAP_MAX =
-      defineGauge("ams_status_jvm_memory_heap_max")
+  public static final MetricDefine AMS_JVM_MEMORY_HEAP_MAX =
+      defineGauge("ams_jvm_memory_heap_max")
           .withDescription(
               "The maximum amount of memory in the heap (in bytes), It's equal to the value specified through -Xmx")
           .build();
 
-  public static final MetricDefine AMS_STATUS_JVM_THREADS_COUNT =
-      defineGauge("ams_status_jvm_threads_count")
+  public static final MetricDefine AMS_JVM_THREADS_COUNT =
+      defineGauge("ams_jvm_threads_count")
           .withDescription("The total number of live threads used by the AMS")
           .build();
 
-  public static final String AMS_STATUS_JVM_GARBAGE_COLLECTOR = "ams_status_jvm_GarbageCollector";
+  public static final MetricDefine AMS_JVM_GARBAGE_COLLECTOR_COUNT =
+      defineGauge("ams_jvm_garbage_collector_count")
+          .withDescription("The count of the JVM's Garbage Collector")
+          .withTags(GARBAGE_COLLECTOR_TAG)
+          .build();
+
+  public static final MetricDefine AMS_JVM_GARBAGE_COLLECTOR_TIME =
+      defineGauge("ams_jvm_garbage_collector_time")
+          .withDescription("The time of the JVM's Garbage Collector")
+          .withTags(GARBAGE_COLLECTOR_TAG)
+          .build();
+
   private final MetricRegistry registry;
   private List<MetricKey> registeredMetricKeys = Lists.newArrayList();
 
@@ -88,24 +98,24 @@ public class AmsServiceMetrics {
     MemoryUsage heapMemoryUsage = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
     registerMetric(
         registry,
-        AMS_STATUS_JVM_MEMORY_HEAP_USED,
+        AMS_JVM_MEMORY_HEAP_USED,
         (org.apache.amoro.api.metrics.Gauge<Long>) () -> heapMemoryUsage.getUsed());
 
     registerMetric(
         registry,
-        AMS_STATUS_JVM_MEMORY_HEAP_COMMITTED,
+        AMS_JVM_MEMORY_HEAP_COMMITTED,
         (org.apache.amoro.api.metrics.Gauge<Long>) () -> heapMemoryUsage.getCommitted());
 
     registerMetric(
         registry,
-        AMS_STATUS_JVM_MEMORY_HEAP_MAX,
+        AMS_JVM_MEMORY_HEAP_MAX,
         (org.apache.amoro.api.metrics.Gauge<Long>) () -> heapMemoryUsage.getMax());
   }
 
   private void registerThreadMetric() {
     registerMetric(
         registry,
-        AMS_STATUS_JVM_THREADS_COUNT,
+        AMS_JVM_THREADS_COUNT,
         (org.apache.amoro.api.metrics.Gauge<Integer>)
             () -> ManagementFactory.getThreadMXBean().getThreadCount());
   }
@@ -115,11 +125,11 @@ public class AmsServiceMetrics {
         (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
     registerMetric(
         registry,
-        AMS_STATUS_JVM_CPU_LOAD,
+        AMS_JVM_CPU_LOAD,
         (org.apache.amoro.api.metrics.Gauge<Double>) () -> mxBean.getProcessCpuLoad());
     registerMetric(
         registry,
-        AMS_STATUS_JVM_CPU_TIME,
+        AMS_JVM_CPU_TIME,
         (org.apache.amoro.api.metrics.Gauge<Long>) () -> mxBean.getProcessCpuTime());
   }
 
@@ -128,33 +138,27 @@ public class AmsServiceMetrics {
         ManagementFactory.getGarbageCollectorMXBeans();
 
     for (final GarbageCollectorMXBean garbageCollector : garbageCollectorMXBeans) {
-      MetricDefine count = formatGarbageCollectorMetricDefine(garbageCollector.getName(), "count");
-      MetricDefine time = formatGarbageCollectorMetricDefine(garbageCollector.getName(), "time");
       registerMetric(
           registry,
-          count,
+          AMS_JVM_GARBAGE_COLLECTOR_COUNT,
+          ImmutableMap.of(GARBAGE_COLLECTOR_TAG, garbageCollector.getName()),
           (org.apache.amoro.api.metrics.Gauge<Long>) () -> garbageCollector.getCollectionCount());
       registerMetric(
           registry,
-          time,
+          AMS_JVM_GARBAGE_COLLECTOR_TIME,
+          ImmutableMap.of(GARBAGE_COLLECTOR_TAG, garbageCollector.getName()),
           (org.apache.amoro.api.metrics.Gauge<Long>) () -> garbageCollector.getCollectionTime());
     }
   }
 
-  private MetricDefine formatGarbageCollectorMetricDefine(
-      String garbageCollector, String identify) {
-    return defineGauge(
-            AMS_STATUS_JVM_GARBAGE_COLLECTOR
-                + "_"
-                + garbageCollector.replaceAll("\\s", "_")
-                + "_"
-                + identify)
-        .withDescription("The " + identify + " of the JVM's Garbage Collector")
-        .build();
-  }
-
   private void registerMetric(MetricRegistry registry, MetricDefine define, Metric metric) {
     MetricKey key = registry.register(define, Collections.emptyMap(), metric);
+    registeredMetricKeys.add(key);
+  }
+
+  private void registerMetric(
+      MetricRegistry registry, MetricDefine define, Map<String, String> tags, Metric metric) {
+    MetricKey key = registry.register(define, tags, metric);
     registeredMetricKeys.add(key);
   }
 }

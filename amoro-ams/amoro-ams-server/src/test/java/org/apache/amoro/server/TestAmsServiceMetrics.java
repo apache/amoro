@@ -18,14 +18,17 @@
 
 package org.apache.amoro.server;
 
-import static org.apache.amoro.server.AmsServiceMetrics.AMS_STATUS_JVM_CPU_LOAD;
-import static org.apache.amoro.server.AmsServiceMetrics.AMS_STATUS_JVM_CPU_TIME;
-import static org.apache.amoro.server.AmsServiceMetrics.AMS_STATUS_JVM_MEMORY_HEAP_COMMITTED;
-import static org.apache.amoro.server.AmsServiceMetrics.AMS_STATUS_JVM_MEMORY_HEAP_MAX;
-import static org.apache.amoro.server.AmsServiceMetrics.AMS_STATUS_JVM_MEMORY_HEAP_USED;
-import static org.apache.amoro.server.AmsServiceMetrics.AMS_STATUS_JVM_THREADS_COUNT;
+import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_CPU_LOAD;
+import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_CPU_TIME;
+import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_GARBAGE_COLLECTOR_COUNT;
+import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_GARBAGE_COLLECTOR_TIME;
+import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_MEMORY_HEAP_COMMITTED;
+import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_MEMORY_HEAP_MAX;
+import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_MEMORY_HEAP_USED;
+import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_THREADS_COUNT;
 
 import org.apache.amoro.api.metrics.Gauge;
+import org.apache.amoro.api.metrics.Metric;
 import org.apache.amoro.api.metrics.MetricKey;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.metrics.MetricRegistry;
@@ -34,6 +37,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.Map;
 
 public class TestAmsServiceMetrics {
   private static final AmsEnvironment amsEnv = AmsEnvironment.getIntegrationInstances();
@@ -50,43 +54,55 @@ public class TestAmsServiceMetrics {
         (Gauge<Long>)
             registry
                 .getMetrics()
-                .get(new MetricKey(AMS_STATUS_JVM_MEMORY_HEAP_MAX, Collections.emptyMap()));
+                .get(new MetricKey(AMS_JVM_MEMORY_HEAP_MAX, Collections.emptyMap()));
     Assert.assertTrue(heapMx.getValue().longValue() > 0);
+    registry.unregister(new MetricKey(AMS_JVM_MEMORY_HEAP_MAX, Collections.emptyMap()));
 
     Gauge<Long> heapUsed =
         (Gauge<Long>)
             registry
                 .getMetrics()
-                .get(new MetricKey(AMS_STATUS_JVM_MEMORY_HEAP_USED, Collections.emptyMap()));
+                .get(new MetricKey(AMS_JVM_MEMORY_HEAP_USED, Collections.emptyMap()));
     Assert.assertTrue(heapUsed.getValue().longValue() > 0);
+    registry.unregister(new MetricKey(AMS_JVM_MEMORY_HEAP_USED, Collections.emptyMap()));
 
     Gauge<Long> heapCommitted =
         (Gauge<Long>)
             registry
                 .getMetrics()
-                .get(new MetricKey(AMS_STATUS_JVM_MEMORY_HEAP_COMMITTED, Collections.emptyMap()));
+                .get(new MetricKey(AMS_JVM_MEMORY_HEAP_COMMITTED, Collections.emptyMap()));
     Assert.assertTrue(heapCommitted.getValue().longValue() > 0);
+    registry.unregister(new MetricKey(AMS_JVM_MEMORY_HEAP_COMMITTED, Collections.emptyMap()));
 
     Gauge<Integer> threadsCount =
         (Gauge<Integer>)
-            registry
-                .getMetrics()
-                .get(new MetricKey(AMS_STATUS_JVM_THREADS_COUNT, Collections.emptyMap()));
+            registry.getMetrics().get(new MetricKey(AMS_JVM_THREADS_COUNT, Collections.emptyMap()));
     Assert.assertTrue(threadsCount.getValue().intValue() > 0);
+    registry.unregister(new MetricKey(AMS_JVM_THREADS_COUNT, Collections.emptyMap()));
 
     Gauge<Double> cpuLoad =
         (Gauge<Double>)
-            registry
-                .getMetrics()
-                .get(new MetricKey(AMS_STATUS_JVM_CPU_LOAD, Collections.emptyMap()));
+            registry.getMetrics().get(new MetricKey(AMS_JVM_CPU_LOAD, Collections.emptyMap()));
     Assert.assertNotNull(cpuLoad);
+    registry.unregister(new MetricKey(AMS_JVM_CPU_LOAD, Collections.emptyMap()));
 
     Gauge<Long> cpuTime =
         (Gauge<Long>)
-            registry
-                .getMetrics()
-                .get(new MetricKey(AMS_STATUS_JVM_CPU_TIME, Collections.emptyMap()));
+            registry.getMetrics().get(new MetricKey(AMS_JVM_CPU_TIME, Collections.emptyMap()));
     Assert.assertTrue(cpuTime.getValue().longValue() > 0);
+    registry.unregister(new MetricKey(AMS_JVM_CPU_TIME, Collections.emptyMap()));
+
+    Map<MetricKey, Metric> metrics = registry.getMetrics();
+    Assert.assertTrue(
+        metrics.keySet().stream()
+            .anyMatch(
+                key ->
+                    key.getDefine().getName().equals(AMS_JVM_GARBAGE_COLLECTOR_COUNT.getName())));
+
+    Assert.assertTrue(
+        metrics.keySet().stream()
+            .anyMatch(
+                key -> key.getDefine().getName().equals(AMS_JVM_GARBAGE_COLLECTOR_TIME.getName())));
 
     amsEnv.stop();
   }
