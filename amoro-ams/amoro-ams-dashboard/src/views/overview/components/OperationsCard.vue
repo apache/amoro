@@ -69,7 +69,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <a-card class="operations-card" title="Latest Operations">
+  <a-card class="operations-card" :title="t('latestOperations')">
     <div class="list-wrap">
       <a-table class="ant-table-common" :loading="loading" :columns="columns" :data-source="dataSource" :pagination="false">
         <template #bodyCell="{ column, record }">
@@ -86,7 +86,7 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .operations-card {
-  height: 350px;
+  height: 500px;
 }
 
 .list-wrap {

@@ -17,26 +17,21 @@ limitations under the License.
 / -->
 
 <script setup lang="ts">
-import { defineProps, ref } from 'vue'
+import { defineProps } from 'vue'
+import type { IKeyAndValue } from '@/types/common.type'
 
-const props = defineProps<{ title: string, data: { title: string, data: string }[] }>()
-
-const loading = ref(true)
-function fetchData() {
-  loading.value = false
-}
-fetchData()
+const props = defineProps<{ title: string, data: IKeyAndValue[] }>()
 </script>
 
 <template>
-  <a-card class="multiple-data" :loading="loading" :body-style="{ paddingTop: '0px' }">
+  <a-card class="multiple-data" :body-style="{ paddingTop: '0px' }">
     <template #title>
       <span class="card-title">{{ props.title }}</span>
     </template>
     <a-row>
-      <a-col v-for="item in props.data" :key="item.title" :span="12">
+      <a-col v-for="item in props.data" :key="item.key" :span="12">
         <a-statistic
-          :title="item.title" :value="item.data"
+          :title="item.key" :value="item.value"
           :value-style="{ color: '#07A7F0', fontSize: '28px' }" style="margin-right: 20px;"
         />
       </a-col>

@@ -19,6 +19,8 @@
 export default {
   overview: 'Overview',
   healthScore: 'Health Score',
+  unhealthTables: 'Unhealth Tables',
+  latestOperations: 'Latest Operations',
   catalogs: 'Catalogs',
   catalog: 'Catalog',
   tables: 'Tables',
@@ -153,6 +155,7 @@ export default {
   duplicateKey: 'duplicate key',
   lastUpgradingFailed: 'Last Upgrading Failed',
   data: 'Data',
+  resource: 'Resource',
   resourceCpu: 'Resource Cpu',
   resourceMemory: 'Resource Memory',
   resourceUsage: 'Resource Usage',

@@ -18,6 +18,7 @@ limitations under the License.
 
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import SingleDataCard from './components/SingleDataCard.vue'
 import MultipleDataCard from './components/MultipleDataCard.vue'
 import UnhealthTablesCard from './components/UnhealthTablesCard.vue'
@@ -25,14 +26,12 @@ import OperationsCard from './components/OperationsCard.vue'
 import PieChartCard from './components/PieChartCard.vue'
 import { getOverviewFormat, getOverviewOptimizingStatus, getOverviewSummary } from '@/services/overview.service'
 import { bytesToSize, mbToSize } from '@/utils'
+import type { IKeyAndValue } from '@/types/common.type'
 
-interface SingleData {
-  title: string
-  data: string
-}
+const { t } = useI18n()
 
-const singleData = ref<SingleData[]>([])
-const multipleData = ref<SingleData[]>([])
+const singleData = ref<IKeyAndValue[]>([])
+const multipleData = ref<IKeyAndValue[]>([])
 const tableFormatData = ref<{ value: number, name: string }[]>([])
 const optimizingStatusData = ref<{ value: number, name: string }[]>([])
 
@@ -40,11 +39,11 @@ async function getCurOverviewData() {
   const summaryResult = await getOverviewSummary()
   const tableSize = bytesToSize(summaryResult.tableTotalSize)
   const memorySize = mbToSize(summaryResult.totalMemory)
-  singleData.value.push({ title: 'Catalog', data: summaryResult.catalogCnt })
-  singleData.value.push({ title: 'Table', data: summaryResult.tableCnt })
-  singleData.value.push({ title: 'Data', data: tableSize })
-  multipleData.value.push({ title: 'CPU', data: summaryResult.totalCpu })
-  multipleData.value.push({ title: 'Memory', data: memorySize })
+  singleData.value.push({ key: t('catalog'), value: summaryResult.catalogCnt })
+  singleData.value.push({ key: t('table'), value: summaryResult.tableCnt })
+  singleData.value.push({ key: t('data'), value: tableSize })
+  multipleData.value.push({ key: t('cpu'), value: summaryResult.totalCpu })
+  multipleData.value.push({ key: t('memory'), value: memorySize })
 
   tableFormatData.value = await getOverviewFormat()
   optimizingStatusData.value = await getOverviewOptimizingStatus()
@@ -59,16 +58,16 @@ onMounted(() => {
   <div :style="{ background: '#F8F7F8', padding: '24px', minHeight: '900px' }" class="overview-content">
     <a-row :gutter="[16, 8]">
       <a-col v-for="(card, index) in singleData" :key="index" :span="6">
-        <SingleDataCard :title="card.title" :data="card.data" />
+        <SingleDataCard :title="card.key" :value="card.value" />
       </a-col>
       <a-col :span="6">
-        <MultipleDataCard title="Resource" :data="multipleData" />
+        <MultipleDataCard :title="t('resource')" :data="multipleData" />
       </a-col>
       <a-col :span="12">
-        <PieChartCard title="Table Format" :data="tableFormatData" />
+        <PieChartCard :title="t('tableFormat')" :data="tableFormatData" />
       </a-col>
       <a-col :span="12">
-        <PieChartCard title="Optimizing Status" :data="optimizingStatusData" />
+        <PieChartCard :title="t('optimizingStatus')" :data="optimizingStatusData" />
       </a-col>
       <a-col :span="12">
         <UnhealthTablesCard />

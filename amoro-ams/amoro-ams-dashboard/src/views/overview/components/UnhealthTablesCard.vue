@@ -29,6 +29,8 @@ import { bytesToSize } from '@/utils'
 const { t } = useI18n()
 const router = useRouter()
 const pagination = reactive(usePagination())
+pagination.pageSize = 10
+pagination.pageSizeOptions = ['10', '25', '50', '100']
 const loading = ref<boolean>(false)
 const catalogs = reactive<string[]>([])
 const catalogFilter = reactive<{ text: string, value: string }[]>([])
@@ -46,7 +48,6 @@ const columns: TableProps['columns'] = [
   {
     title: t('healthScore'),
     dataIndex: 'healthScore',
-    sorter: true,
   },
   {
     title: t('size'),
@@ -77,6 +78,15 @@ function goTableDetail(record: UnhealthTableItem) {
   })
 }
 
+function change({ current = 1, pageSize = 10 }) {
+  pagination.current = current
+  if (pageSize !== pagination.pageSize) {
+    pagination.current = 1
+  }
+  pagination.pageSize = pageSize
+  getUnhealthTables()
+}
+
 async function getUnhealthTables() {
   try {
     loading.value = true
@@ -104,25 +114,17 @@ async function getUnhealthTables() {
   }
 }
 
-const filteredInfo = ref()
-const sortedInfo = ref()
-
-const handleChange: TableProps['onChange'] = (filters, sorter) => {
-  filteredInfo.value = filters
-  sortedInfo.value = sorter
-}
-
 onMounted(() => {
   getUnhealthTables()
 })
 </script>
 
 <template>
-  <a-card class="unhealth-tables-card" title="Unhealth Tables">
+  <a-card class="unhealth-tables-card" :title="t('unhealthTables')">
     <div class="list-wrap">
       <a-table
         class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"
-        :loading="loading" @change="handleChange"
+        :loading="loading" @change="change"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'tableName'">
@@ -144,7 +146,7 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .unhealth-tables-card {
-  height: 350px;
+  height: 500px;
 }
 
 .list-wrap {
