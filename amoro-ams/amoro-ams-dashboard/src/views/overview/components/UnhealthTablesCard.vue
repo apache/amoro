@@ -17,13 +17,14 @@ limitations under the License.
 / -->
 
 <script lang="ts" setup>
-import { ref, onMounted, reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { usePagination } from '@/hooks/usePagination'
 import type { TableProps } from 'ant-design-vue'
+import { usePagination } from '@/hooks/usePagination'
 import type { UnhealthTableItem } from '@/types/common.type'
 import { getUnhealthTableList } from '@/services/overview.service'
+import { bytesToSize } from '@/utils'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -49,17 +50,17 @@ const columns: TableProps['columns'] = [
   },
   {
     title: t('size'),
-    dataIndex: 'size',
+    dataIndex: 'totalSize',
     sorter: true,
   },
   {
     title: t('fileCount'),
-    dataIndex: 'file',
+    dataIndex: 'fileCount',
     sorter: true,
   },
   {
     title: t('averageFileSize'),
-    dataIndex: 'averageFile',
+    dataIndex: 'averageFileSize',
     sorter: true,
   },
 ]
@@ -92,9 +93,9 @@ async function getUnhealthTables() {
       }
       dataSource.push(ele)
     })
-    catalogs.forEach(catalog => {
+    catalogs.forEach((catalog) => {
       catalogFilter.push({ text: catalog, value: catalog })
-    });
+    })
   }
   catch (error) {
   }
@@ -119,13 +120,21 @@ onMounted(() => {
 <template>
   <a-card class="unhealth-tables-card" title="Unhealth Tables">
     <div class="list-wrap">
-      <a-table class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"
-      :loading="loading" @change="handleChange">
+      <a-table
+        class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"
+        :loading="loading" @change="handleChange"
+      >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'tableName'">
             <span :title="record.tableName" class="primary-link" @click="goTableDetail(record)">
               {{ record.tableName }}
             </span>
+          </template>
+          <template v-if="column.dataIndex === 'totalSize'">
+            {{ bytesToSize(record.totalSize) }}
+          </template>
+          <template v-if="column.dataIndex === 'averageFileSize'">
+            {{ bytesToSize(record.averageFileSize) }}
           </template>
         </template>
       </a-table>

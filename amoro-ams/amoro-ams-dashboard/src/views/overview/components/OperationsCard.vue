@@ -17,7 +17,7 @@ limitations under the License.
 / -->
 
 <script lang="ts" setup>
-import { ref, shallowReactive, onMounted, reactive } from 'vue'
+import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import type { OverviwOperationItem } from '@/types/common.type'
@@ -59,7 +59,7 @@ async function getOperationInfo() {
 
 const columns = shallowReactive([
   { dataIndex: 'tableName', title: t('table'), ellipsis: true },
-  { dataIndex: 'operation', title: t('operation'), width: '50%', ellipsis: true},
+  { dataIndex: 'operation', title: t('operation'), width: '50%', ellipsis: true },
   { dataIndex: 'ts', title: t('time'), width: '25%', ellipsis: true },
 ])
 
@@ -106,5 +106,4 @@ onMounted(() => {
     }
   }
 }
-
 </style>
