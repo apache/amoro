@@ -103,6 +103,14 @@ public class AmoroServiceContainer {
   public static void main(String[] args) {
     try {
       AmoroServiceContainer service = new AmoroServiceContainer();
+      Runtime.getRuntime()
+          .addShutdownHook(
+              new Thread(
+                  () -> {
+                    LOG.info("AMS service is shutting down...");
+                    service.dispose();
+                    LOG.info("AMS service has been shut down");
+                  }));
       while (true) {
         try {
           service.waitLeaderShip();
@@ -167,13 +175,16 @@ public class AmoroServiceContainer {
   }
 
   public void dispose() {
-    if (tableManagementServer != null) {
+    if (tableManagementServer != null && tableManagementServer.isServing()) {
+      LOG.info("Stopping table management server...");
       tableManagementServer.stop();
     }
-    if (optimizingServiceServer != null) {
+    if (optimizingServiceServer != null && optimizingServiceServer.isServing()) {
+      LOG.info("Stopping optimizing server...");
       optimizingServiceServer.stop();
     }
     if (httpServer != null) {
+      LOG.info("Stopping http server...");
       try {
         httpServer.close();
       } catch (Exception e) {
@@ -181,10 +192,12 @@ public class AmoroServiceContainer {
       }
     }
     if (tableService != null) {
+      LOG.info("Stopping table service...");
       tableService.dispose();
       tableService = null;
     }
     if (terminalManager != null) {
+      LOG.info("Stopping terminal manager...");
       terminalManager.dispose();
       terminalManager = null;
     }

@@ -336,7 +336,7 @@ You can submit optimizer in your own Flink task development platform or local Fl
  -Dtaskmanager.memory.network.min=32mb \
  -c org.apache.amoro.optimizer.flink.FlinkOptimizer \
  ${AMORO_HOME}/plugin/optimizer/flink/optimizer-job.jar \
- -a 127.0.0.1:1261 \
+ -a thrift://127.0.0.1:1261 \
  -g flinkGroup \
  -p 1 \
  -eds \
@@ -366,7 +366,7 @@ Or you can submit optimizer in your own Spark task development platform or local
  --conf "spark.executor.memory=2g" \
  --class org.apache.amoro.optimizer.spark.SparkOptimizer \
  ${AMORO_HOME}/plugin/optimizer/spark/optimizer-job.jar \
- -a 127.0.0.1:1261 \
+ -a thrift://127.0.0.1:1261 \
  -g sparkGroup \
  -p 1 \
  -eds \
