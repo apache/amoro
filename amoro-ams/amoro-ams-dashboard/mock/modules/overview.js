@@ -77,17 +77,7 @@ export default [
             id: 1
           },
           tableName: 'test_catalog.db.user',
-          operation: `create external table user
-          (
-              user_id   int,
-              user_name string,
-              user_code string,
-              user_note string
-          )
-          row format delimited
-              fields terminated by '|'
-          stored as textfile
-          location '/db/user`,
+          operation: `ALTER TABLE user RENAME COLUMN name TO user_name`,
           ts: '1721353678000',
         },
       ]
@@ -101,8 +91,7 @@ export default [
       msg: 'success',
       result: {
         "list": [
-          { tableIdentifier: { id: 1, catalog: 'test_catalog', database: 'db', tableName: 'user' }, tableName: 'test_catalog.db.user', healthScore: '47', size: '4585900', file: '10', averageFile: '458590' },
-          { tableIdentifier: { id: 2, catalog: 'test_catalog', database: 'db', tableName: 'device' }, tableName: 'test_catalog.db.device', healthScore: '68', size: '6585900', file: '10', averageFile: '658590' },
+          { tableIdentifier: { id: 1, catalog: 'test_catalog', database: 'db', tableName: 'user' }, tableName: 'test_catalog.db.user', healthScore: '47', totalSize: '1774', fileCount: '2', averageFileSize: '887' },
         ],
         "total": 1
       }

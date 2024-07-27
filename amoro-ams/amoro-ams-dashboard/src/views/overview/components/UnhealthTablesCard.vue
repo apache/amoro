@@ -51,15 +51,18 @@ const columns: TableProps['columns'] = [
   },
   {
     title: t('size'),
-    dataIndex: 'size',
+    dataIndex: 'totalSize',
+    sorter: true,
   },
   {
     title: t('fileCount'),
-    dataIndex: 'file',
+    dataIndex: 'fileCount',
+    sorter: true,
   },
   {
     title: t('averageFileSize'),
-    dataIndex: 'averageFile',
+    dataIndex: 'averageFileSize',
+    sorter: true,
   },
 ]
 
@@ -129,11 +132,11 @@ onMounted(() => {
               {{ record.tableName }}
             </span>
           </template>
-          <template v-if="column.dataIndex === 'size'">
-            {{ bytesToSize(record.size) }}
+          <template v-if="column.dataIndex === 'totalSize'">
+            {{ bytesToSize(record.totalSize) }}
           </template>
-          <template v-if="column.dataIndex === 'averageFile'">
-            {{ bytesToSize(record.averageFile) }}
+          <template v-if="column.dataIndex === 'averageFileSize'">
+            {{ bytesToSize(record.averageFileSize) }}
           </template>
         </template>
       </a-table>
