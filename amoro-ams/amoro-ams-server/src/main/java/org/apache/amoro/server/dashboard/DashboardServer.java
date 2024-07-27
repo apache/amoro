@@ -105,7 +105,8 @@ public class DashboardServer {
     this.tableController = new TableController(tableService, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
-    this.overviewController = new OverviewController(tableService, optimizerManager);
+    this.overviewController =
+        new OverviewController(tableService, optimizerManager, tableDescriptor);
 
     this.authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
     this.basicAuthUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
@@ -243,6 +244,9 @@ public class DashboardServer {
             get(
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
                 tableController::getTableBranches);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/consumers",
+                tableController::getTableConsumerInfos);
             post(
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/cancel",
                 tableController::cancelOptimizingProcess);
@@ -335,6 +339,8 @@ public class DashboardServer {
             get("/summary", overviewController::getSummary);
             get("/format", overviewController::getTableFormat);
             get("/optimizing", overviewController::getOptimizingStatus);
+            get("/unhealth", overviewController::getUnhealthTables);
+            get("/operations", overviewController::getLatestOperations);
           });
     };
   }
@@ -380,6 +386,7 @@ public class DashboardServer {
     "/ams/v1/versionInfo",
     "/ams/v1/login",
     "/ams/v1/health/status",
+    "/ams/v1/login/current",
     "/",
     "/overview",
     "/introduce",
