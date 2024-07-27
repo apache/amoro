@@ -37,15 +37,17 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.amoro.table.MixedTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /** The controller that handles overview page requests. */
@@ -56,6 +58,13 @@ public class OverviewController {
   private final DefaultOptimizingService optimizerManager;
   private final ServerTableDescriptor tableDescriptor;
 
+  private final ScheduledExecutorService overviewUpdaterScheduler =
+      Executors.newSingleThreadScheduledExecutor(
+          new ThreadFactoryBuilder()
+              .setNameFormat("overview-updater-scheduler-%d")
+              .setDaemon(true)
+              .build());
+
   public OverviewController(
       TableService tableService,
       DefaultOptimizingService optimizerManager,
@@ -63,22 +72,26 @@ public class OverviewController {
     this.tableService = tableService;
     this.optimizerManager = optimizerManager;
     this.tableDescriptor = tableDescriptor;
+
+    overviewUpdaterScheduler.scheduleAtFixedRate(
+        this::overviewUpdate, 0, 3 * 60 * 1000L, TimeUnit.MILLISECONDS);
+  }
+
+  private void overviewUpdate() {
+    // TODO cache overview page data
   }
 
   public void getSummary(Context ctx) {
     long sumTableSizeInBytes = 0;
     long sumMemorySizeInMb = 0;
     int totalCpu = 0;
+    int catalogCount = tableService.listCatalogMetas().size();
 
     // table info
     List<TableMetadata> tableMetadataList = tableService.listTableMetas();
-    Map<String, ServerCatalog> serverCatalogMap = new HashMap<>();
     for (TableMetadata tableMetadata : tableMetadataList) {
-      String catalog = tableMetadata.getTableIdentifier().getCatalog();
-      if (!serverCatalogMap.containsKey(catalog)) {
-        serverCatalogMap.put(catalog, tableService.getServerCatalog(catalog));
-      }
-      ServerCatalog serverCatalog = serverCatalogMap.get(catalog);
+      ServerCatalog serverCatalog =
+          tableService.getServerCatalog(tableMetadata.getTableIdentifier().getCatalog());
       sumTableSizeInBytes +=
           getFilesStatistics(tableMetadata.getTableIdentifier(), serverCatalog).getTotalSize();
     }
@@ -92,7 +105,7 @@ public class OverviewController {
 
     OverviewSummary overviewSummary =
         new OverviewSummary(
-            serverCatalogMap.size(),
+            catalogCount,
             tableMetadataList.size(),
             sumTableSizeInBytes,
             totalCpu,
@@ -116,9 +129,8 @@ public class OverviewController {
   }
 
   public void getTableFormat(Context ctx) {
-    List<TableMetadata> tableMetadataList = tableService.listTableMetas();
     List<OverviewBaseData> tableFormats =
-        tableMetadataList.stream()
+        tableService.listTableMetas().stream()
             .map(TableMetadata::getFormat)
             .collect(
                 Collectors.groupingBy(tableFormat -> tableFormat.name(), Collectors.counting()))
@@ -130,19 +142,17 @@ public class OverviewController {
   }
 
   public void getOptimizingStatus(Context ctx) {
-    List<TableRuntime> tableRuntimes = new ArrayList<>();
-    List<ServerTableIdentifier> tables = tableService.listManagedTables();
-    for (ServerTableIdentifier identifier : tables) {
-      TableRuntime tableRuntime = tableService.getRuntime(identifier);
-      if (tableRuntime == null) {
-        continue;
-      }
-      tableRuntimes.add(tableRuntime);
-    }
-
     List<OverviewBaseData> optimizingStatusList =
-        tableRuntimes.stream()
-            .map(TableRuntime::getOptimizingStatus)
+        tableService.listManagedTables().stream()
+            .map(
+                tableIdentifier -> {
+                  TableRuntime runtime = tableService.getRuntime(tableIdentifier);
+                  if (runtime == null) {
+                    return null;
+                  }
+                  return runtime.getOptimizingStatus();
+                })
+            .filter(status -> status != null)
             .collect(Collectors.groupingBy(status -> status.name(), Collectors.counting()))
             .entrySet()
             .stream()
@@ -158,15 +168,11 @@ public class OverviewController {
 
     List<OverviewUnhealthTable> unhealthTableList = new ArrayList<>();
     List<TableMetadata> tableMetadataList = tableService.listTableMetas();
-    Map<String, ServerCatalog> serverCatalogMap = new HashMap<>();
     for (TableMetadata tableMetadata : tableMetadataList) {
       String catalog = tableMetadata.getTableIdentifier().getCatalog();
-      if (!serverCatalogMap.containsKey(catalog)) {
-        serverCatalogMap.put(catalog, tableService.getServerCatalog(catalog));
-      }
-      ServerCatalog serverCatalog = serverCatalogMap.get(catalog);
       FilesStatistics filesStatistics =
-          getFilesStatistics(tableMetadata.getTableIdentifier(), serverCatalog);
+          getFilesStatistics(
+              tableMetadata.getTableIdentifier(), tableService.getServerCatalog(catalog));
       unhealthTableList.add(
           // TODO compute health score
           new OverviewUnhealthTable(tableMetadata.getTableIdentifier(), 90, filesStatistics));
@@ -179,9 +185,8 @@ public class OverviewController {
   }
 
   public void getLatestOperations(Context ctx) {
-    List<TableMetadata> tableMetadataList = tableService.listTableMetas();
     List<OverviewTableOperation> latest10Operations =
-        tableMetadataList.stream()
+        tableService.listTableMetas().stream()
             .flatMap(
                 tableMetadata ->
                     tableDescriptor
