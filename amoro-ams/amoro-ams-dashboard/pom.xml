@@ -33,7 +33,7 @@
 
     <properties>
         <node.version>v18.18.0</node.version>
-        <pnpm.version>8.15.5</pnpm.version>
+        <pnpm.version>9.6.0</pnpm.version>
         <maven-frontend-plugin.version>1.12.0</maven-frontend-plugin.version>
     </properties>
 
