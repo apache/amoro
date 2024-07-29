@@ -107,7 +107,7 @@ async function refreshOptimizingProcesses() {
         startTime: item.startTime ? dateFormat(item.startTime) : '-',
         finishTime: item.finishTime ? dateFormat(item.finishTime) : '-',
         optimizingType: item.optimizingType ? item.optimizingType : '-',
-        duration: formatMS2Time(item.duration || '-'),
+        duration: item.duration ? formatMS2Time(item.duration) : '-',
         inputFiles: `${bytesToSize(inputFiles.totalSize)} / ${inputFiles.fileCnt}`,
         outputFiles: `${bytesToSize(outputFiles.totalSize)} / ${outputFiles.fileCnt}`,
         tasks: `${item.successTasks || '0'} / ${item.totalTasks || '0'}${item.runningTasks ? ` (${item.runningTasks} running)` : ''}`,
@@ -186,7 +186,7 @@ async function refreshOptimizingTasks() {
     list.forEach((p: BreadcrumbOptimizingItem) => {
       p.startTime = p.startTime ? dateFormat(p.startTime) : '-'
       p.endTime = p.endTime ? dateFormat(p.endTime) : '-'
-      p.formatCostTime = formatMS2Time(p.costTime)
+      p.formatCostTime = p.costTime ? formatMS2Time(p.costTime) : '-'
       p.thread = p.optimizerToken ? `(${p.threadId})${p.optimizerToken}` : '-'
       p.partitionData = p.partitionData ? p.partitionData : '-'
       p.inputFilesDesc = `${bytesToSize(p.inputFiles.totalSize)} / ${p.inputFiles.fileCnt}`
