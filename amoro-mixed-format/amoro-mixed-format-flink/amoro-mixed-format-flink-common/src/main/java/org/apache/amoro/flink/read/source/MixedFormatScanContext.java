@@ -33,9 +33,11 @@ import org.apache.iceberg.flink.source.StreamingStartingStrategy;
 
 import java.io.Serializable;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /** This is an mixed-format source scan context. */
 public class MixedFormatScanContext extends ScanContext implements Serializable {
@@ -64,10 +66,13 @@ public class MixedFormatScanContext extends ScanContext implements Serializable 
         builder.filters,
         builder.limit,
         builder.includeColumnStats,
+        builder.includeStatsForColumns,
         builder.exposeLocality,
         builder.planParallelism,
         builder.maxPlanningSnapshotCount,
         builder.maxAllowedPlanningFailures,
+        builder.watermarkColumn,
+        builder.watermarkColumnTimeUnit,
         builder.branch,
         builder.tag,
         builder.startTag,
@@ -182,6 +187,10 @@ public class MixedFormatScanContext extends ScanContext implements Serializable 
 
     private String endTag = FlinkReadOptions.END_TAG.defaultValue();
     private String scanStartupMode;
+    private Collection<String> includeStatsForColumns;
+    private String watermarkColumn;
+    private TimeUnit watermarkColumnTimeUnit;
+
     private boolean batchMode = false;
 
     private Builder() {}
@@ -319,6 +328,18 @@ public class MixedFormatScanContext extends ScanContext implements Serializable 
     public Builder batchMode(boolean batchMode) {
       this.batchMode = batchMode;
       return this;
+    }
+
+    public Collection<String> includeStatsForColumns() {
+      return includeStatsForColumns;
+    }
+
+    public String watermarkColumn() {
+      return watermarkColumn;
+    }
+
+    public TimeUnit watermarkColumnTimeUnit() {
+      return watermarkColumnTimeUnit;
     }
 
     public Builder fromProperties(Map<String, String> properties) {
