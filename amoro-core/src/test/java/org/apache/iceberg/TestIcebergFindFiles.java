@@ -35,14 +35,10 @@ import java.util.Arrays;
 import java.util.Set;
 
 @RunWith(Parameterized.class)
-public class TestIcebergFindFiles extends TableTestBase {
-  @Parameterized.Parameters(name = "formatVersion = {0}")
-  public static Object[] parameters() {
-    return new Object[] {1, 2};
-  }
+public class TestIcebergFindFiles extends V2TableTestBase {
 
-  public TestIcebergFindFiles(int formatVersion) {
-    super(formatVersion);
+  public TestIcebergFindFiles() {
+    super();
   }
 
   @Test
