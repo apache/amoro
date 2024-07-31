@@ -20,7 +20,7 @@ FROM csighub.tencentyun.com/dlchub/dlc-base-maven:tlinux4.0-rc0
 
 ENV TZ Asia/Shanghai
 ENV AMORO_HOME /usr/local/amoro
-ENV AMORO_CONF_DIR ${AMORO_HOME}/conf
+ENV AMORO_CONF_DIR ${AMORO_HOME}/dlc-conf
 ENV LOG_LEVEL info
 EXPOSE 1630 1260 1261
 
