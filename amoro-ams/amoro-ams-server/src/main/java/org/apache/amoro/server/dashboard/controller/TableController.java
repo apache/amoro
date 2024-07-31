@@ -148,7 +148,7 @@ public class TableController {
     if (serverTableIdentifier.isPresent()) {
       tableSummary.put(
           "optimizingStatus",
-          tableService.getRuntime(serverTableIdentifier.get()).getOptimizingStatus());
+          tableService.getRuntime(serverTableIdentifier.get().getId()).getOptimizingStatus());
     } else {
       tableSummary.put("optimizingStatus", OptimizingStatus.IDLE);
     }
@@ -650,7 +650,9 @@ public class TableController {
         tableService.getServerTableIdentifier(
             TableIdentifier.of(catalog, db, table).buildTableIdentifier());
     TableRuntime tableRuntime =
-        serverTableIdentifier != null ? tableService.getRuntime(serverTableIdentifier) : null;
+        serverTableIdentifier != null
+            ? tableService.getRuntime(serverTableIdentifier.getId())
+            : null;
 
     Preconditions.checkArgument(
         tableRuntime != null

@@ -121,7 +121,7 @@ public abstract class RestCatalogServiceTestBase {
 
   protected TableRuntime getTableRuntime(TableIdentifier identifier) {
     ServerTableIdentifier serverTableIdentifier = getServerTableIdentifier(identifier);
-    return tableService.getRuntime(serverTableIdentifier);
+    return tableService.getRuntime(serverTableIdentifier.getId());
   }
 
   protected void assertTableRuntime(TableIdentifier identifier, TableFormat format) {

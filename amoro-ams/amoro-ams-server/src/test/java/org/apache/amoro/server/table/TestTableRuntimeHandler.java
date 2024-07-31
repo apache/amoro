@@ -92,14 +92,15 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     tableService.initialize();
     Assert.assertEquals(1, handler.getInitTables().size());
     Assert.assertEquals(
-        createTableId.getId().longValue(), handler.getInitTables().get(0).getTableId());
+        (Long) createTableId.getId().longValue(),
+        handler.getInitTables().get(0).getTableIdentifier().getId());
 
     // test change properties
     MixedTable mixedTable = (MixedTable) tableService().loadTable(createTableId).originalTable();
 
     mixedTable.updateProperties().set(TableProperties.ENABLE_ORPHAN_CLEAN, "true").commit();
     tableService()
-        .getRuntime(createTableId)
+        .getRuntime(createTableId.getId())
         .refresh(tableService.loadTable(serverTableIdentifier()));
     Assert.assertEquals(1, handler.getConfigChangedTables().size());
     validateTableRuntime(handler.getConfigChangedTables().get(0).first());
