@@ -42,6 +42,7 @@ import org.apache.amoro.server.exception.PersistenceException;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
@@ -58,6 +59,9 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -139,12 +143,6 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         Optional.ofNullable((ServerCatalog) internalCatalogMap.get(catalogName))
             .orElse(externalCatalogMap.get(catalogName));
     return Optional.ofNullable(catalog)
-        .orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
-  }
-
-  @Override
-  public InternalCatalog getInternalCatalog(String catalogName) {
-    return Optional.ofNullable(internalCatalogMap.get(catalogName))
         .orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
   }
 
@@ -344,6 +342,26 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
+  public List<TableRuntimeMeta> getTableRuntimes(
+      String optimizerGroup,
+      @Nullable String fuzzyDbName,
+      @Nullable String fuzzyTableName,
+      int limit,
+      int offset) {
+    checkStarted();
+    return getAs(
+        TableMetaMapper.class,
+        mapper ->
+            mapper.selectTableRuntimesForOptimizerGroup(
+                optimizerGroup, fuzzyDbName, fuzzyTableName, limit, offset));
+  }
+
+  public InternalCatalog getInternalCatalog(String catalogName) {
+    return Optional.ofNullable(internalCatalogMap.get(catalogName))
+        .orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
+  }
+
+  @Override
   public void addHandlerChain(RuntimeHandlerChain handler) {
     checkNotStarted();
     if (headHandler == null) {
@@ -375,15 +393,17 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
     List<TableRuntimeMeta> tableRuntimeMetaList =
         getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
+    List<TableRuntime> tableRuntimes = new ArrayList<>(tableRuntimeMetaList.size());
     tableRuntimeMetaList.forEach(
         tableRuntimeMeta -> {
-          TableRuntime tableRuntime = tableRuntimeMeta.constructTableRuntime(this);
-          tableRuntimeMap.put(tableRuntime.getTableIdentifier(), tableRuntime);
+          TableRuntime tableRuntime = new TableRuntime(tableRuntimeMeta, this);
+          tableRuntimeMap.put(tableRuntimeMeta.getTableId(), tableRuntime);
           tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
+          tableRuntimes.add(tableRuntime);
         });
 
     if (headHandler != null) {
-      headHandler.initialize(tableRuntimeMetaList);
+      headHandler.initialize(tableRuntimes);
     }
     if (tableExplorerExecutors == null) {
       int threadCount =

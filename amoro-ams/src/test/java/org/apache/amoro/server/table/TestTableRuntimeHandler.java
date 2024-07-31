@@ -132,7 +132,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
 
   static class TestHandler extends RuntimeHandlerChain {
 
-    private final List<TableRuntimeMeta> initTables = Lists.newArrayList();
+    private final List<TableRuntime> initTables = Lists.newArrayList();
     private final List<Pair<TableRuntime, OptimizingStatus>> statusChangedTables =
         Lists.newArrayList();
     private final List<Pair<TableRuntime, TableConfiguration>> configChangedTables =
@@ -163,8 +163,8 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     }
 
     @Override
-    protected void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
-      initTables.addAll(tableRuntimeMetaList);
+    protected void initHandler(List<TableRuntime> tableRuntimeList) {
+      initTables.addAll(tableRuntimeList);
     }
 
     @Override
@@ -172,7 +172,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
       disposed = true;
     }
 
-    public List<TableRuntimeMeta> getInitTables() {
+    public List<TableRuntime> getInitTables() {
       return initTables;
     }
 
