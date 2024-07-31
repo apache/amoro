@@ -35,6 +35,7 @@ import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
@@ -97,7 +98,16 @@ public class TableRuntime extends StatedPersistentBase {
   private final TableOptimizingMetrics optimizingMetrics;
   private final ReentrantLock blockerLock = new ReentrantLock();
 
-  protected TableRuntime(
+  private long targetSnapshotId;
+
+  private long targetChangeSnapshotId;
+
+  private Map<java.lang.String, java.lang.Long> fromSequence;
+  private Map<java.lang.String, java.lang.Long> toSequence;
+
+  private OptimizingType optimizingType;
+
+  public TableRuntime(
       ServerTableIdentifier tableIdentifier,
       TableRuntimeHandler tableHandler,
       Map<String, String> properties) {
@@ -111,9 +121,10 @@ public class TableRuntime extends StatedPersistentBase {
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
   }
 
-  protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
+  public TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
     Preconditions.checkNotNull(tableRuntimeMeta, "TableRuntimeMeta must not be null.");
     Preconditions.checkNotNull(tableHandler, "TableRuntimeHandler must not be null.");
+
     this.tableHandler = tableHandler;
     this.tableIdentifier =
         ServerTableIdentifier.of(
@@ -140,6 +151,11 @@ public class TableRuntime extends StatedPersistentBase {
     this.pendingInput = tableRuntimeMeta.getPendingInput();
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
     optimizingMetrics.statusChanged(optimizingStatus, this.currentStatusStartTime);
+    this.targetSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
+    this.targetChangeSnapshotId = tableRuntimeMeta.getTargetChangeSnapshotId();
+    this.fromSequence = tableRuntimeMeta.getFromSequence();
+    this.toSequence = tableRuntimeMeta.getToSequence();
+    this.optimizingType = tableRuntimeMeta.getOptimizingType();
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -474,6 +490,46 @@ public class TableRuntime extends StatedPersistentBase {
     this.lastPlanTime = lastPlanTime;
   }
 
+  public long getTargetSnapshotId() {
+    return targetSnapshotId;
+  }
+
+  public void setTargetSnapshotId(long targetSnapshotId) {
+    this.targetSnapshotId = targetSnapshotId;
+  }
+
+  public long getTargetChangeSnapshotId() {
+    return targetChangeSnapshotId;
+  }
+
+  public void setTargetChangeSnapshotId(long targetChangeSnapshotId) {
+    this.targetChangeSnapshotId = targetChangeSnapshotId;
+  }
+
+  public Map<String, Long> getFromSequence() {
+    return fromSequence;
+  }
+
+  public void setFromSequence(Map<String, Long> fromSequence) {
+    this.fromSequence = fromSequence;
+  }
+
+  public Map<String, Long> getToSequence() {
+    return toSequence;
+  }
+
+  public void setToSequence(Map<String, Long> toSequence) {
+    this.toSequence = toSequence;
+  }
+
+  public long getProcessId() {
+    return processId;
+  }
+
+  public OptimizingType getOptimizingType() {
+    return optimizingType;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
@@ -487,6 +543,10 @@ public class TableRuntime extends StatedPersistentBase {
         .add("lastFullOptimizingTime", lastFullOptimizingTime)
         .add("lastMinorOptimizingTime", lastMinorOptimizingTime)
         .add("tableConfiguration", tableConfiguration)
+        .add("targetSnapshotId", targetSnapshotId)
+        .add("targetChangeSnapshotId", targetChangeSnapshotId)
+        .add("fromSequence", fromSequence)
+        .add("toSequence", toSequence)
         .toString();
   }
 

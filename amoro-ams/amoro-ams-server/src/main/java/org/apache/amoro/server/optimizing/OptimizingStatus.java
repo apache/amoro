@@ -19,20 +19,23 @@
 package org.apache.amoro.server.optimizing;
 
 public enum OptimizingStatus {
-  FULL_OPTIMIZING("full", true),
-  MAJOR_OPTIMIZING("major", true),
-  MINOR_OPTIMIZING("minor", true),
-  COMMITTING("committing", true),
-  PLANNING("planning", false),
-  PENDING("pending", false),
-  IDLE("idle", false);
+  FULL_OPTIMIZING("full", true, 0),
+  MAJOR_OPTIMIZING("major", true, 1),
+  MINOR_OPTIMIZING("minor", true, 2),
+  COMMITTING("committing", true, 3),
+  PLANNING("planning", false, 4),
+  PENDING("pending", false, 5),
+  IDLE("idle", false, 6);
   private final String displayValue;
 
   private final boolean isProcessing;
 
-  OptimizingStatus(String displayValue, boolean isProcessing) {
+  private final int code;
+
+  OptimizingStatus(String displayValue, boolean isProcessing, int code) {
     this.displayValue = displayValue;
     this.isProcessing = isProcessing;
+    this.code = code;
   }
 
   public boolean isProcessing() {
@@ -41,5 +44,17 @@ public enum OptimizingStatus {
 
   public String displayValue() {
     return displayValue;
+  }
+
+  public int getCode() {
+    return code;
+  }
+
+  public static OptimizingStatus ofCode(int code) {
+    if (code >= 0 && code < values().length) {
+      return values()[code];
+    }
+
+    return null;
   }
 }

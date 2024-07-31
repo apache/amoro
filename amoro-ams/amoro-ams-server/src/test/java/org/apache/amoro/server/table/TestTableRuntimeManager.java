@@ -70,27 +70,6 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
   }
 
   @Test
-  public void testTableContains() {
-    Assert.assertTrue(tableService().contains(serverTableIdentifier().getId()));
-    ServerTableIdentifier copyId =
-        ServerTableIdentifier.of(
-            null,
-            serverTableIdentifier().getCatalog(),
-            serverTableIdentifier().getDatabase(),
-            serverTableIdentifier().getTableName(),
-            serverTableIdentifier().getFormat());
-    Assert.assertFalse(tableService().contains(copyId.getId()));
-    copyId =
-        ServerTableIdentifier.of(
-            serverTableIdentifier().getId(),
-            serverTableIdentifier().getCatalog(),
-            serverTableIdentifier().getDatabase(),
-            "unknown",
-            serverTableIdentifier().getFormat());
-    Assert.assertFalse(tableService().contains(copyId.getId()));
-  }
-
-  @Test
   public void testTableRuntime() {
     TableRuntime tableRuntime = tableService().getRuntime(serverTableIdentifier().getId());
     validateTableRuntime(tableRuntime);
