@@ -71,7 +71,7 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
 
   @Test
   public void testTableContains() {
-    Assert.assertTrue(tableService().contains(serverTableIdentifier()));
+    Assert.assertTrue(tableService().contains(serverTableIdentifier().getId()));
     ServerTableIdentifier copyId =
         ServerTableIdentifier.of(
             null,
@@ -79,7 +79,7 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
             serverTableIdentifier().getDatabase(),
             serverTableIdentifier().getTableName(),
             serverTableIdentifier().getFormat());
-    Assert.assertFalse(tableService().contains(copyId));
+    Assert.assertFalse(tableService().contains(copyId.getId()));
     copyId =
         ServerTableIdentifier.of(
             serverTableIdentifier().getId(),
@@ -87,12 +87,12 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
             serverTableIdentifier().getDatabase(),
             "unknown",
             serverTableIdentifier().getFormat());
-    Assert.assertFalse(tableService().contains(copyId));
+    Assert.assertFalse(tableService().contains(copyId.getId()));
   }
 
   @Test
   public void testTableRuntime() {
-    TableRuntime tableRuntime = tableService().getRuntime(serverTableIdentifier());
+    TableRuntime tableRuntime = tableService().getRuntime(serverTableIdentifier().getId());
     validateTableRuntime(tableRuntime);
   }
 }

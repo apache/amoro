@@ -31,9 +31,9 @@ public interface TableManager extends TableRuntimeHandler {
    */
   AmoroTable<?> loadTable(ServerTableIdentifier tableIdentifier);
 
-  TableRuntime getRuntime(ServerTableIdentifier tableIdentifier);
+  TableRuntime getRuntime(Long tableId);
 
-  default boolean contains(ServerTableIdentifier tableIdentifier) {
-    return getRuntime(tableIdentifier) != null;
+  default boolean contains(Long tableId) {
+    return getRuntime(tableId) != null;
   }
 }

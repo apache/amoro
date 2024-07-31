@@ -85,8 +85,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private final Map<String, InternalCatalog> internalCatalogMap = new ConcurrentHashMap<>();
   private final Map<String, ExternalCatalog> externalCatalogMap = new ConcurrentHashMap<>();
 
-  private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap =
-      new ConcurrentHashMap<>();
+  private final Map<Long, TableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
 
   private final ScheduledExecutorService tableExplorerScheduler =
       Executors.newSingleThreadScheduledExecutor(
@@ -213,7 +212,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     }
 
     ServerTableIdentifier serverTableIdentifier = internalCatalog.dropTable(database, table);
-    Optional.ofNullable(tableRuntimeMap.remove(serverTableIdentifier))
+    Optional.ofNullable(tableRuntimeMap.remove(serverTableIdentifier.getId()))
         .ifPresent(
             tableRuntime -> {
               if (headHandler != null) {
@@ -411,7 +410,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
   private TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier cannot be null");
-    TableRuntime tableRuntime = getRuntime(tableIdentifier);
+    TableRuntime tableRuntime = getRuntime(tableIdentifier.getId());
     if (tableRuntime == null) {
       throw new ObjectNotExistsException(tableIdentifier);
     }
@@ -447,15 +446,15 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public TableRuntime getRuntime(ServerTableIdentifier tableIdentifier) {
+  public TableRuntime getRuntime(Long tableId) {
     checkStarted();
-    return tableRuntimeMap.get(tableIdentifier);
+    return tableRuntimeMap.get(tableId);
   }
 
   @Override
-  public boolean contains(ServerTableIdentifier tableIdentifier) {
+  public boolean contains(Long tableId) {
     checkStarted();
-    return tableRuntimeMap.containsKey(tableIdentifier);
+    return tableRuntimeMap.containsKey(tableId);
   }
 
   public void dispose() {
@@ -645,7 +644,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
       }
     }
     TableRuntime tableRuntime = new TableRuntime(serverTableIdentifier, this, table.properties());
-    tableRuntimeMap.put(serverTableIdentifier, tableRuntime);
+    tableRuntimeMap.put(serverTableIdentifier.getId(), tableRuntime);
     tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
     if (headHandler != null) {
       headHandler.fireTableAdded(table, tableRuntime);
@@ -659,7 +658,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         externalCatalog.getServerTableIdentifier(
             tableIdentity.getDatabase(), tableIdentity.getTableName());
     if (tableIdentifier != null) {
-      tableRuntimeMap.remove(tableIdentifier);
+      tableRuntimeMap.remove(tableIdentifier.getId());
     }
   }
 
@@ -671,7 +670,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                 tableIdentifier.getCatalog(),
                 tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName()));
-    Optional.ofNullable(tableRuntimeMap.remove(tableIdentifier))
+    Optional.ofNullable(tableRuntimeMap.remove(tableIdentifier.getId()))
         .ifPresent(
             tableRuntime -> {
               if (headHandler != null) {
