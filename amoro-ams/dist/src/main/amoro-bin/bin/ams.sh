@@ -82,7 +82,7 @@ if [ -z "$JAVA_OPTS" ]; then
 fi
 
 
-export CLASSPATH=$AMORO_CONF_DIR:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | sort | paste -sd':' -)
+export CLASSPATH=$AMORO_HOME/conf$AMORO_CONF_DIR:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | sort | paste -sd':' -)
 CMDS="$JAVA_RUN -Dlog4j.configurationFile=${AMORO_LOG_CONF_FILE} -Dlog.home=${AMORO_LOG_DIR} -Dlog.dir=${AMORO_LOG_DIR} -Duser.dir=${AMORO_HOME}  $JAVA_OPTS ${RUN_SERVER}"
 #0:pid bad and proc OK;   1:pid ok and proc bad;    2:pid bad
 function status(){
