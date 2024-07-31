@@ -37,7 +37,7 @@ if [ -z "$AMORO_CONF_DIR" ]; then
 fi
 
 if [ -z "$AMORO_LOG_CONF_FILE" ]; then
-    export $AMORO_LOG_CONF_FILE="${AMORO_CONF_DIR}/log4j2.xml"
+    export AMORO_LOG_CONF_FILE="${AMORO_CONF_DIR}/log4j2.xml"
 fi
 
 
