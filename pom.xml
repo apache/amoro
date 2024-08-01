@@ -1310,6 +1310,7 @@
             </repositories>
 
             <properties>
+                <hive.version>2.3.9</hive.version>
                 <hadoop.version>3.2.0</hadoop.version>
             </properties>
         </profile>
