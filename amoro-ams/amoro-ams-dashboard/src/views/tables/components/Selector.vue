@@ -58,6 +58,7 @@ function onChange(val: string) {
 
 async function getBranchList() {
   const result = await getBranches(props as any)
+  
   branchList.value = (result.list || []).map((l: IServiceBranchItem) => ({ value: l.name, label: l.name, type: branchTypeMap.BRANCH }))
   branchList.value.length && selectObject(branchList.value[0])
 }
@@ -90,6 +91,7 @@ onMounted(() => {
           <div class="branch-selector-search">
             <a-input v-show="tabActiveKey === branchTypeMap.BRANCH" v-model:value="branchSearchKey" :placeholder="$t('filterBranchesOrTags')" @click="onClickInput" />
             <a-input v-show="tabActiveKey === branchTypeMap.TAG" v-model:value="tagSearchKey" :placeholder="$t('filterBranchesOrTags')" @click="onClickInput" />
+            <a-input v-show="tabActiveKey === branchTypeMap.CONSUMER" v-model:value="tagSearchKey" :placeholder="$t('filterBranchesOrTags')" @click="onClickInput" />
           </div>
           <a-tabs v-model:activeKey="tabActiveKey" type="card">
             <a-tab-pane :key="branchTypeMap.BRANCH" :tab="$t('branches')">
@@ -114,7 +116,20 @@ onMounted(() => {
               </template>
               <span v-else class="empty-tips">{{ $t('nothingToShow') }}</span>
             </a-tab-pane>
+            <a-tab-pane :key="branchTypeMap.CONSUMER" :tab="$t('consumer')">
+              <template v-if="!!actualTagList.length">
+                <div v-for="(item, key) in actualTagList" :key="key" class="branch-selector-item" @click="selectObject(item)">
+                  <div class="item-icon">
+                    <check-outlined v-if="item.value === selectedObj.value" />
+                  </div>
+                  <span class="item-label">{{ item.label }}</span>
+                </div>
+              </template>
+              <span v-else class="empty-tips">{{ $t('nothingToShow') }}</span>
+            </a-tab-pane>
           </a-tabs>
+      
+    
         </div>
       </template>
     </a-dropdown>
@@ -128,6 +143,7 @@ onMounted(() => {
       <span class="g-mr-4">{{ tagList.length }}</span>
       <span>{{ $t('tags') }}</span>
     </div>
+    
     <div class="g-ml-24">
       {{ $t('operation') }}:
       <a-select
