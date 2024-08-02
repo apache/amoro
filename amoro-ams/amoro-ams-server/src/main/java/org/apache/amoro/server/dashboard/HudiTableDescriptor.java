@@ -26,6 +26,7 @@ import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.dashboard.model.AMSColumnInfo;
 import org.apache.amoro.server.dashboard.model.AMSPartitionField;
 import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;
+import org.apache.amoro.server.dashboard.model.ConsumerInfo;
 import org.apache.amoro.server.dashboard.model.DDLInfo;
 import org.apache.amoro.server.dashboard.model.FilesStatistics;
 import org.apache.amoro.server.dashboard.model.OperationType;
@@ -697,6 +698,11 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
   public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
     return Lists.newArrayList(
         new TagOrBranchInfo("hoodie-timeline", -1, -1, 0L, 0L, TagOrBranchInfo.BRANCH));
+  }
+
+  @Override
+  public List<ConsumerInfo> getTableConsumerInfos(AmoroTable<?> amoroTable) {
+    return Collections.emptyList();
   }
 
   private long parseHoodieCommitTime(String commitTime) {
