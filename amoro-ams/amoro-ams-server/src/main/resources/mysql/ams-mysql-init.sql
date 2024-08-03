@@ -122,7 +122,8 @@ CREATE TABLE `table_runtime`
     `last_major_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Major Optimize time for all partitions',
     `last_minor_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Minor Optimize time for all partitions',
     `last_full_optimizing_time`     timestamp NULL DEFAULT NULL COMMENT 'Latest Full Optimize time for all partitions',
-    `optimizing_status`             varchar(20) DEFAULT 'IDLE' COMMENT 'Table optimize status: FULL_OPTIMIZING, MAJOR_OPTIMIZING, MINOR_OPTIMIZING, COMMITTING, PENDING, IDLE',
+    `optimizing_status_code`        int DEFAULT 700 COMMENT 'Table optimize status code: 100(FULL_OPTIMIZING),' ||
+        ' 200(MAJOR_OPTIMIZING), 300(MINOR_OPTIMIZING), 400(COMMITTING), 500(PLANING), 600(PENDING), 700(IDLE)',
     `optimizing_status_start_time`  timestamp default CURRENT_TIMESTAMP COMMENT 'Table optimize status start time',
     `optimizing_process_id`         bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
     `optimizer_group`               varchar(64) NOT NULL,

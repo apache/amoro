@@ -27,12 +27,12 @@ public class OptimizingStatusTest {
   public void testOptimizingStatusCodeValue() {
     assertEquals(7, OptimizingStatus.values().length);
 
-    assertEquals(OptimizingStatus.FULL_OPTIMIZING, OptimizingStatus.ofCode(0));
-    assertEquals(OptimizingStatus.MAJOR_OPTIMIZING, OptimizingStatus.ofCode(1));
-    assertEquals(OptimizingStatus.MINOR_OPTIMIZING, OptimizingStatus.ofCode(2));
-    assertEquals(OptimizingStatus.COMMITTING, OptimizingStatus.ofCode(3));
-    assertEquals(OptimizingStatus.PLANNING, OptimizingStatus.ofCode(4));
-    assertEquals(OptimizingStatus.PENDING, OptimizingStatus.ofCode(5));
-    assertEquals(OptimizingStatus.IDLE, OptimizingStatus.ofCode(6));
+    assertEquals(OptimizingStatus.FULL_OPTIMIZING, OptimizingStatus.ofCode(100));
+    assertEquals(OptimizingStatus.MAJOR_OPTIMIZING, OptimizingStatus.ofCode(200));
+    assertEquals(OptimizingStatus.MINOR_OPTIMIZING, OptimizingStatus.ofCode(300));
+    assertEquals(OptimizingStatus.COMMITTING, OptimizingStatus.ofCode(400));
+    assertEquals(OptimizingStatus.PLANNING, OptimizingStatus.ofCode(500));
+    assertEquals(OptimizingStatus.PENDING, OptimizingStatus.ofCode(600));
+    assertEquals(OptimizingStatus.IDLE, OptimizingStatus.ofCode(700));
   }
 }
