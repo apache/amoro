@@ -59,15 +59,18 @@ public class TestBlockerExpiringExecutor extends TableServiceTestBase {
     tableBlocker.setExpirationTime(System.currentTimeMillis() - 10);
     tableBlocker.setCreateTime(System.currentTimeMillis() - 20);
     tableBlocker.setOperations(Collections.singletonList(BlockableOperation.OPTIMIZE.name()));
-    int insert = persistency.insertTableBlocker(tableBlocker);
-    Assert.assertEquals(1, insert);
+    tableBlocker.setPrevBlockerId(-1L);
+    persistency.insertTableBlocker(tableBlocker);
 
     TableBlocker tableBlocker2 = new TableBlocker();
     tableBlocker2.setTableIdentifier(tableIdentifier.getIdentifier());
     tableBlocker2.setExpirationTime(System.currentTimeMillis() + 100000);
     tableBlocker2.setCreateTime(System.currentTimeMillis() - 20);
     tableBlocker2.setOperations(Collections.singletonList(BlockableOperation.BATCH_WRITE.name()));
+    tableBlocker2.setPrevBlockerId(tableBlocker.getBlockerId());
     persistency.insertTableBlocker(tableBlocker2);
+
+    Assert.assertThrows(Exception.class, () -> persistency.insertTableBlocker(tableBlocker2));
 
     Assert.assertEquals(2, persistency.selectTableBlockers(tableIdentifier).size());
     Assert.assertNotNull(persistency.selectTableBlocker(tableBlocker.getBlockerId()));
@@ -83,8 +86,8 @@ public class TestBlockerExpiringExecutor extends TableServiceTestBase {
   }
 
   private static class Persistency extends PersistentBase {
-    public int insertTableBlocker(TableBlocker tableBlocker) {
-      return getAs(TableBlockerMapper.class, mapper -> mapper.insertWhenNotExists(tableBlocker, System.currentTimeMillis()));
+    public void insertTableBlocker(TableBlocker tableBlocker) {
+      doAs(TableBlockerMapper.class, mapper -> mapper.insert(tableBlocker));
     }
 
     public List<TableBlocker> selectTableBlockers(ServerTableIdentifier tableIdentifier) {
@@ -99,7 +102,11 @@ public class TestBlockerExpiringExecutor extends TableServiceTestBase {
     }
 
     public void deleteBlockers(ServerTableIdentifier tableIdentifier) {
-      doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlockers(tableIdentifier));
+      doAs(TableBlockerMapper.class,
+          mapper -> mapper.deleteTableBlockers(
+              tableIdentifier.getCatalog(),
+              tableIdentifier.getDatabase(),
+              tableIdentifier.getTableName()));
     }
 
     public TableBlocker selectTableBlocker(long blockerId) {

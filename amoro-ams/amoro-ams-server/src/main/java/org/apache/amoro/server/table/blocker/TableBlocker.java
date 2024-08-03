@@ -38,6 +38,7 @@ public class TableBlocker {
   private List<String> operations;
   private long createTime;
   private long expirationTime;
+  private long prevBlockerId;
   private Map<String, String> properties;
 
   public static boolean conflict(
@@ -56,7 +57,8 @@ public class TableBlocker {
       List<BlockableOperation> operations,
       Map<String, String> properties,
       long now,
-      long blockerTimeout) {
+      long blockerTimeout,
+      long prevBlockerId) {
     TableBlocker tableBlocker = new TableBlocker();
     tableBlocker.setCatalog(tableIdentifier.getCatalog());
     tableBlocker.setDatabase(tableIdentifier.getDatabase());
@@ -135,6 +137,14 @@ public class TableBlocker {
     this.expirationTime = expirationTime;
   }
 
+  public void setPrevBlockerId(long prevBlockerId) {
+    this.prevBlockerId = prevBlockerId;
+  }
+
+  public long getPrevBlockerId() {
+    return this.prevBlockerId;
+  }
+
   public Map<String, String> getProperties() {
     return properties;
   }
@@ -162,6 +172,7 @@ public class TableBlocker {
         .add("operations", operations)
         .add("createTime", createTime)
         .add("expirationTime", expirationTime)
+        .add("prevBlockerId", prevBlockerId)
         .add("properties", properties)
         .toString();
   }
