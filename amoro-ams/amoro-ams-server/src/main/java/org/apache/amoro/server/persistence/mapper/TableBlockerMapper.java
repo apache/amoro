@@ -94,7 +94,8 @@ public interface TableBlockerMapper {
 
   @Update(
       "UPDATE "
-          + TABLE_NAME + " "
+          + TABLE_NAME
+          + " "
           + "SET "
           + "expiration_time = #{expiration, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter} "
           + "WHERE blocker_id = #{blockerId} "
@@ -145,6 +146,5 @@ public interface TableBlockerMapper {
   int deleteTableBlockers(
       @Param("catalog") String catalog,
       @Param("database") String database,
-      @Param("tableName") String tableName
-  );
+      @Param("tableName") String tableName);
 }

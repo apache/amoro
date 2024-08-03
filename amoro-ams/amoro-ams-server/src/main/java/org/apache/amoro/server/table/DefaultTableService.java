@@ -264,9 +264,9 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     int tryCount = 0;
     while (tryCount++ < 3) {
       long now = System.currentTimeMillis();
-      doAs(TableBlockerMapper.class, mapper -> mapper.deleteExpiredBlockers(
-          catalog, database, table, now
-      ));
+      doAs(
+          TableBlockerMapper.class,
+          mapper -> mapper.deleteExpiredBlockers(catalog, database, table, now));
       List<TableBlocker> tableBlockers =
           getAs(
               TableBlockerMapper.class,
@@ -294,7 +294,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
           return tableBlocker.buildBlocker();
         }
       } catch (PersistenceException e) {
-        LOG.warn("Exception when create a blocker:{}, error message:{}", tableBlocker, e.getMessage());
+        LOG.warn(
+            "Exception when create a blocker:{}, error message:{}", tableBlocker, e.getMessage());
         if (e.getMessage() == null || !e.getMessage().contains("duplicate key")) {
           LOG.error("Exception when create a blocker:{}", tableBlocker, e);
         }
@@ -321,7 +322,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
       }
       long current = System.currentTimeMillis();
       long expirationTime = now + blockerTimeout;
-      long effectRow = updateAs(
+      long effectRow =
+          updateAs(
               TableBlockerMapper.class, mapper -> mapper.renewBlocker(id, current, expirationTime));
       if (effectRow > 0) {
         return expirationTime;

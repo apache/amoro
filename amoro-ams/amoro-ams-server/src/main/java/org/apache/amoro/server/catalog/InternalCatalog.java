@@ -165,7 +165,10 @@ public abstract class InternalCatalog extends ServerCatalog {
             doAs(
                 TableMetaMapper.class,
                 mapper -> mapper.deleteTableMetaById(tableIdentifier.getId())),
-        () -> doAs(TableBlockerMapper.class, mapper -> mapper.deleteTableBlockers(this.name(), databaseName, tableName)),
+        () ->
+            doAs(
+                TableBlockerMapper.class,
+                mapper -> mapper.deleteTableBlockers(this.name(), databaseName, tableName)),
         () -> dropTableInternal(databaseName, tableName),
         () ->
             doAsExisted(

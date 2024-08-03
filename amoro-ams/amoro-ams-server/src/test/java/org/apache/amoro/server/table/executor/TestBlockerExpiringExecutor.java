@@ -102,11 +102,13 @@ public class TestBlockerExpiringExecutor extends TableServiceTestBase {
     }
 
     public void deleteBlockers(ServerTableIdentifier tableIdentifier) {
-      doAs(TableBlockerMapper.class,
-          mapper -> mapper.deleteTableBlockers(
-              tableIdentifier.getCatalog(),
-              tableIdentifier.getDatabase(),
-              tableIdentifier.getTableName()));
+      doAs(
+          TableBlockerMapper.class,
+          mapper ->
+              mapper.deleteTableBlockers(
+                  tableIdentifier.getCatalog(),
+                  tableIdentifier.getDatabase(),
+                  tableIdentifier.getTableName()));
     }
 
     public TableBlocker selectTableBlocker(long blockerId) {
