@@ -33,6 +33,7 @@
     <url>https://amoro.apache.org</url>
 
     <modules>
+        <module>amoro-metrics-overview</module>
         <module>amoro-metrics-prometheus</module>
     </modules>
 
