@@ -26,7 +26,6 @@ import org.apache.amoro.op.CreateTableTransaction;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableBuilder;
@@ -36,7 +35,7 @@ import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.blocker.BasicTableBlockerManager;
 import org.apache.amoro.table.blocker.TableBlockerManager;
 import org.apache.amoro.utils.MixedCatalogUtil;
-import org.apache.amoro.utils.TablePropertyUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -63,6 +62,7 @@ public class BasicMixedIcebergCatalog implements MixedFormatCatalog {
   private AmsClient client;
   private MixedTables tables;
   private SupportsNamespaces asNamespaceCatalog;
+  private String separator;
 
   @Override
   public String name() {
@@ -86,6 +86,7 @@ public class BasicMixedIcebergCatalog implements MixedFormatCatalog {
     }
     this.databaseFilterPattern = databaseFilterPattern;
     this.catalogProperties = properties;
+    this.separator = tableStoreSeparator();
     this.tables = newMixedTables(metaStore, properties, icebergCatalog());
     if (properties.containsKey(CatalogMetaProperties.AMS_URI)) {
       this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
@@ -121,25 +122,17 @@ public class BasicMixedIcebergCatalog implements MixedFormatCatalog {
 
   @Override
   public List<TableIdentifier> listTables(String database) {
-    List<org.apache.iceberg.catalog.TableIdentifier> icebergTableList =
-        tableMetaStore.doAs(() -> icebergCatalog().listTables(Namespace.of(database)));
+    Set<String> icebergTables =
+        tableMetaStore.doAs(() -> icebergCatalog().listTables(Namespace.of(database))).stream()
+            .map(org.apache.iceberg.catalog.TableIdentifier::name)
+            .collect(Collectors.toSet());
     List<TableIdentifier> mixedTables = Lists.newArrayList();
-    Set<org.apache.iceberg.catalog.TableIdentifier> visited = Sets.newHashSet();
-    for (org.apache.iceberg.catalog.TableIdentifier identifier : icebergTableList) {
-      if (visited.contains(identifier)) {
-        continue;
-      }
-      Table table = tableMetaStore.doAs(() -> icebergCatalog().loadTable(identifier));
-      if (tables.isBaseStore(table)) {
-        mixedTables.add(TableIdentifier.of(name(), database, identifier.name()));
-        visited.add(identifier);
-        PrimaryKeySpec keySpec =
-            TablePropertyUtil.parsePrimaryKeySpec(table.schema(), table.properties());
-        if (keySpec.primaryKeyExisted()) {
-          visited.add(tables.parseChangeIdentifier(table));
-        }
-      }
-    }
+    icebergTables.forEach(
+        name -> {
+          if (icebergTables.contains(MixedTableUtil.changeStoreName(name, separator))) {
+            mixedTables.add(TableIdentifier.of(name(), database, name));
+          }
+        });
     return mixedTables;
   }
 
@@ -214,7 +207,13 @@ public class BasicMixedIcebergCatalog implements MixedFormatCatalog {
       TableMetaStore metaStore,
       Map<String, String> catalogProperties,
       org.apache.iceberg.catalog.Catalog icebergCatalog) {
-    return new MixedTables(metaStore, catalogProperties, icebergCatalog);
+    return new MixedTables(metaStore, catalogProperties, icebergCatalog, separator);
+  }
+
+  protected String tableStoreSeparator() {
+    return catalogProperties.getOrDefault(
+        CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR,
+        CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR_DEFAULT);
   }
 
   private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(

@@ -21,6 +21,7 @@ package org.apache.amoro.server.util;
 import org.apache.amoro.io.IcebergDataTestHelpers;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.mixed.MixedTables;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -123,7 +124,12 @@ public class TestIcebergTableUtil {
   }
 
   private static MixedTable newMixedTable(Catalog catalog, boolean withKey) {
-    MixedTables mixedTables = new MixedTables(TableMetaStore.EMPTY, Maps.newHashMap(), catalog);
+    MixedTables mixedTables =
+        new MixedTables(
+            TableMetaStore.EMPTY,
+            Maps.newHashMap(),
+            catalog,
+            CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR_DEFAULT);
     return mixedTables.createTable(
         org.apache.amoro.table.TableIdentifier.of("cata", "db", "table"),
         schema,

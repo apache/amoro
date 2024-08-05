@@ -21,7 +21,6 @@ package org.apache.amoro.mixed;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.AuthenticatedFileIOs;
-import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.BasicKeyedTable;
@@ -32,6 +31,7 @@ import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -47,16 +47,20 @@ import java.util.Map;
 public class MixedTables {
   private static final Logger LOG = LoggerFactory.getLogger(MixedTables.class);
 
-  protected TableMetaStore tableMetaStore;
-  protected Catalog icebergCatalog;
-
-  protected Map<String, String> catalogProperties;
+  protected final TableMetaStore tableMetaStore;
+  protected final Catalog icebergCatalog;
+  protected final Map<String, String> catalogProperties;
+  protected final String separator;
 
   public MixedTables(
-      TableMetaStore tableMetaStore, Map<String, String> catalogProperties, Catalog catalog) {
+      TableMetaStore tableMetaStore,
+      Map<String, String> catalogProperties,
+      Catalog catalog,
+      String separator) {
     this.tableMetaStore = tableMetaStore;
     this.icebergCatalog = catalog;
     this.catalogProperties = catalogProperties;
+    this.separator = separator;
   }
 
   /**
@@ -86,12 +90,9 @@ public class MixedTables {
    * @return change store table identifier.
    */
   protected TableIdentifier generateChangeStoreIdentifier(TableIdentifier baseIdentifier) {
-    String separator =
-        catalogProperties.getOrDefault(
-            CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR,
-            CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR_DEFAULT);
     return TableIdentifier.of(
-        baseIdentifier.namespace(), baseIdentifier.name() + separator + "change" + separator);
+        baseIdentifier.namespace(),
+        MixedTableUtil.changeStoreName(baseIdentifier.name(), separator));
   }
 
   /**
