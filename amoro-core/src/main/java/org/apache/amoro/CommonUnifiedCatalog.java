@@ -90,20 +90,11 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
 
   @Override
   public void dropDatabase(String database) {
-    if (!databaseExists(database)) {
-      throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
-    }
-    if (!listTables(database).isEmpty()) {
-      throw new IllegalStateException("Database: " + database + " is not empty.");
-    }
     findFirstFormatCatalog(TableFormat.values()).dropDatabase(database);
   }
 
   @Override
   public AmoroTable<?> loadTable(String database, String table) {
-    if (!databaseExists(database)) {
-      throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
-    }
 
     return formatCatalogAsOrder(
             TableFormat.MIXED_HIVE,
@@ -130,9 +121,6 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
 
   @Override
   public List<TableIDWithFormat> listTables(String database) {
-    if (!databaseExists(database)) {
-      throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
-    }
     TableFormat[] formats =
         new TableFormat[] {
           TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG, TableFormat.PAIMON
