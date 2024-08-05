@@ -172,9 +172,6 @@ public class CatalogController {
   private static Set<String> getHiddenCatalogProperties(
       String type, Map<String, ?> authConfig, Map<String, ?> storageConfig) {
     Set<String> hiddenProperties = Sets.newHashSet(TABLE_FORMATS);
-    if (!CATALOG_TYPE_CUSTOM.equals(type)) {
-      hiddenProperties.add(CatalogProperties.CATALOG_IMPL);
-    }
     if (AUTH_CONFIGS_VALUE_TYPE_AK_SK.equalsIgnoreCase(
         String.valueOf(authConfig.get(AUTH_CONFIGS_KEY_TYPE)))) {
       hiddenProperties.add(S3FileIOProperties.ACCESS_KEY_ID);
