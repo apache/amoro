@@ -93,6 +93,7 @@ public class AmoroServiceContainer {
   private TServer tableManagementServer;
   private TServer optimizingServiceServer;
   private Javalin httpServer;
+  private AmsServiceMetrics amsServiceMetrics;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
@@ -102,6 +103,14 @@ public class AmoroServiceContainer {
   public static void main(String[] args) {
     try {
       AmoroServiceContainer service = new AmoroServiceContainer();
+      Runtime.getRuntime()
+          .addShutdownHook(
+              new Thread(
+                  () -> {
+                    LOG.info("AMS service is shutting down...");
+                    service.dispose();
+                    LOG.info("AMS service has been shut down");
+                  }));
       while (true) {
         try {
           service.waitLeaderShip();
@@ -156,6 +165,7 @@ public class AmoroServiceContainer {
 
     initHttpService();
     startHttpService();
+    registerAmsServiceMetric();
   }
 
   private void addHandlerChain(RuntimeHandlerChain chain) {
@@ -165,13 +175,16 @@ public class AmoroServiceContainer {
   }
 
   public void dispose() {
-    if (tableManagementServer != null) {
+    if (tableManagementServer != null && tableManagementServer.isServing()) {
+      LOG.info("Stopping table management server...");
       tableManagementServer.stop();
     }
-    if (optimizingServiceServer != null) {
+    if (optimizingServiceServer != null && optimizingServiceServer.isServing()) {
+      LOG.info("Stopping optimizing server...");
       optimizingServiceServer.stop();
     }
     if (httpServer != null) {
+      LOG.info("Stopping http server...");
       try {
         httpServer.close();
       } catch (Exception e) {
@@ -179,14 +192,20 @@ public class AmoroServiceContainer {
       }
     }
     if (tableService != null) {
+      LOG.info("Stopping table service...");
       tableService.dispose();
       tableService = null;
     }
     if (terminalManager != null) {
+      LOG.info("Stopping terminal manager...");
       terminalManager.dispose();
       terminalManager = null;
     }
     optimizingService = null;
+
+    if (amsServiceMetrics != null) {
+      amsServiceMetrics.unregister();
+    }
 
     EventsManager.dispose();
     MetricManager.dispose();
@@ -279,6 +298,11 @@ public class AmoroServiceContainer {
             + "      https://amoro.apache.org/       \n");
 
     LOG.info("Http server start at {}.", port);
+  }
+
+  private void registerAmsServiceMetric() {
+    amsServiceMetrics = new AmsServiceMetrics(MetricManager.getInstance().getGlobalRegistry());
+    amsServiceMetrics.register();
   }
 
   private void initThriftService() throws TTransportException {
