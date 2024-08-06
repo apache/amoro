@@ -109,7 +109,8 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
             TableFormat.MIXED_HIVE,
             TableFormat.MIXED_ICEBERG,
             TableFormat.ICEBERG,
-            TableFormat.PAIMON)
+            TableFormat.PAIMON,
+            TableFormat.HUDI)
         .map(
             formatCatalog -> {
               try {
@@ -135,7 +136,11 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     }
     TableFormat[] formats =
         new TableFormat[] {
-          TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG, TableFormat.PAIMON
+          TableFormat.MIXED_HIVE,
+          TableFormat.MIXED_ICEBERG,
+          TableFormat.ICEBERG,
+          TableFormat.PAIMON,
+          TableFormat.HUDI
         };
 
     Map<String, TableFormat> tableNameToFormat = Maps.newHashMap();

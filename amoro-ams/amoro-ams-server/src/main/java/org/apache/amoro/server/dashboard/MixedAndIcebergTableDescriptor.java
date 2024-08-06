@@ -39,6 +39,7 @@ import org.apache.amoro.server.dashboard.model.PartitionFileBaseInfo;
 import org.apache.amoro.server.dashboard.model.ServerTableMeta;
 import org.apache.amoro.server.dashboard.model.TableBasicInfo;
 import org.apache.amoro.server.dashboard.model.TableStatistics;
+import org.apache.amoro.server.dashboard.model.TableSummary;
 import org.apache.amoro.server.dashboard.model.TagOrBranchInfo;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.TableStatCollector;
@@ -151,14 +152,11 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       }
       serverTableMeta.setChangeMetrics(changeMetrics);
     }
-    Map<String, Object> tableSummary = new HashMap<>();
-    tableSummary.put("size", AmsUtil.byteToXB(tableSize));
-    tableSummary.put("file", tableFileCnt);
-    tableSummary.put(
-        "averageFile", AmsUtil.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
-
-    tableSummary.put("records", getRecordsOfTable(table));
-    tableSummary.put("tableFormat", tableFormat);
+    String averageFileSize = AmsUtil.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt);
+    long records = getRecordsOfTable(table);
+    TableSummary tableSummary =
+        new TableSummary(
+            tableFileCnt, AmsUtil.byteToXB(tableSize), averageFileSize, records, tableFormat);
     serverTableMeta.setTableSummary(tableSummary);
     return serverTableMeta;
   }
@@ -328,7 +326,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
-  public List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, long snapshotId) {
+  public List<PartitionFileBaseInfo> getSnapshotDetail(
+      AmoroTable<?> amoroTable, String snapshotId) {
     MixedTable mixedTable = getTable(amoroTable);
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     Snapshot snapshot;
@@ -345,14 +344,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
           "unknown snapshot " + snapshotId + " of " + amoroTable.id());
     }
     final long snapshotTime = snapshot.timestampMillis();
-    String commitId = String.valueOf(snapshotId);
     snapshot
         .addedDataFiles(mixedTable.io())
         .forEach(
             f ->
                 result.add(
                     new PartitionFileBaseInfo(
-                        commitId,
+                        snapshotId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
                         MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
@@ -366,7 +364,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             f ->
                 result.add(
                     new PartitionFileBaseInfo(
-                        commitId,
+                        snapshotId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
                         MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
@@ -380,7 +378,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             f ->
                 result.add(
                     new PartitionFileBaseInfo(
-                        commitId,
+                        snapshotId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
                         MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
@@ -394,7 +392,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             f ->
                 result.add(
                     new PartitionFileBaseInfo(
-                        commitId,
+                        snapshotId,
                         DataFileType.ofContentId(f.content().id()),
                         snapshotTime,
                         MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
@@ -524,11 +522,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
-  public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, long processId) {
+  public List<OptimizingTaskInfo> getOptimizingTaskInfos(
+      AmoroTable<?> amoroTable, String processId) {
+    long id = Long.parseLong(processId);
     List<OptimizingTaskMeta> optimizingTaskMetaList =
         getAs(
             OptimizingMapper.class,
-            mapper -> mapper.selectOptimizeTaskMetas(Collections.singletonList(processId)));
+            mapper -> mapper.selectOptimizeTaskMetas(Collections.singletonList(id)));
     if (CollectionUtils.isEmpty(optimizingTaskMetaList)) {
       return Collections.emptyList();
     }
@@ -537,7 +537,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             taskMeta ->
                 new OptimizingTaskInfo(
                     taskMeta.getTableId(),
-                    taskMeta.getProcessId(),
+                    String.valueOf(taskMeta.getProcessId()),
                     taskMeta.getTaskId(),
                     taskMeta.getPartitionData(),
                     taskMeta.getStatus(),

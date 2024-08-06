@@ -43,7 +43,11 @@ public class CatalogBuilder {
   private static final Map<String, Set<TableFormat>> formatSupportedMatrix =
       ImmutableMap.of(
           CATALOG_TYPE_HADOOP,
-              Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.PAIMON),
+              Sets.newHashSet(
+                  TableFormat.ICEBERG,
+                  TableFormat.MIXED_ICEBERG,
+                  TableFormat.PAIMON,
+                  TableFormat.HUDI),
           CATALOG_TYPE_GLUE, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
           CATALOG_TYPE_CUSTOM, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
           CATALOG_TYPE_HIVE,
@@ -51,7 +55,8 @@ public class CatalogBuilder {
                   TableFormat.ICEBERG,
                   TableFormat.MIXED_ICEBERG,
                   TableFormat.MIXED_HIVE,
-                  TableFormat.PAIMON),
+                  TableFormat.PAIMON,
+                  TableFormat.HUDI),
           CATALOG_TYPE_AMS, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
 
   private static String getAmsURI(Configurations serviceConfig) {

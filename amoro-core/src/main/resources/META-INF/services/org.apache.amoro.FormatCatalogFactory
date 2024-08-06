@@ -20,3 +20,4 @@ org.apache.amoro.formats.iceberg.IcebergCatalogFactory
 org.apache.amoro.formats.paimon.PaimonCatalogFactory
 org.apache.amoro.formats.mixed.MixedIcebergCatalogFactory
 org.apache.amoro.formats.mixed.MixedHiveCatalogFactory
+org.apache.amoro.formats.hudi.HudiCatalogFactory
