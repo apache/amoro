@@ -18,6 +18,8 @@
 
 package org.apache.amoro.mixed;
 
+import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
+
 import org.apache.amoro.AmsClient;
 import org.apache.amoro.PooledAmsClient;
 import org.apache.amoro.io.AuthenticatedFileIO;
@@ -76,11 +78,14 @@ public class BasicMixedIcebergCatalog implements MixedFormatCatalog {
       String databaseFilter = properties.get(CatalogMetaProperties.KEY_DATABASE_FILTER);
       databaseFilterPattern = Pattern.compile(databaseFilter);
     }
+    String metastoreType = properties.get(ICEBERG_CATALOG_TYPE);
+    Map<String, String> icebergCatalogProperties =
+        MixedCatalogUtil.withIcebergCatalogInitializeProperties(name, metastoreType, properties);
     org.apache.iceberg.catalog.Catalog catalog =
-        buildIcebergCatalog(name, properties, metaStore.getConfiguration());
+        buildIcebergCatalog(name, icebergCatalogProperties, metaStore.getConfiguration());
     this.name = name;
     this.tableMetaStore = metaStore;
-    this.icebergCatalog = MixedCatalogUtil.buildCacheCatalog(catalog, properties);
+    this.icebergCatalog = MixedCatalogUtil.buildCacheCatalog(catalog, icebergCatalogProperties);
     if (catalog instanceof SupportsNamespaces) {
       this.asNamespaceCatalog = (SupportsNamespaces) catalog;
     }

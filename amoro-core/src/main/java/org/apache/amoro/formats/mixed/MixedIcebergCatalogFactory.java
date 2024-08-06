@@ -18,6 +18,9 @@
 
 package org.apache.amoro.formats.mixed;
 
+import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
+
+import com.google.common.collect.Maps;
 import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.FormatCatalogFactory;
 import org.apache.amoro.TableFormat;
@@ -25,7 +28,6 @@ import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.MixedCatalogUtil;
 
 import java.util.Map;
 
@@ -49,9 +51,8 @@ public class MixedIcebergCatalogFactory implements FormatCatalogFactory {
   @Override
   public Map<String, String> convertCatalogProperties(
       String catalogName, String metastoreType, Map<String, String> unifiedCatalogProperties) {
-    Map<String, String> properties =
-        MixedCatalogUtil.withIcebergCatalogInitializeProperties(
-            catalogName, metastoreType, unifiedCatalogProperties);
+    Map<String, String> properties = Maps.newHashMap(unifiedCatalogProperties);
+    properties.put(ICEBERG_CATALOG_TYPE, metastoreType);
     properties.put(CatalogMetaProperties.TABLE_FORMATS, format().name());
     return properties;
   }
