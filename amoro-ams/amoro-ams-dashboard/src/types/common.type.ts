@@ -366,6 +366,7 @@ export interface IBranchItem {
   value: string
   label: string
   type: branchTypeMap
+  amoroCurrentSnapshotsOfTable?:SnapshotItem
 }
 
 export interface IServiceBranchItem {
@@ -375,7 +376,10 @@ export interface IServiceBranchItem {
   maxSnapshotAgeMs: number | null
   maxRefAgeMs: number | null
   type: branchTypeMap
+  consumerId:string
+  amoroCurrentSnapshotsOfTable:SnapshotItem
 }
+
 
 export enum operationMap {
   ALL = 'all',

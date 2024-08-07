@@ -71,6 +71,14 @@ function onRefChange(params: { ref: string, operation: string }) {
   operation.value = params.operation
   getTableInfo()
 }
+function onConsumerChange(params: { ref: string, operation: string, amoroCurrentSnapshotsItem: SnapshotItem }) {
+  tblRef.value = params.ref
+  operation.value = params.operation
+  dataSource.length = 0
+  params.amoroCurrentSnapshotsItem.commitTime = params.amoroCurrentSnapshotsItem.commitTime ? dateFormat(params.amoroCurrentSnapshotsItem.commitTime) : '-'
+  dataSource.push(params.amoroCurrentSnapshotsItem)
+  pagination.total = 1
+}
 
 async function getTableInfo() {
   try {
@@ -99,6 +107,7 @@ async function getTableInfo() {
     })
     recordChartOption.value = generateLineChartOption(t('recordChartTitle'), rcData)
     fileChartOption.value = generateLineChartOption(t('fileChartTitle'), fcData)
+
     pagination.total = total
   }
   catch (error) {
@@ -185,15 +194,10 @@ onMounted(() => {
           <Chart :loading="loading" :options="fileChartOption" />
         </a-col>
       </a-row>
-      <Selector :catalog="sourceData.catalog" :db="sourceData.db" :table="sourceData.table" :disabled="loading" @ref-change="onRefChange" />
-      <a-table
-        row-key="snapshotId"
-        :columns="columns"
-        :data-source="dataSource"
-        :pagination="pagination"
-        :loading="loading"
-        @change="change"
-      >
+      <Selector :catalog="sourceData.catalog" :db="sourceData.db" :table="sourceData.table" :disabled="loading"
+        @consumer-change="onConsumerChange" @ref-change="onRefChange" />
+      <a-table row-key="snapshotId" :columns="columns" :data-source="dataSource" :pagination="pagination"
+        :loading="loading" @change="change">
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'snapshotId'">
             <a-button type="link" @click="toggleBreadcrumb(record)">
@@ -220,15 +224,8 @@ onMounted(() => {
         </a-breadcrumb-item>
         <a-breadcrumb-item>{{ `${$t('snapshotId')} ${snapshotId}` }}</a-breadcrumb-item>
       </a-breadcrumb>
-      <a-table
-        row-key="file"
-        :columns="breadcrumbColumns"
-        :data-source="breadcrumbDataSource"
-        :pagination="breadcrumbPagination"
-        :loading="loading"
-        class="g-mt-8"
-        @change="change"
-      >
+      <a-table row-key="file" :columns="breadcrumbColumns" :data-source="breadcrumbDataSource"
+        :pagination="breadcrumbPagination" :loading="loading" class="g-mt-8" @change="change">
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'path'">
             <a-tooltip>
@@ -255,13 +252,16 @@ onMounted(() => {
 <style lang="less" scoped>
 .table-snapshots {
   padding: 18px 24px;
+
   .text-active {
     color: #1890ff;
     cursor: pointer;
   }
+
   :deep(.ant-btn-link) {
     padding: 0;
   }
+
   .ant-table-wrapper {
     margin-top: 24px;
   }
