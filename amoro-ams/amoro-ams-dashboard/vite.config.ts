@@ -95,7 +95,7 @@ export default defineConfig({
      * If you run the server on you local backend
      * Maybe you need to open the Proxy
      */
-    //  proxy: {
+    // proxy: {
     //   '^/ams': {
     //     // change the target to your backend server
     //     // Such as target: 'http://127.0.0.1:xxx',
