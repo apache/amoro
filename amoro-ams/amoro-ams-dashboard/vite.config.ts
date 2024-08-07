@@ -99,7 +99,7 @@ export default defineConfig({
     //   '^/ams': {
     //     // change the target to your backend server
     //     // Such as target: 'http://127.0.0.1:xxx',
-    //     target: 'http://127.0.0.1:1630',
+    //     target: 'http://127.0.0.1:xxx',
     //     changeOrigin: true,
     //     configure(_, options) {
     //       // configure proxy header here

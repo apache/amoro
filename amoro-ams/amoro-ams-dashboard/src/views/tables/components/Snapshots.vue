@@ -211,22 +211,10 @@ onMounted(() => {
           <Chart :loading="loading" :options="fileChartOption" />
         </a-col>
       </a-row>
-      <Selector
-        :catalog="sourceData.catalog"
-        :db="sourceData.db"
-        :table="sourceData.table"
-        :disabled="loading"
-        @consumer-change="onConsumerChange"
-        @ref-change="onRefChange"
-      />
-      <a-table
-        row-key="snapshotId"
-        :columns="columns"
-        :data-source="dataSource"
-        :pagination="pagination"
-        :loading="loading"
-        @change="change"
-      >
+      <Selector :catalog="sourceData.catalog" :db="sourceData.db" :table="sourceData.table" :disabled="loading"
+        @consumer-change="onConsumerChange" @ref-change="onRefChange" />
+      <a-table row-key="snapshotId" :columns="columns" :data-source="dataSource" :pagination="pagination"
+        :loading="loading" @change="change">
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'snapshotId'">
             <a-button type="link" @click="toggleBreadcrumb(record)">
@@ -235,12 +223,7 @@ onMounted(() => {
           </template>
         </template>
         <template #expandedRowRender="{ record }">
-          <a-row
-            v-for="(value, key) in record.summary"
-            :key="key"
-            type="flex"
-            :gutter="16"
-          >
+          <a-row v-for="(value, key) in record.summary" :key="key" type="flex" :gutter="16">
             <a-col flex="220px" style="text-align: right"> {{ key }} : </a-col>
             <a-col flex="auto">
               {{ value }}
@@ -254,19 +237,12 @@ onMounted(() => {
         <a-breadcrumb-item class="text-active" @click="toggleBreadcrumb">
           All
         </a-breadcrumb-item>
-        <a-breadcrumb-item>{{
-          `${$t("snapshotId")} ${snapshotId}`
-        }}</a-breadcrumb-item>
+        <a-breadcrumb-item>
+          {{ `${$t("snapshotId")} ${snapshotId}` }}
+        </a-breadcrumb-item>
       </a-breadcrumb>
-      <a-table
-        row-key="file"
-        :columns="breadcrumbColumns"
-        :data-source="breadcrumbDataSource"
-        :pagination="breadcrumbPagination"
-        :loading="loading"
-        class="g-mt-8"
-        @change="change"
-      >
+      <a-table row-key="file" :columns="breadcrumbColumns" :data-source="breadcrumbDataSource"
+        :pagination="breadcrumbPagination" :loading="loading" class="g-mt-8" @change="change">
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'path'">
             <a-tooltip>
