@@ -18,117 +18,117 @@ limitations under the License.
 
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import type { IBranchItem, IServiceBranchItem } from '@/types/common.type';
-import { branchTypeMap, operationMap } from '@/types/common.type';
-import { getBranches, getTags, getConsumers } from '@/services/table.service';
+import type { IBranchItem, IServiceBranchItem } from '@/types/common.type'
+import { branchTypeMap, operationMap } from '@/types/common.type'
+import { getBranches, getTags, getConsumers } from '@/services/table.service'
 
 const props = defineProps({
   catalog: String,
   db: String,
   table: String,
   disabled: Boolean
-});
-const emit = defineEmits(['refChange', 'consumerChange']);
+})
+const emit = defineEmits(['refChange', 'consumerChange'])
 
-const disabled = computed(() => props.disabled);
+const disabled = computed(() => props.disabled)
 
 const selectedObj = ref<IBranchItem>({
   value: '',
   type: branchTypeMap.BRANCH,
   label: ''
-});
-const branchSearchKey = ref<string>('');
-const tagSearchKey = ref<string>('');
-const tabActiveKey = ref<string>(branchTypeMap.BRANCH);
-const branchList = ref<IBranchItem[]>([]);
-const tagList = ref<IBranchItem[]>([]);
-const consumerList = ref<IBranchItem[]>([]);
+})
+const branchSearchKey = ref<string>('')
+const tagSearchKey = ref<string>('')
+const tabActiveKey = ref<string>(branchTypeMap.BRANCH)
+const branchList = ref<IBranchItem[]>([])
+const tagList = ref<IBranchItem[]>([])
+const consumerList = ref<IBranchItem[]>([])
 const actualBranchList = computed(() =>
   branchList.value.filter(
     (item) =>
       !branchSearchKey.value || item.label.includes(branchSearchKey.value)
   )
-);
+)
 const actualTagList = computed(() =>
   tagList.value.filter(
     (item) => !tagSearchKey.value || item.label.includes(tagSearchKey.value)
   )
-);
+)
 const actualConsumerList = computed(() =>
   consumerList.value.filter(
     (item) => !tagSearchKey.value || item.label.includes(tagSearchKey.value)
   )
-);
+)
 
-const operation = ref<string>(operationMap.ALL);
+const operation = ref<string>(operationMap.ALL)
 const operationList = reactive([
   operationMap.ALL,
   operationMap.OPTIMIZING,
   operationMap.NONOPTIMIZING
-]);
+])
 
 function onClickInput(e: MouseEvent) {
-  e.stopPropagation();
+  e.stopPropagation()
 }
 
 function getPopupContainer(triggerNode: any) {
-  return triggerNode.parentNode || document.body;
+  return triggerNode.parentNode || document.body
 }
 
 function selectObject(obj: IBranchItem) {
-  selectedObj.value = obj;
-  operation.value = operationMap.ALL;
-  emit('refChange', { ref: obj.value, operation: operationMap.ALL });
+  selectedObj.value = obj
+  operation.value = operationMap.ALL
+  emit('refChange', { ref: obj.value, operation: operationMap.ALL })
 }
 function selectConsumer(obj: IBranchItem) {
-  if (obj.value === selectedObj.value.value) return;
-  selectedObj.value = obj;
-  const amoroCurrentSnapshotsItem = { ...obj.amoroCurrentSnapshotsOfTable };
+  if (obj.value === selectedObj.value.value) return
+  selectedObj.value = obj
+  const amoroCurrentSnapshotsItem = { ...obj.amoroCurrentSnapshotsOfTable }
   emit('consumerChange', {
     ref: obj.value,
     amoroCurrentSnapshotsItem,
     operation: operationMap.ALL
-  });
+  })
 }
 function onChange(val: string) {
-  emit('refChange', { ref: selectedObj.value.value, operation: val });
+  emit('refChange', { ref: selectedObj.value.value, operation: val })
 }
 
 async function getBranchList() {
-  const result = await getBranches(props as any);
+  const result = await getBranches(props as any)
   branchList.value = (result.list || []).map((l: IServiceBranchItem) => ({
     value: l.name,
     label: l.name,
     type: branchTypeMap.BRANCH
-  }));
-  branchList.value.length && selectObject(branchList.value[0]);
+  }))
+  branchList.value.length && selectObject(branchList.value[0])
 }
 
 async function getTagList() {
-  const result = await getTags(props as any);
+  const result = await getTags(props as any)
   tagList.value = (result.list || []).map((l: IServiceBranchItem) => ({
     value: l.name,
     label: l.name,
     type: branchTypeMap.TAG
-  }));
+  }))
 }
 async function getConsumerList() {
-  const result = await getConsumers(props as any);
+  const result = await getConsumers(props as any)
   consumerList.value = (result.list || []).map((l: IServiceBranchItem) => ({
     value: l.consumerId,
     label: l.consumerId,
     type: branchTypeMap.CONSUMER,
     amoroCurrentSnapshotsOfTable: l.amoroCurrentSnapshotsOfTable
-  }));
+  }))
 }
 async function init() {
-  await Promise.all([getBranchList(), getTagList(), getConsumerList()]);
+  await Promise.all([getBranchList(), getTagList(), getConsumerList()])
 }
 
 onMounted(() => {
-  tabActiveKey.value = branchTypeMap.BRANCH;
-  init();
-});
+  tabActiveKey.value = branchTypeMap.BRANCH
+  init()
+})
 </script>
 
 <template>
