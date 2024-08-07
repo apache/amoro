@@ -193,7 +193,7 @@ export default defineComponent({
     font-size: 24px;
     line-height: 1.5;
     margin-right: 16px;
-    max-width: 600px;
+    max-width: 100%;
     padding-left: 24px;
   }
   .table-info {
