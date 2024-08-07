@@ -18,12 +18,9 @@
 
 package org.apache.amoro.server.manager;
 
-import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
+import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
@@ -34,14 +31,13 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /** Kubernetes Optimizer Container with Standalone Optimizer */
@@ -54,7 +50,7 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
   public static final String NAMESPACE = "namespace";
   public static final String IMAGE = "image";
   public static final String PULL_POLICY = "pullPolicy";
-
+  public static final String PODTEMPLATE = "podTemplate";
   public static final String PULL_SECRETS = "imagePullSecrets";
   public static final String KUBE_CONFIG_PATH = "kube-config-path";
 
@@ -105,58 +101,105 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
     String resourceId = resource.getResourceId();
     String groupName = resource.getGroupName();
     String kubernetesName = NAME_PREFIX + resourceId;
-    DeploymentBuilder deploymentBuilder =
-        new DeploymentBuilder()
-            .withNewMetadata()
-            .withName(NAME_PREFIX + resourceId)
-            .endMetadata()
-            .withNewSpec()
-            .withReplicas(1)
-            .withNewTemplate()
-            .withNewMetadata()
-            .addToLabels("app", NAME_PREFIX + resourceId)
-            .addToLabels("AmoroOptimizerGroup", groupName)
-            .addToLabels("AmoroResourceId", resourceId)
-            .endMetadata()
-            .withNewSpec()
-            .addNewContainer()
-            .withName("optimizer")
-            .withImage(image)
-            .withImagePullPolicy(pullPolicy)
-            .withCommand("sh", "-c", startUpArgs)
-            .withResources(
-                new ResourceRequirementsBuilder()
-                    .withLimits(
-                        ImmutableMap.of(
-                            "memory",
-                            new Quantity(memory + "Mi"),
-                            "cpu",
-                            new Quantity(cpuLimit + "")))
-                    .withRequests(
-                        ImmutableMap.of(
-                            "memory",
-                            new Quantity(memory + "Mi"),
-                            "cpu",
-                            new Quantity(cpuLimit + "")))
-                    .build())
-            .endContainer()
-            .endSpec()
-            .endTemplate()
-            .withNewSelector()
-            .addToMatchLabels("app", NAME_PREFIX + resourceId)
-            .endSelector()
-            .endSpec();
+
+    PodTemplate podTemplate = new Yaml().loadAs(groupProperties.get(PODTEMPLATE),PodTemplate.class);
+
+    podTemplate.getTemplate().getMetadata().setLabels(new HashMap<String, String>(){{
+        put("app", NAME_PREFIX + resourceId);
+        put("AmoroOptimizerGroup", groupName);
+        put("AmoroResourceId", resourceId);
+      }});
+
+    Container container = new Container();
+    container.setImage(image);
+    container.setImagePullPolicy(pullPolicy);
+    container.setCommand(new ArrayList<>(Arrays.asList("sh", "-c", startUpArgs)));
+
+    ResourceRequirements resourceRequirements = new ResourceRequirements();
+    resourceRequirements.setLimits(ImmutableMap.of(
+            "memory", new Quantity(memory + "Mi"),
+            "cpu", new Quantity(cpuLimit + "")));
+    resourceRequirements.setRequests(ImmutableMap.of(
+            "memory", new Quantity(memory + "Mi"),
+            "cpu", new Quantity(cpuLimit + "")));
+    container.setResources(resourceRequirements);
+
+    podTemplate.getTemplate().getSpec().getContainers().set(0, container);
+
     if (!imagePullSecretsList.isEmpty()) {
-      deploymentBuilder
-          .editSpec()
-          .editTemplate()
-          .editSpec()
-          .withImagePullSecrets(imagePullSecretsList)
-          .endSpec()
-          .endTemplate()
-          .endSpec();
+      podTemplate.getTemplate().getSpec().setImagePullSecrets(imagePullSecretsList);
     }
-    Deployment deployment = deploymentBuilder.build();
+
+    DeploymentSpec deploymentSpec = new DeploymentSpec();
+    deploymentSpec.setTemplate(podTemplate.getTemplate());
+
+    LabelSelector labelSelector = new LabelSelector();
+    labelSelector.setMatchLabels(new HashMap<String, String>() {{
+      put("app", NAME_PREFIX + resourceId);
+    }});
+
+    deploymentSpec.setSelector(labelSelector);
+    deploymentSpec.setReplicas(1);
+
+    Deployment deployment = new Deployment();
+    deployment.setSpec(deploymentSpec);
+    ObjectMeta deploymentMetadata = new ObjectMeta();
+    deploymentMetadata.setName(NAME_PREFIX + resourceId);
+    deployment.setMetadata(deploymentMetadata);
+
+
+//    DeploymentBuilder deploymentBuilder =
+//        new DeploymentBuilder()
+//            .withNewMetadata()
+//            .withName(NAME_PREFIX + resourceId)
+//            .endMetadata()
+//            .withNewSpec()
+//            .withReplicas(1)
+//            .withNewTemplate()
+//            .withNewMetadata()
+//            .addToLabels("app", NAME_PREFIX + resourceId)
+//            .addToLabels("AmoroOptimizerGroup", groupName)
+//            .addToLabels("AmoroResourceId", resourceId)
+//            .endMetadata()
+//            .withNewSpec()
+//            .addNewContainer()
+//            .withName("optimizer")
+//            .withImage(image)
+//            .withImagePullPolicy(pullPolicy)
+//            .withCommand("sh", "-c", startUpArgs)
+//            .withResources(
+//                new ResourceRequirementsBuilder()
+//                    .withLimits(
+//                        ImmutableMap.of(
+//                            "memory",
+//                            new Quantity(memory + "Mi"),
+//                            "cpu",
+//                            new Quantity(cpuLimit + "")))
+//                    .withRequests(
+//                        ImmutableMap.of(
+//                            "memory",
+//                            new Quantity(memory + "Mi"),
+//                            "cpu",
+//                            new Quantity(cpuLimit + "")))
+//                    .build())
+//            .endContainer()
+//            .endSpec()
+//            .endTemplate()
+//            .withNewSelector()
+//            .addToMatchLabels("app", NAME_PREFIX + resourceId)
+//            .endSelector()
+//            .endSpec();
+//    if (!imagePullSecretsList.isEmpty()) {
+//      deploymentBuilder
+//          .editSpec()
+//          .editTemplate()
+//          .editSpec()
+//          .withImagePullSecrets(imagePullSecretsList)
+//          .endSpec()
+//          .endTemplate()
+//          .endSpec();
+//    }
+//    Deployment deployment = deploymentBuilder.build();
 
     client.apps().deployments().inNamespace(namespace).resource(deployment).create();
     Map<String, String> startupProperties = Maps.newHashMap();
