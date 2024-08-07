@@ -202,7 +202,7 @@ onMounted(() => {
               </template>
               <span v-else class="empty-tips">{{ $t("nothingToShow") }}</span>
             </a-tab-pane>
-            <a-tab-pane :key="branchTypeMap.CONSUMER" :tab="$t('consumer')">
+            <a-tab-pane v-if="consumerList.length!==0" :key="branchTypeMap.CONSUMER" :tab="$t('consumer')">
               <template v-if="!!actualConsumerList.length">
                 <div
                   v-for="(item, key) in actualConsumerList"
