@@ -16,128 +16,41 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.flink.util;
+package org.apache.iceberg.flink.util;
 
-import org.apache.amoro.flink.interceptor.ProxyFactory;
-import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.flink.api.common.operators.MailboxExecutor;
-import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.AbstractUdfStreamOperator;
-import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperatorFactory;
 import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService;
-import org.apache.flink.table.data.RowData;
-import org.apache.flink.table.types.logical.RowType;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.flink.TableLoader;
-import org.apache.iceberg.flink.sink.TaskWriterFactory;
+import org.apache.iceberg.flink.krb.interceptor.ProxyFactory;
 import org.apache.iceberg.flink.source.FlinkInputFormat;
 import org.apache.iceberg.flink.source.ScanContext;
 import org.apache.iceberg.flink.source.StreamingReaderOperator;
 import org.apache.iceberg.io.FileIO;
-import org.apache.iceberg.io.WriteResult;
-import org.apache.iceberg.util.ThreadPools;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-/** An util generates Apache Iceberg writer and committer operator w */
+/** Utility class for Iceberg, fetching Iceberg source function or inputFormat. */
 public class IcebergClassUtil {
-  private static final String ICEBERG_SCAN_CONTEXT_CLASS =
-      "org.apache.iceberg.flink.source.ScanContext";
-  private static final String ICEBERG_PARTITION_SELECTOR_CLASS =
-      "org.apache.iceberg.flink.sink.PartitionKeySelector";
-  private static final String ICEBERG_FILE_COMMITTER_CLASS =
-      "org.apache.iceberg.flink.sink.IcebergFilesCommitter";
-  private static final String ICEBERG_FILE_WRITER_CLASS =
-      "org.apache.iceberg.flink.sink.IcebergStreamWriter";
-
-  public static KeySelector<RowData, Object> newPartitionKeySelector(
-      PartitionSpec spec, Schema schema, RowType flinkSchema) {
-    try {
-      Class<?> clazz = forName(ICEBERG_PARTITION_SELECTOR_CLASS);
-      Constructor<?> c = clazz.getConstructor(PartitionSpec.class, Schema.class, RowType.class);
-      c.setAccessible(true);
-      return (KeySelector<RowData, Object>) c.newInstance(spec, schema, flinkSchema);
-    } catch (NoSuchMethodException
-        | IllegalAccessException
-        | InvocationTargetException
-        | InstantiationException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static OneInputStreamOperator<WriteResult, Void> newIcebergFilesCommitter(
-      TableLoader tableLoader, boolean replacePartitions, String branch, PartitionSpec spec) {
-    try {
-      Class<?> clazz = forName(ICEBERG_FILE_COMMITTER_CLASS);
-      Constructor<?> c =
-          clazz.getDeclaredConstructor(
-              TableLoader.class,
-              boolean.class,
-              Map.class,
-              Integer.class,
-              String.class,
-              PartitionSpec.class);
-      c.setAccessible(true);
-      return (OneInputStreamOperator<WriteResult, Void>)
-          c.newInstance(
-              tableLoader,
-              replacePartitions,
-              new HashMap<>(),
-              ThreadPools.WORKER_THREAD_POOL_SIZE,
-              branch,
-              spec);
-    } catch (NoSuchMethodException
-        | IllegalAccessException
-        | InvocationTargetException
-        | InstantiationException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static OneInputStreamOperator<WriteResult, Void> newIcebergFilesCommitter(
-      TableLoader tableLoader,
-      boolean replacePartitions,
-      String branch,
-      PartitionSpec spec,
-      AuthenticatedFileIO authenticatedFileIO) {
-    OneInputStreamOperator<WriteResult, Void> obj =
-        newIcebergFilesCommitter(tableLoader, replacePartitions, branch, spec);
-    return (OneInputStreamOperator) ProxyUtil.getProxy(obj, authenticatedFileIO);
-  }
-
-  public static ProxyFactory<AbstractStreamOperator> getIcebergStreamWriterProxyFactory(
-      String fullTableName,
-      TaskWriterFactory taskWriterFactory,
-      AuthenticatedFileIO authenticatedFileIO) {
-    Class<?> clazz = forName(ICEBERG_FILE_WRITER_CLASS);
-    return (ProxyFactory<AbstractStreamOperator>)
-        ProxyUtil.getProxyFactory(
-            clazz,
-            authenticatedFileIO,
-            new Class[] {String.class, TaskWriterFactory.class},
-            new Object[] {fullTableName, taskWriterFactory});
-  }
+  private IcebergClassUtil() {}
 
   public static StreamingReaderOperator newStreamingReaderOperator(
       FlinkInputFormat format, ProcessingTimeService timeService, MailboxExecutor mailboxExecutor) {
     try {
-      Constructor<StreamingReaderOperator> c =
+      Constructor<StreamingReaderOperator> constructor =
           StreamingReaderOperator.class.getDeclaredConstructor(
               FlinkInputFormat.class, ProcessingTimeService.class, MailboxExecutor.class);
-      c.setAccessible(true);
-      return c.newInstance(format, timeService, mailboxExecutor);
+      constructor.setAccessible(true);
+      return constructor.newInstance(format, timeService, mailboxExecutor);
     } catch (IllegalAccessException
         | NoSuchMethodException
         | InvocationTargetException
@@ -146,6 +59,7 @@ public class IcebergClassUtil {
     }
   }
 
+  @SuppressWarnings("UnnecessaryParentheses")
   public static FlinkInputFormat getInputFormat(OneInputStreamOperatorFactory operatorFactory) {
     try {
       Class<?>[] classes = StreamingReaderOperator.class.getDeclaredClasses();
@@ -166,7 +80,7 @@ public class IcebergClassUtil {
 
   public static ProxyFactory<FlinkInputFormat> getInputFormatProxyFactory(
       OneInputStreamOperatorFactory operatorFactory,
-      AuthenticatedFileIO authenticatedFileIO,
+      TableMetaStore tableMetaStore,
       Schema tableSchema) {
     FlinkInputFormat inputFormat = getInputFormat(operatorFactory);
     TableLoader tableLoader =
@@ -175,12 +89,12 @@ public class IcebergClassUtil {
     EncryptionManager encryption =
         ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "encryption");
     Object context = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "context");
-    TableMetaStore tableMetaStore =
+    TableMetaStore tableMetaStore1 =
         ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "tableMetaStore");
 
     return ProxyUtil.getProxyFactory(
         FlinkInputFormat.class,
-        authenticatedFileIO,
+        tableMetaStore,
         new Class[] {
           TableLoader.class,
           Schema.class,
@@ -189,17 +103,10 @@ public class IcebergClassUtil {
           ScanContext.class,
           TableMetaStore.class
         },
-        new Object[] {tableLoader, tableSchema, io, encryption, context, tableMetaStore});
+        new Object[] {tableLoader, tableSchema, io, encryption, context, tableMetaStore1});
   }
 
-  private static Class<?> forName(String className) {
-    try {
-      return Class.forName(className);
-    } catch (ClassNotFoundException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
+  @SuppressWarnings("UnnecessaryParentheses")
   public static SourceFunction getSourceFunction(AbstractUdfStreamOperator source) {
     try {
       Field field = AbstractUdfStreamOperator.class.getDeclaredField("userFunction");
@@ -210,11 +117,12 @@ public class IcebergClassUtil {
     }
   }
 
+  @SuppressWarnings("UnnecessaryParentheses")
   public static void clean(StreamExecutionEnvironment env) {
     try {
       Field field = StreamExecutionEnvironment.class.getDeclaredField("transformations");
       field.setAccessible(true);
-      ((List) (field.get(env))).clear();
+      ((List<?>) (field.get(env))).clear();
     } catch (IllegalAccessException | NoSuchFieldException e) {
       throw new RuntimeException(e);
     }
