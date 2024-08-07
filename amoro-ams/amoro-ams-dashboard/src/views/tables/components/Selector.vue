@@ -32,11 +32,7 @@ const emit = defineEmits(['refChange', 'consumerChange'])
 
 const disabled = computed(() => props.disabled)
 
-const selectedObj = ref<IBranchItem>({
-  value: '',
-  type: branchTypeMap.BRANCH,
-  label: ''
-})
+const selectedObj = ref<IBranchItem>({value: '', type: branchTypeMap.BRANCH, label: ''})
 const branchSearchKey = ref<string>('')
 const tagSearchKey = ref<string>('')
 const tabActiveKey = ref<string>(branchTypeMap.BRANCH)
@@ -79,27 +75,17 @@ function onChange(val: string) {
 
 async function getBranchList() {
   const result = await getBranches(props as any)
-  branchList.value = (result.list || []).map((l: IServiceBranchItem) => ({value: l.name, label: l.name, type: branchTypeMap.BRANCH}))
+  branchList.value = (result.list || []).map((l: IServiceBranchItem) => ({value: l.name, label: l.name, type: branchTypeMap.BRANCH }))
   branchList.value.length && selectObject(branchList.value[0])
 }
 
 async function getTagList() {
   const result = await getTags(props as any)
-  tagList.value = (result.list || []).map((l: IServiceBranchItem) => ({
-    value: l.name,
-    label: l.name,
-    type: branchTypeMap.TAG
-  }))
+  tagList.value = (result.list || []).map((l: IServiceBranchItem) => ({value: l.name, label: l.name, type: branchTypeMap.TAG }))
 }
 async function getConsumerList() {
   const result = await getConsumers(props as any)
-  consumerList.value = (result.list || []).map((l: IServiceBranchItem) => ({
-    value: l.consumerId,
-    label: l.consumerId,
-    type: branchTypeMap.CONSUMER,
-    amoroCurrentSnapshotsOfTable: l.amoroCurrentSnapshotsOfTable
-  }))
-}
+  consumerList.value = (result.list || []).map((l: IServiceBranchItem) => ({value: l.consumerId, label: l.consumerId, type: branchTypeMap.CONSUMER, amoroCurrentSnapshotsOfTable: l.amoroCurrentSnapshotsOfTable}))}
 async function init() {
   await Promise.all([getBranchList(), getTagList(), getConsumerList()])
 }

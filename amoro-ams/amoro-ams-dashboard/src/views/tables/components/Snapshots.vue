@@ -22,12 +22,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import Selector from './Selector.vue'
 import { usePagination } from '@/hooks/usePagination'
-import type {
-  BreadcrumbSnapshotItem,
-  IColumns,
-  ILineChartOriginalData,
-  SnapshotItem
-} from '@/types/common.type'
+import type { BreadcrumbSnapshotItem, IColumns, ILineChartOriginalData, SnapshotItem } from '@/types/common.type'
 import { getDetailBySnapshotId, getSnapshots } from '@/services/table.service'
 import { dateFormat } from '@/utils'
 import Chart from '@/components/echarts/Chart.vue'
@@ -49,12 +44,8 @@ const breadcrumbColumns = shallowReactive([
   { title: t('partition'), dataIndex: 'partition', width: 120 },
   { title: t('fileType'), dataIndex: 'fileType', width: 120, ellipsis: true },
   { title: t('size'), dataIndex: 'size', width: 120 },
-  {
-    title: t('commitTime'),
-    dataIndex: 'commitTime',
-    width: 200,
-    ellipsis: true
-  },
+  { title: t('commitTime'), dataIndex: 'commitTime', width: 200, ellipsis: true },
+  { title: t('path'), dataIndex: 'path', ellipsis: true },
   { title: t('path'), dataIndex: 'path', ellipsis: true }
 ])
 const dataSource = reactive<SnapshotItem[]>([])
@@ -69,7 +60,7 @@ const sourceData = reactive({
   catalog: '',
   db: '',
   table: '',
-  ...query
+  ...query,
 })
 const recordChartOption = ref<ECOption>({})
 const fileChartOption = ref<ECOption>({})
@@ -106,7 +97,7 @@ async function getTableInfo() {
       ref: tblRef.value,
       operation: operation.value,
       page: pagination.current,
-      pageSize: pagination.pageSize
+      pageSize: pagination.pageSize,
     })
     const { list = [], total } = result
     const rcData: ILineChartOriginalData = {}
@@ -129,7 +120,8 @@ async function getTableInfo() {
     fileChartOption.value = generateLineChartOption(t('fileChartTitle'), fcData)
     pagination.total = total
   } catch (error) {
-  } finally {
+  } 
+  finally {
     loading.value = false
   }
 }
@@ -141,7 +133,8 @@ function change({ current = 1, pageSize = 25 }) {
       breadcrumbPagination.current = 1
     }
     breadcrumbPagination.pageSize = pageSize
-  } else {
+  }
+  else {
     pagination.current = current
     if (pageSize !== pagination.pageSize) {
       pagination.current = 1
@@ -154,7 +147,8 @@ function change({ current = 1, pageSize = 25 }) {
 function refresh() {
   if (hasBreadcrumb.value) {
     getBreadcrumbTable()
-  } else {
+  }
+  else {
     getTableInfo()
   }
 }
@@ -176,8 +170,10 @@ async function getBreadcrumbTable() {
       p.commitTime = p.commitTime ? dateFormat(p.commitTime) : ''
       breadcrumbDataSource.push(p)
     })
-  } catch (error) {
-  } finally {
+  }
+  catch (error) {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -231,25 +227,14 @@ onMounted(() => {
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'snapshotId'">
-            <a-button
-              type="link"
-              @click="toggleBreadcrumb(record)"
-            >
+            <a-button type="link" @click="toggleBreadcrumb(record)">
               {{ record.snapshotId }}
             </a-button>
           </template>
         </template>
         <template #expandedRowRender="{ record }">
-          <a-row
-            v-for="(value, key) in record.summary"
-            :key="key"
-            type="flex"
-            :gutter="16"
-          >
-            <a-col
-              flex="220px"
-              style="text-align: right"
-            >
+          <a-row v-for="(value, key) in record.summary" :key="key" type="flex" :gutter="16">
+            <a-col flex="220px" style="text-align: right;">
               {{ key }} :
             </a-col>
             <a-col flex="auto">
@@ -261,15 +246,10 @@ onMounted(() => {
     </template>
     <template v-else>
       <a-breadcrumb separator=">">
-        <a-breadcrumb-item
-          class="text-active"
-          @click="toggleBreadcrumb"
-        >
+        <a-breadcrumb-item class="text-active" @click="toggleBreadcrumb">
           All
         </a-breadcrumb-item>
-        <a-breadcrumb-item>
-          {{ `${$t('snapshotId')} ${snapshotId}` }}
-        </a-breadcrumb-item>
+        <a-breadcrumb-item>{{ `${$t('snapshotId')} ${snapshotId}` }}</a-breadcrumb-item>
       </a-breadcrumb>
       <a-table
         row-key="file"
