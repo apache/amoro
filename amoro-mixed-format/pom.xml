@@ -25,7 +25,7 @@
     <parent>
         <artifactId>amoro-parent</artifactId>
         <groupId>org.apache.amoro</groupId>
-        <version>0.7-SNAPSHOT</version>
+        <version>0.8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
