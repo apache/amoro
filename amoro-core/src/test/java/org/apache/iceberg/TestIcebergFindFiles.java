@@ -25,24 +25,44 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Types;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 @RunWith(Parameterized.class)
-public class TestIcebergFindFiles extends TableTestBase {
+public class TestIcebergFindFiles extends TestBase {
+
   @Parameterized.Parameters(name = "formatVersion = {0}")
-  public static Object[] parameters() {
-    return new Object[] {1, 2};
+  public static List<Object> parameters() {
+    return Arrays.asList(1, 2);
   }
 
+  @Rule public TemporaryFolder tempDir = new TemporaryFolder();
+
   public TestIcebergFindFiles(int formatVersion) {
-    super(formatVersion);
+    this.formatVersion = formatVersion;
+  }
+
+  @Before
+  public void setUp() throws Exception {
+    this.tableDir = tempDir.newFolder();
+    this.tableDir.delete();
+    super.setupTable();
+  }
+
+  @After
+  public void cleanUp() throws Exception {
+    super.cleanupTables();
   }
 
   @Test

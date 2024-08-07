@@ -65,6 +65,7 @@ import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /** Basic implementation of {@link UnkeyedTable}, wrapping a {@link Table}. */
 public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
@@ -317,5 +318,10 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public UpdatePartitionProperties updatePartitionProperties(Transaction transaction) {
     return new PartitionPropertiesUpdate(this, transaction);
+  }
+
+  @Override
+  public UUID uuid() {
+    return UUID.fromString(this.operations().current().uuid());
   }
 }
