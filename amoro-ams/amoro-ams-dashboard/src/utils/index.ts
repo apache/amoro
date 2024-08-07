@@ -57,51 +57,33 @@ export function mbToSize(size: number): string {
 /**
  * Convert ms to d h min s
  */
-export function formatMS2Time(time: number, fromHour?: boolean): string {
-  if (time === null || time === undefined || Number.isNaN(time)) {
-    return '-'
-  }
-  // 3h 34min 12s
-  const Second = 1000
-  const Minute = Second * 60
-  const Hour = Minute * 60
-  const Day = Hour * 24
-  if (time === 0) {
-    return '0 ms'
-  }
-  if (time < Second) {
-    return fromHour ? '0 min ' : `${time} ms`
-  }
-  if (time >= Second && time < Minute) {
-    const s = Math.floor(time / Second)
-    if (fromHour) {
-      return '0 min'
-    }
-    return s ? `${s} s` : ''
-  }
-  if (time >= Minute && time < Hour) {
-    const calcMin = Math.floor(time / Minute)
-    const s = Math.floor((time - calcMin * Minute) / Second)
-    if (fromHour) {
-      return `${calcMin} min`
-    }
-    else {
-      return time % Minute === 0 ? `${time / Minute} min` : `${calcMin} min ${s ? `${s} s` : ''}`
-    }
-  }
-  if (time % Hour === 0) {
-    return `${time / Hour} h`
-  }
-  if (time >= Hour && time < Day) {
-    const calcHour = Math.floor(time / Hour)
-    return `${calcHour} h ${formatMS2Time(time - calcHour * Hour, true)}`
-  }
-  if (time % Day === 0) {
-    return `${time / Day} d`
-  }
+export function formatMS2Time(ms: number): string {
+  const secondsInMs = 1000
+  const minutesInMs = secondsInMs * 60
+  const hoursInMs = minutesInMs * 60
+  const daysInMs = hoursInMs * 24
 
-  const calcDay = Math.floor(time / Day)
-  return `${calcDay} d ${formatMS2Time(time - calcDay * Day, true)}`
+  const days = Math.floor(ms / daysInMs)
+  ms %= daysInMs
+
+  const hours = Math.floor(ms / hoursInMs)
+  ms %= hoursInMs
+
+  const minutes = Math.floor(ms / minutesInMs)
+  ms %= minutesInMs
+
+  const seconds = Math.floor(ms / secondsInMs)
+
+  const times = [
+    { value: days, unit: 'd' },
+    { value: hours, unit: 'h' },
+    { value: minutes, unit: 'min' },
+    { value: seconds, unit: 's' },
+  ]
+
+  return times.reduce((pre: string, cur: { value: number, unit: string }) => {
+    return cur.value > 0 ? `${pre}${cur.value} ${cur.unit} ` : pre
+  }, '')
 }
 /**
  * Convert milliseconds to d h min s format
