@@ -133,7 +133,7 @@
         <prometheus.version>0.16.0</prometheus.version>
         <flink.version>1.18.1</flink.version>
         <fabric8-kubernetes-client.version.version>6.12.1</fabric8-kubernetes-client.version.version>
-        <amoro-shade.version>0.7-SNAPSHOT</amoro-shade.version>
+        <amoro-shade.version>0.7.0-incubating</amoro-shade.version>
         <amoro-shade-guava.version>32.1.1-jre</amoro-shade-guava.version>
         <amoro-shade-jackson.version>2.14.2</amoro-shade-jackson.version>
         <amoro-shade-zookeeper.version>3.9.1</amoro-shade-zookeeper.version>
@@ -885,6 +885,12 @@
             <url>https://repository.apache.org/content/repositories/releases/</url>
         </repository>
 
+        <!--
+        Uncomment the following "repository" tag if your maven fails to download amoro-shade snapshot files.
+        We comment these tags by default because downloading from apache repositories is very slow for both github and developers.
+        -->
+
+        <!--
         <repository>
             <releases>
                 <enabled>false</enabled>
@@ -896,6 +902,7 @@
             <name>apache snapshots</name>
             <url>https://repository.apache.org/content/repositories/snapshots/</url>
         </repository>
+        -->
     </repositories>
 
     <pluginRepositories>
