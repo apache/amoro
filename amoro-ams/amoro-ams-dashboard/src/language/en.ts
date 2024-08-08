@@ -200,7 +200,7 @@ export default {
   tags: 'tags',
   consumers: 'consumers',
   nothingToShow: 'Nothing to show',
-  filterBranchesOrTagsOrConsumers: 'Filter branches/tags/consumer',
+  filterBranchesOrTagsOrConsumers: 'Filter branches/tags/consumers',
   findATag: 'Find a tag',
   fileSearchPlaceholder: 'Filter partitions',
   noResourceGroupsTitle: 'No resource groups available.',
