@@ -200,7 +200,7 @@ export default {
   tags: '标签',
   consumers: '用户',
   nothingToShow: '无内容可展示',
-  filterBranchesOrTagsOrConsumers: '过滤分支/标签/用户',
+  filterBranchesOrTagsOrConsumers: '过滤分支/标签/消费者',
   findATag: '查找标签',
   fileSearchPlaceholder: '过滤分区',
   noResourceGroupsTitle: '没有任何优化组',
