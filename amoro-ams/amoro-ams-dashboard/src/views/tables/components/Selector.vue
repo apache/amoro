@@ -20,21 +20,26 @@ limitations under the License.
 import { computed, onMounted, reactive, ref } from 'vue'
 import type { IBranchItem, IServiceBranchItem } from '@/types/common.type'
 import { branchTypeMap, operationMap } from '@/types/common.type'
-import { getBranches, getTags } from '@/services/table.service'
+import { getBranches, getTags, getConsumers } from '@/services/table.service'
 
 const props = defineProps({ catalog: String, db: String, table: String, disabled: Boolean })
-const emit = defineEmits(['refChange'])
+const emit = defineEmits(['refChange', 'consumerChange'])
 
 const disabled = computed(() => props.disabled)
 
 const selectedObj = ref<IBranchItem>({ value: '', type: branchTypeMap.BRANCH, label: '' })
 const branchSearchKey = ref<string>('')
 const tagSearchKey = ref<string>('')
+const consumerSearchKey=ref<string>('')
 const tabActiveKey = ref<string>(branchTypeMap.BRANCH)
 const branchList = ref<IBranchItem[]>([])
 const tagList = ref<IBranchItem[]>([])
+const consumerList = ref<IBranchItem[]>([])
 const actualBranchList = computed(() => branchList.value.filter(item => !branchSearchKey.value || item.label.includes(branchSearchKey.value)))
 const actualTagList = computed(() => tagList.value.filter(item => !tagSearchKey.value || item.label.includes(tagSearchKey.value)))
+const actualConsumerList = computed(() =>consumerList.value.filter((item) => !consumerSearchKey.value || 
+item.label.includes(consumerSearchKey.value)))
+
 const operation = ref<string>(operationMap.ALL)
 const operationList = reactive([operationMap.ALL, operationMap.OPTIMIZING, operationMap.NONOPTIMIZING])
 
@@ -51,7 +56,12 @@ function selectObject(obj: IBranchItem) {
   operation.value = operationMap.ALL
   emit('refChange', { ref: obj.value, operation: operationMap.ALL })
 }
-
+function selectConsumer(obj: IBranchItem) {
+  if (obj.value === selectedObj.value.value) return
+  selectedObj.value = obj
+  const amoroCurrentSnapshotsItem = { ...obj.amoroCurrentSnapshotsOfTable }
+  emit('consumerChange', {ref: obj.value, amoroCurrentSnapshotsItem, operation: operationMap.ALL})
+}
 function onChange(val: string) {
   emit('refChange', { ref: selectedObj.value.value, operation: val })
 }
@@ -66,9 +76,11 @@ async function getTagList() {
   const result = await getTags(props as any)
   tagList.value = (result.list || []).map((l: IServiceBranchItem) => ({ value: l.name, label: l.name, type: branchTypeMap.TAG }))
 }
-
+async function getConsumerList() {
+  const result = await getConsumers(props as any)
+  consumerList.value = (result.list || []).map((l: IServiceBranchItem) => ({ value: l.consumerId, label: l.consumerId, type: branchTypeMap.CONSUMER, amoroCurrentSnapshotsOfTable: l.amoroCurrentSnapshotsOfTable}))}
 async function init() {
-  await Promise.all([getBranchList(), getTagList()])
+  await Promise.all([getBranchList(), getTagList(), getConsumerList()])
 }
 
 onMounted(() => {
@@ -88,8 +100,11 @@ onMounted(() => {
       <template #overlay>
         <div>
           <div class="branch-selector-search">
-            <a-input v-show="tabActiveKey === branchTypeMap.BRANCH" v-model:value="branchSearchKey" :placeholder="$t('filterBranchesOrTags')" @click="onClickInput" />
-            <a-input v-show="tabActiveKey === branchTypeMap.TAG" v-model:value="tagSearchKey" :placeholder="$t('filterBranchesOrTags')" @click="onClickInput" />
+            <a-input v-show="tabActiveKey === branchTypeMap.BRANCH" v-model:value="branchSearchKey" :placeholder="$t('filterBranchesOrTagsOrConsumers')" @click="onClickInput" />
+            <a-input v-show="tabActiveKey === branchTypeMap.TAG" v-model:value="tagSearchKey" :placeholder="$t('filterBranchesOrTagsOrConsumers')" @click="onClickInput" />
+            <a-input
+              v-show="tabActiveKey === branchTypeMap.CONSUMER"  v-model:value="consumerSearchKey" :placeholder="$t('filterBranchesOrTagsOrConsumers')"
+              @click="onClickInput"/>
           </div>
           <a-tabs v-model:activeKey="tabActiveKey" type="card">
             <a-tab-pane :key="branchTypeMap.BRANCH" :tab="$t('branches')">
@@ -114,6 +129,17 @@ onMounted(() => {
               </template>
               <span v-else class="empty-tips">{{ $t('nothingToShow') }}</span>
             </a-tab-pane>
+            <a-tab-pane v-if="consumerList.length !== 0" :key="branchTypeMap.CONSUMER" :tab="$t('consumers')">
+              <template v-if="!!actualConsumerList.length">
+                <div v-for="(item, key) in actualConsumerList" :key="key" class="branch-selector-item" @click="selectConsumer(item)">
+                  <div class="item-icon">
+                    <check-outlined v-if="item.value === selectedObj.value" />
+                  </div>
+                  <span class="item-label">{{ item.label }}</span>
+                </div>
+              </template>
+              <span v-else class="empty-tips">{{ $t('nothingToShow') }}</span>
+            </a-tab-pane>
           </a-tabs>
         </div>
       </template>
@@ -130,11 +156,11 @@ onMounted(() => {
     </div>
     <div class="g-ml-24">
       {{ $t('operation') }}:
-      <a-select
+        <a-select
         v-model:value="operation"
         class="g-ml-8"
         style="width: 160px"
-        :disabled="disabled"
+        :disabled="disabled || tabActiveKey === branchTypeMap.CONSUMER"
         @change="onChange"
       >
         <a-select-option v-for="item in operationList" :key="item" :value="item">
@@ -155,6 +181,7 @@ onMounted(() => {
     display: flex;
     align-items: center;
     color: #102048;
+
     .branch-btn-label {
       line-height: 32px;
       max-width: 125px;
@@ -172,7 +199,7 @@ onMounted(() => {
     padding: 8px 0 16px 0;
     font-size: 12px;
     border-radius: 6px;
-    box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08),0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
 
     .branch-selector-search {
       margin: 0 12px 8px 12px;
@@ -194,6 +221,7 @@ onMounted(() => {
         overflow: hidden;
         text-align: left;
         cursor: pointer;
+
         &:hover {
           background-color: rgba(0, 0, 0, 0.04);
         }

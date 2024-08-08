@@ -209,3 +209,7 @@ export function getTags(params: { catalog: string, db: string, table: string }) 
   const { catalog, db, table } = params
   return request.get(`/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/tags`)
 }
+export function getConsumers(params: { catalog: string, db: string, table: string }) {
+  const { catalog, db, table } = params
+  return request.get(`/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/consumers`)
+}
