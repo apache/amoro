@@ -62,8 +62,8 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   }
 
   @Override
-  protected void initHandler(List<TableRuntime> tableRuntimeMetaList) {
-    tableRuntimeMetaList.stream()
+  protected void initHandler(List<TableRuntime> tableRuntimeList) {
+    tableRuntimeList.stream()
         .filter(this::enabled)
         .forEach(
             tableRuntime -> {

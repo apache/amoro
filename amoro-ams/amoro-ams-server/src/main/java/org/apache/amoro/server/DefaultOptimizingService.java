@@ -454,9 +454,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     @Override
-    protected void initHandler(List<TableRuntime> tableRuntimeMetaList) {
+    protected void initHandler(List<TableRuntime> tableRuntimeList) {
       LOG.info("OptimizerManagementService begin initializing");
-      loadOptimizingQueues(tableRuntimeMetaList);
+      loadOptimizingQueues(tableRuntimeList);
       optimizerKeeper.start();
       LOG.info("SuspendingDetector for Optimizer has been started.");
       LOG.info("OptimizerManagementService initializing has completed");

@@ -132,6 +132,7 @@ CREATE TABLE `table_runtime`
     `pending_input`                 mediumtext,
     PRIMARY KEY (`table_id`),
     UNIQUE KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
+    INDEX idx_optimizer_status_and_time (optimizing_status_code, optimizing_status_start_time DESC);
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize running information of each table' ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE `table_optimizing_process`

@@ -163,8 +163,8 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     }
 
     @Override
-    protected void initHandler(List<TableRuntime> tableRuntimeMetaList) {
-      initTables.addAll(tableRuntimeMetaList);
+    protected void initHandler(List<TableRuntime> tableRuntimeList) {
+      initTables.addAll(tableRuntimeList);
     }
 
     @Override

@@ -102,8 +102,8 @@ public class TableRuntime extends StatedPersistentBase {
 
   private long targetChangeSnapshotId;
 
-  private Map<java.lang.String, java.lang.Long> fromSequence;
-  private Map<java.lang.String, java.lang.Long> toSequence;
+  private Map<String, Long> fromSequence;
+  private Map<String, Long> toSequence;
 
   private OptimizingType optimizingType;
 

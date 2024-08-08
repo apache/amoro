@@ -212,6 +212,7 @@ COMMENT ON COLUMN table_runtime.optimizer_group IS 'Optimizer group';
 COMMENT ON COLUMN table_runtime.table_config IS 'Table-specific configuration';
 COMMENT ON COLUMN table_runtime.optimizing_config IS 'Optimizing configuration';
 COMMENT ON COLUMN table_runtime.pending_input IS 'Pending input data';
+CREATE INDEX idx_optimizer_status_and_time ON table_runtime(optimizing_status_code, optimizing_status_start_time DESC);
 
 CREATE TABLE table_optimizing_process
 (

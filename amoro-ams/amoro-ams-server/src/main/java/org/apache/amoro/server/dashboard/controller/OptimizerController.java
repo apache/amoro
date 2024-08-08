@@ -66,7 +66,7 @@ public class OptimizerController {
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
     int offset = (page - 1) * pageSize;
 
-    String optimizerGroupUsedInDbFilter = "all".equals(optimizerGroup) ? null : optimizerGroup;
+    String optimizerGroupUsedInDbFilter = ALL_GROUP.equals(optimizerGroup) ? null : optimizerGroup;
     // get all info from underlying table table_runtime
     List<TableRuntimeMeta> tableRuntimeBeans =
         tableService.getTableRuntimes(
