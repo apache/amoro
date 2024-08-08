@@ -35,12 +35,15 @@ import org.apache.amoro.server.catalog.ExternalCatalog;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.exception.AlreadyExistsException;
+import org.apache.amoro.server.exception.BlockerConflictException;
 import org.apache.amoro.server.exception.IllegalMetadataException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
+import org.apache.amoro.server.exception.PersistenceException;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
+import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
@@ -55,6 +58,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -251,32 +255,94 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
       TableIdentifier tableIdentifier,
       List<BlockableOperation> operations,
       Map<String, String> properties) {
-    checkStarted();
-    return getAndCheckExist(getOrSyncServerTableIdentifier(tableIdentifier))
-        .block(operations, properties, blockerTimeout)
-        .buildBlocker();
+    Preconditions.checkNotNull(operations, "operations should not be null");
+    Preconditions.checkArgument(!operations.isEmpty(), "operations should not be empty");
+    Preconditions.checkArgument(blockerTimeout > 0, "blocker timeout must > 0");
+    String catalog = tableIdentifier.getCatalog();
+    String database = tableIdentifier.getDatabase();
+    String table = tableIdentifier.getTableName();
+    int tryCount = 0;
+    while (tryCount++ < 3) {
+      long now = System.currentTimeMillis();
+      doAs(
+          TableBlockerMapper.class,
+          mapper -> mapper.deleteExpiredBlockers(catalog, database, table, now));
+      List<TableBlocker> tableBlockers =
+          getAs(
+              TableBlockerMapper.class,
+              mapper ->
+                  mapper.selectBlockers(
+                      tableIdentifier.getCatalog(),
+                      tableIdentifier.getDatabase(),
+                      tableIdentifier.getTableName(),
+                      now));
+      if (TableBlocker.conflict(operations, tableBlockers)) {
+        throw new BlockerConflictException(operations + " is conflict with " + tableBlockers);
+      }
+      Optional<Long> maxBlockerOpt =
+          tableBlockers.stream()
+              .map(TableBlocker::getBlockerId)
+              .max(Comparator.comparingLong(l -> l));
+      long prevBlockerId = maxBlockerOpt.orElse(-1L);
+
+      TableBlocker tableBlocker =
+          TableBlocker.buildTableBlocker(
+              tableIdentifier, operations, properties, now, blockerTimeout, prevBlockerId);
+      try {
+        doAs(TableBlockerMapper.class, mapper -> mapper.insert(tableBlocker));
+        if (tableBlocker.getBlockerId() > 0) {
+          return tableBlocker.buildBlocker();
+        }
+      } catch (PersistenceException e) {
+        LOG.warn(
+            "Exception when create a blocker:{}, error message:{}", tableBlocker, e.getMessage());
+        if (e.getMessage() == null || !e.getMessage().contains("duplicate key")) {
+          LOG.error("Exception when create a blocker:{}", tableBlocker, e);
+        }
+      }
+    }
+    throw new BlockerConflictException("Failed to create a blocker: conflict meet max retry");
   }
 
   @Override
   public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
-    checkStarted();
-    TableRuntime tableRuntime = getRuntime(getServerTableIdentifier(tableIdentifier));
-    if (tableRuntime != null) {
-      tableRuntime.release(blockerId);
-    }
+    doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlocker(Long.parseLong(blockerId)));
   }
 
   @Override
   public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) {
-    checkStarted();
-    TableRuntime tableRuntime = getAndCheckExist(getServerTableIdentifier(tableIdentifier));
-    return tableRuntime.renew(blockerId, blockerTimeout);
+    int retry = 0;
+    while (retry++ < 3) {
+      long now = System.currentTimeMillis();
+      long id = Long.parseLong(blockerId);
+      TableBlocker tableBlocker =
+          getAs(TableBlockerMapper.class, mapper -> mapper.selectBlocker(id, now));
+      if (tableBlocker == null) {
+        throw new ObjectNotExistsException("Blocker " + blockerId + " of " + tableIdentifier);
+      }
+      long current = System.currentTimeMillis();
+      long expirationTime = now + blockerTimeout;
+      long effectRow =
+          updateAs(
+              TableBlockerMapper.class, mapper -> mapper.renewBlocker(id, current, expirationTime));
+      if (effectRow > 0) {
+        return expirationTime;
+      }
+    }
+    throw new BlockerConflictException("Failed to renew a blocker: conflict meet max retry");
   }
 
   @Override
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
-    checkStarted();
-    return getAndCheckExist(getOrSyncServerTableIdentifier(tableIdentifier)).getBlockers().stream()
+    return getAs(
+            TableBlockerMapper.class,
+            mapper ->
+                mapper.selectBlockers(
+                    tableIdentifier.getCatalog(),
+                    tableIdentifier.getDatabase(),
+                    tableIdentifier.getTableName(),
+                    System.currentTimeMillis()))
+        .stream()
         .map(TableBlocker::buildBlocker)
         .collect(Collectors.toList());
   }

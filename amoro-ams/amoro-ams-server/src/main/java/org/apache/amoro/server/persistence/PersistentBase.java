@@ -42,6 +42,20 @@ public abstract class PersistentBase {
                 .openSession(TransactionIsolationLevel.READ_COMMITTED));
   }
 
+  public final <T> Long updateAs(Class<T> mapperClz, Function<T, Number> updateFunction) {
+    try (NestedSqlSession session = beginSession()) {
+      try {
+        T mapper = getMapper(session, mapperClz);
+        Number number = updateFunction.apply(mapper);
+        session.commit();
+        return number.longValue();
+      } catch (Throwable t) {
+        session.rollback();
+        throw AmoroRuntimeException.wrap(t, PersistenceException::new);
+      }
+    }
+  }
+
   protected final <T> void doAs(Class<T> mapperClz, Consumer<T> consumer) {
     try (NestedSqlSession session = beginSession()) {
       try {

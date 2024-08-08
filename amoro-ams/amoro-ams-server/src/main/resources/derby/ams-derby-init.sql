@@ -200,5 +200,7 @@ CREATE TABLE table_blocker (
   create_time timestamp DEFAULT NULL,
   expiration_time timestamp DEFAULT NULL,
   properties clob(64m),
-  PRIMARY KEY (blocker_id)
+  prev_blocker_id bigint NOT NULL DEFAULT -1,
+  PRIMARY KEY (blocker_id),
+  CONSTRAINT prev_uq UNIQUE (catalog_name, db_name, table_name, prev_blocker_id)
 );
