@@ -34,10 +34,8 @@ const tabActiveKey = ref<string>(branchTypeMap.BRANCH)
 const branchList = ref<IBranchItem[]>([])
 const tagList = ref<IBranchItem[]>([])
 const consumerList = ref<IBranchItem[]>([])
-const actualBranchList = computed(() =>branchList.value.filter((item) =>!branchSearchKey.value ||
- item.label.includes(branchSearchKey.value)))
-const actualTagList = computed(() =>tagList.value.filter((item) => !tagSearchKey.value || 
-item.label.includes(tagSearchKey.value)))
+const actualBranchList = computed(() => branchList.value.filter(item => !branchSearchKey.value || item.label.includes(branchSearchKey.value)))
+const actualTagList = computed(() => tagList.value.filter(item => !tagSearchKey.value || item.label.includes(tagSearchKey.value)))
 const actualConsumerList = computed(() =>consumerList.value.filter((item) => !tagSearchKey.value || 
 item.label.includes(tagSearchKey.value)))
 
@@ -94,7 +92,7 @@ onMounted(() => {
   <div class="branch-selector">
     <a-dropdown :trigger="['click']" placement="bottomLeft" :get-popup-container="getPopupContainer">
       <a-button class="branch-btn" :disabled="!selectedObj.value || disabled">
-        <svg-icon class-name="branch-selector-icon" :icon-class="selectedObj.type" class="g-mr-8"/>
+        <svg-icon class-name="branch-selector-icon" :icon-class="selectedObj.type" class="g-mr-8" />
         <span class="branch-btn-label">{{ selectedObj.label }}</span>
         <down-outlined />
       </a-button>
@@ -146,19 +144,24 @@ onMounted(() => {
       </template>
     </a-dropdown>
     <div>
-      <svg-icon class-name="branch-selector-icon" icon-class="branch" class="g-mr-4 g-ml-16"/>
+      <svg-icon class-name="branch-selector-icon" icon-class="branch" class="g-mr-4 g-ml-16" />
       <span class="g-mr-4">{{ branchList.length }}</span>
       <span>{{ $t('branches') }}</span>
     </div>
     <div>
-      <svg-icon class-name="branch-selector-icon" icon-class="tag" class="g-mr-4 g-ml-16"/>
+      <svg-icon class-name="branch-selector-icon" icon-class="tag" class="g-mr-4 g-ml-16" />
       <span class="g-mr-4">{{ tagList.length }}</span>
       <span>{{ $t('tags') }}</span>
     </div>
-
     <div class="g-ml-24">
       {{ $t('operation') }}:
-      <a-select v-model:value="operation" class="g-ml-8"style="width: 160px":disabled="disabled || tabActiveKey === branchTypeMap.CONSUMER" @change="onChange">
+        <a-select
+        v-model:value="operation"
+        class="g-ml-8"
+        style="width: 160px"
+        :disabled="disabled || tabActiveKey === branchTypeMap.CONSUMER"
+        @change="onChange"
+      >
         <a-select-option v-for="item in operationList" :key="item" :value="item">
           {{ item }}
         </a-select-option>
@@ -195,8 +198,7 @@ onMounted(() => {
     padding: 8px 0 16px 0;
     font-size: 12px;
     border-radius: 6px;
-    box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08),
-      0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08),0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
 
     .branch-selector-search {
       margin: 0 12px 8px 12px;

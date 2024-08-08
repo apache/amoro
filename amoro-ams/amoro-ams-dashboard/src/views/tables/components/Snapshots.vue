@@ -36,7 +36,7 @@ const columns: IColumns[] = shallowReactive([
   { title: t('operation'), dataIndex: 'operation' },
   { title: t('records'), dataIndex: 'records' },
   { title: t('fileCount'), dataIndex: 'fileCount' },
-  { title: t('commitTime'), dataIndex: 'commitTime' }
+  { title: t('commitTime'), dataIndex: 'commitTime' },
 ])
 const breadcrumbColumns = shallowReactive([
   { title: t('operation'), dataIndex: 'operation', width: 120, ellipsis: true },
@@ -46,7 +46,6 @@ const breadcrumbColumns = shallowReactive([
   { title: t('size'), dataIndex: 'size', width: 120 },
   { title: t('commitTime'), dataIndex: 'commitTime', width: 200, ellipsis: true },
   { title: t('path'), dataIndex: 'path', ellipsis: true },
-  { title: t('path'), dataIndex: 'path', ellipsis: true }
 ])
 const dataSource = reactive<SnapshotItem[]>([])
 const breadcrumbDataSource = reactive<BreadcrumbSnapshotItem[]>([])
@@ -67,7 +66,7 @@ const fileChartOption = ref<ECOption>({})
 const tblRef = ref<string>('')
 const operation = ref<string>('')
 
-function onRefChange(params: { ref: string; operation: string }) {
+function onRefChange(params: { ref: string, operation: string }) {
   tblRef.value = params.ref
   operation.value = params.operation
   getTableInfo()
@@ -113,14 +112,12 @@ async function getTableInfo() {
       p.commitTime = p.commitTime ? dateFormat(p.commitTime) : '-'
       dataSource.push(p)
     })
-    recordChartOption.value = generateLineChartOption(
-      t('recordChartTitle'),
-      rcData
-    )
+    recordChartOption.value = generateLineChartOption(t('recordChartTitle'), rcData)
     fileChartOption.value = generateLineChartOption(t('fileChartTitle'), fcData)
     pagination.total = total
-  } catch (error) {
-  } 
+  }
+  catch (error) {
+  }
   finally {
     loading.value = false
   }
@@ -161,7 +158,7 @@ async function getBreadcrumbTable() {
       ...sourceData,
       snapshotId: snapshotId.value,
       page: breadcrumbPagination.current,
-      pageSize: breadcrumbPagination.pageSize
+      pageSize: breadcrumbPagination.pageSize,
     }
     const result = await getDetailBySnapshotId(params)
     const { list, total } = result
@@ -197,26 +194,13 @@ onMounted(() => {
     <template v-if="!hasBreadcrumb">
       <a-row>
         <a-col :span="12">
-          <Chart
-            :loading="loading"
-            :options="recordChartOption"
-          />
+          <Chart :loading="loading" :options="recordChartOption" />
         </a-col>
         <a-col :span="12">
-          <Chart
-            :loading="loading"
-            :options="fileChartOption"
-          />
+          <Chart :loading="loading" :options="fileChartOption" />
         </a-col>
       </a-row>
-      <Selector
-        :catalog="sourceData.catalog"
-        :db="sourceData.db"
-        :table="sourceData.table"
-        :disabled="loading"
-        @consumer-change="onConsumerChange"
-        @ref-change="onRefChange"
-      />
+      <Selector :catalog="sourceData.catalog" :db="sourceData.db" :table="sourceData.table" :disabled="loading" @consumer-change="onConsumerChange" @ref-change="onRefChange" />
       <a-table
         row-key="snapshotId"
         :columns="columns"
@@ -286,16 +270,13 @@ onMounted(() => {
 <style lang="less" scoped>
 .table-snapshots {
   padding: 18px 24px;
-
   .text-active {
     color: #1890ff;
     cursor: pointer;
   }
-
   :deep(.ant-btn-link) {
     padding: 0;
   }
-
   .ant-table-wrapper {
     margin-top: 24px;
   }
