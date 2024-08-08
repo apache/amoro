@@ -30,14 +30,15 @@ const disabled = computed(() => props.disabled)
 const selectedObj = ref<IBranchItem>({ value: '', type: branchTypeMap.BRANCH, label: '' })
 const branchSearchKey = ref<string>('')
 const tagSearchKey = ref<string>('')
+const consumerSearchKey=ref<string>('')
 const tabActiveKey = ref<string>(branchTypeMap.BRANCH)
 const branchList = ref<IBranchItem[]>([])
 const tagList = ref<IBranchItem[]>([])
 const consumerList = ref<IBranchItem[]>([])
 const actualBranchList = computed(() => branchList.value.filter(item => !branchSearchKey.value || item.label.includes(branchSearchKey.value)))
 const actualTagList = computed(() => tagList.value.filter(item => !tagSearchKey.value || item.label.includes(tagSearchKey.value)))
-const actualConsumerList = computed(() =>consumerList.value.filter((item) => !tagSearchKey.value || 
-item.label.includes(tagSearchKey.value)))
+const actualConsumerList = computed(() =>consumerList.value.filter((item) => !consumerSearchKey.value || 
+item.label.includes(consumerSearchKey.value)))
 
 const operation = ref<string>(operationMap.ALL)
 const operationList = reactive([operationMap.ALL, operationMap.OPTIMIZING, operationMap.NONOPTIMIZING])
@@ -77,7 +78,7 @@ async function getTagList() {
 }
 async function getConsumerList() {
   const result = await getConsumers(props as any)
-  consumerList.value = (result.list || []).map((l: IServiceBranchItem) => ({ value: l.consumerId, label: l.consumerId, type: branchTypeMap.CONSUMER, amoroCurrentSnapshotsOfTable: l.amoroCurrentSnapshotsOfTable}))}
+  consumerList.value = (result.list || []).map((l: IServiceBranchItem) => ({ value: l.consumerId, label: l.consumerId, type: branchTypeMap.CONSUMERS, amoroCurrentSnapshotsOfTable: l.amoroCurrentSnapshotsOfTable}))}
 async function init() {
   await Promise.all([getBranchList(), getTagList(), getConsumerList()])
 }
@@ -99,10 +100,10 @@ onMounted(() => {
       <template #overlay>
         <div>
           <div class="branch-selector-search">
-            <a-input v-show="tabActiveKey === branchTypeMap.BRANCH" v-model:value="branchSearchKey" :placeholder="$t('filterBranchesOrTags')" @click="onClickInput" />
-            <a-input v-show="tabActiveKey === branchTypeMap.TAG" v-model:value="tagSearchKey" :placeholder="$t('filterBranchesOrTags')" @click="onClickInput" />
+            <a-input v-show="tabActiveKey === branchTypeMap.BRANCH" v-model:value="branchSearchKey" :placeholder="$t('filterBranchesOrTagsOrConsumers')" @click="onClickInput" />
+            <a-input v-show="tabActiveKey === branchTypeMap.TAG" v-model:value="tagSearchKey" :placeholder="$t('filterBranchesOrTagsOrConsumers')" @click="onClickInput" />
             <a-input
-              v-show="tabActiveKey === branchTypeMap.CONSUMER"  v-model:value="tagSearchKey" :placeholder="$t('filterBranchesOrTags')"
+              v-show="tabActiveKey === branchTypeMap.CONSUMERS"  v-model:value="consumerSearchKey" :placeholder="$t('filterBranchesOrTagsOrConsumers')"
               @click="onClickInput"/>
           </div>
           <a-tabs v-model:activeKey="tabActiveKey" type="card">
@@ -128,7 +129,7 @@ onMounted(() => {
               </template>
               <span v-else class="empty-tips">{{ $t('nothingToShow') }}</span>
             </a-tab-pane>
-            <a-tab-pane v-if="consumerList.length !== 0" :key="branchTypeMap.CONSUMER" :tab="$t('consumer')">
+            <a-tab-pane v-if="consumerList.length !== 0" :key="branchTypeMap.CONSUMERS" :tab="$t('consumers')">
               <template v-if="!!actualConsumerList.length">
                 <div v-for="(item, key) in actualConsumerList" :key="key" class="branch-selector-item" @click="selectConsumer(item)">
                   <div class="item-icon">
@@ -159,7 +160,7 @@ onMounted(() => {
         v-model:value="operation"
         class="g-ml-8"
         style="width: 160px"
-        :disabled="disabled || tabActiveKey === branchTypeMap.CONSUMER"
+        :disabled="disabled || tabActiveKey === branchTypeMap.CONSUMERS"
         @change="onChange"
       >
         <a-select-option v-for="item in operationList" :key="item" :value="item">

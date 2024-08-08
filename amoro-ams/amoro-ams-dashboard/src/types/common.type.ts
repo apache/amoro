@@ -359,7 +359,7 @@ export type ILineChartOriginalData = Record<string, Record<string, number>>
 export enum branchTypeMap {
   BRANCH = 'branch',
   TAG = 'tag',
-  CONSUMER = 'consumer',
+  CONSUMERS = 'consumers',
 }
 
 export interface IBranchItem {
