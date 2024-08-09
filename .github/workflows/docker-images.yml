@@ -37,7 +37,7 @@ jobs:
   docker-amoro:
     name: Push Amoro Docker Image to Docker Hub
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.repository, 'zhoujinsong/') }}
+    if: ${{ startsWith(github.repository, 'apache/') }}
     strategy:
       matrix:
         hadoop: [ "v2", "v3" ]
