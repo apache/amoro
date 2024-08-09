@@ -37,7 +37,7 @@ jobs:
   docker-amoro:
     name: Push Amoro Docker Image to Docker Hub
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.repository, 'apache/') }}
+    if: ${{ startsWith(github.repository, 'zhoujinsong/') }}
     strategy:
       matrix:
         hadoop: [ "v2", "v3" ]
@@ -67,7 +67,7 @@ jobs:
             type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},suffix=-snapshot-hadoop2
             type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}
-            type=semver,event=tag,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}-hadoop2
+            type=semver,event=tag,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}, suffix=-hadoop2
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
