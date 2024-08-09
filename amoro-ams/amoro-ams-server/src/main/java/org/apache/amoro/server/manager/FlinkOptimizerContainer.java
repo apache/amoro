@@ -33,7 +33,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.client.program.rest.RestClusterClient;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.runtime.jobgraph.RestoreMode;
+import org.apache.flink.configuration.YamlParserUtils;
+import org.apache.flink.core.execution.RestoreMode;
 import org.apache.flink.runtime.messages.Acknowledge;
 import org.apache.flink.runtime.rest.FileUpload;
 import org.apache.flink.runtime.rest.RestClient;
@@ -60,10 +61,13 @@ import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -80,24 +84,14 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   public static final String FLINK_HOME_PROPERTY = "flink-home";
   public static final String FLINK_CONFIG_PATH = "/conf";
   public static final String FLINK_CONFIG_YAML = "/flink-conf.yaml";
+  // flink version >= 1.20 use it first
+  public static final String NEW_FLINK_CONFIG_YAML = "/config.yaml";
   public static final String ENV_FLINK_CONF_DIR = "FLINK_CONF_DIR";
   public static final String FLINK_CLIENT_TIMEOUT_SECOND = "flink-client-timeout-second";
 
   private static final String DEFAULT_JOB_URI = "/plugin/optimizer/flink/optimizer-job.jar";
   private static final String FLINK_JOB_MAIN_CLASS =
       "org.apache.amoro.optimizer.flink.FlinkOptimizer";
-
-  /**
-   * This will be removed in 0.7.0, using flink properties
-   * `flink-conf.taskmanager.memory.process.size`.
-   */
-  @Deprecated public static final String TASK_MANAGER_MEMORY_PROPERTY = "taskmanager.memory";
-
-  /**
-   * This will be removed in 0.7.0, using flink properties
-   * `flink-conf.jobmanager.memory.process.size`.
-   */
-  @Deprecated public static final String JOB_MANAGER_MEMORY_PROPERTY = "jobmanager.memory";
 
   public static final String FLINK_RUN_TARGET = "target";
   public static final String FLINK_JOB_URI = "job-uri";
@@ -228,16 +222,10 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
     long jobManagerMemory =
         getMemorySizeValue(
-            properties,
-            resourceFlinkConf,
-            JOB_MANAGER_MEMORY_PROPERTY,
-            FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY);
+            properties, resourceFlinkConf, FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY);
     long taskManagerMemory =
         getMemorySizeValue(
-            properties,
-            resourceFlinkConf,
-            TASK_MANAGER_MEMORY_PROPERTY,
-            FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY);
+            properties, resourceFlinkConf, FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY);
 
     resourceFlinkConf.putToOptions(
         FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY, jobManagerMemory + "m");
@@ -266,13 +254,60 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
         jobArgs);
   }
 
+  @VisibleForTesting
+  protected Map<String, String> loadFlinkConfigForYAML(URL path) {
+    this.flinkConfDir = Paths.get(path.getPath()).getParent().toString();
+    return loadFlinkConfig();
+  }
+
+  /**
+   * get flink config with config.yaml or flink-conf.yaml see <a
+   * href="https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/deployment/config/#flink-configuration-file"></a>
+   *
+   * @return flink config map
+   */
   private Map<String, String> loadFlinkConfig() {
     try {
-      return new Yaml().load(Files.newInputStream(Paths.get(flinkConfDir + FLINK_CONFIG_YAML)));
-    } catch (IOException e) {
+      Path flinkConfPath = Paths.get(flinkConfDir + NEW_FLINK_CONFIG_YAML);
+      if (!Files.exists(flinkConfPath, LinkOption.NOFOLLOW_LINKS)) {
+        flinkConfPath = Paths.get(flinkConfDir + FLINK_CONFIG_YAML);
+        return new Yaml().load(Files.newInputStream(flinkConfPath));
+      }
+      Map<String, Object> configDocument =
+          YamlParserUtils.loadYamlFile(new File(flinkConfPath.toUri()));
+      return Maps.transformValues(
+          flatten(configDocument, ""), value -> value == null ? null : value.toString());
+    } catch (Exception e) {
       LOG.error("load flink conf yaml failed: {}", e.getMessage());
       return Collections.emptyMap();
     }
+  }
+
+  /**
+   * Copy from flink 1.20 GlobalConfiguration.flatten Utils
+   *
+   * @param config
+   * @param keyPrefix
+   * @return
+   */
+  private static Map<String, Object> flatten(Map<String, Object> config, String keyPrefix) {
+    final Map<String, Object> flattenedMap = new HashMap<>();
+    config.forEach(
+        (key, value) -> {
+          String flattenedKey = keyPrefix + key;
+          if (value instanceof Map) {
+            Map<String, Object> e = (Map<String, Object>) value;
+            flattenedMap.putAll(flatten(e, flattenedKey + "."));
+          } else {
+            if (value instanceof List) {
+              flattenedMap.put(flattenedKey, YamlParserUtils.toYAMLString(value));
+            } else {
+              flattenedMap.put(flattenedKey, value);
+            }
+          }
+        });
+
+    return flattenedMap;
   }
 
   private void addKubernetesProperties(Resource resource, FlinkConf flinkConf) {
@@ -297,16 +332,12 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
   /**
    * get jobManager and taskManager memory. An example of using Jobmanager memory parameters is as
-   * follows: jobmanager.memory: 1024 flink-conf.jobmanager.memory.process.size: 1024M
-   * flink-conf.yaml Prioritize from high to low.
+   * flink-conf.jobmanager.memory.process.size: 1024M flink-conf.yaml Prioritize from high to low.
    */
   @VisibleForTesting
   protected long getMemorySizeValue(
-      Map<String, String> resourceProperties,
-      FlinkConf conf,
-      String resourcePropertyKey,
-      String flinkConfKey) {
-    String value = resourceProperties.get(resourcePropertyKey);
+      Map<String, String> resourceProperties, FlinkConf conf, String flinkConfKey) {
+    String value = resourceProperties.get(flinkConfKey);
     if (value == null) {
       value = conf.configValue(flinkConfKey);
     }
@@ -532,7 +563,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     JobID jobID = JobID.generate();
     JarRunRequestBody runRequestBody =
         new JarRunRequestBody(
-            FLINK_JOB_MAIN_CLASS, args, null, null, jobID, true, null, RestoreMode.DEFAULT, null);
+            FLINK_JOB_MAIN_CLASS, args, null, null, jobID, true, null, RestoreMode.CLAIM, null);
     LOG.info("Submitting job: {} to session cluster, args: {}", jobID, args);
     try (RestClusterClient<String> restClusterClient =
         FlinkClientUtil.getRestClusterClient(configuration)) {
