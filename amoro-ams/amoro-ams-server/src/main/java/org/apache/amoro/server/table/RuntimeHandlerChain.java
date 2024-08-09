@@ -51,16 +51,15 @@ public abstract class RuntimeHandlerChain {
     }
   }
 
-  public final void initialize(List<TableRuntimeMeta> tableRuntimeMetaList) {
-    List<TableRuntimeMeta> supportedtableRuntimeMetaList =
-        tableRuntimeMetaList.stream()
-            .filter(
-                tableRuntimeMeta -> formatSupported(tableRuntimeMeta.getTableRuntime().getFormat()))
+  public final void initialize(List<TableRuntime> tableRuntimes) {
+    List<TableRuntime> supportedtableRuntimeList =
+        tableRuntimes.stream()
+            .filter(runtime -> formatSupported(runtime.getFormat()))
             .collect(Collectors.toList());
-    initHandler(supportedtableRuntimeMetaList);
+    initHandler(supportedtableRuntimeList);
     initialized = true;
     if (next != null) {
-      next.initialize(tableRuntimeMetaList);
+      next.initialize(tableRuntimes);
     }
   }
 
@@ -147,7 +146,7 @@ public abstract class RuntimeHandlerChain {
 
   protected abstract void handleTableRemoved(TableRuntime tableRuntime);
 
-  protected abstract void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList);
+  protected abstract void initHandler(List<TableRuntime> tableRuntimeList);
 
   protected abstract void doDispose();
 }
