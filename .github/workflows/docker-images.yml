@@ -66,7 +66,7 @@ jobs:
           tags: |
             type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},suffix=-snapshot-hadoop2
-            type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},value=latest
+            type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern=,value=latest
             type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}
             type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}, suffix=-hadoop3
             type=semver,event=tag,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}, suffix=-hadoop2
@@ -130,7 +130,7 @@ jobs:
             type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot-flink1.14
             type=ref,event=branch,enable=${{ matrix.flink == '1.18.1' }},suffix=-snapshot-flink1.18
-            type=semver,enable=${{ matrix.flink == '1.14.6' }},value=latest
+            type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern=,value=latest
             type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}
             type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}, suffix=-flink1.14
             type=semver,enable=${{ matrix.flink == '1.18.1' }},pattern={{version}}, suffix=-flink1.18
@@ -210,7 +210,7 @@ jobs:
           tags: |
             type=ref,event=branch,enable=${{ matrix.spark == '3.3.3' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.spark == '3.3.3' }},suffix=-snapshot-spark3.3
-            type=semver,enable=${{ matrix.spark == '3.3.3' }},value=latest
+            type=semver,enable=${{ matrix.spark == '3.3.3' }},pattern=,value=latest
             type=semver,enable=${{ matrix.spark == '3.3.3' }},pattern={{version}}
             type=semver,enable=${{ matrix.spark == '3.3.3' }},pattern={{version}}, suffix=-spark3.3
 
