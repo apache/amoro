@@ -247,6 +247,12 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
+  public List<TableMetadata> listTableMetas() {
+    checkStarted();
+    return getAs(TableMetaMapper.class, TableMetaMapper::selectTableMetas);
+  }
+
+  @Override
   public Blocker block(
       TableIdentifier tableIdentifier,
       List<BlockableOperation> operations,

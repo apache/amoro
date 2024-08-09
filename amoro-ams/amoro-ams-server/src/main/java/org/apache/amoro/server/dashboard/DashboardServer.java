@@ -18,12 +18,6 @@
 
 package org.apache.amoro.server.dashboard;
 
-import static io.javalin.apibuilder.ApiBuilder.delete;
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.path;
-import static io.javalin.apibuilder.ApiBuilder.post;
-import static io.javalin.apibuilder.ApiBuilder.put;
-
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.core.security.BasicAuthCredentials;
 import io.javalin.http.ContentType;
@@ -39,6 +33,7 @@ import org.apache.amoro.server.dashboard.controller.CatalogController;
 import org.apache.amoro.server.dashboard.controller.HealthCheckController;
 import org.apache.amoro.server.dashboard.controller.LoginController;
 import org.apache.amoro.server.dashboard.controller.OptimizerController;
+import org.apache.amoro.server.dashboard.controller.OverviewController;
 import org.apache.amoro.server.dashboard.controller.PlatformFileInfoController;
 import org.apache.amoro.server.dashboard.controller.SettingController;
 import org.apache.amoro.server.dashboard.controller.TableController;
@@ -67,6 +62,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import static io.javalin.apibuilder.ApiBuilder.delete;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.path;
+import static io.javalin.apibuilder.ApiBuilder.post;
+import static io.javalin.apibuilder.ApiBuilder.put;
+
 public class DashboardServer {
 
   public static final Logger LOG = LoggerFactory.getLogger(DashboardServer.class);
@@ -82,6 +83,7 @@ public class DashboardServer {
   private final TableController tableController;
   private final TerminalController terminalController;
   private final VersionController versionController;
+  private final OverviewController overviewController;
 
   private final String authType;
   private final String basicAuthUser;
@@ -103,6 +105,8 @@ public class DashboardServer {
     this.tableController = new TableController(tableService, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
+    this.overviewController =
+        new OverviewController(tableService, optimizerManager, tableDescriptor);
 
     this.authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
     this.basicAuthUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
@@ -327,6 +331,17 @@ public class DashboardServer {
 
       // version api
       get("/versionInfo", versionController::getVersionInfo);
+
+      // overview api
+      path(
+          "/overview",
+          () -> {
+            get("/summary", overviewController::getSummary);
+            get("/format", overviewController::getTableFormat);
+            get("/optimizing", overviewController::getOptimizingStatus);
+            get("/unhealth", overviewController::getUnhealthTables);
+            get("/operations", overviewController::getLatestOperations);
+          });
     };
   }
 

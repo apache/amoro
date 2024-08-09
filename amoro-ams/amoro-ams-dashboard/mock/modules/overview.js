@@ -33,6 +33,71 @@ export default [
     }),
   },
   {
+    url: '/mock/ams/v1/overview/format',
+    method: 'get',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: [
+        { value: 70, name: 'Iceberg format' },
+        { value: 20, name: 'Mixed-Iceberg' },
+        { value: 10, name: 'Mixed-Hive format' },
+      ]
+    }),
+  },
+  {
+    url: '/mock/ams/v1/overview/optimizing',
+    method: 'get',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: [
+        { value: 40, name: 'Full Optimizing' },
+        { value: 20, name: 'Major Optimizing' },
+        { value: 30, name: 'Minor Optimizing' },
+        { value: 10, name: 'Committing' },
+        { value: 2, name: 'Planning' },
+        { value: 3, name: 'Pending' },
+        { value: 50, name: 'Idle' },
+      ]
+    }),
+  },
+  {
+    url: '/mock/ams/v1/overview/operations',
+    method: 'get',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: [
+        {
+          tableIdentifier: {
+            catalog: 'test_catalog',
+            database: 'db',
+            tableName: 'user',
+            id: 1
+          },
+          tableName: 'test_catalog.db.user',
+          operation: `ALTER TABLE user RENAME COLUMN name TO user_name`,
+          ts: '1721353678000',
+        },
+      ]
+    }),
+  },
+  {
+    url: '/mock/ams/v1/overview/unhealth',
+    method: 'get',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: {
+        "list": [
+          { tableIdentifier: { id: 1, catalog: 'test_catalog', database: 'db', tableName: 'user' }, tableName: 'test_catalog.db.user', healthScore: '47', totalSize: '1774', fileCount: '2', averageFileSize: '887' },
+        ],
+        "total": 1
+      }
+    }),
+  },
+  {
     url: '/mock/ams/v1/overview/top/tables',
     method: 'get',
     response: () => ({
