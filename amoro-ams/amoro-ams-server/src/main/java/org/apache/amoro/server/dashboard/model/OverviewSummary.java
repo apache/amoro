@@ -28,6 +28,8 @@ public class OverviewSummary {
   private int totalCpu;
   private long totalMemory;
 
+  public OverviewSummary() {}
+
   public OverviewSummary(
       int catalogCnt, int tableCnt, long tableTotalSize, int totalCpu, long totalMemory) {
     this.catalogCnt = catalogCnt;

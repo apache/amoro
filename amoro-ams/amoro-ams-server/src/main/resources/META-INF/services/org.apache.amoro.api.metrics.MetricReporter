@@ -16,4 +16,4 @@
 # limitations under the License.
 #
 
-org.apache.amoro.metrics.overview.OverviewMetricsReporter
+org.apache.amoro.server.dashboard.OverviewMetricsReporter

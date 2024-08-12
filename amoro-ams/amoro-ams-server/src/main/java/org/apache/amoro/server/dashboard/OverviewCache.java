@@ -16,24 +16,26 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.metrics.overview;
+package org.apache.amoro.server.dashboard;
 
-import static org.apache.amoro.api.metrics.MetricDefine.defineGauge;
+import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_MEMORY_HEAP_USED;
+import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_THREADS_COUNT;
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TABLES;
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TABLES;
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
 
-import io.javalin.http.Context;
 import org.apache.amoro.api.metrics.Counter;
 import org.apache.amoro.api.metrics.Gauge;
 import org.apache.amoro.api.metrics.Metric;
 import org.apache.amoro.api.metrics.MetricDefine;
 import org.apache.amoro.api.metrics.MetricKey;
 import org.apache.amoro.api.metrics.MetricSet;
-import org.apache.amoro.metrics.overview.model.OverviewSummary;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -43,66 +45,49 @@ public class OverviewCache {
   public static final String STATUS_PLANING = "planing";
   public static final String STATUS_EXECUTING = "executing";
 
-  public static final MetricDefine OPTIMIZER_GROUP_PLANING_TABLES =
-      defineGauge("optimizer_group_planing_tables")
-          .withDescription("Number of planing tables in optimizer group")
-          .withTags("group")
-          .build();
-
-  public static final MetricDefine OPTIMIZER_GROUP_PENDING_TABLES =
-      defineGauge("optimizer_group_pending_tables")
-          .withDescription("Number of pending tables in optimizer group")
-          .withTags("group")
-          .build();
-
-  public static final MetricDefine OPTIMIZER_GROUP_EXECUTING_TABLES =
-      defineGauge("optimizer_group_executing_tables")
-          .withDescription("Number of executing tables in optimizer group")
-          .withTags("group")
-          .build();
-
-  public static final MetricDefine AMS_JVM_MEMORY_HEAP_USED =
-      defineGauge("ams_jvm_memory_heap_used")
-          .withDescription("The amount of heap memory currently used (in bytes) by the AMS")
-          .build();
-
-  public static final MetricDefine AMS_JVM_THREADS_COUNT =
-      defineGauge("ams_jvm_threads_count")
-          .withDescription("The total number of live threads used by the AMS")
-          .build();
   private static final Logger log = LoggerFactory.getLogger(OverviewCache.class);
 
   private Map<MetricKey, Metric> registeredMetrics;
   private Map<MetricDefine, List<MetricKey>> metricDefineMap;
-  private Map<String, Long> optimizingStatusCountMap;
-  private OverviewSummary overviewSummary;
+  private Map<String, Long> optimizingStatusCountMap = new ConcurrentHashMap<>();
 
-  public OverviewCache() {
-    optimizingStatusCountMap = Maps.newConcurrentMap();
-    overviewSummary = new OverviewSummary();
+  private static volatile OverviewCache INSTANCE;
+  private volatile int threadCount;
+  private volatile long totalMemory;
+
+  public OverviewCache() {}
+
+  /** @return Get the singleton object. */
+  public static OverviewCache getInstance() {
+    if (INSTANCE == null) {
+      synchronized (OverviewCache.class) {
+        if (INSTANCE == null) {
+          INSTANCE = new OverviewCache();
+        }
+      }
+    }
+    return INSTANCE;
   }
 
-  public void setMetricSet(MetricSet globalMetricSet) {
+  public void initialize(MetricSet globalMetricSet) {
     this.registeredMetrics = globalMetricSet.getMetrics();
   }
 
-  public void getSummary(Context ctx) {
-    synchronized (overviewSummary) {
-      ctx.json(overviewSummary);
-    }
+  public int getThreadCount() {
+    return threadCount;
   }
 
-  public void getTableFormat(Context ctx) {
-    ctx.json(Maps.newHashMap());
+  public long getTotalMemory() {
+    return totalMemory;
   }
 
-  public void getOptimizingStatus(Context ctx) {
-    ctx.json(optimizingStatusCountMap.entrySet().stream().collect(Collectors.toList()));
+  public void getTableFormat() {}
+
+  public Map<String, Long> getOptimizingStatus() {
+    return optimizingStatusCountMap;
   }
 
-  public void getUnhealthTables(Context ctx) {
-    ctx.json(Maps.newHashMap());
-  }
+  public void getUnhealthTables() {}
 
   public void overviewUpdate() {
     long start = System.currentTimeMillis();
@@ -115,14 +100,14 @@ public class OverviewCache {
                       MetricKey::getDefine,
                       Collectors.mapping(Function.identity(), Collectors.toList())));
 
-      // TODO cache overview page data
       // summary
       updateSummary();
-      // format
       // optimizing status
       updateOptimizingStatus();
 
-      // health score}
+      // TODO:
+      // format
+      // health score
     } catch (Exception e) {
       log.error("OverviewUpdater error", e);
     }
@@ -131,10 +116,8 @@ public class OverviewCache {
   }
 
   private void updateSummary() {
-    synchronized (overviewSummary) {
-      overviewSummary.setTotalCpu((int) sumMetricValuesByDefine(AMS_JVM_THREADS_COUNT));
-      overviewSummary.setTotalMemory(sumMetricValuesByDefine(AMS_JVM_MEMORY_HEAP_USED));
-    }
+    this.threadCount = (int) sumMetricValuesByDefine(AMS_JVM_THREADS_COUNT);
+    this.totalMemory = sumMetricValuesByDefine(AMS_JVM_MEMORY_HEAP_USED);
   }
 
   private void updateOptimizingStatus() {

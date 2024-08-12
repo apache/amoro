@@ -23,3 +23,8 @@
 #    enabled: false
 #    properties:
 #       port: 7001
+#
+#  - name: overview-exporter            # configs for overview exporter
+#    enabled: true
+#    properties:
+#      interval: 180000                  # 3min refreshing interval

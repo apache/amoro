@@ -16,16 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.metrics.overview;
+package org.apache.amoro.server.dashboard;
 
-import static io.javalin.apibuilder.ApiBuilder.get;
-
-import io.javalin.Javalin;
-import io.javalin.apibuilder.EndpointGroup;
 import org.apache.amoro.api.metrics.MetricReporter;
 import org.apache.amoro.api.metrics.MetricSet;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.eclipse.jetty.server.session.SessionHandler;
 
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 /** Overview exporter */
 public class OverviewMetricsReporter implements MetricReporter {
 
-  public static final String PORT = "port";
   public static final String INTERVAL = "interval";
 
   private final ScheduledExecutorService overviewUpdaterScheduler =
@@ -46,48 +40,18 @@ public class OverviewMetricsReporter implements MetricReporter {
               .setDaemon(true)
               .build());
 
-  private Javalin httpServer;
-  private OverviewCache overviewCache;
   private Long overviewRefreshingInterval;
 
   @Override
   public void open(Map<String, String> properties) {
-    int port =
-        Optional.ofNullable(properties.get(PORT))
-            .map(Integer::valueOf)
-            .orElseThrow(() -> new IllegalArgumentException("Lack required property: " + PORT));
     overviewRefreshingInterval =
         Optional.ofNullable(properties.get(INTERVAL))
             .map(Long::valueOf)
             .orElseThrow(() -> new IllegalArgumentException("Lack required property: " + INTERVAL));
-
-    overviewCache = new OverviewCache();
-    httpServer =
-        Javalin.create(
-            config -> {
-              config.sessionHandler(SessionHandler::new);
-              config.enableCorsForAllOrigins();
-              config.showJavalinBanner = false;
-            });
-    httpServer.routes(endpoints());
-    httpServer.start(port);
-  }
-
-  private EndpointGroup endpoints() {
-    return () -> {
-      get("/summary", overviewCache::getSummary);
-      get("/format", overviewCache::getTableFormat);
-      get("/optimizing", overviewCache::getOptimizingStatus);
-      get("/unhealth", overviewCache::getUnhealthTables);
-    };
   }
 
   @Override
-  public void close() {
-    if (httpServer != null) {
-      httpServer.close();
-    }
-  }
+  public void close() {}
 
   @Override
   public String name() {
@@ -96,9 +60,9 @@ public class OverviewMetricsReporter implements MetricReporter {
 
   @Override
   public void setGlobalMetricSet(MetricSet globalMetricSet) {
-    overviewCache.setMetricSet(globalMetricSet);
-
+    OverviewCache overviewCache = OverviewCache.getInstance();
+    overviewCache.initialize(globalMetricSet);
     overviewUpdaterScheduler.scheduleAtFixedRate(
-        overviewCache::overviewUpdate, 5000L, overviewRefreshingInterval, TimeUnit.MILLISECONDS);
+        overviewCache::overviewUpdate, 1000L, overviewRefreshingInterval, TimeUnit.MILLISECONDS);
   }
 }
