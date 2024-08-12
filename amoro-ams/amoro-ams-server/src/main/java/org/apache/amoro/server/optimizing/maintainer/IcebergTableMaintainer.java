@@ -103,6 +103,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
   public static final String EXPIRE_TIMESTAMP_MS = "TIMESTAMP_MS";
   public static final String EXPIRE_TIMESTAMP_S = "TIMESTAMP_S";
 
+  public static final Set<String> AMORO_MAINTAIN_COMMITS =
+      Sets.newHashSet(
+          CommitMetaProducer.OPTIMIZE.name(),
+          CommitMetaProducer.DATA_EXPIRATION.name(),
+          CommitMetaProducer.CLEAN_DANGLING_DELETE.name());
+
   protected Table table;
 
   public IcebergTableMaintainer(Table table) {
@@ -435,6 +441,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
         Collections.emptySet(),
         Collections.emptySet());
     try {
+      rewriteFiles.set(
+          org.apache.amoro.op.SnapshotSummary.SNAPSHOT_PRODUCER,
+          CommitMetaProducer.CLEAN_DANGLING_DELETE.name());
       rewriteFiles.commit();
     } catch (ValidationException e) {
       LOG.warn("Iceberg RewriteFiles commit failed on clear danglingDeleteFiles, but ignore", e);
@@ -498,10 +507,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   public static long fetchLatestNonOptimizedSnapshotTime(Table table) {
     Optional<Snapshot> snapshot =
         IcebergTableUtil.findFirstMatchSnapshot(
-            table,
-            s ->
-                !s.summary().containsValue(CommitMetaProducer.OPTIMIZE.name())
-                    && !s.summary().containsValue(CommitMetaProducer.DATA_EXPIRATION.name()));
+            table, s -> s.summary().values().stream().noneMatch(AMORO_MAINTAIN_COMMITS::contains));
     return snapshot.map(Snapshot::timestampMillis).orElse(Long.MAX_VALUE);
   }
 
