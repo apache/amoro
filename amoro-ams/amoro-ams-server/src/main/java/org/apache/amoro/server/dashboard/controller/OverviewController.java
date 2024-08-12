@@ -20,10 +20,14 @@ package org.apache.amoro.server.dashboard.controller;
 
 import io.javalin.http.Context;
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableIDWithFormat;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.catalog.ServerCatalog;
+import org.apache.amoro.server.dashboard.OverviewCache;
 import org.apache.amoro.server.dashboard.ServerTableDescriptor;
+import org.apache.amoro.server.dashboard.model.DDLInfo;
 import org.apache.amoro.server.dashboard.model.FilesStatistics;
 import org.apache.amoro.server.dashboard.model.OverviewBaseData;
 import org.apache.amoro.server.dashboard.model.OverviewSummary;
@@ -33,17 +37,16 @@ import org.apache.amoro.server.dashboard.model.TableStatistics;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.dashboard.utils.TableStatCollector;
-import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.TableMetadata;
-import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.UnkeyedTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -55,6 +58,7 @@ public class OverviewController {
   private final TableService tableService;
   private final DefaultOptimizingService optimizerManager;
   private final ServerTableDescriptor tableDescriptor;
+  private OverviewCache overviewCache;
 
   public OverviewController(
       TableService tableService,
@@ -63,62 +67,54 @@ public class OverviewController {
     this.tableService = tableService;
     this.optimizerManager = optimizerManager;
     this.tableDescriptor = tableDescriptor;
+    this.overviewCache = OverviewCache.getInstance();
   }
 
   public void getSummary(Context ctx) {
     long sumTableSizeInBytes = 0;
-    long sumMemorySizeInMb = 0;
-    int totalCpu = 0;
+    List<CatalogMeta> catalogMetas = tableService.listCatalogMetas();
+    int catalogCount = catalogMetas.size();
+    int tableCount = 0;
 
     // table info
-    List<TableMetadata> tableMetadataList = tableService.listTableMetas();
-    Map<String, ServerCatalog> serverCatalogMap = new HashMap<>();
-    for (TableMetadata tableMetadata : tableMetadataList) {
-      String catalog = tableMetadata.getTableIdentifier().getCatalog();
-      if (!serverCatalogMap.containsKey(catalog)) {
-        serverCatalogMap.put(catalog, tableService.getServerCatalog(catalog));
+    for (CatalogMeta catalogMeta : catalogMetas) {
+      ServerCatalog serverCatalog = tableService.getServerCatalog(catalogMeta.getCatalogName());
+      List<TableIDWithFormat> tableIDWithFormats = serverCatalog.listTables();
+      tableCount += tableIDWithFormats.size();
+      for (TableIDWithFormat tableIDWithFormat : tableIDWithFormats) {
+        sumTableSizeInBytes += getFilesStatistics(tableIDWithFormat, serverCatalog).getTotalSize();
       }
-      ServerCatalog serverCatalog = serverCatalogMap.get(catalog);
-      sumTableSizeInBytes +=
-          getFilesStatistics(tableMetadata.getTableIdentifier(), serverCatalog).getTotalSize();
     }
 
     // resource info
-    List<OptimizerInstance> optimizers = optimizerManager.listOptimizers();
-    for (OptimizerInstance optimizer : optimizers) {
-      sumMemorySizeInMb += optimizer.getMemoryMb();
-      totalCpu += optimizer.getThreadCount();
-    }
+    int threadCount = overviewCache.getThreadCount();
+    long totalMemory = overviewCache.getTotalMemory();
 
     OverviewSummary overviewSummary =
         new OverviewSummary(
-            serverCatalogMap.size(),
-            tableMetadataList.size(),
-            sumTableSizeInBytes,
-            totalCpu,
-            sumMemorySizeInMb);
+            catalogCount, tableCount, sumTableSizeInBytes, threadCount, byte2Mb(totalMemory));
     ctx.json(OkResponse.of(overviewSummary));
   }
 
+  private long byte2Mb(long bytes) {
+    return bytes / 1024 / 1024;
+  }
+
   private static FilesStatistics getFilesStatistics(
-      ServerTableIdentifier tableIdentifier, ServerCatalog catalog) {
+      TableIDWithFormat tableIDWithFormat, ServerCatalog catalog) {
     AmoroTable<?> amoroTable =
-        catalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+        catalog.loadTable(tableIDWithFormat.database(), tableIDWithFormat.table());
     MixedTable table = (MixedTable) amoroTable.originalTable();
-    TableStatistics tableBaseInfo;
-    if (table.isUnkeyedTable()) {
-      tableBaseInfo = new TableStatistics();
-      TableStatCollector.fillTableStatistics(tableBaseInfo, table.asUnkeyedTable(), table);
-    } else {
-      tableBaseInfo = TableStatCollector.collectBaseTableInfo(table.asKeyedTable());
-    }
+    UnkeyedTable unkeyedTable =
+        table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
+    TableStatistics tableBaseInfo = new TableStatistics();
+    TableStatCollector.fillTableStatistics(tableBaseInfo, unkeyedTable, table);
     return tableBaseInfo.getTotalFilesStat();
   }
 
   public void getTableFormat(Context ctx) {
-    List<TableMetadata> tableMetadataList = tableService.listTableMetas();
     List<OverviewBaseData> tableFormats =
-        tableMetadataList.stream()
+        tableService.listTableMetas().stream()
             .map(TableMetadata::getFormat)
             .collect(
                 Collectors.groupingBy(tableFormat -> tableFormat.name(), Collectors.counting()))
@@ -130,22 +126,9 @@ public class OverviewController {
   }
 
   public void getOptimizingStatus(Context ctx) {
-    List<TableRuntime> tableRuntimes = new ArrayList<>();
-    List<ServerTableIdentifier> tables = tableService.listManagedTables();
-    for (ServerTableIdentifier identifier : tables) {
-      TableRuntime tableRuntime = tableService.getRuntime(identifier);
-      if (tableRuntime == null) {
-        continue;
-      }
-      tableRuntimes.add(tableRuntime);
-    }
-
+    Map<String, Long> optimizingStatus = overviewCache.getOptimizingStatus();
     List<OverviewBaseData> optimizingStatusList =
-        tableRuntimes.stream()
-            .map(TableRuntime::getOptimizingStatus)
-            .collect(Collectors.groupingBy(status -> status.name(), Collectors.counting()))
-            .entrySet()
-            .stream()
+        optimizingStatus.entrySet().stream()
             .map(status -> new OverviewBaseData(status.getKey(), status.getValue()))
             .collect(Collectors.toList());
     ctx.json(OkResponse.of(optimizingStatusList));
@@ -157,19 +140,21 @@ public class OverviewController {
     int offset = (page - 1) * pageSize;
 
     List<OverviewUnhealthTable> unhealthTableList = new ArrayList<>();
-    List<TableMetadata> tableMetadataList = tableService.listTableMetas();
-    Map<String, ServerCatalog> serverCatalogMap = new HashMap<>();
-    for (TableMetadata tableMetadata : tableMetadataList) {
-      String catalog = tableMetadata.getTableIdentifier().getCatalog();
-      if (!serverCatalogMap.containsKey(catalog)) {
-        serverCatalogMap.put(catalog, tableService.getServerCatalog(catalog));
+    List<CatalogMeta> catalogMetas = tableService.listCatalogMetas();
+    for (CatalogMeta catalogMeta : catalogMetas) {
+      ServerCatalog serverCatalog = tableService.getServerCatalog(catalogMeta.getCatalogName());
+      List<TableIDWithFormat> tableIDWithFormats = serverCatalog.listTables();
+      for (TableIDWithFormat tableIDWithFormat : tableIDWithFormats) {
+        FilesStatistics filesStatistics = getFilesStatistics(tableIDWithFormat, serverCatalog);
+        unhealthTableList.add(
+            // TODO compute health score
+            new OverviewUnhealthTable(
+                ServerTableIdentifier.of(
+                    tableIDWithFormat.getIdentifier().buildTableIdentifier(),
+                    tableIDWithFormat.getTableFormat()),
+                90,
+                filesStatistics));
       }
-      ServerCatalog serverCatalog = serverCatalogMap.get(catalog);
-      FilesStatistics filesStatistics =
-          getFilesStatistics(tableMetadata.getTableIdentifier(), serverCatalog);
-      unhealthTableList.add(
-          // TODO compute health score
-          new OverviewUnhealthTable(tableMetadata.getTableIdentifier(), 90, filesStatistics));
     }
     unhealthTableList.sort(Comparator.comparing(OverviewUnhealthTable::getHealthScore));
 
@@ -179,18 +164,29 @@ public class OverviewController {
   }
 
   public void getLatestOperations(Context ctx) {
-    List<TableMetadata> tableMetadataList = tableService.listTableMetas();
+    List<CatalogMeta> catalogMetas = tableService.listCatalogMetas();
+    List<OverviewTableOperation> allTableOperationList = Lists.newArrayList();
+
+    for (CatalogMeta catalogMeta : catalogMetas) {
+      ServerCatalog serverCatalog = tableService.getServerCatalog(catalogMeta.getCatalogName());
+      List<TableIDWithFormat> tableIDWithFormats = serverCatalog.listTables();
+      for (TableIDWithFormat tableIDWithFormat : tableIDWithFormats) {
+        ServerTableIdentifier serverTableIdentifier =
+            ServerTableIdentifier.of(
+                tableIDWithFormat.getIdentifier().buildTableIdentifier(),
+                tableIDWithFormat.getTableFormat());
+        List<DDLInfo> tableOperations =
+            tableDescriptor.getTableOperations(serverTableIdentifier.getIdentifier());
+        List<OverviewTableOperation> overviewTableOperationList =
+            tableOperations.stream()
+                .map(ddl -> new OverviewTableOperation(serverTableIdentifier, ddl))
+                .collect(Collectors.toList());
+        allTableOperationList.addAll(overviewTableOperationList);
+      }
+    }
+
     List<OverviewTableOperation> latest10Operations =
-        tableMetadataList.stream()
-            .flatMap(
-                tableMetadata ->
-                    tableDescriptor
-                        .getTableOperations(tableMetadata.getTableIdentifier().getIdentifier())
-                        .stream()
-                        .map(
-                            ddl ->
-                                new OverviewTableOperation(
-                                    tableMetadata.getTableIdentifier(), ddl)))
+        allTableOperationList.stream()
             .sorted(Comparator.comparing(OverviewTableOperation::getTs).reversed())
             .limit(10)
             .collect(Collectors.toList());

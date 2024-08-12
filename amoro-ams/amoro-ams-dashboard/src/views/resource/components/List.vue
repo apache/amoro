@@ -197,13 +197,13 @@ const groupRecord = ref<IIOptimizeGroupItem>({
   container: '',
   resourceOccupation: '',
 })
-const scaleOutViseble = ref<boolean>(false)
+const scaleOutVisible = ref<boolean>(false)
 function scaleOutGroup(record: IIOptimizeGroupItem) {
   if (record.container === 'external') {
     return
   }
   groupRecord.value = { ...record }
-  scaleOutViseble.value = true
+  scaleOutVisible.value = true
 }
 
 function changeTable({ current = pagination.current, pageSize = pagination.pageSize }) {
@@ -221,7 +221,10 @@ onMounted(() => {
 <template>
   <div class="list-wrap">
     <a-table
-      class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"
+      class="ant-table-common"
+      :columns="columns"
+      :data-source="dataSource"
+      :pagination="pagination"
       :loading="loading" @change="changeTable"
     >
       <template #bodyCell="{ column, record }">
@@ -262,7 +265,7 @@ onMounted(() => {
       </template>
     </a-table>
   </div>
-  <ScaleOut v-if="scaleOutViseble" :group-record="groupRecord" @cancel="scaleOutViseble = false" @refresh="refresh" />
+  <ScaleOut v-if="scaleOutVisible" :group-record="groupRecord" @cancel="scaleOutVisible = false" @refresh="refresh" />
   <u-loading v-if="releaseLoading" />
 </template>
 

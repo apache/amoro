@@ -20,32 +20,26 @@ package org.apache.amoro.server.dashboard.model;
 
 public class ConsumerInfo {
 
-  public static final String CONSUMER_ID = "consumer_id";
-  public static final String NEXT_SNAPSHOT_ID = "next_snapshot_id";
+  private final String consumerId;
+  private final long nextSnapshotId;
+  private final AmoroSnapshotsOfTable amoroCurrentSnapshotsOfTable;
 
-  private String consumerId;
-  private long nextSnapshotId;
-
-  public ConsumerInfo() {}
-
-  public ConsumerInfo(String consumerId, long nextSnapshotId) {
+  public ConsumerInfo(
+      String consumerId, long nextSnapshotId, AmoroSnapshotsOfTable amoroCurrentSnapshotsOfTable) {
     this.consumerId = consumerId;
     this.nextSnapshotId = nextSnapshotId;
+    this.amoroCurrentSnapshotsOfTable = amoroCurrentSnapshotsOfTable;
   }
 
   public String getConsumerId() {
     return consumerId;
   }
 
-  public void setConsumerId(String consumerId) {
-    this.consumerId = consumerId;
-  }
-
   public long getNextSnapshotId() {
     return nextSnapshotId;
   }
 
-  public void setNextSnapshotId(long nextSnapshotId) {
-    this.nextSnapshotId = nextSnapshotId;
+  public AmoroSnapshotsOfTable getAmoroCurrentSnapshotsOfTable() {
+    return amoroCurrentSnapshotsOfTable;
   }
 }

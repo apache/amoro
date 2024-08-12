@@ -71,6 +71,21 @@ function onRefChange(params: { ref: string, operation: string }) {
   operation.value = params.operation
   getTableInfo()
 }
+function onConsumerChange(params: {
+  ref: string
+  operation: string
+  amoroCurrentSnapshotsItem: SnapshotItem
+}) {
+  tblRef.value = params.ref
+  operation.value = params.operation
+  dataSource.length = 0
+  params.amoroCurrentSnapshotsItem.commitTime = params.amoroCurrentSnapshotsItem
+    .commitTime
+    ? dateFormat(params.amoroCurrentSnapshotsItem.commitTime)
+    : '-'
+  dataSource.push(params.amoroCurrentSnapshotsItem)
+  pagination.total = 1
+}
 
 async function getTableInfo() {
   try {
@@ -185,7 +200,7 @@ onMounted(() => {
           <Chart :loading="loading" :options="fileChartOption" />
         </a-col>
       </a-row>
-      <Selector :catalog="sourceData.catalog" :db="sourceData.db" :table="sourceData.table" :disabled="loading" @ref-change="onRefChange" />
+      <Selector :catalog="sourceData.catalog" :db="sourceData.db" :table="sourceData.table" :disabled="loading" @consumer-change="onConsumerChange" @ref-change="onRefChange" />
       <a-table
         row-key="snapshotId"
         :columns="columns"
