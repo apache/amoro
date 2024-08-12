@@ -27,7 +27,7 @@ public enum SqlExample {
           + "    name string, \n"
           + "    ts timestamp,\n"
           + "    primary key (id)\n"
-          + ") using arctic \n"
+          + ") using mixed_iceberg \n"
           + "partitioned by (days(ts)) \n"
           + "tblproperties ('table.props' = 'val');"),
   DELETE_TABLE("DeleteTable", "drop table db_name.table_name;"),
