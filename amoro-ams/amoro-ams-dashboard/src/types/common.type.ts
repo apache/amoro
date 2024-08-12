@@ -258,6 +258,7 @@ export interface IOptimizeTableItem {
   quotaOccupationDesc: string
   duration: number
   durationDesc: string
+  durationDisplay: string
   fileSizeDesc: string
   tableIdentifier: ITableIdentifier
   tableNameOnly?: string
@@ -375,12 +376,14 @@ export type ILineChartOriginalData = Record<string, Record<string, number>>
 export enum branchTypeMap {
   BRANCH = 'branch',
   TAG = 'tag',
+  CONSUMER = 'consumer',
 }
 
 export interface IBranchItem {
   value: string
   label: string
   type: branchTypeMap
+  amoroCurrentSnapshotsOfTable?: SnapshotItem
 }
 
 export interface IServiceBranchItem {
@@ -390,6 +393,8 @@ export interface IServiceBranchItem {
   maxSnapshotAgeMs: number | null
   maxRefAgeMs: number | null
   type: branchTypeMap
+  consumerId: string
+  amoroCurrentSnapshotsOfTable: SnapshotItem
 }
 
 export enum operationMap {
