@@ -24,7 +24,7 @@ export PROJECT_HOME
 cd $CURRENT_DIR
 
 AMORO_VERSION=`cat $PROJECT_HOME/pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
-FLINK_VERSION=1.15.3
+FLINK_VERSION=1.20.0
 SPARK_VERSION=3.3.3
 DEBIAN_MIRROR=http://deb.debian.org
 APACHE_ARCHIVE=https://archive.apache.org/dist
@@ -47,7 +47,7 @@ Images:
     amoro                   Build official Amoro image used for production environments.
 
 Options:
-    --flink-version         Flink binary release version, default is 1.15.3, format must be x.y.z
+    --flink-version         Flink binary release version, default is 1.20.0, format must be x.y.z
     --spark-version         Spark binary release version, default is 3.3.3, format must be x.y.z
     --apache-archive        Apache Archive url, default is https://archive.apache.org/dist
     --debian-mirror         Mirror url of debian, default is http://deb.debian.org
