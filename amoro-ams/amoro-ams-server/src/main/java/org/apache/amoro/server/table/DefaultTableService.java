@@ -79,6 +79,7 @@ import java.util.stream.Collectors;
 public class DefaultTableService extends StatedPersistentBase implements TableService {
 
   public static final Logger LOG = LoggerFactory.getLogger(DefaultTableService.class);
+  private static final int TABLE_BLOCKER_RETRY = 3;
   private final long externalCatalogRefreshingInterval;
   private final long blockerTimeout;
   private final Map<String, InternalCatalog> internalCatalogMap = new ConcurrentHashMap<>();
@@ -262,7 +263,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     String database = tableIdentifier.getDatabase();
     String table = tableIdentifier.getTableName();
     int tryCount = 0;
-    while (tryCount++ < 3) {
+    while (tryCount++ < TABLE_BLOCKER_RETRY) {
       long now = System.currentTimeMillis();
       doAs(
           TableBlockerMapper.class,
@@ -295,7 +296,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         }
       } catch (PersistenceException e) {
         LOG.warn(
-            "Exception when create a blocker:{}, error message:{}", tableBlocker, e.getMessage());
+            "An exception occurs when creating a blocker:{}, error message:{}", tableBlocker, e.getMessage());
         if (e.getMessage() == null || !e.getMessage().contains("duplicate key")) {
           LOG.error("Exception when create a blocker:{}", tableBlocker, e);
         }
@@ -312,7 +313,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   @Override
   public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) {
     int retry = 0;
-    while (retry++ < 3) {
+    while (retry++ < TABLE_BLOCKER_RETRY) {
       long now = System.currentTimeMillis();
       long id = Long.parseLong(blockerId);
       TableBlocker tableBlocker =
