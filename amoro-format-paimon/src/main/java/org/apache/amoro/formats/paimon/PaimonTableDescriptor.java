@@ -51,6 +51,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.paimon.CoreOptions;
 import org.apache.paimon.FileStore;
 import org.apache.paimon.Snapshot;
+import org.apache.paimon.branch.TableBranch;
 import org.apache.paimon.consumer.ConsumerManager;
 import org.apache.paimon.data.BinaryRow;
 import org.apache.paimon.io.DataFileMeta;
@@ -188,9 +189,15 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         throw new RuntimeException(e);
       }
     } else {
-      snapshots = Collections.singleton(table.tagManager().taggedSnapshot(ref)).iterator();
+      if (table.branchManager().branchExists(ref)) {
+        snapshots =
+            table.snapshotManager().latestSnapshot(ref) == null
+                ? Collections.emptyIterator()
+                : Collections.singleton(table.snapshotManager().latestSnapshot(ref)).iterator();
+      } else {
+        snapshots = Collections.singleton(table.tagManager().taggedSnapshot(ref)).iterator();
+      }
     }
-
     FileStore<?> store = table.store();
     List<CompletableFuture<AmoroSnapshotsOfTable>> futures = new ArrayList<>();
     Predicate<Snapshot> predicate =
@@ -531,7 +538,24 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
-    return ImmutableList.of(TagOrBranchInfo.MAIN_BRANCH);
+    FileStoreTable table = getTable(amoroTable);
+    List<TableBranch> branches = table.branchManager().branches();
+    List<TagOrBranchInfo> branchInfos =
+        branches.stream()
+            .map(
+                branch -> {
+                  String branchName = branch.getBranchName();
+                  Long snapshot = branch.getCreatedFromSnapshot();
+                  if (snapshot == null) {
+                    // Indicates that this is an empty snapshot, temporarily use -1 to represent
+                    snapshot = -1L;
+                  }
+                  return new TagOrBranchInfo(
+                      branchName, snapshot, 0, 0L, 0L, TagOrBranchInfo.BRANCH);
+                })
+            .collect(Collectors.toList());
+    branchInfos.add(TagOrBranchInfo.MAIN_BRANCH);
+    return branchInfos;
   }
 
   @Override
