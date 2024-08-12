@@ -25,7 +25,7 @@ import UnhealthTablesCard from './components/UnhealthTablesCard.vue'
 import OperationsCard from './components/OperationsCard.vue'
 import PieChartCard from './components/PieChartCard.vue'
 import { getOverviewFormat, getOverviewOptimizingStatus, getOverviewSummary } from '@/services/overview.service'
-import { bytesToSize } from '@/utils'
+import { bytesToSize, mbToSize } from '@/utils'
 import type { IKeyAndValue } from '@/types/common.type'
 
 const { t } = useI18n()
@@ -38,7 +38,7 @@ const optimizingStatusData = ref<{ value: number, name: string }[]>([])
 async function getCurOverviewData() {
   const summaryResult = await getOverviewSummary()
   const tableSize = bytesToSize(summaryResult.tableTotalSize)
-  const memorySize = bytesToSize(summaryResult.totalMemory)
+  const memorySize = mbToSize(summaryResult.totalMemory)
   singleData.value.push({ key: 'catalog', value: summaryResult.catalogCnt })
   singleData.value.push({ key: 'table', value: summaryResult.tableCnt })
   singleData.value.push({ key: 'data', value: tableSize })
