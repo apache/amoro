@@ -25,7 +25,7 @@ import UnhealthTablesCard from './components/UnhealthTablesCard.vue'
 import OperationsCard from './components/OperationsCard.vue'
 import PieChartCard from './components/PieChartCard.vue'
 import { getOverviewFormat, getOverviewOptimizingStatus, getOverviewSummary } from '@/services/overview.service'
-import { bytesToSize, mbToSize } from '@/utils'
+import { bytesToSize } from '@/utils'
 import type { IKeyAndValue } from '@/types/common.type'
 
 const { t } = useI18n()
@@ -38,12 +38,12 @@ const optimizingStatusData = ref<{ value: number, name: string }[]>([])
 async function getCurOverviewData() {
   const summaryResult = await getOverviewSummary()
   const tableSize = bytesToSize(summaryResult.tableTotalSize)
-  const memorySize = mbToSize(summaryResult.totalMemory)
-  singleData.value.push({ key: t('catalog'), value: summaryResult.catalogCnt })
-  singleData.value.push({ key: t('table'), value: summaryResult.tableCnt })
-  singleData.value.push({ key: t('data'), value: tableSize })
-  multipleData.value.push({ key: t('cpu'), value: summaryResult.totalCpu })
-  multipleData.value.push({ key: t('memory'), value: memorySize })
+  const memorySize = bytesToSize(summaryResult.totalMemory)
+  singleData.value.push({ key: 'catalog', value: summaryResult.catalogCnt })
+  singleData.value.push({ key: 'table', value: summaryResult.tableCnt })
+  singleData.value.push({ key: 'data', value: tableSize })
+  multipleData.value.push({ key: 'cpu', value: summaryResult.totalCpu })
+  multipleData.value.push({ key: 'memory', value: memorySize })
 
   tableFormatData.value = await getOverviewFormat()
   optimizingStatusData.value = await getOverviewOptimizingStatus()
@@ -58,7 +58,7 @@ onMounted(() => {
   <div :style="{ background: '#F8F7F8', padding: '24px', minHeight: '900px' }" class="overview-content">
     <a-row :gutter="[16, 8]">
       <a-col v-for="(card, index) in singleData" :key="index" :span="6">
-        <SingleDataCard :title="card.key" :value="card.value" />
+        <SingleDataCard :title=t(card.key) :value="card.value" />
       </a-col>
       <a-col :span="6">
         <MultipleDataCard :title="t('resource')" :data="multipleData" />

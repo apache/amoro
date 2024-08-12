@@ -92,12 +92,8 @@ public class OverviewController {
 
     OverviewSummary overviewSummary =
         new OverviewSummary(
-            catalogCount, tableCount, sumTableSizeInBytes, threadCount, byte2Mb(totalMemory));
+            catalogCount, tableCount, sumTableSizeInBytes, threadCount, totalMemory);
     ctx.json(OkResponse.of(overviewSummary));
-  }
-
-  private long byte2Mb(long bytes) {
-    return bytes / 1024 / 1024;
   }
 
   private static FilesStatistics getFilesStatistics(

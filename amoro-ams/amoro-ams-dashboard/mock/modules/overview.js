@@ -28,7 +28,7 @@ export default [
         tableCnt: 37944,
         tableTotalSize: 10585900,
         totalCpu: '6',
-        totalMemory: 62464
+        totalMemory: 65498251264
       }
     }),
   },
