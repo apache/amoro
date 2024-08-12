@@ -30,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public class TestMixedDataFiles {
 
@@ -181,4 +182,40 @@ public class TestMixedDataFiles {
 
     Assert.assertEquals(p1, p2);
   }
+
+  @Test
+  public void testTimestampPartitionTZ() {
+    Schema schema = new Schema(Types.NestedField.required(1, "dt", Types.TimestampType.withZone()));
+    PartitionSpec spec = PartitionSpec.builderFor(schema).identity("dt").build();
+    PartitionKey partitionKey = new PartitionKey(spec, schema);
+    GenericRecord record = GenericRecord.create(schema);
+    InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(schema.asStruct());
+    partitionKey.partition(
+        internalRecordWrapper.wrap(
+            record.copy("dt", OffsetDateTime.parse("2024-08-12T11:00:00+08:00"))));
+    String partitionPath = spec.partitionToPath(partitionKey);
+    StructLike partitionData = MixedDataFiles.data(spec, partitionPath);
+    StructLikeWrapper p1 = StructLikeWrapper.forType(spec.partitionType());
+    p1.set(partitionKey);
+    StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
+    p2.set(partitionData);
+    Assert.assertEquals(p1, p2);
+  }
+
+  @Test
+  public void testTimestampPartitionNTZ() {
+    PartitionSpec spec = PartitionSpec.builderFor(SCHEMA).identity("dt").build();
+    PartitionKey partitionKey = new PartitionKey(spec, SCHEMA);
+    GenericRecord record = GenericRecord.create(SCHEMA);
+    InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(SCHEMA.asStruct());
+    partitionKey.partition(
+        internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2024-08-12T11:00:00"))));
+    String partitionPath = spec.partitionToPath(partitionKey);
+    StructLike partitionData = MixedDataFiles.data(spec, partitionPath);
+    StructLikeWrapper p1 = StructLikeWrapper.forType(spec.partitionType());
+    p1.set(partitionKey);
+    StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
+    p2.set(partitionData);
+    Assert.assertEquals(p1, p2);
+  } 
 }
