@@ -217,5 +217,5 @@ public class TestMixedDataFiles {
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
     p2.set(partitionData);
     Assert.assertEquals(p1, p2);
-  } 
+  }
 }
