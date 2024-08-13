@@ -296,7 +296,9 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         }
       } catch (PersistenceException e) {
         LOG.warn(
-            "An exception occurs when creating a blocker:{}, error message:{}", tableBlocker, e.getMessage());
+            "An exception occurs when creating a blocker:{}, error message:{}",
+            tableBlocker,
+            e.getMessage());
         if (e.getMessage() == null || !e.getMessage().contains("duplicate key")) {
           LOG.error("Exception when create a blocker:{}", tableBlocker, e);
         }
