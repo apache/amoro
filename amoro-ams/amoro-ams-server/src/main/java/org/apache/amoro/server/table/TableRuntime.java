@@ -26,8 +26,6 @@ import org.apache.amoro.api.StateField;
 import org.apache.amoro.api.config.OptimizingConfig;
 import org.apache.amoro.api.config.TableConfiguration;
 import org.apache.amoro.server.AmoroServiceConstants;
-import org.apache.amoro.server.exception.BlockerConflictException;
-import org.apache.amoro.server.exception.ObjectNotExistsException;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
@@ -43,24 +41,18 @@ import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.MixedTable;
-import org.apache.amoro.table.blocker.RenewableBlocker;
 import org.apache.iceberg.Snapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 public class TableRuntime extends StatedPersistentBase {
 
@@ -95,7 +87,6 @@ public class TableRuntime extends StatedPersistentBase {
   @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
   private volatile long lastPlanTime;
   private final TableOptimizingMetrics optimizingMetrics;
-  private final ReentrantLock blockerLock = new ReentrantLock();
 
   protected TableRuntime(
       ServerTableIdentifier tableIdentifier,
@@ -514,139 +505,21 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   /**
-   * Get all valid blockers.
-   *
-   * @return all valid blockers
-   */
-  public List<TableBlocker> getBlockers() {
-    blockerLock.lock();
-    try {
-      return getAs(
-          TableBlockerMapper.class,
-          mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
-    } finally {
-      blockerLock.unlock();
-    }
-  }
-
-  /**
-   * Block some operations for table.
-   *
-   * @param operations - operations to be blocked
-   * @param properties -
-   * @param blockerTimeout -
-   * @return TableBlocker if success
-   */
-  public TableBlocker block(
-      List<BlockableOperation> operations,
-      @Nonnull Map<String, String> properties,
-      long blockerTimeout) {
-    Preconditions.checkNotNull(operations, "operations should not be null");
-    Preconditions.checkArgument(!operations.isEmpty(), "operations should not be empty");
-    Preconditions.checkArgument(blockerTimeout > 0, "blocker timeout must > 0");
-    blockerLock.lock();
-    try {
-      long now = System.currentTimeMillis();
-      List<TableBlocker> tableBlockers =
-          getAs(TableBlockerMapper.class, mapper -> mapper.selectBlockers(tableIdentifier, now));
-      if (conflict(operations, tableBlockers)) {
-        throw new BlockerConflictException(operations + " is conflict with " + tableBlockers);
-      }
-      TableBlocker tableBlocker =
-          buildTableBlocker(tableIdentifier, operations, properties, now, blockerTimeout);
-      doAs(TableBlockerMapper.class, mapper -> mapper.insertBlocker(tableBlocker));
-      return tableBlocker;
-    } finally {
-      blockerLock.unlock();
-    }
-  }
-
-  /**
-   * Renew blocker.
-   *
-   * @param blockerId - blockerId
-   * @param blockerTimeout - timeout
-   * @throws IllegalStateException if blocker not exist
-   */
-  public long renew(String blockerId, long blockerTimeout) {
-    blockerLock.lock();
-    try {
-      long now = System.currentTimeMillis();
-      TableBlocker tableBlocker =
-          getAs(
-              TableBlockerMapper.class,
-              mapper -> mapper.selectBlocker(Long.parseLong(blockerId), now));
-      if (tableBlocker == null) {
-        throw new ObjectNotExistsException("Blocker " + blockerId + " of " + tableIdentifier);
-      }
-      long expirationTime = now + blockerTimeout;
-      doAs(
-          TableBlockerMapper.class,
-          mapper -> mapper.updateBlockerExpirationTime(Long.parseLong(blockerId), expirationTime));
-      return expirationTime;
-    } finally {
-      blockerLock.unlock();
-    }
-  }
-
-  /**
-   * Release blocker, succeed when blocker not exist.
-   *
-   * @param blockerId - blockerId
-   */
-  public void release(String blockerId) {
-    blockerLock.lock();
-    try {
-      doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlocker(Long.parseLong(blockerId)));
-    } finally {
-      blockerLock.unlock();
-    }
-  }
-
-  /**
    * Check if operation are blocked now.
    *
    * @param operation - operation to check
    * @return true if blocked
    */
   public boolean isBlocked(BlockableOperation operation) {
-    blockerLock.lock();
-    try {
-      List<TableBlocker> tableBlockers =
-          getAs(
-              TableBlockerMapper.class,
-              mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
-      return conflict(operation, tableBlockers);
-    } finally {
-      blockerLock.unlock();
-    }
-  }
-
-  private boolean conflict(
-      List<BlockableOperation> blockableOperations, List<TableBlocker> blockers) {
-    return blockableOperations.stream().anyMatch(operation -> conflict(operation, blockers));
-  }
-
-  private boolean conflict(BlockableOperation blockableOperation, List<TableBlocker> blockers) {
-    return blockers.stream()
-        .anyMatch(blocker -> blocker.getOperations().contains(blockableOperation.name()));
-  }
-
-  private TableBlocker buildTableBlocker(
-      ServerTableIdentifier tableIdentifier,
-      List<BlockableOperation> operations,
-      Map<String, String> properties,
-      long now,
-      long blockerTimeout) {
-    TableBlocker tableBlocker = new TableBlocker();
-    tableBlocker.setTableIdentifier(tableIdentifier);
-    tableBlocker.setCreateTime(now);
-    tableBlocker.setExpirationTime(now + blockerTimeout);
-    tableBlocker.setOperations(
-        operations.stream().map(BlockableOperation::name).collect(Collectors.toList()));
-    HashMap<String, String> propertiesOfTableBlocker = new HashMap<>(properties);
-    propertiesOfTableBlocker.put(RenewableBlocker.BLOCKER_TIMEOUT, blockerTimeout + "");
-    tableBlocker.setProperties(propertiesOfTableBlocker);
-    return tableBlocker;
+    List<TableBlocker> tableBlockers =
+        getAs(
+            TableBlockerMapper.class,
+            mapper ->
+                mapper.selectBlockers(
+                    tableIdentifier.getCatalog(),
+                    tableIdentifier.getDatabase(),
+                    tableIdentifier.getTableName(),
+                    System.currentTimeMillis()));
+    return TableBlocker.conflict(operation, tableBlockers);
   }
 }
