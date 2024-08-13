@@ -15,16 +15,3 @@
 
 -- If you have any changes to the AMS database, please record them in this file.
 -- We will confirm the corresponding version of these upgrade scripts when releasing.
-
-ALTER TABLE table_identifier CHANGE COLUMN table_name table_name varchar(256) NOT NULL;
-ALTER TABLE table_optimizing_process CHANGE COLUMN table_name table_name varchar(256) NOT NULL;
-ALTER TABLE table_metadata CHANGE COLUMN table_name table_name varchar(256) NOT NULL;
-ALTER TABLE table_runtime CHANGE COLUMN table_name table_name varchar(256) NOT NULL;
-ALTER TABLE table_blocker CHANGE COLUMN table_name table_name varchar(256) NOT NULL;
-
-
--- NEW SCHEMA CHANGE FOR CAS BASE BLOCKER
-TRUNCATE TABLE `table_blocker`;
-ALTER TABLE `table_blocker` DROP INDEX `table_index`;
-ALTER TABLE `table_blocker` ADD COLUMN `prev_blocker_id` bigint(20) NOT NULL DEFAULT -1 COMMENT 'prev blocker id when created';
-ALTER TABLE `table_blocker` ADD UNIQUE KEY `uq_prev` (`catalog_name`,`db_name`,`table_name`, `prev_blocker_id`);
