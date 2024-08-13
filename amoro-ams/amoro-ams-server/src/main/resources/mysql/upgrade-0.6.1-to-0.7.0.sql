@@ -13,11 +13,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
--- If you have any changes to the AMS database, please record them in this file.
--- We will confirm the corresponding version of these upgrade scripts when releasing.
-
-ALTER TABLE table_identifier ALTER COLUMN table_name TYPE varchar(256) NOT NULL;
-ALTER TABLE table_optimizing_process ALTER COLUMN table_name TYPE varchar(256) NOT NULL;
-ALTER TABLE table_metadata ALTER COLUMN table_name TYPE varchar(256) NOT NULL;
-ALTER TABLE table_runtime ALTER COLUMN table_name TYPE varchar(256) NOT NULL;
-ALTER TABLE table_blocker ALTER COLUMN table_name TYPE varchar(256) NOT NULL;
+ALTER TABLE table_identifier CHANGE COLUMN table_name table_name varchar(256) NOT NULL;
+ALTER TABLE table_optimizing_process CHANGE COLUMN table_name table_name varchar(256) NOT NULL;
+ALTER TABLE table_metadata CHANGE COLUMN table_name table_name varchar(256) NOT NULL;
+ALTER TABLE table_runtime CHANGE COLUMN table_name table_name varchar(256) NOT NULL;
+ALTER TABLE table_blocker CHANGE COLUMN table_name table_name varchar(256) NOT NULL;
