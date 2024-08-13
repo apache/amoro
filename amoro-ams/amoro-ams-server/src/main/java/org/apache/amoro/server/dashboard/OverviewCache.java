@@ -18,11 +18,11 @@
 
 package org.apache.amoro.server.dashboard;
 
-import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_MEMORY_HEAP_USED;
-import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_THREADS_COUNT;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TABLES;
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TABLES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_THREADS;
 
 import org.apache.amoro.api.metrics.Counter;
 import org.apache.amoro.api.metrics.Gauge;
@@ -36,6 +36,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -52,8 +54,8 @@ public class OverviewCache {
   private Map<String, Long> optimizingStatusCountMap = new ConcurrentHashMap<>();
 
   private static volatile OverviewCache INSTANCE;
-  private volatile int threadCount;
-  private volatile long totalMemory;
+  private AtomicInteger threadCount = new AtomicInteger();
+  private AtomicLong totalMemory = new AtomicLong();
 
   public OverviewCache() {}
 
@@ -74,11 +76,11 @@ public class OverviewCache {
   }
 
   public int getThreadCount() {
-    return threadCount;
+    return threadCount.get();
   }
 
   public long getTotalMemory() {
-    return totalMemory;
+    return totalMemory.get();
   }
 
   public void getTableFormat() {}
@@ -116,8 +118,8 @@ public class OverviewCache {
   }
 
   private void updateSummary() {
-    this.threadCount = (int) sumMetricValuesByDefine(AMS_JVM_THREADS_COUNT);
-    this.totalMemory = sumMetricValuesByDefine(AMS_JVM_MEMORY_HEAP_USED);
+    this.threadCount.set((int) sumMetricValuesByDefine(OPTIMIZER_GROUP_THREADS));
+    this.totalMemory.set(sumMetricValuesByDefine(OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED));
   }
 
   private void updateOptimizingStatus() {

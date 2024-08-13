@@ -37,7 +37,6 @@ import org.apache.amoro.server.dashboard.model.TableStatistics;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.dashboard.utils.TableStatCollector;
-import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
@@ -113,15 +112,24 @@ public class OverviewController {
   }
 
   public void getTableFormat(Context ctx) {
+    List<CatalogMeta> catalogMetas = tableService.listCatalogMetas();
+    List<TableIDWithFormat> allTables = Lists.newArrayList();
+    for (CatalogMeta catalogMeta : catalogMetas) {
+      ServerCatalog serverCatalog = tableService.getServerCatalog(catalogMeta.getCatalogName());
+      List<TableIDWithFormat> tableIDWithFormats = serverCatalog.listTables();
+      allTables.addAll(tableIDWithFormats);
+    }
+
     List<OverviewBaseData> tableFormats =
-        tableService.listTableMetas().stream()
-            .map(TableMetadata::getFormat)
+        allTables.stream()
+            .map(TableIDWithFormat::getTableFormat)
             .collect(
                 Collectors.groupingBy(tableFormat -> tableFormat.name(), Collectors.counting()))
             .entrySet()
             .stream()
             .map(format -> new OverviewBaseData(format.getKey(), format.getValue()))
             .collect(Collectors.toList());
+
     ctx.json(OkResponse.of(tableFormats));
   }
 

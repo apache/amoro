@@ -56,13 +56,6 @@ public interface TableService extends CatalogService, TableManager {
   List<ServerTableIdentifier> listManagedTables();
 
   /**
-   * load all table metadata
-   *
-   * @return table metadata list
-   */
-  List<TableMetadata> listTableMetas();
-
-  /**
    * Get the ServerTableIdentifier instance of the specified table identifier
    *
    * @return the {@link ServerTableIdentifier} instance
