@@ -23,9 +23,3 @@ ALTER TABLE table_runtime ALTER COLUMN table_name TYPE varchar(256) NOT NULL;
 ALTER TABLE table_blocker ALTER COLUMN table_name TYPE varchar(256) NOT NULL;
 
 
--- NEW SCHEMA CHANGE FOR CAS BASE BLOCKER
-TRUNCATE TABLE `table_blocker`;
-ALTER TABLE `table_blocker` DROP INDEX `table_index`;
-ALTER TABLE `table_blocker` ADD COLUMN `prev_blocker_id` bigint(20) NOT NULL DEFAULT -1;
-COMMENT ON COLUMN table_blocker.prev_blocker_id IS 'prev blocker id when created';
-ALTER TABLE `table_blocker` ADD UNIQUE KEY `uq_prev` (`catalog_name`,`db_name`,`table_name`, `prev_blocker_id`);
