@@ -295,13 +295,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
           return tableBlocker.buildBlocker();
         }
       } catch (PersistenceException e) {
-        LOG.warn(
-            "An exception occurs when creating a blocker:{}, error message:{}",
-            tableBlocker,
-            e.getMessage());
-        if (e.getMessage() == null || !e.getMessage().contains("duplicate key")) {
-          LOG.error("Exception when create a blocker:{}", tableBlocker, e);
-        }
+        LOG.warn("An exception occurs when creating a blocker:{}", tableBlocker, e);
       }
     }
     throw new BlockerConflictException("Failed to create a blocker: conflict meet max retry");
