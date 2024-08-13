@@ -83,9 +83,9 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
   public static final String FLINK_HOME_PROPERTY = "flink-home";
   public static final String FLINK_CONFIG_PATH = "/conf";
-  public static final String FLINK_CONFIG_YAML = "/flink-conf.yaml";
+  public static final String LEGACY_FLINK_CONFIG_YAML = "/flink-conf.yaml";
   // flink version >= 1.20 use it first
-  public static final String NEW_FLINK_CONFIG_YAML = "/config.yaml";
+  public static final String FLINK_CONFIG_YAML = "/config.yaml";
   public static final String ENV_FLINK_CONF_DIR = "FLINK_CONF_DIR";
   public static final String FLINK_CLIENT_TIMEOUT_SECOND = "flink-client-timeout-second";
 
@@ -268,9 +268,9 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
    */
   private Map<String, String> loadFlinkConfig() {
     try {
-      Path flinkConfPath = Paths.get(flinkConfDir + NEW_FLINK_CONFIG_YAML);
+      Path flinkConfPath = Paths.get(flinkConfDir + FLINK_CONFIG_YAML);
       if (!Files.exists(flinkConfPath, LinkOption.NOFOLLOW_LINKS)) {
-        flinkConfPath = Paths.get(flinkConfDir + FLINK_CONFIG_YAML);
+        flinkConfPath = Paths.get(flinkConfDir + LEGACY_FLINK_CONFIG_YAML);
         return new Yaml().load(Files.newInputStream(flinkConfPath));
       }
       Map<String, Object> configDocument =
@@ -563,7 +563,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     JobID jobID = JobID.generate();
     JarRunRequestBody runRequestBody =
         new JarRunRequestBody(
-            FLINK_JOB_MAIN_CLASS, args, null, null, jobID, true, null, RestoreMode.CLAIM, null);
+            FLINK_JOB_MAIN_CLASS, args, null, null, jobID, true, null, RestoreMode.NO_CLAIM, null);
     LOG.info("Submitting job: {} to session cluster, args: {}", jobID, args);
     try (RestClusterClient<String> restClusterClient =
         FlinkClientUtil.getRestClusterClient(configuration)) {
