@@ -15,3 +15,10 @@
 
 -- If you have any changes to the AMS database, please record them in this file.
 -- We will confirm the corresponding version of these upgrade scripts when releasing.
+
+-- NEW SCHEMA CHANGE FOR CAS BASE BLOCKER
+TRUNCATE TABLE `table_blocker`;
+ALTER TABLE `table_blocker` DROP INDEX `table_index`;
+ALTER TABLE `table_blocker` ADD COLUMN `prev_blocker_id` bigint(20) NOT NULL DEFAULT -1;
+COMMENT ON COLUMN table_blocker.prev_blocker_id IS 'prev blocker id when created';
+ALTER TABLE `table_blocker` ADD UNIQUE KEY `uq_prev` (`catalog_name`,`db_name`,`table_name`, `prev_blocker_id`);

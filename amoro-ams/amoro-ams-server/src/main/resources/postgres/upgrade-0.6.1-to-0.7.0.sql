@@ -21,3 +21,5 @@ ALTER TABLE table_optimizing_process ALTER COLUMN table_name TYPE varchar(256) N
 ALTER TABLE table_metadata ALTER COLUMN table_name TYPE varchar(256) NOT NULL;
 ALTER TABLE table_runtime ALTER COLUMN table_name TYPE varchar(256) NOT NULL;
 ALTER TABLE table_blocker ALTER COLUMN table_name TYPE varchar(256) NOT NULL;
+
+
