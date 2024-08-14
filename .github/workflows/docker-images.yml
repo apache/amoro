@@ -103,7 +103,7 @@ jobs:
     if: ${{ startsWith(github.repository, 'apache/') }}
     strategy:
       matrix:
-        flink: [ "1.14.6", "1.18.1" ]
+        flink: [ "1.14.6", "1.20.0" ]
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 8
@@ -129,11 +129,11 @@ jobs:
           tags: |
             type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot-flink1.14
-            type=ref,event=branch,enable=${{ matrix.flink == '1.18.1' }},suffix=-snapshot-flink1.18
+            type=ref,event=branch,enable=${{ matrix.flink == '1.20.0' }},suffix=-snapshot-flink1.20
             type=raw,enable=${{ matrix.hadoop == '1.14.6' && startsWith(github.ref, 'refs/tags/v') }},value=latest
             type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}
             type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}, suffix=-flink1.14
-            type=semver,enable=${{ matrix.flink == '1.18.1' }},pattern={{version}}, suffix=-flink1.18
+            type=semver,enable=${{ matrix.flink == '1.20.0' }},pattern={{version}}, suffix=-flink1.20
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
