@@ -35,10 +35,10 @@ import java.util.List;
 public class TableOrphanFilesCleaningMetrics {
 
   private final Counter orphanDataFilesCount = new Counter();
-  private final Counter slatedOrphanDataFilesCount = new Counter();
+  private final Counter expectedOrphanDataFilesCount = new Counter();
 
   private final Counter orphanMetadataFilesCount = new Counter();
-  private final Counter slatedOrphanMetadataFilesCount = new Counter();
+  private final Counter expectedOrphanMetadataFilesCount = new Counter();
 
   private final ServerTableIdentifier identifier;
 
@@ -47,7 +47,7 @@ public class TableOrphanFilesCleaningMetrics {
   }
 
   public static final MetricDefine TABLE_ORPHAN_CONTENT_FILE_CLEANING_COUNT =
-      defineCounter("table_orphan_content_cleaning_count")
+      defineCounter("table_orphan_content_file_cleaning_count")
           .withDescription("Count of orphan content files cleaned in the table since ams started")
           .withTags("catalog", "database", "table")
           .build();
@@ -58,17 +58,17 @@ public class TableOrphanFilesCleaningMetrics {
           .withTags("catalog", "database", "table")
           .build();
 
-  public static final MetricDefine TABLE_SLATED_ORPHAN_CONTENT_FILE_CLEANING_COUNT =
-      defineCounter("table_slated_orphan_content_file_cleaning_count")
+  public static final MetricDefine TABLE_EXPECTED_ORPHAN_CONTENT_FILE_CLEANING_COUNT =
+      defineCounter("table_expected_orphan_content_file_cleaning_count")
           .withDescription(
-              "Slated count of orphan content files cleaned in the table since ams started")
+              "Expected count of orphan content files cleaned in the table since ams started")
           .withTags("catalog", "database", "table")
           .build();
 
-  public static final MetricDefine TABLE_SLATED_ORPHAN_METADATA_FILE_CLEANING_COUNT =
-      defineCounter("table_slated_orphan_metadata_file_cleaning_count")
+  public static final MetricDefine TABLE_EXPECTED_ORPHAN_METADATA_FILE_CLEANING_COUNT =
+      defineCounter("table_expected_orphan_metadata_file_cleaning_count")
           .withDescription(
-              "Slated count of orphan metadata files cleaned in the table since ams started")
+              "Expected count of orphan metadata files cleaned in the table since ams started")
           .withTags("catalog", "database", "table")
           .build();
 
@@ -95,22 +95,24 @@ public class TableOrphanFilesCleaningMetrics {
       registerMetric(registry, TABLE_ORPHAN_CONTENT_FILE_CLEANING_COUNT, orphanDataFilesCount);
       registerMetric(registry, TABLE_ORPHAN_METADATA_FILE_CLEANING_COUNT, orphanMetadataFilesCount);
       registerMetric(
-          registry, TABLE_SLATED_ORPHAN_CONTENT_FILE_CLEANING_COUNT, slatedOrphanDataFilesCount);
+          registry,
+          TABLE_EXPECTED_ORPHAN_CONTENT_FILE_CLEANING_COUNT,
+          expectedOrphanDataFilesCount);
       registerMetric(
           registry,
-          TABLE_SLATED_ORPHAN_METADATA_FILE_CLEANING_COUNT,
-          slatedOrphanMetadataFilesCount);
+          TABLE_EXPECTED_ORPHAN_METADATA_FILE_CLEANING_COUNT,
+          expectedOrphanMetadataFilesCount);
       globalRegistry = registry;
     }
   }
 
-  public void completeOrphanDataFiles(int slated, int cleaned) {
-    slatedOrphanDataFilesCount.inc(slated);
+  public void completeOrphanDataFiles(int expected, int cleaned) {
+    expectedOrphanMetadataFilesCount.inc(expected);
     orphanDataFilesCount.inc(cleaned);
   }
 
-  public void completeOrphanMetadataFiles(int slated, int cleaned) {
-    slatedOrphanMetadataFilesCount.inc(slated);
+  public void completeOrphanMetadataFiles(int expected, int cleaned) {
+    expectedOrphanMetadataFilesCount.inc(expected);
     orphanMetadataFilesCount.inc(cleaned);
   }
 
