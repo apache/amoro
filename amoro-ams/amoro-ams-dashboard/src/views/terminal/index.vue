@@ -417,19 +417,19 @@ export default defineComponent({
       </div>
 
       <div v-if="runStatus" class="run-status" :style="{ background: bgcMap[runStatus] }">
-          <template v-if="runStatus === 'Running' || runStatus === 'Canceling'">
-            <loading-outlined style="color: #1890ff" />
-          </template>
-          <template v-if="runStatus === 'Canceled' || runStatus === 'Failed'">
-            <close-circle-outlined style="color: #ff4d4f" />
-          </template>
-          <template v-if="runStatus === 'Finished'">
-            <check-circle-outlined style="color: #52c41a" />
-          </template>
-          <template v-if="runStatus === 'Created'">
-            <close-circle-outlined style="color:#333" />
-          </template>
-          <span class="g-ml-12">{{ $t(runStatus) }}</span>
+        <template v-if="runStatus === 'Running' || runStatus === 'Canceling'">
+          <loading-outlined style="color: #1890ff" />
+        </template>
+        <template v-if="runStatus === 'Canceled' || runStatus === 'Failed'">
+          <close-circle-outlined style="color: #ff4d4f" />
+        </template>
+        <template v-if="runStatus === 'Finished'">
+          <check-circle-outlined style="color: #52c41a" />
+        </template>
+        <template v-if="runStatus === 'Created'">
+          <close-circle-outlined style="color:#333" />
+        </template>
+        <span class="g-ml-12">{{ $t(runStatus) }}</span>
       </div>
 
       <!-- sql result -->

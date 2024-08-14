@@ -85,12 +85,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <AModal 
-    :open="props.visible" 
-    :title="$t('scaleOut')" 
-    :confirm-loading="confirmLoading" 
-    :closable="false" 
-    @ok="handleOk" 
+  <AModal
+    :open="props.visible"
+    :title="$t('scaleOut')"
+    :confirm-loading="confirmLoading"
+    :closable="false"
+    @ok="handleOk"
     @cancel="handleCancel"
   >
     <a-form ref="formRef" :model="formState" class="label-120">

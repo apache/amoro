@@ -22,10 +22,10 @@ import { Modal } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
+import { DownOutlined, LogoutOutlined, QuestionCircleOutlined, TranslationOutlined } from '@ant-design/icons-vue'
 import useStore from '@/store'
 import { getVersionInfo } from '@/services/global.service'
 import loginService from '@/services/login.service'
-import { DownOutlined, QuestionCircleOutlined, LogoutOutlined, TranslationOutlined } from '@ant-design/icons-vue'
 
 interface IVersion {
   version: string
@@ -41,7 +41,7 @@ const { t, locale } = useI18n()
 const router = useRouter()
 const store = useStore()
 
-const getVersion = async () => {
+async function getVersion() {
   const res = await getVersionInfo()
   if (res) {
     verInfo.version = res.version
@@ -49,11 +49,11 @@ const getVersion = async () => {
   }
 }
 
-const goLoginPage = () => {
+function goLoginPage() {
   router.push({ path: '/login' })
 }
 
-const handleLogout = async () => {
+async function handleLogout() {
   Modal.confirm({
     title: t('logoutModalTitle'),
     onOk: async () => {
@@ -72,14 +72,15 @@ const handleLogout = async () => {
   })
 }
 
-const goDocs = () => {
+function goDocs() {
   window.open('https://amoro.apache.org/docs/latest/')
 }
 
-const setLocale = () => {
-  if(locale.value === 'zh') {
+function setLocale() {
+  if (locale.value === 'zh') {
     locale.value = 'en'
-  } else {
+  }
+  else {
     locale.value = 'zh'
   }
 }
@@ -96,17 +97,17 @@ onMounted(() => {
       <span class="g-mr-8">{{ `${$t('commitTime')}:  ${verInfo.commitTime}` }}</span>
     </div>
     <a-dropdown>
-      <span>{{ store.userInfo.userName}} <DownOutlined /></span>
+      <span>{{ store.userInfo.userName }} <DownOutlined /></span>
       <template #overlay>
         <a-menu>
           <a-menu-item key="userGuide" @click="goDocs">
-            <question-circle-outlined /> {{ $t('userGuide') }}
+            <QuestionCircleOutlined /> {{ $t('userGuide') }}
           </a-menu-item>
           <a-menu-item key="locale" @click="setLocale">
-            <translation-outlined /> {{ locale === 'zh' ? '切换至英文' : 'Switch To Chinese' }}
+            <TranslationOutlined /> {{ locale === 'zh' ? '切换至英文' : 'Switch To Chinese' }}
           </a-menu-item>
           <a-menu-item key="logout" @click="handleLogout">
-            <logout-outlined /> {{ $t('logout') }}
+            <LogoutOutlined /> {{ $t('logout') }}
           </a-menu-item>
         </a-menu>
       </template>

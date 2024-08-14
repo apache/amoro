@@ -23,17 +23,12 @@
     <parent>
         <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-ams</artifactId>
-        <version>0.7-SNAPSHOT</version>
+        <version>0.8-SNAPSHOT</version>
     </parent>
 
     <artifactId>dist</artifactId>
     <name>Amoro Project AMS Dist</name>
     <url>https://amoro.apache.org</url>
-
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-    </properties>
 
     <dependencies>
         <dependency>

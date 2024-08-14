@@ -30,6 +30,7 @@ import org.apache.amoro.server.dashboard.component.reverser.PaimonTableMetaExtra
 import org.apache.amoro.server.dashboard.model.AMSColumnInfo;
 import org.apache.amoro.server.dashboard.model.AMSPartitionField;
 import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;
+import org.apache.amoro.server.dashboard.model.ConsumerInfo;
 import org.apache.amoro.server.dashboard.model.DDLInfo;
 import org.apache.amoro.server.dashboard.model.OperationType;
 import org.apache.amoro.server.dashboard.model.OptimizingProcessInfo;
@@ -50,6 +51,7 @@ import org.apache.iceberg.util.Pair;
 import org.apache.paimon.CoreOptions;
 import org.apache.paimon.FileStore;
 import org.apache.paimon.Snapshot;
+import org.apache.paimon.consumer.ConsumerManager;
 import org.apache.paimon.data.BinaryRow;
 import org.apache.paimon.io.DataFileMeta;
 import org.apache.paimon.manifest.FileKind;
@@ -518,6 +520,33 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
     return ImmutableList.of(TagOrBranchInfo.MAIN_BRANCH);
+  }
+
+  @Override
+  public List<ConsumerInfo> getTableConsumerInfos(AmoroTable<?> amoroTable) {
+    FileStoreTable table = getTable(amoroTable);
+    FileStore<?> store = table.store();
+    ConsumerManager consumerManager = new ConsumerManager(table.fileIO(), table.location());
+    List<ConsumerInfo> consumerInfos = new ArrayList<>();
+    try {
+      consumerManager
+          .consumers()
+          .forEach(
+              (consumerId, nextSnapshotId) -> {
+                long currentSnapshotId = nextSnapshotId;
+                if (!table.snapshotManager().snapshotExists(currentSnapshotId)) {
+                  // if not exits,maybe steaming scan is running,so need to nextSnapshotId -1
+                  currentSnapshotId = nextSnapshotId - 1;
+                }
+                Snapshot snapshot = table.snapshotManager().snapshot(currentSnapshotId);
+                AmoroSnapshotsOfTable amoroSnapshotsOfTable = getSnapshotsOfTable(store, snapshot);
+                consumerInfos.add(
+                    new ConsumerInfo(consumerId, nextSnapshotId, amoroSnapshotsOfTable));
+              });
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return consumerInfos;
   }
 
   private AmoroSnapshotsOfTable manifestListInfo(

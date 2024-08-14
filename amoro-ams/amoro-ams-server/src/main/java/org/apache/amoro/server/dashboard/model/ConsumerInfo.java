@@ -16,6 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.persistence.mapper;
+package org.apache.amoro.server.dashboard.model;
 
-public class MySQLTestBase {}
+public class ConsumerInfo {
+
+  private final String consumerId;
+  private final long nextSnapshotId;
+  private final AmoroSnapshotsOfTable amoroCurrentSnapshotsOfTable;
+
+  public ConsumerInfo(
+      String consumerId, long nextSnapshotId, AmoroSnapshotsOfTable amoroCurrentSnapshotsOfTable) {
+    this.consumerId = consumerId;
+    this.nextSnapshotId = nextSnapshotId;
+    this.amoroCurrentSnapshotsOfTable = amoroCurrentSnapshotsOfTable;
+  }
+
+  public String getConsumerId() {
+    return consumerId;
+  }
+
+  public long getNextSnapshotId() {
+    return nextSnapshotId;
+  }
+
+  public AmoroSnapshotsOfTable getAmoroCurrentSnapshotsOfTable() {
+    return amoroCurrentSnapshotsOfTable;
+  }
+}

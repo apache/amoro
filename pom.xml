@@ -29,7 +29,7 @@
 
     <groupId>org.apache.amoro</groupId>
     <artifactId>amoro-parent</artifactId>
-    <version>0.7-SNAPSHOT</version>
+    <version>0.8-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Amoro Project Parent</name>
@@ -133,13 +133,16 @@
         <prometheus.version>0.16.0</prometheus.version>
         <flink.version>1.18.1</flink.version>
         <fabric8-kubernetes-client.version.version>6.12.1</fabric8-kubernetes-client.version.version>
-        <amoro-shade.version>0.7-SNAPSHOT</amoro-shade.version>
+        <amoro-shade.version>0.7.0-incubating</amoro-shade.version>
         <amoro-shade-guava.version>32.1.1-jre</amoro-shade-guava.version>
         <amoro-shade-jackson.version>2.14.2</amoro-shade-jackson.version>
         <amoro-shade-zookeeper.version>3.9.1</amoro-shade-zookeeper.version>
         <amoro-shade-thrift.version>0.20.0</amoro-shade-thrift.version>
         <annotation-api.version>1.3.2</annotation-api.version>
         <guava.version>32.1.1-jre</guava.version>
+
+        <rocksdb-dependency-scope>compile</rocksdb-dependency-scope>
+        <lucene-dependency-scope>compile</lucene-dependency-scope>
     </properties>
 
     <dependencies>
@@ -491,18 +494,6 @@
             </dependency>
 
             <dependency>
-                <groupId>io.prometheus</groupId>
-                <artifactId>simpleclient</artifactId>
-                <version>${prometheus.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.prometheus</groupId>
-                <artifactId>simpleclient_httpserver</artifactId>
-                <version>${prometheus.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>dynamodb</artifactId>
                 <version>${awssdk.version}</version>
@@ -518,6 +509,18 @@
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>url-connection-client</artifactId>
                 <version>${awssdk.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>simpleclient</artifactId>
+                <version>${prometheus.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>simpleclient_httpserver</artifactId>
+                <version>${prometheus.version}</version>
             </dependency>
 
             <dependency>
@@ -614,6 +617,7 @@
                 <groupId>org.rocksdb</groupId>
                 <artifactId>rocksdbjni</artifactId>
                 <version>${rocksdb.version}</version>
+                <scope>${rocksdb-dependency-scope}</scope>
             </dependency>
 
             <dependency>
@@ -780,6 +784,7 @@
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
                 <version>${lucene.version}</version>
+                <scope>${lucene-dependency-scope}</scope>
             </dependency>
 
             <!-- flink dependencies -->
@@ -875,6 +880,12 @@
             <url>https://repository.apache.org/content/repositories/releases/</url>
         </repository>
 
+        <!--
+        Uncomment the following "repository" tag if your maven fails to download amoro-shade snapshot files.
+        We comment these tags by default because downloading from apache repositories is very slow for both github and developers.
+        -->
+
+        <!--
         <repository>
             <releases>
                 <enabled>false</enabled>
@@ -886,6 +897,7 @@
             <name>apache snapshots</name>
             <url>https://repository.apache.org/content/repositories/snapshots/</url>
         </repository>
+        -->
     </repositories>
 
     <pluginRepositories>
@@ -1211,6 +1223,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -1281,6 +1300,13 @@
                 <hadoop.version>2.10.2</hadoop.version>
                 <terminal.spark.version>3.2.4</terminal.spark.version>
                 <terminal.spark.major.version>3.2</terminal.spark.major.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>no-extended-disk-storage</id>
+            <properties>
+                <rocksdb-dependency-scope>provided</rocksdb-dependency-scope>
+                <lucene-dependency-scope>provided</lucene-dependency-scope>
             </properties>
         </profile>
     </profiles>

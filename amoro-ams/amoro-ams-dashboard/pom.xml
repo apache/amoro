@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-ams</artifactId>
-        <version>0.7-SNAPSHOT</version>
+        <version>0.8-SNAPSHOT</version>
     </parent>
 
     <artifactId>amoro-ams-dashboard</artifactId>
@@ -32,8 +32,8 @@
     <url>https://amoro.apache.org</url>
 
     <properties>
-        <node.version>v18.0.0</node.version>
-        <pnpm.version>8.15.5</pnpm.version>
+        <node.version>v18.18.0</node.version>
+        <pnpm.version>9.6.0</pnpm.version>
         <maven-frontend-plugin.version>1.12.0</maven-frontend-plugin.version>
     </properties>
 
