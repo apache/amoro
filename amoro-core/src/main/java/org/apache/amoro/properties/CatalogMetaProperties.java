@@ -25,6 +25,9 @@ public class CatalogMetaProperties {
   public static final String STORAGE_CONFIGS_KEY_HDFS_SITE = "hadoop.hdfs.site";
   public static final String STORAGE_CONFIGS_KEY_CORE_SITE = "hadoop.core.site";
   public static final String STORAGE_CONFIGS_KEY_HIVE_SITE = "hive.site";
+
+  public static final String FILE_CONTENT_BASE64_SUFFIX = ".content.base64";
+
   public static final String STORAGE_CONFIGS_KEY_REGION = "storage.s3.region";
   public static final String STORAGE_CONFIGS_KEY_ENDPOINT = "storage.s3.endpoint";
 
