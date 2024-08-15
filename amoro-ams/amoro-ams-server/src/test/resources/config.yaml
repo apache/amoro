@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 ################################################################################
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -14,18 +13,27 @@
 #  distributed under the License is distributed on an "AS IS" BASIS,
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
-# limitations under the License.
+#  limitations under the License.
 ################################################################################
 
-OLD="0.7-SNAPSHOT"
-NEW="0.8-SNAPSHOT"
+jobmanager:
+  bind-host: localhost
+  rpc:
+    address: localhost
+    port: 6123
+  memory:
+    process:
+      size: 1600m
+  execution:
+    failover-strategy: region
 
+taskmanager:
+  bind-host: localhost
+  host: localhost
+  numberOfTaskSlots: 1
+  memory:
+    process:
+      size: 1728m
 
-HERE=` basename "$PWD"`
-if [[ "$HERE" != "tools" ]]; then
-    echo "Please only execute in the tools/ directory";
-    exit 1;
-fi
-
-# change version in all pom files
-find .. -name 'pom.xml' -type f -exec perl -pi -e 's#<version>'"$OLD"'</version>#<version>'"$NEW"'</version>#' {} \;
+parallelism:
+  default: 1

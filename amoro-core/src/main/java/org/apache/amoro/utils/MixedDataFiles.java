@@ -95,6 +95,12 @@ public class MixedDataFiles {
         return new BigDecimal(asString);
       case DATE:
         return Literal.of(asString).to(Types.DateType.get()).value();
+      case TIMESTAMP:
+        if (((Types.TimestampType) type).shouldAdjustToUTC()) {
+          return Literal.of(asString).to(Types.TimestampType.withZone()).value();
+        } else {
+          return Literal.of(asString).to(Types.TimestampType.withoutZone()).value();
+        }
       default:
         throw new UnsupportedOperationException(
             "Unsupported type for fromPartitionString: " + type);

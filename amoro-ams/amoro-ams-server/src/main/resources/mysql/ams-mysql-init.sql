@@ -219,6 +219,7 @@ CREATE TABLE `table_blocker` (
   `create_time` timestamp NULL DEFAULT NULL COMMENT 'Blocker create time',
   `expiration_time` timestamp NULL DEFAULT NULL COMMENT 'Blocker expiration time',
   `properties` mediumtext COMMENT 'Blocker properties',
+  `prev_blocker_id` bigint(20) NOT NULL DEFAULT -1 COMMENT 'prev blocker id when created',
   PRIMARY KEY (`blocker_id`),
-  KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
+  UNIQUE KEY `uq_prev` (`catalog_name`,`db_name`,`table_name`, `prev_blocker_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Table blockers' ROW_FORMAT=DYNAMIC;
