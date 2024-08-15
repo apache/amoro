@@ -34,8 +34,9 @@ fi
 if [ -z "$AMORO_CONF_DIR" ]; then
     export AMORO_CONF_DIR="${AMORO_HOME}/conf"
 fi
-
-
+if [ -z "$AMORO_LOG_CONF_FILE" ]; then
+    export AMORO_LOG_CONF_FILE="${AMORO_CONF_DIR}/log4j2.xml"
+fi
 
 JVM_PROPERTIES=${AMORO_CONF_DIR}/jvm.properties
 JVM_VALUE=
