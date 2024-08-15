@@ -31,10 +31,12 @@ import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.OptimizingType;
+import org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintainer;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.primitives.Longs;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotSummary;
 
 import java.util.List;
 
@@ -211,7 +213,7 @@ public class TableOptimizingMetrics {
   private OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   private long statusSetTimestamp = System.currentTimeMillis();
   private long lastMinorTime, lastMajorTime, lastFullTime;
-  private long latestSnapshotTime = AmoroServiceConstants.INVALID_TIME;
+  private long lastNonMaintainedTime = AmoroServiceConstants.INVALID_TIME;
   private long lastOptimizingTime = AmoroServiceConstants.INVALID_TIME;
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
   private MetricRegistry globalRegistry;
@@ -336,12 +338,19 @@ public class TableOptimizingMetrics {
     }
   }
 
-  public void refreshedSnapshotTime(Snapshot snapshot) {
+  public void nonMaintainedSnapshotTime(Snapshot snapshot) {
     if (snapshot == null) {
       return;
     }
+    // ignore snapshot which is created by amoro maintain commits or no files added
+    if (snapshot.summary().values().stream()
+            .anyMatch(IcebergTableMaintainer.AMORO_MAINTAIN_COMMITS::contains)
+        || Long.parseLong(snapshot.summary().getOrDefault(SnapshotSummary.ADDED_FILES_PROP, "0"))
+            == 0) {
+      return;
+    }
 
-    this.latestSnapshotTime = Longs.max(latestSnapshotTime, snapshot.timestampMillis());
+    this.lastNonMaintainedTime = Longs.max(lastNonMaintainedTime, snapshot.timestampMillis());
   }
 
   public void lastOptimizingSnapshotTime(Snapshot snapshot) {
@@ -470,11 +479,11 @@ public class TableOptimizingMetrics {
   class OptimizingLagDurationGauge implements Gauge<Long> {
     @Override
     public Long getValue() {
-      if (latestSnapshotTime == AmoroServiceConstants.INVALID_TIME
+      if (lastNonMaintainedTime == AmoroServiceConstants.INVALID_TIME
           || lastOptimizingTime == AmoroServiceConstants.INVALID_TIME) {
         return AmoroServiceConstants.INVALID_TIME;
       } else {
-        return latestSnapshotTime - lastOptimizingTime;
+        return lastNonMaintainedTime - lastOptimizingTime;
       }
     }
   }

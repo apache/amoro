@@ -364,7 +364,7 @@ public class TableRuntime extends StatedPersistentBase {
       currentSnapshotId = currentSnapshot.snapshotId();
     }
 
-    optimizingMetrics.refreshedSnapshotTime(currentSnapshot);
+    optimizingMetrics.nonMaintainedSnapshotTime(currentSnapshot);
     optimizingMetrics.lastOptimizingSnapshotTime(
         IcebergTableUtil.findLatestOptimizingSnapshot(table).orElse(null));
 
