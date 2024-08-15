@@ -33,6 +33,7 @@ ams:
 
   http-server:
     bind-port: 1630
+    rest-auth-type: token
 
   refresh-external-catalogs:
     interval: 180000 # 3min
@@ -71,11 +72,11 @@ ams:
     thread-count: 10
 
   sync-hive-tables:
-    enabled: true
+    enabled: false
     thread-count: 10
 
   data-expiration:
-    enabled: false
+    enabled: true
     thread-count: 10
     interval: 1d
 
@@ -83,6 +84,9 @@ ams:
     enabled: true
     thread-count: 3
     interval: 60000 # 1min
+
+  table-manifest-io:
+    thread-count: 20
 
   database:
     type: derby
@@ -117,6 +121,13 @@ ams:
   terminal:
     backend: local
     local.spark.sql.iceberg.handle-timestamp-without-timezone: false
+    result:
+      limit: 1000
+    stop-on-error: false
+    session:
+      timeout: 30
+    local:
+      using-session-catalog-for-hive: false
 
 #  Kyuubi terminal backend configuration.
 #  terminal:
