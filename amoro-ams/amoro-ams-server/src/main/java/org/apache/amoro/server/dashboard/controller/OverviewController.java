@@ -30,6 +30,7 @@ import org.apache.amoro.server.dashboard.ServerTableDescriptor;
 import org.apache.amoro.server.dashboard.model.DDLInfo;
 import org.apache.amoro.server.dashboard.model.FilesStatistics;
 import org.apache.amoro.server.dashboard.model.OverviewBaseData;
+import org.apache.amoro.server.dashboard.model.OverviewResourceUsage;
 import org.apache.amoro.server.dashboard.model.OverviewSummary;
 import org.apache.amoro.server.dashboard.model.OverviewTableOperation;
 import org.apache.amoro.server.dashboard.model.OverviewUnhealthTable;
@@ -69,6 +70,11 @@ public class OverviewController {
     this.overviewCache = OverviewCache.getInstance();
   }
 
+  public void getResourceUsageHistory(Context ctx) {
+    List<OverviewResourceUsage> resourceUsageHistory = overviewCache.getResourceUsageHistory();
+    ctx.json(OkResponse.of(resourceUsageHistory));
+  }
+
   public void getSummary(Context ctx) {
     long sumTableSizeInBytes = 0;
     List<CatalogMeta> catalogMetas = tableService.listCatalogMetas();
@@ -86,12 +92,12 @@ public class OverviewController {
     }
 
     // resource info
-    int threadCount = overviewCache.getThreadCount();
+    int totalCpu = overviewCache.getTotalCpu();
     long totalMemory = overviewCache.getTotalMemory();
 
     OverviewSummary overviewSummary =
         new OverviewSummary(
-            catalogCount, tableCount, sumTableSizeInBytes, threadCount, byte2Mb(totalMemory));
+            catalogCount, tableCount, sumTableSizeInBytes, totalCpu, byte2Mb(totalMemory));
     ctx.json(OkResponse.of(overviewSummary));
   }
 

@@ -337,6 +337,7 @@ public class DashboardServer {
           "/overview",
           () -> {
             get("/summary", overviewController::getSummary);
+            get("/resource", overviewController::getResourceUsageHistory);
             get("/format", overviewController::getTableFormat);
             get("/optimizing", overviewController::getOptimizingStatus);
             get("/unhealth", overviewController::getUnhealthTables);

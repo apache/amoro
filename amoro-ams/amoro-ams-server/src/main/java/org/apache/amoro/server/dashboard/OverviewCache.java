@@ -30,18 +30,23 @@ import org.apache.amoro.api.metrics.Metric;
 import org.apache.amoro.api.metrics.MetricDefine;
 import org.apache.amoro.api.metrics.MetricKey;
 import org.apache.amoro.api.metrics.MetricSet;
+import org.apache.amoro.server.dashboard.model.OverviewResourceUsage;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class OverviewCache {
+
+  private static final int MAX_CACHE_SIZE = 5000;
 
   public static final String STATUS_PENDING = "pending";
   public static final String STATUS_PLANING = "planing";
@@ -52,9 +57,11 @@ public class OverviewCache {
   private Map<MetricKey, Metric> registeredMetrics;
   private Map<MetricDefine, List<MetricKey>> metricDefineMap;
   private Map<String, Long> optimizingStatusCountMap = new ConcurrentHashMap<>();
+  private ConcurrentLinkedDeque<OverviewResourceUsage> resourceUsageHistory =
+      new ConcurrentLinkedDeque<>();
 
   private static volatile OverviewCache INSTANCE;
-  private AtomicInteger threadCount = new AtomicInteger();
+  private AtomicInteger totalCpu = new AtomicInteger();
   private AtomicLong totalMemory = new AtomicLong();
 
   public OverviewCache() {}
@@ -75,12 +82,16 @@ public class OverviewCache {
     this.registeredMetrics = globalMetricSet.getMetrics();
   }
 
-  public int getThreadCount() {
-    return threadCount.get();
+  public int getTotalCpu() {
+    return totalCpu.get();
   }
 
   public long getTotalMemory() {
     return totalMemory.get();
+  }
+
+  public List<OverviewResourceUsage> getResourceUsageHistory() {
+    return ImmutableList.copyOf(resourceUsageHistory);
   }
 
   public void getTableFormat() {}
@@ -118,8 +129,19 @@ public class OverviewCache {
   }
 
   private void updateSummary() {
-    this.threadCount.set((int) sumMetricValuesByDefine(OPTIMIZER_GROUP_THREADS));
-    this.totalMemory.set(sumMetricValuesByDefine(OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED));
+    long ts = System.currentTimeMillis();
+    int optimizerGroupThreadCount = (int) sumMetricValuesByDefine(OPTIMIZER_GROUP_THREADS);
+    long optimizerGroupMemory = sumMetricValuesByDefine(OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED);
+    this.totalCpu.set(optimizerGroupThreadCount);
+    this.totalMemory.set(optimizerGroupMemory);
+    addAndCheck(new OverviewResourceUsage(ts, optimizerGroupThreadCount, optimizerGroupMemory));
+  }
+
+  private void addAndCheck(OverviewResourceUsage overviewResourceUsage) {
+    resourceUsageHistory.add(overviewResourceUsage);
+    if (resourceUsageHistory.size() > MAX_CACHE_SIZE) {
+      resourceUsageHistory.poll();
+    }
   }
 
   private void updateOptimizingStatus() {
