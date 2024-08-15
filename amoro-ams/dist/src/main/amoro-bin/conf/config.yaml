@@ -120,7 +120,6 @@ ams:
 
   terminal:
     backend: local
-    local.spark.sql.iceberg.handle-timestamp-without-timezone: false
     result:
       limit: 1000
     stop-on-error: false
@@ -128,6 +127,7 @@ ams:
       timeout: 30
     local:
       using-session-catalog-for-hive: false
+      spark.sql.iceberg.handle-timestamp-without-timezone: false
 
 #  Kyuubi terminal backend configuration.
 #  terminal:
