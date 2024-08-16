@@ -37,7 +37,7 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
+            <artifactId>amoro-iceberg</artifactId>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>

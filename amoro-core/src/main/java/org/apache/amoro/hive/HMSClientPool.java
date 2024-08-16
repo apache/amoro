@@ -18,7 +18,7 @@
 
 package org.apache.amoro.hive;
 
-import org.apache.iceberg.ClientPool;
+import org.apache.amoro.client.ClientPool;
 import org.apache.thrift.TException;
 
 public interface HMSClientPool extends ClientPool<HMSClient, TException> {}

@@ -30,7 +30,7 @@ import org.apache.amoro.client.AmsThriftUrl;
 import org.apache.amoro.flink.catalog.FlinkUnifiedCatalog;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.MixedFormatCatalogUtil;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.factories.CatalogFactory;
@@ -86,7 +86,8 @@ public class FlinkUnifiedCatalogFactory implements CatalogFactory {
     Configuration hadoopConf = unifiedCatalog.authenticationContext().getConfiguration();
 
     Set<TableFormat> tableFormats =
-        MixedCatalogUtil.tableFormats(unifiedCatalog.metastoreType(), unifiedCatalog.properties());
+        MixedFormatCatalogUtil.tableFormats(
+            unifiedCatalog.metastoreType(), unifiedCatalog.properties());
     validate(tableFormats);
 
     return new FlinkUnifiedCatalog(
