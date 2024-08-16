@@ -87,6 +87,7 @@ public class TableRuntime extends StatedPersistentBase {
   @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
   private volatile long lastPlanTime;
   private final TableOptimizingMetrics optimizingMetrics;
+  private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
 
   protected TableRuntime(
       ServerTableIdentifier tableIdentifier,
@@ -100,6 +101,7 @@ public class TableRuntime extends StatedPersistentBase {
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
+    orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
   }
 
   protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
@@ -131,6 +133,7 @@ public class TableRuntime extends StatedPersistentBase {
     this.pendingInput = tableRuntimeMeta.getPendingInput();
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
     optimizingMetrics.statusChanged(optimizingStatus, this.currentStatusStartTime);
+    orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -143,6 +146,7 @@ public class TableRuntime extends StatedPersistentBase {
 
   public void registerMetric(MetricRegistry metricRegistry) {
     this.optimizingMetrics.register(metricRegistry);
+    this.orphanFilesCleaningMetrics.register(metricRegistry);
   }
 
   public void dispose() {
@@ -156,6 +160,7 @@ public class TableRuntime extends StatedPersistentBase {
                       mapper -> mapper.deleteOptimizingRuntime(tableIdentifier.getId())));
         });
     optimizingMetrics.unregister();
+    orphanFilesCleaningMetrics.unregister();
   }
 
   public void beginPlanning() {
@@ -443,6 +448,10 @@ public class TableRuntime extends StatedPersistentBase {
 
   public String getOptimizerGroup() {
     return optimizerGroup;
+  }
+
+  public TableOrphanFilesCleaningMetrics getOrphanFilesCleaningMetrics() {
+    return orphanFilesCleaningMetrics;
   }
 
   public void setCurrentChangeSnapshotId(long currentChangeSnapshotId) {
