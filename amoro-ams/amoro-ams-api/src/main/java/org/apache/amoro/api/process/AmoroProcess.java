@@ -19,6 +19,7 @@
 package org.apache.amoro.api.process;
 
 import org.apache.amoro.api.Action;
+import org.apache.amoro.process.ProcessStatus;
 
 import java.util.Map;
 

@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.dashboard.model;
 
+import org.apache.amoro.table.descriptor.DDLInfo;
+
 public class TableOperation {
   long ts;
   String operation;

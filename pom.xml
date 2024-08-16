@@ -50,6 +50,8 @@
         <module>amoro-ams</module>
         <module>amoro-iceberg-format</module>
         <module>amoro-mixed-format</module>
+        <module>amoro-hudi-format</module>
+        <module>amoro-paimon-format</module>
     </modules>
 
     <scm>

@@ -19,6 +19,7 @@
 package org.apache.amoro.api.process;
 
 import org.apache.amoro.api.TableRuntime;
+import org.apache.amoro.process.ProcessStatus;
 
 /**
  * An abstract table process to handle table state.
