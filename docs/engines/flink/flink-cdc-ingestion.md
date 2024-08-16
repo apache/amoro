@@ -25,7 +25,7 @@ menu:
  - limitations under the License.
  -->
 # Apache CDC Ingestion
-CDC stands for Change Data Capture, which is a broad concept, as long as it can capture the change data, it can be called CDC. [Flink CDC](https://github.com/ververica/flink-cdc-connectors) is a Log message-based data capture tool, all the inventory and incremental data can be captured. Taking MySQL as an example, it can easily capture Binlog data through Debezium and process the calculations in real time to send them to the data lake. The data lake can then be queried by other engines.
+CDC stands for Change Data Capture, which is a broad concept, as long as it can capture the change data, it can be called CDC. [Flink CDC](https://github.com/apache/flink-cdc) is a Log message-based data capture tool, all the inventory and incremental data can be captured. Taking MySQL as an example, it can easily capture Binlog data through Debezium and process the calculations in real time to send them to the data lake. The data lake can then be queried by other engines.
 
 This section will show how to ingest one table or multiple tables into the data lake for both [Iceberg](../iceberg-format/) format and [Mixed-Iceberg](../mixed-iceberg-format/) format.
 ## Ingest into one table
@@ -113,22 +113,35 @@ The following example will show how to write CDC data from multiple MySQL tables
 
 **Requirements**
 
-Please add [Flink Connector MySQL CDC](https://mvnrepository.com/artifact/com.ververica/flink-connector-mysql-cdc/2.3.0) and [Iceberg](https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-flink-1.14/1.1.0) dependencies to your Maven project's pom.xml file.
+Please add [Flink Connector MySQL CDC](https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc)
+and [Iceberg](https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-flink-1.18/1.6.0) dependencies to your 
+Maven project's pom.xml file.
 
 ```java
-import com.ververica.cdc.connectors.mysql.source.MySqlSource;
-import com.ververica.cdc.connectors.mysql.table.MySqlDeserializationConverterFactory;
-import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
-import com.ververica.cdc.debezium.table.MetadataConverter;
-import com.ververica.cdc.debezium.table.RowDataDebeziumDeserializeSchema;
+import static java.util.stream.Collectors.toMap;
+import static org.apache.flink.cdc.connectors.mysql.table.MySqlReadableMetadata.DATABASE_NAME;
+import static org.apache.flink.cdc.connectors.mysql.table.MySqlReadableMetadata.TABLE_NAME;
+
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.cdc.connectors.mysql.source.MySqlSource;
+import org.apache.flink.cdc.connectors.mysql.table.MySqlDeserializationConverterFactory;
+import org.apache.flink.cdc.debezium.DebeziumDeserializationSchema;
+import org.apache.flink.cdc.debezium.table.MetadataConverter;
+import org.apache.flink.cdc.debezium.table.RowDataDebeziumDeserializeSchema;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
-import org.apache.flink.table.api.*;
-import org.apache.flink.table.catalog.*;
+import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.Schema;
+import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.catalog.CatalogTable;
+import org.apache.flink.table.catalog.Column;
+import org.apache.flink.table.catalog.ObjectPath;
+import org.apache.flink.table.catalog.ResolvedCatalogTable;
+import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.conversion.RowRowConverter;
 import org.apache.flink.table.data.utils.JoinedRowData;
@@ -144,14 +157,16 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.flink.CatalogLoader;
 import org.apache.iceberg.flink.TableLoader;
 import org.apache.iceberg.flink.sink.FlinkSink;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
-import java.util.*;
 
-import static com.ververica.cdc.connectors.mysql.table.MySqlReadableMetadata.DATABASE_NAME;
-import static com.ververica.cdc.connectors.mysql.table.MySqlReadableMetadata.TABLE_NAME;
-import static java.util.stream.Collectors.toMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class MySqlCDC2IcebergExample {
   public static void main(String[] args) throws Exception {
