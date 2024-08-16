@@ -49,7 +49,7 @@
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-iceberg</artifactId>
+            <artifactId>amoro-iceberg-format</artifactId>
             <scope>provided</scope>
         </dependency>
 

@@ -369,7 +369,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-iceberg</artifactId>
+            <artifactId>amoro-iceberg-format</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

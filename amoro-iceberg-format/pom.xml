@@ -27,7 +27,7 @@
         <version>0.8-SNAPSHOT</version>
     </parent>
 
-    <artifactId>amoro-iceberg</artifactId>
+    <artifactId>amoro-iceberg-format</artifactId>
     <name>Amoro Project Iceberg Format</name>
     <url>https://amoro.apache.org</url>
 

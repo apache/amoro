@@ -471,7 +471,7 @@
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-iceberg</artifactId>
+            <artifactId>amoro-iceberg-format</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
