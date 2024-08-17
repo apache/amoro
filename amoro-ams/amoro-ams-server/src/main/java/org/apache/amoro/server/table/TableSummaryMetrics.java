@@ -123,7 +123,6 @@ public class TableSummaryMetrics {
   private final ServerTableIdentifier identifier;
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
   private MetricRegistry globalRegistry;
-  private OptimizingEvaluator.PendingInput pendingInput;
 
   private long totalFiles = 0L;
   private long dataFiles = 0L;
