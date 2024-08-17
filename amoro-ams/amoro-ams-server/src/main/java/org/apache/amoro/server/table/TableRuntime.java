@@ -91,6 +91,7 @@ public class TableRuntime extends StatedPersistentBase {
   private volatile long lastPlanTime;
   private final TableOptimizingMetrics optimizingMetrics;
   private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
+  private final TableSummaryMetrics tableSummaryMetrics;
 
   protected TableRuntime(
       ServerTableIdentifier tableIdentifier,
@@ -105,6 +106,7 @@ public class TableRuntime extends StatedPersistentBase {
     persistTableRuntime();
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
     orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
+    tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
   }
 
   protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
@@ -140,6 +142,8 @@ public class TableRuntime extends StatedPersistentBase {
     optimizingMetrics.lastOptimizingTime(OptimizingType.MAJOR, this.lastMajorOptimizingTime);
     optimizingMetrics.lastOptimizingTime(OptimizingType.FULL, this.lastFullOptimizingTime);
     orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
+    tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
+    tableSummaryMetrics.refresh(pendingInput);
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -153,6 +157,7 @@ public class TableRuntime extends StatedPersistentBase {
   public void registerMetric(MetricRegistry metricRegistry) {
     this.optimizingMetrics.register(metricRegistry);
     this.orphanFilesCleaningMetrics.register(metricRegistry);
+    this.tableSummaryMetrics.register(metricRegistry);
   }
 
   public void dispose() {
@@ -167,6 +172,7 @@ public class TableRuntime extends StatedPersistentBase {
         });
     optimizingMetrics.unregister();
     orphanFilesCleaningMetrics.unregister();
+    tableSummaryMetrics.unregister();
   }
 
   public void beginPlanning() {
@@ -322,7 +328,7 @@ public class TableRuntime extends StatedPersistentBase {
 
   private boolean refreshSnapshots(AmoroTable<?> amoroTable) {
     MixedTable table = (MixedTable) amoroTable.originalTable();
-
+    tableSummaryMetrics.refreshSnapshots(table);
     long lastSnapshotId = currentSnapshotId;
     if (table.isKeyedTable()) {
       long changeSnapshotId = currentChangeSnapshotId;

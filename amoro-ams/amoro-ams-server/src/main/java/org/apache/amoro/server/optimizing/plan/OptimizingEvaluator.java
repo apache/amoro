@@ -181,10 +181,13 @@ public class OptimizingEvaluator {
 
     private int dataFileCount = 0;
     private long dataFileSize = 0;
+    private long dataFileRecords = 0;
     private int equalityDeleteFileCount = 0;
     private int positionalDeleteFileCount = 0;
     private long positionalDeleteBytes = 0L;
     private long equalityDeleteBytes = 0L;
+    private long equalityDeleteFileRecords = 0L;
+    private long positionalDeleteFileRecords = 0L;
 
     public PendingInput() {}
 
@@ -195,9 +198,12 @@ public class OptimizingEvaluator {
             .add(evaluator.getPartition().second());
         dataFileCount += evaluator.getFragmentFileCount() + evaluator.getSegmentFileCount();
         dataFileSize += evaluator.getFragmentFileSize() + evaluator.getSegmentFileSize();
+        dataFileRecords += evaluator.getFragmentFileRecords() + evaluator.getSegmentFileRecords();
         positionalDeleteBytes += evaluator.getPosDeleteFileSize();
+        positionalDeleteFileRecords += evaluator.getPosDeleteFileRecords();
         positionalDeleteFileCount += evaluator.getPosDeleteFileCount();
         equalityDeleteBytes += evaluator.getEqualityDeleteFileSize();
+        equalityDeleteFileRecords += evaluator.getEqualityDeleteFileRecords();
         equalityDeleteFileCount += evaluator.getEqualityDeleteFileCount();
       }
     }
@@ -212,6 +218,10 @@ public class OptimizingEvaluator {
 
     public long getDataFileSize() {
       return dataFileSize;
+    }
+
+    public long getDataFileRecords() {
+      return dataFileRecords;
     }
 
     public int getEqualityDeleteFileCount() {
@@ -230,16 +240,27 @@ public class OptimizingEvaluator {
       return equalityDeleteBytes;
     }
 
+    public long getEqualityDeleteFileRecords() {
+      return equalityDeleteFileRecords;
+    }
+
+    public long getPositionalDeleteFileRecords() {
+      return positionalDeleteFileRecords;
+    }
+
     @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
           .add("partitions", partitions)
           .add("dataFileCount", dataFileCount)
           .add("dataFileSize", dataFileSize)
+          .add("dataFileRecords", dataFileRecords)
           .add("equalityDeleteFileCount", equalityDeleteFileCount)
           .add("positionalDeleteFileCount", positionalDeleteFileCount)
           .add("positionalDeleteBytes", positionalDeleteBytes)
           .add("equalityDeleteBytes", equalityDeleteBytes)
+          .add("equalityDeleteFileRecords", equalityDeleteFileRecords)
+          .add("positionalDeleteFileRecords", positionalDeleteFileRecords)
           .toString();
     }
   }
