@@ -71,10 +71,10 @@ public abstract class PersistentBase {
 
   protected final <T> void doAsAlone(Class<T> mapperClz, Consumer<T> consumer) {
     try (NestedSqlSession session =
-            new NestedSqlSession(
-                    SqlSessionFactoryProvider.getInstance()
-                            .get()
-                            .openSession(TransactionIsolationLevel.READ_COMMITTED))) {
+        new NestedSqlSession(
+            SqlSessionFactoryProvider.getInstance()
+                .get()
+                .openSession(TransactionIsolationLevel.READ_COMMITTED))) {
       try {
         T mapper = getMapper(session, mapperClz);
         consumer.accept(mapper);
