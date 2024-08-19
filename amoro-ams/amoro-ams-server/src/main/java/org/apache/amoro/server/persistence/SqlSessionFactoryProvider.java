@@ -99,6 +99,7 @@ public class SqlSessionFactoryProvider {
     TransactionFactory transactionFactory = new JdbcTransactionFactory();
     Environment environment = new Environment("develop", transactionFactory, dataSource);
     Configuration configuration = new Configuration(environment);
+    configuration.setDefaultExecutorType(org.apache.ibatis.session.ExecutorType.BATCH);
     configuration.addMapper(TableMetaMapper.class);
     configuration.addMapper(OptimizingMapper.class);
     configuration.addMapper(CatalogMetaMapper.class);
