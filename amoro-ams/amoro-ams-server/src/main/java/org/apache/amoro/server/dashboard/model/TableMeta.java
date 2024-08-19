@@ -66,7 +66,9 @@ public class TableMeta {
     ARCTIC("arctic"),
     HIVE("hive"),
     ICEBERG("iceberg"),
-    PAIMON("paimon");
+    PAIMON("paimon"),
+
+    HUDI("hudi");
 
     private final String name;
 

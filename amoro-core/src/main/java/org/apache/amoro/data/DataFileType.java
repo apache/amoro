@@ -38,7 +38,8 @@ public enum DataFileType {
   INSERT_FILE(1, "I"),
   EQ_DELETE_FILE(2, "ED"),
   POS_DELETE_FILE(3, "PD"),
-  ICEBERG_EQ_DELETE_FILE(4, "IED");
+  ICEBERG_EQ_DELETE_FILE(4, "IED"),
+  LOG_FILE(5, "L");
 
   private final int id;
 

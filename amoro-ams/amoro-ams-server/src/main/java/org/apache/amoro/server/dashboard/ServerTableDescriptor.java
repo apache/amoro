@@ -58,7 +58,8 @@ public class ServerTableDescriptor extends PersistentBase {
     FormatTableDescriptor[] formatTableDescriptors =
         new FormatTableDescriptor[] {
           new MixedAndIcebergTableDescriptor(executorService),
-          new PaimonTableDescriptor(executorService)
+          new PaimonTableDescriptor(executorService),
+          new HudiTableDescriptor(executorService)
         };
     for (FormatTableDescriptor formatTableDescriptor : formatTableDescriptors) {
       for (TableFormat format : formatTableDescriptor.supportFormat()) {
@@ -81,7 +82,7 @@ public class ServerTableDescriptor extends PersistentBase {
   }
 
   public List<PartitionFileBaseInfo> getSnapshotDetail(
-      TableIdentifier tableIdentifier, long snapshotId) {
+      TableIdentifier tableIdentifier, String snapshotId) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getSnapshotDetail(amoroTable, snapshotId);
@@ -132,7 +133,7 @@ public class ServerTableDescriptor extends PersistentBase {
   }
 
   public List<OptimizingTaskInfo> getOptimizingProcessTaskInfos(
-      TableIdentifier tableIdentifier, long processId) {
+      TableIdentifier tableIdentifier, String processId) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getOptimizingTaskInfos(amoroTable, processId);

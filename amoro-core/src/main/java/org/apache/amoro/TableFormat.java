@@ -27,7 +27,8 @@ public enum TableFormat {
   ICEBERG,
   MIXED_ICEBERG,
   MIXED_HIVE,
-  PAIMON;
+  PAIMON,
+  HUDI;
 
   public boolean in(TableFormat... tableFormats) {
     for (TableFormat tableFormat : tableFormats) {

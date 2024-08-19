@@ -50,6 +50,7 @@ import org.apache.amoro.server.dashboard.model.PartitionFileBaseInfo;
 import org.apache.amoro.server.dashboard.model.ServerTableMeta;
 import org.apache.amoro.server.dashboard.model.TableMeta;
 import org.apache.amoro.server.dashboard.model.TableOperation;
+import org.apache.amoro.server.dashboard.model.TableSummary;
 import org.apache.amoro.server.dashboard.model.TagOrBranchInfo;
 import org.apache.amoro.server.dashboard.model.UpgradeHiveMeta;
 import org.apache.amoro.server.dashboard.model.UpgradeRunningInfo;
@@ -140,17 +141,16 @@ public class TableController {
     ServerTableMeta serverTableMeta =
         tableDescriptor.getTableDetail(
             TableIdentifier.of(catalog, database, tableName).buildTableIdentifier());
-    Map<String, Object> tableSummary = serverTableMeta.getTableSummary();
+    TableSummary tableSummary = serverTableMeta.getTableSummary();
     Optional<ServerTableIdentifier> serverTableIdentifier =
         Optional.ofNullable(
             tableService.getServerTableIdentifier(
                 TableIdentifier.of(catalog, database, tableName).buildTableIdentifier()));
     if (serverTableIdentifier.isPresent()) {
-      tableSummary.put(
-          "optimizingStatus",
-          tableService.getRuntime(serverTableIdentifier.get()).getOptimizingStatus());
+      TableRuntime tableRuntime = tableService.getRuntime(serverTableIdentifier.get());
+      tableSummary.setOptimizingStatus(tableRuntime.getOptimizingStatus().name());
     } else {
-      tableSummary.put("optimizingStatus", OptimizingStatus.IDLE);
+      tableSummary.setOptimizingStatus(OptimizingStatus.IDLE.name());
     }
     ctx.json(OkResponse.of(serverTableMeta));
   }
@@ -346,7 +346,7 @@ public class TableController {
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     List<OptimizingTaskInfo> optimizingTaskInfos =
         tableDescriptor.getOptimizingProcessTaskInfos(
-            tableIdentifier.buildTableIdentifier(), Long.parseLong(processId));
+            tableIdentifier.buildTableIdentifier(), processId);
 
     PageResult<OptimizingTaskInfo> pageResult = PageResult.of(optimizingTaskInfos, offset, limit);
     ctx.json(OkResponse.of(pageResult));
@@ -396,8 +396,7 @@ public class TableController {
 
     List<PartitionFileBaseInfo> result =
         tableDescriptor.getSnapshotDetail(
-            TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(),
-            Long.parseLong(snapshotId));
+            TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(), snapshotId);
     int offset = (page - 1) * pageSize;
     PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(result, offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
@@ -501,6 +500,8 @@ public class TableController {
               return TableMeta.TableType.PAIMON.toString();
             case ICEBERG:
               return TableMeta.TableType.ICEBERG.toString();
+            case HUDI:
+              return TableMeta.TableType.HUDI.toString();
             default:
               throw new IllegalStateException("Unknown format");
           }
