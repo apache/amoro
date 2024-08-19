@@ -20,6 +20,6 @@
 
 #metric-reporters:
 #  - name: prometheus-exporter            # configs for prometheus exporter
-#    enabled: false
+#    enabled: true
 #    properties:
 #       port: 7001
