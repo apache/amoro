@@ -42,6 +42,7 @@ import org.apache.iceberg.encryption.EncryptedInputFile;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.TypeUtil;
@@ -191,13 +192,15 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
         return avro.build();
 
       case PARQUET:
-        Parquet.ReadBuilder parquet =
-            Parquet.read(input)
-                .project(fileProjection)
-                .createReaderFunc(
-                    fileSchema ->
-                        GenericParquetReaders.buildReader(
-                            fileProjection, fileSchema, idToConstant));
+        Parquet.ReadBuilder parquet = Parquet.read(input)
+	                    .project(fileProjection)
+	                    .createReaderFunc(fileSchema ->
+	                            GenericParquetReaders.buildReader(fileProjection, fileSchema, idToConstant));
+		
+		//Fix the issue that parquet file schema without field ID ,then compact misaligned columns issue
+		if (nameMapping != null && !nameMapping.isEmpty()) {
+			parquet.withNameMapping(NameMappingParser.fromJson(nameMapping));
+		}
 
         if (reuseContainer) {
           parquet.reuseContainers();
