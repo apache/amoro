@@ -50,6 +50,7 @@ import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class OptimizingEvaluator {
 
@@ -60,6 +61,7 @@ public class OptimizingEvaluator {
   protected final TableSnapshot currentSnapshot;
   protected boolean isInitialized = false;
 
+  protected Map<String, PartitionEvaluator> needOptimizingPlanMap = Maps.newHashMap();
   protected Map<String, PartitionEvaluator> partitionPlanMap = Maps.newHashMap();
 
   public OptimizingEvaluator(TableRuntime tableRuntime, MixedTable table) {
@@ -95,7 +97,7 @@ public class OptimizingEvaluator {
     LOG.info(
         "{} finished evaluating, found {} partitions that need optimizing in {} ms",
         mixedTable.id(),
-        partitionPlanMap.size(),
+        needOptimizingPlanMap.size(),
         System.currentTimeMillis() - startTime);
   }
 
@@ -129,7 +131,10 @@ public class OptimizingEvaluator {
         mixedTable.id(),
         count,
         System.currentTimeMillis() - startTime);
-    partitionPlanMap.values().removeIf(plan -> !plan.isNecessary());
+    needOptimizingPlanMap.putAll(
+        partitionPlanMap.entrySet().stream()
+            .filter(entry -> entry.getValue().isNecessary())
+            .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue())));
   }
 
   private Map<String, String> partitionProperties(Pair<Integer, StructLike> partition) {
@@ -165,7 +170,7 @@ public class OptimizingEvaluator {
     if (!isInitialized) {
       initEvaluator();
     }
-    return !partitionPlanMap.isEmpty();
+    return !needOptimizingPlanMap.isEmpty();
   }
 
   public PendingInput getPendingInput() {
@@ -173,6 +178,13 @@ public class OptimizingEvaluator {
       initEvaluator();
     }
     return new PendingInput(partitionPlanMap.values());
+  }
+
+  public PendingInput getOptimizingPendingInput() {
+    if (!isInitialized) {
+      initEvaluator();
+    }
+    return new PendingInput(needOptimizingPlanMap.values());
   }
 
   public static class PendingInput {

@@ -205,33 +205,33 @@ public class TableSummaryMetrics {
     globalRegistry = null;
   }
 
-  public void refresh(OptimizingEvaluator.PendingInput pendingInput) {
-    if (pendingInput == null) {
+  public void refresh(OptimizingEvaluator.PendingInput tableSummary) {
+    if (tableSummary == null) {
       return;
     }
     totalFiles =
-        pendingInput.getDataFileCount()
-            + pendingInput.getEqualityDeleteFileCount()
-            + pendingInput.getPositionalDeleteFileCount();
-    dataFiles = pendingInput.getDataFileCount();
-    positionDeleteFiles = pendingInput.getPositionalDeleteFileCount();
-    equalityDeleteFiles = pendingInput.getEqualityDeleteFileCount();
+        tableSummary.getDataFileCount()
+            + tableSummary.getEqualityDeleteFileCount()
+            + tableSummary.getPositionalDeleteFileCount();
+    dataFiles = tableSummary.getDataFileCount();
+    positionDeleteFiles = tableSummary.getPositionalDeleteFileCount();
+    equalityDeleteFiles = tableSummary.getEqualityDeleteFileCount();
 
     totalFilesSize =
-        pendingInput.getDataFileSize()
-            + pendingInput.getEqualityDeleteBytes()
-            + pendingInput.getPositionalDeleteBytes();
-    positionDeleteFilesSize = pendingInput.getPositionalDeleteBytes();
-    dataFilesSize = pendingInput.getDataFileSize();
-    equalityDeleteFilesSize = pendingInput.getEqualityDeleteBytes();
+        tableSummary.getDataFileSize()
+            + tableSummary.getEqualityDeleteBytes()
+            + tableSummary.getPositionalDeleteBytes();
+    positionDeleteFilesSize = tableSummary.getPositionalDeleteBytes();
+    dataFilesSize = tableSummary.getDataFileSize();
+    equalityDeleteFilesSize = tableSummary.getEqualityDeleteBytes();
 
     totalRecords =
-        pendingInput.getDataFileRecords()
-            + pendingInput.getEqualityDeleteFileRecords()
-            + pendingInput.getPositionalDeleteFileRecords();
-    positionDeleteFilesRecords = pendingInput.getPositionalDeleteFileRecords();
-    dataFilesRecords = pendingInput.getDataFileRecords();
-    equalityDeleteFilesRecords = pendingInput.getEqualityDeleteFileRecords();
+        tableSummary.getDataFileRecords()
+            + tableSummary.getEqualityDeleteFileRecords()
+            + tableSummary.getPositionalDeleteFileRecords();
+    positionDeleteFilesRecords = tableSummary.getPositionalDeleteFileRecords();
+    dataFilesRecords = tableSummary.getDataFileRecords();
+    equalityDeleteFilesRecords = tableSummary.getEqualityDeleteFileRecords();
   }
 
   public void refreshSnapshots(MixedTable table) {

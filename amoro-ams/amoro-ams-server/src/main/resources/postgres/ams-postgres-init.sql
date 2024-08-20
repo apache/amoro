@@ -189,6 +189,7 @@ CREATE TABLE table_runtime
     table_config TEXT,
     optimizing_config TEXT,
     pending_input TEXT,
+    table_summary TEXT,
     PRIMARY KEY (table_id),
     UNIQUE (catalog_name, db_name, table_name)
 );
@@ -211,6 +212,7 @@ COMMENT ON COLUMN table_runtime.optimizer_group IS 'Optimizer group';
 COMMENT ON COLUMN table_runtime.table_config IS 'Table-specific configuration';
 COMMENT ON COLUMN table_runtime.optimizing_config IS 'Optimizing configuration';
 COMMENT ON COLUMN table_runtime.pending_input IS 'Pending input data';
+COMMENT ON COLUMN table_runtime.table_summary IS 'Table Summary data';
 
 CREATE TABLE table_optimizing_process
 (

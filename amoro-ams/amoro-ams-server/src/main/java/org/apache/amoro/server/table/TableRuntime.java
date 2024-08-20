@@ -88,6 +88,7 @@ public class TableRuntime extends StatedPersistentBase {
   @StateField private volatile TableConfiguration tableConfiguration;
   @StateField private volatile long processId;
   @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
+  @StateField private volatile OptimizingEvaluator.PendingInput tableSummary;
   private volatile long lastPlanTime;
   private final TableOptimizingMetrics optimizingMetrics;
   private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
@@ -136,6 +137,7 @@ public class TableRuntime extends StatedPersistentBase {
             ? OptimizingStatus.PENDING
             : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
+    this.tableSummary = tableRuntimeMeta.getTableSummary();
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
     optimizingMetrics.statusChanged(optimizingStatus, this.currentStatusStartTime);
     optimizingMetrics.lastOptimizingTime(OptimizingType.MINOR, this.lastMinorOptimizingTime);
@@ -143,7 +145,7 @@ public class TableRuntime extends StatedPersistentBase {
     optimizingMetrics.lastOptimizingTime(OptimizingType.FULL, this.lastFullOptimizingTime);
     orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
     tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
-    tableSummaryMetrics.refresh(pendingInput);
+    tableSummaryMetrics.refresh(tableSummary);
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -246,6 +248,15 @@ public class TableRuntime extends StatedPersistentBase {
             tableHandler.handleTableChanged(this, configuration);
           }
           return this;
+        });
+  }
+
+  public void setTableSummary(OptimizingEvaluator.PendingInput tableSummary) {
+    invokeConsistency(
+        () -> {
+          this.tableSummary = tableSummary;
+          tableSummaryMetrics.refresh(tableSummary);
+          persistUpdatingRuntime();
         });
   }
 

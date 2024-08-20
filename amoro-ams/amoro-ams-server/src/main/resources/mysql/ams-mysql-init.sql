@@ -129,6 +129,7 @@ CREATE TABLE `table_runtime`
     `table_config`                  mediumtext,
     `optimizing_config`             mediumtext,
     `pending_input`                 mediumtext,
+    `table_summary`                 mediumtext,
     PRIMARY KEY (`table_id`),
     UNIQUE KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize running information of each table' ROW_FORMAT=DYNAMIC;

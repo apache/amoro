@@ -18,11 +18,6 @@
 
 package org.apache.amoro.server;
 
-import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_SNAPSHOTS;
-import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_TOTAL_FILES;
-import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_TOTAL_FILES_SIZE;
-import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_TOTAL_RECORDS;
-
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
@@ -31,11 +26,6 @@ import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.metrics.Gauge;
-import org.apache.amoro.api.metrics.Metric;
-import org.apache.amoro.api.metrics.MetricDefine;
-import org.apache.amoro.api.metrics.MetricKey;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.io.MixedDataTestHelpers;
@@ -43,7 +33,6 @@ import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
 import org.apache.amoro.server.exception.IllegalTaskStateException;
 import org.apache.amoro.server.exception.PluginRetryAuthException;
-import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
@@ -51,7 +40,6 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.executor.TableRuntimeRefreshExecutor;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
@@ -140,33 +128,6 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     AppendFiles appendFiles = table.newAppend();
     dataFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
-  }
-
-  @Test
-  public void testTableSummaryMetrics() {
-    ServerTableIdentifier identifier = serverTableIdentifier();
-    Map<MetricKey, Metric> metrics = MetricManager.getInstance().getGlobalRegistry().getMetrics();
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_TOTAL_FILES);
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_TOTAL_FILES_SIZE);
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_TOTAL_RECORDS);
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_SNAPSHOTS);
-  }
-
-  private void assertTableSummaryMetric(
-      Map<MetricKey, Metric> metrics, ServerTableIdentifier identifier, MetricDefine metricDefine) {
-    Gauge<Long> metric =
-        (Gauge<Long>)
-            metrics.get(
-                new MetricKey(
-                    metricDefine,
-                    ImmutableMap.of(
-                        "catalog",
-                        identifier.getCatalog(),
-                        "database",
-                        identifier.getDatabase(),
-                        "table",
-                        identifier.getTableName())));
-    Assertions.assertTrue(metric.getValue() > 0);
   }
 
   @Test

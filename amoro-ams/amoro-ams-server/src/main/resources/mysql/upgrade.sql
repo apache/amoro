@@ -21,3 +21,6 @@ TRUNCATE TABLE `table_blocker`;
 ALTER TABLE `table_blocker` DROP INDEX `table_index`;
 ALTER TABLE `table_blocker` ADD COLUMN `prev_blocker_id` bigint(20) NOT NULL DEFAULT -1 COMMENT 'prev blocker id when created';
 ALTER TABLE `table_blocker` ADD UNIQUE KEY `uq_prev` (`catalog_name`,`db_name`,`table_name`, `prev_blocker_id`);
+
+-- ADD COLUMN table_summary FOR TABLE_RUNTIME
+ALTER TABLE `table_runtime` ADD COLUMN `table_summary` mediumtext AFTER `pending_input`;
