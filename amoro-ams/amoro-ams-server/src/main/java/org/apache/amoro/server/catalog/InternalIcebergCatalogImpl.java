@@ -18,6 +18,9 @@
 
 package org.apache.amoro.server.catalog;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalListener;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
@@ -40,6 +43,7 @@ import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
+import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 
@@ -50,10 +54,13 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
   final int httpPort;
   final String exposedHost;
 
+  final Cache<AmoroTable<?>, FileIO> fileIOCloser;
+
   protected InternalIcebergCatalogImpl(CatalogMeta metadata, Configurations serverConfiguration) {
     super(metadata);
     this.httpPort = serverConfiguration.getInteger(AmoroManagementConf.HTTP_SERVER_PORT);
     this.exposedHost = serverConfiguration.getString(AmoroManagementConf.SERVER_EXPOSE_HOST);
+    this.fileIOCloser = newFileIOCloser();
   }
 
   @Override
@@ -96,12 +103,14 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
                 .toString());
     org.apache.amoro.table.TableIdentifier tableIdentifier =
         org.apache.amoro.table.TableIdentifier.of(name(), database, tableName);
-
-    return IcebergTable.newIcebergTable(
-        tableIdentifier,
-        table,
-        MixedCatalogUtil.buildMetaStore(getMetadata()),
-        getMetadata().getCatalogProperties());
+    AmoroTable<?> amoroTable =
+        IcebergTable.newIcebergTable(
+            tableIdentifier,
+            table,
+            MixedCatalogUtil.buildMetaStore(getMetadata()),
+            getMetadata().getCatalogProperties());
+    fileIOCloser.put(amoroTable, ops.io());
+    return amoroTable;
   }
 
   protected AuthenticatedFileIO fileIO(CatalogMeta catalogMeta) {
@@ -143,5 +152,18 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
         format().name());
     //noinspection unchecked
     return (InternalTableHandler<O>) new InternalIcebergHandler(getMetadata(), metadata);
+  }
+
+  private Cache<AmoroTable<?>, FileIO> newFileIOCloser() {
+    return Caffeine.newBuilder()
+        .weakKeys()
+        .removalListener(
+            (RemovalListener<AmoroTable<?>, FileIO>)
+                (ops, fileIO, cause) -> {
+                  if (null != fileIO) {
+                    fileIO.close();
+                  }
+                })
+        .build();
   }
 }
