@@ -21,9 +21,6 @@ package org.apache.amoro.server.table;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_DATA_FILES;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_DATA_FILES_RECORDS;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_DATA_FILES_SIZE;
-import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_EQUALITY_DELETE_FILES;
-import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_EQUALITY_DELETE_FILES_RECORDS;
-import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_EQUALITY_DELETE_FILES_SIZE;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_POSITION_DELETE_FILES;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_POSITION_DELETE_FILES_RECORDS;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_POSITION_DELETE_FILES_SIZE;
@@ -35,8 +32,6 @@ import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_TO
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
-import org.apache.amoro.api.OptimizerProperties;
-import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.metrics.Gauge;
 import org.apache.amoro.api.metrics.Metric;
@@ -45,13 +40,11 @@ import org.apache.amoro.api.metrics.MetricKey;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.io.MixedDataTestHelpers;
-import org.apache.amoro.server.exception.PluginRetryAuthException;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
 import org.apache.amoro.server.table.executor.TableRuntimeRefreshExecutor;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
@@ -73,13 +66,10 @@ import java.util.Map;
 @RunWith(Parameterized.class)
 public class TestTableSummaryMetrics extends AMSTableTestBase {
 
-  private String token;
-  private Toucher toucher;
-
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
     return new Object[][] {
-      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true)}
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(true, false)}
     };
   }
 
@@ -90,28 +80,15 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
 
   @Before
   public void prepare() {
-    toucher = new Toucher();
     createDatabase();
     createTable();
     initTableWithFiles();
-    TableRuntimeRefresher refresher = new TableRuntimeRefresher();
-    refresher.refreshPending();
-    refresher.dispose();
+    refreshPending();
   }
 
   @After
   public void clear() {
     try {
-      if (toucher != null) {
-        toucher.stop();
-        toucher = null;
-      }
-      optimizingService()
-          .listOptimizers()
-          .forEach(
-              optimizer ->
-                  optimizingService()
-                      .deleteOptimizer(optimizer.getGroupName(), optimizer.getResourceId()));
       dropTable();
       dropDatabase();
     } catch (Exception e) {
@@ -120,33 +97,37 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
   }
 
   private void initTableWithFiles() {
-    MixedTable mixedTable =
-        (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
-    appendData(mixedTable.asUnkeyedTable(), 1);
-    appendData(mixedTable.asUnkeyedTable(), 2);
-    appendPosDelete(mixedTable.asUnkeyedTable(), 3);
-    appendPosDelete(mixedTable.asUnkeyedTable(), 4);
+    UnkeyedTable table =
+        ((MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable())
+            .asUnkeyedTable();
+    appendData(table);
+    appendPosDelete(table);
     TableRuntime runtime = tableService().getRuntime(serverTableIdentifier());
-
     runtime.refresh(tableService().loadTable(serverTableIdentifier()));
   }
 
-  private void appendData(UnkeyedTable table, int id) {
+  private void appendData(UnkeyedTable table) {
     ArrayList<Record> newRecords =
         Lists.newArrayList(
-            MixedDataTestHelpers.createRecord(
-                table.schema(), id, "111", 0L, "2022-01-01T12:00:00"));
-    List<DataFile> dataFiles = MixedDataTestHelpers.writeBaseStore(table, 0L, newRecords, false);
+            tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"));
+    List<DataFile> dataFiles =
+        OptimizingTestHelpers.appendBase(
+            table, tableTestHelper().writeBaseStore(table, 0L, newRecords, false));
+
     AppendFiles appendFiles = table.newAppend();
     dataFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
   }
 
-  private void appendPosDelete(UnkeyedTable table, int id) {
+  private void appendPosDelete(UnkeyedTable table) {
     ArrayList<Record> newRecords =
         Lists.newArrayList(
-            tableTestHelper().generateTestRecord(id, "222", 0, "2022-01-01T12:00:00"));
-    List<DataFile> dataFiles = MixedDataTestHelpers.writeBaseStore(table, 0L, newRecords, false);
+            tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00"));
+    List<DataFile> dataFiles =
+        OptimizingTestHelpers.appendBase(
+            table, tableTestHelper().writeBaseStore(table, 0L, newRecords, false));
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
@@ -156,6 +137,13 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
     OptimizingTestHelpers.appendBasePosDelete(table, posDeleteFiles);
   }
 
+  void refreshPending() {
+    TableRuntimeRefreshExecutor refresher =
+        new TableRuntimeRefreshExecutor(tableService(), 1, Integer.MAX_VALUE);
+    refresher.execute(tableService().getRuntime(serverTableIdentifier()));
+    refresher.dispose();
+  }
+
   @Test
   public void testTableSummaryMetrics() {
     ServerTableIdentifier identifier = serverTableIdentifier();
@@ -163,17 +151,14 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
     assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_TOTAL_FILES);
     assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_DATA_FILES);
     assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_POSITION_DELETE_FILES);
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_EQUALITY_DELETE_FILES);
 
     assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_TOTAL_FILES_SIZE);
     assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_DATA_FILES_SIZE);
     assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_POSITION_DELETE_FILES_SIZE);
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_EQUALITY_DELETE_FILES_SIZE);
 
     assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_TOTAL_RECORDS);
     assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_DATA_FILES_RECORDS);
     assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_POSITION_DELETE_FILES_RECORDS);
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_EQUALITY_DELETE_FILES_RECORDS);
 
     assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_SNAPSHOTS);
   }
@@ -193,76 +178,5 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
                         "table",
                         identifier.getTableName())));
     Assertions.assertTrue(metric.getValue() > 0);
-  }
-
-  private OptimizerRegisterInfo buildRegisterInfo() {
-    OptimizerRegisterInfo registerInfo = new OptimizerRegisterInfo();
-    Map<String, String> registerProperties = Maps.newHashMap();
-    registerProperties.put(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL, "100");
-    registerInfo.setProperties(registerProperties);
-    registerInfo.setThreadCount(1);
-    registerInfo.setMemoryMb(1024);
-    registerInfo.setGroupName(defaultResourceGroup().getName());
-    registerInfo.setResourceId("1");
-    registerInfo.setStartTime(System.currentTimeMillis());
-    return registerInfo;
-  }
-
-  private class TableRuntimeRefresher extends TableRuntimeRefreshExecutor {
-
-    public TableRuntimeRefresher() {
-      super(tableService(), 1, Integer.MAX_VALUE);
-    }
-
-    void refreshPending() {
-      execute(tableService().getRuntime(serverTableIdentifier()));
-    }
-  }
-
-  private class Toucher implements Runnable {
-
-    private volatile boolean stop = false;
-    private volatile boolean suspend = false;
-    private final Thread thread = new Thread(this);
-
-    public Toucher() {
-      token = optimizingService().authenticate(buildRegisterInfo());
-      thread.setDaemon(true);
-      thread.start();
-    }
-
-    public synchronized void stop() throws InterruptedException {
-      stop = true;
-      thread.interrupt();
-      thread.join();
-    }
-
-    public synchronized void suspend() {
-      suspend = true;
-      thread.interrupt();
-    }
-
-    public synchronized void goOn() {
-      suspend = false;
-      thread.interrupt();
-    }
-
-    @Override
-    public void run() {
-      while (!stop) {
-        try {
-          Thread.sleep(300);
-          synchronized (this) {
-            if (!suspend) {
-              optimizingService().touch(token);
-            }
-          }
-        } catch (PluginRetryAuthException e) {
-          e.printStackTrace();
-        } catch (Exception ignore) {
-          // ignore
-        }
-      }
-    }
   }
 }

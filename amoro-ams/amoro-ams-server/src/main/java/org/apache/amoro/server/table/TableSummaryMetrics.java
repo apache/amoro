@@ -33,7 +33,6 @@ import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 
 import java.util.List;
-import java.util.stream.StreamSupport;
 
 /** Table Summary metrics. */
 public class TableSummaryMetrics {
@@ -237,6 +236,6 @@ public class TableSummaryMetrics {
   public void refreshSnapshots(MixedTable table) {
     UnkeyedTable unkeyedTable =
         table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
-    snapshots = StreamSupport.stream(unkeyedTable.snapshots().spliterator(), false).count();
+    snapshots = Lists.newArrayList(unkeyedTable.snapshots().iterator()).size();
   }
 }
