@@ -159,7 +159,7 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
         .weakKeys()
         .removalListener(
             (RemovalListener<AmoroTable<?>, FileIO>)
-                (ops, fileIO, cause) -> {
+                (tbl, fileIO, cause) -> {
                   if (null != fileIO) {
                     fileIO.close();
                   }
