@@ -231,6 +231,10 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
         FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY, jobManagerMemory + "m");
     resourceFlinkConf.putToOptions(
         FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY, taskManagerMemory + "m");
+    resourceFlinkConf.putToOptions(
+        FlinkConfKeys.YARN_APPLICATION_JOB_NAME,
+        String.join(
+            "-", "Amoro-flink-optimizer", resource.getGroupName(), resource.getResourceId()));
 
     String flinkAction = target.isApplicationMode() ? "run-application" : "run";
     if (Target.KUBERNETES_APPLICATION == target) {
@@ -650,6 +654,8 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     public static final String KUBERNETES_CLUSTER_ID = "kubernetes.cluster-id";
     public static final String KUBERNETES_TASKMANAGER_LABELS = "kubernetes.taskmanager.labels";
     public static final String KUBERNETES_JOBMANAGER_LABELS = "kubernetes.jobmanager.labels";
+
+    public static final String YARN_APPLICATION_JOB_NAME = "yarn.application.name";
   }
 
   public static class FlinkConf {
