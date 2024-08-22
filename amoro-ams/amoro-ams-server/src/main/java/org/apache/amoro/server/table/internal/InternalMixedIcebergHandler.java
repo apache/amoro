@@ -27,7 +27,7 @@ import org.apache.amoro.server.utils.InternalTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableOperations;
@@ -65,7 +65,7 @@ public class InternalMixedIcebergHandler extends InternalIcebergHandler {
     if (InternalTableUtil.isLegacyMixedIceberg(tableMetadata())) {
       String tableLocation =
           changeStore ? tableMetadata().getChangeLocation() : tableMetadata().getBaseLocation();
-      TableMetaStore metaStore = MixedCatalogUtil.buildMetaStore(catalogMeta);
+      TableMetaStore metaStore = CatalogUtil.buildMetaStore(catalogMeta);
 
       MixedHadoopTableOperations ops =
           new MixedHadoopTableOperations(new Path(tableLocation), io, metaStore.getConfiguration());

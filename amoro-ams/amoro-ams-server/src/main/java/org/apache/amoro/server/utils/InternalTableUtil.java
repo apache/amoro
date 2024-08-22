@@ -30,7 +30,7 @@ import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.AuthenticatedFileIOs;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
@@ -82,7 +82,7 @@ public class InternalTableUtil {
    */
   public static AuthenticatedFileIO newIcebergFileIo(CatalogMeta meta) {
     Map<String, String> catalogProperties = meta.getCatalogProperties();
-    TableMetaStore store = MixedCatalogUtil.buildMetaStore(meta);
+    TableMetaStore store = CatalogUtil.buildMetaStore(meta);
     Configuration conf = store.getConfiguration();
     String warehouse = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
     String defaultImpl = HADOOP_FILE_IO_IMPL;

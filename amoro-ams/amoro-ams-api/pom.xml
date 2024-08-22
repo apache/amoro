@@ -48,6 +48,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-core</artifactId>
+            <version>${iceberg.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-iceberg-format</artifactId>
             <scope>provided</scope>

@@ -36,9 +36,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class MixedCatalogUtil {
+public class CatalogUtil {
 
-  private static final Logger LOG = LoggerFactory.getLogger(MixedCatalogUtil.class);
+  private static final Logger LOG = LoggerFactory.getLogger(CatalogUtil.class);
 
   /** Return table format set catalog supported. */
   public static Set<TableFormat> tableFormats(CatalogMeta meta) {
@@ -113,7 +113,7 @@ public class MixedCatalogUtil {
     if (catalogMeta.getStorageConfigs() != null) {
       Map<String, String> storageConfigs = catalogMeta.getStorageConfigs();
       if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equalsIgnoreCase(
-          MixedCatalogUtil.getCompatibleStorageType(storageConfigs))) {
+          CatalogUtil.getCompatibleStorageType(storageConfigs))) {
         String coreSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE);
         String hdfsSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE);
         String hiveSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE);

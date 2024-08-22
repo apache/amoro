@@ -68,7 +68,7 @@ import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFa
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.TableProperties;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -171,7 +171,7 @@ public class TableController {
         "catalog.database.tableName can not be empty in any element");
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     CatalogMeta catalogMeta = serverCatalog.getMetadata();
-    TableMetaStore tableMetaStore = MixedCatalogUtil.buildMetaStore(catalogMeta);
+    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
     HMSClientPool hmsClientPool =
         new CachedHiveClientPool(tableMetaStore, catalogMeta.getCatalogProperties());
 
@@ -212,9 +212,9 @@ public class TableController {
     CatalogMeta catalogMeta = serverCatalog.getMetadata();
     String amsUri = AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME);
     catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, amsUri);
-    TableMetaStore tableMetaStore = MixedCatalogUtil.buildMetaStore(catalogMeta);
+    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
     // check whether catalog support MIXED_HIVE format.
-    Set<TableFormat> tableFormats = MixedCatalogUtil.tableFormats(catalogMeta);
+    Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
     Preconditions.checkState(
         tableFormats.contains(TableFormat.MIXED_HIVE),
         "Catalog %s does not support MIXED_HIVE format",
@@ -527,7 +527,7 @@ public class TableController {
     String catalogType = serverCatalog.getMetadata().getCatalogType();
     if (catalogType.equals(CATALOG_TYPE_HIVE)) {
       CatalogMeta catalogMeta = serverCatalog.getMetadata();
-      TableMetaStore tableMetaStore = MixedCatalogUtil.buildMetaStore(catalogMeta);
+      TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
       HMSClientPool hmsClientPool =
           new CachedHiveClientPool(tableMetaStore, catalogMeta.getCatalogProperties());
 

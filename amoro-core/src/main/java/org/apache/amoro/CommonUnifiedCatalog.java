@@ -22,7 +22,7 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 
 import java.util.List;
 import java.util.Map;
@@ -45,9 +45,9 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   public CommonUnifiedCatalog(
       Supplier<CatalogMeta> catalogMetaSupplier, Map<String, String> properties) {
     CatalogMeta catalogMeta = catalogMetaSupplier.get();
-    MixedCatalogUtil.mergeCatalogProperties(catalogMeta, properties);
+    CatalogUtil.mergeCatalogProperties(catalogMeta, properties);
     this.meta = catalogMeta;
-    this.tableMetaStore = MixedCatalogUtil.buildMetaStore(catalogMeta);
+    this.tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
     this.properties.putAll(properties);
     this.metaSupplier = catalogMetaSupplier;
     initializeFormatCatalogs();
@@ -176,11 +176,11 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   @Override
   public synchronized void refresh() {
     CatalogMeta newMeta = metaSupplier.get();
-    MixedCatalogUtil.mergeCatalogProperties(meta, properties);
+    CatalogUtil.mergeCatalogProperties(meta, properties);
     if (newMeta.equals(this.meta)) {
       return;
     }
-    this.tableMetaStore = MixedCatalogUtil.buildMetaStore(newMeta);
+    this.tableMetaStore = CatalogUtil.buildMetaStore(newMeta);
     this.meta = newMeta;
     this.initializeFormatCatalogs();
   }
@@ -192,8 +192,8 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
 
   protected void initializeFormatCatalogs() {
     ServiceLoader<FormatCatalogFactory> loader = ServiceLoader.load(FormatCatalogFactory.class);
-    Set<TableFormat> formats = MixedCatalogUtil.tableFormats(this.meta);
-    TableMetaStore store = MixedCatalogUtil.buildMetaStore(this.meta);
+    Set<TableFormat> formats = CatalogUtil.tableFormats(this.meta);
+    TableMetaStore store = CatalogUtil.buildMetaStore(this.meta);
     Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newConcurrentMap();
     for (FormatCatalogFactory factory : loader) {
       if (formats.contains(factory.format())) {

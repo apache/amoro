@@ -166,7 +166,9 @@ public class DataExpirationConfig {
   }
 
   public static DataExpirationConfig parse(Map<String, String> properties) {
-    boolean gcEnabled = CompatiblePropertyUtil.propertyAsBoolean(properties, "gc.enabled", true);
+    boolean gcEnabled =
+        CompatiblePropertyUtil.propertyAsBoolean(
+            properties, org.apache.iceberg.TableProperties.GC_ENABLED, true);
     DataExpirationConfig config =
         new DataExpirationConfig()
             .setEnabled(
