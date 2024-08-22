@@ -338,10 +338,9 @@ public class DashboardServer {
           () -> {
             get("/summary", overviewController::getSummary);
             get("/resource", overviewController::getResourceUsageHistory);
-            get("/format", overviewController::getTableFormat);
             get("/optimizing", overviewController::getOptimizingStatus);
-            get("/unhealth", overviewController::getUnhealthTables);
-            get("/operations", overviewController::getLatestOperations);
+            get("/dataSize", overviewController::getDataSizeHistory);
+            get("/top10", overviewController::getTop10Tables);
           });
     };
   }

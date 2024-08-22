@@ -21,90 +21,62 @@ import { onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import type { TableProps } from 'ant-design-vue'
-import { usePagination } from '@/hooks/usePagination'
-import type { UnhealthTableItem } from '@/types/common.type'
-import { getUnhealthTableList } from '@/services/overview.service'
+import type { ITopTableItem } from '@/types/common.type'
+import { getTop10TableList } from '@/services/overview.service'
 import { bytesToSize } from '@/utils'
 
 const { t } = useI18n()
 const router = useRouter()
-const pagination = reactive(usePagination())
-pagination.pageSize = 10
-pagination.pageSizeOptions = ['10', '25', '50', '100']
+const orderBy = ref('healthScore');
 const loading = ref<boolean>(false)
-const catalogs = reactive<string[]>([])
-const catalogFilter = reactive<{ text: string, value: string }[]>([])
-const dataSource = reactive<UnhealthTableItem[]>([])
+const dataSource = reactive<ITopTableItem[]>([])
 
 const columns: TableProps['columns'] = [
   {
     title: t('table'),
     dataIndex: 'tableName',
-    filterSearch: true,
-    filters: catalogFilter,
-    filterMode: 'tree',
-    onFilter: (value, record: UnhealthTableItem) => record.tableIdentifier.catalog === value,
+    width: 300
   },
   {
-    title: t('healthScore'),
-    dataIndex: 'healthScore',
-  },
-  {
-    title: t('size'),
-    dataIndex: 'totalSize',
-    sorter: true,
+    title: t('tableSize'),
+    dataIndex: 'tableSize',
   },
   {
     title: t('fileCount'),
     dataIndex: 'fileCount',
-    sorter: true,
   },
   {
     title: t('averageFileSize'),
     dataIndex: 'averageFileSize',
-    sorter: true,
   },
+  {
+    title: t('healthScore'),
+    dataIndex: 'healthScore',
+  }
 ]
 
-function goTableDetail(record: UnhealthTableItem) {
-  const { catalog, database, tableName } = record.tableIdentifier
-  router.push({
-    path: '/tables',
-    query: {
-      catalog,
-      db: database,
-      table: tableName,
-    },
-  })
-}
-
-function change({ current = 1, pageSize = 10 }) {
-  pagination.current = current
-  if (pageSize !== pagination.pageSize) {
-    pagination.current = 1
+function goTableDetail(record: ITopTableItem) {
+  try {
+    const table = (record.tableName || '').split('.')
+    router.push({
+      path: '/tables',
+      query: {
+        catalog: table[0],
+        db: table[1],
+        table: table[2],
+      },
+    })
+  } catch (error) {
   }
-  pagination.pageSize = pageSize
-  getUnhealthTables()
 }
 
-async function getUnhealthTables() {
+async function getTop10Tables() {
   try {
     loading.value = true
     dataSource.length = 0
-    const result = await getUnhealthTableList({
-      page: pagination.current,
-      pageSize: pagination.pageSize,
-    })
-    const { total, list } = result
-    pagination.total = total;
-    (list || []).forEach((ele: UnhealthTableItem) => {
-      if (!catalogs.includes(ele.tableIdentifier.catalog)) {
-        catalogs.push(ele.tableIdentifier.catalog)
-      }
+    const result = await getTop10TableList(orderBy.value)
+    result.forEach((ele: ITopTableItem) => {
       dataSource.push(ele)
-    })
-    catalogs.forEach((catalog) => {
-      catalogFilter.push({ text: catalog, value: catalog })
     })
   }
   catch (error) {
@@ -115,25 +87,37 @@ async function getUnhealthTables() {
 }
 
 onMounted(() => {
-  getUnhealthTables()
+  getTop10Tables()
 })
 </script>
 
 <template>
-  <a-card class="unhealth-tables-card" :title="t('unhealthTables')">
+  <a-card class="unhealth-tables-card">
+    <template #title>
+      <a-row justify="space-between">
+        <span class="card-title" v-text="t('Top 10 Tables')"></span>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <a-select v-model:value="orderBy" @change="getTop10Tables" style="width: 150px">
+            <a-select-option value="tableSize">{{ t('tableSize') }}</a-select-option>
+            <a-select-option value="fileCount"> {{ t('fileCount') }}</a-select-option>
+            <a-select-option value="healthScore">{{ t('healthScore') }}</a-select-option>
+          </a-select>
+        </div>
+      </a-row>
+    </template>
+
     <div class="list-wrap">
-      <a-table
-        class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"
-        :loading="loading" @change="change"
-      >
+      <a-table class="ant-table-common" :columns="columns" :data-source="dataSource" :loading="loading"
+        :pagination="false">
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'tableName'">
             <span :title="record.tableName" class="primary-link" @click="goTableDetail(record)">
               {{ record.tableName }}
             </span>
           </template>
-          <template v-if="column.dataIndex === 'totalSize'">
-            {{ bytesToSize(record.totalSize) }}
+          <template v-if="column.dataIndex === 'tableSize'">
+            {{ bytesToSize(record.tableSize) }}
           </template>
           <template v-if="column.dataIndex === 'averageFileSize'">
             {{ bytesToSize(record.averageFileSize) }}
@@ -145,8 +129,12 @@ onMounted(() => {
 </template>
 
 <style lang="less" scoped>
+.card-title {
+  font-size: 18px;
+}
+
 .unhealth-tables-card {
-  height: 500px;
+  height: 450px;
 }
 
 .list-wrap {

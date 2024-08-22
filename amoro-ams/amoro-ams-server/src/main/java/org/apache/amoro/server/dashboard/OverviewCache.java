@@ -33,7 +33,6 @@ import org.apache.amoro.api.metrics.MetricDefine;
 import org.apache.amoro.api.metrics.MetricKey;
 import org.apache.amoro.api.metrics.MetricSet;
 import org.apache.amoro.server.dashboard.model.OverviewResourceUsage;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,11 +49,11 @@ public class OverviewCache {
 
   private static final int MAX_CACHE_SIZE = 5000;
 
-  public static final String STATUS_PENDING = "pending";
-  public static final String STATUS_PLANING = "planing";
-  public static final String STATUS_EXECUTING = "executing";
-  public static final String STATUS_IDLE = "idle";
-  public static final String STATUS_COMMITTING = "committing";
+  public static final String STATUS_PENDING = "Pending";
+  public static final String STATUS_PLANING = "Planing";
+  public static final String STATUS_EXECUTING = "Executing";
+  public static final String STATUS_IDLE = "Idle";
+  public static final String STATUS_COMMITTING = "Committing";
 
   private static final Logger log = LoggerFactory.getLogger(OverviewCache.class);
 
@@ -94,8 +93,10 @@ public class OverviewCache {
     return totalMemory.get();
   }
 
-  public List<OverviewResourceUsage> getResourceUsageHistory() {
-    return ImmutableList.copyOf(resourceUsageHistory);
+  public List<OverviewResourceUsage> getResourceUsageHistory(long startTime) {
+    return resourceUsageHistory.stream()
+        .filter(item -> item.getTs() >= startTime)
+        .collect(Collectors.toList());
   }
 
   public void getTableFormat() {}
@@ -135,10 +136,11 @@ public class OverviewCache {
   private void updateSummary() {
     long ts = System.currentTimeMillis();
     int optimizerGroupThreadCount = (int) sumMetricValuesByDefine(OPTIMIZER_GROUP_THREADS);
-    long optimizerGroupMemory = sumMetricValuesByDefine(OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED);
+    long optimizerGroupMemoryInMb =
+        byte2Mb(sumMetricValuesByDefine(OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED));
     this.totalCpu.set(optimizerGroupThreadCount);
-    this.totalMemory.set(optimizerGroupMemory);
-    addAndCheck(new OverviewResourceUsage(ts, optimizerGroupThreadCount, optimizerGroupMemory));
+    this.totalMemory.set(optimizerGroupMemoryInMb);
+    addAndCheck(new OverviewResourceUsage(ts, optimizerGroupThreadCount, optimizerGroupMemoryInMb));
   }
 
   private void addAndCheck(OverviewResourceUsage overviewResourceUsage) {
@@ -146,6 +148,10 @@ public class OverviewCache {
     if (resourceUsageHistory.size() > MAX_CACHE_SIZE) {
       resourceUsageHistory.poll();
     }
+  }
+
+  private long byte2Mb(long bytes) {
+    return bytes / 1024 / 1024;
   }
 
   private void updateOptimizingStatus() {
