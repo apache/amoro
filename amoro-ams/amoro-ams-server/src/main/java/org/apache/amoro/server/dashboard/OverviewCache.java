@@ -18,7 +18,9 @@
 
 package org.apache.amoro.server.dashboard;
 
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_COMMITTING_TABLES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TABLES;
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_IDLE_TABLES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TABLES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
@@ -51,6 +53,8 @@ public class OverviewCache {
   public static final String STATUS_PENDING = "pending";
   public static final String STATUS_PLANING = "planing";
   public static final String STATUS_EXECUTING = "executing";
+  public static final String STATUS_IDLE = "idle";
+  public static final String STATUS_COMMITTING = "committing";
 
   private static final Logger log = LoggerFactory.getLogger(OverviewCache.class);
 
@@ -151,6 +155,9 @@ public class OverviewCache {
         STATUS_PLANING, sumMetricValuesByDefine(OPTIMIZER_GROUP_PLANING_TABLES));
     optimizingStatusCountMap.put(
         STATUS_EXECUTING, sumMetricValuesByDefine(OPTIMIZER_GROUP_EXECUTING_TABLES));
+    optimizingStatusCountMap.put(STATUS_IDLE, sumMetricValuesByDefine(OPTIMIZER_GROUP_IDLE_TABLES));
+    optimizingStatusCountMap.put(
+        STATUS_COMMITTING, sumMetricValuesByDefine(OPTIMIZER_GROUP_COMMITTING_TABLES));
   }
 
   private long sumMetricValuesByDefine(MetricDefine metricDefine) {
