@@ -21,6 +21,9 @@ package org.apache.amoro.server.table;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_DATA_FILES;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_DATA_FILES_RECORDS;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_DATA_FILES_SIZE;
+import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_EQUALITY_DELETE_FILES;
+import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_EQUALITY_DELETE_FILES_RECORDS;
+import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_EQUALITY_DELETE_FILES_SIZE;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_POSITION_DELETE_FILES;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_POSITION_DELETE_FILES_RECORDS;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_POSITION_DELETE_FILES_SIZE;
@@ -82,8 +85,6 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
   public void prepare() {
     createDatabase();
     createTable();
-    initTableWithFiles();
-    refreshPending();
   }
 
   @After
@@ -107,13 +108,13 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
   }
 
   private void appendData(UnkeyedTable table) {
-    ArrayList<Record> newRecords =
+    ArrayList<Record> newRc =
         Lists.newArrayList(
             tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
             tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"));
     List<DataFile> dataFiles =
         OptimizingTestHelpers.appendBase(
-            table, tableTestHelper().writeBaseStore(table, 0L, newRecords, false));
+            table, tableTestHelper().writeBaseStore(table, 0L, newRc, false));
 
     AppendFiles appendFiles = table.newAppend();
     dataFiles.forEach(appendFiles::appendFile);
@@ -121,13 +122,13 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
   }
 
   private void appendPosDelete(UnkeyedTable table) {
-    ArrayList<Record> newRecords =
+    ArrayList<Record> newRc =
         Lists.newArrayList(
             tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
             tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00"));
     List<DataFile> dataFiles =
         OptimizingTestHelpers.appendBase(
-            table, tableTestHelper().writeBaseStore(table, 0L, newRecords, false));
+            table, tableTestHelper().writeBaseStore(table, 0L, newRc, false));
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
@@ -148,22 +149,62 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
   public void testTableSummaryMetrics() {
     ServerTableIdentifier identifier = serverTableIdentifier();
     Map<MetricKey, Metric> metrics = MetricManager.getInstance().getGlobalRegistry().getMetrics();
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_TOTAL_FILES);
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_DATA_FILES);
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_POSITION_DELETE_FILES);
+    Gauge<Long> totalFiles = getMetric(metrics, identifier, TABLE_SUMMARY_TOTAL_FILES);
+    Gauge<Long> dataFiles = getMetric(metrics, identifier, TABLE_SUMMARY_DATA_FILES);
+    Gauge<Long> posDelFiles = getMetric(metrics, identifier, TABLE_SUMMARY_POSITION_DELETE_FILES);
+    Gauge<Long> eqDelFiles = getMetric(metrics, identifier, TABLE_SUMMARY_EQUALITY_DELETE_FILES);
 
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_TOTAL_FILES_SIZE);
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_DATA_FILES_SIZE);
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_POSITION_DELETE_FILES_SIZE);
+    Gauge<Long> totalSize = getMetric(metrics, identifier, TABLE_SUMMARY_TOTAL_FILES_SIZE);
+    Gauge<Long> dataSize = getMetric(metrics, identifier, TABLE_SUMMARY_DATA_FILES_SIZE);
+    Gauge<Long> posDelSize =
+        getMetric(metrics, identifier, TABLE_SUMMARY_POSITION_DELETE_FILES_SIZE);
+    Gauge<Long> eqDelSize =
+        getMetric(metrics, identifier, TABLE_SUMMARY_EQUALITY_DELETE_FILES_SIZE);
 
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_TOTAL_RECORDS);
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_DATA_FILES_RECORDS);
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_POSITION_DELETE_FILES_RECORDS);
+    Gauge<Long> totalRecords = getMetric(metrics, identifier, TABLE_SUMMARY_TOTAL_RECORDS);
+    Gauge<Long> dataRecords = getMetric(metrics, identifier, TABLE_SUMMARY_DATA_FILES_RECORDS);
+    Gauge<Long> posDelRecords =
+        getMetric(metrics, identifier, TABLE_SUMMARY_POSITION_DELETE_FILES_RECORDS);
+    Gauge<Long> eqDelRecords =
+        getMetric(metrics, identifier, TABLE_SUMMARY_EQUALITY_DELETE_FILES_RECORDS);
 
-    assertTableSummaryMetric(metrics, identifier, TABLE_SUMMARY_SNAPSHOTS);
+    Gauge<Long> snapshots = getMetric(metrics, identifier, TABLE_SUMMARY_SNAPSHOTS);
+
+    Assertions.assertEquals(0, totalFiles.getValue());
+    Assertions.assertEquals(0, dataFiles.getValue());
+    Assertions.assertEquals(0, posDelFiles.getValue());
+    Assertions.assertEquals(0, eqDelFiles.getValue());
+
+    Assertions.assertEquals(0, totalSize.getValue());
+    Assertions.assertEquals(0, dataSize.getValue());
+    Assertions.assertEquals(0, posDelSize.getValue());
+    Assertions.assertEquals(0, eqDelSize.getValue());
+
+    Assertions.assertEquals(0, totalRecords.getValue());
+    Assertions.assertEquals(0, dataRecords.getValue());
+    Assertions.assertEquals(0, posDelRecords.getValue());
+    Assertions.assertEquals(0, eqDelRecords.getValue());
+
+    // refresh metrics
+    initTableWithFiles();
+    refreshPending();
+
+    Assertions.assertTrue(totalFiles.getValue() > 0);
+    Assertions.assertTrue(dataFiles.getValue() > 0);
+    Assertions.assertTrue(posDelFiles.getValue() > 0);
+
+    Assertions.assertTrue(totalSize.getValue() > 0);
+    Assertions.assertTrue(dataSize.getValue() > 0);
+    Assertions.assertTrue(posDelSize.getValue() > 0);
+
+    Assertions.assertTrue(totalRecords.getValue() > 0);
+    Assertions.assertTrue(dataRecords.getValue() > 0);
+    Assertions.assertTrue(posDelRecords.getValue() > 0);
+
+    Assertions.assertTrue(snapshots.getValue() > 0);
   }
 
-  private void assertTableSummaryMetric(
+  private Gauge<Long> getMetric(
       Map<MetricKey, Metric> metrics, ServerTableIdentifier identifier, MetricDefine metricDefine) {
     Gauge<Long> metric =
         (Gauge<Long>)
@@ -177,6 +218,6 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
                         identifier.getDatabase(),
                         "table",
                         identifier.getTableName())));
-    Assertions.assertTrue(metric.getValue() > 0);
+    return metric;
   }
 }
