@@ -30,7 +30,7 @@ CDC stands for Change Data Capture, which is a broad concept, as long as it can 
 This section will show how to ingest one table or multiple tables into the data lake for both [Iceberg](../iceberg-format/) format and [Mixed-Iceberg](../mixed-iceberg-format/) format.
 ## Ingest into one table
 ### Iceberg format
-The following example will show how [MySQL CDC](https://nightlies.apache.org/flink/flink-cdc-docs-master/docs/connectors/flink-sources/mysql-cdc/) data is written to an Iceberg table.
+The following example will show how [MySQL CDC](https://nightlies.apache.org/flink/flink-cdc-docs-release-3.1/docs/) data is written to an Iceberg table.
 
 **Requirements**
 
@@ -74,7 +74,7 @@ The following example will show how MySQL CDC data is written to a Mixed-Iceberg
 
 **Requirements**
 
-Please add [Flink SQL Connector MySQL CDC](https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc) and [Amoro](../../../download/) Jars to the lib directory of the Flink engine package.
+Please add [Flink SQL Connector MySQL CDC](https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc/3.1.1) and [Amoro](../../../download/) Jars to the lib directory of the Flink engine package.
 
 ```sql
 CREATE TABLE products (
@@ -113,7 +113,7 @@ The following example will show how to write CDC data from multiple MySQL tables
 
 **Requirements**
 
-Please add [Flink Connector MySQL CDC](https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc)
+Please add [Flink Connector MySQL CDC](https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc/3.1.1)
 and [Iceberg](https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-flink-1.18/1.6.0) dependencies to your 
 Maven project's pom.xml file.
 
@@ -341,7 +341,7 @@ The following example will show how to write CDC data from multiple MySQL tables
 
 **Requirements**
 
-Please add [Flink Connector MySQL CDC](https://mvnrepository.com/artifact/com.ververica/flink-connector-mysql-cdc/2.3.0) and [Amoro](https://mvnrepository.com/artifact/com.netease.arctic/arctic-flink-runtime-1.14/0.4.1) dependencies to your Maven project's pom.xml file.
+Please add [Flink Connector MySQL CDC](https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc/3.1.1) and [Amoro](https://mvnrepository.com/artifact/org.apache.amoro/amoro-mixed-format-flink-1.17/0.7.0-incubating) dependencies to your Maven project's pom.xml file.
 
 ```java
 import org.apache.amoro.flink.InternalCatalogBuilder;
