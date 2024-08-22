@@ -34,6 +34,10 @@
     <name>Amoro Project AMS Server</name>
     <url>https://amoro.apache.org</url>
 
+    <properties>
+        <git-commit-id-plugin.fail-on-no-git-dir>false</git-commit-id-plugin.fail-on-no-git-dir>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
@@ -415,8 +419,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <failOnNoGitDirectory>false</failOnNoGitDirectory>
-                    <failOnUnableToExtractRepoInfo>false</failOnUnableToExtractRepoInfo>
+                    <failOnNoGitDirectory>${git-commit-id-plugin.fail-on-no-git-dir}</failOnNoGitDirectory>
+                    <failOnUnableToExtractRepoInfo>${git-commit-id-plugin.fail-on-no-git-dir}</failOnUnableToExtractRepoInfo>
                     <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
                     <generateGitPropertiesFile>true</generateGitPropertiesFile>
                     <generateGitPropertiesFilename>
@@ -490,6 +494,12 @@
                     <artifactId>amoro-hudi-format</artifactId>
                 </dependency>
             </dependencies>
+        </profile>
+        <profile>
+            <id>fail-on-no-git-dir</id>
+            <properties>
+                <git-commit-id-plugin.fail-on-no-git-dir>true</git-commit-id-plugin.fail-on-no-git-dir>
+            </properties>
         </profile>
     </profiles>
 </project>
