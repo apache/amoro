@@ -122,8 +122,8 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
   public void close() {
     if (leaderLatch != null) {
       try {
-        this.zkClient.close();
         this.leaderLatch.close();
+        this.zkClient.close();
       } catch (IOException e) {
         LOG.error("Close high availability services failed", e);
       }
