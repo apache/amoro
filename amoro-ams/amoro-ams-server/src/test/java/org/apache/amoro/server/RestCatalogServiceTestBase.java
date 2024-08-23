@@ -31,8 +31,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.MixedCatalogUtil;
-import org.apache.iceberg.CatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.rest.RESTCatalog;
@@ -99,10 +98,10 @@ public abstract class RestCatalogServiceTestBase {
     clientProperties.putIfAbsent("warehouse", catalogName());
 
     CatalogMeta catalogMeta = serverCatalog.getMetadata();
-    TableMetaStore store = MixedCatalogUtil.buildMetaStore(catalogMeta);
+    TableMetaStore store = CatalogUtil.buildMetaStore(catalogMeta);
 
     return (RESTCatalog)
-        CatalogUtil.loadCatalog(
+        org.apache.iceberg.CatalogUtil.loadCatalog(
             "org.apache.iceberg.rest.RESTCatalog",
             "test",
             clientProperties,

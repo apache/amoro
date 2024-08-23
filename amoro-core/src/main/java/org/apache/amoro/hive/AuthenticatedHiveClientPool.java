@@ -18,13 +18,13 @@
 
 package org.apache.amoro.hive;
 
+import org.apache.amoro.client.ClientPoolImpl;
 import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.utils.DynConstructors;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.MetaException;
-import org.apache.iceberg.ClientPoolImpl;
-import org.apache.iceberg.common.DynConstructors;
 import org.apache.iceberg.hive.RuntimeMetaException;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;

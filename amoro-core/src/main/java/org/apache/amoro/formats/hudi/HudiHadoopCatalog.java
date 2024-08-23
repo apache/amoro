@@ -27,7 +27,7 @@ import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -185,7 +185,7 @@ public class HudiHadoopCatalog implements FormatCatalog {
           Map<String, String> tableProperties =
               hoodieTable.getMetaClient().getTableConfig().propsMap();
           Map<String, String> properties =
-              MixedCatalogUtil.mergeCatalogPropertiesToTable(tableProperties, this.properties);
+              CatalogUtil.mergeCatalogPropertiesToTable(tableProperties, this.properties);
           return new HudiTable(identifier, hoodieTable, properties);
         });
   }
