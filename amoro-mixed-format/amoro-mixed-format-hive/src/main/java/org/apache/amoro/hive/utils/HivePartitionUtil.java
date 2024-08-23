@@ -18,6 +18,7 @@
 
 package org.apache.amoro.hive.utils;
 
+import org.apache.amoro.client.ClientPool;
 import org.apache.amoro.hive.HMSClient;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -29,7 +30,6 @@ import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.ClientPool;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;

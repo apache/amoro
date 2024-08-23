@@ -59,7 +59,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Stores hadoop config files for {@link MixedTable} */
+/** Stores hadoop config files */
 public class TableMetaStore implements Serializable {
   private static final long serialVersionUID = 1L;
 

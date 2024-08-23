@@ -41,7 +41,7 @@
         <!--amoro-->
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
+            <artifactId>amoro-iceberg-format</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.ow2.asm</groupId>

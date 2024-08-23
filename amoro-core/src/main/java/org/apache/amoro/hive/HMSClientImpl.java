@@ -18,6 +18,7 @@
 
 package org.apache.amoro.hive;
 
+import org.apache.amoro.utils.DynMethods;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.PartitionDropOptions;
 import org.apache.hadoop.hive.metastore.api.Database;
@@ -25,7 +26,6 @@ import org.apache.hadoop.hive.metastore.api.EnvironmentContext;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.common.DynMethods;
 import org.apache.thrift.TException;
 
 import java.util.List;

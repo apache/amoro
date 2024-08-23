@@ -157,9 +157,7 @@ public class TableConfiguration {
   }
 
   public static TableConfiguration parseConfig(Map<String, String> properties) {
-    boolean gcEnabled =
-        CompatiblePropertyUtil.propertyAsBoolean(
-            properties, org.apache.iceberg.TableProperties.GC_ENABLED, true);
+    boolean gcEnabled = CompatiblePropertyUtil.propertyAsBoolean(properties, "gc.enabled", true);
     return new TableConfiguration()
         .setExpireSnapshotEnabled(
             gcEnabled

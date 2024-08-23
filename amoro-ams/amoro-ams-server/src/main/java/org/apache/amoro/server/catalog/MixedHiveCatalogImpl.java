@@ -29,7 +29,7 @@ import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.internal.InternalTableCreator;
 import org.apache.amoro.server.table.internal.InternalTableHandler;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.thrift.TException;
@@ -44,7 +44,7 @@ public class MixedHiveCatalogImpl extends InternalCatalog {
     super(catalogMeta);
     this.tables =
         new MixedHiveTables(
-            catalogMeta.getCatalogProperties(), MixedCatalogUtil.buildMetaStore(catalogMeta));
+            catalogMeta.getCatalogProperties(), CatalogUtil.buildMetaStore(catalogMeta));
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
   }
 
@@ -53,8 +53,7 @@ public class MixedHiveCatalogImpl extends InternalCatalog {
     super.updateMetadata(metadata);
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
     this.tables =
-        new MixedHiveTables(
-            metadata.getCatalogProperties(), MixedCatalogUtil.buildMetaStore(metadata));
+        new MixedHiveTables(metadata.getCatalogProperties(), CatalogUtil.buildMetaStore(metadata));
   }
 
   @Override

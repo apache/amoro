@@ -23,7 +23,7 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 
 import javax.inject.Inject;
 
@@ -65,7 +65,7 @@ public class DefaultMixedFormatCatalogFactory implements MixedFormatCatalogFacto
           try (ThreadContextClassLoader ignored =
               new ThreadContextClassLoader(this.getClass().getClassLoader())) {
             CatalogMeta meta = CatalogLoader.loadMeta(mixedFormatConfig.getCatalogUrl());
-            this.tableMetaStore = MixedCatalogUtil.buildMetaStore(meta);
+            this.tableMetaStore = CatalogUtil.buildMetaStore(meta);
           }
         }
       }

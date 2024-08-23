@@ -32,7 +32,7 @@ import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 
 import java.util.Map;
 import java.util.Set;
@@ -68,7 +68,7 @@ public class CatalogBuilder {
   public static ServerCatalog buildServerCatalog(
       CatalogMeta catalogMeta, Configurations serverConfiguration) {
     String type = catalogMeta.getCatalogType();
-    Set<TableFormat> tableFormats = MixedCatalogUtil.tableFormats(catalogMeta);
+    Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
 
     Preconditions.checkState(
         formatSupportedMatrix.containsKey(type), "unsupported catalog type: %s", type);
