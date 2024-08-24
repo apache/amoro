@@ -36,6 +36,7 @@ import org.apache.amoro.server.optimizing.scan.KeyedTableFileScanHelper;
 import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
+import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.executor.ExecutorTestBase;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -185,7 +186,7 @@ public class TestDataExpire extends ExecutorTestBase {
     OptimizingTestHelpers.appendBase(
         getMixedTable(), tableTestHelper().writeBaseStore(getMixedTable(), 0, records, false));
 
-    DataExpirationConfig config = new DataExpirationConfig(getMixedTable());
+    DataExpirationConfig config = parseDataExpirationConfig(getMixedTable());
 
     getMaintainerAndExpire(config, "2022-01-03T18:00:00.000");
 
@@ -237,7 +238,7 @@ public class TestDataExpire extends ExecutorTestBase {
     assertScanResult(scan, 4, 0);
 
     // expire partitions that order than 2022-01-02 18:00:00.000
-    DataExpirationConfig config = new DataExpirationConfig(keyedTable);
+    DataExpirationConfig config = parseDataExpirationConfig(keyedTable);
     MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(keyedTable);
     tableMaintainer.expireDataFrom(
         config,
@@ -320,7 +321,7 @@ public class TestDataExpire extends ExecutorTestBase {
     assertScanResult(scan, 4, 0);
 
     // expire partitions that order than 2022-01-02 18:00:00.000
-    DataExpirationConfig config = new DataExpirationConfig(keyedTable);
+    DataExpirationConfig config = parseDataExpirationConfig(keyedTable);
     MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable());
     mixedTableMaintainer.expireDataFrom(
         config,
@@ -358,7 +359,7 @@ public class TestDataExpire extends ExecutorTestBase {
     assertScanResult(scan, 4, 0);
 
     // expire partitions that order than 2022-01-02 18:00:00.000
-    DataExpirationConfig config = new DataExpirationConfig(getMixedTable());
+    DataExpirationConfig config = parseDataExpirationConfig(getMixedTable());
 
     getMaintainerAndExpire(config, "2022-01-03T18:00:00.000");
 
@@ -386,7 +387,7 @@ public class TestDataExpire extends ExecutorTestBase {
     OptimizingTestHelpers.appendBase(
         getMixedTable(), tableTestHelper().writeBaseStore(getMixedTable(), 0, records, false));
 
-    DataExpirationConfig config = new DataExpirationConfig(getMixedTable());
+    DataExpirationConfig config = parseDataExpirationConfig(getMixedTable());
 
     if (getTestFormat().equals(TableFormat.ICEBERG)) {
       Table table = getMixedTable().asUnkeyedTable();
@@ -482,7 +483,7 @@ public class TestDataExpire extends ExecutorTestBase {
     }
     assertScanResult(scan, 1, 0);
 
-    DataExpirationConfig config = new DataExpirationConfig(testTable);
+    DataExpirationConfig config = parseDataExpirationConfig(testTable);
     MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable());
     mixedTableMaintainer.expireDataFrom(
         config,
@@ -611,5 +612,10 @@ public class TestDataExpire extends ExecutorTestBase {
         .type()
         .typeId()
         .equals(Type.TypeID.STRING);
+  }
+
+  private static DataExpirationConfig parseDataExpirationConfig(MixedTable table) {
+    Map<String, String> properties = table.properties();
+    return TableConfigurations.parseDataExpirationConfig(properties);
   }
 }

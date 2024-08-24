@@ -39,6 +39,7 @@ import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
 import org.apache.amoro.server.optimizing.plan.TaskDescriptor;
+import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.table.MixedTable;
@@ -191,7 +192,8 @@ public class CompleteOptimizingFlow {
   }
 
   private OptimizingConfig optimizingConfig() {
-    TableConfiguration tableConfiguration = TableConfiguration.parseConfig(table.properties());
+    TableConfiguration tableConfiguration =
+        TableConfigurations.parseTableConfig(table.properties());
     return tableConfiguration.getOptimizingConfig();
   }
 

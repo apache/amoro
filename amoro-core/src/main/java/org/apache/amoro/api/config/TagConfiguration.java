@@ -21,15 +21,11 @@ package org.apache.amoro.api.config;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Objects;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.apache.amoro.table.TableProperties;
-import org.apache.amoro.utils.CompatiblePropertyUtil;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.Locale;
-import java.util.Map;
 
 /** Configuration for auto creating tags. */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -102,54 +98,6 @@ public class TagConfiguration {
     public String generateTagName(LocalDateTime tagTime, String tagFormat) {
       return tagTime.minus(periodDuration()).format(DateTimeFormatter.ofPattern(tagFormat));
     }
-  }
-
-  public static TagConfiguration parse(Map<String, String> tableProperties) {
-    TagConfiguration tagConfig = new TagConfiguration();
-    tagConfig.setAutoCreateTag(
-        CompatiblePropertyUtil.propertyAsBoolean(
-            tableProperties,
-            TableProperties.ENABLE_AUTO_CREATE_TAG,
-            TableProperties.ENABLE_AUTO_CREATE_TAG_DEFAULT));
-    tagConfig.setTriggerPeriod(
-        Period.valueOf(
-            CompatiblePropertyUtil.propertyAsString(
-                    tableProperties,
-                    TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD,
-                    TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD_DEFAULT)
-                .toUpperCase(Locale.ROOT)));
-
-    String defaultFormat;
-    switch (tagConfig.getTriggerPeriod()) {
-      case DAILY:
-        defaultFormat = TableProperties.AUTO_CREATE_TAG_FORMAT_DAILY_DEFAULT;
-        break;
-      case HOURLY:
-        defaultFormat = TableProperties.AUTO_CREATE_TAG_FORMAT_HOURLY_DEFAULT;
-        break;
-      default:
-        throw new IllegalArgumentException(
-            "Unsupported trigger period: " + tagConfig.getTriggerPeriod());
-    }
-    tagConfig.setTagFormat(
-        CompatiblePropertyUtil.propertyAsString(
-            tableProperties, TableProperties.AUTO_CREATE_TAG_FORMAT, defaultFormat));
-    tagConfig.setTriggerOffsetMinutes(
-        CompatiblePropertyUtil.propertyAsInt(
-            tableProperties,
-            TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES,
-            TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES_DEFAULT));
-    tagConfig.setMaxDelayMinutes(
-        CompatiblePropertyUtil.propertyAsInt(
-            tableProperties,
-            TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES,
-            TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES_DEFAULT));
-    tagConfig.setTagMaxAgeMs(
-        CompatiblePropertyUtil.propertyAsLong(
-            tableProperties,
-            TableProperties.AUTO_CREATE_TAG_MAX_AGE_MS,
-            TableProperties.AUTO_CREATE_TAG_MAX_AGE_MS_DEFAULT));
-    return tagConfig;
   }
 
   public boolean isAutoCreateTag() {

@@ -27,6 +27,7 @@ import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.PathInfo;
 import org.apache.amoro.io.SupportsFileSystemOperations;
 import org.apache.amoro.server.AmoroServiceConstants;
+import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
@@ -237,7 +238,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
       DataExpirationConfig expirationConfig =
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
       Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
-      if (!expirationConfig.isValid(field, table.name())) {
+      if (!TableConfigurations.isValidDataExpirationField(expirationConfig, field, table.name())) {
         return;
       }
 

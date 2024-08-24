@@ -36,7 +36,7 @@ import io.javalin.http.HttpCode;
 import io.javalin.plugin.json.JavalinJackson;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.events.IcebergReportEvent;
+import org.apache.amoro.events.IcebergReportEvent;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;

@@ -25,13 +25,13 @@ import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.config.TableConfiguration;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.executor.ExecutorTestBase;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
@@ -174,7 +174,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
                 AmsUtil.toTableIdentifier(testKeyedTable.id()), getTestFormat()));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
     Mockito.when(tableRuntime.getTableConfiguration())
-        .thenReturn(TableConfiguration.parseConfig(testKeyedTable.properties()));
+        .thenReturn(TableConfigurations.parseTableConfig((testKeyedTable.properties())));
 
     Assert.assertEquals(5, Iterables.size(testKeyedTable.changeTable().snapshots()));
 
@@ -217,7 +217,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
             ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id()), getTestFormat()));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
     Mockito.when(tableRuntime.getTableConfiguration())
-        .thenReturn(TableConfiguration.parseConfig(table.properties()));
+        .thenReturn(TableConfigurations.parseTableConfig(table.properties()));
 
     Assert.assertEquals(4, Iterables.size(table.snapshots()));
 
@@ -257,7 +257,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
             ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id()), getTestFormat()));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
     Mockito.when(tableRuntime.getTableConfiguration())
-        .thenReturn(TableConfiguration.parseConfig(table.properties()));
+        .thenReturn(TableConfigurations.parseTableConfig(table.properties()));
 
     Assert.assertEquals(4, Iterables.size(table.snapshots()));
 
@@ -288,7 +288,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
             ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id()), getTestFormat()));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
     Mockito.when(tableRuntime.getTableConfiguration())
-        .thenReturn(TableConfiguration.parseConfig(table.properties()));
+        .thenReturn(TableConfigurations.parseTableConfig(table.properties()));
 
     new MixedTableMaintainer(table).expireSnapshots(tableRuntime);
     Assert.assertEquals(1, Iterables.size(table.snapshots()));
@@ -476,7 +476,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
                 AmsUtil.toTableIdentifier(testKeyedTable.id()), getTestFormat()));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
     Mockito.when(tableRuntime.getTableConfiguration())
-        .thenReturn(TableConfiguration.parseConfig(testKeyedTable.properties()));
+        .thenReturn(TableConfigurations.parseTableConfig(testKeyedTable.properties()));
 
     MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(testKeyedTable);
     testKeyedTable.updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
@@ -485,7 +485,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     testKeyedTable.updateProperties().set("gc.enabled", "true").commit();
     Mockito.when(tableRuntime.getTableConfiguration())
-        .thenReturn(TableConfiguration.parseConfig(testKeyedTable.properties()));
+        .thenReturn(TableConfigurations.parseTableConfig(testKeyedTable.properties()));
     tableMaintainer.expireSnapshots(tableRuntime);
     Assert.assertEquals(1, Iterables.size(testKeyedTable.changeTable().snapshots()));
   }
@@ -508,7 +508,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
                 AmsUtil.toTableIdentifier(testUnkeyedTable.id()), getTestFormat()));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
     Mockito.when(tableRuntime.getTableConfiguration())
-        .thenReturn(TableConfiguration.parseConfig(testUnkeyedTable.properties()));
+        .thenReturn(TableConfigurations.parseTableConfig(testUnkeyedTable.properties()));
 
     MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(testUnkeyedTable);
     testUnkeyedTable
@@ -520,7 +520,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     testUnkeyedTable.updateProperties().set("gc.enabled", "true").commit();
     Mockito.when(tableRuntime.getTableConfiguration())
-        .thenReturn(TableConfiguration.parseConfig(testUnkeyedTable.properties()));
+        .thenReturn(TableConfigurations.parseTableConfig(testUnkeyedTable.properties()));
     tableMaintainer.expireSnapshots(tableRuntime);
     Assert.assertEquals(1, Iterables.size(testUnkeyedTable.snapshots()));
   }

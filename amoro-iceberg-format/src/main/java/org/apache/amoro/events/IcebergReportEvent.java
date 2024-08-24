@@ -16,8 +16,10 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.api.events;
+package org.apache.amoro.events;
 
+import org.apache.amoro.api.events.EventType;
+import org.apache.amoro.api.events.TableEvent;
 import org.apache.iceberg.metrics.MetricsReport;
 
 /** An event triggered when iceberg report metrics */

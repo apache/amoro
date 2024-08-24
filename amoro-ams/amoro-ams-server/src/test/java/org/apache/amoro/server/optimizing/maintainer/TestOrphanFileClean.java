@@ -25,10 +25,10 @@ import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.config.TableConfiguration;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
+import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.executor.ExecutorTestBase;
@@ -401,7 +401,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
         .thenReturn(
             ServerTableIdentifier.of(AmsUtil.toTableIdentifier(baseTable.id()), getTestFormat()));
     Mockito.when(tableRuntime.getTableConfiguration())
-        .thenReturn(TableConfiguration.parseConfig(baseTable.properties()));
+        .thenReturn(TableConfigurations.parseTableConfig(baseTable.properties()));
 
     Mockito.when(tableRuntime.getOrphanFilesCleaningMetrics())
         .thenReturn(
@@ -417,7 +417,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
 
     baseTable.updateProperties().set("gc.enabled", "true").commit();
     Mockito.when(tableRuntime.getTableConfiguration())
-        .thenReturn(TableConfiguration.parseConfig(baseTable.properties()));
+        .thenReturn(TableConfigurations.parseTableConfig((baseTable.properties())));
     maintainer.cleanOrphanFiles(tableRuntime);
 
     Assert.assertFalse(getMixedTable().io().exists(baseOrphanFileDir));

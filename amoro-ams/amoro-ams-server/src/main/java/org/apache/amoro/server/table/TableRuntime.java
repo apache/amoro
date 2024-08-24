@@ -100,7 +100,7 @@ public class TableRuntime extends StatedPersistentBase {
     Preconditions.checkNotNull(tableHandler, "TableRuntimeHandler must not be null.");
     this.tableHandler = tableHandler;
     this.tableIdentifier = tableIdentifier;
-    this.tableConfiguration = TableConfiguration.parseConfig(properties);
+    this.tableConfiguration = TableConfigurations.parseTableConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
@@ -376,7 +376,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   private boolean updateConfigInternal(Map<String, String> properties) {
-    TableConfiguration newTableConfig = TableConfiguration.parseConfig(properties);
+    TableConfiguration newTableConfig = TableConfigurations.parseTableConfig(properties);
     if (tableConfiguration.equals(newTableConfig)) {
       return false;
     }

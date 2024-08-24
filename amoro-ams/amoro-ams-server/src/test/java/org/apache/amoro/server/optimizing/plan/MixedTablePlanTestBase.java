@@ -32,6 +32,7 @@ import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
 import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
+import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -567,7 +568,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   private OptimizingConfig getConfig() {
-    return OptimizingConfig.parse(getMixedTable().properties());
+    return TableConfigurations.parseOptimizingConfig(getMixedTable().properties());
   }
 
   protected void updateChangeHashBucket(int bucket) {

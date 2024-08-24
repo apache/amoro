@@ -26,6 +26,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.config.DataExpirationConfig;
 import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.scan.TableEntriesScan;
+import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.HiveLocationUtil;
@@ -122,7 +123,8 @@ public class MixedTableMaintainer implements TableMaintainer {
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
       Types.NestedField field =
           mixedTable.schema().findField(expirationConfig.getExpirationField());
-      if (!expirationConfig.isValid(field, mixedTable.name())) {
+      if (!TableConfigurations.isValidDataExpirationField(
+          expirationConfig, field, mixedTable.name())) {
         return;
       }
 
