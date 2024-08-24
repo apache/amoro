@@ -16,11 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.api.metrics;
+package org.apache.amoro.metrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
+import org.apache.amoro.api.metrics.MetricDefine;
+import org.apache.amoro.api.metrics.MetricType;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;

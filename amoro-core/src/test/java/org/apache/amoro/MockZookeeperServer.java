@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.api;
+package org.apache.amoro;
 
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFrameworkFactory;

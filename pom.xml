@@ -233,12 +233,6 @@
         <dependencies>
             <dependency>
                 <groupId>org.apache.amoro</groupId>
-                <artifactId>amoro-ams-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
