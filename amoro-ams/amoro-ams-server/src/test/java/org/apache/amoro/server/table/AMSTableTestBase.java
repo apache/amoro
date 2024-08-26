@@ -35,8 +35,8 @@ import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.amoro.utils.ConvertStructUtil;
-import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -203,7 +203,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
                 catalogMeta.getCatalogName(),
                 catalogMeta.getCatalogType(),
                 catalogMeta.getCatalogProperties(),
-                MixedCatalogUtil.buildMetaStore(catalogMeta));
+                CatalogUtil.buildMetaStore(catalogMeta));
     catalog
         .newTableBuilder(tableTestHelper.id(), tableTestHelper.tableSchema())
         .withPartitionSpec(tableTestHelper.partitionSpec())
@@ -218,7 +218,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
             catalogMeta.getCatalogName(),
             catalogMeta.getCatalogType(),
             catalogMeta.getCatalogProperties(),
-            MixedCatalogUtil.buildMetaStore(catalogMeta));
+            CatalogUtil.buildMetaStore(catalogMeta));
     catalog
         .newTableBuilder(tableTestHelper.id(), tableTestHelper.tableSchema())
         .withPartitionSpec(tableTestHelper.partitionSpec())

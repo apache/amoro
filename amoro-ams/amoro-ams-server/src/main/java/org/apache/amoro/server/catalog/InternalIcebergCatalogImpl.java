@@ -34,7 +34,7 @@ import org.apache.amoro.server.table.internal.InternalTableCreator;
 import org.apache.amoro.server.table.internal.InternalTableHandler;
 import org.apache.amoro.server.utils.InternalTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.TableOperations;
@@ -100,7 +100,7 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
     return IcebergTable.newIcebergTable(
         tableIdentifier,
         table,
-        MixedCatalogUtil.buildMetaStore(getMetadata()),
+        CatalogUtil.buildMetaStore(getMetadata()),
         getMetadata().getCatalogProperties());
   }
 

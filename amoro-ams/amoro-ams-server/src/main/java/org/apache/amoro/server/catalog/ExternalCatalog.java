@@ -29,7 +29,7 @@ import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +46,7 @@ public class ExternalCatalog extends ServerCatalog {
 
   protected ExternalCatalog(CatalogMeta metadata) {
     super(metadata);
-    this.tableMetaStore = MixedCatalogUtil.buildMetaStore(metadata);
+    this.tableMetaStore = CatalogUtil.buildMetaStore(metadata);
     this.unifiedCatalog =
         this.tableMetaStore.doAs(
             () -> new CommonUnifiedCatalog(this::getMetadata, Maps.newHashMap()));
@@ -76,7 +76,7 @@ public class ExternalCatalog extends ServerCatalog {
   @Override
   public void updateMetadata(CatalogMeta metadata) {
     super.updateMetadata(metadata);
-    this.tableMetaStore = MixedCatalogUtil.buildMetaStore(metadata);
+    this.tableMetaStore = CatalogUtil.buildMetaStore(metadata);
     this.unifiedCatalog.refresh();
     updateDatabaseFilter(metadata);
     updateTableFilter(metadata);

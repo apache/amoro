@@ -26,7 +26,7 @@ import org.apache.amoro.hive.HMSClient;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
@@ -190,7 +190,7 @@ public class HudiHiveCatalog implements FormatCatalog {
           Map<String, String> tableProperties = hiveTable.getParameters();
           tableProperties = filterEngineProperties(tableProperties);
           Map<String, String> properties =
-              MixedCatalogUtil.mergeCatalogPropertiesToTable(tableProperties, this.properties);
+              CatalogUtil.mergeCatalogPropertiesToTable(tableProperties, this.properties);
           return new HudiTable(identifier, hoodieTable, properties);
         });
   }

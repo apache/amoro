@@ -39,7 +39,7 @@ import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.TableProperties;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.MixedFormatCatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.iceberg.FileFormat;
@@ -116,7 +116,7 @@ public class MixedHiveTables {
     UnkeyedHiveTable baseTable =
         new KeyedHiveTable.HiveBaseInternalTable(
             tableIdentifier,
-            MixedCatalogUtil.useMixedTableOperations(
+            MixedFormatCatalogUtil.useMixedTableOperations(
                 baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             tableLocation,
@@ -128,7 +128,7 @@ public class MixedHiveTables {
     ChangeTable changeTable =
         new KeyedHiveTable.HiveChangeInternalTable(
             tableIdentifier,
-            MixedCatalogUtil.useMixedTableOperations(
+            MixedFormatCatalogUtil.useMixedTableOperations(
                 changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -166,7 +166,7 @@ public class MixedHiveTables {
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
     return new UnkeyedHiveTable(
         tableIdentifier,
-        MixedCatalogUtil.useMixedTableOperations(
+        MixedFormatCatalogUtil.useMixedTableOperations(
             table, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO,
         tableLocation,
@@ -219,7 +219,7 @@ public class MixedHiveTables {
     UnkeyedHiveTable baseTable =
         new KeyedHiveTable.HiveBaseInternalTable(
             tableIdentifier,
-            MixedCatalogUtil.useMixedTableOperations(
+            MixedFormatCatalogUtil.useMixedTableOperations(
                 baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             tableLocation,
@@ -247,7 +247,7 @@ public class MixedHiveTables {
     ChangeTable changeTable =
         new KeyedHiveTable.HiveChangeInternalTable(
             tableIdentifier,
-            MixedCatalogUtil.useMixedTableOperations(
+            MixedFormatCatalogUtil.useMixedTableOperations(
                 changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
             catalogProperties);
@@ -366,7 +366,7 @@ public class MixedHiveTables {
             catalogProperties);
     return new UnkeyedHiveTable(
         tableIdentifier,
-        MixedCatalogUtil.useMixedTableOperations(
+        MixedFormatCatalogUtil.useMixedTableOperations(
             table, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO,
         tableLocation,

@@ -23,7 +23,7 @@ import org.apache.amoro.AmoroCatalog;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.formats.paimon.PaimonCatalogFactory;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
@@ -63,7 +63,7 @@ public class PaimonHadoopCatalogTestHelper extends AbstractFormatCatalogTestHelp
   @Override
   public AmoroCatalog amoroCatalog() {
     PaimonCatalogFactory paimonCatalogFactory = new PaimonCatalogFactory();
-    TableMetaStore metaStore = MixedCatalogUtil.buildMetaStore(getCatalogMeta());
+    TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
     Map<String, String> paimonCatalogProperties =
         paimonCatalogFactory.convertCatalogProperties(
             catalogName, getMetastoreType(), getCatalogMeta().getCatalogProperties());
