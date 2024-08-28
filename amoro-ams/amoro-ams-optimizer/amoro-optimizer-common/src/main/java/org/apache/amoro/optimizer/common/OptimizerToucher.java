@@ -20,7 +20,7 @@ package org.apache.amoro.optimizer.common;
 
 import org.apache.amoro.ErrorCodes;
 import org.apache.amoro.api.AmoroException;
-import org.apache.amoro.api.OptimizerProperties;
+import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TException;

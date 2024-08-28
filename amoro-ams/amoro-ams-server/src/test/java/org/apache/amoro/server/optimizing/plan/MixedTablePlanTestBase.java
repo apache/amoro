@@ -19,8 +19,8 @@
 package org.apache.amoro.server.optimizing.plan;
 
 import org.apache.amoro.TableTestHelper;
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.config.OptimizingConfig;
+import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.data.DataTreeNode;

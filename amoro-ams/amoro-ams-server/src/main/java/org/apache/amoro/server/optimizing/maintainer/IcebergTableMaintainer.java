@@ -21,8 +21,8 @@ package org.apache.amoro.server.optimizing.maintainer;
 import static org.apache.amoro.shade.guava32.com.google.common.primitives.Longs.min;
 
 import org.apache.amoro.api.CommitMetaProducer;
-import org.apache.amoro.api.config.DataExpirationConfig;
-import org.apache.amoro.api.config.TableConfiguration;
+import org.apache.amoro.config.DataExpirationConfig;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.PathInfo;
 import org.apache.amoro.io.SupportsFileSystemOperations;

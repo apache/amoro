@@ -24,7 +24,7 @@ import static org.apache.amoro.BasicTableTestHelper.SPEC;
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
-import org.apache.amoro.api.config.DataExpirationConfig;
+import org.apache.amoro.config.DataExpirationConfig;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.data.ChangeAction;

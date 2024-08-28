@@ -24,7 +24,7 @@ import org.apache.amoro.api.InvalidObjectException;
 import org.apache.amoro.api.MetaException;
 import org.apache.amoro.api.NoSuchObjectException;
 import org.apache.amoro.api.OperationConflictException;
-import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 

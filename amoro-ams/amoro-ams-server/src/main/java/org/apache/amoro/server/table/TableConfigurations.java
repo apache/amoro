@@ -18,11 +18,11 @@
 
 package org.apache.amoro.server.table;
 
-import org.apache.amoro.api.config.ConfigHelpers;
-import org.apache.amoro.api.config.DataExpirationConfig;
-import org.apache.amoro.api.config.OptimizingConfig;
-import org.apache.amoro.api.config.TableConfiguration;
-import org.apache.amoro.api.config.TagConfiguration;
+import org.apache.amoro.config.ConfigHelpers;
+import org.apache.amoro.config.DataExpirationConfig;
+import org.apache.amoro.config.OptimizingConfig;
+import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.config.TagConfiguration;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;

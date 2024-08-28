@@ -20,7 +20,7 @@ package org.apache.amoro.server.table.internal;
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.properties.CatalogMetaProperties;

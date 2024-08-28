@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server;
 
-import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.properties.AmsHAProperties;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;

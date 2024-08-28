@@ -23,7 +23,7 @@ import static org.apache.amoro.utils.MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE
 
 import org.apache.amoro.IcebergFileEntry;
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.api.config.DataExpirationConfig;
+import org.apache.amoro.config.DataExpirationConfig;
 import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.server.table.TableConfigurations;

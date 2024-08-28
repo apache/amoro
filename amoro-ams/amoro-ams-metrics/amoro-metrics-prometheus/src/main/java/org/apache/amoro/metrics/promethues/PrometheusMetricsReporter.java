@@ -19,8 +19,8 @@
 package org.apache.amoro.metrics.promethues;
 
 import io.prometheus.client.exporter.HTTPServer;
-import org.apache.amoro.api.metrics.MetricReporter;
-import org.apache.amoro.api.metrics.MetricSet;
+import org.apache.amoro.metrics.MetricReporter;
+import org.apache.amoro.metrics.MetricSet;
 
 import java.io.IOException;
 import java.util.Map;

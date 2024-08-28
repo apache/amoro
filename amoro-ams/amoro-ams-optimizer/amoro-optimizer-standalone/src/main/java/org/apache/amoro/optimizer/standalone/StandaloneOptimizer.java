@@ -18,7 +18,7 @@
 
 package org.apache.amoro.optimizer.standalone;
 
-import org.apache.amoro.api.resource.Resource;
+import org.apache.amoro.resource.Resource;
 import org.apache.amoro.optimizer.common.Optimizer;
 import org.apache.amoro.optimizer.common.OptimizerConfig;
 import org.kohsuke.args4j.CmdLineException;

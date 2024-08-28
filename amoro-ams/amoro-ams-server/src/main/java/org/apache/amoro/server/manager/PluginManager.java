@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.manager;
 
-import org.apache.amoro.api.AmoroPlugin;
+import org.apache.amoro.AmoroPlugin;
 
 import java.util.List;
 

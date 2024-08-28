@@ -18,7 +18,7 @@
 
 package org.apache.amoro.optimizer.common;
 
-import org.apache.amoro.api.OptimizerProperties;
+import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
