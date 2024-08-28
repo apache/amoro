@@ -472,4 +472,38 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>paimon</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.amoro</groupId>
+                    <artifactId>amoro-paimon-format</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>hudi</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.amoro</groupId>
+                    <artifactId>amoro-hudi-format</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>allFormats</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.amoro</groupId>
+                    <artifactId>amoro-paimon-format</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.amoro</groupId>
+                    <artifactId>amoro-hudi-format</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

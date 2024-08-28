@@ -251,6 +251,18 @@
 
             <dependency>
                 <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-paimon-format</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-hudi-format</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-mixed-format-hive</artifactId>
                 <version>${project.version}</version>
             </dependency>
