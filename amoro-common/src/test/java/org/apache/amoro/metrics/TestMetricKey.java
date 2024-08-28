@@ -21,9 +21,6 @@ package org.apache.amoro.metrics;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import org.apache.amoro.metrics.MetricDefine;
-import org.apache.amoro.metrics.MetricKey;
-import org.apache.amoro.metrics.MetricType;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;

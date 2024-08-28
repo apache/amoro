@@ -20,9 +20,9 @@ package org.apache.amoro.server.table;
 
 import static org.apache.amoro.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
 
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.properties.MetaTableProperties;

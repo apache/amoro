@@ -18,10 +18,10 @@
 
 package org.apache.amoro.optimizer.spark;
 
-import org.apache.amoro.resource.Resource;
 import org.apache.amoro.optimizer.common.Optimizer;
 import org.apache.amoro.optimizer.common.OptimizerConfig;
 import org.apache.amoro.optimizer.common.OptimizerToucher;
+import org.apache.amoro.resource.Resource;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.util.Utils;

@@ -19,10 +19,10 @@
 package org.apache.amoro.server.table;
 
 import org.apache.amoro.AmoroTable;
-import org.apache.amoro.TableFormat;
-import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.StateField;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.AmoroServiceConstants;

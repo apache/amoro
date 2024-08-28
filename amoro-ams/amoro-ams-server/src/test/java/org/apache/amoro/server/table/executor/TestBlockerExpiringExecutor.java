@@ -18,9 +18,9 @@
 
 package org.apache.amoro.server.table.executor;
 
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.BlockableOperation;
-import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.table.TableManager;

@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server.optimizing;
 
+import org.apache.amoro.StateField;
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
-import org.apache.amoro.StateField;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.server.AmoroServiceConstants;

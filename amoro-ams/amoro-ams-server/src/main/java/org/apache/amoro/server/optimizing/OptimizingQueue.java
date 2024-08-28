@@ -20,10 +20,10 @@ package org.apache.amoro.server.optimizing;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
-import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.resource.ResourceGroup;
+import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.exception.OptimizingClosedException;
 import org.apache.amoro.server.manager.MetricManager;

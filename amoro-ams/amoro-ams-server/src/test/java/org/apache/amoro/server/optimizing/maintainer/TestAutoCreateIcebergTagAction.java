@@ -20,9 +20,9 @@ package org.apache.amoro.server.optimizing.maintainer;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.config.TagConfiguration;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
+import org.apache.amoro.config.TagConfiguration;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.table.TableProperties;

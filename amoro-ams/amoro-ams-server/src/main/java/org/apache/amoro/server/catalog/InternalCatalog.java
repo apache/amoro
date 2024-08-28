@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server.catalog;
 
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.IllegalMetadataException;

@@ -19,9 +19,9 @@
 package org.apache.amoro.server;
 
 import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
-import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;

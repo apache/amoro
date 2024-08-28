@@ -19,9 +19,9 @@
 package org.apache.amoro.server;
 
 import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.table.TableMetadata;

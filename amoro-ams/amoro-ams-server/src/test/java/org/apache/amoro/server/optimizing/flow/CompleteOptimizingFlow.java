@@ -23,9 +23,9 @@ import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGG
 import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT;
 import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE;
 
-import org.apache.amoro.TableFormat;
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.hive.optimizing.MixFormatRewriteExecutor;

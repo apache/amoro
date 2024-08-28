@@ -22,9 +22,9 @@ import static org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintain
 import static org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintainer.FLINK_JOB_ID;
 
 import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
-import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
