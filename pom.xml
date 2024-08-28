@@ -50,6 +50,8 @@
         <module>amoro-ams</module>
         <module>amoro-iceberg-format</module>
         <module>amoro-mixed-format</module>
+        <module>amoro-hudi-format</module>
+        <module>amoro-paimon-format</module>
     </modules>
 
     <scm>
@@ -244,6 +246,18 @@
             <dependency>
                 <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-iceberg-format</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-paimon-format</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-hudi-format</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

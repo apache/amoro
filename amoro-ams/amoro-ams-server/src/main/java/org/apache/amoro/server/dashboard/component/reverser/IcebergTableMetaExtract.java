@@ -19,6 +19,7 @@
 package org.apache.amoro.server.dashboard.component.reverser;
 
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.table.descriptor.TableMetaExtract;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;

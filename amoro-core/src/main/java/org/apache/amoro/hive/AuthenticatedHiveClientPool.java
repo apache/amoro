@@ -19,13 +19,13 @@
 package org.apache.amoro.hive;
 
 import org.apache.amoro.client.ClientPoolImpl;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.DynConstructors;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.MetaException;
-import org.apache.iceberg.hive.RuntimeMetaException;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
@@ -47,6 +47,36 @@ public class AuthenticatedHiveClientPool extends ClientPoolImpl<HMSClient, TExce
           .impl(HiveMetaStoreClient.class, Configuration.class)
           .build();
 
+  @VisibleForTesting
+  public static HMSClient createHiveMetaStoreClient(HiveConf hiveConf) {
+    try {
+      try {
+        HiveMetaStoreClient client = CLIENT_CTOR.newInstance(hiveConf);
+        return new HMSClientImpl(client);
+      } catch (RuntimeException e) {
+        // any MetaException would be wrapped into RuntimeException during reflection, so
+        // let's double-check type
+        // here
+        if (e.getCause() instanceof MetaException) {
+          throw (MetaException) e.getCause();
+        }
+        throw e;
+      }
+    } catch (MetaException e) {
+      throw new RuntimeException("Failed to connect to Hive Metastore", e);
+    } catch (Throwable t) {
+      if (t.getMessage().contains("Another instance of Derby may have already booted")) {
+        throw new RuntimeException(
+            "Failed to start an embedded metastore because embedded "
+                + "Derby supports only one client at a time. To fix this, use a metastore that supports "
+                + "multiple clients.",
+            t);
+      }
+
+      throw new RuntimeException("Failed to connect to Hive Metastore", t);
+    }
+  }
+
   public AuthenticatedHiveClientPool(TableMetaStore tableMetaStore, int poolSize) {
     super(poolSize, TTransportException.class, true);
     this.hiveConf =
@@ -58,35 +88,7 @@ public class AuthenticatedHiveClientPool extends ClientPoolImpl<HMSClient, TExce
 
   @Override
   protected HMSClient newClient() {
-    return metaStore.doAs(
-        () -> {
-          try {
-            try {
-              HiveMetaStoreClient client = CLIENT_CTOR.newInstance(hiveConf);
-              return new HMSClientImpl(client);
-            } catch (RuntimeException e) {
-              // any MetaException would be wrapped into RuntimeException during reflection, so
-              // let's double-check type
-              // here
-              if (e.getCause() instanceof MetaException) {
-                throw (MetaException) e.getCause();
-              }
-              throw e;
-            }
-          } catch (MetaException e) {
-            throw new RuntimeMetaException(e, "Failed to connect to Hive Metastore");
-          } catch (Throwable t) {
-            if (t.getMessage().contains("Another instance of Derby may have already booted")) {
-              throw new RuntimeMetaException(
-                  t,
-                  "Failed to start an embedded metastore because embedded "
-                      + "Derby supports only one client at a time. To fix this, use a metastore that supports "
-                      + "multiple clients.");
-            }
-
-            throw new RuntimeMetaException(t, "Failed to connect to Hive Metastore");
-          }
-        });
+    return metaStore.doAs(() -> createHiveMetaStoreClient(hiveConf));
   }
 
   @Override
@@ -98,7 +100,7 @@ public class AuthenticatedHiveClientPool extends ClientPoolImpl<HMSClient, TExce
               client.close();
               client.reconnect();
             } catch (MetaException e) {
-              throw new RuntimeMetaException(e, "Failed to reconnect to Hive Metastore");
+              throw new RuntimeException("Failed to reconnect to Hive Metastore", e);
             }
             return client;
           });
