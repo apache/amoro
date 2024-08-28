@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.api.metrics;
+package org.apache.amoro.metrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;

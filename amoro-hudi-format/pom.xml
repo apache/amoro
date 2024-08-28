@@ -39,7 +39,7 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
+            <artifactId>amoro-common</artifactId>
         </dependency>
 
         <!--  apache hudi dependencies -->

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.api.metrics;
+package org.apache.amoro.metrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -31,14 +31,15 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-public class MetricDefineTest {
-  private MetricDefine source =
-      new MetricDefine(
-          "test-define", Arrays.asList("tag1", "tag2"), MetricType.Counter, "description");
+public class TestMetricDefine {
 
   @ParameterizedTest
   @MethodSource("provideMetricNamesForEquality")
-  public void testEquals(MetricDefine target, boolean expectedEquality) {
+  void testEquals(MetricDefine target, boolean expectedEquality) {
+    MetricDefine source =
+        new MetricDefine(
+            "test-define", Arrays.asList("tag1", "tag2"), MetricType.Counter, "description");
+
     // MetricDefine is equally if(name, tag set, type) are qually
     if (expectedEquality) {
       assertEquals(source, target, "MetricNames should be equal");
@@ -50,35 +51,36 @@ public class MetricDefineTest {
     }
   }
 
-  public static Stream<Arguments> provideMetricNamesForEquality() {
+  static Stream<Arguments> provideMetricNamesForEquality() {
 
     return Stream.of(
-        // same <name, tags, type> should be true
+        // Return true with the same name, tags and type
         Arguments.of(
             new MetricDefine(
                 "test-define", Arrays.asList("tag1", "tag2"), MetricType.Counter, "description"),
             true),
-        // different name should be false
+        // Return false with the different name
         Arguments.of(
             new MetricDefine(
                 "different-name", Arrays.asList("tag1", "tag2"), MetricType.Counter, "description"),
             false),
-        // different order of tags should be true
+        // Return true if the order of elements in tags is different
         Arguments.of(
             new MetricDefine(
                 "test-define", Arrays.asList("tag2", "tag1"), MetricType.Counter, "description"),
             true),
-        // different tags should be false
+        // Return false if tags contain different elements inside
         Arguments.of(
             new MetricDefine(
                 "test-define", Arrays.asList("tag3", "tag4"), MetricType.Counter, "description"),
             false),
-        // different MetricType should be false
+        // Return false with different MetricType
         Arguments.of(
             new MetricDefine(
                 "test-define", Arrays.asList("tag1", "tag2"), MetricType.Gauge, "description"),
             false),
-        // even description is different，should be true
+        // Return true if they are different with description. That is because the description isn't
+        // truly involved in the functions of equals and hashCode.
         Arguments.of(
             new MetricDefine(
                 "test-define",

@@ -28,7 +28,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>amoro-core</artifactId>
+    <artifactId>amoro-common</artifactId>
     <packaging>jar</packaging>
     <name>Amoro Project Core</name>
     <url>https://amoro.apache.org</url>
