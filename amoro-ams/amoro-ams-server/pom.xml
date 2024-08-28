@@ -475,7 +475,7 @@
 
     <profiles>
         <profile>
-            <id>paimon</id>
+            <id>support-paimon-format</id>
             <dependencies>
                 <dependency>
                     <groupId>org.apache.amoro</groupId>
@@ -484,7 +484,7 @@
             </dependencies>
         </profile>
         <profile>
-            <id>hudi</id>
+            <id>support-hudi-format</id>
             <dependencies>
                 <dependency>
                     <groupId>org.apache.amoro</groupId>
@@ -493,7 +493,7 @@
             </dependencies>
         </profile>
         <profile>
-            <id>allFormats</id>
+            <id>support-all-formats</id>
             <dependencies>
                 <dependency>
                     <groupId>org.apache.amoro</groupId>
