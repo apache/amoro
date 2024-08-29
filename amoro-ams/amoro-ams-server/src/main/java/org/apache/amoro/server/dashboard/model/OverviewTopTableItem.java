@@ -21,14 +21,21 @@ package org.apache.amoro.server.dashboard.model;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 
-public class OverviewTableOperation {
-  private final ServerTableIdentifier tableIdentifier;
+public class OverviewTopTableItem {
   private String tableName;
-  private long ts;
-  private String operation;
+  private long tableSize;
+  private int fileCount;
+  private long averageFileSize;
+  private int healthScore;
 
-  public OverviewTableOperation(ServerTableIdentifier tableIdentifier, DDLInfo ddlInfo) {
-    this.tableIdentifier = tableIdentifier;
+  public OverviewTopTableItem() {}
+
+  public OverviewTopTableItem(
+      ServerTableIdentifier tableIdentifier,
+      long tableSize,
+      int fileCount,
+      long averageFileSize,
+      int healthScore) {
     this.tableName =
         tableIdentifier
             .getCatalog()
@@ -36,25 +43,10 @@ public class OverviewTableOperation {
             .concat(tableIdentifier.getDatabase())
             .concat(".")
             .concat(tableIdentifier.getTableName());
-    this.ts = ddlInfo.getCommitTime();
-    this.operation = ddlInfo.getDdl();
-  }
-
-  public OverviewTableOperation(ServerTableIdentifier tableIdentifier, long ts, String operation) {
-    this.tableIdentifier = tableIdentifier;
-    this.tableName =
-        tableIdentifier
-            .getCatalog()
-            .concat(".")
-            .concat(tableIdentifier.getDatabase())
-            .concat(".")
-            .concat(tableIdentifier.getTableName());
-    this.ts = ts;
-    this.operation = operation;
-  }
-
-  public ServerTableIdentifier getTableIdentifier() {
-    return tableIdentifier;
+    this.healthScore = healthScore;
+    this.fileCount = fileCount;
+    this.tableSize = tableSize;
+    this.averageFileSize = averageFileSize;
   }
 
   public String getTableName() {
@@ -65,28 +57,46 @@ public class OverviewTableOperation {
     this.tableName = tableName;
   }
 
-  public long getTs() {
-    return ts;
+  public long getTableSize() {
+    return tableSize;
   }
 
-  public void setTs(long ts) {
-    this.ts = ts;
+  public void setTableSize(long tableSize) {
+    this.tableSize = tableSize;
   }
 
-  public String getOperation() {
-    return operation;
+  public int getFileCount() {
+    return fileCount;
   }
 
-  public void setOperation(String operation) {
-    this.operation = operation;
+  public void setFileCount(int fileCount) {
+    this.fileCount = fileCount;
+  }
+
+  public long getAverageFileSize() {
+    return averageFileSize;
+  }
+
+  public void setAverageFileSize(long averageFileSize) {
+    this.averageFileSize = averageFileSize;
+  }
+
+  public int getHealthScore() {
+    return healthScore;
+  }
+
+  public void setHealthScore(int healthScore) {
+    this.healthScore = healthScore;
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("tableName", tableName)
-        .add("ts", ts)
-        .add("operation", operation)
+        .add("tableSize", tableSize)
+        .add("fileCount", fileCount)
+        .add("averageFileSize", averageFileSize)
+        .add("healthScore", healthScore)
         .toString();
   }
 }

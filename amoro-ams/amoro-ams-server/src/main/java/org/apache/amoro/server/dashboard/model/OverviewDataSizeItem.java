@@ -20,15 +20,13 @@ package org.apache.amoro.server.dashboard.model;
 
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 
-public class OverviewResourceUsage {
+public class OverviewDataSizeItem {
   private long ts;
-  private int totalCpu;
-  private long totalMemory;
+  private long dataSize;
 
-  public OverviewResourceUsage(long ts, int totalCpu, long totalMemory) {
+  public OverviewDataSizeItem(long ts, long dataSize) {
     this.ts = ts;
-    this.totalCpu = totalCpu;
-    this.totalMemory = totalMemory;
+    this.dataSize = dataSize;
   }
 
   public long getTs() {
@@ -39,28 +37,16 @@ public class OverviewResourceUsage {
     this.ts = ts;
   }
 
-  public int getTotalCpu() {
-    return totalCpu;
+  public long getDataSize() {
+    return dataSize;
   }
 
-  public void setTotalCpu(int totalCpu) {
-    this.totalCpu = totalCpu;
-  }
-
-  public long getTotalMemory() {
-    return totalMemory;
-  }
-
-  public void setTotalMemory(long totalMemory) {
-    this.totalMemory = totalMemory;
+  public void setDataSize(long dataSize) {
+    this.dataSize = dataSize;
   }
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("ts", ts)
-        .add("totalCpu", totalCpu)
-        .add("totalMemory", totalMemory)
-        .toString();
+    return MoreObjects.toStringHelper(this).add("ts", ts).add("dataSize", dataSize).toString();
   }
 }

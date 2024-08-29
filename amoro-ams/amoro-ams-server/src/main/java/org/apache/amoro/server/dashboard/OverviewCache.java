@@ -32,12 +32,20 @@ import org.apache.amoro.api.metrics.Metric;
 import org.apache.amoro.api.metrics.MetricDefine;
 import org.apache.amoro.api.metrics.MetricKey;
 import org.apache.amoro.api.metrics.MetricSet;
-import org.apache.amoro.server.dashboard.model.OverviewResourceUsage;
+import org.apache.amoro.server.dashboard.model.OverviewDataSizeItem;
+import org.apache.amoro.server.dashboard.model.OverviewResourceUsageItem;
+import org.apache.amoro.server.dashboard.model.OverviewTopTableItem;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,14 +64,23 @@ public class OverviewCache {
   public static final String STATUS_COMMITTING = "Committing";
 
   private static final Logger log = LoggerFactory.getLogger(OverviewCache.class);
+  private static volatile OverviewCache INSTANCE;
 
   private Map<MetricKey, Metric> registeredMetrics;
   private Map<MetricDefine, List<MetricKey>> metricDefineMap;
   private Map<String, Long> optimizingStatusCountMap = new ConcurrentHashMap<>();
-  private ConcurrentLinkedDeque<OverviewResourceUsage> resourceUsageHistory =
+  private ConcurrentLinkedDeque<OverviewResourceUsageItem> resourceUsageHistory =
+      new ConcurrentLinkedDeque<>();
+  private ConcurrentLinkedDeque<OverviewDataSizeItem> dataSizeHistory =
       new ConcurrentLinkedDeque<>();
 
-  private static volatile OverviewCache INSTANCE;
+  private volatile List<OverviewTopTableItem> top10TablesByTableSize = new ArrayList<>();
+  private volatile List<OverviewTopTableItem> top10TablesByFileCount = new ArrayList<>();
+  private volatile List<OverviewTopTableItem> top10TablesByHealthScore = new ArrayList<>();
+
+  private AtomicInteger totalCatalog = new AtomicInteger();
+  private AtomicInteger totalTableCount = new AtomicInteger();
+  private AtomicLong totalDataSize = new AtomicLong();
   private AtomicInteger totalCpu = new AtomicInteger();
   private AtomicLong totalMemory = new AtomicLong();
 
@@ -85,6 +102,18 @@ public class OverviewCache {
     this.registeredMetrics = globalMetricSet.getMetrics();
   }
 
+  public List<OverviewTopTableItem> getTop10TablesByTableSize() {
+    return ImmutableList.copyOf(top10TablesByTableSize);
+  }
+
+  public List<OverviewTopTableItem> getTop10TablesByFileCount() {
+    return ImmutableList.copyOf(top10TablesByFileCount);
+  }
+
+  public List<OverviewTopTableItem> getTop10TablesByHealthScore() {
+    return ImmutableList.copyOf(top10TablesByHealthScore);
+  }
+
   public int getTotalCpu() {
     return totalCpu.get();
   }
@@ -93,19 +122,21 @@ public class OverviewCache {
     return totalMemory.get();
   }
 
-  public List<OverviewResourceUsage> getResourceUsageHistory(long startTime) {
+  public List<OverviewResourceUsageItem> getResourceUsageHistory(long startTime) {
     return resourceUsageHistory.stream()
         .filter(item -> item.getTs() >= startTime)
         .collect(Collectors.toList());
   }
 
-  public void getTableFormat() {}
+  public List<OverviewDataSizeItem> getDataSizeHistory(long startTime) {
+    return dataSizeHistory.stream()
+        .filter(item -> item.getTs() >= startTime)
+        .collect(Collectors.toList());
+  }
 
   public Map<String, Long> getOptimizingStatus() {
     return optimizingStatusCountMap;
   }
-
-  public void getUnhealthTables() {}
 
   public void overviewUpdate() {
     long start = System.currentTimeMillis();
@@ -118,35 +149,79 @@ public class OverviewCache {
                       MetricKey::getDefine,
                       Collectors.mapping(Function.identity(), Collectors.toList())));
 
-      // summary
-      updateSummary();
+      // resource usage
+      updateResourceUsage(start);
       // optimizing status
       updateOptimizingStatus();
 
       // TODO:
-      // format
+      // data size
       // health score
+      updateTableSummary(start);
+
     } catch (Exception e) {
       log.error("OverviewUpdater error", e);
+    } finally {
+      long end = System.currentTimeMillis();
+      log.info("Updating overview cache took {} ms.", end - start);
     }
-    long end = System.currentTimeMillis();
-    log.info("Updating overview cache took {} ms.", end - start);
   }
 
-  private void updateSummary() {
-    long ts = System.currentTimeMillis();
+  private void updateTableSummary(long ts) {
+    Map<String, OverviewTopTableItem> topTableItemMap = Maps.newHashMap();
+    Set<String> catalog = Sets.newHashSet();
+    MetricDefine metricDefine = null;
+    long totalTableSize = 0L;
+    int totalTableCount = 0;
+    // table size
+    List<MetricKey> metricKeys = metricDefineMap.get(metricDefine);
+    for (MetricKey metricKey : metricKeys) {
+      String tableName = tableName(metricKey);
+      catalog.add(metricKey.valueOfTag("catalog"));
+      topTableItemMap.put(tableName, new OverviewTopTableItem());
+    }
+    // file count
+
+    // health score
+
+    this.totalDataSize.set(totalTableSize);
+    this.totalTableCount.set(totalTableCount);
+    addAndCheck(new OverviewDataSizeItem(ts, totalTableSize));
+  }
+
+  private String tableName(MetricKey metricKey) {
+    return metricKey
+        .valueOfTag("catalog")
+        .concat(".")
+        .concat(metricKey.valueOfTag("database"))
+        .concat(".")
+        .concat(metricKey.valueOfTag("table"));
+  }
+
+  private void updateResourceUsage(long ts) {
     int optimizerGroupThreadCount = (int) sumMetricValuesByDefine(OPTIMIZER_GROUP_THREADS);
     long optimizerGroupMemoryInMb =
         byte2Mb(sumMetricValuesByDefine(OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED));
+
     this.totalCpu.set(optimizerGroupThreadCount);
     this.totalMemory.set(optimizerGroupMemoryInMb);
-    addAndCheck(new OverviewResourceUsage(ts, optimizerGroupThreadCount, optimizerGroupMemoryInMb));
+    addAndCheck(
+        new OverviewResourceUsageItem(ts, optimizerGroupThreadCount, optimizerGroupMemoryInMb));
   }
 
-  private void addAndCheck(OverviewResourceUsage overviewResourceUsage) {
-    resourceUsageHistory.add(overviewResourceUsage);
-    if (resourceUsageHistory.size() > MAX_CACHE_SIZE) {
-      resourceUsageHistory.poll();
+  private void addAndCheck(OverviewDataSizeItem dataSizeItem) {
+    dataSizeHistory.add(dataSizeItem);
+    checkSize(dataSizeHistory);
+  }
+
+  private void addAndCheck(OverviewResourceUsageItem resourceUsageItem) {
+    resourceUsageHistory.add(resourceUsageItem);
+    checkSize(resourceUsageHistory);
+  }
+
+  private <T> void checkSize(Deque<T> deque) {
+    if (deque.size() > MAX_CACHE_SIZE) {
+      deque.poll();
     }
   }
 
@@ -164,6 +239,25 @@ public class OverviewCache {
     optimizingStatusCountMap.put(STATUS_IDLE, sumMetricValuesByDefine(OPTIMIZER_GROUP_IDLE_TABLES));
     optimizingStatusCountMap.put(
         STATUS_COMMITTING, sumMetricValuesByDefine(OPTIMIZER_GROUP_COMMITTING_TABLES));
+  }
+
+  private long countMetric(MetricDefine metricDefine) {
+    List<MetricKey> metricKeys = metricDefineMap.get(metricDefine);
+    if ((metricKeys == null)) {
+      return 0;
+    }
+    return metricKeys.size();
+  }
+
+  private long countMetricByTag(MetricDefine metricDefine, String tag) {
+    List<MetricKey> metricKeys = metricDefineMap.get(metricDefine);
+    if ((metricKeys == null)) {
+      return 0;
+    }
+    return metricKeys.stream()
+        .map(metricKey -> metricKey.valueOfTag(tag))
+        .collect(Collectors.toSet())
+        .size();
   }
 
   private long sumMetricValuesByDefine(MetricDefine metricDefine) {
