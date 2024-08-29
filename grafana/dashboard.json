@@ -44,8 +44,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -109,8 +108,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -120,44 +118,44 @@
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "interval": "",
           "legendFormat": "Instance",
-          "range": true,
+          "range": false,
           "refId": "D",
           "useBackend": false
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "sum(amoro_optimizer_group_memory_bytes_allocated)",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Memory",
-          "range": true,
+          "range": false,
           "refId": "E",
           "useBackend": false
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "sum(amoro_optimizer_group_threads)",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Thread",
-          "range": true,
+          "range": false,
           "refId": "F",
           "useBackend": false
         }
@@ -167,8 +165,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "description": "Table Current Stat",
       "fieldConfig": {
@@ -218,70 +215,70 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "sum(amoro_table_optimizing_status_in_idle)",
           "fullMetaSearch": false,
           "includeNullMetadata": false,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Idle",
-          "range": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "sum(amoro_table_optimizing_status_in_planning)",
           "hide": false,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Planning",
-          "range": true,
+          "range": false,
           "refId": "B"
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "editorMode": "code",
+          "exemplar": false,
           "expr": "sum(amoro_table_optimizing_status_in_executing)",
           "hide": false,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Executing",
-          "range": true,
+          "range": false,
           "refId": "C"
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "editorMode": "code",
+          "exemplar": false,
           "expr": "sum(amoro_table_optimizing_status_in_pending)",
           "hide": false,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Pending",
-          "range": true,
+          "range": false,
           "refId": "D"
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "editorMode": "code",
+          "exemplar": false,
           "expr": "sum(amoro_table_optimizing_status_in_committing)",
           "hide": false,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Committing",
-          "range": true,
+          "range": false,
           "refId": "E"
         }
       ],
@@ -290,8 +287,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "description": "Count of all optimizing process since ams started",
       "fieldConfig": {
@@ -372,32 +368,32 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "sum by(catalog) (amoro_table_optimizing_process_total_count_total)",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Total",
-          "range": true,
+          "range": false,
           "refId": "B",
           "useBackend": false
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "editorMode": "code",
+          "exemplar": false,
           "expr": "sum by(catalog) (amoro_table_optimizing_process_failed_count_total)",
           "hide": false,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Failed",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -406,8 +402,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "description": "Count of Minor optimizing process since ams started",
       "fieldConfig": {
@@ -488,35 +483,35 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "sum by(catalog) (amoro_table_optimizing_minor_total_count_total)",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Total",
-          "range": true,
+          "range": false,
           "refId": "B",
           "useBackend": false
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "sum by(catalog) (amoro_table_optimizing_minor_failed_count_total)",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Failed",
-          "range": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -526,8 +521,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "description": "Count of Major optimizing process since ams started",
       "fieldConfig": {
@@ -608,35 +602,35 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "sum by(catalog) (amoro_table_optimizing_major_total_count_total)",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Total",
-          "range": true,
+          "range": false,
           "refId": "B",
           "useBackend": false
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "sum by(catalog) (amoro_table_optimizing_major_failed_count_total)",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Failed",
-          "range": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -646,8 +640,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "description": "Count of full optimizing process since ams started",
       "fieldConfig": {
@@ -728,35 +721,35 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "sum by(catalog) (amoro_table_optimizing_full_total_count_total)",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Total",
-          "range": true,
+          "range": false,
           "refId": "B",
           "useBackend": false
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "sum by(catalog) (amoro_table_optimizing_full_failed_count_total)",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "legendFormat": "Failed",
-          "range": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -779,8 +772,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "description": "Duration in milliseconds after table be in planning status",
       "fieldConfig": {
@@ -839,7 +831,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 0,
         "y": 13
@@ -860,8 +852,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -880,8 +871,111 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "id": 42,
+      "options": {
+        "displayMode": "basic",
+        "maxVizHeight": 300,
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.1.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "disableTextWrap": false,
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "amoro_table_optimizing_status_planning_duration_mills{catalog=~\"$Catalog\", database=~\"$Database\", table=~\"$Table\"} > 0",
+          "format": "time_series",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "interval": "",
+          "legendFormat": "{{catalog}}.{{database}}.{{table}}",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Top Planning Duration",
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "includeTimeField": false,
+            "labelsToFields": false,
+            "mode": "seriesToRows",
+            "reducers": [
+              "max"
+            ]
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "Max"
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 10
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus"
       },
       "description": "Duration in milliseconds after table be in pending status",
       "fieldConfig": {
@@ -940,10 +1034,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
-        "x": 12,
-        "y": 13
+        "x": 0,
+        "y": 22
       },
       "id": 27,
       "options": {
@@ -961,8 +1055,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -981,8 +1074,111 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "id": 30,
+      "options": {
+        "displayMode": "basic",
+        "maxVizHeight": 300,
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.1.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "disableTextWrap": false,
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "amoro_table_optimizing_status_pending_duration_mills{catalog=~\"$Catalog\", database=~\"$Database\", table=~\"$Table\"} > 0",
+          "format": "time_series",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "interval": "",
+          "legendFormat": "{{catalog}}.{{database}}.{{table}}",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Top Pending Duration",
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "includeTimeField": false,
+            "labelsToFields": false,
+            "mode": "seriesToRows",
+            "reducers": [
+              "max"
+            ]
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "Max"
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 10
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus"
       },
       "description": "Duration in milliseconds after table be in executing status",
       "fieldConfig": {
@@ -1041,10 +1237,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 0,
-        "y": 21
+        "y": 31
       },
       "id": 28,
       "options": {
@@ -1062,8 +1258,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1082,8 +1277,111 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 31
+      },
+      "id": 41,
+      "options": {
+        "displayMode": "basic",
+        "maxVizHeight": 300,
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.1.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "disableTextWrap": false,
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "amoro_table_optimizing_status_executing_duration_mills{catalog=~\"$Catalog\", database=~\"$Database\", table=~\"$Table\"} > 0",
+          "format": "time_series",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "interval": "",
+          "legendFormat": "{{catalog}}.{{database}}.{{table}}",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Top Executing Duration",
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "includeTimeField": false,
+            "labelsToFields": false,
+            "mode": "seriesToRows",
+            "reducers": [
+              "max"
+            ]
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "Max"
+              }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 10
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus"
       },
       "description": "Duration in milliseconds after table be in Committing status",
       "fieldConfig": {
@@ -1142,10 +1440,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
-        "x": 12,
-        "y": 21
+        "x": 0,
+        "y": 40
       },
       "id": 29,
       "options": {
@@ -1163,8 +1461,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1183,9 +1480,9 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1197,7 +1494,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -1206,10 +1504,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
-        "x": 0,
-        "y": 29
+        "x": 12,
+        "y": 40
       },
       "id": 7,
       "options": {
@@ -1232,131 +1530,25 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "exemplar": false,
-          "expr": "sum by(catalog, database, table) (amoro_table_optimizing_status_executing_duration_mills{catalog=~\"$Catalog\", database=~\"$Database\", table=~\"$Table\"}) > 0",
-          "format": "time_series",
-          "fullMetaSearch": false,
-          "hide": false,
-          "includeNullMetadata": true,
-          "instant": false,
-          "interval": "$__rate_interval",
-          "legendFormat": "{{database}}.{{table}}",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "Top Executing Duration",
-      "transformations": [
-        {
-          "id": "reduce",
-          "options": {
-            "includeTimeField": false,
-            "labelsToFields": false,
-            "mode": "seriesToRows",
-            "reducers": [
-              "sum"
-            ]
-          }
-        },
-        {
-          "id": "sortBy",
-          "options": {
-            "fields": {},
-            "sort": [
-              {
-                "desc": true,
-                "field": "Total"
-              }
-            ]
-          }
-        },
-        {
-          "id": "limit",
-          "options": {
-            "limitField": 10
-          }
-        }
-      ],
-      "type": "bargauge"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "decimals": 0,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green"
-              }
-            ]
-          },
-          "unit": "ms"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 29
-      },
-      "id": 30,
-      "options": {
-        "displayMode": "basic",
-        "maxVizHeight": 300,
-        "minVizHeight": 10,
-        "minVizWidth": 0,
-        "namePlacement": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [],
-          "fields": "",
-          "values": true
-        },
-        "showUnfilled": true,
-        "sizing": "auto",
-        "valueMode": "color"
-      },
-      "pluginVersion": "11.1.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by(catalog, database, table) (amoro_table_optimizing_status_planning_duration_mills{catalog=~\"$Catalog\", database=~\"$Database\", table=~\"$Table\"}) > 0",
+          "expr": "amoro_table_optimizing_status_committing_duration_mills{catalog=~\"$Catalog\", database=~\"$Database\", table=~\"$Table\"} ",
           "format": "time_series",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
           "instant": false,
-          "interval": "$__rate_interval",
-          "legendFormat": "{{database}}.{{table}}",
+          "interval": "",
+          "legendFormat": "{{catalog}}.{{database}}.{{table}}",
           "range": true,
           "refId": "A",
           "useBackend": false
         }
       ],
-      "title": "Top Pending Duration",
+      "title": "Top Committing Duration",
       "transformations": [
         {
           "id": "reduce",
@@ -1365,7 +1557,7 @@
             "labelsToFields": false,
             "mode": "seriesToRows",
             "reducers": [
-              "sum"
+              "max"
             ]
           }
         },
@@ -1376,7 +1568,7 @@
             "sort": [
               {
                 "desc": true,
-                "field": "Total"
+                "field": "Max"
               }
             ]
           }
@@ -1392,8 +1584,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1406,7 +1597,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -1415,13 +1607,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 0,
-        "y": 37
+        "y": 49
       },
       "id": 31,
-      "maxDataPoints": 1,
       "options": {
         "displayMode": "basic",
         "maxVizHeight": 300,
@@ -1442,8 +1633,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "code",
@@ -1453,10 +1643,10 @@
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "interval": "",
-          "legendFormat": "{{database}}.{{table}}",
-          "range": true,
+          "legendFormat": "{{catalog}}.{{database}}.{{table}}",
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -1496,8 +1686,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1510,7 +1699,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -1519,13 +1709,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 12,
-        "y": 37
+        "y": 49
       },
       "id": 33,
-      "maxDataPoints": 1,
       "options": {
         "displayMode": "basic",
         "maxVizHeight": 300,
@@ -1546,8 +1735,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "code",
@@ -1557,10 +1745,10 @@
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "interval": "",
-          "legendFormat": "{{database}}.{{table}}",
-          "range": true,
+          "legendFormat": "{{catalog}}.{{database}}.{{table}}",
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -1600,8 +1788,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1614,7 +1801,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -1623,13 +1811,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 0,
-        "y": 45
+        "y": 58
       },
       "id": 34,
-      "maxDataPoints": 1,
       "options": {
         "displayMode": "basic",
         "maxVizHeight": 300,
@@ -1650,8 +1837,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "code",
@@ -1661,10 +1847,10 @@
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "interval": "",
-          "legendFormat": "{{database}}.{{table}}",
-          "range": true,
+          "legendFormat": "{{catalog}}.{{database}}.{{table}}",
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -1704,8 +1890,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1718,7 +1903,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -1727,13 +1913,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 12,
-        "y": 45
+        "y": 58
       },
       "id": 32,
-      "maxDataPoints": 1,
       "options": {
         "displayMode": "basic",
         "maxVizHeight": 300,
@@ -1754,8 +1939,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1765,10 +1949,10 @@
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "interval": "",
-          "legendFormat": "{{database}}.{{table}}",
-          "range": true,
+          "legendFormat": "{{catalog}}.{{database}}.{{table}}",
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -1812,7 +1996,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 53
+        "y": 67
       },
       "id": 35,
       "panels": [],
@@ -1821,8 +2005,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1866,7 +2049,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1881,7 +2065,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 54
+        "y": 68
       },
       "id": 36,
       "options": {
@@ -1899,8 +2083,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "amoro_optimizer_group_planing_tables",
@@ -1915,8 +2098,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1960,7 +2142,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1975,7 +2158,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 54
+        "y": 68
       },
       "id": 39,
       "options": {
@@ -1993,8 +2176,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "amoro_optimizer_group_pending_tables",
@@ -2009,8 +2191,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -2054,7 +2235,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2069,7 +2251,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 54
+        "y": 68
       },
       "id": 38,
       "options": {
@@ -2087,8 +2269,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "amoro_optimizer_group_executing_tables",
@@ -2103,8 +2284,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -2148,7 +2328,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2163,7 +2344,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 62
+        "y": 76
       },
       "id": 37,
       "options": {
@@ -2181,8 +2362,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "amoro_optimizer_group_pending_tasks",
@@ -2197,8 +2377,7 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -2242,7 +2421,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2257,7 +2437,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 62
+        "y": 76
       },
       "id": 40,
       "options": {
@@ -2275,8 +2455,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "amoro_optimizer_group_executing_tasks",
@@ -2308,8 +2487,7 @@
           ]
         },
         "datasource": {
-          "type": "prometheus",
-          "uid": "PBFA97CFB590B2093"
+          "type": "prometheus"
         },
         "definition": "label_values(amoro_table_optimizing_process_total_count_total,catalog)",
         "hide": 0,
@@ -2339,8 +2517,7 @@
           ]
         },
         "datasource": {
-          "type": "prometheus",
-          "uid": "PBFA97CFB590B2093"
+          "type": "prometheus"
         },
         "definition": "label_values(amoro_table_optimizing_process_total_count_total{catalog=~\"$Catalog\"},database)",
         "hide": 0,
@@ -2370,8 +2547,7 @@
           ]
         },
         "datasource": {
-          "type": "prometheus",
-          "uid": "PBFA97CFB590B2093"
+          "type": "prometheus"
         },
         "definition": "label_values(amoro_table_optimizing_process_total_count_total{catalog=~\"$Catalog\", database=~\"$Database\"},table)",
         "hide": 0,
@@ -2393,7 +2569,7 @@
     ]
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {
@@ -2401,7 +2577,6 @@
   },
   "timezone": "",
   "title": "Amoro Metrics Dashboard",
-  "uid": "ee034aae-e2ea-4b59-b1e7-ada469b7efa8",
-  "version": 5,
+  "version": 24,
   "weekStart": ""
 }
