@@ -48,7 +48,7 @@
   - "amoro-ams/amoro-ams-server/**/*"
 
 "module:ams-dashboard":
-  - "amoro-admin/**/*"
+  - "amoro-web/**/*"
 
 "module:ams-optimizer":
   - "amoro-ams/amoro-ams-optimizer/**/*"
