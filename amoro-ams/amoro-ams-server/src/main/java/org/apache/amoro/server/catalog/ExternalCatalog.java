@@ -20,11 +20,11 @@ package org.apache.amoro.server.catalog;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.CommonUnifiedCatalog;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;

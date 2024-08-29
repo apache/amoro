@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.persistence.mapper;
 
-import org.apache.amoro.api.resource.Resource;
-import org.apache.amoro.api.resource.ResourceGroup;
+import org.apache.amoro.resource.Resource;
+import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.persistence.converter.Long2TsConverter;
 import org.apache.amoro.server.persistence.converter.Map2StringConverter;
 import org.apache.amoro.server.resource.OptimizerInstance;

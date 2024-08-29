@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.events;
 
-import org.apache.amoro.api.events.Event;
-import org.apache.amoro.api.events.EventListener;
+import org.apache.amoro.events.Event;
+import org.apache.amoro.events.EventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

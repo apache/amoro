@@ -19,19 +19,19 @@
 package org.apache.amoro.server;
 
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.OptimizerProperties;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.OptimizerProperties;
 import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.config.Configurations;
-import org.apache.amoro.api.config.TableConfiguration;
-import org.apache.amoro.api.resource.Resource;
-import org.apache.amoro.api.resource.ResourceGroup;
+import org.apache.amoro.config.Configurations;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.resource.Resource;
+import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.exception.ForbiddenException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
 import org.apache.amoro.server.exception.PluginRetryAuthException;

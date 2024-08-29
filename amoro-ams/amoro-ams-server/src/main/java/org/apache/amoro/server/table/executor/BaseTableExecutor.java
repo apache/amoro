@@ -19,8 +19,8 @@
 package org.apache.amoro.server.table.executor;
 
 import org.apache.amoro.AmoroTable;
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.config.TableConfiguration;
+import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableManager;

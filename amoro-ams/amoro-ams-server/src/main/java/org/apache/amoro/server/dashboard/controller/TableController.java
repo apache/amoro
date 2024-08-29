@@ -22,10 +22,10 @@ import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIV
 
 import io.javalin.http.Context;
 import org.apache.amoro.Constants;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.catalog.MixedHiveCatalog;

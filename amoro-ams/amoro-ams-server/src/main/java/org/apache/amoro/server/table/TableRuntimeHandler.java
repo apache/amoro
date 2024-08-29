@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.table;
 
-import org.apache.amoro.api.config.TableConfiguration;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 
 public interface TableRuntimeHandler {

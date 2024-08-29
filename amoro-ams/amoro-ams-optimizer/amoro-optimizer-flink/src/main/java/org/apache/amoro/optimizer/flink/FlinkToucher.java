@@ -18,8 +18,8 @@
 
 package org.apache.amoro.optimizer.flink;
 
-import org.apache.amoro.api.resource.Resource;
 import org.apache.amoro.optimizer.common.OptimizerToucher;
+import org.apache.amoro.resource.Resource;
 import org.apache.flink.runtime.execution.Environment;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;

@@ -20,9 +20,9 @@ package org.apache.amoro.server.optimizing.maintainer;
 
 import static org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintainer.DATA_FOLDER_NAME;
 
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
-import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;

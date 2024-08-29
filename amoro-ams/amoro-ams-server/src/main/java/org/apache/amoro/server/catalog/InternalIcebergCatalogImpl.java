@@ -21,7 +21,7 @@ package org.apache.amoro.server.catalog;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.formats.iceberg.IcebergTable;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.server.AmoroManagementConf;
