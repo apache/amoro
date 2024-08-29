@@ -69,7 +69,6 @@ conf/
 # dashboard static resources
 amoro-web/src/main/resources/static/
 amoro-web/node/
-amoro-web/node_modules/
 
 !amoro-ams/dist/src/main/amoro-bin/bin/
 !amoro-ams/dist/src/main/amoro-bin/conf/
