@@ -129,9 +129,12 @@ ams:
 #    type: postgres
 #    jdbc-driver-class: org.postgresql.Driver
 #    url: jdbc:postgresql://127.0.0.1:5432/amoro
+#    init-schema: false
 #    username: user
 #    password: passwd
 ```
+
+AMS will create tables automatically, if you want to create tables on yourself, set `ams.database.init-schema` to false.
 
 ### Configure high availability
 

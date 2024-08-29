@@ -40,6 +40,8 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -54,6 +56,7 @@ import java.sql.Statement;
 import java.time.Duration;
 
 public class SqlSessionFactoryProvider {
+  private static final Logger LOG = LoggerFactory.getLogger(SqlSessionFactoryProvider.class);
 
   private static final String DERBY_INIT_SQL_SCRIPT = "derby/ams-derby-init.sql";
   private static final String MYSQL_INIT_SQL_SCRIPT = "mysql/ams-mysql-init.sql";
@@ -123,6 +126,11 @@ public class SqlSessionFactoryProvider {
    * @param config
    */
   private void createTablesIfNeed(Configurations config) {
+    boolean initSchema = config.getBoolean(AmoroManagementConf.DB_INIT_SCHEMA);
+    if (!initSchema) {
+      LOG.info("Skip database schema initialize.");
+      return;
+    }
     String dbTypeConfig = config.getString(AmoroManagementConf.DB_TYPE);
     String query = "";
 
