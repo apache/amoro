@@ -25,4 +25,4 @@ ALTER TABLE `table_blocker` ADD UNIQUE KEY `uq_prev` (`catalog_name`,`db_name`,`
 
 -- ADD COLUMN table_summary FOR TABLE_RUNTIME
 ALTER TABLE table_runtime ADD COLUMN table_summary TEXT;
-COMMENT ON COLUMN table_runtime.table_summary IS 'Table Summary data';
+COMMENT ON COLUMN table_runtime.table_summary IS 'Table summary data';
