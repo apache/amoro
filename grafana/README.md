@@ -16,9 +16,5 @@ This guide explains how to import and configure the provided Grafana dashboard.
 
 ## Notes
 
-- Ensure data sources are properly configured.
-- Customize variables, thresholds, and layouts as needed.
-
-## Resources
-
-- [Grafana Documentation](https://grafana.com/docs/)
+- Ensure data sources are properly configured. For details, please refer to: [Grafana data source](https://grafana.com/docs/grafana/latest/datasources/prometheus/).
+- Customize variables, thresholds, and layouts as needed. For details, please refer to: [Grafana build dashboards](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/).
