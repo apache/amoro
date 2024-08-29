@@ -36,6 +36,7 @@ import java.nio.ByteBuffer;
 public class OptimizerExecutor extends AbstractOptimizerOperator {
 
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerExecutor.class);
+  protected static final int ERROR_MESSAGE_MAX_LENGTH = 4000;
 
   private final int threadId;
 
@@ -166,7 +167,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
           System.currentTimeMillis() - startTime,
           t);
       OptimizingTaskResult errorResult = new OptimizingTaskResult(task.getTaskId(), threadId);
-      errorResult.setErrorMessage(ExceptionUtil.getErrorMessage(t, 4000));
+      errorResult.setErrorMessage(ExceptionUtil.getErrorMessage(t, ERROR_MESSAGE_MAX_LENGTH));
       return errorResult;
     }
   }

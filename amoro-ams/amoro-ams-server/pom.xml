@@ -281,6 +281,11 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>url-connection-client</artifactId>
         </dependency>
+	
+	<dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>s3-transfer-manager</artifactId>
+	</dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -334,19 +339,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.paimon</groupId>
-            <artifactId>paimon-s3</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.paimon</groupId>
-            <artifactId>paimon-spark-common</artifactId>
-            <version>${paimon.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-
         <!-- test dependencies -->
         <dependency>
             <groupId>org.apache.amoro</groupId>
@@ -375,6 +367,21 @@
         <dependency>
             <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-format-hive</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-paimon-format</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-paimon-format</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
@@ -465,4 +472,38 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>support-paimon-format</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.amoro</groupId>
+                    <artifactId>amoro-paimon-format</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>support-hudi-format</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.amoro</groupId>
+                    <artifactId>amoro-hudi-format</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>support-all-formats</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.amoro</groupId>
+                    <artifactId>amoro-paimon-format</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.amoro</groupId>
+                    <artifactId>amoro-hudi-format</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

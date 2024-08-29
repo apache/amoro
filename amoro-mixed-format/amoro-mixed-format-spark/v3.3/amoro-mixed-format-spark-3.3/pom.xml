@@ -274,6 +274,12 @@
             <version>${paimon.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-paimon-format</artifactId>
+            <version>${parent.version}</version>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.junit.platform</groupId>

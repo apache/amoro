@@ -19,13 +19,14 @@
 package org.apache.amoro.server.dashboard.utils;
 
 import org.apache.amoro.Constants;
-import org.apache.amoro.server.dashboard.model.FilesStatistics;
 import org.apache.amoro.server.dashboard.model.SnapshotInfo;
 import org.apache.amoro.server.dashboard.model.TableStatistics;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.table.descriptor.FilesStatistics;
+import org.apache.amoro.table.descriptor.FilesStatisticsBuilder;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
