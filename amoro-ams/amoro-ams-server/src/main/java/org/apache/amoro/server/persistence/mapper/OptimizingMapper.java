@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.persistence.mapper;
 
-import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.server.optimizing.MetricsSummary;
 import org.apache.amoro.server.optimizing.OptimizingProcess;

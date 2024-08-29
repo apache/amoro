@@ -24,7 +24,7 @@ import static org.apache.amoro.server.AmoroManagementConf.DB_PASSWORD;
 import static org.apache.amoro.server.AmoroManagementConf.DB_USER_NAME;
 import static org.apache.amoro.server.AmoroManagementConf.SERVER_EXPOSE_HOST;
 
-import org.apache.amoro.api.config.ConfigHelpers;
+import org.apache.amoro.config.ConfigHelpers;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.junit.Assert;
 import org.junit.Test;

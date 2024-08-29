@@ -19,13 +19,13 @@
 package org.apache.amoro.metrics.promethues;
 
 import io.prometheus.client.Collector;
-import org.apache.amoro.api.metrics.Counter;
-import org.apache.amoro.api.metrics.Gauge;
-import org.apache.amoro.api.metrics.Metric;
-import org.apache.amoro.api.metrics.MetricDefine;
-import org.apache.amoro.api.metrics.MetricKey;
-import org.apache.amoro.api.metrics.MetricSet;
-import org.apache.amoro.api.metrics.MetricType;
+import org.apache.amoro.metrics.Counter;
+import org.apache.amoro.metrics.Gauge;
+import org.apache.amoro.metrics.Metric;
+import org.apache.amoro.metrics.MetricDefine;
+import org.apache.amoro.metrics.MetricKey;
+import org.apache.amoro.metrics.MetricSet;
+import org.apache.amoro.metrics.MetricType;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

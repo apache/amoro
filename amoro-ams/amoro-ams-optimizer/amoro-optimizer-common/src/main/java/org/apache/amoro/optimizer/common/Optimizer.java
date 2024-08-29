@@ -18,7 +18,7 @@
 
 package org.apache.amoro.optimizer.common;
 
-import org.apache.amoro.api.OptimizerProperties;
+import org.apache.amoro.OptimizerProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

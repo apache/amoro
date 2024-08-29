@@ -19,7 +19,7 @@
 package org.apache.amoro.server.table.executor;
 
 import org.apache.amoro.AmoroTable;
-import org.apache.amoro.api.config.TableConfiguration;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.table.TableManager;

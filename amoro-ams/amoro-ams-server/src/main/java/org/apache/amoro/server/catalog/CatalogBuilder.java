@@ -26,7 +26,7 @@ import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIV
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;

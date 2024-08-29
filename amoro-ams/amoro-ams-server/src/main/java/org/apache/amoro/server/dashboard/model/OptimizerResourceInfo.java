@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.dashboard.model;
 
-import org.apache.amoro.api.resource.ResourceGroup;
+import org.apache.amoro.resource.ResourceGroup;
 
 public class OptimizerResourceInfo {
   private ResourceGroup resourceGroup;

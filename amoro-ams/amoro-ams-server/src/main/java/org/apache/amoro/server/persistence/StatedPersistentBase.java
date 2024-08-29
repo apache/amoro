@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.persistence;
 
-import org.apache.amoro.api.StateField;
+import org.apache.amoro.StateField;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 
 import java.lang.reflect.Field;

@@ -21,7 +21,7 @@ package org.apache.amoro.server.dashboard;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.TableIdentifier;
-import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.table.TableService;
