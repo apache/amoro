@@ -59,7 +59,7 @@
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-ams-dashboard</artifactId>
+            <artifactId>amoro-admin</artifactId>
             <version>${project.version}</version>
         </dependency>
 
