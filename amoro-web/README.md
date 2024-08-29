@@ -25,7 +25,7 @@ This is the Dashboard frontend for Amoro Management Service (AMS).
 
 ## Installing Dependencies
 
-In the `amoro-admin` directory, run `pnpm install` to install all the dependencies.
+In the `amoro-web` directory, run `pnpm install` to install all the dependencies.
 
 ## Running Locally
 
@@ -35,13 +35,13 @@ After completing the [Installing Dependencies](#Installing Dependencies) step, y
 
 <b>If You are a frontend developer</b>
 
-In the `amoro-admin` directory, run `pnpm dev:mock` to start a development server for the dashboard app at `http://127.0.0.1:8080`.
+In the `amoro-web` directory, run `pnpm dev:mock` to start a development server for the dashboard app at `http://127.0.0.1:8080`.
 
 <b>If You not. You just running `pnpm dev`</b>
 
 ### Configure the ams Server to connect to
 
-1. open the `vite.config.ts` under the folder `amoro-admin`
+1. open the `vite.config.ts` under the folder `amoro-web`
 
 2. find the `proxy` configuration then unpack annotations and change the `target` to you server location
 
@@ -69,12 +69,12 @@ proxy: {
 
 ## Building Project
 
-In the `amoro-admin` directory, run `pnpm build` to prepare the dashboard for deployment.
+In the `amoro-web` directory, run `pnpm build` to prepare the dashboard for deployment.
 
 ## Top Level Directory Structure
 
 ```
-amoro-admin
+amoro-web
  |-- mock
  |-- public
  |-- src
@@ -91,13 +91,13 @@ amoro-admin
  |-- pnpm-lock
 ```
 
-- [public](amoro-admin/public): The index.html and favicon.ico of this project.
-- [src](amoro-admin/src): The source files of this project.
-  - [src/components](amoro-admin/src/components): All the shared components in the repo, can be used in all views.
-  - [src/views](amoro-admin/src/views): All the views.
-  - [src/services](amoro-admin/src/services): The services for the feature component to communicate with ams server.
-  - [src/utils](amoro-admin/src/utils): The utility functions in this project.
-  - [src/App.vue](amoro-admin/src/main.tsx): The entrance of this project.
-- [vite.config.ts](/amoro-admin/vite.config.ts): The configuration file of vue3.
-- [package.json](amoro-admin/package.json): The project build files and package management, it defines the scripts/tasks and the dependent packages for this project.
-- [pnpm-lock.yaml](amoro-admin/pnpm-lock.yaml): The package management pnpm lock file.
+- [public](amoro-web/public): The index.html and favicon.ico of this project.
+- [src](amoro-web/src): The source files of this project.
+  - [src/components](amoro-web/src/components): All the shared components in the repo, can be used in all views.
+  - [src/views](amoro-web/src/views): All the views.
+  - [src/services](amoro-web/src/services): The services for the feature component to communicate with ams server.
+  - [src/utils](amoro-web/src/utils): The utility functions in this project.
+  - [src/App.vue](amoro-web/src/main.tsx): The entrance of this project.
+- [vite.config.ts](/amoro-web/vite.config.ts): The configuration file of vue3.
+- [package.json](amoro-web/package.json): The project build files and package management, it defines the scripts/tasks and the dependent packages for this project.
+- [pnpm-lock.yaml](amoro-web/pnpm-lock.yaml): The package management pnpm lock file.
