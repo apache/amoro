@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server;
 
-import org.apache.amoro.api.config.ConfigOption;
-import org.apache.amoro.api.config.ConfigOptions;
+import org.apache.amoro.config.ConfigOption;
+import org.apache.amoro.config.ConfigOptions;
 
 import java.time.Duration;
 import java.util.Arrays;

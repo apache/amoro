@@ -18,11 +18,12 @@
 
 package org.apache.amoro.server;
 
-import static org.apache.amoro.api.metrics.MetricDefine.defineGauge;
+import static org.apache.amoro.metrics.MetricDefine.defineGauge;
 
-import org.apache.amoro.api.metrics.Metric;
-import org.apache.amoro.api.metrics.MetricDefine;
-import org.apache.amoro.api.metrics.MetricKey;
+import org.apache.amoro.metrics.Gauge;
+import org.apache.amoro.metrics.Metric;
+import org.apache.amoro.metrics.MetricDefine;
+import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -97,40 +98,28 @@ public class AmsServiceMetrics {
   private void registerHeapMetric() {
     MemoryUsage heapMemoryUsage = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
     registerMetric(
-        registry,
-        AMS_JVM_MEMORY_HEAP_USED,
-        (org.apache.amoro.api.metrics.Gauge<Long>) () -> heapMemoryUsage.getUsed());
+        registry, AMS_JVM_MEMORY_HEAP_USED, (Gauge<Long>) () -> heapMemoryUsage.getUsed());
 
     registerMetric(
         registry,
         AMS_JVM_MEMORY_HEAP_COMMITTED,
-        (org.apache.amoro.api.metrics.Gauge<Long>) () -> heapMemoryUsage.getCommitted());
+        (Gauge<Long>) () -> heapMemoryUsage.getCommitted());
 
-    registerMetric(
-        registry,
-        AMS_JVM_MEMORY_HEAP_MAX,
-        (org.apache.amoro.api.metrics.Gauge<Long>) () -> heapMemoryUsage.getMax());
+    registerMetric(registry, AMS_JVM_MEMORY_HEAP_MAX, (Gauge<Long>) () -> heapMemoryUsage.getMax());
   }
 
   private void registerThreadMetric() {
     registerMetric(
         registry,
         AMS_JVM_THREADS_COUNT,
-        (org.apache.amoro.api.metrics.Gauge<Integer>)
-            () -> ManagementFactory.getThreadMXBean().getThreadCount());
+        (Gauge<Integer>) () -> ManagementFactory.getThreadMXBean().getThreadCount());
   }
 
   private void registerCPuMetric() {
     final com.sun.management.OperatingSystemMXBean mxBean =
         (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-    registerMetric(
-        registry,
-        AMS_JVM_CPU_LOAD,
-        (org.apache.amoro.api.metrics.Gauge<Double>) () -> mxBean.getProcessCpuLoad());
-    registerMetric(
-        registry,
-        AMS_JVM_CPU_TIME,
-        (org.apache.amoro.api.metrics.Gauge<Long>) () -> mxBean.getProcessCpuTime());
+    registerMetric(registry, AMS_JVM_CPU_LOAD, (Gauge<Double>) () -> mxBean.getProcessCpuLoad());
+    registerMetric(registry, AMS_JVM_CPU_TIME, (Gauge<Long>) () -> mxBean.getProcessCpuTime());
   }
 
   private void registerGarbageCollectorMetrics() {
@@ -142,12 +131,12 @@ public class AmsServiceMetrics {
           registry,
           AMS_JVM_GARBAGE_COLLECTOR_COUNT,
           ImmutableMap.of(GARBAGE_COLLECTOR_TAG, garbageCollector.getName()),
-          (org.apache.amoro.api.metrics.Gauge<Long>) () -> garbageCollector.getCollectionCount());
+          (Gauge<Long>) () -> garbageCollector.getCollectionCount());
       registerMetric(
           registry,
           AMS_JVM_GARBAGE_COLLECTOR_TIME,
           ImmutableMap.of(GARBAGE_COLLECTOR_TAG, garbageCollector.getName()),
-          (org.apache.amoro.api.metrics.Gauge<Long>) () -> garbageCollector.getCollectionTime());
+          (Gauge<Long>) () -> garbageCollector.getCollectionTime());
     }
   }
 

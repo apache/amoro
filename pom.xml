@@ -46,7 +46,7 @@
     </licenses>
 
     <modules>
-        <module>amoro-core</module>
+        <module>amoro-common</module>
         <module>amoro-ams</module>
         <module>amoro-iceberg-format</module>
         <module>amoro-mixed-format</module>
@@ -233,13 +233,7 @@
         <dependencies>
             <dependency>
                 <groupId>org.apache.amoro</groupId>
-                <artifactId>amoro-ams-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.amoro</groupId>
-                <artifactId>amoro-core</artifactId>
+                <artifactId>amoro-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

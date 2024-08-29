@@ -23,7 +23,7 @@ import static org.apache.amoro.server.table.internal.InternalTableConstants.CHAN
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.mixed.InternalMixedIcebergCatalog;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;

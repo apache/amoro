@@ -33,10 +33,6 @@
     <url>https://amoro.apache.org</url>
 
     <dependencies>
-        <dependency>
-            <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-ams-api</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
@@ -50,15 +46,7 @@
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-ams-api</artifactId>
+            <artifactId>amoro-common</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>

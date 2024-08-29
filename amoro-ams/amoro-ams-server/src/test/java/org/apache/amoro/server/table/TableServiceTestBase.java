@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.table;
 
-import org.apache.amoro.api.config.Configurations;
-import org.apache.amoro.api.resource.ResourceGroup;
+import org.apache.amoro.config.Configurations;
+import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.manager.EventsManager;

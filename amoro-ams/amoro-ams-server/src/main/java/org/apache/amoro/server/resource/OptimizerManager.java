@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.resource;
 
-import org.apache.amoro.api.resource.ResourceManager;
+import org.apache.amoro.resource.ResourceManager;
 
 import java.util.List;
 
