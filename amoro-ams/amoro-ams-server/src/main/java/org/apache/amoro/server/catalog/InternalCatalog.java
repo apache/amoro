@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server.catalog;
 
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.IllegalMetadataException;
@@ -165,7 +165,10 @@ public abstract class InternalCatalog extends ServerCatalog {
             doAs(
                 TableMetaMapper.class,
                 mapper -> mapper.deleteTableMetaById(tableIdentifier.getId())),
-        () -> doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlockers(tableIdentifier)),
+        () ->
+            doAs(
+                TableBlockerMapper.class,
+                mapper -> mapper.deleteTableBlockers(this.name(), databaseName, tableName)),
         () -> dropTableInternal(databaseName, tableName),
         () ->
             doAsExisted(

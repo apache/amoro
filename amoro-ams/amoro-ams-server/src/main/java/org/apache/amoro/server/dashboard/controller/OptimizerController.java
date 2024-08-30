@@ -19,10 +19,10 @@
 package org.apache.amoro.server.dashboard.controller;
 
 import io.javalin.http.Context;
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.resource.Resource;
-import org.apache.amoro.api.resource.ResourceGroup;
-import org.apache.amoro.api.resource.ResourceType;
+import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.resource.Resource;
+import org.apache.amoro.resource.ResourceGroup;
+import org.apache.amoro.resource.ResourceType;
 import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.dashboard.model.OptimizerInstanceInfo;
 import org.apache.amoro.server.dashboard.model.OptimizerResourceInfo;

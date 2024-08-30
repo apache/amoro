@@ -71,7 +71,7 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
   public void testEmpty() {
     OptimizingEvaluator optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertFalse(optimizingEvaluator.isNecessary());
-    OptimizingEvaluator.PendingInput pendingInput = optimizingEvaluator.getPendingInput();
+    OptimizingEvaluator.PendingInput pendingInput = optimizingEvaluator.getOptimizingPendingInput();
     assertEmptyInput(pendingInput);
   }
 
@@ -90,7 +90,7 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
 
     OptimizingEvaluator optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertFalse(optimizingEvaluator.isNecessary());
-    OptimizingEvaluator.PendingInput pendingInput = optimizingEvaluator.getPendingInput();
+    OptimizingEvaluator.PendingInput pendingInput = optimizingEvaluator.getOptimizingPendingInput();
     assertEmptyInput(pendingInput);
 
     // add more files
@@ -104,7 +104,7 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
 
     optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertTrue(optimizingEvaluator.isNecessary());
-    pendingInput = optimizingEvaluator.getPendingInput();
+    pendingInput = optimizingEvaluator.getOptimizingPendingInput();
 
     assertInput(pendingInput, FileInfo.buildFileInfo(dataFiles));
   }

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.exception;
 
-import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.TableIdentifier;
 
 public class ObjectNotExistsException extends AmoroRuntimeException {

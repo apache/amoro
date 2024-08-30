@@ -96,6 +96,9 @@ Amoro support multiple processing engines for Mixed format as below:
 Amoro contains modules as below:
 
 - `amoro-core` contains core abstractions and common implementation for other modules
+- `amoro-iceberg-format` contains integration of Apache Iceberg format
+- `amoro-hudi-format` contains integration of Apache Hudi format
+- `amoro-paimon-format` contains integration of Apache Paimon format
 - `amoro-ams` is amoro management service module
     - `amoro-ams-api` contains ams thrift api and common interfaces
     - `amoro-ams-dashboard` is the dashboard frontend for ams
@@ -117,11 +120,14 @@ Amoro is built using Maven with JDK 8 and JDK 17(only for `amoro-mixed-format/am
 * Build and skip dashboard: `mvn clean package -Pskip-dashboard-build`
 * Build and disable disk storage, RocksDB will NOT be introduced to avoid memory overflow: `mvn clean package -DskipTests -Pno-extented-disk-storage`
 * Build with hadoop 2.x(the default is 3.x) dependencies: `mvn clean package -DskipTests -Phadoop2`
-* Specify Flink version for Flink optimizer(the default is 1.18.1): `mvn clean package -DskipTests -Dflink-optimizer.flink-version=1.15.4`
+* Specify Flink version for Flink optimizer(the default is 1.20.0): `mvn clean package -DskipTests -Dflink-optimizer.flink-version=1.20.0`
   * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-optimizer-pre-1.15` parameter: `mvn clean package -DskipTests -Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`
-* Specify Spark version for Spark optimizer(the default is 3.3.3): `mvn clean package -DskipTests -Dspark-optimizer.spark-version=3.2.2`
+* Specify Spark version for Spark optimizer(the default is 3.3.3): `mvn clean package -DskipTests -Dspark-optimizer.spark-version=3.3.3`
 * Build `amoro-mixed-format-trino` module under JDK 17: `mvn clean package -DskipTests -Pformat-mixed-format-trino,build-mixed-format-trino -pl 'amoro-mixed-format/amoro-mixed-format-trino' -am`.
 * Build all modules: `mvn clean package -DskipTests -Ptoolchain,build-mixed-format-trino`, besides you need config `toolchains.xml` in `${user.home}/.m2/` dir with content below.
+* Build a distribution package with all formats integrated: `mvn clean package -Psupport-all-formats`
+  * Build a distribution package with Apache Paimon format: `mvn clean package -Psupport-paimon-format`
+  * Build a distribution package with Apache Hudi format: `mvn clean package -Psupport-hudi-format`
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>

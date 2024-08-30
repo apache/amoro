@@ -23,27 +23,17 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.FileNameRules;
-import org.apache.amoro.server.dashboard.component.reverser.DDLReverser;
+import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.process.ProcessTaskStatus;
 import org.apache.amoro.server.dashboard.component.reverser.IcebergTableMetaExtract;
-import org.apache.amoro.server.dashboard.model.AMSColumnInfo;
-import org.apache.amoro.server.dashboard.model.AMSPartitionField;
-import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;
-import org.apache.amoro.server.dashboard.model.ConsumerInfo;
-import org.apache.amoro.server.dashboard.model.DDLInfo;
-import org.apache.amoro.server.dashboard.model.FilesStatistics;
-import org.apache.amoro.server.dashboard.model.OperationType;
-import org.apache.amoro.server.dashboard.model.OptimizingProcessInfo;
-import org.apache.amoro.server.dashboard.model.OptimizingTaskInfo;
-import org.apache.amoro.server.dashboard.model.PartitionBaseInfo;
-import org.apache.amoro.server.dashboard.model.PartitionFileBaseInfo;
-import org.apache.amoro.server.dashboard.model.ServerTableMeta;
 import org.apache.amoro.server.dashboard.model.TableBasicInfo;
 import org.apache.amoro.server.dashboard.model.TableStatistics;
-import org.apache.amoro.server.dashboard.model.TagOrBranchInfo;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.TableStatCollector;
+import org.apache.amoro.server.optimizing.MetricsSummary;
 import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
+import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
@@ -51,23 +41,43 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.table.descriptor.AMSColumnInfo;
+import org.apache.amoro.table.descriptor.AMSPartitionField;
+import org.apache.amoro.table.descriptor.AmoroSnapshotsOfTable;
+import org.apache.amoro.table.descriptor.ConsumerInfo;
+import org.apache.amoro.table.descriptor.DDLInfo;
+import org.apache.amoro.table.descriptor.DDLReverser;
+import org.apache.amoro.table.descriptor.FilesStatistics;
+import org.apache.amoro.table.descriptor.FormatTableDescriptor;
+import org.apache.amoro.table.descriptor.OperationType;
+import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
+import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
+import org.apache.amoro.table.descriptor.PartitionBaseInfo;
+import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
+import org.apache.amoro.table.descriptor.ServerTableMeta;
+import org.apache.amoro.table.descriptor.TableSummary;
+import org.apache.amoro.table.descriptor.TagOrBranchInfo;
 import org.apache.amoro.utils.MixedDataFiles;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.IcebergFindFiles;
+import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.util.Pair;
+import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.SnapshotUtil;
 import org.slf4j.Logger;
@@ -91,10 +101,11 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   private static final Logger LOG = LoggerFactory.getLogger(MixedAndIcebergTableDescriptor.class);
 
-  private final ExecutorService executorService;
+  private ExecutorService executorService;
 
-  public MixedAndIcebergTableDescriptor(ExecutorService executorService) {
-    this.executorService = executorService;
+  @Override
+  public void withIoExecutor(ExecutorService ioExecutor) {
+    this.executorService = ioExecutor;
   }
 
   @Override
@@ -151,14 +162,11 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       }
       serverTableMeta.setChangeMetrics(changeMetrics);
     }
-    Map<String, Object> tableSummary = new HashMap<>();
-    tableSummary.put("size", AmsUtil.byteToXB(tableSize));
-    tableSummary.put("file", tableFileCnt);
-    tableSummary.put(
-        "averageFile", AmsUtil.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
-
-    tableSummary.put("records", getRecordsOfTable(table));
-    tableSummary.put("tableFormat", tableFormat);
+    String averageFileSize = AmsUtil.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt);
+    long records = getRecordsOfTable(table);
+    TableSummary tableSummary =
+        new TableSummary(
+            tableFileCnt, AmsUtil.byteToXB(tableSize), averageFileSize, records, tableFormat);
     serverTableMeta.setTableSummary(tableSummary);
     return serverTableMeta;
   }
@@ -259,8 +267,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   private void collectSnapshots(
       List<AmoroSnapshotsOfTable> snapshotsOfTables, Pair<Table, Long> tableAndSnapshotId) {
-    Table table = tableAndSnapshotId.first();
-    Long snapshotId = tableAndSnapshotId.second();
+    Table table = tableAndSnapshotId.getLeft();
+    Long snapshotId = tableAndSnapshotId.getRight();
     if (snapshotId != null) {
       SnapshotUtil.ancestorsOf(snapshotId, table::snapshot)
           .forEach(
@@ -328,7 +336,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
-  public List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, long snapshotId) {
+  public List<PartitionFileBaseInfo> getSnapshotDetail(
+      AmoroTable<?> amoroTable, String snapshotId) {
     MixedTable mixedTable = getTable(amoroTable);
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     Snapshot snapshot;
@@ -345,15 +354,14 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
           "unknown snapshot " + snapshotId + " of " + amoroTable.id());
     }
     final long snapshotTime = snapshot.timestampMillis();
-    String commitId = String.valueOf(snapshotId);
     snapshot
         .addedDataFiles(mixedTable.io())
         .forEach(
             f ->
                 result.add(
                     new PartitionFileBaseInfo(
-                        commitId,
-                        DataFileType.ofContentId(f.content().id()),
+                        snapshotId,
+                        DataFileType.ofContentId(f.content().id()).name(),
                         snapshotTime,
                         MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
                             .partitionToPath(f.partition()),
@@ -366,8 +374,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             f ->
                 result.add(
                     new PartitionFileBaseInfo(
-                        commitId,
-                        DataFileType.ofContentId(f.content().id()),
+                        snapshotId,
+                        DataFileType.ofContentId(f.content().id()).name(),
                         snapshotTime,
                         MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
                             .partitionToPath(f.partition()),
@@ -380,8 +388,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             f ->
                 result.add(
                     new PartitionFileBaseInfo(
-                        commitId,
-                        DataFileType.ofContentId(f.content().id()),
+                        snapshotId,
+                        DataFileType.ofContentId(f.content().id()).name(),
                         snapshotTime,
                         MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
                             .partitionToPath(f.partition()),
@@ -394,8 +402,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             f ->
                 result.add(
                     new PartitionFileBaseInfo(
-                        commitId,
-                        DataFileType.ofContentId(f.content().id()),
+                        snapshotId,
+                        DataFileType.ofContentId(f.content().id()).name(),
                         snapshotTime,
                         MixedTableUtil.getMixedTablePartitionSpecById(mixedTable, f.specId())
                             .partitionToPath(f.partition()),
@@ -518,17 +526,19 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
     return Pair.of(
         processMetaList.stream()
-            .map(p -> OptimizingProcessInfo.build(p, optimizingTasks.get(p.getProcessId())))
+            .map(p -> buildOptimizingProcessInfo(p, optimizingTasks.get(p.getProcessId())))
             .collect(Collectors.toList()),
         total);
   }
 
   @Override
-  public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, long processId) {
+  public List<OptimizingTaskInfo> getOptimizingTaskInfos(
+      AmoroTable<?> amoroTable, String processId) {
+    long id = Long.parseLong(processId);
     List<OptimizingTaskMeta> optimizingTaskMetaList =
         getAs(
             OptimizingMapper.class,
-            mapper -> mapper.selectOptimizeTaskMetas(Collections.singletonList(processId)));
+            mapper -> mapper.selectOptimizeTaskMetas(Collections.singletonList(id)));
     if (CollectionUtils.isEmpty(optimizingTaskMetaList)) {
       return Collections.emptyList();
     }
@@ -537,10 +547,10 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             taskMeta ->
                 new OptimizingTaskInfo(
                     taskMeta.getTableId(),
-                    taskMeta.getProcessId(),
+                    String.valueOf(taskMeta.getProcessId()),
                     taskMeta.getTaskId(),
                     taskMeta.getPartitionData(),
-                    taskMeta.getStatus(),
+                    ProcessTaskStatus.valueOf(taskMeta.getStatus().name()),
                     taskMeta.getRetryNum(),
                     taskMeta.getOptimizerToken(),
                     taskMeta.getThreadId(),
@@ -601,7 +611,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
           }
           return new PartitionFileBaseInfo(
               String.valueOf(snapshotId),
-              dataFileType,
+              dataFileType.name(),
               commitTime,
               partitionPath,
               contentFile.specId(),
@@ -668,11 +678,11 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     fillTableProperties(serverTableMeta, table.properties());
     serverTableMeta.setPartitionColumnList(
         table.spec().fields().stream()
-            .map(item -> AMSPartitionField.buildFromPartitionSpec(table.spec().schema(), item))
+            .map(item -> buildPartitionFieldFromPartitionSpec(table.spec().schema(), item))
             .collect(Collectors.toList()));
     serverTableMeta.setSchema(
         table.schema().columns().stream()
-            .map(AMSColumnInfo::buildFromNestedField)
+            .map(MixedAndIcebergTableDescriptor::buildColumnInfoFromNestedField)
             .collect(Collectors.toList()));
 
     serverTableMeta.setFilter(null);
@@ -682,7 +692,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       if (kt.primaryKeySpec() != null) {
         serverTableMeta.setPkList(
             kt.primaryKeySpec().fields().stream()
-                .map(item -> AMSColumnInfo.buildFromPartitionSpec(table.spec().schema(), item))
+                .map(item -> buildColumnInfoFromPartitionSpec(table.spec().schema(), item))
                 .collect(Collectors.toList()));
       }
     }
@@ -729,11 +739,109 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       snapshotRefs.forEach(
           (name, snapshotRef) -> {
             if (predicate.test(snapshotRef)) {
-              result.add(new TagOrBranchInfo(name, snapshotRef));
+              result.add(buildTagOrBranchInfo(name, snapshotRef));
             }
           });
       result.sort(Comparator.comparing(TagOrBranchInfo::getName));
       return result;
     }
+  }
+
+  private static AMSColumnInfo buildColumnInfoFromNestedField(Types.NestedField field) {
+    if (field == null) {
+      return null;
+    }
+    return new AMSColumnInfo.Builder()
+        .field(field.name())
+        .type(field.type().toString())
+        .required(field.isRequired())
+        .comment(field.doc())
+        .build();
+  }
+
+  /** Construct ColumnInfo based on schema and primary key field. */
+  private static AMSColumnInfo buildColumnInfoFromPartitionSpec(
+      Schema schema, PrimaryKeySpec.PrimaryKeyField pkf) {
+    return buildColumnInfoFromNestedField(schema.findField(pkf.fieldName()));
+  }
+
+  private static AMSPartitionField buildPartitionFieldFromPartitionSpec(
+      Schema schema, PartitionField pf) {
+    return new AMSPartitionField.Builder()
+        .field(pf.name())
+        .sourceField(schema.findColumnName(pf.sourceId()))
+        .transform(pf.transform().toString())
+        .fieldId(pf.fieldId())
+        .sourceFieldId(pf.sourceId())
+        .build();
+  }
+
+  private static TagOrBranchInfo buildTagOrBranchInfo(String name, SnapshotRef snapshotRef) {
+    String type = null;
+    if (snapshotRef.isTag()) {
+      type = TagOrBranchInfo.TAG;
+    } else if (snapshotRef.isBranch()) {
+      type = TagOrBranchInfo.BRANCH;
+    } else {
+      throw new RuntimeException("Invalid snapshot ref: " + snapshotRef);
+    }
+    return new TagOrBranchInfo(
+        name,
+        snapshotRef.snapshotId(),
+        snapshotRef.minSnapshotsToKeep(),
+        snapshotRef.maxSnapshotAgeMs(),
+        snapshotRef.maxRefAgeMs(),
+        type);
+  }
+
+  private static OptimizingProcessInfo buildOptimizingProcessInfo(
+      OptimizingProcessMeta meta, List<OptimizingTaskMeta> optimizingTaskStats) {
+    if (meta == null) {
+      return null;
+    }
+    OptimizingProcessInfo result = new OptimizingProcessInfo();
+
+    if (optimizingTaskStats != null) {
+      int successTasks = 0;
+      int runningTasks = 0;
+      for (OptimizingTaskMeta optimizingTaskStat : optimizingTaskStats) {
+        TaskRuntime.Status status = optimizingTaskStat.getStatus();
+        switch (status) {
+          case SUCCESS:
+            successTasks++;
+            break;
+          case SCHEDULED:
+          case ACKED:
+            runningTasks++;
+            break;
+        }
+      }
+      result.setTotalTasks(optimizingTaskStats.size());
+      result.setSuccessTasks(successTasks);
+      result.setRunningTasks(runningTasks);
+    }
+    MetricsSummary summary = meta.getSummary();
+    if (summary != null) {
+      result.setInputFiles(summary.getInputFilesStatistics());
+      result.setOutputFiles(summary.getOutputFilesStatistics());
+    }
+
+    result.setTableId(meta.getTableId());
+    result.setCatalogName(meta.getCatalogName());
+    result.setDbName(meta.getDbName());
+    result.setTableName(meta.getTableName());
+
+    result.setProcessId(String.valueOf(meta.getProcessId()));
+    result.setStartTime(meta.getPlanTime());
+    result.setOptimizingType(meta.getOptimizingType().name());
+    result.setStatus(ProcessStatus.valueOf(meta.getStatus().name()));
+    result.setFailReason(meta.getFailReason());
+    result.setDuration(
+        meta.getEndTime() > 0
+            ? meta.getEndTime() - meta.getPlanTime()
+            : System.currentTimeMillis() - meta.getPlanTime());
+    result.setFinishTime(meta.getEndTime());
+    result.setSummary(meta.getSummary().summaryAsMap(true));
+    return result;
   }
 }

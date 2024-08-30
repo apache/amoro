@@ -26,7 +26,7 @@
     <parent>
         <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-ams</artifactId>
-        <version>0.7-SNAPSHOT</version>
+        <version>0.8-SNAPSHOT</version>
     </parent>
 
     <artifactId>amoro-ams-server</artifactId>
@@ -35,10 +35,9 @@
     <url>https://amoro.apache.org</url>
 
     <dependencies>
-
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-ams-api</artifactId>
+            <artifactId>amoro-iceberg-format</artifactId>
         </dependency>
 
         <dependency>
@@ -195,6 +194,12 @@
         </dependency>
 
         <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-dbcp2</artifactId>
         </dependency>
@@ -270,6 +275,11 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>url-connection-client</artifactId>
         </dependency>
+	
+	<dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>s3-transfer-manager</artifactId>
+	</dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -292,6 +302,22 @@
             </exclusions>
         </dependency>
 
+        <!--  apache hudi dependencies -->
+        <dependency>
+            <groupId>org.apache.hudi</groupId>
+            <artifactId>hudi-java-client</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.orc</groupId>
+                    <artifactId>orc-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>asm</groupId>
+                    <artifactId>asm</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- runtime dependencies -->
         <dependency>
             <groupId>org.apache.amoro</groupId>
@@ -307,23 +333,10 @@
             <scope>runtime</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.paimon</groupId>
-            <artifactId>paimon-s3</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.paimon</groupId>
-            <artifactId>paimon-spark-common</artifactId>
-            <version>${paimon.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-
         <!-- test dependencies -->
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
+            <artifactId>amoro-common</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
@@ -331,15 +344,30 @@
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-ams-api</artifactId>
+            <artifactId>amoro-iceberg-format</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
             <classifier>tests</classifier>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-format-hive</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-paimon-format</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-paimon-format</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
@@ -430,4 +458,38 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>support-paimon-format</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.amoro</groupId>
+                    <artifactId>amoro-paimon-format</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>support-hudi-format</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.amoro</groupId>
+                    <artifactId>amoro-hudi-format</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>support-all-formats</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.amoro</groupId>
+                    <artifactId>amoro-paimon-format</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.amoro</groupId>
+                    <artifactId>amoro-hudi-format</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

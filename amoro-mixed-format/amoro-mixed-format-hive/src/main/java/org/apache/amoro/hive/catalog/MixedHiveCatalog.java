@@ -56,7 +56,7 @@ import org.apache.amoro.table.blocker.BasicTableBlockerManager;
 import org.apache.amoro.table.blocker.TableBlockerManager;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.ConvertStructUtil;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.MixedFormatCatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
@@ -425,7 +425,7 @@ public class MixedHiveCatalog implements MixedFormatCatalog {
 
     protected void checkProperties() {
       Map<String, String> mergedProperties =
-          MixedCatalogUtil.mergeCatalogPropertiesToTable(properties, catalogProperties);
+          MixedFormatCatalogUtil.mergeCatalogPropertiesToTable(properties, catalogProperties);
       boolean enableStream =
           CompatiblePropertyUtil.propertyAsBoolean(
               mergedProperties,

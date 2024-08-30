@@ -113,6 +113,7 @@ const tableFormatMap = {
   ICEBERG: 'ICEBERG',
   MIXED_ICEBERG: 'MIXED_ICEBERG',
   PAIMON: 'PAIMON',
+  HUDI: 'HUDI',
 }
 
 const tableFormatText = {
@@ -120,10 +121,12 @@ const tableFormatText = {
   [tableFormatMap.MIXED_HIVE]: 'Mixed Hive',
   [tableFormatMap.MIXED_ICEBERG]: 'Mixed Iceberg',
   [tableFormatMap.PAIMON]: 'Paimon',
+  [tableFormatMap.HUDI]: 'Hudi',
 }
 const storeSupportFormat: { [prop: string]: string[] } = {
   ams: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
-  hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON],
+  hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.MIXED_ICEBERG,
+      tableFormatMap.ICEBERG, tableFormatMap.PAIMON, tableFormatMap.HUDI],
   hadoop: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON],
   glue: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
   custom: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],

@@ -19,15 +19,13 @@
 package org.apache.amoro.server.table;
 
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.StateField;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.BlockableOperation;
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.StateField;
-import org.apache.amoro.api.config.OptimizingConfig;
-import org.apache.amoro.api.config.TableConfiguration;
+import org.apache.amoro.config.OptimizingConfig;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.AmoroServiceConstants;
-import org.apache.amoro.server.exception.BlockerConflictException;
-import org.apache.amoro.server.exception.ObjectNotExistsException;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
@@ -42,25 +40,22 @@ import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.table.BaseTable;
+import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.MixedTable;
-import org.apache.amoro.table.blocker.RenewableBlocker;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.Snapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 public class TableRuntime extends StatedPersistentBase {
 
@@ -93,9 +88,11 @@ public class TableRuntime extends StatedPersistentBase {
   @StateField private volatile TableConfiguration tableConfiguration;
   @StateField private volatile long processId;
   @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
+  @StateField private volatile OptimizingEvaluator.PendingInput tableSummary;
   private volatile long lastPlanTime;
   private final TableOptimizingMetrics optimizingMetrics;
-  private final ReentrantLock blockerLock = new ReentrantLock();
+  private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
+  private final TableSummaryMetrics tableSummaryMetrics;
 
   protected TableRuntime(
       ServerTableIdentifier tableIdentifier,
@@ -105,10 +102,12 @@ public class TableRuntime extends StatedPersistentBase {
     Preconditions.checkNotNull(tableHandler, "TableRuntimeHandler must not be null.");
     this.tableHandler = tableHandler;
     this.tableIdentifier = tableIdentifier;
-    this.tableConfiguration = TableConfiguration.parseConfig(properties);
+    this.tableConfiguration = TableConfigurations.parseTableConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
+    orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
+    tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
   }
 
   protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
@@ -138,8 +137,15 @@ public class TableRuntime extends StatedPersistentBase {
             ? OptimizingStatus.PENDING
             : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
+    this.tableSummary = tableRuntimeMeta.getTableSummary();
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
     optimizingMetrics.statusChanged(optimizingStatus, this.currentStatusStartTime);
+    optimizingMetrics.lastOptimizingTime(OptimizingType.MINOR, this.lastMinorOptimizingTime);
+    optimizingMetrics.lastOptimizingTime(OptimizingType.MAJOR, this.lastMajorOptimizingTime);
+    optimizingMetrics.lastOptimizingTime(OptimizingType.FULL, this.lastFullOptimizingTime);
+    orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
+    tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
+    tableSummaryMetrics.refresh(tableSummary);
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -152,6 +158,8 @@ public class TableRuntime extends StatedPersistentBase {
 
   public void registerMetric(MetricRegistry metricRegistry) {
     this.optimizingMetrics.register(metricRegistry);
+    this.orphanFilesCleaningMetrics.register(metricRegistry);
+    this.tableSummaryMetrics.register(metricRegistry);
   }
 
   public void dispose() {
@@ -165,6 +173,8 @@ public class TableRuntime extends StatedPersistentBase {
                       mapper -> mapper.deleteOptimizingRuntime(tableIdentifier.getId())));
         });
     optimizingMetrics.unregister();
+    orphanFilesCleaningMetrics.unregister();
+    tableSummaryMetrics.unregister();
   }
 
   public void beginPlanning() {
@@ -241,6 +251,15 @@ public class TableRuntime extends StatedPersistentBase {
         });
   }
 
+  public void setTableSummary(OptimizingEvaluator.PendingInput tableSummary) {
+    invokeConsistency(
+        () -> {
+          this.tableSummary = tableSummary;
+          tableSummaryMetrics.refresh(tableSummary);
+          persistUpdatingRuntime();
+        });
+  }
+
   /**
    * When there is no task to be optimized, clean pendingInput and update `lastOptimizedSnapshotId`
    * to `currentSnapshotId`.
@@ -304,10 +323,10 @@ public class TableRuntime extends StatedPersistentBase {
               lastFullOptimizingTime = optimizingProcess.getPlanTime();
             }
           }
+          optimizingMetrics.processComplete(processType, success, optimizingProcess.getPlanTime());
           updateOptimizingStatus(OptimizingStatus.IDLE);
           optimizingProcess = null;
           persistUpdatingRuntime();
-          optimizingMetrics.processComplete(processType, success);
           tableHandler.handleTableChanged(this, originalStatus);
         });
   }
@@ -320,12 +339,16 @@ public class TableRuntime extends StatedPersistentBase {
 
   private boolean refreshSnapshots(AmoroTable<?> amoroTable) {
     MixedTable table = (MixedTable) amoroTable.originalTable();
+    tableSummaryMetrics.refreshSnapshots(table);
+    long lastSnapshotId = currentSnapshotId;
     if (table.isKeyedTable()) {
-      long lastSnapshotId = currentSnapshotId;
       long changeSnapshotId = currentChangeSnapshotId;
-      currentSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().baseTable(), false);
-      currentChangeSnapshotId =
-          IcebergTableUtil.getSnapshotId(table.asKeyedTable().changeTable(), false);
+      ChangeTable changeTable = table.asKeyedTable().changeTable();
+      BaseTable baseTable = table.asKeyedTable().baseTable();
+
+      currentChangeSnapshotId = doRefreshSnapshots(changeTable);
+      currentSnapshotId = doRefreshSnapshots(baseTable);
+
       if (currentSnapshotId != lastSnapshotId || currentChangeSnapshotId != changeSnapshotId) {
         LOG.info(
             "Refreshing table {} with base snapshot id {} and change snapshot id {}",
@@ -335,9 +358,7 @@ public class TableRuntime extends StatedPersistentBase {
         return true;
       }
     } else {
-      long lastSnapshotId = currentSnapshotId;
-      Snapshot currentSnapshot = table.asUnkeyedTable().currentSnapshot();
-      currentSnapshotId = currentSnapshot == null ? -1 : currentSnapshot.snapshotId();
+      currentSnapshotId = doRefreshSnapshots((UnkeyedTable) table);
       if (currentSnapshotId != lastSnapshotId) {
         LOG.info(
             "Refreshing table {} with base snapshot id {}", tableIdentifier, currentSnapshotId);
@@ -347,12 +368,32 @@ public class TableRuntime extends StatedPersistentBase {
     return false;
   }
 
+  /**
+   * Refresh snapshots for table.
+   *
+   * @param table - table
+   * @return refreshed snapshotId
+   */
+  private long doRefreshSnapshots(UnkeyedTable table) {
+    long currentSnapshotId = AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+    Snapshot currentSnapshot = IcebergTableUtil.getSnapshot(table, false);
+    if (currentSnapshot != null) {
+      currentSnapshotId = currentSnapshot.snapshotId();
+    }
+
+    optimizingMetrics.nonMaintainedSnapshotTime(currentSnapshot);
+    optimizingMetrics.lastOptimizingSnapshotTime(
+        IcebergTableUtil.findLatestOptimizingSnapshot(table).orElse(null));
+
+    return currentSnapshotId;
+  }
+
   public OptimizingEvaluator.PendingInput getPendingInput() {
     return pendingInput;
   }
 
   private boolean updateConfigInternal(Map<String, String> properties) {
-    TableConfiguration newTableConfig = TableConfiguration.parseConfig(properties);
+    TableConfiguration newTableConfig = TableConfigurations.parseTableConfig(properties);
     if (tableConfiguration.equals(newTableConfig)) {
       return false;
     }
@@ -454,6 +495,10 @@ public class TableRuntime extends StatedPersistentBase {
     return optimizerGroup;
   }
 
+  public TableOrphanFilesCleaningMetrics getOrphanFilesCleaningMetrics() {
+    return orphanFilesCleaningMetrics;
+  }
+
   public void setCurrentChangeSnapshotId(long currentChangeSnapshotId) {
     this.currentChangeSnapshotId = currentChangeSnapshotId;
   }
@@ -514,139 +559,21 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   /**
-   * Get all valid blockers.
-   *
-   * @return all valid blockers
-   */
-  public List<TableBlocker> getBlockers() {
-    blockerLock.lock();
-    try {
-      return getAs(
-          TableBlockerMapper.class,
-          mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
-    } finally {
-      blockerLock.unlock();
-    }
-  }
-
-  /**
-   * Block some operations for table.
-   *
-   * @param operations - operations to be blocked
-   * @param properties -
-   * @param blockerTimeout -
-   * @return TableBlocker if success
-   */
-  public TableBlocker block(
-      List<BlockableOperation> operations,
-      @Nonnull Map<String, String> properties,
-      long blockerTimeout) {
-    Preconditions.checkNotNull(operations, "operations should not be null");
-    Preconditions.checkArgument(!operations.isEmpty(), "operations should not be empty");
-    Preconditions.checkArgument(blockerTimeout > 0, "blocker timeout must > 0");
-    blockerLock.lock();
-    try {
-      long now = System.currentTimeMillis();
-      List<TableBlocker> tableBlockers =
-          getAs(TableBlockerMapper.class, mapper -> mapper.selectBlockers(tableIdentifier, now));
-      if (conflict(operations, tableBlockers)) {
-        throw new BlockerConflictException(operations + " is conflict with " + tableBlockers);
-      }
-      TableBlocker tableBlocker =
-          buildTableBlocker(tableIdentifier, operations, properties, now, blockerTimeout);
-      doAs(TableBlockerMapper.class, mapper -> mapper.insertBlocker(tableBlocker));
-      return tableBlocker;
-    } finally {
-      blockerLock.unlock();
-    }
-  }
-
-  /**
-   * Renew blocker.
-   *
-   * @param blockerId - blockerId
-   * @param blockerTimeout - timeout
-   * @throws IllegalStateException if blocker not exist
-   */
-  public long renew(String blockerId, long blockerTimeout) {
-    blockerLock.lock();
-    try {
-      long now = System.currentTimeMillis();
-      TableBlocker tableBlocker =
-          getAs(
-              TableBlockerMapper.class,
-              mapper -> mapper.selectBlocker(Long.parseLong(blockerId), now));
-      if (tableBlocker == null) {
-        throw new ObjectNotExistsException("Blocker " + blockerId + " of " + tableIdentifier);
-      }
-      long expirationTime = now + blockerTimeout;
-      doAs(
-          TableBlockerMapper.class,
-          mapper -> mapper.updateBlockerExpirationTime(Long.parseLong(blockerId), expirationTime));
-      return expirationTime;
-    } finally {
-      blockerLock.unlock();
-    }
-  }
-
-  /**
-   * Release blocker, succeed when blocker not exist.
-   *
-   * @param blockerId - blockerId
-   */
-  public void release(String blockerId) {
-    blockerLock.lock();
-    try {
-      doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlocker(Long.parseLong(blockerId)));
-    } finally {
-      blockerLock.unlock();
-    }
-  }
-
-  /**
    * Check if operation are blocked now.
    *
    * @param operation - operation to check
    * @return true if blocked
    */
   public boolean isBlocked(BlockableOperation operation) {
-    blockerLock.lock();
-    try {
-      List<TableBlocker> tableBlockers =
-          getAs(
-              TableBlockerMapper.class,
-              mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
-      return conflict(operation, tableBlockers);
-    } finally {
-      blockerLock.unlock();
-    }
-  }
-
-  private boolean conflict(
-      List<BlockableOperation> blockableOperations, List<TableBlocker> blockers) {
-    return blockableOperations.stream().anyMatch(operation -> conflict(operation, blockers));
-  }
-
-  private boolean conflict(BlockableOperation blockableOperation, List<TableBlocker> blockers) {
-    return blockers.stream()
-        .anyMatch(blocker -> blocker.getOperations().contains(blockableOperation.name()));
-  }
-
-  private TableBlocker buildTableBlocker(
-      ServerTableIdentifier tableIdentifier,
-      List<BlockableOperation> operations,
-      Map<String, String> properties,
-      long now,
-      long blockerTimeout) {
-    TableBlocker tableBlocker = new TableBlocker();
-    tableBlocker.setTableIdentifier(tableIdentifier);
-    tableBlocker.setCreateTime(now);
-    tableBlocker.setExpirationTime(now + blockerTimeout);
-    tableBlocker.setOperations(
-        operations.stream().map(BlockableOperation::name).collect(Collectors.toList()));
-    HashMap<String, String> propertiesOfTableBlocker = new HashMap<>(properties);
-    propertiesOfTableBlocker.put(RenewableBlocker.BLOCKER_TIMEOUT, blockerTimeout + "");
-    tableBlocker.setProperties(propertiesOfTableBlocker);
-    return tableBlocker;
+    List<TableBlocker> tableBlockers =
+        getAs(
+            TableBlockerMapper.class,
+            mapper ->
+                mapper.selectBlockers(
+                    tableIdentifier.getCatalog(),
+                    tableIdentifier.getDatabase(),
+                    tableIdentifier.getTableName(),
+                    System.currentTimeMillis()));
+    return TableBlocker.conflict(operation, tableBlockers);
   }
 }

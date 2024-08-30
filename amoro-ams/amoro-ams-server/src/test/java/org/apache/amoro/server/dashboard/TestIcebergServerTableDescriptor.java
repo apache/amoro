@@ -21,6 +21,8 @@ package org.apache.amoro.server.dashboard;
 import org.apache.amoro.formats.AmoroCatalogTestHelper;
 import org.apache.amoro.formats.IcebergHadoopCatalogTestHelper;
 import org.apache.amoro.hive.formats.IcebergHiveCatalogTestHelper;
+import org.apache.amoro.table.descriptor.FormatTableDescriptor;
+import org.apache.amoro.table.descriptor.TestServerTableDescriptor;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.types.Types;
 import org.junit.runner.RunWith;
@@ -75,6 +77,11 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
   @Override
   protected void tableOperationsDropColumn() {
     getTable().updateSchema().deleteColumn("renamed_col").commit();
+  }
+
+  @Override
+  protected FormatTableDescriptor getTableDescriptor() {
+    return new MixedAndIcebergTableDescriptor();
   }
 
   private Table getTable() {

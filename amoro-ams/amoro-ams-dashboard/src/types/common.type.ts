@@ -370,6 +370,7 @@ export enum tableTypeIconMap {
   ARCTIC = 'amoro',
   HIVE = 'hive',
   PAIMON = 'paimon',
+  HUDI = 'hudi',
 }
 
 export type ILineChartOriginalData = Record<string, Record<string, number>>

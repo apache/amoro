@@ -35,7 +35,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableBuilder;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -305,9 +305,7 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
 
       MixedFormatCatalog catalog = new BasicMixedCatalog();
       catalog.initialize(
-          meta.getCatalogName(),
-          meta.getCatalogProperties(),
-          MixedCatalogUtil.buildMetaStore(meta));
+          meta.getCatalogName(), meta.getCatalogProperties(), CatalogUtil.buildMetaStore(meta));
       this.historicalCatalog = catalog;
       this.historicalCatalog.createDatabase(database);
     }

@@ -18,9 +18,9 @@
 
 package org.apache.amoro.server.terminal.kyuubi;
 
-import org.apache.amoro.api.config.ConfigOption;
-import org.apache.amoro.api.config.ConfigOptions;
-import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.config.ConfigOption;
+import org.apache.amoro.config.ConfigOptions;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.terminal.SparkContextUtil;
 import org.apache.amoro.server.terminal.TerminalSession;
 import org.apache.amoro.server.terminal.TerminalSessionFactory;

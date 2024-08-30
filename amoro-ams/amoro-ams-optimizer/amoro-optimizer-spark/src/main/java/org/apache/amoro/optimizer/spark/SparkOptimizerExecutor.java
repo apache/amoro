@@ -74,7 +74,7 @@ public class SparkOptimizerExecutor extends OptimizerExecutor {
           (System.currentTimeMillis() - startTime),
           r);
       result = new OptimizingTaskResult(task.getTaskId(), threadId);
-      result.setErrorMessage(ExceptionUtil.getErrorMessage(r, 4000));
+      result.setErrorMessage(ExceptionUtil.getErrorMessage(r, ERROR_MESSAGE_MAX_LENGTH));
       return result;
     }
   }

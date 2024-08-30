@@ -19,7 +19,7 @@
 package org.apache.amoro.server.resource;
 
 import org.apache.amoro.api.OptimizerRegisterInfo;
-import org.apache.amoro.api.resource.Resource;
+import org.apache.amoro.resource.Resource;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 
 import java.util.UUID;

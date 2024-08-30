@@ -129,6 +129,7 @@ CREATE TABLE `table_runtime`
     `table_config`                  mediumtext,
     `optimizing_config`             mediumtext,
     `pending_input`                 mediumtext,
+    `table_summary`                 mediumtext,
     PRIMARY KEY (`table_id`),
     UNIQUE KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize running information of each table' ROW_FORMAT=DYNAMIC;
@@ -219,6 +220,7 @@ CREATE TABLE `table_blocker` (
   `create_time` timestamp NULL DEFAULT NULL COMMENT 'Blocker create time',
   `expiration_time` timestamp NULL DEFAULT NULL COMMENT 'Blocker expiration time',
   `properties` mediumtext COMMENT 'Blocker properties',
+  `prev_blocker_id` bigint(20) NOT NULL DEFAULT -1 COMMENT 'prev blocker id when created',
   PRIMARY KEY (`blocker_id`),
-  KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
+  UNIQUE KEY `uq_prev` (`catalog_name`,`db_name`,`table_name`, `prev_blocker_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Table blockers' ROW_FORMAT=DYNAMIC;

@@ -118,6 +118,7 @@ CREATE TABLE table_runtime (
     table_config                CLOB(64m),
     optimizing_config           CLOB(64m),
     pending_input               CLOB(64m),
+    table_summary               CLOB(64m),
     CONSTRAINT table_runtime_pk PRIMARY KEY (table_id),
     CONSTRAINT table_runtime_table_name_idx UNIQUE (catalog_name, db_name, table_name)
 );
@@ -200,5 +201,7 @@ CREATE TABLE table_blocker (
   create_time timestamp DEFAULT NULL,
   expiration_time timestamp DEFAULT NULL,
   properties clob(64m),
-  PRIMARY KEY (blocker_id)
+  prev_blocker_id bigint NOT NULL DEFAULT -1,
+  PRIMARY KEY (blocker_id),
+  CONSTRAINT prev_uq UNIQUE (catalog_name, db_name, table_name, prev_blocker_id)
 );

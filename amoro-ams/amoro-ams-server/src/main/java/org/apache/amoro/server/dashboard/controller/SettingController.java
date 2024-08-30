@@ -19,8 +19,8 @@
 package org.apache.amoro.server.dashboard.controller;
 
 import io.javalin.http.Context;
-import org.apache.amoro.api.config.Configurations;
-import org.apache.amoro.api.resource.ResourceGroup;
+import org.apache.amoro.config.Configurations;
+import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.resource.ContainerMetadata;

@@ -34,9 +34,9 @@ import io.javalin.http.ContentType;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.plugin.json.JavalinJackson;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.events.IcebergReportEvent;
+import org.apache.amoro.events.IcebergReportEvent;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
@@ -50,7 +50,7 @@ import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableOperations;
@@ -435,7 +435,7 @@ public class RestCatalogService extends PersistentBase {
     ServerCatalog internalCatalog = tableService.getServerCatalog(catalog);
     Preconditions.checkArgument(
         internalCatalog instanceof InternalCatalog, "The catalog is not an iceberg rest catalog");
-    Set<TableFormat> tableFormats = MixedCatalogUtil.tableFormats(internalCatalog.getMetadata());
+    Set<TableFormat> tableFormats = CatalogUtil.tableFormats(internalCatalog.getMetadata());
     Preconditions.checkArgument(
         tableFormats.size() == 1
             && (tableFormats.contains(TableFormat.ICEBERG)

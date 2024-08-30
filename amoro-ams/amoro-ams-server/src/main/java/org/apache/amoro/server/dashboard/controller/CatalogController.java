@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.dashboard.controller;
 
+import static org.apache.amoro.TableFormat.HUDI;
 import static org.apache.amoro.TableFormat.ICEBERG;
 import static org.apache.amoro.TableFormat.MIXED_HIVE;
 import static org.apache.amoro.TableFormat.MIXED_ICEBERG;
@@ -71,7 +72,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableProperties;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.AwsClientProperties;
@@ -125,6 +126,8 @@ public class CatalogController {
         CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_HIVE));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, PAIMON));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, HUDI));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(
             CATALOG_TYPE_HADOOP, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
@@ -246,12 +249,12 @@ public class CatalogController {
         metaAuthConfig.put(
             AUTH_CONFIGS_KEY_SECRET_KEY, serverAuthConfig.get(AUTH_CONFIGS_KEY_SECRET_KEY));
 
-        MixedCatalogUtil.copyProperty(
+        CatalogUtil.copyProperty(
             serverAuthConfig,
             catalogMeta.getCatalogProperties(),
             AUTH_CONFIGS_KEY_ACCESS_KEY,
             S3FileIOProperties.ACCESS_KEY_ID);
-        MixedCatalogUtil.copyProperty(
+        CatalogUtil.copyProperty(
             serverAuthConfig,
             catalogMeta.getCatalogProperties(),
             AUTH_CONFIGS_KEY_SECRET_KEY,
@@ -292,12 +295,12 @@ public class CatalogController {
                     catalogName, CONFIG_TYPE_AUTH, AUTH_CONFIGS_KEY_KRB5.replace("\\.", "-"))));
         break;
       case AUTH_CONFIGS_VALUE_TYPE_AK_SK:
-        MixedCatalogUtil.copyProperty(
+        CatalogUtil.copyProperty(
             catalogMeta.getCatalogProperties(),
             serverAuthConfig,
             S3FileIOProperties.ACCESS_KEY_ID,
             AUTH_CONFIGS_KEY_ACCESS_KEY);
-        MixedCatalogUtil.copyProperty(
+        CatalogUtil.copyProperty(
             catalogMeta.getCatalogProperties(),
             serverAuthConfig,
             S3FileIOProperties.SECRET_ACCESS_KEY,
@@ -312,7 +315,7 @@ public class CatalogController {
       String catalogName, CatalogMeta catalogMeta) {
     Map<String, Object> storageConfig = new HashMap<>();
     Map<String, String> config = catalogMeta.getStorageConfigs();
-    String storageType = MixedCatalogUtil.getCompatibleStorageType(config);
+    String storageType = CatalogUtil.getCompatibleStorageType(config);
     storageConfig.put(STORAGE_CONFIGS_KEY_TYPE, storageType);
     if (STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equals(storageType)) {
       storageConfig.put(
@@ -342,12 +345,12 @@ public class CatalogController {
                   CONFIG_TYPE_STORAGE,
                   STORAGE_CONFIGS_KEY_HIVE_SITE.replace("\\.", "-"))));
     } else if (STORAGE_CONFIGS_VALUE_TYPE_S3.equals(storageType)) {
-      MixedCatalogUtil.copyProperty(
+      CatalogUtil.copyProperty(
           catalogMeta.getCatalogProperties(),
           storageConfig,
           AwsClientProperties.CLIENT_REGION,
           STORAGE_CONFIGS_KEY_REGION);
-      MixedCatalogUtil.copyProperty(
+      CatalogUtil.copyProperty(
           catalogMeta.getCatalogProperties(),
           storageConfig,
           S3FileIOProperties.ENDPOINT,
@@ -418,12 +421,12 @@ public class CatalogController {
         }
       }
     } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_S3)) {
-      MixedCatalogUtil.copyProperty(
+      CatalogUtil.copyProperty(
           info.getStorageConfig(),
           catalogMeta.getCatalogProperties(),
           STORAGE_CONFIGS_KEY_REGION,
           AwsClientProperties.CLIENT_REGION);
-      MixedCatalogUtil.copyProperty(
+      CatalogUtil.copyProperty(
           info.getStorageConfig(),
           catalogMeta.getCatalogProperties(),
           STORAGE_CONFIGS_KEY_ENDPOINT,

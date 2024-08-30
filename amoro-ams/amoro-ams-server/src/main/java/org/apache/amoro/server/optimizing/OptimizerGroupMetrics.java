@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.optimizing;
 
-import static org.apache.amoro.api.metrics.MetricDefine.defineGauge;
+import static org.apache.amoro.metrics.MetricDefine.defineGauge;
 import static org.apache.amoro.server.optimizing.OptimizingStatus.COMMITTING;
 import static org.apache.amoro.server.optimizing.OptimizingStatus.IDLE;
 import static org.apache.amoro.server.optimizing.OptimizingStatus.PENDING;
@@ -27,10 +27,10 @@ import static org.apache.amoro.server.optimizing.TaskRuntime.Status.ACKED;
 import static org.apache.amoro.server.optimizing.TaskRuntime.Status.PLANNED;
 import static org.apache.amoro.server.optimizing.TaskRuntime.Status.SCHEDULED;
 
-import org.apache.amoro.api.metrics.Gauge;
-import org.apache.amoro.api.metrics.Metric;
-import org.apache.amoro.api.metrics.MetricDefine;
-import org.apache.amoro.api.metrics.MetricKey;
+import org.apache.amoro.metrics.Gauge;
+import org.apache.amoro.metrics.Metric;
+import org.apache.amoro.metrics.MetricDefine;
+import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;

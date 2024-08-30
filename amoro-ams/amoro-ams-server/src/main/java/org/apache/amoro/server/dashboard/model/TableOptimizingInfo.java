@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.dashboard.model;
 
-import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.table.TableProperties;

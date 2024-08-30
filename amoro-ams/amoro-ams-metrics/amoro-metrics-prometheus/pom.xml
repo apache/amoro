@@ -22,7 +22,7 @@
     <parent>
         <artifactId>amoro-ams-metrics</artifactId>
         <groupId>org.apache.amoro</groupId>
-        <version>0.7-SNAPSHOT</version>
+        <version>0.8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -34,9 +34,9 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-ams-api</artifactId>
-            <scope>provided</scope>
+            <artifactId>amoro-common</artifactId>
         </dependency>
+
         <dependency>
             <groupId>io.prometheus</groupId>
             <artifactId>simpleclient</artifactId>

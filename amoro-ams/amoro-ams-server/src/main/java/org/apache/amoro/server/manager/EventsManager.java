@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.manager;
 
-import org.apache.amoro.api.events.Event;
-import org.apache.amoro.api.events.EventListener;
+import org.apache.amoro.events.Event;
+import org.apache.amoro.events.EventListener;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
