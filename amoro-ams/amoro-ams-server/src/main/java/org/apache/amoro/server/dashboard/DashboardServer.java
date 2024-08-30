@@ -105,8 +105,7 @@ public class DashboardServer {
     this.tableController = new TableController(tableService, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
-    this.overviewController =
-        new OverviewController(tableService, optimizerManager, tableDescriptor);
+    this.overviewController = new OverviewController();
 
     this.authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
     this.basicAuthUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
@@ -340,7 +339,7 @@ public class DashboardServer {
             get("/resource", overviewController::getResourceUsageHistory);
             get("/optimizing", overviewController::getOptimizingStatus);
             get("/dataSize", overviewController::getDataSizeHistory);
-            get("/top10", overviewController::getTop10Tables);
+            get("/top", overviewController::getTopTables);
           });
     };
   }

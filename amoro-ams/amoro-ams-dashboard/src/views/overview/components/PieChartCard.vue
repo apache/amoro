@@ -62,7 +62,7 @@ watch(() => props.data, renderChart)
 </script>
 
 <template>
-  <a-card>
+  <a-card class="pie-chart-card">
     <template #title>
       <span class="card-title" v-text="title"></span>
     </template>
@@ -71,6 +71,10 @@ watch(() => props.data, renderChart)
 </template>
 
 <style scoped>
+.pie-chart-card {
+  height: 500px;
+}
+
 .card-title {
   font-size: 18px;
 }

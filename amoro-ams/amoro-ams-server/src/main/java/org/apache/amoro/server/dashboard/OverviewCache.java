@@ -25,13 +25,15 @@ import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TABLES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_THREADS;
+import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_TOTAL_FILES;
+import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_TOTAL_FILES_SIZE;
 
-import org.apache.amoro.api.metrics.Counter;
-import org.apache.amoro.api.metrics.Gauge;
-import org.apache.amoro.api.metrics.Metric;
-import org.apache.amoro.api.metrics.MetricDefine;
-import org.apache.amoro.api.metrics.MetricKey;
-import org.apache.amoro.api.metrics.MetricSet;
+import org.apache.amoro.metrics.Counter;
+import org.apache.amoro.metrics.Gauge;
+import org.apache.amoro.metrics.Metric;
+import org.apache.amoro.metrics.MetricDefine;
+import org.apache.amoro.metrics.MetricKey;
+import org.apache.amoro.metrics.MetricSet;
 import org.apache.amoro.server.dashboard.model.OverviewDataSizeItem;
 import org.apache.amoro.server.dashboard.model.OverviewResourceUsageItem;
 import org.apache.amoro.server.dashboard.model.OverviewTopTableItem;
@@ -74,13 +76,11 @@ public class OverviewCache {
   private ConcurrentLinkedDeque<OverviewDataSizeItem> dataSizeHistory =
       new ConcurrentLinkedDeque<>();
 
-  private volatile List<OverviewTopTableItem> top10TablesByTableSize = new ArrayList<>();
-  private volatile List<OverviewTopTableItem> top10TablesByFileCount = new ArrayList<>();
-  private volatile List<OverviewTopTableItem> top10TablesByHealthScore = new ArrayList<>();
+  private volatile List<OverviewTopTableItem> allTopTableItem = new ArrayList<>();
 
   private AtomicInteger totalCatalog = new AtomicInteger();
-  private AtomicInteger totalTableCount = new AtomicInteger();
   private AtomicLong totalDataSize = new AtomicLong();
+  private AtomicInteger totalTableCount = new AtomicInteger();
   private AtomicInteger totalCpu = new AtomicInteger();
   private AtomicLong totalMemory = new AtomicLong();
 
@@ -102,16 +102,20 @@ public class OverviewCache {
     this.registeredMetrics = globalMetricSet.getMetrics();
   }
 
-  public List<OverviewTopTableItem> getTop10TablesByTableSize() {
-    return ImmutableList.copyOf(top10TablesByTableSize);
+  public List<OverviewTopTableItem> getAllTopTableItem() {
+    return ImmutableList.copyOf(allTopTableItem);
   }
 
-  public List<OverviewTopTableItem> getTop10TablesByFileCount() {
-    return ImmutableList.copyOf(top10TablesByFileCount);
+  public int getTotalCatalog() {
+    return totalCatalog.get();
   }
 
-  public List<OverviewTopTableItem> getTop10TablesByHealthScore() {
-    return ImmutableList.copyOf(top10TablesByHealthScore);
+  public int getTotalTableCount() {
+    return totalTableCount.get();
+  }
+
+  public long getTotalDataSize() {
+    return totalDataSize.get();
   }
 
   public int getTotalCpu() {
@@ -138,7 +142,7 @@ public class OverviewCache {
     return optimizingStatusCountMap;
   }
 
-  public void overviewUpdate() {
+  public void refresh() {
     long start = System.currentTimeMillis();
     log.info("Updating overview cache");
     try {
@@ -153,49 +157,81 @@ public class OverviewCache {
       updateResourceUsage(start);
       // optimizing status
       updateOptimizingStatus();
-
-      // TODO:
-      // data size
-      // health score
+      // table summary
       updateTableSummary(start);
 
     } catch (Exception e) {
-      log.error("OverviewUpdater error", e);
+      log.error("OverviewRefresher error", e);
     } finally {
       long end = System.currentTimeMillis();
-      log.info("Updating overview cache took {} ms.", end - start);
+      log.info("Refresher overview cache took {} ms.", end - start);
     }
   }
 
   private void updateTableSummary(long ts) {
     Map<String, OverviewTopTableItem> topTableItemMap = Maps.newHashMap();
-    Set<String> catalog = Sets.newHashSet();
-    MetricDefine metricDefine = null;
+    Set<String> allCatalogs = Sets.newHashSet();
     long totalTableSize = 0L;
-    int totalTableCount = 0;
+
     // table size
-    List<MetricKey> metricKeys = metricDefineMap.get(metricDefine);
+    List<MetricKey> metricKeys = metricDefineMap.get(TABLE_SUMMARY_TOTAL_FILES_SIZE);
     for (MetricKey metricKey : metricKeys) {
       String tableName = tableName(metricKey);
-      catalog.add(metricKey.valueOfTag("catalog"));
-      topTableItemMap.put(tableName, new OverviewTopTableItem());
+      allCatalogs.add(catalog(metricKey));
+      OverviewTopTableItem tableItem =
+          topTableItemMap.computeIfAbsent(tableName, ignore -> new OverviewTopTableItem(tableName));
+      long tableSize = (long) covertValue(registeredMetrics.get(metricKey));
+      tableItem.setTableSize(tableSize);
+      totalTableSize += tableSize;
     }
-    // file count
 
-    // health score
+    // file count
+    metricKeys = metricDefineMap.get(TABLE_SUMMARY_TOTAL_FILES);
+    for (MetricKey metricKey : metricKeys) {
+      String tableName = tableName(metricKey);
+      allCatalogs.add(catalog(metricKey));
+      OverviewTopTableItem tableItem =
+          topTableItemMap.computeIfAbsent(tableName, ignore -> new OverviewTopTableItem(tableName));
+      int fileCount = (int) covertValue(registeredMetrics.get(metricKey));
+      tableItem.setFileCount(fileCount);
+      tableItem.setAverageFileSize(fileCount == 0 ? 0 : tableItem.getTableSize() / fileCount);
+    }
+
+    // TODO health score
+    metricKeys = metricDefineMap.get(TABLE_SUMMARY_TOTAL_FILES);
+    for (MetricKey metricKey : metricKeys) {
+      String tableName = tableName(metricKey);
+      allCatalogs.add(catalog(metricKey));
+      OverviewTopTableItem tableItem =
+          topTableItemMap.computeIfAbsent(tableName, ignore -> new OverviewTopTableItem(tableName));
+      tableItem.setHealthScore(80);
+    }
 
     this.totalDataSize.set(totalTableSize);
-    this.totalTableCount.set(totalTableCount);
+    this.totalCatalog.set(allCatalogs.size());
+    this.totalTableCount.set(metricKeys.size());
     addAndCheck(new OverviewDataSizeItem(ts, totalTableSize));
+    this.allTopTableItem = new ArrayList<>(topTableItemMap.values());
+  }
+
+  private String catalog(MetricKey metricKey) {
+    return metricKey.valueOfTag("catalog");
+  }
+
+  private String database(MetricKey metricKey) {
+    return metricKey.valueOfTag("database");
+  }
+
+  private String table(MetricKey metricKey) {
+    return metricKey.valueOfTag("table");
   }
 
   private String tableName(MetricKey metricKey) {
-    return metricKey
-        .valueOfTag("catalog")
+    return catalog(metricKey)
         .concat(".")
-        .concat(metricKey.valueOfTag("database"))
+        .concat(database(metricKey))
         .concat(".")
-        .concat(metricKey.valueOfTag("table"));
+        .concat(table(metricKey));
   }
 
   private void updateResourceUsage(long ts) {

@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.dashboard;
 
-import org.apache.amoro.api.metrics.MetricReporter;
-import org.apache.amoro.api.metrics.MetricSet;
+import org.apache.amoro.metrics.MetricReporter;
+import org.apache.amoro.metrics.MetricSet;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import java.util.Map;
@@ -63,6 +63,6 @@ public class OverviewMetricsReporter implements MetricReporter {
     OverviewCache overviewCache = OverviewCache.getInstance();
     overviewCache.initialize(globalMetricSet);
     overviewUpdaterScheduler.scheduleAtFixedRate(
-        overviewCache::overviewUpdate, 1000L, overviewRefreshingInterval, TimeUnit.MILLISECONDS);
+        overviewCache::refresh, 1000L, overviewRefreshingInterval, TimeUnit.MILLISECONDS);
   }
 }

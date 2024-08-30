@@ -82,12 +82,22 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/overview/top10',
+    url: '/mock/ams/v1/overview/top',
     method: 'get',
     response: () => ({
       code: 200,
       msg: 'success',
       result: [
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
         { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
       ]
     }),

@@ -35,23 +35,28 @@ const columns: TableProps['columns'] = [
   {
     title: t('table'),
     dataIndex: 'tableName',
-    width: 300
+    width: 300, 
+    ellipsis: true
   },
   {
     title: t('tableSize'),
     dataIndex: 'tableSize',
+    ellipsis: true
   },
   {
     title: t('fileCount'),
     dataIndex: 'fileCount',
+    ellipsis: true
   },
   {
     title: t('averageFileSize'),
     dataIndex: 'averageFileSize',
+    ellipsis: true
   },
   {
     title: t('healthScore'),
     dataIndex: 'healthScore',
+    ellipsis: true
   }
 ]
 
@@ -74,7 +79,11 @@ async function getTop10Tables() {
   try {
     loading.value = true
     dataSource.length = 0
-    const result = await getTop10TableList(orderBy.value)
+    const params = {
+      order: orderBy.value === 'healthScore' ? 'asc': 'desc',
+      orderBy: orderBy.value
+    }
+    const result = await getTop10TableList(params)
     result.forEach((ele: ITopTableItem) => {
       dataSource.push(ele)
     })
@@ -92,7 +101,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <a-card class="unhealth-tables-card">
+  <a-card class="top-tables-card">
     <template #title>
       <a-row justify="space-between">
         <span class="card-title" v-text="t('Top 10 Tables')"></span>
@@ -108,8 +117,8 @@ onMounted(() => {
     </template>
 
     <div class="list-wrap">
-      <a-table class="ant-table-common" :columns="columns" :data-source="dataSource" :loading="loading"
-        :pagination="false">
+      <a-table class="ant-table-common" :columns="columns" :data-source="dataSource" :scroll="{ x: '100%', y: 350 }" :loading="loading"
+        :pagination="false" >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'tableName'">
             <span :title="record.tableName" class="primary-link" @click="goTableDetail(record)">
@@ -133,8 +142,8 @@ onMounted(() => {
   font-size: 18px;
 }
 
-.unhealth-tables-card {
-  height: 450px;
+.top-tables-card {
+  height: 500px;
 }
 
 .list-wrap {

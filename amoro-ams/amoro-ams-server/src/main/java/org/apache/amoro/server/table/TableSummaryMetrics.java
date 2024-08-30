@@ -18,13 +18,11 @@
 
 package org.apache.amoro.server.table;
 
-import static org.apache.amoro.api.metrics.MetricDefine.defineGauge;
-
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.metrics.Gauge;
-import org.apache.amoro.api.metrics.Metric;
-import org.apache.amoro.api.metrics.MetricDefine;
-import org.apache.amoro.api.metrics.MetricKey;
+import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.metrics.Gauge;
+import org.apache.amoro.metrics.Metric;
+import org.apache.amoro.metrics.MetricDefine;
+import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
@@ -33,6 +31,8 @@ import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 
 import java.util.List;
+
+import static org.apache.amoro.metrics.MetricDefine.defineGauge;
 
 /** Table Summary metrics. */
 public class TableSummaryMetrics {

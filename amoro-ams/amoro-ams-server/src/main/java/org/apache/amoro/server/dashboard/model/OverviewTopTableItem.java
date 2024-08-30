@@ -18,7 +18,6 @@
 
 package org.apache.amoro.server.dashboard.model;
 
-import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 
 public class OverviewTopTableItem {
@@ -30,23 +29,8 @@ public class OverviewTopTableItem {
 
   public OverviewTopTableItem() {}
 
-  public OverviewTopTableItem(
-      ServerTableIdentifier tableIdentifier,
-      long tableSize,
-      int fileCount,
-      long averageFileSize,
-      int healthScore) {
-    this.tableName =
-        tableIdentifier
-            .getCatalog()
-            .concat(".")
-            .concat(tableIdentifier.getDatabase())
-            .concat(".")
-            .concat(tableIdentifier.getTableName());
-    this.healthScore = healthScore;
-    this.fileCount = fileCount;
-    this.tableSize = tableSize;
-    this.averageFileSize = averageFileSize;
+  public OverviewTopTableItem(String tableName) {
+    this.tableName = tableName;
   }
 
   public String getTableName() {
