@@ -52,9 +52,7 @@ export default [
       code: 200,
       msg: 'success',
       result: [
-        { value: 40, name: 'Full Optimizing' },
-        { value: 20, name: 'Major Optimizing' },
-        { value: 30, name: 'Minor Optimizing' },
+        { value: 40, name: 'Executing' },
         { value: 10, name: 'Committing' },
         { value: 2, name: 'Planning' },
         { value: 3, name: 'Pending' },
@@ -84,68 +82,71 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/overview/unhealth',
-    method: 'get',
-    response: () => ({
-      code: 200,
-      msg: 'success',
-      result: {
-        "list": [
-          { tableIdentifier: { id: 1, catalog: 'test_catalog', database: 'db', tableName: 'user' }, tableName: 'test_catalog.db.user', healthScore: '47', totalSize: '1774', fileCount: '2', averageFileSize: '887' },
-        ],
-        "total": 1
-      }
-    }),
-  },
-  {
-    url: '/mock/ams/v1/overview/top/tables',
+    url: '/mock/ams/v1/overview/top',
     method: 'get',
     response: () => ({
       code: 200,
       msg: 'success',
       result: [
-        {
-          tableName: 'trino_online_env_hive.spark_test.ctpri',
-          size: 12938982,
-          fileCnt: 57889
-        },
-        {
-          tableName: 'trino_online_env_hive.spark_test.ctpp_col',
-          size: 329043290,
-          fileCnt: 79910
-        }
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
+        { tableName: 'test_catalog.db.user', tableSize: '1774', fileCount: '2', averageFileSize: '887', healthScore: '47',},
       ]
     }),
   },
   {
-    url: '/mock/ams/v1/overview/metric/optimize/resource',
+    url: '/mock/ams/v1/overview/resource',
     method: 'get',
     response: () => ({
       code: 200,
       msg: 'success',
-      result: {
-        timeLine: [
-          '10-09 14:48'
-        ],
-        usedCpu: [
-          '83.24'
-        ],
-        usedCpuDivision: [
-          '1828C/2196C'
-        ],
-        usedCpuPercent: [
-          '83.24%'
-        ],
-        usedMem: [
-          '83.24'
-        ],
-        usedMemDivision: [
-          '1828C/2196C10364G'
-        ],
-        usedMemPercent: [
-          '83.24%'
-        ]
-      }
+      result: [{
+        ts: 1724119207500,
+        totalCpu: 2,
+        totalMemory: 4048
+      },{
+        ts: 1724122892000,
+        totalCpu: 5,
+        totalMemory: 8096
+      },{
+        ts: 1724126441000,
+        totalCpu: 12,
+        totalMemory: 32492
+      },{
+        ts: 1724130154000,
+        totalCpu: 7,
+        totalMemory: 14462
+      },{
+        ts: 1724133605600,
+        totalCpu: 26,
+        totalMemory: 50176
+      }]
+    }),
+  },
+  {
+    url: '/mock/ams/v1/overview/dataSize',
+    method: 'get',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: [{
+        ts: 1724119200000,
+        dataSize: 1024000
+      },{
+        ts: 1724122800000,
+        dataSize: 2048000
+      },{
+        ts: 1724126400000,
+        dataSize: 4096000
+      }]
     }),
   },
 ]

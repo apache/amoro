@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.table;
 
-import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;

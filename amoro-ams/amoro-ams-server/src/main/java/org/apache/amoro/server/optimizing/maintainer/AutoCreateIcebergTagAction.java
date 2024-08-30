@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.optimizing.maintainer;
 
-import org.apache.amoro.api.config.TagConfiguration;
+import org.apache.amoro.config.TagConfiguration;
 import org.apache.iceberg.ManageSnapshots;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;

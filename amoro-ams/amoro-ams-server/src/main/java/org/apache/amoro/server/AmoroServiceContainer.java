@@ -21,11 +21,11 @@ package org.apache.amoro.server;
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import org.apache.amoro.Constants;
+import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.api.AmoroTableMetastore;
-import org.apache.amoro.api.OptimizerProperties;
 import org.apache.amoro.api.OptimizingService;
-import org.apache.amoro.api.config.ConfigHelpers;
-import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.config.ConfigHelpers;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.dashboard.DashboardServer;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
@@ -201,7 +201,11 @@ public class AmoroServiceContainer {
       terminalManager.dispose();
       terminalManager = null;
     }
-    optimizingService = null;
+    if (optimizingService != null) {
+      LOG.info("Stopping optimizing service...");
+      optimizingService.dispose();
+      optimizingService = null;
+    }
 
     if (amsServiceMetrics != null) {
       amsServiceMetrics.unregister();

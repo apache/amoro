@@ -1,0 +1,111 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+/-->
+
+<script lang="ts" setup>
+import { useI18n } from 'vue-i18n'
+import { ref, onMounted } from 'vue';
+import Chart from '@/components/echarts/Chart.vue'
+import { mbToSize, dateFormat } from '@/utils'
+import { getResourceUsageList } from '@/services/overview.service'
+import type { ResourceUsageItem } from '@/types/common.type'
+
+const { t } = useI18n()
+const timeRange = ref('24');
+const loading = ref<boolean>(false)
+
+function resourceFormatter(params: any[]): string {
+  const cpuParam = params.find(p => p.seriesName === 'CPU');
+  const memoryParam = params.find(p => p.seriesName === 'Memory');
+  const memorySize = mbToSize(memoryParam.value);
+  let str = `<span style="font-size: 12px">${params[0].axisValue}</span><br/>`;
+  str += `<span style="display: inline-block;background-color:${cpuParam.color}; margin-right: 6px; width: 6px;height: 6px;"></span>CPU: ${cpuParam.value} Core<br/>`;
+  str += `<span style="display: inline-block;background-color:${memoryParam.color}; margin-right: 6px; width: 6px;height: 6px;"></span>Memory: ${memorySize}<br/>`;
+  return str;
+}
+
+const option = ref({
+  tooltip: {
+    trigger: 'axis',
+    formatter: resourceFormatter
+  },
+  legend: { data: ['CPU', 'Memory'] },
+  xAxis: { type: 'category', data: [''] },
+  yAxis: [
+    { type: 'value', name: 'CPU Core', axisLabel: { formatter: '{value}' } },
+    { type: 'value', name: 'Memory', axisLabel: { formatter: (value: number) => { return `${mbToSize(value)}` } } }
+  ],
+  series: [
+    { name: 'CPU', type: 'line', yAxisIndex: 0, data: [-1] },
+    { name: 'Memory', type: 'line', yAxisIndex: 1, data: [-1] }
+  ]
+});
+
+const updateData = async () => {
+  try {
+    loading.value = true;
+    const times: string[] = [];
+    const cpu: number[] = [];
+    const memory: number[] = [];
+
+    const startTime = new Date().getTime() - parseFloat(timeRange.value) * 60 * 60 * 1000;
+    const result: ResourceUsageItem[] = await getResourceUsageList(startTime);
+    result.forEach(item => {
+      times.push(dateFormat(item.ts));
+      cpu.push(item.totalCpu);
+      memory.push(item.totalMemory);
+    });
+    option.value.xAxis.data = times;
+    option.value.series[0].data = cpu;
+    option.value.series[1].data = memory;
+  }
+  catch (error) {
+  }
+  finally {
+    loading.value = false
+  }
+};
+
+onMounted(() => {
+  updateData();
+});
+</script>
+
+<template>
+  <a-card>
+    <template #title>
+      <a-row justify="space-between">
+        <span class="card-title" v-text="t('resourceUsage')"></span>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <a-select v-model:value="timeRange" @change="updateData" style="width: 120px">
+            <a-select-option value='0.5'>Last 30 min</a-select-option>
+            <a-select-option value='8'>Last 8 h</a-select-option>
+            <a-select-option value='24'>Last 24 h</a-select-option>
+            <a-select-option value='168'>Last 7 day</a-select-option>
+          </a-select>
+        </div>
+      </a-row>
+    </template>
+    <Chart :loading="loading" :options="option" />
+  </a-card>
+</template>
+
+<style scoped>
+.card-title {
+  font-size: 18px;
+}
+</style>

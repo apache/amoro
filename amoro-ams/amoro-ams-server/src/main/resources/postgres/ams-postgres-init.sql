@@ -189,6 +189,7 @@ CREATE TABLE table_runtime
     table_config TEXT,
     optimizing_config TEXT,
     pending_input TEXT,
+    table_summary TEXT,
     PRIMARY KEY (table_id),
     UNIQUE (catalog_name, db_name, table_name)
 );
@@ -211,6 +212,7 @@ COMMENT ON COLUMN table_runtime.optimizer_group IS 'Optimizer group';
 COMMENT ON COLUMN table_runtime.table_config IS 'Table-specific configuration';
 COMMENT ON COLUMN table_runtime.optimizing_config IS 'Optimizing configuration';
 COMMENT ON COLUMN table_runtime.pending_input IS 'Pending input data';
+COMMENT ON COLUMN table_runtime.table_summary IS 'Table summary data';
 
 CREATE TABLE table_optimizing_process
 (
@@ -352,9 +354,10 @@ CREATE TABLE table_blocker
     operations VARCHAR(128) NOT NULL,
     create_time TIMESTAMP,
     expiration_time TIMESTAMP,
-    properties TEXT
+    properties TEXT,
+    prev_blocker_id BIGSERIAL NOT NULL
 );
-CREATE INDEX blocker_index ON table_optimizing_process (catalog_name, db_name, table_name);
+CREATE UNIQUE INDEX uq_prev ON table_blocker (catalog_name, db_name, table_name, prev_blocker_id);
 
 COMMENT ON TABLE table_blocker IS 'Table blockers';
 COMMENT ON COLUMN table_blocker.blocker_id IS 'Blocker unique ID';
@@ -365,3 +368,4 @@ COMMENT ON COLUMN table_blocker.operations IS 'Blocked operations';
 COMMENT ON COLUMN table_blocker.create_time IS 'Blocker create time';
 COMMENT ON COLUMN table_blocker.expiration_time IS 'Blocker expiration time';
 COMMENT ON COLUMN table_blocker.properties IS 'Blocker properties';
+COMMENT ON COLUMN table_blocker.prev_blocker_id is 'prev blocker id when created';

@@ -34,12 +34,25 @@ export function getOverviewOperations() {
   return request.get('ams/v1/overview/operations')
 }
 
-export function getUnhealthTableList(
-  params: {
-    page: number
-    pageSize: number
-  },
-) {
-  const { page, pageSize } = params
-  return request.get(`ams/v1/overview/unhealth`, { params: { page, pageSize } })
+export function getTop10TableList(params: {
+  order?: string
+  orderBy?: string
+  count?: number
+}) {
+  const { order, orderBy, count } = params
+  return request.get(`ams/v1/overview/top`, {
+    params: {
+      order: order || 'asc',
+      orderBy: orderBy || 'healthScore',
+      count: count || 10
+    }
+  })
+}
+
+export function getResourceUsageList(startTime: number) {
+  return request.get(`ams/v1/overview/resource`, { params: { startTime } })
+}
+
+export function getDataSizeList(startTime: number) {
+  return request.get(`ams/v1/overview/dataSize`, { params: { startTime } })
 }

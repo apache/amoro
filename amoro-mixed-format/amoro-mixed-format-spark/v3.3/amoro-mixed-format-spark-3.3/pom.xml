@@ -23,7 +23,7 @@
     <parent>
         <artifactId>amoro-mixed-format-spark</artifactId>
         <groupId>org.apache.amoro</groupId>
-        <version>0.7-SNAPSHOT</version>
+        <version>0.8-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -193,7 +193,7 @@
         <!-- amoro dependency -->
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
+            <artifactId>amoro-common</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
@@ -274,6 +274,12 @@
             <version>${paimon.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-paimon-format</artifactId>
+            <version>${parent.version}</version>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.junit.platform</groupId>
@@ -295,14 +301,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-ams-api</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
@@ -311,7 +309,7 @@
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
+            <artifactId>amoro-common</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
@@ -364,6 +362,13 @@
         <dependency>
             <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-format-spark-3-common</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-iceberg-format</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

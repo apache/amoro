@@ -18,13 +18,16 @@
 
 package org.apache.amoro.server.manager;
 
-import org.apache.amoro.api.OptimizerProperties;
+import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class TestFlinkOptimizerContainer {
   FlinkOptimizerContainer container = new FlinkOptimizerContainer();
@@ -53,6 +56,28 @@ public class TestFlinkOptimizerContainer {
   }
 
   @Test
+  public void testReadFlinkConfigFile() {
+    ClassLoader classLoader = getClass().getClassLoader();
+    URL flinkConfResourceUrl = classLoader.getResource("flink-conf.yaml");
+    Assert.assertEquals(
+        Paths.get(Objects.requireNonNull(flinkConfResourceUrl).getPath()).getFileName().toString(),
+        "flink-conf.yaml");
+    URL newFlinkConfResourceUrl = classLoader.getResource("config.yaml");
+    Assert.assertEquals(
+        Paths.get(Objects.requireNonNull(newFlinkConfResourceUrl).getPath())
+            .getFileName()
+            .toString(),
+        "config.yaml");
+    Map<String, String> flinkConfig = container.loadFlinkConfigForYAML(newFlinkConfResourceUrl);
+    Assert.assertEquals(
+        flinkConfig.get(FlinkOptimizerContainer.FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY),
+        "1728m");
+    Assert.assertEquals(
+        flinkConfig.get(FlinkOptimizerContainer.FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY),
+        "1600m");
+  }
+
+  @Test
   public void testBuildFlinkOptions() {
     Map<String, String> containerProperties = Maps.newHashMap(this.containerProperties);
     containerProperties.put("flink-conf.key1", "value1");
@@ -78,8 +103,8 @@ public class TestFlinkOptimizerContainer {
   @Test
   public void testGetMemorySizeValue() {
     HashMap<String, String> prop = new HashMap<>();
-    prop.put("taskmanager.memory", "100");
-    prop.put("jobmanager.memory", "100");
+    prop.put(FlinkOptimizerContainer.FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY, "100");
+    prop.put(FlinkOptimizerContainer.FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY, "100");
 
     FlinkOptimizerContainer.FlinkConf conf =
         FlinkOptimizerContainer.FlinkConf.buildFor(prop, Maps.newHashMap()).build();
@@ -87,11 +112,11 @@ public class TestFlinkOptimizerContainer {
     Assert.assertEquals(
         100L,
         container.getMemorySizeValue(
-            prop, conf, "taskmanager.memory", "taskmanager.memory.process.size"));
+            prop, conf, FlinkOptimizerContainer.FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY));
     Assert.assertEquals(
         100L,
         container.getMemorySizeValue(
-            prop, conf, "jobmanager.memory", "jobmanager.memory.process.size"));
+            prop, conf, FlinkOptimizerContainer.FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY));
 
     Map<String, String> containerProperties = Maps.newHashMap();
     containerProperties.put("flink-conf.jobmanager.memory.process.size", "200 M");
@@ -101,36 +126,36 @@ public class TestFlinkOptimizerContainer {
     Assert.assertEquals(
         200L,
         container.getMemorySizeValue(
-            prop, conf, "taskmanager.memory", "taskmanager.memory.process.size"));
+            prop, conf, FlinkOptimizerContainer.FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY));
     Assert.assertEquals(
         200L,
         container.getMemorySizeValue(
-            prop, conf, "jobmanager.memory", "jobmanager.memory.process.size"));
+            prop, conf, FlinkOptimizerContainer.FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY));
 
     prop.clear();
     containerProperties = Maps.newHashMap();
     conf = FlinkOptimizerContainer.FlinkConf.buildFor(prop, containerProperties).build();
 
-    prop.put("taskmanager.memory", "300 M");
-    prop.put("jobmanager.memory", "300");
+    prop.put(FlinkOptimizerContainer.FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY, "300 M");
+    prop.put(FlinkOptimizerContainer.FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY, "300");
     Assert.assertEquals(
         300L,
         container.getMemorySizeValue(
-            prop, conf, "taskmanager.memory", "taskmanager.memory.process.size"));
+            prop, conf, FlinkOptimizerContainer.FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY));
     Assert.assertEquals(
         300L,
         container.getMemorySizeValue(
-            prop, conf, "jobmanager.memory", "jobmanager.memory.process.size"));
+            prop, conf, FlinkOptimizerContainer.FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY));
 
     conf = FlinkOptimizerContainer.FlinkConf.buildFor(Maps.newHashMap(), Maps.newHashMap()).build();
     prop.clear();
     Assert.assertEquals(
         0L,
         container.getMemorySizeValue(
-            prop, conf, "taskmanager.memory", "taskmanager.memory.process.size"));
+            prop, conf, FlinkOptimizerContainer.FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY));
     Assert.assertEquals(
         0L,
         container.getMemorySizeValue(
-            prop, conf, "jobmanager.memory", "jobmanager.memory.process.size"));
+            prop, conf, FlinkOptimizerContainer.FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY));
   }
 }

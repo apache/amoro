@@ -19,19 +19,19 @@
 package org.apache.amoro.server;
 
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.OptimizerProperties;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.OptimizerProperties;
 import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.config.Configurations;
-import org.apache.amoro.api.config.TableConfiguration;
-import org.apache.amoro.api.resource.Resource;
-import org.apache.amoro.api.resource.ResourceGroup;
+import org.apache.amoro.config.Configurations;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.resource.Resource;
+import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.exception.ForbiddenException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
 import org.apache.amoro.server.exception.PluginRetryAuthException;
@@ -69,7 +69,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -99,7 +99,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final OptimizerKeeper optimizerKeeper = new OptimizerKeeper();
   private final TableService tableService;
   private final RuntimeHandlerChain tableHandlerChain;
-  private final Executor planExecutor;
+  private final ExecutorService planExecutor;
 
   public DefaultOptimizingService(Configurations serviceConfig, DefaultTableService tableService) {
     this.optimizerTouchTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT);
@@ -385,6 +385,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizingQueueByGroup.clear();
     optimizingQueueByToken.clear();
     authOptimizers.clear();
+    planExecutor.shutdown();
   }
 
   public boolean canDeleteResourceGroup(String name) {

@@ -21,12 +21,14 @@ package org.apache.amoro.server.optimizing.maintainer;
 import static org.apache.amoro.shade.guava32.com.google.common.primitives.Longs.min;
 
 import org.apache.amoro.api.CommitMetaProducer;
-import org.apache.amoro.api.config.DataExpirationConfig;
-import org.apache.amoro.api.config.TableConfiguration;
+import org.apache.amoro.config.DataExpirationConfig;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.PathInfo;
 import org.apache.amoro.io.SupportsFileSystemOperations;
 import org.apache.amoro.server.AmoroServiceConstants;
+import org.apache.amoro.server.table.TableConfigurations;
+import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
@@ -118,6 +120,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
   @Override
   public void cleanOrphanFiles(TableRuntime tableRuntime) {
     TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
+    TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics =
+        tableRuntime.getOrphanFilesCleaningMetrics();
 
     if (!tableConfiguration.isCleanOrphanEnabled()) {
       return;
@@ -125,13 +129,13 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
     long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
 
-    cleanContentFiles(System.currentTimeMillis() - keepTime);
+    cleanContentFiles(System.currentTimeMillis() - keepTime, orphanFilesCleaningMetrics);
 
     // refresh
     table.refresh();
 
     // clear metadata files
-    cleanMetadata(System.currentTimeMillis() - keepTime);
+    cleanMetadata(System.currentTimeMillis() - keepTime, orphanFilesCleaningMetrics);
   }
 
   @Override
@@ -234,7 +238,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
       DataExpirationConfig expirationConfig =
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
       Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
-      if (!expirationConfig.isValid(field, table.name())) {
+      if (!TableConfigurations.isValidDataExpirationField(expirationConfig, field, table.name())) {
         return;
       }
 
@@ -299,18 +303,20 @@ public class IcebergTableMaintainer implements TableMaintainer {
         .execute();
   }
 
-  protected void cleanContentFiles(long lastTime) {
+  protected void cleanContentFiles(
+      long lastTime, TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics) {
     // For clean data files, should getRuntime valid files in the base store and the change store,
     // so acquire in advance
     // to prevent repeated acquisition
     Set<String> validFiles = orphanFileCleanNeedToExcludeFiles();
     LOG.info("{} start cleaning orphan files in content", table.name());
-    clearInternalTableContentsFiles(lastTime, validFiles);
+    clearInternalTableContentsFiles(lastTime, validFiles, orphanFilesCleaningMetrics);
   }
 
-  protected void cleanMetadata(long lastTime) {
+  protected void cleanMetadata(
+      long lastTime, TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics) {
     LOG.info("{} start clean metadata files", table.name());
-    clearInternalTableMetadata(lastTime);
+    clearInternalTableMetadata(lastTime, orphanFilesCleaningMetrics);
   }
 
   protected void cleanDanglingDeleteFiles() {
@@ -353,9 +359,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return (AuthenticatedFileIO) table.io();
   }
 
-  private void clearInternalTableContentsFiles(long lastTime, Set<String> exclude) {
+  private void clearInternalTableContentsFiles(
+      long lastTime,
+      Set<String> exclude,
+      TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics) {
     String dataLocation = table.location() + File.separator + DATA_FOLDER_NAME;
-    int slated = 0, deleted = 0;
+    int expected = 0, deleted = 0;
 
     try (AuthenticatedFileIO io = fileIO()) {
       // listPrefix will not return the directory and the orphan file clean should clean the empty
@@ -365,7 +374,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
         Set<PathInfo> directories = new HashSet<>();
         Set<String> filesToDelete =
             deleteInvalidFilesInFs(fio, dataLocation, lastTime, exclude, directories);
-        slated = filesToDelete.size();
+        expected = filesToDelete.size();
         deleted = TableFileUtil.deleteFiles(io, filesToDelete);
         /* delete empty directories */
         deleteEmptyDirectories(fio, directories, lastTime, exclude);
@@ -373,7 +382,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
         SupportsPrefixOperations pio = io.asPrefixFileIO();
         Set<String> filesToDelete =
             deleteInvalidFilesByPrefix(pio, dataLocation, lastTime, exclude);
-        slated = filesToDelete.size();
+        expected = filesToDelete.size();
         deleted = TableFileUtil.deleteFiles(io, filesToDelete);
       } else {
         LOG.warn(
@@ -383,19 +392,22 @@ public class IcebergTableMaintainer implements TableMaintainer {
       }
     }
 
-    final int finalCandidate = slated;
+    final int finalExpected = expected;
     final int finalDeleted = deleted;
     runWithCondition(
-        slated > 0,
-        () ->
-            LOG.info(
-                "{}: There were {} files slated for deletion and {} files were successfully deleted",
-                table.name(),
-                finalCandidate,
-                finalDeleted));
+        expected > 0,
+        () -> {
+          LOG.info(
+              "{}: There were {} files expected for deletion and {} files were successfully deleted",
+              table.name(),
+              finalExpected,
+              finalDeleted);
+          orphanFilesCleaningMetrics.completeOrphanDataFiles(finalExpected, finalDeleted);
+        });
   }
 
-  private void clearInternalTableMetadata(long lastTime) {
+  private void clearInternalTableMetadata(
+      long lastTime, TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics) {
     Set<String> validFiles = getValidMetadataFiles(table);
     LOG.info("{} table getRuntime {} valid files", table.name(), validFiles.size());
     Pattern excludeFileNameRegex = getExcludeFileNameRegex(table);
@@ -414,12 +426,14 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
         runWithCondition(
             !filesToDelete.isEmpty(),
-            () ->
-                LOG.info(
-                    "{}: There were {} metadata files to be deleted and {} metadata files were successfully deleted",
-                    table.name(),
-                    filesToDelete.size(),
-                    deleted));
+            () -> {
+              LOG.info(
+                  "{}: There were {} metadata files to be deleted and {} metadata files were successfully deleted",
+                  table.name(),
+                  filesToDelete.size(),
+                  deleted);
+              orphanFilesCleaningMetrics.completeOrphanMetadataFiles(filesToDelete.size(), deleted);
+            });
       } else {
         LOG.warn(
             String.format(

@@ -60,14 +60,16 @@ jobs:
         id: meta
         with:
           flavor: |
-            latest=auto
+            latest=false
           images: |
             name=apache/amoro
           tags: |
             type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},suffix=-snapshot-hadoop2
+            type=raw,enable=${{ matrix.hadoop == 'v3' && startsWith(github.ref, 'refs/tags/v') }},value=latest
             type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}
-            type=semver,event=tag,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}-hadoop2
+            type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}, suffix=-hadoop3
+            type=semver,event=tag,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}, suffix=-hadoop2
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
@@ -101,7 +103,7 @@ jobs:
     if: ${{ startsWith(github.repository, 'apache/') }}
     strategy:
       matrix:
-        flink: [ "1.14.6", "1.18.1" ]
+        flink: [ "1.14.6", "1.20.0" ]
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 8
@@ -121,16 +123,17 @@ jobs:
         id: meta
         with:
           flavor: |
-            latest=auto
+            latest=false
           images: |
             name=apache/amoro-flink-optimizer
           tags: |
             type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot-flink1.14
-            type=ref,event=branch,enable=${{ matrix.flink == '1.18.1' }},suffix=-snapshot-flink1.18
+            type=ref,event=branch,enable=${{ matrix.flink == '1.20.0' }},suffix=-snapshot-flink1.20
+            type=raw,enable=${{ matrix.hadoop == '1.14.6' && startsWith(github.ref, 'refs/tags/v') }},value=latest
             type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}
-            type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}-flink1.14
-            type=semver,enable=${{ matrix.flink == '1.18.1' }},pattern={{version}}-flink1.18
+            type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}, suffix=-flink1.14
+            type=semver,enable=${{ matrix.flink == '1.20.0' }},pattern={{version}}, suffix=-flink1.20
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
@@ -201,13 +204,15 @@ jobs:
         id: meta
         with:
           flavor: |
-            latest=auto
+            latest=false
           images: |
             name=apache/amoro-spark-optimizer
           tags: |
             type=ref,event=branch,enable=${{ matrix.spark == '3.3.3' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.spark == '3.3.3' }},suffix=-snapshot-spark3.3
+            type=raw,enable=${{ matrix.hadoop == '3.3.3' && startsWith(github.ref, 'refs/tags/v') }},value=latest
             type=semver,enable=${{ matrix.spark == '3.3.3' }},pattern={{version}}
+            type=semver,enable=${{ matrix.spark == '3.3.3' }},pattern={{version}}, suffix=-spark3.3
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'

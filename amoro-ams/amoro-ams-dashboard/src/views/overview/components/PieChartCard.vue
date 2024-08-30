@@ -18,7 +18,7 @@ limitations under the License.
 
 <script lang="ts" setup>
 import { onMounted, ref, watch } from 'vue'
-import * as echarts from 'echarts'
+import Chart from '@/components/echarts/Chart.vue'
 
 const props = defineProps<{
   title: string
@@ -28,12 +28,10 @@ const props = defineProps<{
   }[]
 }>()
 
-const pieChart = ref<HTMLDivElement | null>(null)
+const pieChartOption = ref({})
 
 function renderChart() {
-  if (pieChart.value) {
-    const chart = echarts.init(pieChart.value, null, { height: 300 })
-    const option = {
+  pieChartOption.value = {
       tooltip: {
         trigger: 'item',
       },
@@ -57,8 +55,6 @@ function renderChart() {
         },
       ],
     }
-    chart.setOption(option)
-  }
 }
 
 onMounted(renderChart)
@@ -66,9 +62,20 @@ watch(() => props.data, renderChart)
 </script>
 
 <template>
-  <a-card :title="title">
-    <div ref="pieChart" style="width: 100%; height: 300px;" />
+  <a-card class="pie-chart-card">
+    <template #title>
+      <span class="card-title" v-text="title"></span>
+    </template>
+    <Chart :options="pieChartOption" />
   </a-card>
 </template>
 
-<style scoped></style>
+<style scoped>
+.pie-chart-card {
+  height: 500px;
+}
+
+.card-title {
+  font-size: 18px;
+}
+</style>

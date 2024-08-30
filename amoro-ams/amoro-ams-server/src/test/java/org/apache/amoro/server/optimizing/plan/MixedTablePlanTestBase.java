@@ -18,11 +18,11 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableTestHelper;
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.config.OptimizingConfig;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.optimizing.MixFormatRewriteExecutorFactory;
@@ -32,6 +32,7 @@ import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
 import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
+import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -567,7 +568,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   private OptimizingConfig getConfig() {
-    return OptimizingConfig.parse(getMixedTable().properties());
+    return TableConfigurations.parseOptimizingConfig(getMixedTable().properties());
   }
 
   protected void updateChangeHashBucket(int bucket) {

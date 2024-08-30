@@ -69,13 +69,23 @@ export interface IBaseDetailInfo {
   hasPartition: boolean
 }
 
-export interface UnhealthTableItem {
-  tableIdentifier: ITableIdentifier
+export interface ResourceUsageItem {
+  ts: number
+  totalCpu: number
+  totalMemory: number
+}
+
+export interface DataSizeItem {
+  ts: string
+  dataSize: number
+}
+
+export interface ITopTableItem {
   tableName: string
+  tableSize: number
+  fileCount: number
+  averageFileSize: number
   healthScore: number
-  size: number
-  file: number
-  averageFile: number
 }
 
 export interface DetailColumnItem {
@@ -315,15 +325,6 @@ export interface IChartLineData {
   data2: number[] | string[]
 }
 
-export interface ITopTableItem {
-  tableName: string
-  size: number
-  fileCnt: number
-  displaySize: string
-  tableNameOnly: string
-  index: number
-}
-
 export interface IOptimizeGroup {
   container: string
   name: string
@@ -369,6 +370,7 @@ export enum tableTypeIconMap {
   ARCTIC = 'amoro',
   HIVE = 'hive',
   PAIMON = 'paimon',
+  HUDI = 'hudi',
 }
 
 export type ILineChartOriginalData = Record<string, Record<string, number>>

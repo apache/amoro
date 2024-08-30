@@ -19,110 +19,96 @@
 package org.apache.amoro.server.dashboard.controller;
 
 import io.javalin.http.Context;
-import org.apache.amoro.AmoroTable;
-import org.apache.amoro.TableIDWithFormat;
-import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.server.DefaultOptimizingService;
-import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.dashboard.OverviewCache;
-import org.apache.amoro.server.dashboard.ServerTableDescriptor;
-import org.apache.amoro.server.dashboard.model.DDLInfo;
-import org.apache.amoro.server.dashboard.model.FilesStatistics;
 import org.apache.amoro.server.dashboard.model.OverviewBaseData;
+import org.apache.amoro.server.dashboard.model.OverviewDataSizeItem;
+import org.apache.amoro.server.dashboard.model.OverviewResourceUsageItem;
 import org.apache.amoro.server.dashboard.model.OverviewSummary;
-import org.apache.amoro.server.dashboard.model.OverviewTableOperation;
-import org.apache.amoro.server.dashboard.model.OverviewUnhealthTable;
-import org.apache.amoro.server.dashboard.model.TableStatistics;
+import org.apache.amoro.server.dashboard.model.OverviewTopTableItem;
 import org.apache.amoro.server.dashboard.response.OkResponse;
-import org.apache.amoro.server.dashboard.response.PageResult;
-import org.apache.amoro.server.dashboard.utils.TableStatCollector;
-import org.apache.amoro.server.table.TableMetadata;
-import org.apache.amoro.server.table.TableService;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
-import org.apache.amoro.table.MixedTable;
-import org.apache.amoro.table.UnkeyedTable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
 
 /** The controller that handles overview page requests. */
 public class OverviewController {
 
-  private static final Logger log = LoggerFactory.getLogger(OverviewController.class);
-  private final TableService tableService;
-  private final DefaultOptimizingService optimizerManager;
-  private final ServerTableDescriptor tableDescriptor;
   private OverviewCache overviewCache;
 
-  public OverviewController(
-      TableService tableService,
-      DefaultOptimizingService optimizerManager,
-      ServerTableDescriptor tableDescriptor) {
-    this.tableService = tableService;
-    this.optimizerManager = optimizerManager;
-    this.tableDescriptor = tableDescriptor;
+  public OverviewController() {
     this.overviewCache = OverviewCache.getInstance();
   }
 
-  public void getSummary(Context ctx) {
-    long sumTableSizeInBytes = 0;
-    List<CatalogMeta> catalogMetas = tableService.listCatalogMetas();
-    int catalogCount = catalogMetas.size();
-    int tableCount = 0;
+  public void getResourceUsageHistory(Context ctx) {
+    String startTime = ctx.queryParam("startTime");
+    Preconditions.checkArgument(StringUtils.isNumeric(startTime), "invalid startTime!");
+    List<OverviewResourceUsageItem> resourceUsageHistory =
+        overviewCache.getResourceUsageHistory(Long.parseLong(startTime));
+    ctx.json(OkResponse.of(resourceUsageHistory));
+  }
 
-    // table info
-    for (CatalogMeta catalogMeta : catalogMetas) {
-      ServerCatalog serverCatalog = tableService.getServerCatalog(catalogMeta.getCatalogName());
-      List<TableIDWithFormat> tableIDWithFormats = serverCatalog.listTables();
-      tableCount += tableIDWithFormats.size();
-      for (TableIDWithFormat tableIDWithFormat : tableIDWithFormats) {
-        sumTableSizeInBytes += getFilesStatistics(tableIDWithFormat, serverCatalog).getTotalSize();
-      }
+  public void getDataSizeHistory(Context ctx) {
+    String startTime = ctx.queryParam("startTime");
+    Preconditions.checkArgument(StringUtils.isNumeric(startTime), "invalid startTime!");
+    List<OverviewDataSizeItem> dataSizeHistory =
+        overviewCache.getDataSizeHistory(Long.parseLong(startTime));
+    ctx.json(OkResponse.of(dataSizeHistory));
+  }
+
+  public void getTopTables(Context ctx) {
+    String order = ctx.queryParam("order");
+    String orderBy = ctx.queryParam("orderBy");
+    Integer limit = ctx.queryParamAsClass("limit", Integer.class).getOrDefault(10);
+    Preconditions.checkArgument(StringUtils.isNotBlank(order), "order can not be empty");
+    Preconditions.checkArgument(StringUtils.isNotBlank(orderBy), "orderBy can not be empty");
+    List<OverviewTopTableItem> top10Tables;
+    boolean isAsc = "asc".equals(order);
+
+    switch (orderBy) {
+      case "tableSize":
+        top10Tables = getTopTables(isAsc, OverviewTopTableItem::getTableSize, limit);
+        break;
+      case "fileCount":
+        top10Tables = getTopTables(isAsc, OverviewTopTableItem::getFileCount, limit);
+        break;
+      case "healthScore":
+        top10Tables = getTopTables(isAsc, OverviewTopTableItem::getHealthScore, limit);
+        break;
+      default:
+        throw new IllegalArgumentException("Invalid orderBy: " + orderBy);
     }
+    ctx.json(OkResponse.of(top10Tables));
+  }
 
-    // resource info
-    int threadCount = overviewCache.getThreadCount();
+  private List<OverviewTopTableItem> getTopTables(
+      boolean asc, ToLongFunction<OverviewTopTableItem> orderby, int limit) {
+    return overviewCache.getAllTopTableItem().stream()
+        .sorted(
+            asc
+                ? Comparator.comparingLong(orderby)
+                    .thenComparing(OverviewTopTableItem::getTableName)
+                : Comparator.comparingLong(orderby)
+                    .reversed()
+                    .thenComparing(OverviewTopTableItem::getTableName))
+        .limit(limit)
+        .collect(Collectors.toList());
+  }
+
+  public void getSummary(Context ctx) {
+    int totalCatalog = overviewCache.getTotalCatalog();
+    int totalTableCount = overviewCache.getTotalTableCount();
+    long totalDataSize = overviewCache.getTotalDataSize();
+    int totalCpu = overviewCache.getTotalCpu();
     long totalMemory = overviewCache.getTotalMemory();
 
     OverviewSummary overviewSummary =
-        new OverviewSummary(
-            catalogCount, tableCount, sumTableSizeInBytes, threadCount, byte2Mb(totalMemory));
+        new OverviewSummary(totalCatalog, totalTableCount, totalDataSize, totalCpu, totalMemory);
     ctx.json(OkResponse.of(overviewSummary));
-  }
-
-  private long byte2Mb(long bytes) {
-    return bytes / 1024 / 1024;
-  }
-
-  private static FilesStatistics getFilesStatistics(
-      TableIDWithFormat tableIDWithFormat, ServerCatalog catalog) {
-    AmoroTable<?> amoroTable =
-        catalog.loadTable(tableIDWithFormat.database(), tableIDWithFormat.table());
-    MixedTable table = (MixedTable) amoroTable.originalTable();
-    UnkeyedTable unkeyedTable =
-        table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
-    TableStatistics tableBaseInfo = new TableStatistics();
-    TableStatCollector.fillTableStatistics(tableBaseInfo, unkeyedTable, table);
-    return tableBaseInfo.getTotalFilesStat();
-  }
-
-  public void getTableFormat(Context ctx) {
-    List<OverviewBaseData> tableFormats =
-        tableService.listTableMetas().stream()
-            .map(TableMetadata::getFormat)
-            .collect(
-                Collectors.groupingBy(tableFormat -> tableFormat.name(), Collectors.counting()))
-            .entrySet()
-            .stream()
-            .map(format -> new OverviewBaseData(format.getKey(), format.getValue()))
-            .collect(Collectors.toList());
-    ctx.json(OkResponse.of(tableFormats));
   }
 
   public void getOptimizingStatus(Context ctx) {
@@ -132,64 +118,5 @@ public class OverviewController {
             .map(status -> new OverviewBaseData(status.getKey(), status.getValue()))
             .collect(Collectors.toList());
     ctx.json(OkResponse.of(optimizingStatusList));
-  }
-
-  public void getUnhealthTables(Context ctx) {
-    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
-    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
-    int offset = (page - 1) * pageSize;
-
-    List<OverviewUnhealthTable> unhealthTableList = new ArrayList<>();
-    List<CatalogMeta> catalogMetas = tableService.listCatalogMetas();
-    for (CatalogMeta catalogMeta : catalogMetas) {
-      ServerCatalog serverCatalog = tableService.getServerCatalog(catalogMeta.getCatalogName());
-      List<TableIDWithFormat> tableIDWithFormats = serverCatalog.listTables();
-      for (TableIDWithFormat tableIDWithFormat : tableIDWithFormats) {
-        FilesStatistics filesStatistics = getFilesStatistics(tableIDWithFormat, serverCatalog);
-        unhealthTableList.add(
-            // TODO compute health score
-            new OverviewUnhealthTable(
-                ServerTableIdentifier.of(
-                    tableIDWithFormat.getIdentifier().buildTableIdentifier(),
-                    tableIDWithFormat.getTableFormat()),
-                90,
-                filesStatistics));
-      }
-    }
-    unhealthTableList.sort(Comparator.comparing(OverviewUnhealthTable::getHealthScore));
-
-    PageResult<OverviewUnhealthTable> amsPageResult =
-        PageResult.of(unhealthTableList, offset, pageSize);
-    ctx.json(OkResponse.of(amsPageResult));
-  }
-
-  public void getLatestOperations(Context ctx) {
-    List<CatalogMeta> catalogMetas = tableService.listCatalogMetas();
-    List<OverviewTableOperation> allTableOperationList = Lists.newArrayList();
-
-    for (CatalogMeta catalogMeta : catalogMetas) {
-      ServerCatalog serverCatalog = tableService.getServerCatalog(catalogMeta.getCatalogName());
-      List<TableIDWithFormat> tableIDWithFormats = serverCatalog.listTables();
-      for (TableIDWithFormat tableIDWithFormat : tableIDWithFormats) {
-        ServerTableIdentifier serverTableIdentifier =
-            ServerTableIdentifier.of(
-                tableIDWithFormat.getIdentifier().buildTableIdentifier(),
-                tableIDWithFormat.getTableFormat());
-        List<DDLInfo> tableOperations =
-            tableDescriptor.getTableOperations(serverTableIdentifier.getIdentifier());
-        List<OverviewTableOperation> overviewTableOperationList =
-            tableOperations.stream()
-                .map(ddl -> new OverviewTableOperation(serverTableIdentifier, ddl))
-                .collect(Collectors.toList());
-        allTableOperationList.addAll(overviewTableOperationList);
-      }
-    }
-
-    List<OverviewTableOperation> latest10Operations =
-        allTableOperationList.stream()
-            .sorted(Comparator.comparing(OverviewTableOperation::getTs).reversed())
-            .limit(10)
-            .collect(Collectors.toList());
-    ctx.json(OkResponse.of(latest10Operations));
   }
 }

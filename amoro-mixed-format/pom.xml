@@ -1,5 +1,4 @@
-
-
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Licensed to the Apache Software Foundation (ASF) under one
   ~ or more contributor license agreements.  See the NOTICE file
@@ -25,7 +24,7 @@
     <parent>
         <artifactId>amoro-parent</artifactId>
         <groupId>org.apache.amoro</groupId>
-        <version>0.7-SNAPSHOT</version>
+        <version>0.8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

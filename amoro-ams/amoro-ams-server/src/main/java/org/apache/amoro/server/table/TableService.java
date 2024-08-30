@@ -18,9 +18,9 @@
 
 package org.apache.amoro.server.table;
 
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.Blocker;
-import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.server.catalog.CatalogService;
 
@@ -54,13 +54,6 @@ public interface TableService extends CatalogService, TableManager {
    * @return {@link ServerTableIdentifier} list
    */
   List<ServerTableIdentifier> listManagedTables();
-
-  /**
-   * load all table metadata
-   *
-   * @return table metadata list
-   */
-  List<TableMetadata> listTableMetas();
 
   /**
    * Get the ServerTableIdentifier instance of the specified table identifier

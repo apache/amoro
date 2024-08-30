@@ -26,13 +26,13 @@ import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIV
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 
 import java.util.Map;
 import java.util.Set;
@@ -43,7 +43,11 @@ public class CatalogBuilder {
   private static final Map<String, Set<TableFormat>> formatSupportedMatrix =
       ImmutableMap.of(
           CATALOG_TYPE_HADOOP,
-              Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.PAIMON),
+              Sets.newHashSet(
+                  TableFormat.ICEBERG,
+                  TableFormat.MIXED_ICEBERG,
+                  TableFormat.PAIMON,
+                  TableFormat.HUDI),
           CATALOG_TYPE_GLUE, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
           CATALOG_TYPE_CUSTOM, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
           CATALOG_TYPE_HIVE,
@@ -51,7 +55,8 @@ public class CatalogBuilder {
                   TableFormat.ICEBERG,
                   TableFormat.MIXED_ICEBERG,
                   TableFormat.MIXED_HIVE,
-                  TableFormat.PAIMON),
+                  TableFormat.PAIMON,
+                  TableFormat.HUDI),
           CATALOG_TYPE_AMS, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
 
   private static String getAmsURI(Configurations serviceConfig) {
@@ -63,7 +68,7 @@ public class CatalogBuilder {
   public static ServerCatalog buildServerCatalog(
       CatalogMeta catalogMeta, Configurations serverConfiguration) {
     String type = catalogMeta.getCatalogType();
-    Set<TableFormat> tableFormats = MixedCatalogUtil.tableFormats(catalogMeta);
+    Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
 
     Preconditions.checkState(
         formatSupportedMatrix.containsKey(type), "unsupported catalog type: %s", type);

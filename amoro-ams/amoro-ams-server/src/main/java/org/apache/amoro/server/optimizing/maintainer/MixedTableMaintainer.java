@@ -23,9 +23,11 @@ import static org.apache.amoro.utils.MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE
 
 import org.apache.amoro.IcebergFileEntry;
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.api.config.DataExpirationConfig;
+import org.apache.amoro.config.DataExpirationConfig;
 import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.scan.TableEntriesScan;
+import org.apache.amoro.server.table.TableConfigurations;
+import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.HiveLocationUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
@@ -121,7 +123,8 @@ public class MixedTableMaintainer implements TableMaintainer {
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
       Types.NestedField field =
           mixedTable.schema().findField(expirationConfig.getExpirationField());
-      if (!expirationConfig.isValid(field, mixedTable.name())) {
+      if (!TableConfigurations.isValidDataExpirationField(
+          expirationConfig, field, mixedTable.name())) {
         return;
       }
 
@@ -244,18 +247,20 @@ public class MixedTableMaintainer implements TableMaintainer {
     throw new UnsupportedOperationException("Mixed table doesn't support auto create tags");
   }
 
-  protected void cleanContentFiles(long lastTime) {
+  protected void cleanContentFiles(
+      long lastTime, TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics) {
     if (changeMaintainer != null) {
-      changeMaintainer.cleanContentFiles(lastTime);
+      changeMaintainer.cleanContentFiles(lastTime, orphanFilesCleaningMetrics);
     }
-    baseMaintainer.cleanContentFiles(lastTime);
+    baseMaintainer.cleanContentFiles(lastTime, orphanFilesCleaningMetrics);
   }
 
-  protected void cleanMetadata(long lastTime) {
+  protected void cleanMetadata(
+      long lastTime, TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics) {
     if (changeMaintainer != null) {
-      changeMaintainer.cleanMetadata(lastTime);
+      changeMaintainer.cleanMetadata(lastTime, orphanFilesCleaningMetrics);
     }
-    baseMaintainer.cleanMetadata(lastTime);
+    baseMaintainer.cleanMetadata(lastTime, orphanFilesCleaningMetrics);
   }
 
   protected void cleanDanglingDeleteFiles() {

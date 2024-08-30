@@ -21,10 +21,11 @@ import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import SingleDataCard from './components/SingleDataCard.vue'
 import MultipleDataCard from './components/MultipleDataCard.vue'
-import UnhealthTablesCard from './components/UnhealthTablesCard.vue'
-import OperationsCard from './components/OperationsCard.vue'
+import Top10TablesCard from './components/Top10TablesCard.vue'
+import ResourceUsageCard from './components/ResourceUsageCard.vue'
+import DataSizeCard from './components/DataSizeCard.vue'
 import PieChartCard from './components/PieChartCard.vue'
-import { getOverviewFormat, getOverviewOptimizingStatus, getOverviewSummary } from '@/services/overview.service'
+import { getOverviewOptimizingStatus, getOverviewSummary } from '@/services/overview.service'
 import { bytesToSize, mbToSize } from '@/utils'
 import type { IKeyAndValue } from '@/types/common.type'
 
@@ -32,7 +33,6 @@ const { t } = useI18n()
 
 const singleData = ref<IKeyAndValue[]>([])
 const multipleData = ref<IKeyAndValue[]>([])
-const tableFormatData = ref<{ value: number, name: string }[]>([])
 const optimizingStatusData = ref<{ value: number, name: string }[]>([])
 
 async function getCurOverviewData() {
@@ -45,7 +45,6 @@ async function getCurOverviewData() {
   multipleData.value.push({ key: 'cpu', value: summaryResult.totalCpu })
   multipleData.value.push({ key: 'memory', value: memorySize })
 
-  tableFormatData.value = await getOverviewFormat()
   optimizingStatusData.value = await getOverviewOptimizingStatus()
 }
 
@@ -64,16 +63,16 @@ onMounted(() => {
         <MultipleDataCard :title="t('resource')" :data="multipleData" />
       </a-col>
       <a-col :span="12">
-        <PieChartCard :title="t('tableFormat')" :data="tableFormatData" />
+        <ResourceUsageCard/>
+      </a-col>
+      <a-col :span="12">
+        <DataSizeCard />
       </a-col>
       <a-col :span="12">
         <PieChartCard :title="t('optimizingStatus')" :data="optimizingStatusData" />
       </a-col>
       <a-col :span="12">
-        <UnhealthTablesCard />
-      </a-col>
-      <a-col :span="12">
-        <OperationsCard />
+        <Top10TablesCard />
       </a-col>
     </a-row>
   </div>

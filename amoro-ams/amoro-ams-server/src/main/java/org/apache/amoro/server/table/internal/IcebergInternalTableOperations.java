@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.table.internal;
 
-import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.utils.InternalTableUtil;

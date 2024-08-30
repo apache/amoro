@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server;
 
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.AmoroTableMetastore;
 import org.apache.amoro.api.BlockableOperation;
@@ -25,7 +26,6 @@ import org.apache.amoro.api.Blocker;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.NoSuchObjectException;
 import org.apache.amoro.api.OperationConflictException;
-import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.TableCommitMeta;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.api.TableMeta;

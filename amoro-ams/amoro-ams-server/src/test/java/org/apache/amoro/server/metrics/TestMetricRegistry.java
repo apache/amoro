@@ -25,12 +25,12 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import org.apache.amoro.api.metrics.Counter;
-import org.apache.amoro.api.metrics.Gauge;
-import org.apache.amoro.api.metrics.Metric;
-import org.apache.amoro.api.metrics.MetricDefine;
-import org.apache.amoro.api.metrics.MetricKey;
-import org.apache.amoro.api.metrics.MetricRegisterListener;
+import org.apache.amoro.metrics.Counter;
+import org.apache.amoro.metrics.Gauge;
+import org.apache.amoro.metrics.Metric;
+import org.apache.amoro.metrics.MetricDefine;
+import org.apache.amoro.metrics.MetricKey;
+import org.apache.amoro.metrics.MetricRegisterListener;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.junit.jupiter.api.BeforeEach;
