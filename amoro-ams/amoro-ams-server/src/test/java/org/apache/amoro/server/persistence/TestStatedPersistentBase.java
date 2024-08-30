@@ -21,7 +21,7 @@ package org.apache.amoro.server.persistence;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.apache.amoro.api.StateField;
+import org.apache.amoro.StateField;
 import org.junit.Test;
 
 import java.util.UUID;

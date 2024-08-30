@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.manager;
 
-import org.apache.amoro.api.metrics.MetricRegisterListener;
-import org.apache.amoro.api.metrics.MetricReporter;
+import org.apache.amoro.metrics.MetricRegisterListener;
+import org.apache.amoro.metrics.MetricReporter;
 import org.apache.amoro.server.metrics.MetricRegistry;
 
 /** Metric plugins manager and registry */

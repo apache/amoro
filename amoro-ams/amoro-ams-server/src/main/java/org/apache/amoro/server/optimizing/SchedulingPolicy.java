@@ -18,9 +18,9 @@
 
 package org.apache.amoro.server.optimizing;
 
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.BlockableOperation;
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.resource.ResourceGroup;
+import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;

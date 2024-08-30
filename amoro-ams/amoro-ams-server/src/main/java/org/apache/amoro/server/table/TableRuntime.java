@@ -19,12 +19,12 @@
 package org.apache.amoro.server.table;
 
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.StateField;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.BlockableOperation;
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.StateField;
-import org.apache.amoro.api.config.OptimizingConfig;
-import org.apache.amoro.api.config.TableConfiguration;
+import org.apache.amoro.config.OptimizingConfig;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
@@ -102,7 +102,7 @@ public class TableRuntime extends StatedPersistentBase {
     Preconditions.checkNotNull(tableHandler, "TableRuntimeHandler must not be null.");
     this.tableHandler = tableHandler;
     this.tableIdentifier = tableIdentifier;
-    this.tableConfiguration = TableConfiguration.parseConfig(properties);
+    this.tableConfiguration = TableConfigurations.parseTableConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
@@ -393,7 +393,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   private boolean updateConfigInternal(Map<String, String> properties) {
-    TableConfiguration newTableConfig = TableConfiguration.parseConfig(properties);
+    TableConfiguration newTableConfig = TableConfigurations.parseTableConfig(properties);
     if (tableConfiguration.equals(newTableConfig)) {
       return false;
     }

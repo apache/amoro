@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
-import org.apache.amoro.api.config.OptimizingConfig;
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
