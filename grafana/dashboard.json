@@ -25,7 +25,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 24,
+  "id": 26,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -44,7 +44,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -108,7 +109,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -127,7 +129,8 @@
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -144,7 +147,8 @@
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -165,7 +169,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "description": "Table Current Stat",
       "fieldConfig": {
@@ -215,7 +220,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -231,7 +237,8 @@
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "editorMode": "builder",
           "exemplar": false,
@@ -244,7 +251,8 @@
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -257,7 +265,8 @@
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -270,7 +279,8 @@
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -287,7 +297,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "description": "Count of all optimizing process since ams started",
       "fieldConfig": {
@@ -368,7 +379,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -385,7 +397,8 @@
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -402,7 +415,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "description": "Count of Minor optimizing process since ams started",
       "fieldConfig": {
@@ -483,7 +497,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -500,7 +515,8 @@
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -521,7 +537,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "description": "Count of Major optimizing process since ams started",
       "fieldConfig": {
@@ -602,7 +619,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -619,7 +637,8 @@
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -640,7 +659,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "description": "Count of full optimizing process since ams started",
       "fieldConfig": {
@@ -721,7 +741,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -738,7 +759,8 @@
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -772,7 +794,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "description": "Duration in milliseconds after table be in planning status",
       "fieldConfig": {
@@ -852,7 +875,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -871,7 +895,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -921,7 +946,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "code",
@@ -975,7 +1001,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "description": "Duration in milliseconds after table be in pending status",
       "fieldConfig": {
@@ -1055,7 +1082,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1074,7 +1102,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -1124,7 +1153,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "code",
@@ -1178,7 +1208,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "description": "Duration in milliseconds after table be in executing status",
       "fieldConfig": {
@@ -1223,8 +1254,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1232,7 +1262,8 @@
               }
             ]
           },
-          "unit": "ms"
+          "unit": "ms",
+          "unitScale": true
         },
         "overrides": []
       },
@@ -1258,7 +1289,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1277,7 +1309,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -1291,12 +1324,12 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
-          "unit": "ms"
+          "unit": "ms",
+          "unitScale": true
         },
         "overrides": []
       },
@@ -1323,11 +1356,12 @@
         "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "11.1.2",
+      "pluginVersion": "10.3.0",
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "code",
@@ -1381,7 +1415,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "description": "Duration in milliseconds after table be in Committing status",
       "fieldConfig": {
@@ -1426,8 +1461,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1435,7 +1469,8 @@
               }
             ]
           },
-          "unit": "ms"
+          "unit": "ms",
+          "unitScale": true
         },
         "overrides": []
       },
@@ -1461,7 +1496,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1480,7 +1516,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -1494,12 +1531,12 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
-          "unit": "ms"
+          "unit": "ms",
+          "unitScale": true
         },
         "overrides": []
       },
@@ -1526,11 +1563,12 @@
         "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "11.1.2",
+      "pluginVersion": "10.3.0",
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "code",
@@ -1585,7 +1623,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "${Datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -1599,12 +1637,12 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
-          "unit": "none"
+          "unit": "none",
+          "unitScale": true
         },
         "overrides": []
       },
@@ -1631,11 +1669,12 @@
         "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "11.1.2",
+      "pluginVersion": "10.3.0",
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "code",
@@ -1716,7 +1755,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "${Datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1729,12 +1768,12 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
-          "unit": "none"
+          "unit": "none",
+          "unitScale": true
         },
         "overrides": []
       },
@@ -1761,11 +1800,12 @@
         "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "11.1.2",
+      "pluginVersion": "10.3.0",
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "code",
@@ -1846,7 +1886,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "${Datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1859,12 +1899,12 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
-          "unit": "none"
+          "unit": "none",
+          "unitScale": true
         },
         "overrides": []
       },
@@ -1891,11 +1931,12 @@
         "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "11.1.2",
+      "pluginVersion": "10.3.0",
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "code",
@@ -1976,7 +2017,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": ""
+        "uid": "${Datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1989,12 +2030,12 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
-          "unit": "none"
+          "unit": "none",
+          "unitScale": true
         },
         "overrides": []
       },
@@ -2021,11 +2062,12 @@
         "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "11.1.2",
+      "pluginVersion": "10.3.0",
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "disableTextWrap": false,
           "editorMode": "code",
@@ -2118,7 +2160,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2162,15 +2205,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
                 "value": 80
               }
             ]
-          }
+          },
+          "unitScale": true
         },
         "overrides": []
       },
@@ -2196,7 +2239,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "editorMode": "code",
           "expr": "amoro_optimizer_group_planing_tables",
@@ -2211,7 +2255,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2255,15 +2300,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
                 "value": 80
               }
             ]
-          }
+          },
+          "unitScale": true
         },
         "overrides": []
       },
@@ -2289,7 +2334,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "editorMode": "code",
           "expr": "amoro_optimizer_group_pending_tables",
@@ -2304,7 +2350,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2348,15 +2395,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
                 "value": 80
               }
             ]
-          }
+          },
+          "unitScale": true
         },
         "overrides": []
       },
@@ -2382,7 +2429,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "editorMode": "code",
           "expr": "amoro_optimizer_group_executing_tables",
@@ -2397,7 +2445,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2441,15 +2490,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
                 "value": 80
               }
             ]
-          }
+          },
+          "unitScale": true
         },
         "overrides": []
       },
@@ -2475,7 +2524,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "editorMode": "code",
           "expr": "amoro_optimizer_group_pending_tasks",
@@ -2490,7 +2540,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${Datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2534,15 +2585,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
                 "value": 80
               }
             ]
-          }
+          },
+          "unitScale": true
         },
         "overrides": []
       },
@@ -2568,7 +2619,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${Datasource}"
           },
           "editorMode": "code",
           "expr": "amoro_optimizer_group_executing_tasks",
@@ -2584,14 +2636,31 @@
   ],
   "refresh": "5m",
   "schemaVersion": 39,
-  "tags": [
-    "Amoro"
-  ],
+  "tags": [],
   "templating": {
     "list": [
       {
         "current": {
-          "selected": false,
+          "selected": true,
+          "text": "default",
+          "value": "default"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "",
+        "multi": false,
+        "name": "Datasource",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "selected": true,
           "text": [
             "All"
           ],
@@ -2601,7 +2670,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": ""
+          "uid": "${Datasource}"
         },
         "definition": "label_values(amoro_table_optimizing_process_total_count_total,catalog)",
         "hide": 0,
@@ -2632,7 +2701,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": ""
+          "uid": "${Datasource}"
         },
         "definition": "label_values(amoro_table_optimizing_process_total_count_total{catalog=~\"$Catalog\"},database)",
         "hide": 0,
@@ -2663,7 +2732,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": ""
+          "uid": "${Datasource}"
         },
         "definition": "label_values(amoro_table_optimizing_process_total_count_total{catalog=~\"$Catalog\", database=~\"$Database\"},table)",
         "hide": 0,
@@ -2693,7 +2762,7 @@
   },
   "timezone": "",
   "title": "Amoro Metrics Dashboard",
-  "uid": "fdw9wnq0zcw00a",
-  "version": 4,
+  "uid": "f09370a2-8bbd-46e8-a50e-534db38f36e9",
+  "version": 2,
   "weekStart": ""
 }
