@@ -1585,7 +1585,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": ""
       },
       "description": "",
       "fieldConfig": {
@@ -1716,7 +1716,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": ""
       },
       "fieldConfig": {
         "defaults": {
@@ -1846,7 +1846,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": ""
       },
       "fieldConfig": {
         "defaults": {
@@ -1976,7 +1976,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": ""
       },
       "fieldConfig": {
         "defaults": {
@@ -2601,7 +2601,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "PBFA97CFB590B2093"
+          "uid": ""
         },
         "definition": "label_values(amoro_table_optimizing_process_total_count_total,catalog)",
         "hide": 0,
@@ -2632,7 +2632,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "PBFA97CFB590B2093"
+          "uid": ""
         },
         "definition": "label_values(amoro_table_optimizing_process_total_count_total{catalog=~\"$Catalog\"},database)",
         "hide": 0,
@@ -2663,7 +2663,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "PBFA97CFB590B2093"
+          "uid": ""
         },
         "definition": "label_values(amoro_table_optimizing_process_total_count_total{catalog=~\"$Catalog\", database=~\"$Database\"},table)",
         "hide": 0,
