@@ -69,7 +69,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -99,7 +99,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final OptimizerKeeper optimizerKeeper = new OptimizerKeeper();
   private final TableService tableService;
   private final RuntimeHandlerChain tableHandlerChain;
-  private final Executor planExecutor;
+  private final ExecutorService planExecutor;
 
   public DefaultOptimizingService(Configurations serviceConfig, DefaultTableService tableService) {
     this.optimizerTouchTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT);
@@ -385,6 +385,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizingQueueByGroup.clear();
     optimizingQueueByToken.clear();
     authOptimizers.clear();
+    planExecutor.shutdown();
   }
 
   public boolean canDeleteResourceGroup(String name) {
