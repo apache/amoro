@@ -118,6 +118,7 @@ CREATE TABLE table_runtime (
     table_config                CLOB(64m),
     optimizing_config           CLOB(64m),
     pending_input               CLOB(64m),
+    table_summary               CLOB(64m),
     CONSTRAINT table_runtime_pk PRIMARY KEY (table_id),
     CONSTRAINT table_runtime_table_name_idx UNIQUE (catalog_name, db_name, table_name)
 );

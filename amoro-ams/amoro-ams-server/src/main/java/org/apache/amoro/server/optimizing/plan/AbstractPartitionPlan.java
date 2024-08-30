@@ -192,6 +192,11 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   }
 
   @Override
+  public long getFragmentFileRecords() {
+    return evaluator().getFragmentFileRecords();
+  }
+
+  @Override
   public int getSegmentFileCount() {
     return evaluator().getSegmentFileCount();
   }
@@ -199,6 +204,11 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   @Override
   public long getSegmentFileSize() {
     return evaluator().getSegmentFileSize();
+  }
+
+  @Override
+  public long getSegmentFileRecords() {
+    return evaluator().getSegmentFileRecords();
   }
 
   @Override
@@ -212,6 +222,11 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   }
 
   @Override
+  public long getEqualityDeleteFileRecords() {
+    return evaluator().getEqualityDeleteFileRecords();
+  }
+
+  @Override
   public int getPosDeleteFileCount() {
     return evaluator().getPosDeleteFileCount();
   }
@@ -219,6 +234,11 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   @Override
   public long getPosDeleteFileSize() {
     return evaluator().getPosDeleteFileSize();
+  }
+
+  @Override
+  public long getPosDeleteFileRecords() {
+    return evaluator().getPosDeleteFileRecords();
   }
 
   @Override

@@ -88,9 +88,11 @@ public class TableRuntime extends StatedPersistentBase {
   @StateField private volatile TableConfiguration tableConfiguration;
   @StateField private volatile long processId;
   @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
+  @StateField private volatile OptimizingEvaluator.PendingInput tableSummary;
   private volatile long lastPlanTime;
   private final TableOptimizingMetrics optimizingMetrics;
   private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
+  private final TableSummaryMetrics tableSummaryMetrics;
 
   protected TableRuntime(
       ServerTableIdentifier tableIdentifier,
@@ -105,6 +107,7 @@ public class TableRuntime extends StatedPersistentBase {
     persistTableRuntime();
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
     orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
+    tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
   }
 
   protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
@@ -134,12 +137,15 @@ public class TableRuntime extends StatedPersistentBase {
             ? OptimizingStatus.PENDING
             : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
+    this.tableSummary = tableRuntimeMeta.getTableSummary();
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
     optimizingMetrics.statusChanged(optimizingStatus, this.currentStatusStartTime);
     optimizingMetrics.lastOptimizingTime(OptimizingType.MINOR, this.lastMinorOptimizingTime);
     optimizingMetrics.lastOptimizingTime(OptimizingType.MAJOR, this.lastMajorOptimizingTime);
     optimizingMetrics.lastOptimizingTime(OptimizingType.FULL, this.lastFullOptimizingTime);
     orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
+    tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
+    tableSummaryMetrics.refresh(tableSummary);
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -153,6 +159,7 @@ public class TableRuntime extends StatedPersistentBase {
   public void registerMetric(MetricRegistry metricRegistry) {
     this.optimizingMetrics.register(metricRegistry);
     this.orphanFilesCleaningMetrics.register(metricRegistry);
+    this.tableSummaryMetrics.register(metricRegistry);
   }
 
   public void dispose() {
@@ -167,6 +174,7 @@ public class TableRuntime extends StatedPersistentBase {
         });
     optimizingMetrics.unregister();
     orphanFilesCleaningMetrics.unregister();
+    tableSummaryMetrics.unregister();
   }
 
   public void beginPlanning() {
@@ -240,6 +248,15 @@ public class TableRuntime extends StatedPersistentBase {
             tableHandler.handleTableChanged(this, configuration);
           }
           return this;
+        });
+  }
+
+  public void setTableSummary(OptimizingEvaluator.PendingInput tableSummary) {
+    invokeConsistency(
+        () -> {
+          this.tableSummary = tableSummary;
+          tableSummaryMetrics.refresh(tableSummary);
+          persistUpdatingRuntime();
         });
   }
 
@@ -322,7 +339,7 @@ public class TableRuntime extends StatedPersistentBase {
 
   private boolean refreshSnapshots(AmoroTable<?> amoroTable) {
     MixedTable table = (MixedTable) amoroTable.originalTable();
-
+    tableSummaryMetrics.refreshSnapshots(table);
     long lastSnapshotId = currentSnapshotId;
     if (table.isKeyedTable()) {
       long changeSnapshotId = currentChangeSnapshotId;
