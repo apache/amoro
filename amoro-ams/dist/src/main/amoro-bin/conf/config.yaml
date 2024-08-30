@@ -103,6 +103,7 @@ ams:
 #    url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&allowPublicKeyRetrieval=true&useSSL=false
 #    username: root
 #    password: root
+#    auto-create-tables: true
 #    connection-pool-max-total: 20
 #    connection-pool-max-idle: 16
 #    connection-pool-max-wait-millis: 1000
@@ -114,6 +115,7 @@ ams:
 #    url: jdbc:postgresql://127.0.0.1:5432/db
 #    username: user
 #    password: passwd
+#    auto-create-tables: true
 #    connection-pool-max-total: 20
 #    connection-pool-max-idle: 16
 #    connection-pool-max-wait-millis: 1000
