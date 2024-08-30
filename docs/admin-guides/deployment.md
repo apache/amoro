@@ -111,6 +111,8 @@ $ mv mysql-connector-java-${MYSQL_JDBC_DRIVER_VERSION}.jar lib
 ```
 
 Create an empty database in MySQL/PostgreSQL, then AMS will automatically create tables in this MySQL/PostgreSQL database when it first started.
+If you want to create tables on yourself, set `ams.database.auto-create-tables` to false.
+
 
 One thing you need to do is Adding MySQL/PostgreSQL configuration under `config.yaml` of Ams:
 
@@ -123,12 +125,14 @@ ams:
     url: jdbc:mysql://127.0.0.1:3306/amoro?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&allowPublicKeyRetrieval=true&useSSL=false
     username: root
     password: root
+    auto-create-tables: true
 # PostgreSQL
 #ams:
 #  database:
 #    type: postgres
 #    jdbc-driver-class: org.postgresql.Driver
 #    url: jdbc:postgresql://127.0.0.1:5432/amoro
+#    auto-create-tables: false
 #    username: user
 #    password: passwd
 ```

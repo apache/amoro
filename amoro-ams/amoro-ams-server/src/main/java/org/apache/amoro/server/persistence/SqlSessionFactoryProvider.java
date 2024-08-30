@@ -40,6 +40,8 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -47,6 +49,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -54,6 +57,7 @@ import java.sql.Statement;
 import java.time.Duration;
 
 public class SqlSessionFactoryProvider {
+  private static final Logger LOG = LoggerFactory.getLogger(SqlSessionFactoryProvider.class);
 
   private static final String DERBY_INIT_SQL_SCRIPT = "derby/ams-derby-init.sql";
   private static final String MYSQL_INIT_SQL_SCRIPT = "mysql/ams-mysql-init.sql";
@@ -123,8 +127,14 @@ public class SqlSessionFactoryProvider {
    * @param config
    */
   private void createTablesIfNeed(Configurations config) {
+    boolean initSchema = config.getBoolean(AmoroManagementConf.DB_AUTO_CREATE_TABLES);
+    if (!initSchema) {
+      LOG.info("Skip auto create tables due to configuration");
+      return;
+    }
     String dbTypeConfig = config.getString(AmoroManagementConf.DB_TYPE);
     String query = "";
+    LOG.info("Start create tables, database type:{}", dbTypeConfig);
 
     try (SqlSession sqlSession = get().openSession(true);
         Connection connection = sqlSession.getConnection();
@@ -142,13 +152,17 @@ public class SqlSessionFactoryProvider {
                 "SELECT 1 FROM information_schema.tables WHERE table_schema = %s AND table_name = '%s'",
                 "current_schema()", "catalog_metadata");
       }
+      LOG.info("Start check table creation, using query: {}", query);
       try (ResultSet rs = statement.executeQuery(query)) {
         if (!rs.next()) {
+          Path script = Paths.get(getInitSqlScriptPath(dbTypeConfig));
+          LOG.info("Table not exists, start run create tables script file:{}", script);
           ScriptRunner runner = new ScriptRunner(connection);
           runner.runScript(
-              new InputStreamReader(
-                  Files.newInputStream(Paths.get(getInitSqlScriptPath(dbTypeConfig))),
-                  StandardCharsets.UTF_8));
+              new InputStreamReader(Files.newInputStream(script), StandardCharsets.UTF_8));
+          LOG.info("Tables are created successfully");
+        } else {
+          LOG.info("Tables are created, skip auto create tables.");
         }
       }
     } catch (Exception e) {
