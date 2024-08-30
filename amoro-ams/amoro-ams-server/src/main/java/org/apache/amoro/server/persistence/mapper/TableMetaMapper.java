@@ -329,6 +329,8 @@ public interface TableMetaMapper {
           + " table_config = #{runtime.tableConfiguration,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
           + " pending_input = #{runtime.pendingInput, jdbcType=VARCHAR,"
+          + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
+          + " table_summary = #{runtime.tableSummary, jdbcType=VARCHAR,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter}"
           + " WHERE table_id = #{runtime.tableIdentifier.id}")
   void updateTableRuntime(@Param("runtime") TableRuntime runtime);
@@ -341,7 +343,7 @@ public interface TableMetaMapper {
           + " current_change_snapshotId, last_optimized_snapshotId, last_optimized_change_snapshotId,"
           + " last_major_optimizing_time, last_minor_optimizing_time,"
           + " last_full_optimizing_time, optimizing_status, optimizing_status_start_time, optimizing_process_id,"
-          + " optimizer_group, table_config, pending_input) VALUES"
+          + " optimizer_group, table_config, pending_input, table_summary) VALUES"
           + " (#{runtime.tableIdentifier.id}, #{runtime.tableIdentifier.catalog},"
           + " #{runtime.tableIdentifier.database}, #{runtime.tableIdentifier.tableName}, #{runtime"
           + ".currentSnapshotId},"
@@ -359,6 +361,8 @@ public interface TableMetaMapper {
           + " #{runtime.tableConfiguration,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
           + " #{runtime.pendingInput, jdbcType=VARCHAR,"
+          + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
+          + " #{runtime.tableSummary, jdbcType=VARCHAR,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter})")
   void insertTableRuntime(@Param("runtime") TableRuntime runtime);
 
@@ -367,7 +371,7 @@ public interface TableMetaMapper {
           + ".current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId,"
           + " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time, a.optimizing_status,"
           + " a.optimizing_status_start_time, a.optimizing_process_id,"
-          + " a.optimizer_group, a.table_config, a.pending_input, b.optimizing_type, b.target_snapshot_id,"
+          + " a.optimizer_group, a.table_config, a.pending_input, a.table_summary, b.optimizing_type, b.target_snapshot_id,"
           + " b.target_change_snapshot_id, b.plan_time, b.from_sequence, b.to_sequence FROM table_runtime a"
           + " INNER JOIN table_identifier i ON a.table_id = i.table_id "
           + " LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id")
@@ -409,6 +413,10 @@ public interface TableMetaMapper {
     @Result(
         property = "pendingInput",
         column = "pending_input",
+        typeHandler = JsonObjectConverter.class),
+    @Result(
+        property = "tableSummary",
+        column = "table_summary",
         typeHandler = JsonObjectConverter.class),
     @Result(property = "optimizingType", column = "optimizing_type"),
     @Result(property = "targetSnapshotId", column = "target_snapshot_id"),

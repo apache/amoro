@@ -201,7 +201,11 @@ public class AmoroServiceContainer {
       terminalManager.dispose();
       terminalManager = null;
     }
-    optimizingService = null;
+    if (optimizingService != null) {
+      LOG.info("Stopping optimizing service...");
+      optimizingService.dispose();
+      optimizingService = null;
+    }
 
     if (amsServiceMetrics != null) {
       amsServiceMetrics.unregister();
