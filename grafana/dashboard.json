@@ -25,7 +25,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 23,
+  "id": 24,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -1584,8 +1584,10 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1643,10 +1645,10 @@
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": true,
+          "instant": false,
           "interval": "",
           "legendFormat": "{{catalog}}.{{database}}.{{table}}",
-          "range": false,
+          "range": true,
           "refId": "A",
           "useBackend": false
         }
@@ -1659,8 +1661,35 @@
             "includeTimeField": false,
             "mode": "seriesToRows",
             "reducers": [
+              "min",
               "lastNotNull"
             ]
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Diff",
+            "binary": {
+              "left": "Last *",
+              "operator": "-",
+              "right": "Min"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            }
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "Diff",
+                "Field"
+              ]
+            }
           }
         },
         {
@@ -1670,7 +1699,7 @@
             "sort": [
               {
                 "desc": true,
-                "field": "Last *"
+                "field": "Diff"
               }
             ]
           }
@@ -1686,7 +1715,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
@@ -1745,10 +1775,10 @@
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": true,
+          "instant": false,
           "interval": "",
           "legendFormat": "{{catalog}}.{{database}}.{{table}}",
-          "range": false,
+          "range": true,
           "refId": "A",
           "useBackend": false
         }
@@ -1761,8 +1791,35 @@
             "includeTimeField": false,
             "mode": "seriesToRows",
             "reducers": [
-              "lastNotNull"
+              "lastNotNull",
+              "min"
             ]
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Diff",
+            "binary": {
+              "left": "Last *",
+              "operator": "-",
+              "right": "Min"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            }
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "Field",
+                "Diff"
+              ]
+            }
           }
         },
         {
@@ -1772,7 +1829,7 @@
             "sort": [
               {
                 "desc": true,
-                "field": "Last *"
+                "field": "Diff"
               }
             ]
           }
@@ -1788,7 +1845,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
@@ -1816,7 +1874,7 @@
         "x": 0,
         "y": 58
       },
-      "id": 34,
+      "id": 43,
       "options": {
         "displayMode": "basic",
         "maxVizHeight": 300,
@@ -1847,10 +1905,10 @@
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": true,
+          "instant": false,
           "interval": "",
           "legendFormat": "{{catalog}}.{{database}}.{{table}}",
-          "range": false,
+          "range": true,
           "refId": "A",
           "useBackend": false
         }
@@ -1863,8 +1921,35 @@
             "includeTimeField": false,
             "mode": "seriesToRows",
             "reducers": [
-              "lastNotNull"
+              "lastNotNull",
+              "min"
             ]
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Diff",
+            "binary": {
+              "left": "Last *",
+              "operator": "-",
+              "right": "Min"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            }
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "Field",
+                "Diff"
+              ]
+            }
           }
         },
         {
@@ -1874,7 +1959,7 @@
             "sort": [
               {
                 "desc": true,
-                "field": "Last *"
+                "field": "Diff"
               }
             ]
           }
@@ -1890,7 +1975,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
@@ -1918,7 +2004,7 @@
         "x": 12,
         "y": 58
       },
-      "id": 32,
+      "id": 44,
       "options": {
         "displayMode": "basic",
         "maxVizHeight": 300,
@@ -1942,17 +2028,17 @@
             "type": "prometheus"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
+          "editorMode": "code",
           "exemplar": false,
           "expr": "amoro_table_optimizing_full_total_count_total{catalog=~\"$Catalog\", database=~\"$Database\", table=~\"$Table\"} > 0",
           "format": "time_series",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
-          "instant": true,
+          "instant": false,
           "interval": "",
           "legendFormat": "{{catalog}}.{{database}}.{{table}}",
-          "range": false,
+          "range": true,
           "refId": "A",
           "useBackend": false
         }
@@ -1965,8 +2051,35 @@
             "includeTimeField": false,
             "mode": "seriesToRows",
             "reducers": [
-              "lastNotNull"
+              "lastNotNull",
+              "min"
             ]
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Diff",
+            "binary": {
+              "left": "Last *",
+              "operator": "-",
+              "right": "Min"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            }
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "Field",
+                "Diff"
+              ]
+            }
           }
         },
         {
@@ -1976,7 +2089,7 @@
             "sort": [
               {
                 "desc": true,
-                "field": "Last *"
+                "field": "Diff"
               }
             ]
           }
@@ -2478,7 +2591,7 @@
     "list": [
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": [
             "All"
           ],
@@ -2487,7 +2600,8 @@
           ]
         },
         "datasource": {
-          "type": "prometheus"
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
         },
         "definition": "label_values(amoro_table_optimizing_process_total_count_total,catalog)",
         "hide": 0,
@@ -2517,7 +2631,8 @@
           ]
         },
         "datasource": {
-          "type": "prometheus"
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
         },
         "definition": "label_values(amoro_table_optimizing_process_total_count_total{catalog=~\"$Catalog\"},database)",
         "hide": 0,
@@ -2547,7 +2662,8 @@
           ]
         },
         "datasource": {
-          "type": "prometheus"
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
         },
         "definition": "label_values(amoro_table_optimizing_process_total_count_total{catalog=~\"$Catalog\", database=~\"$Database\"},table)",
         "hide": 0,
@@ -2577,6 +2693,7 @@
   },
   "timezone": "",
   "title": "Amoro Metrics Dashboard",
-  "version": 24,
+  "uid": "fdw9wnq0zcw00a",
+  "version": 4,
   "weekStart": ""
 }
