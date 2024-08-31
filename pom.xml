@@ -47,6 +47,7 @@
 
     <modules>
         <module>amoro-common</module>
+        <module>amoro-web</module>
         <module>amoro-ams</module>
         <module>amoro-iceberg-format</module>
         <module>amoro-mixed-format</module>

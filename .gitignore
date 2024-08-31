@@ -67,8 +67,8 @@ conf/
 *.tgz
 
 # dashboard static resources
-amoro-ams/amoro-ams-dashboard/src/main/resources/static/
-amoro-ams/amoro-ams-dashboard/node/
+amoro-web/src/main/resources/static/
+amoro-web/node/
 
 !amoro-ams/dist/src/main/amoro-bin/bin/
 !amoro-ams/dist/src/main/amoro-bin/conf/
