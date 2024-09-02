@@ -19,7 +19,7 @@
 package org.apache.amoro.server.table;
 
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.api.config.TableConfiguration;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.OptimizingType;
@@ -45,6 +45,7 @@ public class TableRuntimeMeta {
   private String optimizerGroup;
   private TableConfiguration tableConfig;
   private OptimizingEvaluator.PendingInput pendingInput;
+  private OptimizingEvaluator.PendingInput tableSummary;
   private long optimizingProcessId = 0;
   private OptimizingProcess.Status processStatus;
   private OptimizingType optimizingType;
@@ -201,6 +202,18 @@ public class TableRuntimeMeta {
 
   public void setLastOptimizedSnapshotId(long lastOptimizedSnapshotId) {
     this.lastOptimizedSnapshotId = lastOptimizedSnapshotId;
+  }
+
+  public OptimizingEvaluator.PendingInput getTableSummary() {
+    return tableSummary;
+  }
+
+  public void setTableSummary(OptimizingEvaluator.PendingInput tableSummary) {
+    this.tableSummary = tableSummary;
+  }
+
+  public void setTableRuntime(TableRuntime tableRuntime) {
+    this.tableRuntime = tableRuntime;
   }
 
   public void setLastOptimizedChangeSnapshotId(long lastOptimizedChangeSnapshotId) {

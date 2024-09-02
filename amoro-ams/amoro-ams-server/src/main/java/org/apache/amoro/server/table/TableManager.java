@@ -19,7 +19,7 @@
 package org.apache.amoro.server.table;
 
 import org.apache.amoro.AmoroTable;
-import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.ServerTableIdentifier;
 
 public interface TableManager extends TableRuntimeHandler {
 

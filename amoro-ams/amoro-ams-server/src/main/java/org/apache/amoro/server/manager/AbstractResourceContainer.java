@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server.manager;
 
-import org.apache.amoro.api.OptimizerProperties;
-import org.apache.amoro.api.resource.Resource;
-import org.apache.amoro.api.resource.ResourceContainer;
-import org.apache.amoro.api.resource.ResourceStatus;
+import org.apache.amoro.OptimizerProperties;
+import org.apache.amoro.resource.Resource;
+import org.apache.amoro.resource.ResourceContainer;
+import org.apache.amoro.resource.ResourceStatus;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.lang3.StringUtils;
 

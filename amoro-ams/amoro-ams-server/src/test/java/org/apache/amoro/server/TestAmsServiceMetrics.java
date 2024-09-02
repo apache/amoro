@@ -27,9 +27,9 @@ import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_MEMORY_HEAP_MAX;
 import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_MEMORY_HEAP_USED;
 import static org.apache.amoro.server.AmsServiceMetrics.AMS_JVM_THREADS_COUNT;
 
-import org.apache.amoro.api.metrics.Gauge;
-import org.apache.amoro.api.metrics.Metric;
-import org.apache.amoro.api.metrics.MetricKey;
+import org.apache.amoro.metrics.Gauge;
+import org.apache.amoro.metrics.Metric;
+import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.junit.Assert;

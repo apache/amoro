@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.metrics;
 
-import org.apache.amoro.api.metrics.MetricReporter;
-import org.apache.amoro.api.metrics.MetricSet;
+import org.apache.amoro.metrics.MetricReporter;
+import org.apache.amoro.metrics.MetricSet;
 
 import java.util.Map;
 

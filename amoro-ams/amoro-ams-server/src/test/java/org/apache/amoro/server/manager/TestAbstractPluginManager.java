@@ -19,7 +19,7 @@
 package org.apache.amoro.server.manager;
 
 import com.clearspring.analytics.util.Lists;
-import org.apache.amoro.api.ActivePlugin;
+import org.apache.amoro.ActivePlugin;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.LoadingPluginException;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;

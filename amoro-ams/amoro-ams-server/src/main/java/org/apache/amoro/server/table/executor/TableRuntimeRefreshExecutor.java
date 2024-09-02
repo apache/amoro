@@ -19,7 +19,7 @@
 package org.apache.amoro.server.table.executor;
 
 import org.apache.amoro.AmoroTable;
-import org.apache.amoro.api.config.TableConfiguration;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.table.TableManager;
@@ -50,7 +50,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
       OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
       if (evaluator.isNecessary()) {
-        OptimizingEvaluator.PendingInput pendingInput = evaluator.getPendingInput();
+        OptimizingEvaluator.PendingInput pendingInput = evaluator.getOptimizingPendingInput();
         logger.debug(
             "{} optimizing is necessary and get pending input {}",
             tableRuntime.getTableIdentifier(),
@@ -59,6 +59,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
       } else {
         tableRuntime.optimizingNotNecessary();
       }
+      tableRuntime.setTableSummary(evaluator.getPendingInput());
     }
   }
 

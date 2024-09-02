@@ -18,9 +18,9 @@
 
 package org.apache.amoro.server.terminal;
 
-import org.apache.amoro.api.config.ConfigOption;
-import org.apache.amoro.api.config.ConfigOptions;
-import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.config.ConfigOption;
+import org.apache.amoro.config.ConfigOptions;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableMetaStore;
 

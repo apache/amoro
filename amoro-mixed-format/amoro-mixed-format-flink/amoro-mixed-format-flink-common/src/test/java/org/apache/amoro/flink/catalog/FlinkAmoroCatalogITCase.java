@@ -24,10 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.amoro.flink.table.AmoroCatalogITCaseBase;
 import org.apache.amoro.formats.AmoroCatalogTestHelper;
-import org.apache.amoro.formats.PaimonHadoopCatalogTestHelper;
+import org.apache.amoro.formats.paimon.PaimonHadoopCatalogTestHelper;
+import org.apache.amoro.formats.paimon.PaimonHiveCatalogTestHelper;
 import org.apache.amoro.formats.paimon.PaimonTable;
 import org.apache.amoro.hive.TestHMS;
-import org.apache.amoro.hive.formats.PaimonHiveCatalogTestHelper;
 import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.Catalog;

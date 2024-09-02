@@ -21,12 +21,13 @@ package org.apache.amoro.server.optimizing.maintainer;
 import static org.apache.amoro.shade.guava32.com.google.common.primitives.Longs.min;
 
 import org.apache.amoro.api.CommitMetaProducer;
-import org.apache.amoro.api.config.DataExpirationConfig;
-import org.apache.amoro.api.config.TableConfiguration;
+import org.apache.amoro.config.DataExpirationConfig;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.PathInfo;
 import org.apache.amoro.io.SupportsFileSystemOperations;
 import org.apache.amoro.server.AmoroServiceConstants;
+import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
@@ -237,7 +238,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
       DataExpirationConfig expirationConfig =
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
       Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
-      if (!expirationConfig.isValid(field, table.name())) {
+      if (!TableConfigurations.isValidDataExpirationField(expirationConfig, field, table.name())) {
         return;
       }
 

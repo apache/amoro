@@ -46,10 +46,13 @@
     </licenses>
 
     <modules>
-        <module>amoro-core</module>
+        <module>amoro-common</module>
+        <module>amoro-web</module>
         <module>amoro-ams</module>
         <module>amoro-iceberg-format</module>
         <module>amoro-mixed-format</module>
+        <module>amoro-hudi-format</module>
+        <module>amoro-paimon-format</module>
     </modules>
 
     <scm>
@@ -96,7 +99,7 @@
         <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
 
         <iceberg.version>1.4.3</iceberg.version>
-        <paimon.version>0.8.0</paimon.version>
+        <paimon.version>0.8.2</paimon.version>
         <hive.version>3.1.1</hive.version>
         <hadoop.version>3.4.0</hadoop.version>
         <kerby.version>2.0.3</kerby.version>
@@ -231,19 +234,25 @@
         <dependencies>
             <dependency>
                 <groupId>org.apache.amoro</groupId>
-                <artifactId>amoro-ams-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.amoro</groupId>
-                <artifactId>amoro-core</artifactId>
+                <artifactId>amoro-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-iceberg-format</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-paimon-format</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-hudi-format</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -517,6 +526,12 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>url-connection-client</artifactId>
+                <version>${awssdk.version}</version>
+	    </dependency>
+
+	    <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>s3-transfer-manager</artifactId>
                 <version>${awssdk.version}</version>
             </dependency>
 

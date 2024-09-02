@@ -33,9 +33,7 @@
     <url>https://amoro.apache.org</url>
 
     <modules>
-        <module>amoro-ams-api</module>
         <module>amoro-ams-server</module>
-        <module>amoro-ams-dashboard</module>
         <module>amoro-ams-optimizer</module>
         <module>amoro-ams-metrics</module>
         <module>dist</module>

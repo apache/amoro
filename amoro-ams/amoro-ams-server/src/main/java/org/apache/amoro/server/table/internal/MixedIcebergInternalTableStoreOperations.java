@@ -22,7 +22,7 @@ import static org.apache.amoro.server.table.internal.InternalTableConstants.CHAN
 import static org.apache.amoro.server.table.internal.InternalTableConstants.PROPERTIES_METADATA_LOCATION;
 import static org.apache.amoro.server.table.internal.InternalTableConstants.PROPERTIES_PREV_METADATA_LOCATION;
 
-import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.io.FileIO;
