@@ -142,9 +142,10 @@ public class InternalMixedCatalogImpl extends InternalIcebergCatalogImpl {
           new BasicUnkeyedTable(
               tableIdentifier, baseTable, fileIO, getMetadata().getCatalogProperties());
     }
-
-    return new org.apache.amoro.formats.mixed.MixedTable(
-        mixedIcebergTable, TableFormat.MIXED_ICEBERG);
+    AmoroTable<?> amoroTable =
+        new org.apache.amoro.formats.mixed.MixedTable(mixedIcebergTable, TableFormat.MIXED_ICEBERG);
+    fileIOCloser.put(amoroTable, fileIO);
+    return amoroTable;
   }
 
   protected TableFormat format() {
