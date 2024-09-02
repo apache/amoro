@@ -33,19 +33,6 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/overview/format',
-    method: 'get',
-    response: () => ({
-      code: 200,
-      msg: 'success',
-      result: [
-        { value: 70, name: 'Iceberg format' },
-        { value: 20, name: 'Mixed-Iceberg' },
-        { value: 10, name: 'Mixed-Hive format' },
-      ]
-    }),
-  },
-  {
     url: '/mock/ams/v1/overview/optimizing',
     method: 'get',
     response: () => ({
@@ -57,27 +44,6 @@ export default [
         { value: 2, name: 'Planning' },
         { value: 3, name: 'Pending' },
         { value: 50, name: 'Idle' },
-      ]
-    }),
-  },
-  {
-    url: '/mock/ams/v1/overview/operations',
-    method: 'get',
-    response: () => ({
-      code: 200,
-      msg: 'success',
-      result: [
-        {
-          tableIdentifier: {
-            catalog: 'test_catalog',
-            database: 'db',
-            tableName: 'user',
-            id: 1
-          },
-          tableName: 'test_catalog.db.user',
-          operation: `ALTER TABLE user RENAME COLUMN name TO user_name`,
-          ts: '1721353678000',
-        },
       ]
     }),
   },
