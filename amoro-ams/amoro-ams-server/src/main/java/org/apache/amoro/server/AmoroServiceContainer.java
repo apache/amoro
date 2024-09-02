@@ -52,8 +52,8 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.TMultiplexedProcessor;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TProcessor;
 import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocolFactory;
+import org.apache.amoro.shade.thrift.org.apache.thrift.server.THsHaServer;
 import org.apache.amoro.shade.thrift.org.apache.thrift.server.TServer;
-import org.apache.amoro.shade.thrift.org.apache.thrift.server.TThreadedSelectorServer;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TNonblockingServerSocket;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportFactory;
@@ -374,15 +374,13 @@ public class AmoroServiceContainer {
     TTransportFactory transportFactory = new TFramedTransport.Factory();
     TMultiplexedProcessor multiplexedProcessor = new TMultiplexedProcessor();
     multiplexedProcessor.registerProcessor(processorName, processor);
-    TThreadedSelectorServer.Args args =
-        new TThreadedSelectorServer.Args(serverTransport)
+    THsHaServer.Args args =
+        new THsHaServer.Args(serverTransport)
             .processor(multiplexedProcessor)
             .transportFactory(transportFactory)
             .protocolFactory(protocolFactory)
             .inputProtocolFactory(inputProtoFactory)
-            .executorService(executorService)
-            .selectorThreads(selectorThreads)
-            .acceptQueueSizePerThread(queueSizePerSelector);
+            .executorService(executorService);
     LOG.info(
         "The number of selector threads for the {} thrift server is: {}",
         processorName,
@@ -391,7 +389,7 @@ public class AmoroServiceContainer {
         "The size of per-selector queue for the {} thrift server is: {}",
         processorName,
         queueSizePerSelector);
-    return new TThreadedSelectorServer(args);
+    return new THsHaServer(args);
   }
 
   private ThreadFactory getThriftThreadFactory(String processorName) {
