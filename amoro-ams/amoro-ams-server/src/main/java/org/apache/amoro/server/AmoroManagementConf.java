@@ -260,6 +260,12 @@ public class AmoroManagementConf {
           .defaultValue("jdbc:derby:/tmp/amoro/derby;create=true")
           .withDescription("Database connection address");
 
+  public static final ConfigOption<Boolean> DB_AUTO_CREATE_TABLES =
+      ConfigOptions.key("database.auto-create-tables")
+          .booleanType()
+          .defaultValue(true)
+          .withDescription("Auto init table schema when started");
+
   public static final ConfigOption<String> DB_DRIVER_CLASS_NAME =
       ConfigOptions.key("database.jdbc-driver-class")
           .stringType()

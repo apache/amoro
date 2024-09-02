@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.table;
 
+import static org.apache.amoro.metrics.MetricDefine.defineGauge;
+
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.metrics.Gauge;
 import org.apache.amoro.metrics.Metric;
@@ -31,8 +33,6 @@ import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 
 import java.util.List;
-
-import static org.apache.amoro.metrics.MetricDefine.defineGauge;
 
 /** Table Summary metrics. */
 public class TableSummaryMetrics {

@@ -22,11 +22,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.apache.amoro</groupId>
-        <artifactId>amoro-ams</artifactId>
+        <artifactId>amoro-parent</artifactId>
         <version>0.8-SNAPSHOT</version>
     </parent>
 
-    <artifactId>amoro-ams-dashboard</artifactId>
+    <artifactId>amoro-web</artifactId>
     <packaging>jar</packaging>
     <name>Amoro Project AMS Dashboard</name>
     <url>https://amoro.apache.org</url>
@@ -38,7 +38,7 @@
     </properties>
 
     <build>
-        <finalName>amoro-ams-dashboard-${project.version}</finalName>
+        <finalName>amoro-web-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
