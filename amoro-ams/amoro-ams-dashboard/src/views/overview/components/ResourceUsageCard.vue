@@ -20,7 +20,7 @@ limitations under the License.
 import { useI18n } from 'vue-i18n'
 import { ref, onMounted } from 'vue';
 import Chart from '@/components/echarts/Chart.vue'
-import { mbToSize, dateFormat } from '@/utils'
+import { bytesToSize, dateFormat } from '@/utils'
 import { getResourceUsageList } from '@/services/overview.service'
 import type { ResourceUsageItem } from '@/types/common.type'
 
@@ -31,7 +31,7 @@ const loading = ref<boolean>(false)
 function resourceFormatter(params: any[]): string {
   const cpuParam = params.find(p => p.seriesName === 'CPU');
   const memoryParam = params.find(p => p.seriesName === 'Memory');
-  const memorySize = mbToSize(memoryParam.value);
+  const memorySize = bytesToSize(memoryParam.value);
   let str = `<span style="font-size: 12px">${params[0].axisValue}</span><br/>`;
   str += `<span style="display: inline-block;background-color:${cpuParam.color}; margin-right: 6px; width: 6px;height: 6px;"></span>CPU: ${cpuParam.value} Core<br/>`;
   str += `<span style="display: inline-block;background-color:${memoryParam.color}; margin-right: 6px; width: 6px;height: 6px;"></span>Memory: ${memorySize}<br/>`;
@@ -47,7 +47,7 @@ const option = ref({
   xAxis: { type: 'category', data: [''] },
   yAxis: [
     { type: 'value', name: 'CPU Core', axisLabel: { formatter: '{value}' } },
-    { type: 'value', name: 'Memory', axisLabel: { formatter: (value: number) => { return `${mbToSize(value)}` } } }
+    { type: 'value', name: 'Memory', axisLabel: { formatter: (value: number) => { return `${bytesToSize(value)}` } } }
   ],
   series: [
     { name: 'CPU', type: 'line', yAxisIndex: 0, data: [-1] },

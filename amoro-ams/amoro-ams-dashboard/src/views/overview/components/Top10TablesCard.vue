@@ -17,10 +17,9 @@ limitations under the License.
 / -->
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref,shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import type { TableProps } from 'ant-design-vue'
 import type { ITopTableItem } from '@/types/common.type'
 import { getTop10TableList } from '@/services/overview.service'
 import { bytesToSize } from '@/utils'
@@ -31,7 +30,7 @@ const orderBy = ref('healthScore');
 const loading = ref<boolean>(false)
 const dataSource = reactive<ITopTableItem[]>([])
 
-const columns: TableProps['columns'] = [
+const columns = shallowReactive([
   {
     title: t('table'),
     dataIndex: 'tableName',
@@ -58,7 +57,7 @@ const columns: TableProps['columns'] = [
     dataIndex: 'healthScore',
     ellipsis: true
   }
-]
+])
 
 function goTableDetail(record: ITopTableItem) {
   try {
@@ -104,7 +103,7 @@ onMounted(() => {
   <a-card class="top-tables-card">
     <template #title>
       <a-row justify="space-between">
-        <span class="card-title" v-text="t('Top 10 Tables')"></span>
+        <span class="card-title" v-text="t('top10Tables')"></span>
 
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <a-select v-model:value="orderBy" @change="getTop10Tables" style="width: 150px">

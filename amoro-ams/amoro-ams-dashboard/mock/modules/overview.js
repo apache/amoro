@@ -28,7 +28,7 @@ export default [
         tableCnt: 37944,
         tableTotalSize: 10585900,
         totalCpu: '6',
-        totalMemory: 62464
+        totalMemory: 62464000000
       }
     }),
   },
@@ -111,23 +111,23 @@ export default [
       result: [{
         ts: 1724119207500,
         totalCpu: 2,
-        totalMemory: 4048
+        totalMemory: 4048000000
       },{
         ts: 1724122892000,
         totalCpu: 5,
-        totalMemory: 8096
+        totalMemory: 8096000000
       },{
         ts: 1724126441000,
         totalCpu: 12,
-        totalMemory: 32492
+        totalMemory: 32492000000
       },{
         ts: 1724130154000,
         totalCpu: 7,
-        totalMemory: 14462
+        totalMemory: 14462000000
       },{
         ts: 1724133605600,
         totalCpu: 26,
-        totalMemory: 50176
+        totalMemory: 50176000000
       }]
     }),
   },

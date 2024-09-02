@@ -19,7 +19,7 @@
 export default {
   overview: '总览',
   healthScore: '健康度',
-  unhealthTables: '非健康表',
+  top10Tables: '表TOP 10',
   latestOperations: '最近操作',
   catalogs: '目录',
   catalog: '目录',

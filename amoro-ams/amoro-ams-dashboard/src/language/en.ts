@@ -19,7 +19,7 @@
 export default {
   overview: 'Overview',
   healthScore: 'Health Score',
-  unhealthTables: 'Unhealth Tables',
+  top10Tables: 'Top 10 Tables',
   latestOperations: 'Latest Operations',
   catalogs: 'Catalogs',
   catalog: 'Catalog',

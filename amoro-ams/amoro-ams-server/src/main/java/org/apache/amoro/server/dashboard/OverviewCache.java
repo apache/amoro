@@ -236,13 +236,13 @@ public class OverviewCache {
 
   private void updateResourceUsage(long ts) {
     int optimizerGroupThreadCount = (int) sumMetricValuesByDefine(OPTIMIZER_GROUP_THREADS);
-    long optimizerGroupMemoryInMb =
-        byte2Mb(sumMetricValuesByDefine(OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED));
+    long optimizerGroupMemoryBytes =
+        sumMetricValuesByDefine(OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED);
 
     this.totalCpu.set(optimizerGroupThreadCount);
-    this.totalMemory.set(optimizerGroupMemoryInMb);
+    this.totalMemory.set(optimizerGroupMemoryBytes);
     addAndCheck(
-        new OverviewResourceUsageItem(ts, optimizerGroupThreadCount, optimizerGroupMemoryInMb));
+        new OverviewResourceUsageItem(ts, optimizerGroupThreadCount, optimizerGroupMemoryBytes));
   }
 
   private void addAndCheck(OverviewDataSizeItem dataSizeItem) {
@@ -259,10 +259,6 @@ public class OverviewCache {
     if (deque.size() > MAX_CACHE_SIZE) {
       deque.poll();
     }
-  }
-
-  private long byte2Mb(long bytes) {
-    return bytes / 1024 / 1024;
   }
 
   private void updateOptimizingStatus() {
