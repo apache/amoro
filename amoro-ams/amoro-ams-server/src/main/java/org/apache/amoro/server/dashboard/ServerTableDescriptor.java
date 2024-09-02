@@ -21,26 +21,28 @@ package org.apache.amoro.server.dashboard;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.TableIdentifier;
-import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.catalog.ServerCatalog;
-import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;
-import org.apache.amoro.server.dashboard.model.ConsumerInfo;
-import org.apache.amoro.server.dashboard.model.DDLInfo;
-import org.apache.amoro.server.dashboard.model.OperationType;
-import org.apache.amoro.server.dashboard.model.OptimizingProcessInfo;
-import org.apache.amoro.server.dashboard.model.OptimizingTaskInfo;
-import org.apache.amoro.server.dashboard.model.PartitionBaseInfo;
-import org.apache.amoro.server.dashboard.model.PartitionFileBaseInfo;
-import org.apache.amoro.server.dashboard.model.ServerTableMeta;
-import org.apache.amoro.server.dashboard.model.TagOrBranchInfo;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.table.TableService;
-import org.apache.iceberg.util.Pair;
+import org.apache.amoro.table.descriptor.AmoroSnapshotsOfTable;
+import org.apache.amoro.table.descriptor.ConsumerInfo;
+import org.apache.amoro.table.descriptor.DDLInfo;
+import org.apache.amoro.table.descriptor.FormatTableDescriptor;
+import org.apache.amoro.table.descriptor.OperationType;
+import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
+import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
+import org.apache.amoro.table.descriptor.PartitionBaseInfo;
+import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
+import org.apache.amoro.table.descriptor.ServerTableMeta;
+import org.apache.amoro.table.descriptor.TagOrBranchInfo;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.util.ThreadPools;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
 
 public class ServerTableDescriptor extends PersistentBase {
@@ -54,17 +56,13 @@ public class ServerTableDescriptor extends PersistentBase {
 
     // All table formats will jointly reuse the work thread pool named iceberg-worker-pool-%d
     ExecutorService executorService = ThreadPools.getWorkerPool();
-
-    FormatTableDescriptor[] formatTableDescriptors =
-        new FormatTableDescriptor[] {
-          new MixedAndIcebergTableDescriptor(executorService),
-          new PaimonTableDescriptor(executorService),
-          new HudiTableDescriptor(executorService)
-        };
-    for (FormatTableDescriptor formatTableDescriptor : formatTableDescriptors) {
-      for (TableFormat format : formatTableDescriptor.supportFormat()) {
-        formatDescriptorMap.put(format, formatTableDescriptor);
+    ServiceLoader<FormatTableDescriptor> tableDescriptorLoader =
+        ServiceLoader.load(FormatTableDescriptor.class);
+    for (FormatTableDescriptor descriptor : tableDescriptorLoader) {
+      for (TableFormat format : descriptor.supportFormat()) {
+        formatDescriptorMap.put(format, descriptor);
       }
+      descriptor.withIoExecutor(executorService);
     }
   }
 

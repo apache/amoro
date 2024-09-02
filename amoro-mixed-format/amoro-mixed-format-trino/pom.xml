@@ -357,7 +357,7 @@
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
+            <artifactId>amoro-common</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
@@ -391,7 +391,7 @@
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
+            <artifactId>amoro-common</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
@@ -467,6 +467,14 @@
                     <artifactId>servlet-api</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-iceberg-format</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -530,14 +538,6 @@
             <groupId>io.trino</groupId>
             <artifactId>trino-testing</artifactId>
             <version>${trino.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-ams-api</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -87,11 +87,17 @@ public interface PartitionEvaluator {
   /** Get the total size of fragment files involved in optimizing. */
   long getFragmentFileSize();
 
+  /** Get the total records of fragment files involved in optimizing. */
+  long getFragmentFileRecords();
+
   /** Get the count of segment files involved in optimizing. */
   int getSegmentFileCount();
 
   /** Get the total size of segment files involved in optimizing. */
   long getSegmentFileSize();
+
+  /** Get the total records of segment files involved in optimizing. */
+  long getSegmentFileRecords();
 
   /** Get the count of equality delete files involved in optimizing. */
   int getEqualityDeleteFileCount();
@@ -99,9 +105,15 @@ public interface PartitionEvaluator {
   /** Get the total size of equality delete files involved in optimizing. */
   long getEqualityDeleteFileSize();
 
+  /** Get the total records of equality delete files involved in optimizing. */
+  long getEqualityDeleteFileRecords();
+
   /** Get the count of positional delete files involved in optimizing. */
   int getPosDeleteFileCount();
 
   /** Get the total size of positional delete files involved in optimizing. */
   long getPosDeleteFileSize();
+
+  /** Get the total records of positional delete files involved in optimizing. */
+  long getPosDeleteFileRecords();
 }

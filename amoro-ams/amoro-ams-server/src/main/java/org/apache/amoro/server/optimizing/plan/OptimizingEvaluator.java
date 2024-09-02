@@ -50,6 +50,7 @@ import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class OptimizingEvaluator {
 
@@ -60,6 +61,7 @@ public class OptimizingEvaluator {
   protected final TableSnapshot currentSnapshot;
   protected boolean isInitialized = false;
 
+  protected Map<String, PartitionEvaluator> needOptimizingPlanMap = Maps.newHashMap();
   protected Map<String, PartitionEvaluator> partitionPlanMap = Maps.newHashMap();
 
   public OptimizingEvaluator(TableRuntime tableRuntime, MixedTable table) {
@@ -95,7 +97,7 @@ public class OptimizingEvaluator {
     LOG.info(
         "{} finished evaluating, found {} partitions that need optimizing in {} ms",
         mixedTable.id(),
-        partitionPlanMap.size(),
+        needOptimizingPlanMap.size(),
         System.currentTimeMillis() - startTime);
   }
 
@@ -129,7 +131,10 @@ public class OptimizingEvaluator {
         mixedTable.id(),
         count,
         System.currentTimeMillis() - startTime);
-    partitionPlanMap.values().removeIf(plan -> !plan.isNecessary());
+    needOptimizingPlanMap.putAll(
+        partitionPlanMap.entrySet().stream()
+            .filter(entry -> entry.getValue().isNecessary())
+            .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue())));
   }
 
   private Map<String, String> partitionProperties(Pair<Integer, StructLike> partition) {
@@ -165,7 +170,7 @@ public class OptimizingEvaluator {
     if (!isInitialized) {
       initEvaluator();
     }
-    return !partitionPlanMap.isEmpty();
+    return !needOptimizingPlanMap.isEmpty();
   }
 
   public PendingInput getPendingInput() {
@@ -175,16 +180,26 @@ public class OptimizingEvaluator {
     return new PendingInput(partitionPlanMap.values());
   }
 
+  public PendingInput getOptimizingPendingInput() {
+    if (!isInitialized) {
+      initEvaluator();
+    }
+    return new PendingInput(needOptimizingPlanMap.values());
+  }
+
   public static class PendingInput {
 
     @JsonIgnore private final Map<Integer, Set<StructLike>> partitions = Maps.newHashMap();
 
     private int dataFileCount = 0;
     private long dataFileSize = 0;
+    private long dataFileRecords = 0;
     private int equalityDeleteFileCount = 0;
     private int positionalDeleteFileCount = 0;
     private long positionalDeleteBytes = 0L;
     private long equalityDeleteBytes = 0L;
+    private long equalityDeleteFileRecords = 0L;
+    private long positionalDeleteFileRecords = 0L;
 
     public PendingInput() {}
 
@@ -195,9 +210,12 @@ public class OptimizingEvaluator {
             .add(evaluator.getPartition().second());
         dataFileCount += evaluator.getFragmentFileCount() + evaluator.getSegmentFileCount();
         dataFileSize += evaluator.getFragmentFileSize() + evaluator.getSegmentFileSize();
+        dataFileRecords += evaluator.getFragmentFileRecords() + evaluator.getSegmentFileRecords();
         positionalDeleteBytes += evaluator.getPosDeleteFileSize();
+        positionalDeleteFileRecords += evaluator.getPosDeleteFileRecords();
         positionalDeleteFileCount += evaluator.getPosDeleteFileCount();
         equalityDeleteBytes += evaluator.getEqualityDeleteFileSize();
+        equalityDeleteFileRecords += evaluator.getEqualityDeleteFileRecords();
         equalityDeleteFileCount += evaluator.getEqualityDeleteFileCount();
       }
     }
@@ -212,6 +230,10 @@ public class OptimizingEvaluator {
 
     public long getDataFileSize() {
       return dataFileSize;
+    }
+
+    public long getDataFileRecords() {
+      return dataFileRecords;
     }
 
     public int getEqualityDeleteFileCount() {
@@ -230,16 +252,27 @@ public class OptimizingEvaluator {
       return equalityDeleteBytes;
     }
 
+    public long getEqualityDeleteFileRecords() {
+      return equalityDeleteFileRecords;
+    }
+
+    public long getPositionalDeleteFileRecords() {
+      return positionalDeleteFileRecords;
+    }
+
     @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
           .add("partitions", partitions)
           .add("dataFileCount", dataFileCount)
           .add("dataFileSize", dataFileSize)
+          .add("dataFileRecords", dataFileRecords)
           .add("equalityDeleteFileCount", equalityDeleteFileCount)
           .add("positionalDeleteFileCount", positionalDeleteFileCount)
           .add("positionalDeleteBytes", positionalDeleteBytes)
           .add("equalityDeleteBytes", equalityDeleteBytes)
+          .add("equalityDeleteFileRecords", equalityDeleteFileRecords)
+          .add("positionalDeleteFileRecords", positionalDeleteFileRecords)
           .toString();
     }
   }

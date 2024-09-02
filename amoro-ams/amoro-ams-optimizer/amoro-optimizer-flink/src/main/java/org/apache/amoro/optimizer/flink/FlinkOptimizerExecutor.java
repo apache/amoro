@@ -72,10 +72,11 @@ public class FlinkOptimizerExecutor extends OptimizerExecutor {
     // add optimizer flink runtime info, including application_id, tm_id
     StringBuilder sb = new StringBuilder();
     if (!Strings.isNullOrEmpty(result.getErrorMessage())) {
-      if (runtimeContext != null && runtimeContext.size() > 0) {
+      if (runtimeContext != null && !runtimeContext.isEmpty()) {
         runtimeContext.forEach((k, v) -> sb.append(k).append("=").append(v).append("\n"));
       }
-      result.setErrorMessage(sb.toString() + result.getErrorMessage());
+      result.setErrorMessage(
+          (sb + result.getErrorMessage()).substring(0, ERROR_MESSAGE_MAX_LENGTH));
     }
     return result;
   }

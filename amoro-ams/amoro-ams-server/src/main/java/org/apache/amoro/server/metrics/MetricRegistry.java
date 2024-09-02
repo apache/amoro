@@ -18,11 +18,11 @@
 
 package org.apache.amoro.server.metrics;
 
-import org.apache.amoro.api.metrics.Metric;
-import org.apache.amoro.api.metrics.MetricDefine;
-import org.apache.amoro.api.metrics.MetricKey;
-import org.apache.amoro.api.metrics.MetricRegisterListener;
-import org.apache.amoro.api.metrics.MetricSet;
+import org.apache.amoro.metrics.Metric;
+import org.apache.amoro.metrics.MetricDefine;
+import org.apache.amoro.metrics.MetricKey;
+import org.apache.amoro.metrics.MetricRegisterListener;
+import org.apache.amoro.metrics.MetricSet;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;

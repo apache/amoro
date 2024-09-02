@@ -78,11 +78,11 @@ Amoro has supported built-in metrics to measure status of table self-optimizing 
 
 ## Orphan Files Cleaning metrics
 
-| Metric Name                               | Type    | Tags                     | Description                                                                    |
-|-------------------------------------------|---------|--------------------------|--------------------------------------------------------------------------------|
-| table_orphan_content_file_cleaning_count  | Counter | catalog, database, table | Count of orphan content files cleaned in the table since ams started           |
-| table_orphan_metadata_file_cleaning_count | Counter | catalog, database, table | Count of orphan metadata files cleaned in the table since ams started          |
-| table_expected_orphan_content_file_cleaning_count | Counter | catalog, database, table | Expected Count of orphan content files cleaned in the table since ams started  |
+| Metric Name                                        | Type    | Tags                     | Description                                                                    |
+|----------------------------------------------------|---------|--------------------------|--------------------------------------------------------------------------------|
+| table_orphan_content_file_cleaning_count           | Counter | catalog, database, table | Count of orphan content files cleaned in the table since ams started           |
+| table_orphan_metadata_file_cleaning_count          | Counter | catalog, database, table | Count of orphan metadata files cleaned in the table since ams started          |
+| table_expected_orphan_content_file_cleaning_count  | Counter | catalog, database, table | Expected Count of orphan content files cleaned in the table since ams started  |
 | table_expected_orphan_metadata_file_cleaning_count | Counter | catalog, database, table | Expected Count of orphan metadata files cleaned in the table since ams started |
 
 
@@ -97,3 +97,21 @@ Amoro has supported built-in metrics to measure status of table self-optimizing 
 | ams_jvm_threads_count                                  | Gauge  |                 | The total number of live threads used by the AMS                 |
 | ams_jvm_garbage_collector_count                        | Gauge  |garbage_collector| The count of the JVM's Garbage Collector, such as G1 Young        |
 | ams_jvm_garbage_collector_time                         | Gauge  |garbage_collector| The time spent by the JVM's Garbage Collector, such as G1 Young   |
+
+## table summary metrics
+
+| Metric Name                                 | Type    | Tags                     | Description                                   |
+|---------------------------------------------|---------|--------------------------|-----------------------------------------------|
+| table_summary_total_files                   | Gauge   | catalog, database, table | Total number of files in the table            |
+| table_summary_data_files                    | Gauge   | catalog, database, table | Number of data files in the table             |
+| table_summary_equality_delete_files         | Gauge   | catalog, database, table | Number of equality delete files in the table  |
+| table_summary_position_delete_files         | Gauge   | catalog, database, table | Number of position delete files in the table  |
+| table_summary_total_files_size              | Gauge   | catalog, database, table | Total size of files in the table              |
+| table_summary_data_files_size               | Gauge   | catalog, database, table | Size of data files in the table               |
+| table_summary_equality_delete_files_size    | Gauge   | catalog, database, table | Size of equality delete files in the table    |
+| table_summary_position_delete_files_size    | Gauge   | catalog, database, table | Size of position delete files in the table    |
+| table_summary_total_records                 | Gauge   | catalog, database, table | Total records in the table                    |
+| table_summary_data_files_records            | Gauge   | catalog, database, table | Records of data files in the table            |
+| table_summary_equality_delete_files_records | Gauge   | catalog, database, table | Records of equality delete files in the table |
+| table_summary_position_delete_files_records | Gauge   | catalog, database, table | Records of position delete files in the table |
+| table_summary_snapshots                     | Gauge   | catalog, database, table | Number of snapshots in the table              |

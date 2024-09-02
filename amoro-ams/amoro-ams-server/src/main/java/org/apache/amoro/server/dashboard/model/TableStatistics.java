@@ -19,6 +19,7 @@
 package org.apache.amoro.server.dashboard.model;
 
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.descriptor.FilesStatistics;
 
 import java.util.Map;
 

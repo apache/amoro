@@ -22,10 +22,10 @@ import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIV
 
 import io.javalin.http.Context;
 import org.apache.amoro.Constants;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.catalog.MixedHiveCatalog;
@@ -37,21 +37,9 @@ import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.dashboard.ServerTableDescriptor;
 import org.apache.amoro.server.dashboard.ServerTableProperties;
-import org.apache.amoro.server.dashboard.model.AMSColumnInfo;
-import org.apache.amoro.server.dashboard.model.AmoroSnapshotsOfTable;
-import org.apache.amoro.server.dashboard.model.ConsumerInfo;
-import org.apache.amoro.server.dashboard.model.DDLInfo;
 import org.apache.amoro.server.dashboard.model.HiveTableInfo;
-import org.apache.amoro.server.dashboard.model.OperationType;
-import org.apache.amoro.server.dashboard.model.OptimizingProcessInfo;
-import org.apache.amoro.server.dashboard.model.OptimizingTaskInfo;
-import org.apache.amoro.server.dashboard.model.PartitionBaseInfo;
-import org.apache.amoro.server.dashboard.model.PartitionFileBaseInfo;
-import org.apache.amoro.server.dashboard.model.ServerTableMeta;
 import org.apache.amoro.server.dashboard.model.TableMeta;
 import org.apache.amoro.server.dashboard.model.TableOperation;
-import org.apache.amoro.server.dashboard.model.TableSummary;
-import org.apache.amoro.server.dashboard.model.TagOrBranchInfo;
 import org.apache.amoro.server.dashboard.model.UpgradeHiveMeta;
 import org.apache.amoro.server.dashboard.model.UpgradeRunningInfo;
 import org.apache.amoro.server.dashboard.model.UpgradeStatus;
@@ -68,12 +56,24 @@ import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFa
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.TableProperties;
-import org.apache.amoro.utils.MixedCatalogUtil;
+import org.apache.amoro.table.descriptor.AMSColumnInfo;
+import org.apache.amoro.table.descriptor.AmoroSnapshotsOfTable;
+import org.apache.amoro.table.descriptor.ConsumerInfo;
+import org.apache.amoro.table.descriptor.DDLInfo;
+import org.apache.amoro.table.descriptor.OperationType;
+import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
+import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
+import org.apache.amoro.table.descriptor.PartitionBaseInfo;
+import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
+import org.apache.amoro.table.descriptor.ServerTableMeta;
+import org.apache.amoro.table.descriptor.TableSummary;
+import org.apache.amoro.table.descriptor.TagOrBranchInfo;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.SnapshotRef;
-import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,7 +171,7 @@ public class TableController {
         "catalog.database.tableName can not be empty in any element");
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     CatalogMeta catalogMeta = serverCatalog.getMetadata();
-    TableMetaStore tableMetaStore = MixedCatalogUtil.buildMetaStore(catalogMeta);
+    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
     HMSClientPool hmsClientPool =
         new CachedHiveClientPool(tableMetaStore, catalogMeta.getCatalogProperties());
 
@@ -212,9 +212,9 @@ public class TableController {
     CatalogMeta catalogMeta = serverCatalog.getMetadata();
     String amsUri = AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME);
     catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, amsUri);
-    TableMetaStore tableMetaStore = MixedCatalogUtil.buildMetaStore(catalogMeta);
+    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
     // check whether catalog support MIXED_HIVE format.
-    Set<TableFormat> tableFormats = MixedCatalogUtil.tableFormats(catalogMeta);
+    Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
     Preconditions.checkState(
         tableFormats.contains(TableFormat.MIXED_HIVE),
         "Catalog %s does not support MIXED_HIVE format",
@@ -317,8 +317,8 @@ public class TableController {
     Pair<List<OptimizingProcessInfo>, Integer> optimizingProcessesInfo =
         tableDescriptor.getOptimizingProcessesInfo(
             tableIdentifier.buildTableIdentifier(), limit, offset);
-    List<OptimizingProcessInfo> result = optimizingProcessesInfo.first();
-    int total = optimizingProcessesInfo.second();
+    List<OptimizingProcessInfo> result = optimizingProcessesInfo.getLeft();
+    int total = optimizingProcessesInfo.getRight();
 
     ctx.json(OkResponse.of(PageResult.of(result, total)));
   }
@@ -527,7 +527,7 @@ public class TableController {
     String catalogType = serverCatalog.getMetadata().getCatalogType();
     if (catalogType.equals(CATALOG_TYPE_HIVE)) {
       CatalogMeta catalogMeta = serverCatalog.getMetadata();
-      TableMetaStore tableMetaStore = MixedCatalogUtil.buildMetaStore(catalogMeta);
+      TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
       HMSClientPool hmsClientPool =
           new CachedHiveClientPool(tableMetaStore, catalogMeta.getCatalogProperties());
 

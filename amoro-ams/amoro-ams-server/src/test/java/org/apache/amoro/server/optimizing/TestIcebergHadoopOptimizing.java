@@ -28,8 +28,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.TableProperties;
-import org.apache.amoro.utils.MixedCatalogUtil;
-import org.apache.iceberg.CatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -433,9 +432,10 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
       throw new IllegalStateException("unknown catalog");
     }
 
-    TableMetaStore tms = MixedCatalogUtil.buildMetaStore(serverCatalog.getMetadata());
+    TableMetaStore tms = CatalogUtil.buildMetaStore(serverCatalog.getMetadata());
     Catalog icebergCatalog =
-        CatalogUtil.loadCatalog(impl, catalog, properties, tms.getConfiguration());
+        org.apache.iceberg.CatalogUtil.loadCatalog(
+            impl, catalog, properties, tms.getConfiguration());
 
     Map<String, String> tableProperties = Maps.newHashMap();
     tableProperties.put(

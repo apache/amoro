@@ -19,11 +19,11 @@
 package org.apache.amoro.server.table;
 
 import org.apache.amoro.CommonUnifiedCatalog;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.catalog.MixedTables;
@@ -35,8 +35,8 @@ import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.amoro.utils.ConvertStructUtil;
-import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -203,7 +203,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
                 catalogMeta.getCatalogName(),
                 catalogMeta.getCatalogType(),
                 catalogMeta.getCatalogProperties(),
-                MixedCatalogUtil.buildMetaStore(catalogMeta));
+                CatalogUtil.buildMetaStore(catalogMeta));
     catalog
         .newTableBuilder(tableTestHelper.id(), tableTestHelper.tableSchema())
         .withPartitionSpec(tableTestHelper.partitionSpec())
@@ -218,7 +218,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
             catalogMeta.getCatalogName(),
             catalogMeta.getCatalogType(),
             catalogMeta.getCatalogProperties(),
-            MixedCatalogUtil.buildMetaStore(catalogMeta));
+            CatalogUtil.buildMetaStore(catalogMeta));
     catalog
         .newTableBuilder(tableTestHelper.id(), tableTestHelper.tableSchema())
         .withPartitionSpec(tableTestHelper.partitionSpec())

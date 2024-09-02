@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server;
 
-import org.apache.amoro.api.config.ConfigOption;
-import org.apache.amoro.api.config.Configurations;
+import org.apache.amoro.config.ConfigOption;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 
 import java.net.InetAddress;

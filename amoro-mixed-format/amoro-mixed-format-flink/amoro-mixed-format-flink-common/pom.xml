@@ -44,7 +44,7 @@
         <!--amoro-->
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
+            <artifactId>amoro-iceberg-format</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.ow2.asm</groupId>
@@ -312,9 +312,17 @@
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
+            <artifactId>amoro-common</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-iceberg-format</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
 
@@ -323,6 +331,21 @@
             <artifactId>amoro-mixed-format-hive</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-paimon-format</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-paimon-format</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -387,14 +410,6 @@
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>${assertj.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-ams-api</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
     </dependencies>

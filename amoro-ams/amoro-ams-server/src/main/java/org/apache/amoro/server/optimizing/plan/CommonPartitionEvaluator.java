@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
-import org.apache.amoro.api.config.OptimizingConfig;
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
@@ -52,23 +52,29 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   // fragment files
   protected int fragmentFileCount = 0;
   protected long fragmentFileSize = 0;
+  protected long fragmentFileRecords = 0;
 
   // segment files
   protected int rewriteSegmentFileCount = 0;
   protected long rewriteSegmentFileSize = 0L;
+  protected long rewriteSegmentFileRecords = 0L;
   protected int undersizedSegmentFileCount = 0;
   protected long undersizedSegmentFileSize = 0;
+  protected long undersizedSegmentFileRecords = 0;
   protected int rewritePosSegmentFileCount = 0;
   protected int combinePosSegmentFileCount = 0;
   protected long rewritePosSegmentFileSize = 0L;
+  protected long rewritePosSegmentFileRecords = 0L;
   protected long min1SegmentFileSize = Integer.MAX_VALUE;
   protected long min2SegmentFileSize = Integer.MAX_VALUE;
 
   // delete files
   protected int equalityDeleteFileCount = 0;
   protected long equalityDeleteFileSize = 0L;
+  protected long equalityDeleteFileRecords = 0L;
   protected int posDeleteFileCount = 0;
   protected long posDeleteFileSize = 0L;
+  protected long posDeleteFileRecords = 0L;
 
   private long cost = -1;
   private Boolean necessary = null;
@@ -132,6 +138,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   private boolean addFragmentFile(DataFile dataFile, List<ContentFile<?>> deletes) {
     fragmentFileSize += dataFile.fileSizeInBytes();
     fragmentFileCount++;
+    fragmentFileRecords += dataFile.recordCount();
 
     for (ContentFile<?> delete : deletes) {
       addDelete(delete);
@@ -149,6 +156,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     if (fileShouldRewrite(dataFile, deletes)) {
       rewriteSegmentFileSize += dataFile.fileSizeInBytes();
       rewriteSegmentFileCount++;
+      rewriteSegmentFileRecords += dataFile.recordCount();
       return true;
     }
 
@@ -162,6 +170,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
     undersizedSegmentFileSize += dataFile.fileSizeInBytes();
     undersizedSegmentFileCount++;
+    undersizedSegmentFileRecords += dataFile.recordCount();
     return true;
   }
 
@@ -169,6 +178,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     if (fileShouldRewrite(dataFile, deletes)) {
       rewriteSegmentFileSize += dataFile.fileSizeInBytes();
       rewriteSegmentFileCount++;
+      rewriteSegmentFileRecords += dataFile.recordCount();
       for (ContentFile<?> delete : deletes) {
         addDelete(delete);
       }
@@ -178,6 +188,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     if (segmentShouldRewritePos(dataFile, deletes)) {
       rewritePosSegmentFileSize += dataFile.fileSizeInBytes();
       rewritePosSegmentFileCount++;
+      rewritePosSegmentFileRecords += dataFile.recordCount();
       for (ContentFile<?> delete : deletes) {
         addDelete(delete);
       }
@@ -241,9 +252,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     if (delete.content() == FileContent.POSITION_DELETES) {
       posDeleteFileCount++;
       posDeleteFileSize += delete.fileSizeInBytes();
+      posDeleteFileRecords += delete.recordCount();
     } else {
       equalityDeleteFileCount++;
       equalityDeleteFileSize += delete.fileSizeInBytes();
+      equalityDeleteFileRecords += delete.recordCount();
     }
   }
 
@@ -367,6 +380,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   @Override
+  public long getFragmentFileRecords() {
+    return fragmentFileRecords;
+  }
+
+  @Override
   public int getSegmentFileCount() {
     return rewriteSegmentFileCount + undersizedSegmentFileCount + rewritePosSegmentFileCount;
   }
@@ -374,6 +392,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public long getSegmentFileSize() {
     return rewriteSegmentFileSize + undersizedSegmentFileSize + rewritePosSegmentFileSize;
+  }
+
+  @Override
+  public long getSegmentFileRecords() {
+    return rewriteSegmentFileRecords + undersizedSegmentFileRecords + rewritePosSegmentFileRecords;
   }
 
   @Override
@@ -387,6 +410,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   @Override
+  public long getEqualityDeleteFileRecords() {
+    return equalityDeleteFileRecords;
+  }
+
+  @Override
   public int getPosDeleteFileCount() {
     return posDeleteFileCount;
   }
@@ -394,6 +422,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public long getPosDeleteFileSize() {
     return posDeleteFileSize;
+  }
+
+  @Override
+  public long getPosDeleteFileRecords() {
+    return posDeleteFileRecords;
   }
 
   public static class Weight implements PartitionEvaluator.Weight {
@@ -423,18 +456,24 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
         .add("lastFullOptimizeTime", tableRuntime.getLastFullOptimizingTime())
         .add("fragmentFileCount", fragmentFileCount)
         .add("fragmentFileSize", fragmentFileSize)
+        .add("fragmentFileRecords", fragmentFileRecords)
         .add("rewriteSegmentFileCount", rewriteSegmentFileCount)
         .add("rewriteSegmentFileSize", rewriteSegmentFileSize)
+        .add("rewriteSegmentFileRecords", rewriteSegmentFileRecords)
         .add("undersizedSegmentFileCount", undersizedSegmentFileCount)
         .add("undersizedSegmentFileSize", undersizedSegmentFileSize)
+        .add("undersizedSegmentFileRecords", undersizedSegmentFileRecords)
         .add("rewritePosSegmentFileCount", rewritePosSegmentFileCount)
         .add("rewritePosSegmentFileSize", rewritePosSegmentFileSize)
+        .add("rewritePosSegmentFileRecords", rewritePosSegmentFileRecords)
         .add("min1SegmentFileSize", min1SegmentFileSize)
         .add("min2SegmentFileSize", min2SegmentFileSize)
         .add("equalityDeleteFileCount", equalityDeleteFileCount)
         .add("equalityDeleteFileSize", equalityDeleteFileSize)
+        .add("equalityDeleteFileRecords", equalityDeleteFileRecords)
         .add("posDeleteFileCount", posDeleteFileCount)
         .add("posDeleteFileSize", posDeleteFileSize)
+        .add("posDeleteFileRecords", posDeleteFileRecords)
         .toString();
   }
 }
