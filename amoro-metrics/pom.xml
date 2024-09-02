@@ -23,20 +23,17 @@
 
     <parent>
         <groupId>org.apache.amoro</groupId>
-        <artifactId>amoro-ams</artifactId>
+        <artifactId>amoro-parent</artifactId>
         <version>0.8-SNAPSHOT</version>
     </parent>
 
-    <artifactId>amoro-ams-optimizer</artifactId>
+    <artifactId>amoro-metrics</artifactId>
     <packaging>pom</packaging>
-    <name>Amoro Project AMS Optimizer Parent</name>
+    <name>Amoro Project AMS Metric Reporter Parent</name>
     <url>https://amoro.apache.org</url>
 
     <modules>
-        <module>amoro-optimizer-common</module>
-        <module>amoro-optimizer-flink</module>
-        <module>amoro-optimizer-spark</module>
-        <module>amoro-optimizer-standalone</module>
+        <module>amoro-metrics-prometheus</module>
     </modules>
 
 </project>

@@ -16,24 +16,40 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>amoro-optimizer</artifactId>
+        <groupId>org.apache.amoro</groupId>
+        <version>0.8-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.apache.amoro</groupId>
-        <artifactId>amoro-ams</artifactId>
-        <version>0.8-SNAPSHOT</version>
-    </parent>
-
-    <artifactId>amoro-ams-metrics</artifactId>
-    <packaging>pom</packaging>
-    <name>Amoro Project AMS Metric Reporter Parent</name>
+    <artifactId>amoro-optimizer-common</artifactId>
+    <name>Amoro Project AMS Optimizer Common</name>
     <url>https://amoro.apache.org</url>
 
-    <modules>
-        <module>amoro-metrics-prometheus</module>
-    </modules>
+    <dependencies>
 
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-mixed-format-hive</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>args4j</groupId>
+            <artifactId>args4j</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-common</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

@@ -162,7 +162,7 @@ jobs:
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'amoro-ams/amoro-ams-optimizer/amoro-optimizer-flink' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
+        run: mvn clean package -pl 'amoro-optimizer/amoro-optimizer-flink' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
 
       - name: Build and Push Flink Optimizer Docker Image
         uses: docker/build-push-action@v4
@@ -176,7 +176,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             FLINK_VERSION=${{ matrix.flink }}
-            OPTIMIZER_JOB=amoro-ams/amoro-ams-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
+            OPTIMIZER_JOB=amoro-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
 
   docker-optimizer-spark:
     name: Push Amoro Optimizer-Spark Docker Image to Docker Hub
@@ -237,7 +237,7 @@ jobs:
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'amoro-ams/amoro-ams-optimizer/amoro-optimizer-spark' -am -e ${OPTIMIZER_SPARK} -DskipTests -B -ntp
+        run: mvn clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${OPTIMIZER_SPARK} -DskipTests -B -ntp
 
       - name: Build and Push Spark Optimizer Docker Image
         uses: docker/build-push-action@v4
@@ -251,6 +251,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             SPARK_VERSION=${{ matrix.spark }}
-            OPTIMIZER_JOB=amoro-ams/amoro-ams-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
+            OPTIMIZER_JOB=amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
 
 

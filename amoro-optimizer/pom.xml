@@ -16,46 +16,27 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>amoro-ams-optimizer</artifactId>
-        <groupId>org.apache.amoro</groupId>
-        <version>0.8-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>amoro-optimizer-standalone</artifactId>
-    <name>Amoro Project AMS Standalone Optimizer</name>
+    <parent>
+        <groupId>org.apache.amoro</groupId>
+        <artifactId>amoro-parent</artifactId>
+        <version>0.8-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>amoro-optimizer</artifactId>
+    <packaging>pom</packaging>
+    <name>Amoro Project AMS Optimizer Parent</name>
     <url>https://amoro.apache.org</url>
 
+    <modules>
+        <module>amoro-optimizer-common</module>
+        <module>amoro-optimizer-flink</module>
+        <module>amoro-optimizer-spark</module>
+        <module>amoro-optimizer-standalone</module>
+    </modules>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-optimizer-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>args4j</groupId>
-            <artifactId>args4j</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-common</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
 </project>
