@@ -30,7 +30,7 @@
     <files>
         <file>
             <source>
-                ../amoro-ams-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${project.version}-jar-with-dependencies.jar
+                ../../amoro-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${project.version}-jar-with-dependencies.jar
             </source>
             <outputDirectory>plugin/optimizer/flink</outputDirectory>
             <destName>optimizer-job.jar</destName>
@@ -38,7 +38,7 @@
         </file>
         <file>
             <source>
-                ../amoro-ams-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${project.version}-jar-with-dependencies.jar
+                ../../amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${project.version}-jar-with-dependencies.jar
             </source>
             <outputDirectory>plugin/optimizer/spark</outputDirectory>
             <destName>optimizer-job.jar</destName>
@@ -46,7 +46,7 @@
         </file>
         <file>
             <source>
-                ../amoro-ams-metrics/amoro-metrics-prometheus/target/amoro-metrics-prometheus-${project.version}-jar-with-dependencies.jar
+                ../../amoro-metrics/amoro-metrics-prometheus/target/amoro-metrics-prometheus-${project.version}-jar-with-dependencies.jar
             </source>
             <outputDirectory>plugin/metric-reporters</outputDirectory>
             <destName>prometheus-reporter.jar</destName>

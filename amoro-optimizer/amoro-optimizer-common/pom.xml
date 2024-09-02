@@ -21,33 +21,27 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>amoro-ams-optimizer</artifactId>
+        <artifactId>amoro-optimizer</artifactId>
         <groupId>org.apache.amoro</groupId>
         <version>0.8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>amoro-optimizer-standalone</artifactId>
-    <name>Amoro Project AMS Standalone Optimizer</name>
+    <artifactId>amoro-optimizer-common</artifactId>
+    <name>Amoro Project AMS Optimizer Common</name>
     <url>https://amoro.apache.org</url>
 
-
     <dependencies>
+
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-optimizer-common</artifactId>
-            <version>${project.version}</version>
+            <artifactId>amoro-mixed-format-hive</artifactId>
         </dependency>
 
         <dependency>
             <groupId>args4j</groupId>
             <artifactId>args4j</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
         </dependency>
 
         <dependency>

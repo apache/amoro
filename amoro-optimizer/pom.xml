@@ -27,7 +27,7 @@
         <version>0.8-SNAPSHOT</version>
     </parent>
 
-    <artifactId>amoro-ams-optimizer</artifactId>
+    <artifactId>amoro-optimizer</artifactId>
     <packaging>pom</packaging>
     <name>Amoro Project AMS Optimizer Parent</name>
     <url>https://amoro.apache.org</url>

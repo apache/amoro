@@ -28,9 +28,9 @@ FLINK_VERSION=1.20.0
 SPARK_VERSION=3.3.3
 DEBIAN_MIRROR=http://deb.debian.org
 APACHE_ARCHIVE=https://archive.apache.org/dist
-FLINK_OPTIMIZER_JOB_PATH=amoro-ams/amoro-ams-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${AMORO_VERSION}-jar-with-dependencies.jar
+FLINK_OPTIMIZER_JOB_PATH=amoro-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${AMORO_VERSION}-jar-with-dependencies.jar
 FLINK_OPTIMIZER_JOB=${PROJECT_HOME}/${FLINK_OPTIMIZER_JOB_PATH}
-SPARK_OPTIMIZER_JOB_PATH=amoro-ams/amoro-ams-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${AMORO_VERSION}-jar-with-dependencies.jar
+SPARK_OPTIMIZER_JOB_PATH=amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${AMORO_VERSION}-jar-with-dependencies.jar
 SPARK_OPTIMIZER_JOB=${PROJECT_HOME}/${SPARK_OPTIMIZER_JOB_PATH}
 AMORO_TAG=$AMORO_VERSION
 MAVEN_MIRROR=https://repo.maven.apache.org/maven2
@@ -160,7 +160,7 @@ function build_optimizer_flink() {
     OPTIMIZER_JOB=${FLINK_OPTIMIZER_JOB}
 
     if [ ! -f "${OPTIMIZER_JOB}" ]; then
-      BUILD_CMD="mvn clean package -pl amoro-ams/amoro-ams-optimizer/amoro-optimizer-flink -am -e -DskipTests"
+      BUILD_CMD="mvn clean package -pl amoro-optimizer/amoro-optimizer-flink -am -e -DskipTests"
       echo "flink optimizer job not exists in ${OPTIMIZER_JOB}"
       echo "please check the file or run '${BUILD_CMD}' first. "
       exit  1
@@ -183,7 +183,7 @@ function build_optimizer_spark() {
     OPTIMIZER_JOB=${SPARK_OPTIMIZER_JOB}
 
     if [ ! -f "${OPTIMIZER_JOB}" ]; then
-      BUILD_CMD="mvn clean package -pl amoro-ams/amoro-ams-optimizer/amoro-optimizer-spark -am -e -DskipTests"
+      BUILD_CMD="mvn clean package -pl amoro-optimizer/amoro-optimizer-spark -am -e -DskipTests"
       echo "spark optimizer job not exists in ${OPTIMIZER_JOB}"
       echo "please check the file or run '${BUILD_CMD}' first. "
       exit  1

@@ -49,6 +49,8 @@
         <module>amoro-common</module>
         <module>amoro-web</module>
         <module>amoro-ams</module>
+        <module>amoro-optimizer</module>
+        <module>amoro-metrics</module>
         <module>amoro-iceberg-format</module>
         <module>amoro-mixed-format</module>
         <module>amoro-hudi-format</module>

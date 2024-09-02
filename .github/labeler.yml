@@ -51,7 +51,7 @@
   - "amoro-web/**/*"
 
 "module:ams-optimizer":
-  - "amoro-ams/amoro-ams-optimizer/**/*"
+  - "amoro-optimizer/**/*"
 
 "module:mixed-spark":
   - "amoro-mixed-format/amoro-mixed-format-spark/**/*"
