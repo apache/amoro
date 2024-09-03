@@ -20,7 +20,7 @@ limitations under the License.
 import { computed, onMounted, reactive, ref } from 'vue'
 import type { IBranchItem, IServiceBranchItem } from '@/types/common.type'
 import { branchTypeMap, operationMap } from '@/types/common.type'
-import { getBranches, getTags, getConsumers } from '@/services/table.service'
+import { getBranches, getConsumers, getTags } from '@/services/table.service'
 
 const props = defineProps({ catalog: String, db: String, table: String, disabled: Boolean })
 const emit = defineEmits(['refChange', 'consumerChange'])
@@ -30,15 +30,15 @@ const disabled = computed(() => props.disabled)
 const selectedObj = ref<IBranchItem>({ value: '', type: branchTypeMap.BRANCH, label: '' })
 const branchSearchKey = ref<string>('')
 const tagSearchKey = ref<string>('')
-const consumerSearchKey=ref<string>('')
+const consumerSearchKey = ref<string>('')
 const tabActiveKey = ref<string>(branchTypeMap.BRANCH)
 const branchList = ref<IBranchItem[]>([])
 const tagList = ref<IBranchItem[]>([])
 const consumerList = ref<IBranchItem[]>([])
 const actualBranchList = computed(() => branchList.value.filter(item => !branchSearchKey.value || item.label.includes(branchSearchKey.value)))
 const actualTagList = computed(() => tagList.value.filter(item => !tagSearchKey.value || item.label.includes(tagSearchKey.value)))
-const actualConsumerList = computed(() =>consumerList.value.filter((item) => !consumerSearchKey.value || 
-item.label.includes(consumerSearchKey.value)))
+const actualConsumerList = computed(() => consumerList.value.filter(item => !consumerSearchKey.value
+  || item.label.includes(consumerSearchKey.value)))
 
 const operation = ref<string>(operationMap.ALL)
 const operationList = reactive([operationMap.ALL, operationMap.OPTIMIZING, operationMap.NONOPTIMIZING])
@@ -57,10 +57,11 @@ function selectObject(obj: IBranchItem) {
   emit('refChange', { ref: obj.value, operation: operationMap.ALL })
 }
 function selectConsumer(obj: IBranchItem) {
-  if (obj.value === selectedObj.value.value) return
+  if (obj.value === selectedObj.value.value)
+    return
   selectedObj.value = obj
   const amoroCurrentSnapshotsItem = { ...obj.amoroCurrentSnapshotsOfTable }
-  emit('consumerChange', {ref: obj.value, amoroCurrentSnapshotsItem, operation: operationMap.ALL})
+  emit('consumerChange', { ref: obj.value, amoroCurrentSnapshotsItem, operation: operationMap.ALL })
 }
 function onChange(val: string) {
   emit('refChange', { ref: selectedObj.value.value, operation: val })
@@ -78,7 +79,8 @@ async function getTagList() {
 }
 async function getConsumerList() {
   const result = await getConsumers(props as any)
-  consumerList.value = (result.list || []).map((l: IServiceBranchItem) => ({ value: l.consumerId, label: l.consumerId, type: branchTypeMap.CONSUMER, amoroCurrentSnapshotsOfTable: l.amoroCurrentSnapshotsOfTable}))}
+  consumerList.value = (result.list || []).map((l: IServiceBranchItem) => ({ value: l.consumerId, label: l.consumerId, type: branchTypeMap.CONSUMER, amoroCurrentSnapshotsOfTable: l.amoroCurrentSnapshotsOfTable }))
+}
 async function init() {
   await Promise.all([getBranchList(), getTagList(), getConsumerList()])
 }
@@ -103,8 +105,9 @@ onMounted(() => {
             <a-input v-show="tabActiveKey === branchTypeMap.BRANCH" v-model:value="branchSearchKey" :placeholder="$t('filterBranchesOrTagsOrConsumers')" @click="onClickInput" />
             <a-input v-show="tabActiveKey === branchTypeMap.TAG" v-model:value="tagSearchKey" :placeholder="$t('filterBranchesOrTagsOrConsumers')" @click="onClickInput" />
             <a-input
-              v-show="tabActiveKey === branchTypeMap.CONSUMER"  v-model:value="consumerSearchKey" :placeholder="$t('filterBranchesOrTagsOrConsumers')"
-              @click="onClickInput"/>
+              v-show="tabActiveKey === branchTypeMap.CONSUMER" v-model:value="consumerSearchKey" :placeholder="$t('filterBranchesOrTagsOrConsumers')"
+              @click="onClickInput"
+            />
           </div>
           <a-tabs v-model:activeKey="tabActiveKey" type="card">
             <a-tab-pane :key="branchTypeMap.BRANCH" :tab="$t('branches')">
@@ -156,7 +159,7 @@ onMounted(() => {
     </div>
     <div class="g-ml-24">
       {{ $t('operation') }}:
-        <a-select
+      <a-select
         v-model:value="operation"
         class="g-ml-8"
         style="width: 160px"
