@@ -55,6 +55,7 @@
         <module>amoro-mixed-format</module>
         <module>amoro-hudi-format</module>
         <module>amoro-paimon-format</module>
+        <module>dist</module>
     </modules>
 
     <scm>

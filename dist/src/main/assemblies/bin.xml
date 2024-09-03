@@ -30,7 +30,7 @@
     <files>
         <file>
             <source>
-                ../../amoro-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${project.version}-jar-with-dependencies.jar
+                ../amoro-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${project.version}-jar-with-dependencies.jar
             </source>
             <outputDirectory>plugin/optimizer/flink</outputDirectory>
             <destName>optimizer-job.jar</destName>
@@ -38,7 +38,7 @@
         </file>
         <file>
             <source>
-                ../../amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${project.version}-jar-with-dependencies.jar
+                ../amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${project.version}-jar-with-dependencies.jar
             </source>
             <outputDirectory>plugin/optimizer/spark</outputDirectory>
             <destName>optimizer-job.jar</destName>
@@ -46,16 +46,16 @@
         </file>
         <file>
             <source>
-                ../../amoro-metrics/amoro-metrics-prometheus/target/amoro-metrics-prometheus-${project.version}-jar-with-dependencies.jar
+                ../amoro-metrics/amoro-metrics-prometheus/target/amoro-metrics-prometheus-${project.version}-jar-with-dependencies.jar
             </source>
             <outputDirectory>plugin/metric-reporters</outputDirectory>
             <destName>prometheus-reporter.jar</destName>
             <fileMode>0644</fileMode>
         </file>
         <file>
-            <source>../amoro-ams-server/target/amoro-ams-server-${project.version}.jar</source>
+            <source>../amoro-ams/target/amoro-ams-${project.version}.jar</source>
             <outputDirectory>lib/</outputDirectory>
-            <destName>amoro-ams-server-${project.version}.jar</destName>
+            <destName>amoro-ams-${project.version}.jar</destName>
             <fileMode>0644</fileMode>
         </file>
         <file>
@@ -64,26 +64,26 @@
             <fileMode>0644</fileMode>
         </file>
         <file>
-            <source>../../LICENSE-binary</source>
+            <source>../LICENSE-binary</source>
             <outputDirectory/>
             <destName>LICENSE</destName>
             <fileMode>0644</fileMode>
         </file>
         <file>
-            <source>../../NOTICE-binary</source>
+            <source>../NOTICE-binary</source>
             <outputDirectory/>
             <destName>NOTICE</destName>
             <fileMode>0644</fileMode>
         </file>
         <file>
-            <source>../../DISCLAIMER</source>
+            <source>../DISCLAIMER</source>
             <outputDirectory/>
             <fileMode>0644</fileMode>
         </file>
     </files>
     <fileSets>
         <fileSet>
-            <directory>../../licenses-binary</directory>
+            <directory>../licenses-binary</directory>
             <outputDirectory>licenses</outputDirectory>
             <fileMode>0644</fileMode>
         </fileSet>
@@ -99,22 +99,22 @@
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../amoro-ams-server/src/main/resources/mysql</directory>
+            <directory>../amoro-ams/src/main/resources/mysql</directory>
             <outputDirectory>conf/mysql</outputDirectory>
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../amoro-ams-server/src/main/resources/postgres</directory>
+            <directory>../amoro-ams/src/main/resources/postgres</directory>
             <outputDirectory>conf/postgres</outputDirectory>
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../amoro-ams-server/src/main/resources/derby</directory>
+            <directory>../amoro-ams/src/main/resources/derby</directory>
             <outputDirectory>conf/derby</outputDirectory>
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../amoro-ams-server/target/amoro-ams-server-dependency/lib</directory>
+            <directory>../amoro-ams/target/amoro-ams-dependency/lib</directory>
             <outputDirectory>lib/</outputDirectory>
             <fileMode>0644</fileMode>
         </fileSet>
