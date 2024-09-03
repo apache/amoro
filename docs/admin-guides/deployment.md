@@ -50,7 +50,7 @@ $ git clone https://github.com/apache/amoro.git
 $ cd amoro
 $ base_dir=$(pwd) 
 $ mvn clean package -DskipTests
-$ cd amoro-ams/dist/target/
+$ cd dist/target/
 $ ls
 amoro-x.y.z-bin.zip # AMS release package
 

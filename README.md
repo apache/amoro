@@ -102,7 +102,7 @@ Amoro contains modules as below:
 - `amoro-ams` is amoro management service module
     - `amoro-ams-api` contains ams thrift api and common interfaces
     - `amoro-ams-dashboard` is the dashboard frontend for ams
-    - `amoro-ams-server` is the backend server for ams
+    - `amoro-ams` is the backend server for ams
     - `amoro-optimizer` provides default optimizer implementation
 - `amoro-mixed-format` provides Mixed format implementation
     - `amoro-mixed-format-hive` integrates with Apache Hive and implements Mixed Hive format

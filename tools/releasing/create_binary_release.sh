@@ -68,7 +68,7 @@ make_binary_release() {
   $MVN clean package ${HADOOP_PROFILE} -Pno-extended-disk-storage -pl ':dist' -am -Dgpg.skip -Dcheckstyle.skip=true -DskipTests
 
   local TARGET_FILE="apache-amoro-${RELEASE_VERSION}-bin-${HADOOP_VERSION}.tar.gz"
-  cp amoro-ams/dist/target/apache-amoro-${RELEASE_VERSION}-bin.tar.gz ${RELEASE_DIR}/${TARGET_FILE}
+  cp dist/target/apache-amoro-${RELEASE_VERSION}-bin.tar.gz ${RELEASE_DIR}/${TARGET_FILE}
   cd ${RELEASE_DIR}
 
   # Sign sha the tgz

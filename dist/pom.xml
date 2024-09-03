@@ -22,7 +22,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.apache.amoro</groupId>
-        <artifactId>amoro-ams</artifactId>
+        <artifactId>amoro-parent</artifactId>
         <version>0.8-SNAPSHOT</version>
     </parent>
 
@@ -33,7 +33,7 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-ams-server</artifactId>
+            <artifactId>amoro-ams</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

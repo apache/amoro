@@ -32,7 +32,7 @@ ADD . /workspace/amoro
 WORKDIR /workspace/amoro
 
 RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
-    && cp amoro-ams/dist/target/*.tar.gz /usr/local \
+    && cp dist/target/*.tar.gz /usr/local \
     && tar -xzvf /usr/local/apache-amoro-${AMORO_VERSION}-bin.tar.gz -C /usr/local \
     && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/flink -rf \
     && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/spark -rf \
