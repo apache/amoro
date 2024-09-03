@@ -95,15 +95,13 @@ Amoro support multiple processing engines for Mixed format as below:
 
 Amoro contains modules as below:
 
-- `amoro-core` contains core abstractions and common implementation for other modules
+- `amoro-common` contains core abstractions and common implementation for other modules
+- `amoro-ams` is amoro management service module
+- `amoro-web` is the dashboard frontend for ams
+- `amoro-optimizer` provides default optimizer implementation
 - `amoro-iceberg-format` contains integration of Apache Iceberg format
 - `amoro-hudi-format` contains integration of Apache Hudi format
 - `amoro-paimon-format` contains integration of Apache Paimon format
-- `amoro-ams` is amoro management service module
-    - `amoro-ams-api` contains ams thrift api and common interfaces
-    - `amoro-ams-dashboard` is the dashboard frontend for ams
-    - `amoro-ams` is the backend server for ams
-    - `amoro-optimizer` provides default optimizer implementation
 - `amoro-mixed-format` provides Mixed format implementation
     - `amoro-mixed-format-hive` integrates with Apache Hive and implements Mixed Hive format
     - `amoro-mixed-format-flink` provides Flink connectors for Mixed format tables (use amoro-flink-runtime for a shaded version)
