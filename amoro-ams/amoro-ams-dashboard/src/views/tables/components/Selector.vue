@@ -88,8 +88,8 @@ onMounted(() => {
       <template #overlay>
         <div>
           <div class="branch-selector-search">
-            <a-input v-show="tabActiveKey === branchTypeMap.BRANCH" v-model:value="branchSearchKey" :placeholder="$t('filterBranchesOrTags')" @click="onClickInput" />
-            <a-input v-show="tabActiveKey === branchTypeMap.TAG" v-model:value="tagSearchKey" :placeholder="$t('filterBranchesOrTags')" @click="onClickInput" />
+            <a-input v-show="tabActiveKey === branchTypeMap.BRANCH" v-model:value="branchSearchKey" :placeholder="$t('filterBranchesOrTagsOrConsumers')" @click="onClickInput" />
+            <a-input v-show="tabActiveKey === branchTypeMap.TAG" v-model:value="tagSearchKey" :placeholder="$t('filterBranchesOrTagsOrConsumers')" @click="onClickInput" />
           </div>
           <a-tabs v-model:activeKey="tabActiveKey" type="card">
             <a-tab-pane :key="branchTypeMap.BRANCH" :tab="$t('branches')">
