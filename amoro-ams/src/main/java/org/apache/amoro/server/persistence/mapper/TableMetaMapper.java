@@ -23,6 +23,7 @@ import org.apache.amoro.server.persistence.converter.JsonObjectConverter;
 import org.apache.amoro.server.persistence.converter.Long2TsConverter;
 import org.apache.amoro.server.persistence.converter.Map2StringConverter;
 import org.apache.amoro.server.persistence.converter.MapLong2StringConverter;
+import org.apache.amoro.server.persistence.converter.TableFormatConverter;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableRuntimeMeta;
@@ -77,7 +78,10 @@ public interface TableMetaMapper {
     @Result(property = "tableIdentifier.tableName", column = "table_name"),
     @Result(property = "tableIdentifier.database", column = "db_name"),
     @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
-    @Result(property = "tableIdentifier.format", column = "format"),
+    @Result(
+        property = "tableIdentifier.format",
+        column = "format",
+        typeHandler = TableFormatConverter.class),
     @Result(property = "primaryKey", column = "primary_key"),
     @Result(property = "tableLocation", column = "table_location"),
     @Result(property = "baseLocation", column = "base_location"),
@@ -112,7 +116,10 @@ public interface TableMetaMapper {
     @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
     @Result(property = "tableIdentifier.database", column = "db_name"),
     @Result(property = "tableIdentifier.tableName", column = "table_name"),
-    @Result(property = "tableIdentifier.format", column = "format"),
+    @Result(
+        property = "tableIdentifier.format",
+        column = "format",
+        typeHandler = TableFormatConverter.class),
     @Result(property = "primaryKey", column = "primary_key"),
     @Result(property = "tableLocation", column = "table_location"),
     @Result(property = "baseLocation", column = "base_location"),
@@ -182,7 +189,10 @@ public interface TableMetaMapper {
     @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
     @Result(property = "tableIdentifier.database", column = "db_name"),
     @Result(property = "tableIdentifier.tableName", column = "table_name"),
-    @Result(property = "tableIdentifier.format", column = "format"),
+    @Result(
+        property = "tableIdentifier.format",
+        column = "format",
+        typeHandler = TableFormatConverter.class),
     @Result(property = "primaryKey", column = "primary_key"),
     @Result(property = "tableLocation", column = "table_location"),
     @Result(property = "baseLocation", column = "base_location"),
@@ -217,7 +227,10 @@ public interface TableMetaMapper {
     @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
     @Result(property = "tableIdentifier.database", column = "db_name"),
     @Result(property = "tableIdentifier.tableName", column = "table_name"),
-    @Result(property = "tableIdentifier.format", column = "format"),
+    @Result(
+        property = "tableIdentifier.format",
+        column = "format",
+        typeHandler = TableFormatConverter.class),
     @Result(property = "primaryKey", column = "primary_key"),
     @Result(property = "tableLocation", column = "table_location"),
     @Result(property = "baseLocation", column = "base_location"),
@@ -267,7 +280,7 @@ public interface TableMetaMapper {
     @Result(property = "tableName", column = "table_name"),
     @Result(property = "database", column = "db_name"),
     @Result(property = "catalog", column = "catalog_name"),
-    @Result(property = "format", column = "format"),
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
   })
   ServerTableIdentifier selectTableIdentifier(
       @Param("catalogName") String catalogName,
@@ -282,7 +295,7 @@ public interface TableMetaMapper {
     @Result(property = "catalog", column = "catalog_name"),
     @Result(property = "database", column = "db_name"),
     @Result(property = "tableName", column = "table_name"),
-    @Result(property = "format", column = "format")
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
   })
   List<ServerTableIdentifier> selectTableIdentifiersByDb(
       @Param("catalogName") String catalogName, @Param("databaseName") String databaseName);
@@ -295,7 +308,7 @@ public interface TableMetaMapper {
     @Result(property = "catalog", column = "catalog_name"),
     @Result(property = "database", column = "db_name"),
     @Result(property = "tableName", column = "table_name"),
-    @Result(property = "format", column = "format")
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
   })
   List<ServerTableIdentifier> selectTableIdentifiersByCatalog(
       @Param("catalogName") String catalogName);
@@ -306,7 +319,7 @@ public interface TableMetaMapper {
     @Result(property = "catalog", column = "catalog_name"),
     @Result(property = "database", column = "db_name"),
     @Result(property = "tableName", column = "table_name"),
-    @Result(property = "format", column = "format")
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
   })
   List<ServerTableIdentifier> selectAllTableIdentifiers();
 
@@ -380,7 +393,7 @@ public interface TableMetaMapper {
     @Result(property = "catalogName", column = "catalog_name"),
     @Result(property = "dbName", column = "db_name"),
     @Result(property = "tableName", column = "table_name"),
-    @Result(property = "format", column = "format"),
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class),
     @Result(property = "currentSnapshotId", column = "current_snapshot_id"),
     @Result(property = "currentChangeSnapshotId", column = "current_change_snapshotId"),
     @Result(property = "lastOptimizedSnapshotId", column = "last_optimized_snapshotId"),

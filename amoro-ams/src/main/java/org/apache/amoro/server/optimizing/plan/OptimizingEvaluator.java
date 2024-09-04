@@ -77,7 +77,7 @@ public class OptimizingEvaluator {
   protected void initEvaluator() {
     long startTime = System.currentTimeMillis();
     TableFileScanHelper tableFileScanHelper;
-    if (TableFormat.ICEBERG == mixedTable.format()) {
+    if (TableFormat.ICEBERG.equals(mixedTable.format())) {
       tableFileScanHelper =
           new IcebergTableFileScanHelper(mixedTable.asUnkeyedTable(), currentSnapshot.snapshotId());
     } else {
@@ -142,7 +142,7 @@ public class OptimizingEvaluator {
   }
 
   protected PartitionEvaluator buildEvaluator(Pair<Integer, StructLike> partition) {
-    if (TableFormat.ICEBERG == mixedTable.format()) {
+    if (TableFormat.ICEBERG.equals(mixedTable.format())) {
       return new CommonPartitionEvaluator(tableRuntime, partition, System.currentTimeMillis());
     } else {
       Map<String, String> partitionProperties = partitionProperties(partition);

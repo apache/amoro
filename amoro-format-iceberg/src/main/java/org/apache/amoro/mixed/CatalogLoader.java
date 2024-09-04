@@ -88,7 +88,7 @@ public class CatalogLoader {
         tableFormats.size() == 1, "Catalog support only one table format now.");
     TableFormat tableFormat = tableFormats.iterator().next();
     Preconditions.checkArgument(
-        TableFormat.MIXED_HIVE == tableFormat || TableFormat.MIXED_ICEBERG == tableFormat,
+        TableFormat.MIXED_HIVE.equals(tableFormat) || TableFormat.MIXED_ICEBERG.equals(tableFormat),
         "MixedCatalogLoader only support mixed-format, format: %s",
         tableFormat.name());
 
@@ -98,20 +98,20 @@ public class CatalogLoader {
       case CatalogMetaProperties.CATALOG_TYPE_GLUE:
       case CatalogMetaProperties.CATALOG_TYPE_CUSTOM:
         Preconditions.checkArgument(
-            TableFormat.MIXED_ICEBERG == tableFormat,
+            TableFormat.MIXED_ICEBERG.equals(tableFormat),
             "%s catalog support mixed-iceberg table only.",
             metastoreType);
         catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
         break;
       case CatalogMetaProperties.CATALOG_TYPE_HIVE:
-        if (TableFormat.MIXED_HIVE == tableFormat) {
+        if (TableFormat.MIXED_HIVE.equals(tableFormat)) {
           catalogImpl = HIVE_CATALOG_IMPL;
         } else {
           catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
         }
         break;
       case CatalogMetaProperties.CATALOG_TYPE_AMS:
-        if (TableFormat.MIXED_ICEBERG == tableFormat) {
+        if (TableFormat.MIXED_ICEBERG.equals(tableFormat)) {
           catalogImpl = INTERNAL_CATALOG_IMPL;
         } else {
           throw new IllegalArgumentException("Internal Catalog mixed-iceberg table only");

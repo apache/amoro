@@ -76,7 +76,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
             + " PARTITIONED BY (pt) ";
     sql(sqlText);
     int expect = 0;
-    if (TableFormat.PAIMON != format || !spark().version().startsWith("3.1")) {
+    if (!TableFormat.PAIMON.equals(format) || !spark().version().startsWith("3.1")) {
       // write is not supported in spark3-1
       sqlText =
           "INSERT INTO "
@@ -109,7 +109,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
   }
 
   private String pkDDL(TableFormat format) {
-    if (TableFormat.MIXED_HIVE == format || TableFormat.MIXED_ICEBERG == format) {
+    if (TableFormat.MIXED_HIVE.equals(format) || TableFormat.MIXED_ICEBERG.equals(format)) {
       return ", primary key(id)";
     }
     return "";
@@ -147,14 +147,10 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     }
 
     List<String> subTableNames = Lists.newArrayList();
-    switch (format) {
-      case ICEBERG:
-        subTableNames = icebergInspectTableNames();
-        break;
-      case MIXED_ICEBERG:
-      case MIXED_HIVE:
-        subTableNames = mixedFormatSubTableNames();
-        break;
+    if (TableFormat.ICEBERG.equals(format)) {
+      subTableNames = icebergInspectTableNames();
+    } else if (format.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG)) {
+      subTableNames = mixedFormatSubTableNames();
     }
 
     for (String inspectTableName : subTableNames) {

@@ -18,6 +18,7 @@
 
 package org.apache.amoro.catalog;
 
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableBuilder;
@@ -44,14 +45,11 @@ public abstract class TableTestBase extends CatalogTestBase {
     this.tableMetaStore = MixedFormatCatalogUtil.buildMetaStore(getCatalogMeta());
 
     getUnifiedCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
-    switch (getTestFormat()) {
-      case MIXED_HIVE:
-      case MIXED_ICEBERG:
-        createMixedFormatTable();
-        break;
-      case ICEBERG:
-        createIcebergFormatTable();
-        break;
+    TableFormat format = getTestFormat();
+    if (TableFormat.MIXED_HIVE.equals(format) || TableFormat.MIXED_ICEBERG.equals(format)) {
+      createMixedFormatTable();
+    } else if (TableFormat.ICEBERG.equals(format)) {
+      createIcebergFormatTable();
     }
   }
 

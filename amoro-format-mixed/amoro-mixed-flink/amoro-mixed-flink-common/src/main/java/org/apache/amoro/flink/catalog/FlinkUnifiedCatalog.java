@@ -223,7 +223,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
       throws TableAlreadyExistException, DatabaseNotExistException, CatalogException {
     Configuration configuration = new Configuration();
     table.getOptions().forEach(configuration::setString);
-    TableFormat format = configuration.get(TABLE_FORMAT);
+    TableFormat format = TableFormat.valueOf(configuration.get(TABLE_FORMAT));
     TableIdentifier tableIdentifier =
         TableIdentifier.of(
             unifiedCatalog.name(), tablePath.getDatabaseName(), tablePath.getObjectName());
@@ -464,25 +464,19 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   private AbstractCatalog createOriginalCatalog(
       TableIdentifier tableIdentifier, TableFormat tableFormat) {
     CatalogFactory catalogFactory;
-
-    switch (tableFormat) {
-      case MIXED_ICEBERG:
-      case MIXED_HIVE:
-        catalogFactory = new MixedCatalogFactory();
-        break;
-      case ICEBERG:
-        catalogFactory = new IcebergFlinkCatalogFactory(hadoopConf);
-        break;
-      case PAIMON:
-        catalogFactory =
-            new PaimonFlinkCatalogFactory(
-                unifiedCatalog.properties(), unifiedCatalog.metastoreType());
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            String.format(
-                "Unsupported table format: [%s] in the unified catalog, table identifier is [%s], the supported table formats are [%s].",
-                tableFormat, tableIdentifier, FlinkUnifiedCatalogFactory.SUPPORTED_FORMATS));
+    if (tableFormat.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG)) {
+      catalogFactory = new MixedCatalogFactory();
+    } else if (tableFormat.equals(TableFormat.ICEBERG)) {
+      catalogFactory = new IcebergFlinkCatalogFactory(hadoopConf);
+    } else if (tableFormat.equals(TableFormat.PAIMON)) {
+      catalogFactory =
+          new PaimonFlinkCatalogFactory(
+              unifiedCatalog.properties(), unifiedCatalog.metastoreType());
+    } else {
+      throw new UnsupportedOperationException(
+          String.format(
+              "Unsupported table format: [%s] in the unified catalog, table identifier is [%s], the supported table formats are [%s].",
+              tableFormat, tableIdentifier, FlinkUnifiedCatalogFactory.SUPPORTED_FORMATS));
     }
 
     AbstractCatalog originalCatalog;
