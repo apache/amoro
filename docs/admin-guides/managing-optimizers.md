@@ -70,7 +70,7 @@ The supported parameters include:
 ### Kubernetes container
 
 Kubernetes container is a way to start Optimizer On K8s with standalone Optimizer.
-To use flink container, you need to add a new container configuration. 
+To use Kubernetes container, you need to add a new container configuration. 
 with container-impl as `org.apache.amoro.server.manager.KubernetesOptimizerContainer`
 
 Kubernetes container support the following properties:
