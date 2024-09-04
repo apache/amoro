@@ -171,7 +171,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     return serverTableMeta;
   }
 
-  private String decorateTableFormat(AmoroTable table) {
+  private String decorateTableFormat(AmoroTable<?> table) {
     StringBuilder sb = new StringBuilder();
     sb.append(AmsUtil.formatString(table.format().name()));
     if (table.format().equals(TableFormat.ICEBERG)) {
@@ -340,14 +340,15 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       AmoroTable<?> amoroTable, String snapshotId) {
     MixedTable mixedTable = getTable(amoroTable);
     List<PartitionFileBaseInfo> result = new ArrayList<>();
+    long commitId = Long.parseLong(snapshotId);
     Snapshot snapshot;
     if (mixedTable.isKeyedTable()) {
-      snapshot = mixedTable.asKeyedTable().changeTable().snapshot(snapshotId);
+      snapshot = mixedTable.asKeyedTable().changeTable().snapshot(commitId);
       if (snapshot == null) {
-        snapshot = mixedTable.asKeyedTable().baseTable().snapshot(snapshotId);
+        snapshot = mixedTable.asKeyedTable().baseTable().snapshot(commitId);
       }
     } else {
-      snapshot = mixedTable.asUnkeyedTable().snapshot(snapshotId);
+      snapshot = mixedTable.asUnkeyedTable().snapshot(commitId);
     }
     if (snapshot == null) {
       throw new IllegalArgumentException(
