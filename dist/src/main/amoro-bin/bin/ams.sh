@@ -28,9 +28,6 @@ JAVA_OPTS="-server -XX:+UseG1GC -XX:MaxGCPauseMillis=200 \
 -Xloggc:$AMORO_LOG_DIR/gc.log -XX:+PrintGCDateStamps -XX:+IgnoreUnrecognizedVMOptions -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M \
 -Xms${JVM_XMS_CONFIG}m -Xmx${JVM_XMX_CONFIG}m \
 -verbose:gc -XX:+PrintGCDetails \
--Dcom.sun.management.jmxremote \
--Dcom.sun.management.jmxremote.ssl=false \
--Dcom.sun.management.jmxremote.authenticate=false \
 --add-opens=java.base/java.lang=ALL-UNNAMED \
 --add-opens=java.base/java.lang.invoke=ALL-UNNAMED \
 --add-opens=java.base/java.lang.reflect=ALL-UNNAMED \
@@ -47,7 +44,11 @@ JAVA_OPTS="-server -XX:+UseG1GC -XX:MaxGCPauseMillis=200 \
 "
 
 if [ -n "$JMX_REMOTE_PORT_CONFIG" ];then
-        JAVA_OPTS="${JAVA_OPTS} -Dcom.sun.management.jmxremote.port=${JMX_REMOTE_PORT_CONFIG} "
+  JAVA_OPTS="${JAVA_OPTS} -Dcom.sun.management.jmxremote.port=${JMX_REMOTE_PORT_CONFIG} \
+  -Dcom.sun.management.jmxremote \
+  -Dcom.sun.management.jmxremote.ssl=false \
+  -Dcom.sun.management.jmxremote.authenticate=false \
+  "
 fi
 
 if [ ! -z "$JVM_EXTRA_CONFIG" ];then
