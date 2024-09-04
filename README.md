@@ -103,17 +103,17 @@ Amoro contains modules as below:
 - `amoro-format-hudi` contains integration of Apache Hudi format
 - `amoro-format-paimon` contains integration of Apache Paimon format
 - `amoro-format-mixed` provides Mixed format implementation
-    - `amoro-format-mixed-hive` integrates with Apache Hive and implements Mixed Hive format
-    - `amoro-format-mixed-flink` provides Flink connectors for Mixed format tables (use amoro-flink-runtime for a shaded version)
-    - `amoro-format-mixed-spark` provides Spark connectors for Mixed format tables (use amoro-spark-runtime for a shaded version)
-    - `amoro-format-mixed-trino` provides Trino connectors for Mixed format tables
+    - `amoro-mixed-hive` integrates with Apache Hive and implements Mixed Hive format
+    - `amoro-mixed-flink` provides Flink connectors for Mixed format tables (use amoro-flink-runtime for a shaded version)
+    - `amoro-mixed-spark` provides Spark connectors for Mixed format tables (use amoro-spark-runtime for a shaded version)
+    - `amoro-mixed-trino` provides Trino connectors for Mixed format tables
 
 
 ## Building
 
-Amoro is built using Maven with JDK 8 and JDK 17(only for `amoro-format-mixed/amoro-format-mixed-trino` module).
+Amoro is built using Maven with JDK 8 and JDK 17(only for `amoro-format-mixed/amoro-mixed-trino` module).
 
-* Build all modules without `amoro-format-mixed-trino`: `mvn clean package`
+* Build all modules without `amoro-mixed-trino`: `mvn clean package`
 * Build and skip tests: `mvn clean package -DskipTests`
 * Build and skip dashboard: `mvn clean package -Pskip-dashboard-build`
 * Build and disable disk storage, RocksDB will NOT be introduced to avoid memory overflow: `mvn clean package -DskipTests -Pno-extented-disk-storage`
@@ -121,7 +121,7 @@ Amoro is built using Maven with JDK 8 and JDK 17(only for `amoro-format-mixed/am
 * Specify Flink version for Flink optimizer(the default is 1.20.0): `mvn clean package -DskipTests -Dflink-optimizer.flink-version=1.20.0`
   * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-optimizer-pre-1.15` parameter: `mvn clean package -DskipTests -Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`
 * Specify Spark version for Spark optimizer(the default is 3.3.3): `mvn clean package -DskipTests -Dspark-optimizer.spark-version=3.3.3`
-* Build `amoro-format-mixed-trino` module under JDK 17: `mvn clean package -DskipTests -Pformat-mixed-format-trino,build-mixed-format-trino -pl 'amoro-format-mixed/amoro-format-mixed-trino' -am`.
+* Build `amoro-mixed-trino` module under JDK 17: `mvn clean package -DskipTests -Pformat-mixed-format-trino,build-mixed-format-trino -pl 'amoro-format-mixed/amoro-mixed-trino' -am`.
 * Build all modules: `mvn clean package -DskipTests -Ptoolchain,build-mixed-format-trino`, besides you need config `toolchains.xml` in `${user.home}/.m2/` dir with content below.
 * Build a distribution package with all formats integrated: `mvn clean package -Psupport-all-formats`
   * Build a distribution package with Apache Paimon format: `mvn clean package -Psupport-paimon-format`
