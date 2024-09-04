@@ -16,32 +16,24 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>amoro-optimizer</artifactId>
         <groupId>org.apache.amoro</groupId>
+        <artifactId>amoro-parent</artifactId>
         <version>0.8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>amoro-optimizer-common</artifactId>
-    <name>Amoro Project AMS Optimizer Common</name>
-    <url>https://amoro.apache.org</url>
+    <artifactId>amoro-format-paimon</artifactId>
+    <name>Amoro Paimon Format Integration</name>
 
     <dependencies>
-
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-mixed-hive</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>args4j</groupId>
-            <artifactId>args4j</artifactId>
+            <artifactId>amoro-common</artifactId>
         </dependency>
 
         <dependency>
@@ -51,5 +43,18 @@
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.paimon</groupId>
+            <artifactId>paimon-bundle</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_2.12</artifactId>
+            <version>3.3.2</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
+
 </project>

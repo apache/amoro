@@ -20,36 +20,24 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>amoro-optimizer</artifactId>
+        <artifactId>amoro-parent</artifactId>
         <groupId>org.apache.amoro</groupId>
         <version>0.8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>amoro-optimizer-common</artifactId>
-    <name>Amoro Project AMS Optimizer Common</name>
+    <artifactId>amoro-format-mixed</artifactId>
+    <packaging>pom</packaging>
+    <name>Amoro Project Mixed Format Parent</name>
     <url>https://amoro.apache.org</url>
 
-    <dependencies>
+    <modules>
+        <module>amoro-mixed-flink</module>
+        <module>amoro-mixed-spark</module>
+        <module>amoro-mixed-hive</module>
+        <module>amoro-mixed-trino</module>
+    </modules>
 
-        <dependency>
-            <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-mixed-hive</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>args4j</groupId>
-            <artifactId>args4j</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-common</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
 </project>

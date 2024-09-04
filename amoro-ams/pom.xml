@@ -41,12 +41,12 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-iceberg-format</artifactId>
+            <artifactId>amoro-format-iceberg</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-mixed-format-hive</artifactId>
+            <artifactId>amoro-mixed-hive</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.eclipse.jetty.orbit</groupId>
@@ -325,7 +325,7 @@
         <!-- runtime dependencies -->
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-mixed-format-spark-${terminal.spark.major.version}</artifactId>
+            <artifactId>amoro-format-mixed-spark-${terminal.spark.major.version}</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
@@ -348,7 +348,7 @@
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-iceberg-format</artifactId>
+            <artifactId>amoro-format-iceberg</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
@@ -356,7 +356,7 @@
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-mixed-format-hive</artifactId>
+            <artifactId>amoro-mixed-hive</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
@@ -364,14 +364,14 @@
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-paimon-format</artifactId>
+            <artifactId>amoro-format-paimon</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-paimon-format</artifactId>
+            <artifactId>amoro-format-paimon</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
@@ -469,7 +469,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.amoro</groupId>
-                    <artifactId>amoro-paimon-format</artifactId>
+                    <artifactId>amoro-format-paimon</artifactId>
                 </dependency>
             </dependencies>
         </profile>
@@ -478,7 +478,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.amoro</groupId>
-                    <artifactId>amoro-hudi-format</artifactId>
+                    <artifactId>amoro-format-hudi</artifactId>
                 </dependency>
             </dependencies>
         </profile>
@@ -487,11 +487,11 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.amoro</groupId>
-                    <artifactId>amoro-paimon-format</artifactId>
+                    <artifactId>amoro-format-paimon</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.apache.amoro</groupId>
-                    <artifactId>amoro-hudi-format</artifactId>
+                    <artifactId>amoro-format-hudi</artifactId>
                 </dependency>
             </dependencies>
         </profile>

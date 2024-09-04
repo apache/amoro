@@ -21,9 +21,9 @@ on:
       - ".github/workflows/**"
       - "amoro-ams/**"
       - "amoro-core/**"
-      - "amoro-mixed-format/amoro-mixed-format-flink/**"
-      - "amoro-mixed-format/amoro-mixed-format-hive/**"
-      - "amoro-mixed-format/amoro-mixed-format-spark/**"
+      - "amoro-format-mixed/amoro-format-mixed-flink/**"
+      - "amoro-format-mixed/amoro-format-mixed-hive/**"
+      - "amoro-format-mixed/amoro-format-mixed-spark/**"
       - "pom.xml"
       - "tools/maven/**"
 

@@ -54,13 +54,13 @@
   - "amoro-optimizer/**/*"
 
 "module:mixed-spark":
-  - "amoro-mixed-format/amoro-mixed-format-spark/**/*"
+  - "amoro-format-mixed/amoro-format-mixed-spark/**/*"
 
 "module:mixed-flink":
-  - "amoro-mixed-format/amoro-mixed-format-flink/**/*"
+  - "amoro-format-mixed/amoro-format-mixed-flink/**/*"
 
 "module:mixed-hive":
-  - "amoro-mixed-format/amoro-mixed-format-hive/**/*"
+  - "amoro-format-mixed/amoro-format-mixed-hive/**/*"
 
 "module:mixed-trino":
-  - "amoro-mixed-format/amoro-mixed-format-trino/**/*"
+  - "amoro-format-mixed/amoro-format-mixed-trino/**/*"
