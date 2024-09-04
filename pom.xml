@@ -51,10 +51,10 @@
         <module>amoro-ams</module>
         <module>amoro-optimizer</module>
         <module>amoro-metrics</module>
-        <module>amoro-iceberg-format</module>
-        <module>amoro-mixed-format</module>
-        <module>amoro-hudi-format</module>
-        <module>amoro-paimon-format</module>
+        <module>amoro-format-iceberg</module>
+        <module>amoro-format-mixed</module>
+        <module>amoro-format-hudi</module>
+        <module>amoro-format-paimon</module>
         <module>dist</module>
     </modules>
 
@@ -243,25 +243,25 @@
 
             <dependency>
                 <groupId>org.apache.amoro</groupId>
-                <artifactId>amoro-iceberg-format</artifactId>
+                <artifactId>amoro-format-iceberg</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.amoro</groupId>
-                <artifactId>amoro-paimon-format</artifactId>
+                <artifactId>amoro-format-paimon</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.amoro</groupId>
-                <artifactId>amoro-hudi-format</artifactId>
+                <artifactId>amoro-format-hudi</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.amoro</groupId>
-                <artifactId>amoro-mixed-format-hive</artifactId>
+                <artifactId>amoro-mixed-hive</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

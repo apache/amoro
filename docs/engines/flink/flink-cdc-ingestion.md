@@ -341,7 +341,7 @@ The following example will show how to write CDC data from multiple MySQL tables
 
 **Requirements**
 
-Please add [Flink Connector MySQL CDC](https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc/3.1.1) and [Amoro](https://mvnrepository.com/artifact/org.apache.amoro/amoro-mixed-format-flink-1.17/0.7.0-incubating) dependencies to your Maven project's pom.xml file.
+Please add [Flink Connector MySQL CDC](https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc/3.1.1) and [Amoro](https://mvnrepository.com/artifact/org.apache.amoro/amoro-format-mixed-flink-1.17/0.7.0-incubating) dependencies to your Maven project's pom.xml file.
 
 ```java
 import org.apache.amoro.flink.InternalCatalogBuilder;

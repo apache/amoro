@@ -16,40 +16,26 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>amoro-optimizer</artifactId>
-        <groupId>org.apache.amoro</groupId>
-        <version>0.8-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.apache.amoro</groupId>
+        <artifactId>amoro-format-mixed</artifactId>
+        <version>0.8-SNAPSHOT</version>
+    </parent>
 
-    <artifactId>amoro-optimizer-common</artifactId>
-    <name>Amoro Project AMS Optimizer Common</name>
+    <artifactId>amoro-mixed-spark</artifactId>
+    <packaging>pom</packaging>
+    <name>Amoro Project Mixed Format Spark Parent</name>
     <url>https://amoro.apache.org</url>
 
-    <dependencies>
-
-        <dependency>
-            <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-mixed-hive</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>args4j</groupId>
-            <artifactId>args4j</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-common</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+    <modules>
+        <module>amoro-mixed-spark-3-common</module>
+        <module>v3.2/amoro-mixed-spark-3.2</module>
+        <module>v3.2/amoro-mixed-spark-runtime-3.2</module>
+        <module>v3.3/amoro-mixed-spark-3.3</module>
+        <module>v3.3/amoro-mixed-spark-runtime-3.3</module>
+    </modules>
 </project>
