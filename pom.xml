@@ -29,7 +29,7 @@
 
     <groupId>org.apache.amoro</groupId>
     <artifactId>amoro-parent</artifactId>
-    <version>0.7-SNAPSHOT</version>
+    <version>0.8-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Amoro Project Parent</name>
@@ -46,9 +46,16 @@
     </licenses>
 
     <modules>
-        <module>amoro-core</module>
+        <module>amoro-common</module>
+        <module>amoro-web</module>
         <module>amoro-ams</module>
-        <module>amoro-mixed-format</module>
+        <module>amoro-optimizer</module>
+        <module>amoro-metrics</module>
+        <module>amoro-format-iceberg</module>
+        <module>amoro-format-mixed</module>
+        <module>amoro-format-hudi</module>
+        <module>amoro-format-paimon</module>
+        <module>dist</module>
     </modules>
 
     <scm>
@@ -95,7 +102,7 @@
         <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
 
         <iceberg.version>1.4.3</iceberg.version>
-        <paimon.version>0.8.0</paimon.version>
+        <paimon.version>0.8.2</paimon.version>
         <hive.version>3.1.1</hive.version>
         <hadoop.version>3.4.0</hadoop.version>
         <kerby.version>2.0.3</kerby.version>
@@ -111,6 +118,7 @@
         <curator.version>5.6.0</curator.version>
         <mockito.version>4.11.0</mockito.version>
         <parquet-avro.version>1.13.1</parquet-avro.version>
+        <mysql-jdbc.version>8.0.33</mysql-jdbc.version>
         <orc-core.version>1.8.3</orc-core.version>
         <awssdk.version>2.24.12</awssdk.version>
         <terminal.spark.version>3.3.2</terminal.spark.version>
@@ -131,15 +139,16 @@
         <lucene.version>8.11.2</lucene.version>
         <bitmap.version>1.0.1</bitmap.version>
         <prometheus.version>0.16.0</prometheus.version>
-        <flink.version>1.18.1</flink.version>
-        <fabric8-kubernetes-client.version.version>6.12.1</fabric8-kubernetes-client.version.version>
-        <amoro-shade.version>0.7-SNAPSHOT</amoro-shade.version>
+        <flink.version>1.20.0</flink.version>
+        <fabric8-kubernetes-client.version.version>6.13.3</fabric8-kubernetes-client.version.version>
+        <amoro-shade.version>0.7.0-incubating</amoro-shade.version>
         <amoro-shade-guava.version>32.1.1-jre</amoro-shade-guava.version>
         <amoro-shade-jackson.version>2.14.2</amoro-shade-jackson.version>
         <amoro-shade-zookeeper.version>3.9.1</amoro-shade-zookeeper.version>
         <amoro-shade-thrift.version>0.20.0</amoro-shade-thrift.version>
         <annotation-api.version>1.3.2</annotation-api.version>
         <guava.version>32.1.1-jre</guava.version>
+        <hudi.version>0.14.1</hudi.version>
 
         <rocksdb-dependency-scope>compile</rocksdb-dependency-scope>
         <lucene-dependency-scope>compile</lucene-dependency-scope>
@@ -228,19 +237,31 @@
         <dependencies>
             <dependency>
                 <groupId>org.apache.amoro</groupId>
-                <artifactId>amoro-ams-api</artifactId>
+                <artifactId>amoro-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.amoro</groupId>
-                <artifactId>amoro-core</artifactId>
+                <artifactId>amoro-format-iceberg</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.amoro</groupId>
-                <artifactId>amoro-mixed-format-hive</artifactId>
+                <artifactId>amoro-format-paimon</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-format-hudi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-mixed-hive</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -509,6 +530,12 @@
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>url-connection-client</artifactId>
                 <version>${awssdk.version}</version>
+	    </dependency>
+
+	    <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>s3-transfer-manager</artifactId>
+                <version>${awssdk.version}</version>
             </dependency>
 
             <dependency>
@@ -575,6 +602,12 @@
                 <groupId>org.apache.derby</groupId>
                 <artifactId>derby</artifactId>
                 <version>${derby-jdbc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${mysql-jdbc.version}</version>
             </dependency>
 
             <dependency>
@@ -812,6 +845,13 @@
                 <version>${annotation-api.version}</version>
             </dependency>
 
+            <!--  apache hudi dependencies management -->
+            <dependency>
+                <groupId>org.apache.hudi</groupId>
+                <artifactId>hudi-java-client</artifactId>
+                <version>${hudi.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
@@ -880,6 +920,12 @@
             <url>https://repository.apache.org/content/repositories/releases/</url>
         </repository>
 
+        <!--
+        Uncomment the following "repository" tag if your maven fails to download amoro-shade snapshot files.
+        We comment these tags by default because downloading from apache repositories is very slow for both github and developers.
+        -->
+
+        <!--
         <repository>
             <releases>
                 <enabled>false</enabled>
@@ -891,6 +937,7 @@
             <name>apache snapshots</name>
             <url>https://repository.apache.org/content/repositories/snapshots/</url>
         </repository>
+        -->
     </repositories>
 
     <pluginRepositories>
