@@ -144,7 +144,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark-3.2_2.12</artifactId>
+            <artifactId>iceberg-spark-3.3_2.12</artifactId>
             <version>${iceberg.version}</version>
             <scope>provided</scope>
             <exclusions>
