@@ -96,7 +96,6 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   private final RewriteFilesInput input;
   private final List<DeleteFile> posDeletes;
   // There may have multiple equality delete fields within a rewrite input
-  // and the delete ids are union of all equality delete fields.
   private final Multimap<Set<Integer>, DeleteFile> eqDeleteFilesByDeleteIds =
       Multimaps.newMultimap(Maps.newHashMap(), Lists::newArrayList);
 
@@ -104,6 +103,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
   private final Set<String> positionPathSets;
 
+  // The delete ids are union of all equality delete fields
   private final Set<Integer> deleteIds = new HashSet<>();
 
   private CloseablePredicate<StructForDelete<T>> eqPredicate;
