@@ -297,4 +297,229 @@ public class TestIcebergCombinedReader extends TableTestBase {
     }
     dataReader.close();
   }
+
+  @Test
+  public void readDataDropAEqField() throws IOException {
+    CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 100L;
+    StructLike partitionData = getPartitionData();
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(getMixedTable().asUnkeyedTable(), 0, 1)
+            .format(fileFormat)
+            .build();
+    DataFile dataFile =
+        FileHelpers.writeDataFile(
+            getMixedTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            Arrays.asList(
+                MixedDataTestHelpers.createRecord(1, "john", 0, "1970-01-01T08:00:00"),
+                MixedDataTestHelpers.createRecord(2, "lily", 1, "1970-01-01T08:00:00"),
+                MixedDataTestHelpers.createRecord(3, "sam", 2, "1970-01-01T08:00:00")));
+
+    Schema idSchema1 = TypeUtil.select(BasicTableTestHelper.TABLE_SCHEMA, Sets.newHashSet(1, 2));
+    GenericRecord idRecord = GenericRecord.create(idSchema1);
+    List<Record> records = new ArrayList<>();
+    IntStream.range(2, 100).forEach(id -> records.add(idRecord.copy("id", id, "name", "john")));
+    DeleteFile eqDeleteFile1 =
+        FileHelpers.writeDeleteFile(
+            getMixedTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            records,
+            idSchema1);
+
+    // Assuming that drop an identifier field
+    Schema idSchema2 = TypeUtil.select(BasicTableTestHelper.TABLE_SCHEMA, Sets.newHashSet(1));
+    GenericRecord idRecord2 = GenericRecord.create(idSchema2);
+    List<Record> records2 = new ArrayList<>();
+    IntStream.range(2, 100).forEach(id -> records2.add(idRecord2.copy("id", id)));
+    DeleteFile eqDeleteFile2 =
+        FileHelpers.writeDeleteFile(
+            getMixedTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            records2,
+            idSchema2);
+
+    RewriteFilesInput task2 =
+        new RewriteFilesInput(
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 3L)},
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 3L)},
+            new DeleteFile[] {},
+            new DeleteFile[] {
+              MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile1, 4L),
+              MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile2, 5L)
+            },
+            getMixedTable());
+
+    GenericCombinedIcebergDataReader dataReader =
+        new GenericCombinedIcebergDataReader(
+            getMixedTable().io(),
+            getMixedTable().schema(),
+            getMixedTable().spec(),
+            getMixedTable().asUnkeyedTable().encryption(),
+            null,
+            false,
+            IdentityPartitionConverters::convertConstant,
+            false,
+            null,
+            task2);
+    try (CloseableIterable<Record> readRecords = dataReader.readData()) {
+      Assert.assertEquals(1, Iterables.size(readRecords));
+    }
+
+    try (CloseableIterable<Record> readRecords = dataReader.readDeletedData()) {
+      Assert.assertEquals(2, Iterables.size(readRecords));
+    }
+
+    dataReader.close();
+  }
+
+  @Test
+  public void readDataReplaceAEqField() throws IOException {
+    StructLike partitionData = getPartitionData();
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(getMixedTable().asUnkeyedTable(), 0, 1)
+            .format(fileFormat)
+            .build();
+    DataFile dataFile =
+        FileHelpers.writeDataFile(
+            getMixedTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            Arrays.asList(
+                MixedDataTestHelpers.createRecord(1, "john", 0, "1970-01-01T08:00:00"),
+                MixedDataTestHelpers.createRecord(2, "lily", 1, "1970-01-01T08:00:00"),
+                MixedDataTestHelpers.createRecord(3, "sam", 2, "1970-01-01T08:00:00")));
+
+    Schema idSchema1 = TypeUtil.select(BasicTableTestHelper.TABLE_SCHEMA, Sets.newHashSet(1));
+    GenericRecord idRecord1 = GenericRecord.create(idSchema1);
+    List<Record> records1 = new ArrayList<>();
+    IntStream.range(2, 100).forEach(id -> records1.add(idRecord1.copy("id", id)));
+    DeleteFile eqDeleteFile1 =
+        FileHelpers.writeDeleteFile(
+            getMixedTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            records1,
+            idSchema1);
+
+    // Write records and identifier field is `name` instead
+    Schema idSchema2 = TypeUtil.select(BasicTableTestHelper.TABLE_SCHEMA, Sets.newHashSet(2));
+    GenericRecord idRecord2 = GenericRecord.create(idSchema2);
+    List<Record> records2 = new ArrayList<>();
+    records2.add(idRecord2.copy("name", "john"));
+    DeleteFile eqDeleteFile2 =
+        FileHelpers.writeDeleteFile(
+            getMixedTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            records2,
+            idSchema2);
+    RewriteFilesInput task =
+        new RewriteFilesInput(
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 3L)},
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 3L)},
+            new DeleteFile[] {},
+            new DeleteFile[] {
+              MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile1, 4L),
+              MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile2, 5L)
+            },
+            getMixedTable());
+    GenericCombinedIcebergDataReader dataReader =
+        new GenericCombinedIcebergDataReader(
+            getMixedTable().io(),
+            getMixedTable().schema(),
+            getMixedTable().spec(),
+            getMixedTable().asUnkeyedTable().encryption(),
+            null,
+            false,
+            IdentityPartitionConverters::convertConstant,
+            false,
+            null,
+            task);
+    try (CloseableIterable<Record> readRecords = dataReader.readData()) {
+      Assert.assertEquals(0, Iterables.size(readRecords));
+    }
+    try (CloseableIterable<Record> readRecords = dataReader.readDeletedData()) {
+      Assert.assertEquals(3, Iterables.size(readRecords));
+    }
+
+    dataReader.close();
+  }
+
+  @Test
+  public void readReadAddAEqField() throws IOException {
+    StructLike partitionData = getPartitionData();
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(getMixedTable().asUnkeyedTable(), 0, 1)
+            .format(fileFormat)
+            .build();
+    DataFile dataFile =
+        FileHelpers.writeDataFile(
+            getMixedTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            Arrays.asList(
+                MixedDataTestHelpers.createRecord(1, "john", 0, "1970-01-01T08:00:00"),
+                MixedDataTestHelpers.createRecord(2, "lily", 1, "1970-01-01T08:00:00"),
+                MixedDataTestHelpers.createRecord(3, "sam", 2, "1970-01-01T08:00:00")));
+
+    Schema idSchema1 = TypeUtil.select(BasicTableTestHelper.TABLE_SCHEMA, Sets.newHashSet(1));
+    GenericRecord idRecord1 = GenericRecord.create(idSchema1);
+    List<Record> records1 = new ArrayList<>();
+    IntStream.range(2, 100).forEach(id -> records1.add(idRecord1.copy("id", id)));
+    DeleteFile eqDeleteFile1 =
+        FileHelpers.writeDeleteFile(
+            getMixedTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            records1,
+            idSchema1);
+
+    // Write delete records and add a new field `name`
+    Schema idSchema2 = TypeUtil.select(BasicTableTestHelper.TABLE_SCHEMA, Sets.newHashSet(1, 2));
+    GenericRecord idRecord2 = GenericRecord.create(idSchema2);
+    List<Record> records2 = new ArrayList<>();
+    IntStream.range(1, 100).forEach(id -> records2.add(idRecord2.copy("id", id, "name", "john")));
+    DeleteFile eqDeleteFile2 =
+        FileHelpers.writeDeleteFile(
+            getMixedTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            records2,
+            idSchema2);
+    RewriteFilesInput task =
+        new RewriteFilesInput(
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 3L)},
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 3L)},
+            new DeleteFile[] {},
+            new DeleteFile[] {
+              MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile1, 4L),
+              MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile2, 5L)
+            },
+            getMixedTable());
+
+    GenericCombinedIcebergDataReader dataReader =
+        new GenericCombinedIcebergDataReader(
+            getMixedTable().io(),
+            getMixedTable().schema(),
+            getMixedTable().spec(),
+            getMixedTable().asUnkeyedTable().encryption(),
+            null,
+            false,
+            IdentityPartitionConverters::convertConstant,
+            false,
+            null,
+            task);
+
+    try (CloseableIterable<Record> readRecords = dataReader.readData()) {
+      Assert.assertEquals(0, Iterables.size(readRecords));
+    }
+    try (CloseableIterable<Record> readRecords = dataReader.readDeletedData()) {
+      Assert.assertEquals(3, Iterables.size(readRecords));
+    }
+
+    dataReader.close();
+  }
 }
