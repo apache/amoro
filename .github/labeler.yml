@@ -32,7 +32,7 @@
 
 "type:build":
   - "**/*pom.xml"
-  - "amoro-ams/dist/**/*"
+  - "dist/**/*"
   - "docker/**/*"
   - "charts/**/"
 
@@ -40,27 +40,26 @@
   - "*.md"
   - "docs/**/*"
 
-"module:core":
-  - "amoro-core/**/*"
+"module:common":
+  - "amoro-common/**/*"
 
 "module:ams-server":
-  - "amoro-ams/amoro-ams-api/**/*"
-  - "amoro-ams/amoro-ams-server/**/*"
+  - "amoro-ams/**/*"
 
 "module:ams-dashboard":
   - "amoro-web/**/*"
 
 "module:ams-optimizer":
-  - "amoro-ams/amoro-ams-optimizer/**/*"
+  - "amoro-optimizer/**/*"
 
 "module:mixed-spark":
-  - "amoro-mixed-format/amoro-mixed-format-spark/**/*"
+  - "amoro-format-mixed/amoro-mixed-spark/**/*"
 
 "module:mixed-flink":
-  - "amoro-mixed-format/amoro-mixed-format-flink/**/*"
+  - "amoro-format-mixed/amoro-mixed-flink/**/*"
 
 "module:mixed-hive":
-  - "amoro-mixed-format/amoro-mixed-format-hive/**/*"
+  - "amoro-format-mixed/amoro-mixed-hive/**/*"
 
 "module:mixed-trino":
-  - "amoro-mixed-format/amoro-mixed-format-trino/**/*"
+  - "amoro-format-mixed/amoro-mixed-trino/**/*"

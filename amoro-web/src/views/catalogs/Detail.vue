@@ -125,8 +125,7 @@ const tableFormatText = {
 }
 const storeSupportFormat: { [prop: string]: string[] } = {
   ams: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
-  hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.MIXED_ICEBERG,
-      tableFormatMap.ICEBERG, tableFormatMap.PAIMON, tableFormatMap.HUDI],
+  hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON, tableFormatMap.HUDI],
   hadoop: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON],
   glue: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
   custom: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],

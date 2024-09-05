@@ -50,17 +50,17 @@ $ git clone https://github.com/apache/amoro.git
 $ cd amoro
 $ base_dir=$(pwd) 
 $ mvn clean package -DskipTests
-$ cd amoro-ams/dist/target/
+$ cd dist/target/
 $ ls
 amoro-x.y.z-bin.zip # AMS release package
 
-$ cd ${base_dir}/amoro-mixed-format/amoro-mixed-format-flink/v1.15/amoro-mixed-format-flink-runtime-1.15/target
+$ cd ${base_dir}/amoro-format-mixed/amoro-format-mixed-flink/v1.15/amoro-format-mixed-flink-runtime-1.15/target
 $ ls 
-amoro-mixed-format-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
+amoro-format-mixed-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
 
-$ cd ${base_dir}/amoro-mixed-format/amoro-mixed-format-spark/v3.2/amoro-mixed-format-spark-runtime-3.2/target
+$ cd ${base_dir}/amoro-format-mixed/amoro-format-mixed-spark/v3.2/amoro-format-mixed-spark-runtime-3.2/target
 $ ls
-amoro-mixed-format-spark-runtime-3.2-x.y.z.jar # Spark v3.2 runtime package)
+amoro-format-mixed-spark-runtime-3.2-x.y.z.jar # Spark v3.2 runtime package)
 ```
 
 More build guide can be found in the project's [README](https://github.com/apache/amoro?tab=readme-ov-file#building).
