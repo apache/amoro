@@ -20,15 +20,16 @@ package org.apache.amoro.server.dashboard.controller;
 
 import io.javalin.http.Context;
 import org.apache.amoro.server.dashboard.OverviewCache;
-import org.apache.amoro.server.dashboard.model.OverviewBaseData;
 import org.apache.amoro.server.dashboard.model.OverviewDataSizeItem;
 import org.apache.amoro.server.dashboard.model.OverviewResourceUsageItem;
 import org.apache.amoro.server.dashboard.model.OverviewSummary;
 import org.apache.amoro.server.dashboard.model.OverviewTopTableItem;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -113,9 +114,9 @@ public class OverviewController {
 
   public void getOptimizingStatus(Context ctx) {
     Map<String, Long> optimizingStatus = overviewCache.getOptimizingStatus();
-    List<OverviewBaseData> optimizingStatusList =
+    List<ImmutableMap<String, ? extends Serializable>> optimizingStatusList =
         optimizingStatus.entrySet().stream()
-            .map(status -> new OverviewBaseData(status.getKey(), status.getValue()))
+            .map(status -> ImmutableMap.of("name", status.getKey(), "value", status.getValue()))
             .collect(Collectors.toList());
     ctx.json(OkResponse.of(optimizingStatusList));
   }

@@ -18,13 +18,14 @@
 # This file is config file for plugin metric reporter
 # configurations of metric reporters
 
-#metric-reporters:
+metric-reporters:
+  - name: overview-exporter            # configs for overview exporter
+    enabled: true
+    properties:
+      interval: 180000                  # 3min refreshing interval
+
 #  - name: prometheus-exporter            # configs for prometheus exporter
-#    enabled: true
+#    enabled: false
 #    properties:
 #       port: 7001
-#
-#  - name: overview-exporter            # configs for overview exporter
-#    enabled: true
-#    properties:
-#      interval: 180000                  # 3min refreshing interval
+
