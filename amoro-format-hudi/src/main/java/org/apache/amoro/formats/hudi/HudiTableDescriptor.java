@@ -447,7 +447,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
       HoodieInstant inf =
           instantMap.get(instantTimestamp + "_" + HoodieInstant.State.INFLIGHT.name());
       if (inf != null) {
-        processInfo.setStatus(ProcessStatus.ACTIVE);
+        processInfo.setStatus(ProcessStatus.RUNNING);
       }
     }
     return processInfo;
