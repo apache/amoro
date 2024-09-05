@@ -37,3 +37,36 @@ taskmanager:
 
 parallelism:
   default: 1
+
+containers:
+  - name: KubernetesContainer
+    container-impl: org.apache.amoro.server.manager.KubernetesOptimizerContainer
+    properties:
+      kube-config-path: "~/.kube/config"
+      image: apache/amoro:0.7-SNAPSHOT
+      namespace: default
+      pullPolicy: "IfNotPresent"
+      podTemplate: |
+        apiVersion: apps/v1
+        kind: PodTemplate
+        metadata:
+          name: <NAME_PREFIX><resourceId>
+        template:
+          metadata:
+            labels:
+              app: <NAME_PREFIX><resourceId>
+              AmoroOptimizerGroup: <groupName>
+              AmoroResourceId: <resourceId>
+          spec:
+            containers:
+              - name: optimizer
+                image: apache/amoro:0.6
+                imagePullPolicy: IfNotPresent
+                command: [ "sh", "-c", "echo 'Hello, World!'" ]
+                resources:
+                  limits:
+                    memory: 2048Mi
+                    cpu: 2
+                  requests:
+                    memory: 2048Mi
+                    cpu: 2
