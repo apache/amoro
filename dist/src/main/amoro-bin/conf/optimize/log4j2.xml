@@ -101,6 +101,7 @@
             <!-- SET CONSOLE_LOG_LEVEL=info to print console logger in docker -->
             <AppenderRef ref="consoleAppender" level="${CONSOLE_LEVEL}" />
         </Root>
+        <logger name="org.apache.hadoop.io.compress.CodecPool" level="warn" additivity="false" />
     </Loggers>
 
 </Configuration>
