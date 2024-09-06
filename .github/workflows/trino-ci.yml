@@ -21,8 +21,8 @@ on:
       - ".github/workflows/**"
       - "amoro-ams/**"
       - "amoro-core/**"
-      - "amoro-mixed-format/amoro-mixed-format-hive/**"
-      - "amoro-mixed-format/amoro-mixed-format-trino/**"
+      - "amoro-format-mixed/amoro-mixed-hive/**"
+      - "amoro-format-mixed/amoro-mixed-trino/**"
       - "pom.xml"
       - "tools/maven/**"
 
@@ -42,7 +42,7 @@ jobs:
         run: mvn validate -P format-mixed-format-trino
 
       - name: Build trino module with Maven
-        run: mvn clean install -pl 'amoro-mixed-format/amoro-mixed-format-trino' -am -B -P hadoop2,format-mixed-format-trino,build-mixed-format-trino
+        run: mvn clean install -pl 'amoro-format-mixed/amoro-mixed-trino' -am -B -P hadoop2,format-mixed-format-trino,build-mixed-format-trino
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
