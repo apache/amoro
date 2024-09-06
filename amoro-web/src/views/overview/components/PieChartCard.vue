@@ -32,29 +32,29 @@ const pieChartOption = ref({})
 
 function renderChart() {
   pieChartOption.value = {
-      tooltip: {
-        trigger: 'item',
-      },
-      legend: {
-        orient: 'vertical',
-        left: 'left',
-      },
-      series: [
-        {
-          name: props.title,
-          type: 'pie',
-          radius: '50%',
-          data: props.data,
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)',
-            },
+    tooltip: {
+      trigger: 'item',
+    },
+    legend: {
+      orient: 'vertical',
+      left: 'left',
+    },
+    series: [
+      {
+        name: props.title,
+        type: 'pie',
+        radius: '50%',
+        data: props.data,
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)',
           },
         },
-      ],
-    }
+      },
+    ],
+  }
 }
 
 onMounted(renderChart)
@@ -64,7 +64,7 @@ watch(() => props.data, renderChart)
 <template>
   <a-card class="pie-chart-card">
     <template #title>
-      <span class="card-title" v-text="title"></span>
+      <span class="card-title" v-text="title" />
     </template>
     <Chart :options="pieChartOption" />
   </a-card>

@@ -26,7 +26,7 @@ import type {
 import {
   BarChart,
   LineChart,
-  PieChart
+  PieChart,
 } from 'echarts/charts'
 import type {
   DatasetComponentOption,

@@ -17,7 +17,7 @@ limitations under the License.
 / -->
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref,shallowReactive } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import type { ITopTableItem } from '@/types/common.type'
@@ -26,37 +26,38 @@ import { bytesToSize } from '@/utils'
 
 const { t } = useI18n()
 const router = useRouter()
-const orderBy = ref('healthScore');
+const orderBy = ref('healthScore')
 const loading = ref<boolean>(false)
 const dataSource = reactive<ITopTableItem[]>([])
 
-const columns = shallowReactive([
+const columns = computed(() => [
   {
     title: t('table'),
     dataIndex: 'tableName',
-    width: 300, 
-    ellipsis: true
+    width: 300,
+    ellipsis: true,
   },
   {
     title: t('tableSize'),
     dataIndex: 'tableSize',
-    ellipsis: true
+    ellipsis: true,
   },
   {
     title: t('fileCount'),
     dataIndex: 'fileCount',
-    ellipsis: true
+    ellipsis: true,
   },
   {
     title: t('averageFileSize'),
     dataIndex: 'averageFileSize',
-    ellipsis: true
+    width: 140,
+    ellipsis: true,
   },
   {
     title: t('healthScore'),
     dataIndex: 'healthScore',
-    ellipsis: true
-  }
+    ellipsis: true,
+  },
 ])
 
 function goTableDetail(record: ITopTableItem) {
@@ -70,7 +71,8 @@ function goTableDetail(record: ITopTableItem) {
         table: table[2],
       },
     })
-  } catch (error) {
+  }
+  catch (error) {
   }
 }
 
@@ -79,8 +81,8 @@ async function getTop10Tables() {
     loading.value = true
     dataSource.length = 0
     const params = {
-      order: orderBy.value === 'healthScore' ? 'asc': 'desc',
-      orderBy: orderBy.value
+      order: orderBy.value === 'healthScore' ? 'asc' : 'desc',
+      orderBy: orderBy.value,
     }
     const result = await getTop10TableList(params)
     result.forEach((ele: ITopTableItem) => {
@@ -103,21 +105,29 @@ onMounted(() => {
   <a-card class="top-tables-card">
     <template #title>
       <a-row justify="space-between">
-        <span class="card-title" v-text="t('top10Tables')"></span>
+        <span class="card-title" v-text="t('top10Tables')" />
 
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <a-select v-model:value="orderBy" @change="getTop10Tables" style="width: 150px">
-            <a-select-option value="tableSize">{{ t('tableSize') }}</a-select-option>
-            <a-select-option value="fileCount"> {{ t('fileCount') }}</a-select-option>
-            <a-select-option value="healthScore">{{ t('healthScore') }}</a-select-option>
+          <a-select v-model:value="orderBy" style="width: 150px" @change="getTop10Tables">
+            <a-select-option value="tableSize">
+              {{ t('tableSize') }}
+            </a-select-option>
+            <a-select-option value="fileCount">
+              {{ t('fileCount') }}
+            </a-select-option>
+            <a-select-option value="healthScore">
+              {{ t('healthScore') }}
+            </a-select-option>
           </a-select>
         </div>
       </a-row>
     </template>
 
     <div class="list-wrap">
-      <a-table class="ant-table-common" :columns="columns" :data-source="dataSource" :scroll="{ x: '100%', y: 350 }" :loading="loading"
-        :pagination="false" >
+      <a-table
+        class="ant-table-common" :columns="columns" :data-source="dataSource" :scroll="{ x: '100%', y: 350 }" :loading="loading"
+        :pagination="false"
+      >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'tableName'">
             <span :title="record.tableName" class="primary-link" @click="goTableDetail(record)">

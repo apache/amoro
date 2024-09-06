@@ -17,6 +17,10 @@
   */
 
 export default {
+  last30min: 'Last 30 min',
+  last8h: 'Last 8 h',
+  last24h: 'Last 24 h',
+  last7day: 'Last 7 day',
   overview: 'Overview',
   healthScore: 'Health Score',
   top10Tables: 'Top 10 Tables',

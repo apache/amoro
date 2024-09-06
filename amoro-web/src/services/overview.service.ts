@@ -44,8 +44,8 @@ export function getTop10TableList(params: {
     params: {
       order: order || 'asc',
       orderBy: orderBy || 'healthScore',
-      count: count || 10
-    }
+      count: count || 10,
+    },
   })
 }
 

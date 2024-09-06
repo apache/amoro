@@ -17,6 +17,10 @@
   */
 
 export default {
+  last30min: '最近 30分钟',
+  last8h: '最近 8小时',
+  last24h: '最近 24小时',
+  last7day: '最近 7天',
   overview: '总览',
   healthScore: '健康度',
   top10Tables: '表TOP 10',

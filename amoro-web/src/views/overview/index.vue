@@ -57,13 +57,13 @@ onMounted(() => {
   <div :style="{ background: '#F8F7F8', padding: '24px', minHeight: '900px' }" class="overview-content">
     <a-row :gutter="[16, 8]">
       <a-col v-for="(card, index) in singleData" :key="index" :span="6">
-        <SingleDataCard :title=t(card.key) :value="card.value" />
+        <SingleDataCard :title="t(card.key)" :value="card.value" />
       </a-col>
       <a-col :span="6">
         <MultipleDataCard :title="t('resource')" :data="multipleData" />
       </a-col>
       <a-col :span="12">
-        <ResourceUsageCard/>
+        <ResourceUsageCard />
       </a-col>
       <a-col :span="12">
         <DataSizeCard />
