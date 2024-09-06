@@ -252,10 +252,11 @@ public class TerminalManager {
   private String catalogConnectorType(CatalogMeta catalogMeta) {
     String catalogType = catalogMeta.getCatalogType();
     Set<TableFormat> tableFormatSet = CatalogUtil.tableFormats(catalogMeta);
-
     if (catalogType.equalsIgnoreCase(CatalogType.AMS.name())) {
-      if (tableFormatSet.contains(TableFormat.MIXED_ICEBERG)) {
-        return "arctic";
+      if (tableFormatSet.size() > 1) {
+        return "unified";
+      } else if (tableFormatSet.contains(TableFormat.MIXED_ICEBERG)) {
+        return "mixed_iceberg";
       } else if (tableFormatSet.contains(TableFormat.ICEBERG)) {
         return "iceberg";
       }
@@ -263,9 +264,10 @@ public class TerminalManager {
         || catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())) {
       if (tableFormatSet.size() > 1) {
         return "unified";
-      } else if (tableFormatSet.contains(TableFormat.MIXED_HIVE)
-          || tableFormatSet.contains(TableFormat.MIXED_ICEBERG)) {
-        return "arctic";
+      } else if (tableFormatSet.contains(TableFormat.MIXED_ICEBERG)) {
+        return "mixed_iceberg";
+      } else if (tableFormatSet.contains(TableFormat.MIXED_HIVE)) {
+        return "mixed_hive";
       } else if (tableFormatSet.contains(TableFormat.ICEBERG)) {
         return "iceberg";
       } else if (tableFormatSet.contains(TableFormat.PAIMON)) {

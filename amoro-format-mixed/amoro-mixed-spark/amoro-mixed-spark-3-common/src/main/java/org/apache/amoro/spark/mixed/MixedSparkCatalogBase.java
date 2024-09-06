@@ -20,9 +20,11 @@ package org.apache.amoro.spark.mixed;
 
 import static org.apache.amoro.spark.mixed.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
 import static org.apache.amoro.spark.mixed.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE_DEFAULT;
+import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
 
 import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -63,10 +65,10 @@ public abstract class MixedSparkCatalogBase
   @Override
   public final void initialize(String name, CaseInsensitiveStringMap options) {
     this.catalogName = name;
-    String catalogUrl = options.get("ams.uri");
+    String catalogUrl = options.get(CatalogMetaProperties.AMS_URI);
     if (StringUtils.isNotBlank(catalogUrl)) {
       // initialize for unified catalog.
-      String metastoreType = options.get("type");
+      String metastoreType = options.get(ICEBERG_CATALOG_TYPE);
       String registerName = options.get("register-name");
       Preconditions.checkArgument(
           StringUtils.isNotEmpty(metastoreType),
