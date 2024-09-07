@@ -54,11 +54,13 @@ export default defineComponent({
       isSecondaryNav: false,
       baseInfo: {
         optimizingStatus: '',
+        records: '',
         tableType: '',
         tableName: '',
         createTime: '',
         tableFormat: '',
         hasPartition: false,
+        healthScore: -1,
       } as IBaseDetailInfo,
       detailLoaded: false,
     })
@@ -150,6 +152,10 @@ export default defineComponent({
               <a-divider type="vertical" />
             </template>
             <p>{{ $t('tableFormat') }}: <span class="text-color">{{ baseInfo.tableFormat }}</span></p>
+            <a-divider type="vertical" />
+            <p>
+              {{ $t('healthScore') }}: <span class="text-color">{{ baseInfo.healthScore == null || baseInfo.healthScore < 0 ? 'N/A' : baseInfo.healthScore }}</span>
+            </p>
           </div>
         </div>
       </div>
@@ -178,9 +184,11 @@ export default defineComponent({
   border: 1px solid #e8e8f0;
   padding: 12px 0;
   min-height: 100%;
+
   .create-time {
     margin-top: 12px;
   }
+
   .tables-menu-wrap {
     position: fixed;
     width: 100%;
@@ -189,6 +197,7 @@ export default defineComponent({
     left: 200px;
     z-index: 100;
   }
+
   .table-name {
     font-size: 24px;
     line-height: 1.5;
@@ -196,16 +205,20 @@ export default defineComponent({
     max-width: 100%;
     padding-left: 24px;
   }
+
   .table-info {
     padding: 12px 24px 0 24px;
+
     .text-color {
       color: #7CB305;
     }
   }
+
   .table-edit {
     font-size: 18px;
     padding-right: 12px;
   }
+
   :deep(.ant-tabs-nav) {
     padding-left: 12px;
     margin-bottom: 0;
