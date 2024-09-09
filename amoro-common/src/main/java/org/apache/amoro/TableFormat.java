@@ -35,7 +35,7 @@ public final class TableFormat {
   public static final TableFormat ICEBERG = register("ICEBERG");
 
   public static final TableFormat MIXED_ICEBERG = register("MIXED_ICEBERG");
-  public static final TableFormat MIXED_HIVE = register("MIXED_ICEBERG");
+  public static final TableFormat MIXED_HIVE = register("MIXED_HIVE");
   public static final TableFormat PAIMON = register("PAIMON");
   public static final TableFormat HUDI = register("HUDI");
 
