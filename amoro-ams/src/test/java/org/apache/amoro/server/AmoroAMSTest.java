@@ -31,7 +31,7 @@ import org.testcontainers.utility.DockerImageName;
 public class AmoroAMSTest {
   @ClassRule public static final Network NETWORK = Network.newNetwork();
 
-  private static final String AMS_IMAGE_VERSION = "apache/amoro:0.8-SNAPSHOT";
+  private static final String AMS_IMAGE_VERSION = "apache/amoro:master-snapshot";
 
   public GenericContainer AMSContainer =
       new GenericContainer(DockerImageName.parse(AMS_IMAGE_VERSION))
