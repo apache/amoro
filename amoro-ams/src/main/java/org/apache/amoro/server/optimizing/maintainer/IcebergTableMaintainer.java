@@ -167,7 +167,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
     if (!expireSnapshotEnabled(tableRuntime)) {
       return;
     }
-    expireSnapshots(mustOlderThan(tableRuntime, System.currentTimeMillis()));
+    expireSnapshots(
+        mustOlderThan(tableRuntime, System.currentTimeMillis()),
+        tableRuntime.getTableConfiguration().getSnapshotMinCount());
   }
 
   protected boolean expireSnapshotEnabled(TableRuntime tableRuntime) {
@@ -176,18 +178,22 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @VisibleForTesting
-  void expireSnapshots(long mustOlderThan) {
-    expireSnapshots(mustOlderThan, expireSnapshotNeedToExcludeFiles());
+  void expireSnapshots(long mustOlderThan, int minCount) {
+    expireSnapshots(mustOlderThan, minCount, expireSnapshotNeedToExcludeFiles());
   }
 
-  private void expireSnapshots(long olderThan, Set<String> exclude) {
-    LOG.debug("start expire snapshots older than {}, the exclude is {}", olderThan, exclude);
+  private void expireSnapshots(long olderThan, int minCount, Set<String> exclude) {
+    LOG.debug(
+        "start expire snapshots older than {} and retain last {} snapshots, the exclude is {}",
+        olderThan,
+        minCount,
+        exclude);
     final AtomicInteger toDeleteFiles = new AtomicInteger(0);
     Set<String> parentDirectories = new HashSet<>();
     Set<String> expiredFiles = new HashSet<>();
     table
         .expireSnapshots()
-        .retainLast(1)
+        .retainLast(Math.max(minCount, 1))
         .expireOlderThan(olderThan)
         .deleteWith(
             file -> {
