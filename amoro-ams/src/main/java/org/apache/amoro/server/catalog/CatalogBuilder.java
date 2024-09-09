@@ -74,11 +74,10 @@ public class CatalogBuilder {
         formatSupportedMatrix.containsKey(type), "unsupported catalog type: %s", type);
 
     Set<TableFormat> supportedFormats = formatSupportedMatrix.get(type);
-    TableFormat tableFormat = tableFormats.iterator().next();
     Preconditions.checkState(
-        supportedFormats.contains(tableFormat),
+        supportedFormats.containsAll(tableFormats),
         "Table format %s is not supported for metastore type: %s",
-        tableFormat,
+        tableFormats,
         type);
 
     switch (type) {
@@ -91,13 +90,7 @@ public class CatalogBuilder {
         catalogMeta.getCatalogProperties().put(CatalogMetaProperties.AMS_URI, amsUri);
         return new ExternalCatalog(catalogMeta);
       case CATALOG_TYPE_AMS:
-        if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
-          return new InternalMixedCatalogImpl(catalogMeta, serverConfiguration);
-        } else if (tableFormat.equals(TableFormat.ICEBERG)) {
-          return new InternalIcebergCatalogImpl(catalogMeta, serverConfiguration);
-        } else {
-          throw new IllegalStateException("AMS catalog support iceberg/mixed-iceberg table only.");
-        }
+        return new InternalCatalogImpl(catalogMeta, serverConfiguration);
       default:
         throw new IllegalStateException("unsupported catalog type:" + type);
     }
