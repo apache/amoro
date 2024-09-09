@@ -150,8 +150,22 @@ public class TableProperties {
   public static final String CHANGE_DATA_TTL = "change.data.ttl.minutes";
   public static final long CHANGE_DATA_TTL_DEFAULT = 10080; // 7 Days
 
-  public static final String BASE_SNAPSHOT_KEEP_MINUTES = "snapshot.base.keep.minutes";
-  public static final long BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 720; // 12 Hours
+  /**
+   * @deprecated Use {@link TableProperties#SNAPSHOT_KEEP_DURATION } instead; will be removed in
+   *     0.9.0
+   */
+  @Deprecated public static final String BASE_SNAPSHOT_KEEP_MINUTES = "snapshot.base.keep.minutes";
+  /**
+   * @deprecated Use {@link TableProperties#SNAPSHOT_KEEP_DURATION_DEFAULT } instead; will be
+   *     removed in 0.9.0
+   */
+  @Deprecated public static final long BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 720; // 12 Hours
+
+  public static final String SNAPSHOT_KEEP_DURATION = "snapshot.keep.duration";
+  public static final String SNAPSHOT_KEEP_DURATION_DEFAULT = "720min"; // 12 Hours
+
+  public static final String SNAPSHOT_MIN_COUNT = "snapshot.keep.min-count";
+  public static final int SNAPSHOT_MIN_COUNT_DEFAULT = 1;
 
   public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
   public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;

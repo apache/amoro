@@ -122,7 +122,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     // In order to advance the snapshot
     insertChangeDataFiles(testKeyedTable, 2);
 
-    tableMaintainer.getChangeMaintainer().expireSnapshots(System.currentTimeMillis());
+    tableMaintainer.getChangeMaintainer().expireSnapshots(System.currentTimeMillis(), 1);
 
     Assert.assertEquals(1, Iterables.size(testKeyedTable.changeTable().snapshots()));
     s1Files.forEach(
@@ -333,7 +333,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     List<DataFile> newDataFiles = writeAndCommitBaseStore(table);
     Assert.assertEquals(3, Iterables.size(table.snapshots()));
-    new MixedTableMaintainer(table).expireSnapshots(System.currentTimeMillis());
+    new MixedTableMaintainer(table).expireSnapshots(System.currentTimeMillis(), 1);
     Assert.assertEquals(1, Iterables.size(table.snapshots()));
 
     dataFiles.forEach(file -> Assert.assertFalse(table.io().exists(file.path().toString())));
@@ -383,7 +383,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(testKeyedTable);
     tableMaintainer.getChangeMaintainer().expireFiles(secondCommitTime + 1);
-    tableMaintainer.getChangeMaintainer().expireSnapshots(secondCommitTime + 1);
+    tableMaintainer.getChangeMaintainer().expireSnapshots(secondCommitTime + 1, 1);
 
     Set<CharSequence> dataFiles = getDataFiles(testKeyedTable);
     Assert.assertEquals(last4File, dataFiles);
@@ -449,7 +449,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assert.assertTrue(baseTable.io().exists(file1.path()));
     Assert.assertTrue(baseTable.io().exists(file2.path()));
     Assert.assertTrue(baseTable.io().exists(file3.path()));
-    new MixedTableMaintainer(testKeyedTable).expireSnapshots(expireTime);
+    new MixedTableMaintainer(testKeyedTable).expireSnapshots(expireTime, 1);
 
     Assert.assertEquals(1, Iterables.size(baseTable.snapshots()));
     Assert.assertFalse(baseTable.io().exists(file1.path()));
@@ -523,6 +523,62 @@ public class TestSnapshotExpire extends ExecutorTestBase {
         .thenReturn(TableConfigurations.parseTableConfig(testUnkeyedTable.properties()));
     tableMaintainer.expireSnapshots(tableRuntime);
     Assert.assertEquals(1, Iterables.size(testUnkeyedTable.snapshots()));
+  }
+
+  @Test
+  public void testRetainMinSnapshot() {
+    UnkeyedTable table =
+        isKeyedTable()
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
+    table.newAppend().commit();
+    table.newAppend().commit();
+    List<Snapshot> expectedSnapshots = new ArrayList<>();
+    expectedSnapshots.add(table.currentSnapshot());
+
+    table.updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "0s").commit();
+    table.updateProperties().set(TableProperties.SNAPSHOT_MIN_COUNT, "3").commit();
+
+    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
+    Mockito.when(tableRuntime.getTableIdentifier())
+        .thenReturn(
+            ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id()), getTestFormat()));
+    Mockito.when(tableRuntime.getTableConfiguration())
+        .thenReturn(TableConfigurations.parseTableConfig(table.properties()));
+    Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
+
+    new MixedTableMaintainer(table).expireSnapshots(tableRuntime);
+    Assert.assertEquals(2, Iterables.size(table.snapshots()));
+
+    table.newAppend().commit();
+    expectedSnapshots.add(table.currentSnapshot());
+    table.newAppend().commit();
+    expectedSnapshots.add(table.currentSnapshot());
+
+    new MixedTableMaintainer(table).expireSnapshots(tableRuntime);
+    Assert.assertEquals(3, Iterables.size(table.snapshots()));
+    Assert.assertTrue(
+        Iterators.elementsEqual(expectedSnapshots.iterator(), table.snapshots().iterator()));
+  }
+
+  @Test
+  public void testSnapshotExpireConfig() {
+    UnkeyedTable table =
+        isKeyedTable()
+            ? getMixedTable().asKeyedTable().baseTable()
+            : getMixedTable().asUnkeyedTable();
+    table.updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "180s").commit();
+    Assert.assertEquals(
+        3L, TableConfigurations.parseTableConfig(table.properties()).getSnapshotTTLMinutes());
+
+    // using default time unit: minutes
+    table.updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "720").commit();
+    Assert.assertEquals(
+        720L, TableConfigurations.parseTableConfig(table.properties()).getSnapshotTTLMinutes());
+
+    table.updateProperties().set(TableProperties.SNAPSHOT_MIN_COUNT, "10").commit();
+    Assert.assertEquals(
+        10, TableConfigurations.parseTableConfig(table.properties()).getSnapshotMinCount());
   }
 
   private long waitUntilAfter(long timestampMillis) {
