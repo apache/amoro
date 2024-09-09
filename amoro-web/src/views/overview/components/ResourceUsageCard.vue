@@ -29,12 +29,12 @@ const timeRange = ref('24')
 const loading = ref<boolean>(false)
 
 function resourceFormatter(params: any[]): string {
-  const cpuParam = params.find(p => p.seriesName === 'CPU')
-  const memoryParam = params.find(p => p.seriesName === 'Memory')
+  const cpuParam = params[0]
+  const memoryParam = params[1]
   const memorySize = bytesToSize(memoryParam.value)
   let str = `<span style="font-size: 12px">${params[0].axisValue}</span><br/>`
-  str += `<span style="display: inline-block;background-color:${cpuParam.color}; margin-right: 6px; width: 6px;height: 6px;"></span>CPU: ${cpuParam.value} Core<br/>`
-  str += `<span style="display: inline-block;background-color:${memoryParam.color}; margin-right: 6px; width: 6px;height: 6px;"></span>Memory: ${memorySize}<br/>`
+  str += `<span style="display: inline-block;background-color:${cpuParam.color}; margin-right: 6px; width: 6px;height: 6px;"></span>${t('cpu')}: ${cpuParam.value} Core<br/>`
+  str += `<span style="display: inline-block;background-color:${memoryParam.color}; margin-right: 6px; width: 6px;height: 6px;"></span>${t('memory')}: ${memorySize}<br/>`
   return str
 }
 
@@ -43,15 +43,15 @@ const option = ref({
     trigger: 'axis',
     formatter: resourceFormatter,
   },
-  legend: { data: ['CPU', 'Memory'] },
+  legend: { data: [t('cpu'), t('memory')] },
   xAxis: { type: 'category', data: [''] },
   yAxis: [
-    { type: 'value', name: 'CPU Core', axisLabel: { formatter: '{value}' } },
-    { type: 'value', name: 'Memory', axisLabel: { formatter: (value: number) => { return `${bytesToSize(value)}` } } },
+    { type: 'value', name: t('cpuCores'), axisLabel: { formatter: '{value}' } },
+    { type: 'value', name: t('memory'), axisLabel: { formatter: (value: number) => { return `${bytesToSize(value)}` } } },
   ],
   series: [
-    { name: 'CPU', type: 'line', yAxisIndex: 0, data: [-1] },
-    { name: 'Memory', type: 'line', yAxisIndex: 1, data: [-1] },
+    { name: t('cpu'), type: 'line', yAxisIndex: 0, data: [-1] },
+    { name: t('memory'), type: 'line', yAxisIndex: 1, data: [-1] },
   ],
 })
 
@@ -92,11 +92,11 @@ onMounted(() => {
         <span class="card-title" v-text="t('resourceUsage')" />
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <a-select v-model:value="timeRange" style="width: 120px" @change="updateData">
-            <a-select-option value="0.5">
-              {{ t('last30min') }}
+            <a-select-option value="1">
+              {{ t('last1h') }}
             </a-select-option>
-            <a-select-option value="8">
-              {{ t('last8h') }}
+            <a-select-option value="12">
+              {{ t('last12h') }}
             </a-select-option>
             <a-select-option value="24">
               {{ t('last24h') }}

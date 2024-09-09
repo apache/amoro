@@ -25,6 +25,7 @@ import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TABLES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_THREADS;
+import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_HEALTH_SCORE;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_TOTAL_FILES;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_TOTAL_FILES_SIZE;
 
@@ -57,8 +58,6 @@ import java.util.stream.Collectors;
 
 public class OverviewCache {
 
-  private static final int MAX_CACHE_SIZE = 5000;
-
   public static final String STATUS_PENDING = "Pending";
   public static final String STATUS_PLANING = "Planing";
   public static final String STATUS_EXECUTING = "Executing";
@@ -83,8 +82,9 @@ public class OverviewCache {
   private AtomicInteger totalTableCount = new AtomicInteger();
   private AtomicInteger totalCpu = new AtomicInteger();
   private AtomicLong totalMemory = new AtomicLong();
+  private int maxRecordCount;
 
-  public OverviewCache() {}
+  private OverviewCache() {}
 
   /** @return Get the singleton object. */
   public static OverviewCache getInstance() {
@@ -98,7 +98,8 @@ public class OverviewCache {
     return INSTANCE;
   }
 
-  public void initialize(MetricSet globalMetricSet) {
+  public void initialize(int maxRecordCount, MetricSet globalMetricSet) {
+    this.maxRecordCount = maxRecordCount;
     this.registeredMetrics = globalMetricSet.getMetrics();
   }
 
@@ -153,12 +154,9 @@ public class OverviewCache {
                       MetricKey::getDefine,
                       Collectors.mapping(Function.identity(), Collectors.toList())));
 
-      // resource usage
       updateResourceUsage(start);
-      // optimizing status
+      updateTableDetail(start);
       updateOptimizingStatus();
-      // table summary
-      updateTableSummary(start);
 
     } catch (Exception e) {
       log.error("OverviewRefresher error", e);
@@ -168,7 +166,18 @@ public class OverviewCache {
     }
   }
 
-  private void updateTableSummary(long ts) {
+  private void updateResourceUsage(long ts) {
+    int optimizerGroupThreadCount = (int) sumMetricValuesByDefine(OPTIMIZER_GROUP_THREADS);
+    long optimizerGroupMemoryBytes =
+        sumMetricValuesByDefine(OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED);
+
+    this.totalCpu.set(optimizerGroupThreadCount);
+    this.totalMemory.set(optimizerGroupMemoryBytes);
+    addAndCheck(
+        new OverviewResourceUsageItem(ts, optimizerGroupThreadCount, optimizerGroupMemoryBytes));
+  }
+
+  private void updateTableDetail(long ts) {
     Map<String, OverviewTopTableItem> topTableItemMap = Maps.newHashMap();
     Set<String> allCatalogs = Sets.newHashSet();
     long totalTableSize = 0L;
@@ -180,7 +189,7 @@ public class OverviewCache {
       allCatalogs.add(catalog(metricKey));
       OverviewTopTableItem tableItem =
           topTableItemMap.computeIfAbsent(tableName, ignore -> new OverviewTopTableItem(tableName));
-      long tableSize = (long) covertValue(registeredMetrics.get(metricKey));
+      long tableSize = covertValue(registeredMetrics.get(metricKey));
       tableItem.setTableSize(tableSize);
       totalTableSize += tableSize;
     }
@@ -197,68 +206,22 @@ public class OverviewCache {
       tableItem.setAverageFileSize(fileCount == 0 ? 0 : tableItem.getTableSize() / fileCount);
     }
 
-    // TODO health score
-    metricKeys = metricDefineMap.get(TABLE_SUMMARY_TOTAL_FILES);
+    // health score
+    metricKeys = metricDefineMap.get(TABLE_SUMMARY_HEALTH_SCORE);
     for (MetricKey metricKey : metricKeys) {
       String tableName = tableName(metricKey);
       allCatalogs.add(catalog(metricKey));
       OverviewTopTableItem tableItem =
           topTableItemMap.computeIfAbsent(tableName, ignore -> new OverviewTopTableItem(tableName));
-      tableItem.setHealthScore(80);
+      int healthScore = (int) covertValue(registeredMetrics.get(metricKey));
+      tableItem.setHealthScore(healthScore);
     }
 
     this.totalDataSize.set(totalTableSize);
     this.totalCatalog.set(allCatalogs.size());
     this.totalTableCount.set(metricKeys.size());
-    addAndCheck(new OverviewDataSizeItem(ts, totalTableSize));
     this.allTopTableItem = new ArrayList<>(topTableItemMap.values());
-  }
-
-  private String catalog(MetricKey metricKey) {
-    return metricKey.valueOfTag("catalog");
-  }
-
-  private String database(MetricKey metricKey) {
-    return metricKey.valueOfTag("database");
-  }
-
-  private String table(MetricKey metricKey) {
-    return metricKey.valueOfTag("table");
-  }
-
-  private String tableName(MetricKey metricKey) {
-    return catalog(metricKey)
-        .concat(".")
-        .concat(database(metricKey))
-        .concat(".")
-        .concat(table(metricKey));
-  }
-
-  private void updateResourceUsage(long ts) {
-    int optimizerGroupThreadCount = (int) sumMetricValuesByDefine(OPTIMIZER_GROUP_THREADS);
-    long optimizerGroupMemoryBytes =
-        sumMetricValuesByDefine(OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED);
-
-    this.totalCpu.set(optimizerGroupThreadCount);
-    this.totalMemory.set(optimizerGroupMemoryBytes);
-    addAndCheck(
-        new OverviewResourceUsageItem(ts, optimizerGroupThreadCount, optimizerGroupMemoryBytes));
-  }
-
-  private void addAndCheck(OverviewDataSizeItem dataSizeItem) {
-    dataSizeHistory.add(dataSizeItem);
-    checkSize(dataSizeHistory);
-  }
-
-  private void addAndCheck(OverviewResourceUsageItem resourceUsageItem) {
-    resourceUsageHistory.add(resourceUsageItem);
-    checkSize(resourceUsageHistory);
-  }
-
-  private <T> void checkSize(Deque<T> deque) {
-    if (deque.size() > MAX_CACHE_SIZE) {
-      deque.poll();
-    }
+    addAndCheck(new OverviewDataSizeItem(ts, totalTableSize));
   }
 
   private void updateOptimizingStatus() {
@@ -273,23 +236,40 @@ public class OverviewCache {
         STATUS_COMMITTING, sumMetricValuesByDefine(OPTIMIZER_GROUP_COMMITTING_TABLES));
   }
 
-  private long countMetric(MetricDefine metricDefine) {
-    List<MetricKey> metricKeys = metricDefineMap.get(metricDefine);
-    if ((metricKeys == null)) {
-      return 0;
-    }
-    return metricKeys.size();
+  private void addAndCheck(OverviewDataSizeItem dataSizeItem) {
+    dataSizeHistory.add(dataSizeItem);
+    checkSize(dataSizeHistory);
   }
 
-  private long countMetricByTag(MetricDefine metricDefine, String tag) {
-    List<MetricKey> metricKeys = metricDefineMap.get(metricDefine);
-    if ((metricKeys == null)) {
-      return 0;
+  private void addAndCheck(OverviewResourceUsageItem resourceUsageItem) {
+    resourceUsageHistory.add(resourceUsageItem);
+    checkSize(resourceUsageHistory);
+  }
+
+  private <T> void checkSize(Deque<T> deque) {
+    if (deque.size() > maxRecordCount) {
+      deque.poll();
     }
-    return metricKeys.stream()
-        .map(metricKey -> metricKey.valueOfTag(tag))
-        .collect(Collectors.toSet())
-        .size();
+  }
+
+  private String tableName(MetricKey metricKey) {
+    return catalog(metricKey)
+        .concat(".")
+        .concat(database(metricKey))
+        .concat(".")
+        .concat(table(metricKey));
+  }
+
+  private String catalog(MetricKey metricKey) {
+    return metricKey.valueOfTag("catalog");
+  }
+
+  private String database(MetricKey metricKey) {
+    return metricKey.valueOfTag("database");
+  }
+
+  private String table(MetricKey metricKey) {
+    return metricKey.valueOfTag("table");
   }
 
   private long sumMetricValuesByDefine(MetricDefine metricDefine) {
@@ -299,15 +279,15 @@ public class OverviewCache {
     }
     return metricKeys.stream()
         .map(metricKey -> covertValue(registeredMetrics.get(metricKey)))
-        .mapToLong(Double::longValue)
+        .mapToLong(Long::longValue)
         .sum();
   }
 
-  private double covertValue(Metric metric) {
+  private long covertValue(Metric metric) {
     if (metric instanceof Counter) {
       return ((Counter) metric).getCount();
     } else if (metric instanceof Gauge) {
-      return ((Gauge<?>) metric).getValue().doubleValue();
+      return ((Gauge<?>) metric).getValue().longValue();
     } else {
       throw new IllegalStateException(
           "unknown metric implement class:" + metric.getClass().getName());

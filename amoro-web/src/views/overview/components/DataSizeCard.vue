@@ -32,7 +32,7 @@ function dataSizeFormatter(params: any[]): string {
   const dataParam = params[0]
   const dataSize = bytesToSize(dataParam.value)
   let str = `<span style="font-size: 12px">${params[0].axisValue}</span><br/>`
-  str += `<span style="display: inline-block;background-color:${dataParam.color}; margin-right: 6px; width: 6px;height: 6px;"></span>DataSize: ${dataSize}<br/>`
+  str += `<span style="display: inline-block;background-color:${dataParam.color}; margin-right: 6px; width: 6px;height: 6px;"></span>${t('dataSize')}: ${dataSize}<br/>`
   return str
 }
 
@@ -41,7 +41,7 @@ const dataSizeChartOption = ref({
     trigger: 'axis',
     formatter: dataSizeFormatter,
   },
-  legend: { data: ['DataSize'] },
+  legend: { data: [t('dataSize')] },
   xAxis: {
     type: 'category',
     data: [''],
@@ -52,7 +52,7 @@ const dataSizeChartOption = ref({
   },
   series: [
     {
-      name: 'DataSize',
+      name: t('dataSize'),
       type: 'line',
       data: [-1],
     },
@@ -93,11 +93,11 @@ onMounted(() => {
         <span class="card-title" v-text="t('dataSize')" />
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <a-select v-model:value="timeRange" style="width: 120px" @change="updateData">
-            <a-select-option value="0.5">
-              {{ t('last30min') }}
+            <a-select-option value="1">
+              {{ t('last1h') }}
             </a-select-option>
-            <a-select-option value="8">
-              {{ t('last8h') }}
+            <a-select-option value="12">
+              {{ t('last12h') }}
             </a-select-option>
             <a-select-option value="24">
               {{ t('last24h') }}

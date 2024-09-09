@@ -17,8 +17,8 @@
   */
 
 export default {
-  last30min: 'Last 30 min',
-  last8h: 'Last 8 h',
+  last1h: 'Last 1 h',
+  last12h: 'Last 12 h',
   last24h: 'Last 24 h',
   last7day: 'Last 7 day',
   healthScore: 'Health Score',
@@ -167,6 +167,7 @@ export default {
   resourceUsage: 'Resource Usage',
   top10: 'Top 10',
   numIndex: 'No.',
+  cpuCores: 'CPU Cores',
   cpu: 'CPU',
   memory: 'Memory',
   lastTime: 'Last {time}',

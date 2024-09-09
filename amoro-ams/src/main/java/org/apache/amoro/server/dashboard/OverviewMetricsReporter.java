@@ -31,7 +31,8 @@ import java.util.concurrent.TimeUnit;
 /** Overview exporter */
 public class OverviewMetricsReporter implements MetricReporter {
 
-  public static final String INTERVAL = "interval";
+  public static final String REFRESH_INTERVAL = "refresh-interval";
+  public static final String MAX_RECORD_COUNT = "max-record-count";
 
   private final ScheduledExecutorService overviewUpdaterScheduler =
       Executors.newSingleThreadScheduledExecutor(
@@ -40,14 +41,22 @@ public class OverviewMetricsReporter implements MetricReporter {
               .setDaemon(true)
               .build());
 
-  private Long overviewRefreshingInterval;
+  private long overviewRefreshingInterval;
+  private int maxRecordCount;
 
   @Override
   public void open(Map<String, String> properties) {
     overviewRefreshingInterval =
-        Optional.ofNullable(properties.get(INTERVAL))
+        Optional.ofNullable(properties.get(REFRESH_INTERVAL))
             .map(Long::valueOf)
-            .orElseThrow(() -> new IllegalArgumentException("Lack required property: " + INTERVAL));
+            .orElseThrow(
+                () -> new IllegalArgumentException("Lack required property: " + REFRESH_INTERVAL));
+
+    maxRecordCount =
+        Optional.ofNullable(properties.get(MAX_RECORD_COUNT))
+            .map(Integer::valueOf)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Lack required property: " + MAX_RECORD_COUNT));
   }
 
   @Override
@@ -61,7 +70,7 @@ public class OverviewMetricsReporter implements MetricReporter {
   @Override
   public void setGlobalMetricSet(MetricSet globalMetricSet) {
     OverviewCache overviewCache = OverviewCache.getInstance();
-    overviewCache.initialize(globalMetricSet);
+    overviewCache.initialize(maxRecordCount, globalMetricSet);
     overviewUpdaterScheduler.scheduleAtFixedRate(
         overviewCache::refresh, 1000L, overviewRefreshingInterval, TimeUnit.MILLISECONDS);
   }

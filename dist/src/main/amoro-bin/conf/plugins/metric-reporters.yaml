@@ -19,10 +19,11 @@
 # configurations of metric reporters
 
 metric-reporters:
-  - name: overview-exporter            # configs for overview exporter
-    enabled: true
+  - name: overview-exporter               # configs for overview exporter
+    enabled: true                         # if false, overview page will not fetch data
     properties:
-      interval: 180000                  # 3min refreshing interval
+      refresh-interval: 180000            # 3 min
+      max-record-count: 3500              # Data keep time is equal to interval(ms) * max-record-count
 
 #  - name: prometheus-exporter            # configs for prometheus exporter
 #    enabled: false

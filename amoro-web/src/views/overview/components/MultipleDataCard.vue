@@ -17,10 +17,12 @@ limitations under the License.
 / -->
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { defineProps } from 'vue'
 import type { IKeyAndValue } from '@/types/common.type'
 
 const props = defineProps<{ title: string, data: IKeyAndValue[] }>()
+const { t } = useI18n()
 </script>
 
 <template>
@@ -31,7 +33,7 @@ const props = defineProps<{ title: string, data: IKeyAndValue[] }>()
     <a-row>
       <a-col v-for="item in props.data" :key="item.key" :span="12">
         <a-statistic
-          :title="item.key" :value="item.value"
+          :title="t(item.key)" :value="item.value"
           :value-style="{ color: '#07A7F0', fontSize: '28px' }" style="margin-right: 20px;"
         />
       </a-col>

@@ -72,7 +72,7 @@ public class TestOverviewCache extends AMSTableTestBase {
     createDatabase();
     createTable();
     this.overviewCache = OverviewCache.getInstance();
-    this.overviewCache.initialize(MetricManager.getInstance().getGlobalRegistry());
+    this.overviewCache.initialize(10, MetricManager.getInstance().getGlobalRegistry());
     this.overviewCache.refresh();
   }
 
@@ -134,7 +134,7 @@ public class TestOverviewCache extends AMSTableTestBase {
 
     List<OverviewTopTableItem> allTopTableItem = overviewCache.getAllTopTableItem();
     Assertions.assertEquals(1, allTopTableItem.size());
-    Assertions.assertTrue(allTopTableItem.get(0).getHealthScore() > 0);
+    Assertions.assertEquals(-1, allTopTableItem.get(0).getHealthScore());
 
     // insert data
     initTableWithFiles();
@@ -148,8 +148,7 @@ public class TestOverviewCache extends AMSTableTestBase {
 
     Assertions.assertEquals(2, overviewCache.getDataSizeHistory(0).size());
     Assertions.assertEquals(2, overviewCache.getResourceUsageHistory(0).size());
-
     allTopTableItem = overviewCache.getAllTopTableItem();
-    Assertions.assertTrue(allTopTableItem.get(0).getHealthScore() > 0);
+    Assertions.assertEquals(100, allTopTableItem.get(0).getHealthScore());
   }
 }

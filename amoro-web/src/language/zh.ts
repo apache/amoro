@@ -17,13 +17,13 @@
   */
 
 export default {
-  last30min: '最近 30分钟',
-  last8h: '最近 8小时',
+  last1h: '最近 1小时',
+  last12h: '最近 12小时',
   last24h: '最近 24小时',
   last7day: '最近 7天',
   healthScore: '健康度',
   overview: '总览',
-  top10Tables: '表TOP 10',
+  top10Tables: '表 TOP 10',
   latestOperations: '最近操作',
   catalogs: '目录',
   catalog: '目录',
@@ -167,6 +167,7 @@ export default {
   resourceUsage: '资源使用情况',
   top10: '前 10',
   numIndex: '编号',
+  cpuCores: 'CPU 核心数',
   cpu: 'CPU',
   memory: '内存',
   lastTime: '上次 {time}',

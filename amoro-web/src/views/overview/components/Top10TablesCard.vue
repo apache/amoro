@@ -32,7 +32,7 @@ const dataSource = reactive<ITopTableItem[]>([])
 
 const columns = computed(() => [
   {
-    title: t('table'),
+    title: t('tableName'),
     dataIndex: 'tableName',
     width: 300,
     ellipsis: true,
@@ -40,11 +40,13 @@ const columns = computed(() => [
   {
     title: t('tableSize'),
     dataIndex: 'tableSize',
+    width: 100,
     ellipsis: true,
   },
   {
     title: t('fileCount'),
     dataIndex: 'fileCount',
+    width: 100,
     ellipsis: true,
   },
   {
@@ -56,6 +58,7 @@ const columns = computed(() => [
   {
     title: t('healthScore'),
     dataIndex: 'healthScore',
+    width: 110,
     ellipsis: true,
   },
 ])
@@ -139,6 +142,9 @@ onMounted(() => {
           </template>
           <template v-if="column.dataIndex === 'averageFileSize'">
             {{ bytesToSize(record.averageFileSize) }}
+          </template>
+          <template v-if="column.dataIndex === 'healthScore'">
+            {{ record.healthScore == null || record.healthScore < 0 ? 'N/A' : record.healthScore }}
           </template>
         </template>
       </a-table>

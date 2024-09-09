@@ -33,7 +33,6 @@ import java.io.Serializable;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
 
 /** The controller that handles overview page requests. */
@@ -69,16 +68,27 @@ public class OverviewController {
     Preconditions.checkArgument(StringUtils.isNotBlank(orderBy), "orderBy can not be empty");
     List<OverviewTopTableItem> top10Tables;
     boolean isAsc = "asc".equals(order);
-
     switch (orderBy) {
       case "tableSize":
-        top10Tables = getTopTables(isAsc, OverviewTopTableItem::getTableSize, limit);
+        Comparator<OverviewTopTableItem> tableSizeComparator =
+            Comparator.comparingLong(OverviewTopTableItem::getTableSize);
+        top10Tables = getTopTables(isAsc, tableSizeComparator, limit);
         break;
       case "fileCount":
-        top10Tables = getTopTables(isAsc, OverviewTopTableItem::getFileCount, limit);
+        Comparator<OverviewTopTableItem> fileCountComparator =
+            Comparator.comparingLong(OverviewTopTableItem::getFileCount);
+        top10Tables = getTopTables(isAsc, fileCountComparator, limit);
         break;
       case "healthScore":
-        top10Tables = getTopTables(isAsc, OverviewTopTableItem::getHealthScore, limit);
+        // If the table health score of the table has not been calculated,
+        // it should be sorted at the end of the list
+        Comparator<OverviewTopTableItem> healthScoreComparator =
+            Comparator.comparingLong(
+                item ->
+                    item.getHealthScore() < 0
+                        ? (isAsc ? Long.MAX_VALUE : Long.MIN_VALUE)
+                        : item.getTableSize());
+        top10Tables = getTopTables(isAsc, healthScoreComparator, limit);
         break;
       default:
         throw new IllegalArgumentException("Invalid orderBy: " + orderBy);
@@ -87,15 +97,12 @@ public class OverviewController {
   }
 
   private List<OverviewTopTableItem> getTopTables(
-      boolean asc, ToLongFunction<OverviewTopTableItem> orderby, int limit) {
+      boolean asc, Comparator<OverviewTopTableItem> comparator, int limit) {
     return overviewCache.getAllTopTableItem().stream()
         .sorted(
             asc
-                ? Comparator.comparingLong(orderby)
-                    .thenComparing(OverviewTopTableItem::getTableName)
-                : Comparator.comparingLong(orderby)
-                    .reversed()
-                    .thenComparing(OverviewTopTableItem::getTableName))
+                ? comparator.thenComparing(OverviewTopTableItem::getTableName)
+                : comparator.reversed().thenComparing(OverviewTopTableItem::getTableName))
         .limit(limit)
         .collect(Collectors.toList());
   }
