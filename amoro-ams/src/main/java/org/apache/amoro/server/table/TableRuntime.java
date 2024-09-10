@@ -413,7 +413,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void addTaskQuota(TaskRuntime.TaskQuota taskQuota) {
-    doAsAlone(OptimizingMapper.class, mapper -> mapper.insertTaskQuota(taskQuota));
+    doAsIgnoreError(OptimizingMapper.class, mapper -> mapper.insertTaskQuota(taskQuota));
     taskQuotas.add(taskQuota);
     long validTime = System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
     this.taskQuotas.removeIf(task -> task.checkExpired(validTime));

@@ -466,9 +466,6 @@ public class OptimizingQueue extends PersistentBase {
             persistProcessCompleted(false);
           }
         }
-      } catch (Exception e) {
-        LOG.error("accept result error:", e);
-        throw e;
       } finally {
         lock.unlock();
       }

@@ -23,6 +23,8 @@ import org.apache.amoro.server.exception.PersistenceException;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.ibatis.session.TransactionIsolationLevel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.function.Consumer;
@@ -30,6 +32,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public abstract class PersistentBase {
+
+  private static final Logger LOG = LoggerFactory.getLogger(PersistentBase.class);
 
   protected PersistentBase() {}
 
@@ -69,19 +73,14 @@ public abstract class PersistentBase {
     }
   }
 
-  protected final <T> void doAsAlone(Class<T> mapperClz, Consumer<T> consumer) {
-    try (NestedSqlSession session =
-        new NestedSqlSession(
-            SqlSessionFactoryProvider.getInstance()
-                .get()
-                .openSession(TransactionIsolationLevel.READ_COMMITTED))) {
+  protected final <T> void doAsIgnoreError(Class<T> mapperClz, Consumer<T> consumer) {
+    try (NestedSqlSession session = beginSession()) {
       try {
         T mapper = getMapper(session, mapperClz);
         consumer.accept(mapper);
         session.commit();
       } catch (Throwable t) {
-        session.rollback();
-        throw AmoroRuntimeException.wrap(t, PersistenceException::new);
+        LOG.error("Ignore error in doAsIgnoreError", t);
       }
     }
   }
