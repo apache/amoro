@@ -370,6 +370,59 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   @Override
+  public int getHealthScore() {
+    long dataFilesSize = getFragmentFileSize() + getSegmentFileSize();
+    long dataFiles = getFragmentFileCount() + getSegmentFileCount();
+    long dataRecords = getFragmentFileRecords() + getSegmentFileRecords();
+
+    double averageDataFileSize = getNormalizedRatio(dataFilesSize, dataFiles);
+    double eqDeleteRatio = getNormalizedRatio(equalityDeleteFileRecords, dataRecords);
+    double posDeleteRatio = getNormalizedRatio(posDeleteFileRecords, dataRecords);
+
+    double tablePenaltyFactor = getTablePenaltyFactor(dataFiles, dataFilesSize);
+    return (int)
+        Math.ceil(
+            100
+                - tablePenaltyFactor
+                    * (40 * getSmallFilePenaltyFactor(averageDataFileSize)
+                        + 40 * getEqDeletePenaltyFactor(eqDeleteRatio)
+                        + 20 * getPosDeletePenaltyFactor(posDeleteRatio)));
+  }
+
+  private double getEqDeletePenaltyFactor(double eqDeleteRatio) {
+    double eqDeleteRatioThreshold = config.getMajorDuplicateRatio();
+    return getNormalizedRatio(eqDeleteRatio, eqDeleteRatioThreshold);
+  }
+
+  private double getPosDeletePenaltyFactor(double posDeleteRatio) {
+    double posDeleteRatioThreshold = config.getMajorDuplicateRatio() * 2;
+    return getNormalizedRatio(posDeleteRatio, posDeleteRatioThreshold);
+  }
+
+  private double getSmallFilePenaltyFactor(double averageDataFileSize) {
+    return 1 - getNormalizedRatio(averageDataFileSize, minTargetSize);
+  }
+
+  private double getTablePenaltyFactor(long dataFiles, long dataFilesSize) {
+    // if the number of table files is less than or equal to 1,
+    // there is no penalty, i.e., the table is considered to be perfectly healthy
+    if (dataFiles <= 1) {
+      return 0;
+    }
+    // The small table has very little impact on performance,
+    // so there is only a small penalty
+    return getNormalizedRatio(dataFiles, config.getMinorLeastFileCount())
+        * getNormalizedRatio(dataFilesSize, config.getTargetSize());
+  }
+
+  private double getNormalizedRatio(double numerator, double denominator) {
+    if (denominator <= 0) {
+      return 0;
+    }
+    return Math.min(numerator, denominator) / denominator;
+  }
+
+  @Override
   public int getFragmentFileCount() {
     return fragmentFileCount;
   }
