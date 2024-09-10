@@ -110,6 +110,12 @@
                                         <exclude>org/apache/iceberg/spark/extensions/**</exclude>
                                     </excludes>
                                 </filter>
+                                <filter combine.children="append">
+                                    <artifact>org.apache.iceberg:iceberg-spark-3.2_2.12</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/services/org.apache.spark.sql.sources.DataSourceRegister</exclude>
+                                    </excludes>
+                                </filter>
                             </filters>
                             <relocations>
                                 <!-- relocation amoro spark packages -->

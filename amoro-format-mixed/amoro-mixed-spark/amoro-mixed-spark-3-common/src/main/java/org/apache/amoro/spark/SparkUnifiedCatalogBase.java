@@ -18,7 +18,10 @@
 
 package org.apache.amoro.spark;
 
+import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
+
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.CommonUnifiedCatalog;
 import org.apache.amoro.Constants;
 import org.apache.amoro.FormatCatalogFactory;
 import org.apache.amoro.TableFormat;
@@ -29,7 +32,11 @@ import org.apache.amoro.client.AmsThriftUrl;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.table.TableMetaStore;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.iceberg.spark.SparkUtil;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
@@ -60,6 +67,8 @@ import java.util.ServiceLoader;
 public class SparkUnifiedCatalogBase implements TableCatalog, SupportsNamespaces, ProcedureCatalog {
 
   private static final Logger LOG = LoggerFactory.getLogger(SparkUnifiedCatalogBase.class);
+
+  public static final String CATALOG_REGISTER_NAME = "register-name";
   private static final Map<TableFormat, String> defaultTableCatalogImplMap =
       ImmutableMap.of(
           TableFormat.ICEBERG, "org.apache.iceberg.spark.SparkCatalog",
@@ -74,28 +83,40 @@ public class SparkUnifiedCatalogBase implements TableCatalog, SupportsNamespaces
 
   @Override
   public void initialize(String name, CaseInsensitiveStringMap options) {
+    this.name = name;
     Map<String, String> properties = Maps.newHashMap(options);
     String uri = options.get(SparkUnifiedCatalogProperties.URI);
     properties.remove(SparkUnifiedCatalogProperties.URI);
-    Preconditions.checkNotNull(uri, "lack required option: %s", SparkUnifiedCatalogProperties.URI);
+    if (StringUtils.isNotEmpty(uri)) {
+      AmsThriftUrl catalogUri = AmsThriftUrl.parse(uri, Constants.THRIFT_TABLE_SERVICE_NAME);
+      String registerCatalogName = catalogUri.catalogName();
 
-    AmsThriftUrl catalogUri = AmsThriftUrl.parse(uri, Constants.THRIFT_TABLE_SERVICE_NAME);
-    String registerCatalogName = catalogUri.catalogName();
-
-    if (StringUtils.isBlank(registerCatalogName)) {
-      registerCatalogName = name;
-      if (CatalogManager.SESSION_CATALOG_NAME().equalsIgnoreCase(registerCatalogName)) {
-        LOG.warn(
-            "Catalog name is not exists in catalog uri, using spark catalog as register catalog name, but "
-                + "current name "
-                + registerCatalogName
-                + " is spark session catalog name.");
+      if (StringUtils.isBlank(registerCatalogName)) {
+        registerCatalogName = name;
+        if (CatalogManager.SESSION_CATALOG_NAME().equalsIgnoreCase(registerCatalogName)) {
+          LOG.warn(
+              "Catalog name is not exists in catalog uri, using spark catalog as register catalog name, but "
+                  + "current name "
+                  + registerCatalogName
+                  + " is spark session catalog name.");
+        }
       }
+
+      this.unifiedCatalog =
+          UnifiedCatalogLoader.loadUnifiedCatalog(
+              catalogUri.serverUrl(), registerCatalogName, properties);
+    } else {
+      String metastoreType = properties.get(ICEBERG_CATALOG_TYPE);
+      Preconditions.checkArgument(
+          StringUtils.isNotEmpty(metastoreType),
+          "Lack required property: type when initializing unified spark catalog");
+      Configuration localConfiguration =
+          SparkUtil.hadoopConfCatalogOverrides(SparkSession.active(), name);
+      TableMetaStore tableMetaStore =
+          TableMetaStore.builder().withConfiguration(localConfiguration).build();
+      this.unifiedCatalog =
+          new CommonUnifiedCatalog(name, metastoreType, properties, tableMetaStore);
     }
-    this.name = name;
-    this.unifiedCatalog =
-        UnifiedCatalogLoader.loadUnifiedCatalog(
-            catalogUri.serverUrl(), registerCatalogName, properties);
     ServiceLoader<SparkTableFormat> sparkTableFormats = ServiceLoader.load(SparkTableFormat.class);
     for (SparkTableFormat format : sparkTableFormats) {
       tableFormats.put(format.format(), format);
@@ -317,7 +338,7 @@ public class SparkUnifiedCatalogBase implements TableCatalog, SupportsNamespaces
       if (tableCatalog instanceof SupportAuthentication) {
         ((SupportAuthentication) tableCatalog)
             .setAuthenticationContext(unifiedCatalog.authenticationContext());
-        tableCatalogInitializeProperties.put("register-name", unifiedCatalog.name());
+        tableCatalogInitializeProperties.put(CATALOG_REGISTER_NAME, unifiedCatalog.name());
       }
       tableCatalog.initialize(name, new CaseInsensitiveStringMap(tableCatalogInitializeProperties));
       return tableCatalog;
