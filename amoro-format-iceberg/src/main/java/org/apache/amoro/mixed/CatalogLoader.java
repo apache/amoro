@@ -35,6 +35,8 @@ import org.apache.iceberg.common.DynConstructors;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
+
 /** Catalogs, create mixed-format catalog from metastore thrift url. */
 public class CatalogLoader {
 
@@ -164,6 +166,9 @@ public class CatalogLoader {
       TableMetaStore metaStore) {
     String catalogImpl = catalogImpl(metastoreType, properties);
     MixedFormatCatalog catalog = buildCatalog(catalogImpl);
+    if (!properties.containsKey(ICEBERG_CATALOG_TYPE)) {
+      properties.put(ICEBERG_CATALOG_TYPE, metastoreType);
+    }
     catalog.initialize(catalogName, properties, metaStore);
     return catalog;
   }
