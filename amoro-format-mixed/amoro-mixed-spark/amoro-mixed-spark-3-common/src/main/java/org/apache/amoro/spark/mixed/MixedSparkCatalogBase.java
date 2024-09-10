@@ -28,6 +28,7 @@ import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.spark.SupportAuthentication;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
@@ -67,13 +68,14 @@ public abstract class MixedSparkCatalogBase
   @Override
   public final void initialize(String name, CaseInsensitiveStringMap options) {
     this.catalogName = name;
+    Map<String, String> properties = Maps.newHashMap(options);
     if (tableMetaStore == null) {
       String catalogUrl = options.get("url");
       if (StringUtils.isBlank(catalogUrl)) {
         catalogUrl = options.get("uri");
       }
       if (catalogUrl != null) {
-        catalog = CatalogLoader.load(catalogUrl, options);
+        catalog = CatalogLoader.load(catalogUrl, properties);
       } else {
         Configuration localConfiguration =
             SparkUtil.hadoopConfCatalogOverrides(SparkSession.active(), name);
@@ -92,7 +94,7 @@ public abstract class MixedSparkCatalogBase
           CatalogLoader.createCatalog(
               registerName == null ? catalogName : registerName,
               metastoreType,
-              options,
+              properties,
               tableMetaStore);
     }
     this.options = options;
