@@ -112,10 +112,17 @@ public class TableSummaryMetrics {
           .withTags("catalog", "database", "table")
           .build();
 
-  // table summary snapshots number metrics
+  // table summary snapshots number metric
   public static final MetricDefine TABLE_SUMMARY_SNAPSHOTS =
       defineGauge("table_summary_snapshots")
           .withDescription("Number of snapshots in the table")
+          .withTags("catalog", "database", "table")
+          .build();
+
+  // table summary health score metric
+  public static final MetricDefine TABLE_SUMMARY_HEALTH_SCORE =
+      defineGauge("table_summary_health_score")
+          .withDescription("Health score of the table")
           .withTags("catalog", "database", "table")
           .build();
 
@@ -136,6 +143,7 @@ public class TableSummaryMetrics {
   private long dataFilesRecords = 0L;
   private long equalityDeleteFilesRecords = 0L;
   private long snapshots = 0L;
+  private long healthScore = 0L;
 
   public TableSummaryMetrics(ServerTableIdentifier identifier) {
     this.identifier = identifier;
@@ -191,8 +199,11 @@ public class TableSummaryMetrics {
           TABLE_SUMMARY_EQUALITY_DELETE_FILES_RECORDS,
           (Gauge<Long>) () -> equalityDeleteFilesRecords);
 
-      // register snapshots number metrics
+      // register snapshots number metric
       registerMetric(registry, TABLE_SUMMARY_SNAPSHOTS, (Gauge<Long>) () -> snapshots);
+
+      // register health score metric
+      registerMetric(registry, TABLE_SUMMARY_HEALTH_SCORE, (Gauge<Long>) () -> healthScore);
 
       globalRegistry = registry;
     }
@@ -231,6 +242,8 @@ public class TableSummaryMetrics {
     positionDeleteFilesRecords = tableSummary.getPositionalDeleteFileRecords();
     dataFilesRecords = tableSummary.getDataFileRecords();
     equalityDeleteFilesRecords = tableSummary.getEqualityDeleteFileRecords();
+
+    healthScore = tableSummary.getHealthScore();
   }
 
   public void refreshSnapshots(MixedTable table) {

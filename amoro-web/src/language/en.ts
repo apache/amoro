@@ -17,6 +17,7 @@
   */
 
 export default {
+  healthScore: 'Health Score',
   overview: 'Overview',
   catalogs: 'Catalogs',
   catalog: 'Catalog',

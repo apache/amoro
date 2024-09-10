@@ -27,6 +27,7 @@ import java.util.Optional;
 public class TableConfiguration {
   private boolean expireSnapshotEnabled;
   private long snapshotTTLMinutes;
+  private int snapshotMinCount;
   private long changeDataTTLMinutes;
   private boolean cleanOrphanEnabled;
   private long orphanExistingMinutes;
@@ -43,6 +44,10 @@ public class TableConfiguration {
 
   public long getSnapshotTTLMinutes() {
     return snapshotTTLMinutes;
+  }
+
+  public int getSnapshotMinCount() {
+    return snapshotMinCount;
   }
 
   public long getChangeDataTTLMinutes() {
@@ -73,6 +78,11 @@ public class TableConfiguration {
 
   public TableConfiguration setSnapshotTTLMinutes(long snapshotTTLMinutes) {
     this.snapshotTTLMinutes = snapshotTTLMinutes;
+    return this;
+  }
+
+  public TableConfiguration setSnapshotMinCount(int snapshotMinCount) {
+    this.snapshotMinCount = snapshotMinCount;
     return this;
   }
 
@@ -130,6 +140,7 @@ public class TableConfiguration {
     TableConfiguration that = (TableConfiguration) o;
     return expireSnapshotEnabled == that.expireSnapshotEnabled
         && snapshotTTLMinutes == that.snapshotTTLMinutes
+        && snapshotMinCount == that.snapshotMinCount
         && changeDataTTLMinutes == that.changeDataTTLMinutes
         && cleanOrphanEnabled == that.cleanOrphanEnabled
         && orphanExistingMinutes == that.orphanExistingMinutes
@@ -144,6 +155,7 @@ public class TableConfiguration {
     return Objects.hashCode(
         expireSnapshotEnabled,
         snapshotTTLMinutes,
+        snapshotMinCount,
         changeDataTTLMinutes,
         cleanOrphanEnabled,
         orphanExistingMinutes,
