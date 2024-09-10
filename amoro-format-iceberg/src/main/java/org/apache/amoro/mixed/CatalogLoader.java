@@ -18,6 +18,8 @@
 
 package org.apache.amoro.mixed;
 
+import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
+
 import org.apache.amoro.AmsClient;
 import org.apache.amoro.Constants;
 import org.apache.amoro.PooledAmsClient;
@@ -34,8 +36,6 @@ import org.apache.iceberg.common.DynConstructors;
 
 import java.util.Map;
 import java.util.Set;
-
-import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
 
 /** Catalogs, create mixed-format catalog from metastore thrift url. */
 public class CatalogLoader {

@@ -70,8 +70,12 @@ public class TestUnifiedCatalog {
 
   @Test
   public void testCreateUnifiedCatalog() {
-    UnifiedCatalog unifiedCatalog = new CommonUnifiedCatalog(meta.getCatalogName(),
-        meta.getCatalogType(), meta.getCatalogProperties(), TableMetaStore.EMPTY);
+    UnifiedCatalog unifiedCatalog =
+        new CommonUnifiedCatalog(
+            meta.getCatalogName(),
+            meta.getCatalogType(),
+            meta.getCatalogProperties(),
+            TableMetaStore.EMPTY);
     validateUnifiedCatalog(unifiedCatalog);
   }
 
@@ -80,7 +84,8 @@ public class TestUnifiedCatalog {
     Assert.assertEquals(CommonUnifiedCatalog.class.getName(), unifiedCatalog.getClass().getName());
 
     unifiedCatalog.createDatabase(TableTestHelper.TEST_DB_NAME);
-    Assert.assertEquals(Lists.newArrayList(TableTestHelper.TEST_DB_NAME), unifiedCatalog.listDatabases());
+    Assert.assertEquals(
+        Lists.newArrayList(TableTestHelper.TEST_DB_NAME), unifiedCatalog.listDatabases());
     Assert.assertEquals(0, unifiedCatalog.listTables(TableTestHelper.TEST_DB_NAME).size());
     unifiedCatalog.dropDatabase(TableTestHelper.TEST_DB_NAME);
     unifiedCatalog.refresh();
