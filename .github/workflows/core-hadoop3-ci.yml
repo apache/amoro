@@ -20,7 +20,12 @@ on:
     paths:
       - ".github/workflows/**"
       - "amoro-ams/**"
-      - "amoro-core/**"
+      - "amoro-common/**"
+      - "amoro-metrics/**"
+      - "amoro-optimizer/**"
+      - "amoro-format-iceberg/**"
+      - "amoro-format-paimon/**"
+      - "amoro-format-hudi/**"
       - "amoro-format-mixed/amoro-format-mixed-flink/**"
       - "amoro-format-mixed/amoro-format-mixed-hive/**"
       - "amoro-format-mixed/amoro-format-mixed-spark/**"
