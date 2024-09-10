@@ -257,7 +257,7 @@ public interface TableMetaMapper {
   @Insert(
       "INSERT INTO table_identifier(catalog_name, db_name, table_name, format) VALUES("
           + " #{tableIdentifier.catalog}, #{tableIdentifier.database}, #{tableIdentifier.tableName}, "
-          + " #{tableIdentifier.format})")
+          + " #{tableIdentifier.format, typeHandler=org.apache.amoro.server.persistence.converter.TableFormatConverter})")
   @Options(useGeneratedKeys = true, keyProperty = "tableIdentifier.id")
   void insertTable(@Param("tableIdentifier") ServerTableIdentifier tableIdentifier);
 
