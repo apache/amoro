@@ -31,6 +31,7 @@ public class TableConfiguration {
   private long changeDataTTLMinutes;
   private boolean cleanOrphanEnabled;
   private long orphanExistingMinutes;
+  private long cleanOrphanIntervalMinutes;
   private boolean deleteDanglingDeleteFilesEnabled;
   private OptimizingConfig optimizingConfig;
   private DataExpirationConfig expiringDataConfig;
@@ -60,6 +61,10 @@ public class TableConfiguration {
 
   public long getOrphanExistingMinutes() {
     return orphanExistingMinutes;
+  }
+
+  public long getCleanOrphanIntervalMinutes() {
+    return cleanOrphanIntervalMinutes;
   }
 
   public OptimizingConfig getOptimizingConfig() {
@@ -98,6 +103,11 @@ public class TableConfiguration {
 
   public TableConfiguration setOrphanExistingMinutes(long orphanExistingMinutes) {
     this.orphanExistingMinutes = orphanExistingMinutes;
+    return this;
+  }
+
+  public TableConfiguration setCleanOrphanIntervalMinutes(long cleanOrphanIntervalMinutes) {
+    this.cleanOrphanIntervalMinutes = cleanOrphanIntervalMinutes;
     return this;
   }
 

@@ -29,15 +29,13 @@ import org.slf4j.LoggerFactory;
 public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(OrphanFilesCleaningExecutor.class);
 
-  private static final long INTERVAL = 24 * 60 * 60 * 1000L;
-
   public OrphanFilesCleaningExecutor(TableManager tableRuntimes, int poolSize) {
     super(tableRuntimes, poolSize);
   }
 
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return INTERVAL;
+    return tableRuntime.getTableConfiguration().getCleanOrphanIntervalMinutes() * 60 * 1000;
   }
 
   @Override
