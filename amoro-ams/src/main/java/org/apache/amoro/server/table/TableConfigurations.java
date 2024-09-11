@@ -91,11 +91,6 @@ public class TableConfigurations {
                 properties,
                 TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME,
                 TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT))
-        .setCleanOrphanIntervalMinutes(
-            CompatiblePropertyUtil.propertyAsLong(
-                properties,
-                TableProperties.ORPHAN_FILE_CLEAN_INTERVAL_TIME,
-                TableProperties.ORPHAN_FILE_CLEAN_INTERVAL_TIME_DEFAULT))
         .setDeleteDanglingDeleteFilesEnabled(
             gcEnabled
                 && CompatiblePropertyUtil.propertyAsBoolean(

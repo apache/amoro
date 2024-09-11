@@ -26,16 +26,20 @@ import org.apache.amoro.server.table.TableRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+
 public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(OrphanFilesCleaningExecutor.class);
+  private final Duration interval;
 
-  public OrphanFilesCleaningExecutor(TableManager tableRuntimes, int poolSize) {
+  public OrphanFilesCleaningExecutor(TableManager tableRuntimes, int poolSize, Duration interval) {
     super(tableRuntimes, poolSize);
+    this.interval = interval;
   }
 
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return tableRuntime.getTableConfiguration().getCleanOrphanIntervalMinutes() * 60 * 1000;
+    return interval.toMillis();
   }
 
   @Override
