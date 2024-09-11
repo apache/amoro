@@ -30,7 +30,6 @@ const CreateTable = () => import('@/views/tables/create.vue')
 const Settings = () => import('@/views/settings/index.vue')
 const Terminal = () => import('@/views/terminal/index.vue')
 const Login = () => import('@/views/login/index.vue')
-const Introduce = () => import('@/views/introduce/index.vue')
 const Resource = () => import('@/views/resource/index.vue')
 const Overview = () => import('@/views/overview/index.vue')
 
@@ -38,7 +37,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'Home',
-    redirect: 'introduce', // overview
+    redirect: 'overview', // overview
     component: Home,
     children: [
       {
@@ -84,11 +83,6 @@ const routes: Array<RouteRecordRaw> = [
         path: 'terminal',
         name: 'Terminal',
         component: Terminal,
-      },
-      {
-        path: 'introduce',
-        name: 'Introduce',
-        component: Introduce,
       },
       {
         path: 'overview',

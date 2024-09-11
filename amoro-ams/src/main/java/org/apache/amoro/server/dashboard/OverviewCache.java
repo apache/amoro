@@ -64,25 +64,23 @@ public class OverviewCache {
   public static final String STATUS_IDLE = "Idle";
   public static final String STATUS_COMMITTING = "Committing";
 
-  private static final Logger log = LoggerFactory.getLogger(OverviewCache.class);
-  private static volatile OverviewCache INSTANCE;
-
-  private Map<MetricKey, Metric> registeredMetrics;
-  private Map<MetricDefine, List<MetricKey>> metricDefineMap;
-  private Map<String, Long> optimizingStatusCountMap = new ConcurrentHashMap<>();
-  private ConcurrentLinkedDeque<OverviewResourceUsageItem> resourceUsageHistory =
-      new ConcurrentLinkedDeque<>();
-  private ConcurrentLinkedDeque<OverviewDataSizeItem> dataSizeHistory =
-      new ConcurrentLinkedDeque<>();
+  private static final Logger LOG = LoggerFactory.getLogger(OverviewCache.class);
 
   private volatile List<OverviewTopTableItem> allTopTableItem = new ArrayList<>();
+  private final Map<String, Long> optimizingStatusCountMap = new ConcurrentHashMap<>();
+  private final ConcurrentLinkedDeque<OverviewResourceUsageItem> resourceUsageHistory =
+      new ConcurrentLinkedDeque<>();
+  private final ConcurrentLinkedDeque<OverviewDataSizeItem> dataSizeHistory =
+      new ConcurrentLinkedDeque<>();
+  private final AtomicInteger totalCatalog = new AtomicInteger();
+  private final AtomicLong totalDataSize = new AtomicLong();
+  private final AtomicInteger totalTableCount = new AtomicInteger();
+  private final AtomicInteger totalCpu = new AtomicInteger();
+  private final AtomicLong totalMemory = new AtomicLong();
 
-  private AtomicInteger totalCatalog = new AtomicInteger();
-  private AtomicLong totalDataSize = new AtomicLong();
-  private AtomicInteger totalTableCount = new AtomicInteger();
-  private AtomicInteger totalCpu = new AtomicInteger();
-  private AtomicLong totalMemory = new AtomicLong();
+  private MetricSet metricSet;
   private int maxRecordCount;
+  private static volatile OverviewCache INSTANCE;
 
   private OverviewCache() {}
 
@@ -100,7 +98,7 @@ public class OverviewCache {
 
   public void initialize(int maxRecordCount, MetricSet globalMetricSet) {
     this.maxRecordCount = maxRecordCount;
-    this.registeredMetrics = globalMetricSet.getMetrics();
+    this.metricSet = globalMetricSet;
   }
 
   public List<OverviewTopTableItem> getAllTopTableItem() {
@@ -145,31 +143,34 @@ public class OverviewCache {
 
   public void refresh() {
     long start = System.currentTimeMillis();
-    log.info("Updating overview cache");
+    LOG.info("Updating overview cache");
     try {
-      this.metricDefineMap =
-          registeredMetrics.keySet().stream()
+      // Already registered metrics may change,
+      // so the metricDefineMap needs to be recalculated at each refresh
+      Map<MetricDefine, List<MetricKey>> metricDefineMap =
+          metricSet.getMetrics().keySet().stream()
               .collect(
                   Collectors.groupingBy(
                       MetricKey::getDefine,
                       Collectors.mapping(Function.identity(), Collectors.toList())));
 
-      updateResourceUsage(start);
-      updateTableDetail(start);
-      updateOptimizingStatus();
+      updateResourceUsage(start, metricDefineMap);
+      updateTableDetail(start, metricDefineMap);
+      updateOptimizingStatus(metricDefineMap);
 
     } catch (Exception e) {
-      log.error("OverviewRefresher error", e);
+      LOG.error("OverviewRefresher error", e);
     } finally {
       long end = System.currentTimeMillis();
-      log.info("Refresher overview cache took {} ms.", end - start);
+      LOG.info("Refresher overview cache took {} ms.", end - start);
     }
   }
 
-  private void updateResourceUsage(long ts) {
-    int optimizerGroupThreadCount = (int) sumMetricValuesByDefine(OPTIMIZER_GROUP_THREADS);
+  private void updateResourceUsage(long ts, Map<MetricDefine, List<MetricKey>> metricDefineMap) {
+    int optimizerGroupThreadCount =
+        (int) sumMetricValuesByDefine(metricDefineMap, OPTIMIZER_GROUP_THREADS);
     long optimizerGroupMemoryBytes =
-        sumMetricValuesByDefine(OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED);
+        sumMetricValuesByDefine(metricDefineMap, OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED);
 
     this.totalCpu.set(optimizerGroupThreadCount);
     this.totalMemory.set(optimizerGroupMemoryBytes);
@@ -177,15 +178,16 @@ public class OverviewCache {
         new OverviewResourceUsageItem(ts, optimizerGroupThreadCount, optimizerGroupMemoryBytes));
   }
 
-  private void updateTableDetail(long ts) {
+  private void updateTableDetail(long ts, Map<MetricDefine, List<MetricKey>> metricDefineMap) {
     Map<String, OverviewTopTableItem> topTableItemMap = Maps.newHashMap();
     Set<String> allCatalogs = Sets.newHashSet();
+    Map<MetricKey, Metric> registeredMetrics = metricSet.getMetrics();
     long totalTableSize = 0L;
 
     // table size
     List<MetricKey> metricKeys = metricDefineMap.get(TABLE_SUMMARY_TOTAL_FILES_SIZE);
     for (MetricKey metricKey : metricKeys) {
-      String tableName = tableName(metricKey);
+      String tableName = fullTableName(metricKey);
       allCatalogs.add(catalog(metricKey));
       OverviewTopTableItem tableItem =
           topTableItemMap.computeIfAbsent(tableName, ignore -> new OverviewTopTableItem(tableName));
@@ -197,7 +199,7 @@ public class OverviewCache {
     // file count
     metricKeys = metricDefineMap.get(TABLE_SUMMARY_TOTAL_FILES);
     for (MetricKey metricKey : metricKeys) {
-      String tableName = tableName(metricKey);
+      String tableName = fullTableName(metricKey);
       allCatalogs.add(catalog(metricKey));
       OverviewTopTableItem tableItem =
           topTableItemMap.computeIfAbsent(tableName, ignore -> new OverviewTopTableItem(tableName));
@@ -209,7 +211,7 @@ public class OverviewCache {
     // health score
     metricKeys = metricDefineMap.get(TABLE_SUMMARY_HEALTH_SCORE);
     for (MetricKey metricKey : metricKeys) {
-      String tableName = tableName(metricKey);
+      String tableName = fullTableName(metricKey);
       allCatalogs.add(catalog(metricKey));
       OverviewTopTableItem tableItem =
           topTableItemMap.computeIfAbsent(tableName, ignore -> new OverviewTopTableItem(tableName));
@@ -224,16 +226,19 @@ public class OverviewCache {
     addAndCheck(new OverviewDataSizeItem(ts, totalTableSize));
   }
 
-  private void updateOptimizingStatus() {
+  private void updateOptimizingStatus(Map<MetricDefine, List<MetricKey>> metricDefineMap) {
     optimizingStatusCountMap.put(
-        STATUS_PENDING, sumMetricValuesByDefine(OPTIMIZER_GROUP_PENDING_TABLES));
+        STATUS_PENDING, sumMetricValuesByDefine(metricDefineMap, OPTIMIZER_GROUP_PENDING_TABLES));
     optimizingStatusCountMap.put(
-        STATUS_PLANING, sumMetricValuesByDefine(OPTIMIZER_GROUP_PLANING_TABLES));
+        STATUS_PLANING, sumMetricValuesByDefine(metricDefineMap, OPTIMIZER_GROUP_PLANING_TABLES));
     optimizingStatusCountMap.put(
-        STATUS_EXECUTING, sumMetricValuesByDefine(OPTIMIZER_GROUP_EXECUTING_TABLES));
-    optimizingStatusCountMap.put(STATUS_IDLE, sumMetricValuesByDefine(OPTIMIZER_GROUP_IDLE_TABLES));
+        STATUS_EXECUTING,
+        sumMetricValuesByDefine(metricDefineMap, OPTIMIZER_GROUP_EXECUTING_TABLES));
     optimizingStatusCountMap.put(
-        STATUS_COMMITTING, sumMetricValuesByDefine(OPTIMIZER_GROUP_COMMITTING_TABLES));
+        STATUS_IDLE, sumMetricValuesByDefine(metricDefineMap, OPTIMIZER_GROUP_IDLE_TABLES));
+    optimizingStatusCountMap.put(
+        STATUS_COMMITTING,
+        sumMetricValuesByDefine(metricDefineMap, OPTIMIZER_GROUP_COMMITTING_TABLES));
   }
 
   private void addAndCheck(OverviewDataSizeItem dataSizeItem) {
@@ -252,7 +257,7 @@ public class OverviewCache {
     }
   }
 
-  private String tableName(MetricKey metricKey) {
+  private String fullTableName(MetricKey metricKey) {
     return catalog(metricKey)
         .concat(".")
         .concat(database(metricKey))
@@ -272,13 +277,14 @@ public class OverviewCache {
     return metricKey.valueOfTag("table");
   }
 
-  private long sumMetricValuesByDefine(MetricDefine metricDefine) {
+  private long sumMetricValuesByDefine(
+      Map<MetricDefine, List<MetricKey>> metricDefineMap, MetricDefine metricDefine) {
     List<MetricKey> metricKeys = metricDefineMap.get(metricDefine);
     if ((metricKeys == null)) {
       return 0;
     }
     return metricKeys.stream()
-        .map(metricKey -> covertValue(registeredMetrics.get(metricKey)))
+        .map(metricKey -> covertValue(metricSet.getMetrics().get(metricKey)))
         .mapToLong(Long::longValue)
         .sum();
   }

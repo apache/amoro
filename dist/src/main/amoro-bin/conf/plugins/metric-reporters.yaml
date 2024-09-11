@@ -10,7 +10,7 @@
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.max-history-records
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
@@ -23,7 +23,7 @@ metric-reporters:
     enabled: true                         # if false, overview page will not fetch data
     properties:
       refresh-interval: 180000            # 3 min
-      max-record-count: 3500              # Data keep time is equal to interval(ms) * max-record-count
+      max-history-records: 3360              # Keep 7 days history by default, 7 * 24 * 60 / 3 = 3360
 
 #  - name: prometheus-exporter            # configs for prometheus exporter
 #    enabled: false

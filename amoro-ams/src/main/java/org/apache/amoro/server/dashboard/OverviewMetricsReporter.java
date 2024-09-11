@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 public class OverviewMetricsReporter implements MetricReporter {
 
   public static final String REFRESH_INTERVAL = "refresh-interval";
-  public static final String MAX_RECORD_COUNT = "max-record-count";
+  public static final String MAX_HISTORY_RECORDS = "max-history-records";
 
   private final ScheduledExecutorService overviewUpdaterScheduler =
       Executors.newSingleThreadScheduledExecutor(
@@ -53,10 +53,11 @@ public class OverviewMetricsReporter implements MetricReporter {
                 () -> new IllegalArgumentException("Lack required property: " + REFRESH_INTERVAL));
 
     maxRecordCount =
-        Optional.ofNullable(properties.get(MAX_RECORD_COUNT))
+        Optional.ofNullable(properties.get(MAX_HISTORY_RECORDS))
             .map(Integer::valueOf)
             .orElseThrow(
-                () -> new IllegalArgumentException("Lack required property: " + MAX_RECORD_COUNT));
+                () ->
+                    new IllegalArgumentException("Lack required property: " + MAX_HISTORY_RECORDS));
   }
 
   @Override

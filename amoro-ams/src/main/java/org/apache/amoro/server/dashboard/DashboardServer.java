@@ -331,7 +331,7 @@ public class DashboardServer {
       // version api
       get("/versionInfo", versionController::getVersionInfo);
 
-      // overview api
+      // overview apis
       path(
           "/overview",
           () -> {
