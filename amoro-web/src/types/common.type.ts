@@ -60,6 +60,7 @@ export interface IKeyAndValue {
 }
 export interface IBaseDetailInfo {
   optimizingStatus: string
+  records: string
   tableType: string
   tableName: string
   createTime: string
@@ -68,6 +69,7 @@ export interface IBaseDetailInfo {
   averageFile: string
   tableFormat: string
   hasPartition: boolean
+  healthScore: number
 }
 
 export interface DetailColumnItem {

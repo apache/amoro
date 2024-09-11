@@ -65,7 +65,7 @@ make_binary_release() {
   echo "Creating ${HADOOP_VERSION} binary release"
 
   # enable release profile here (to check for the maven version)
-  $MVN clean package ${HADOOP_PROFILE} -Pno-extended-disk-storage -pl ':dist' -am -Dgpg.skip -Dcheckstyle.skip=true -DskipTests
+  $MVN clean package ${HADOOP_PROFILE} -Pno-extended-disk-storage -Pfail-on-no-git-dir -pl ':dist' -am -Dgpg.skip -Dcheckstyle.skip=true -DskipTests
 
   local TARGET_FILE="apache-amoro-${RELEASE_VERSION}-bin-${HADOOP_VERSION}.tar.gz"
   cp dist/target/apache-amoro-${RELEASE_VERSION}-bin.tar.gz ${RELEASE_DIR}/${TARGET_FILE}

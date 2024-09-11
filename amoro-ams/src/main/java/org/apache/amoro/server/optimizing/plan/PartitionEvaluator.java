@@ -81,6 +81,9 @@ public interface PartitionEvaluator {
    */
   OptimizingType getOptimizingType();
 
+  /** Get health score of this partition. */
+  int getHealthScore();
+
   /** Get the count of fragment files involved in optimizing. */
   int getFragmentFileCount();
 

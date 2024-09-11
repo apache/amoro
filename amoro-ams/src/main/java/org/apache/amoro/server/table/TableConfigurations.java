@@ -36,6 +36,7 @@ import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -61,10 +62,19 @@ public class TableConfigurations {
                     TableProperties.ENABLE_TABLE_EXPIRE,
                     TableProperties.ENABLE_TABLE_EXPIRE_DEFAULT))
         .setSnapshotTTLMinutes(
-            CompatiblePropertyUtil.propertyAsLong(
+            ConfigHelpers.TimeUtils.parseDuration(
+                        CompatiblePropertyUtil.propertyAsString(
+                            properties,
+                            TableProperties.SNAPSHOT_KEEP_DURATION,
+                            TableProperties.SNAPSHOT_KEEP_DURATION_DEFAULT),
+                        ChronoUnit.MINUTES)
+                    .getSeconds()
+                / 60)
+        .setSnapshotMinCount(
+            CompatiblePropertyUtil.propertyAsInt(
                 properties,
-                TableProperties.BASE_SNAPSHOT_KEEP_MINUTES,
-                TableProperties.BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT))
+                TableProperties.SNAPSHOT_MIN_COUNT,
+                TableProperties.SNAPSHOT_MIN_COUNT_DEFAULT))
         .setChangeDataTTLMinutes(
             CompatiblePropertyUtil.propertyAsLong(
                 properties,

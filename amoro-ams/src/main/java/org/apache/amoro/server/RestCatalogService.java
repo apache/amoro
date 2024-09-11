@@ -437,9 +437,8 @@ public class RestCatalogService extends PersistentBase {
         internalCatalog instanceof InternalCatalog, "The catalog is not an iceberg rest catalog");
     Set<TableFormat> tableFormats = CatalogUtil.tableFormats(internalCatalog.getMetadata());
     Preconditions.checkArgument(
-        tableFormats.size() == 1
-            && (tableFormats.contains(TableFormat.ICEBERG)
-                || tableFormats.contains(TableFormat.MIXED_ICEBERG)),
+        tableFormats.contains(TableFormat.ICEBERG)
+            || tableFormats.contains(TableFormat.MIXED_ICEBERG),
         "The catalog is not an iceberg rest catalog");
     return (InternalCatalog) internalCatalog;
   }

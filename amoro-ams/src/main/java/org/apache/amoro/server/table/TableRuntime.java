@@ -392,6 +392,10 @@ public class TableRuntime extends StatedPersistentBase {
     return pendingInput;
   }
 
+  public OptimizingEvaluator.PendingInput getTableSummary() {
+    return tableSummary;
+  }
+
   private boolean updateConfigInternal(Map<String, String> properties) {
     TableConfiguration newTableConfig = TableConfigurations.parseTableConfig(properties);
     if (tableConfiguration.equals(newTableConfig)) {

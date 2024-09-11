@@ -182,6 +182,11 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   }
 
   @Override
+  public int getHealthScore() {
+    return evaluator.getHealthScore();
+  }
+
+  @Override
   public int getFragmentFileCount() {
     return evaluator().getFragmentFileCount();
   }

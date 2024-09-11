@@ -26,6 +26,7 @@ public class TableSummary {
   private String tableFormat;
   private long records;
   private String optimizingStatus;
+  private int healthScore = -1; // -1 means not calculated
 
   public TableSummary() {}
 
@@ -70,5 +71,14 @@ public class TableSummary {
 
   public void setOptimizingStatus(String optimizingStatus) {
     this.optimizingStatus = optimizingStatus;
+  }
+
+  /** Current table health score */
+  public int getHealthScore() {
+    return healthScore;
+  }
+
+  public void setHealthScore(int healthScore) {
+    this.healthScore = healthScore;
   }
 }

@@ -109,11 +109,11 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @VisibleForTesting
-  protected void expireSnapshots(long mustOlderThan) {
+  protected void expireSnapshots(long mustOlderThan, int minCount) {
     if (changeMaintainer != null) {
-      changeMaintainer.expireSnapshots(mustOlderThan);
+      changeMaintainer.expireSnapshots(mustOlderThan, minCount);
     }
-    baseMaintainer.expireSnapshots(mustOlderThan);
+    baseMaintainer.expireSnapshots(mustOlderThan, minCount);
   }
 
   @Override
@@ -291,9 +291,9 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     @Override
     @VisibleForTesting
-    void expireSnapshots(long mustOlderThan) {
+    void expireSnapshots(long mustOlderThan, int minCount) {
       expireFiles(mustOlderThan);
-      super.expireSnapshots(mustOlderThan);
+      super.expireSnapshots(mustOlderThan, minCount);
     }
 
     @Override
@@ -303,7 +303,9 @@ public class MixedTableMaintainer implements TableMaintainer {
       }
       long now = System.currentTimeMillis();
       expireFiles(now - snapshotsKeepTime(tableRuntime));
-      expireSnapshots(mustOlderThan(tableRuntime, now));
+      expireSnapshots(
+          mustOlderThan(tableRuntime, now),
+          tableRuntime.getTableConfiguration().getSnapshotMinCount());
     }
 
     @Override

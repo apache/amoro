@@ -200,10 +200,12 @@ public class OptimizingEvaluator {
     private long equalityDeleteBytes = 0L;
     private long equalityDeleteFileRecords = 0L;
     private long positionalDeleteFileRecords = 0L;
+    private int healthScore = -1; // -1 means not calculated
 
     public PendingInput() {}
 
     public PendingInput(Collection<PartitionEvaluator> evaluators) {
+      double totalHealthScore = 0;
       for (PartitionEvaluator evaluator : evaluators) {
         partitions
             .computeIfAbsent(evaluator.getPartition().first(), ignore -> Sets.newHashSet())
@@ -217,7 +219,9 @@ public class OptimizingEvaluator {
         equalityDeleteBytes += evaluator.getEqualityDeleteFileSize();
         equalityDeleteFileRecords += evaluator.getEqualityDeleteFileRecords();
         equalityDeleteFileCount += evaluator.getEqualityDeleteFileCount();
+        totalHealthScore += evaluator.getHealthScore();
       }
+      healthScore = (int) Math.ceil(totalHealthScore / evaluators.size());
     }
 
     public Map<Integer, Set<StructLike>> getPartitions() {
@@ -260,6 +264,10 @@ public class OptimizingEvaluator {
       return positionalDeleteFileRecords;
     }
 
+    public int getHealthScore() {
+      return healthScore;
+    }
+
     @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
@@ -273,6 +281,7 @@ public class OptimizingEvaluator {
           .add("equalityDeleteBytes", equalityDeleteBytes)
           .add("equalityDeleteFileRecords", equalityDeleteFileRecords)
           .add("positionalDeleteFileRecords", positionalDeleteFileRecords)
+          .add("healthScore", healthScore)
           .toString();
     }
   }

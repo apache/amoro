@@ -76,7 +76,10 @@ export default [
           "file": 2,
           "size": "1.79KB",
           "tableFormat": "Iceberg(V1)",
-          "averageFile": "918.00B"
+          "averageFile": "918.00B",
+          "records":24,
+          "optimizingStatus":"IDLE",
+          "healthScore":100,
         },
         "baseLocation": "/mnt/dfs/4/warehouse_public/db/user",
         "filter": null,

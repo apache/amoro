@@ -299,6 +299,10 @@ public class ConfigHelpers {
     private static final Map<String, ChronoUnit> LABEL_TO_UNIT_MAP =
         Collections.unmodifiableMap(initMap());
 
+    public static Duration parseDuration(String text) {
+      return parseDuration(text, ChronoUnit.MILLIS);
+    }
+
     /**
      * Parse the given string to a java {@link Duration}. The string is in format "{length
      * value}{time unit label}", e.g. "123ms", "321 s". If no time unit label is specified, it will
@@ -318,7 +322,7 @@ public class ConfigHelpers {
      *
      * @param text string to parse.
      */
-    public static Duration parseDuration(String text) {
+    public static Duration parseDuration(String text, ChronoUnit defaultUnit) {
       checkNotNull(text);
 
       final String trimmed = text.trim();
@@ -350,7 +354,7 @@ public class ConfigHelpers {
       }
 
       if (unitLabel.isEmpty()) {
-        return Duration.of(value, ChronoUnit.MILLIS);
+        return Duration.of(value, defaultUnit);
       }
 
       ChronoUnit unit = LABEL_TO_UNIT_MAP.get(unitLabel);

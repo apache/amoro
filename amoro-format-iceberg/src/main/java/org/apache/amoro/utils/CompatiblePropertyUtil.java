@@ -96,6 +96,8 @@ public class CompatiblePropertyUtil {
         return TableProperties.ENABLE_ORPHAN_CLEAN_LEGACY;
       case TableProperties.ENABLE_LOG_STORE:
         return TableProperties.ENABLE_LOG_STORE_LEGACY;
+      case TableProperties.SNAPSHOT_KEEP_DURATION:
+        return TableProperties.BASE_SNAPSHOT_KEEP_MINUTES;
       default:
         return null;
     }

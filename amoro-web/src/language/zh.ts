@@ -17,6 +17,7 @@
   */
 
 export default {
+  healthScore: '健康度',
   overview: '总览',
   catalogs: '目录',
   catalog: '目录',

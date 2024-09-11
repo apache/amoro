@@ -112,7 +112,7 @@ public class MixedHiveCatalog implements MixedFormatCatalog {
     this.catalogProperties = properties;
     this.tableMetaStore = metaStore;
     this.tables = newMixedHiveTables(properties, metaStore);
-    this.hiveClientPool = ((MixedHiveTables) tables).getHiveClientPool();
+    this.hiveClientPool = tables.getHiveClientPool();
   }
 
   protected MixedHiveTables getTables() {

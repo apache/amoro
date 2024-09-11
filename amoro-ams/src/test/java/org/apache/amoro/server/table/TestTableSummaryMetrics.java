@@ -24,6 +24,7 @@ import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_DA
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_EQUALITY_DELETE_FILES;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_EQUALITY_DELETE_FILES_RECORDS;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_EQUALITY_DELETE_FILES_SIZE;
+import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_HEALTH_SCORE;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_POSITION_DELETE_FILES;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_POSITION_DELETE_FILES_RECORDS;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_POSITION_DELETE_FILES_SIZE;
@@ -170,6 +171,8 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
 
     Gauge<Long> snapshots = getMetric(metrics, identifier, TABLE_SUMMARY_SNAPSHOTS);
 
+    Gauge<Long> healthScore = getMetric(metrics, identifier, TABLE_SUMMARY_HEALTH_SCORE);
+
     Assertions.assertEquals(0, totalFiles.getValue());
     Assertions.assertEquals(0, dataFiles.getValue());
     Assertions.assertEquals(0, posDelFiles.getValue());
@@ -184,6 +187,7 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
     Assertions.assertEquals(0, dataRecords.getValue());
     Assertions.assertEquals(0, posDelRecords.getValue());
     Assertions.assertEquals(0, eqDelRecords.getValue());
+    Assertions.assertEquals(0, healthScore.getValue());
 
     // refresh metrics
     initTableWithFiles();
@@ -202,6 +206,7 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
     Assertions.assertTrue(posDelRecords.getValue() > 0);
 
     Assertions.assertTrue(snapshots.getValue() > 0);
+    Assertions.assertTrue(healthScore.getValue() > 0);
   }
 
   private Gauge<Long> getMetric(
