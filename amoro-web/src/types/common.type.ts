@@ -72,6 +72,25 @@ export interface IBaseDetailInfo {
   healthScore: number
 }
 
+export interface ResourceUsageItem {
+  ts: number
+  totalCpu: number
+  totalMemory: number
+}
+
+export interface DataSizeItem {
+  ts: string
+  dataSize: number
+}
+
+export interface ITopTableItem {
+  tableName: string
+  tableSize: number
+  fileCount: number
+  averageFileSize: number
+  healthScore: number
+}
+
 export interface DetailColumnItem {
   checked?: unknown
   field: string
@@ -189,6 +208,13 @@ export interface SnapshotItem {
   recordsSummaryForChart: Record<string, number>
 }
 
+export interface OverviwOperationItem {
+  tableName: string
+  tableIdentifier: ITableIdentifier
+  operation: string
+  ts: number | string
+}
+
 export interface OperationItem {
   ts: number | string
   operation: string
@@ -300,15 +326,6 @@ export interface IChartLineData {
   timeLine: string[]
   data1: number[] | string[]
   data2: number[] | string[]
-}
-
-export interface ITopTableItem {
-  tableName: string
-  size: number
-  fileCnt: number
-  displaySize: string
-  tableNameOnly: string
-  index: number
 }
 
 export interface IOptimizeGroup {

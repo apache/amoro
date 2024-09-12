@@ -59,6 +59,11 @@ export default defineComponent({
       ]
       const allMenu: MenuItem[] = [
         {
+          key: 'overview',
+          title: t('overview'),
+          icon: 'overview',
+        },
+        {
           key: 'tables',
           title: t('tables'),
           icon: 'tables',
@@ -142,9 +147,9 @@ export default defineComponent({
       }, time)
     }
 
-    const viewIntroduce = () => {
+    const viewOverview = () => {
       router.push({
-        path: '/introduce',
+        path: '/overview',
       })
     }
 
@@ -158,7 +163,7 @@ export default defineComponent({
       store,
       toggleTablesMenu,
       goCreatePage,
-      viewIntroduce,
+      viewOverview,
     }
   },
 })
@@ -166,7 +171,7 @@ export default defineComponent({
 
 <template>
   <div :class="{ 'side-bar-collapsed': collapsed }" class="side-bar">
-    <div :class="{ 'logo-collapsed': collapsed }" class="logo g-flex-ae" @mouseenter="toggleTablesMenu(false)" @click="viewIntroduce">
+    <div :class="{ 'logo-collapsed': collapsed }" class="logo g-flex-ae" @mouseenter="toggleTablesMenu(false)" @click="viewOverview">
       <img src="../assets/images/logo1.svg" class="logo-img" alt="">
       <img v-show="!collapsed" src="../assets/images/arctic-dashboard1.svg" class="arctic-name" alt="">
     </div>

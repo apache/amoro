@@ -187,7 +187,7 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
     Assertions.assertEquals(0, dataRecords.getValue());
     Assertions.assertEquals(0, posDelRecords.getValue());
     Assertions.assertEquals(0, eqDelRecords.getValue());
-    Assertions.assertEquals(0, healthScore.getValue());
+    Assertions.assertEquals(-1, healthScore.getValue());
 
     // refresh metrics
     initTableWithFiles();

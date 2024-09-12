@@ -65,16 +65,18 @@ Amoro has supported built-in metrics to measure status of table self-optimizing 
 
 ## Optimizer Group metrics
 
-| Metric Name                            | Type   | Tags  | Description                                      |
-|----------------------------------------|--------|-------|--------------------------------------------------|
-| optimizer_group_pending_tasks          | Gauge  | group | Number of pending tasks in optimizer group       |
-| optimizer_group_executing_tasks        | Gauge  | group | Number of executing tasks in optimizer group     |
-| optimizer_group_planing_tables         | Gauge  | group | Number of planing tables in optimizer group      |
-| optimizer_group_pending_tables         | Gauge  | group | Number of pending tables in optimizer group      |
-| optimizer_group_executing_tables       | Gauge  | group | Number of executing tables in optimizer group    |
-| optimizer_group_optimizer_instances    | Gauge  | group | Number of optimizer instances in optimizer group |
-| optimizer_group_memory_bytes_allocated | Gauge  | group | Memory bytes allocated in optimizer group        |
-| optimizer_group_threads                | Gauge  | group | Number of total threads in optimizer group       |
+| Metric Name                             | Type   | Tags  | Description                                      |
+|-----------------------------------------|--------|-------|--------------------------------------------------|
+| optimizer_group_pending_tasks           | Gauge  | group | Number of pending tasks in optimizer group       |
+| optimizer_group_executing_tasks         | Gauge  | group | Number of executing tasks in optimizer group     |
+| optimizer_group_planing_tables          | Gauge  | group | Number of planing tables in optimizer group      |
+| optimizer_group_pending_tables          | Gauge  | group | Number of pending tables in optimizer group      |
+| optimizer_group_executing_tables        | Gauge  | group | Number of executing tables in optimizer group    |
+| optimizer_group_idle_tables             | Gauge  | group | Number of idle tables in optimizer group         |
+| optimizer_group_committing_tables       | Gauge  | group | Number of committing tables in optimizer group   |
+| optimizer_group_optimizer_instances     | Gauge  | group | Number of optimizer instances in optimizer group |
+| optimizer_group_memory_bytes_allocated  | Gauge  | group | Memory bytes allocated in optimizer group        |
+| optimizer_group_threads                 | Gauge  | group | Number of total threads in optimizer group       |
 
 ## Orphan Files Cleaning metrics
 

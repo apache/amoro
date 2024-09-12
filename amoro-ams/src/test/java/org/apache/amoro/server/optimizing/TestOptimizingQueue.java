@@ -19,8 +19,10 @@
 package org.apache.amoro.server.optimizing;
 
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.GROUP_TAG;
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_COMMITTING_TABLES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TABLES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TASKS;
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_IDLE_TABLES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_OPTIMIZER_INSTANCES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TABLES;
@@ -267,12 +269,20 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Gauge<Long> executingTablesGauge =
         (Gauge<Long>)
             registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_EXECUTING_TABLES, tagValues));
+    Gauge<Long> idleTablesGauge =
+        (Gauge<Long>)
+            registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_IDLE_TABLES, tagValues));
+    Gauge<Long> committingTablesGauge =
+        (Gauge<Long>)
+            registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_COMMITTING_TABLES, tagValues));
 
     Assert.assertEquals(0, queueTasksGauge.getValue().longValue());
     Assert.assertEquals(0, executingTasksGauge.getValue().longValue());
     Assert.assertEquals(0, planingTablesGauge.getValue().longValue());
     Assert.assertEquals(1, pendingTablesGauge.getValue().longValue());
     Assert.assertEquals(0, executingTablesGauge.getValue().longValue());
+    Assert.assertEquals(0, idleTablesGauge.getValue().longValue());
+    Assert.assertEquals(0, committingTablesGauge.getValue().longValue());
 
     TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
     Assert.assertNotNull(task);
@@ -282,6 +292,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(0, planingTablesGauge.getValue().longValue());
     Assert.assertEquals(0, pendingTablesGauge.getValue().longValue());
     Assert.assertEquals(1, executingTablesGauge.getValue().longValue());
+    Assert.assertEquals(0, idleTablesGauge.getValue().longValue());
+    Assert.assertEquals(0, committingTablesGauge.getValue().longValue());
 
     task.ack(optimizerThread);
     Assert.assertEquals(0, queueTasksGauge.getValue().longValue());
@@ -289,6 +301,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(0, planingTablesGauge.getValue().longValue());
     Assert.assertEquals(0, pendingTablesGauge.getValue().longValue());
     Assert.assertEquals(1, executingTablesGauge.getValue().longValue());
+    Assert.assertEquals(0, idleTablesGauge.getValue().longValue());
+    Assert.assertEquals(0, committingTablesGauge.getValue().longValue());
 
     task.complete(
         optimizerThread,
@@ -298,6 +312,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(0, planingTablesGauge.getValue().longValue());
     Assert.assertEquals(0, pendingTablesGauge.getValue().longValue());
     Assert.assertEquals(1, executingTablesGauge.getValue().longValue());
+    Assert.assertEquals(0, idleTablesGauge.getValue().longValue());
+    Assert.assertEquals(1, committingTablesGauge.getValue().longValue());
 
     OptimizingProcess optimizingProcess = tableRuntimeMeta.getTableRuntime().getOptimizingProcess();
     optimizingProcess.commit();
@@ -306,6 +322,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(0, planingTablesGauge.getValue().longValue());
     Assert.assertEquals(0, pendingTablesGauge.getValue().longValue());
     Assert.assertEquals(0, executingTablesGauge.getValue().longValue());
+    Assert.assertEquals(1, idleTablesGauge.getValue().longValue());
+    Assert.assertEquals(0, committingTablesGauge.getValue().longValue());
     queue.dispose();
   }
 
