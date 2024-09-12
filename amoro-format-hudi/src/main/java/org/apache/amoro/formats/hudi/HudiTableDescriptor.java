@@ -93,6 +93,8 @@ import java.util.stream.Stream;
 public class HudiTableDescriptor implements FormatTableDescriptor {
 
   private static final Logger LOG = LoggerFactory.getLogger(HudiTableDescriptor.class);
+  private static final String COMPACTION = "compaction";
+  private static final String CLUSTERING = "clustering";
 
   private ExecutorService ioExecutors;
 
@@ -328,7 +330,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, int limit, int offset) {
+      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
     HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
     HoodieDefaultTimeline timeline = new HoodieActiveTimeline(hoodieTable.getMetaClient(), false);
     List<HoodieInstant> instants = timeline.getInstants();
@@ -369,7 +371,24 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
                 })
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
-    return Pair.of(infos, infos.size());
+    infos =
+        infos.stream()
+            .filter(
+                i ->
+                    StringUtils.isNullOrEmpty(type) || type.equalsIgnoreCase(i.getOptimizingType()))
+            .filter(i -> status == null || status == i.getStatus())
+            .collect(Collectors.toList());
+    int total = infos.size();
+    infos = infos.stream().skip(offset).limit(limit).collect(Collectors.toList());
+    return Pair.of(infos, total);
+  }
+
+  @Override
+  public Map<String, String> getTableOptimizingTypes(AmoroTable<?> amoroTable) {
+    Map<String, String> types = Maps.newHashMap();
+    types.put(COMPACTION, COMPACTION);
+    types.put(CLUSTERING, CLUSTERING);
+    return types;
   }
 
   protected OptimizingProcessInfo getOptimizingInfo(
@@ -455,7 +474,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
       processInfo.getSummary().put("strategy", strategy.getCompactorClassName());
       processInfo.getSummary().putAll(strategy.getStrategyParams());
     }
-    processInfo.setOptimizingType("Compact");
+    processInfo.setOptimizingType(COMPACTION);
   }
 
   private OptimizingProcessInfo fillClusterProcessInfo(
@@ -481,7 +500,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     processInfo.setInputFiles(FilesStatistics.build(inputFileCount, inputFileSize));
     int tasks = plan.getInputGroups().size();
     processInfo.setTotalTasks(tasks);
-    processInfo.setOptimizingType("Cluster");
+    processInfo.setOptimizingType(CLUSTERING);
 
     HoodieClusteringStrategy strategy = plan.getStrategy();
     if (strategy != null) {

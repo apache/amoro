@@ -156,13 +156,28 @@ export function getOptimizingProcesses(
     catalog: string
     db: string
     table: string
+    type: string
+    status: string
     page: number
     pageSize: number
     token?: string
   },
 ) {
-  const { catalog, db, table, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes`, { params: { page, pageSize, token } })
+  const { catalog, db, table, type, status, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes`, { params: { page, pageSize, token, type, status } })
+}
+
+// get optimizing process types
+export function getTableOptimizingTypes(
+  params: {
+    catalog: string
+    db: string
+    table: string
+    token?: string
+  },
+) {
+  const { catalog, db, table, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-types`, { params: { token } })
 }
 
 // get optimizing taskes
