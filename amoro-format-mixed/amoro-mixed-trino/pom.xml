@@ -50,6 +50,7 @@
         <jol.version>0.16</jol.version>
         <surefire-testng.version>3.2.5</surefire-testng.version>
         <skip-build-mixed-format-trino>true</skip-build-mixed-format-trino>
+        <root.dir>${project.parent.parent.basedir}</root.dir>
     </properties>
 
     <dependencies>
