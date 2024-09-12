@@ -102,6 +102,12 @@ public class AmoroManagementConf {
           .defaultValue(10)
           .withDescription("The number of threads used for orphan files cleaning.");
 
+  public static final ConfigOption<Duration> CLEAN_ORPHAN_FILES_INTERVAL =
+      ConfigOptions.key("clean-orphan-files.interval")
+          .durationType()
+          .defaultValue(Duration.ofDays(1))
+          .withDescription("Interval for cleaning orphan files.");
+
   public static final ConfigOption<Boolean> CLEAN_DANGLING_DELETE_FILES_ENABLED =
       ConfigOptions.key("clean-dangling-delete-files.enabled")
           .booleanType()
