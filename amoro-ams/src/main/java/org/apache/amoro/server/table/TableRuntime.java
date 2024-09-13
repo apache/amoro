@@ -199,7 +199,7 @@ public class TableRuntime extends StatedPersistentBase {
     } catch (Exception e) {
       OptimizingStatus originalStatus = optimizingStatus;
       updateOptimizingStatus(OptimizingStatus.PENDING);
-      LOG.error(
+      LOG.warn(
           "Persistent database failed, only the optimizing state in the memory was changed.", e);
       tableHandler.handleTableChanged(this, originalStatus);
     }
