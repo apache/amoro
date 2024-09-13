@@ -49,7 +49,9 @@ public class AsyncTableExecutors {
     if (conf.getBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
       this.orphanFilesCleaningExecutor =
           new OrphanFilesCleaningExecutor(
-              tableManager, conf.getInteger(AmoroManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT));
+              tableManager,
+              conf.getInteger(AmoroManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT),
+              conf.get(AmoroManagementConf.CLEAN_ORPHAN_FILES_INTERVAL));
     }
     if (conf.getBoolean(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_ENABLED)) {
       this.danglingDeleteFilesCleaningExecutor =
