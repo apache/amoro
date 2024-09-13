@@ -26,6 +26,7 @@ import type {
 import {
   BarChart,
   LineChart,
+  PieChart,
 } from 'echarts/charts'
 import type {
   DatasetComponentOption,
@@ -67,6 +68,7 @@ echarts.use([
   UniversalTransition,
   CanvasRenderer,
   LegendComponent,
+  PieChart,
 ])
 
 export default echarts

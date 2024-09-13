@@ -65,16 +65,18 @@ Amoro has supported built-in metrics to measure status of table self-optimizing 
 
 ## Optimizer Group metrics
 
-| Metric Name                            | Type   | Tags  | Description                                      |
-|----------------------------------------|--------|-------|--------------------------------------------------|
-| optimizer_group_pending_tasks          | Gauge  | group | Number of pending tasks in optimizer group       |
-| optimizer_group_executing_tasks        | Gauge  | group | Number of executing tasks in optimizer group     |
-| optimizer_group_planing_tables         | Gauge  | group | Number of planing tables in optimizer group      |
-| optimizer_group_pending_tables         | Gauge  | group | Number of pending tables in optimizer group      |
-| optimizer_group_executing_tables       | Gauge  | group | Number of executing tables in optimizer group    |
-| optimizer_group_optimizer_instances    | Gauge  | group | Number of optimizer instances in optimizer group |
-| optimizer_group_memory_bytes_allocated | Gauge  | group | Memory bytes allocated in optimizer group        |
-| optimizer_group_threads                | Gauge  | group | Number of total threads in optimizer group       |
+| Metric Name                             | Type   | Tags  | Description                                      |
+|-----------------------------------------|--------|-------|--------------------------------------------------|
+| optimizer_group_pending_tasks           | Gauge  | group | Number of pending tasks in optimizer group       |
+| optimizer_group_executing_tasks         | Gauge  | group | Number of executing tasks in optimizer group     |
+| optimizer_group_planing_tables          | Gauge  | group | Number of planing tables in optimizer group      |
+| optimizer_group_pending_tables          | Gauge  | group | Number of pending tables in optimizer group      |
+| optimizer_group_executing_tables        | Gauge  | group | Number of executing tables in optimizer group    |
+| optimizer_group_idle_tables             | Gauge  | group | Number of idle tables in optimizer group         |
+| optimizer_group_committing_tables       | Gauge  | group | Number of committing tables in optimizer group   |
+| optimizer_group_optimizer_instances     | Gauge  | group | Number of optimizer instances in optimizer group |
+| optimizer_group_memory_bytes_allocated  | Gauge  | group | Memory bytes allocated in optimizer group        |
+| optimizer_group_threads                 | Gauge  | group | Number of total threads in optimizer group       |
 
 ## Orphan Files Cleaning metrics
 
@@ -100,18 +102,19 @@ Amoro has supported built-in metrics to measure status of table self-optimizing 
 
 ## table summary metrics
 
-| Metric Name                                 | Type    | Tags                     | Description                                   |
-|---------------------------------------------|---------|--------------------------|-----------------------------------------------|
-| table_summary_total_files                   | Gauge   | catalog, database, table | Total number of files in the table            |
-| table_summary_data_files                    | Gauge   | catalog, database, table | Number of data files in the table             |
-| table_summary_equality_delete_files         | Gauge   | catalog, database, table | Number of equality delete files in the table  |
-| table_summary_position_delete_files         | Gauge   | catalog, database, table | Number of position delete files in the table  |
-| table_summary_total_files_size              | Gauge   | catalog, database, table | Total size of files in the table              |
-| table_summary_data_files_size               | Gauge   | catalog, database, table | Size of data files in the table               |
-| table_summary_equality_delete_files_size    | Gauge   | catalog, database, table | Size of equality delete files in the table    |
-| table_summary_position_delete_files_size    | Gauge   | catalog, database, table | Size of position delete files in the table    |
-| table_summary_total_records                 | Gauge   | catalog, database, table | Total records in the table                    |
-| table_summary_data_files_records            | Gauge   | catalog, database, table | Records of data files in the table            |
-| table_summary_equality_delete_files_records | Gauge   | catalog, database, table | Records of equality delete files in the table |
-| table_summary_position_delete_files_records | Gauge   | catalog, database, table | Records of position delete files in the table |
-| table_summary_snapshots                     | Gauge   | catalog, database, table | Number of snapshots in the table              |
+| Metric Name                                   | Type    | Tags                     | Description                                   |
+|-----------------------------------------------|---------|--------------------------|-----------------------------------------------|
+| table_summary_total_files                     | Gauge   | catalog, database, table | Total number of files in the table            |
+| table_summary_data_files                      | Gauge   | catalog, database, table | Number of data files in the table             |
+| table_summary_equality_delete_files           | Gauge   | catalog, database, table | Number of equality delete files in the table  |
+| table_summary_position_delete_files           | Gauge   | catalog, database, table | Number of position delete files in the table  |
+| table_summary_total_files_size                | Gauge   | catalog, database, table | Total size of files in the table              |
+| table_summary_data_files_size                 | Gauge   | catalog, database, table | Size of data files in the table               |
+| table_summary_equality_delete_files_size      | Gauge   | catalog, database, table | Size of equality delete files in the table    |
+| table_summary_position_delete_files_size      | Gauge   | catalog, database, table | Size of position delete files in the table    |
+| table_summary_total_records                   | Gauge   | catalog, database, table | Total records in the table                    |
+| table_summary_data_files_records              | Gauge   | catalog, database, table | Records of data files in the table            |
+| table_summary_equality_delete_files_records   | Gauge   | catalog, database, table | Records of equality delete files in the table |
+| table_summary_position_delete_files_records   | Gauge   | catalog, database, table | Records of position delete files in the table |
+| table_summary_snapshots                       | Gauge   | catalog, database, table | Number of snapshots in the table              |
+| table_summary_health_score                    | Gauge   | catalog, database, table | Health score of the table                     |

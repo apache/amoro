@@ -19,6 +19,8 @@
 package org.apache.amoro.server.optimizing;
 
 import static org.apache.amoro.metrics.MetricDefine.defineGauge;
+import static org.apache.amoro.server.optimizing.OptimizingStatus.COMMITTING;
+import static org.apache.amoro.server.optimizing.OptimizingStatus.IDLE;
 import static org.apache.amoro.server.optimizing.OptimizingStatus.PENDING;
 import static org.apache.amoro.server.optimizing.OptimizingStatus.PLANNING;
 import static org.apache.amoro.server.optimizing.TaskRuntime.Status.ACKED;
@@ -69,6 +71,18 @@ public class OptimizerGroupMetrics {
   public static final MetricDefine OPTIMIZER_GROUP_EXECUTING_TABLES =
       defineGauge("optimizer_group_executing_tables")
           .withDescription("Number of executing tables in optimizer group")
+          .withTags(GROUP_TAG)
+          .build();
+
+  public static final MetricDefine OPTIMIZER_GROUP_IDLE_TABLES =
+      defineGauge("optimizer_group_idle_tables")
+          .withDescription("Number of idle tables in optimizer group")
+          .withTags(GROUP_TAG)
+          .build();
+
+  public static final MetricDefine OPTIMIZER_GROUP_COMMITTING_TABLES =
+      defineGauge("optimizer_group_committing_tables")
+          .withDescription("Number of committing tables in optimizer group")
           .withTags(GROUP_TAG)
           .build();
 
@@ -148,6 +162,22 @@ public class OptimizerGroupMetrics {
             () ->
                 optimizingQueue.getSchedulingPolicy().getTableRuntimeMap().values().stream()
                     .filter(t -> t.getOptimizingStatus().isProcessing())
+                    .count());
+    registerMetric(
+        registry,
+        OPTIMIZER_GROUP_IDLE_TABLES,
+        (Gauge<Long>)
+            () ->
+                optimizingQueue.getSchedulingPolicy().getTableRuntimeMap().values().stream()
+                    .filter(t -> t.getOptimizingStatus().equals(IDLE))
+                    .count());
+    registerMetric(
+        registry,
+        OPTIMIZER_GROUP_COMMITTING_TABLES,
+        (Gauge<Long>)
+            () ->
+                optimizingQueue.getSchedulingPolicy().getTableRuntimeMap().values().stream()
+                    .filter(t -> t.getOptimizingStatus().equals(COMMITTING))
                     .count());
 
     registerMetric(

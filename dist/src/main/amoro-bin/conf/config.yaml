@@ -66,6 +66,7 @@ ams:
   clean-orphan-files:
     enabled: true
     thread-count: 10
+    interval: 1d
 
   clean-dangling-delete-files:
     enabled: true
