@@ -1343,7 +1343,7 @@
             </properties>
         </profile>
         <profile>
-            <id>tencent</id>
+            <id>dlc</id>
             <repositories>
                 <repository>
                     <id>dlc-repo</id>
@@ -1358,6 +1358,25 @@
 
             <properties>
                 <hive.version>2.3.9</hive.version>
+                <hadoop.version>3.2.0</hadoop.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>emr</id>
+            <repositories>
+                <repository>
+                    <id>emr-repo</id>
+                    <name>emr-repo</name>
+                    <url>https://mirrors.tencent.com/repository/maven/QCLOUD-EMR</url>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <updatePolicy>daily</updatePolicy>
+                    </snapshots>
+                </repository>
+            </repositories>
+
+            <properties>
+                <hive.version>3.1.3</hive.version>
                 <hadoop.version>3.2.0</hadoop.version>
             </properties>
         </profile>
