@@ -193,8 +193,40 @@
 
     <profiles>
         <profile>
-            <id>tencent</id>
+            <id>dlc</id>
             <dependencies>
+                <dependency>
+                    <groupId>com.qcloud.cos</groupId>
+                    <artifactId>lakefs-cosn-client</artifactId>
+                    <version>2.2.6-release</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.slf4j</groupId>
+                            <artifactId>slf4j-log4j12</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+
+                <dependency>
+                    <groupId>com.tencent.optimizer</groupId>
+                    <artifactId>iceberg-extend</artifactId>
+                    <version>2.6.5</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.tencent.optimizer</groupId>
+                            <artifactId>spark-optimizer</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>org.apache.iceberg</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>org.apache.spark</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+
                 <dependency>
                     <groupId>com.qcloud</groupId>
                     <artifactId>chdfs_hadoop_plugin_network</artifactId>
@@ -228,38 +260,30 @@
         </profile>
 
         <profile>
-            <id>dlc</id>
+            <id>emr</id>
             <dependencies>
                 <dependency>
-                    <groupId>com.qcloud.cos</groupId>
-                    <artifactId>lakefs-cosn-client</artifactId>
-                    <version>2.2.6-release</version>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.slf4j</groupId>
-                            <artifactId>slf4j-log4j12</artifactId>
-                        </exclusion>
-                    </exclusions>
+                    <groupId>com.qcloud</groupId>
+                    <artifactId>chdfs_hadoop_plugin_network</artifactId>
+                    <version>2.8</version>
                 </dependency>
 
                 <dependency>
-                    <groupId>com.tencent.optimizer</groupId>
-                    <artifactId>iceberg-extend</artifactId>
-                    <version>2.6.5</version>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>com.tencent.optimizer</groupId>
-                            <artifactId>spark-optimizer</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>org.apache.iceberg</groupId>
-                            <artifactId>*</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>org.apache.spark</groupId>
-                            <artifactId>*</artifactId>
-                        </exclusion>
-                    </exclusions>
+                    <groupId>com.qcloud</groupId>
+                    <artifactId>cosn-ranger-interface</artifactId>
+                    <version>1.0.4</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>com.qcloud</groupId>
+                    <artifactId>hadoop-ranger-client-for-hadoop</artifactId>
+                    <version>3.1.0-5.0</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>com.tencent.cloud.emr</groupId>
+                    <artifactId>temrfs-network</artifactId>
+                    <version>1.3</version>
                 </dependency>
             </dependencies>
         </profile>
