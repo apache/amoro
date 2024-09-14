@@ -68,7 +68,6 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
   private final Map<String, PluginConfiguration> pluginConfigs = Maps.newConcurrentMap();
   private final String pluginCategory;
   private final Class<T> pluginType;
-  private boolean builtInLoaded = false;
 
   @SuppressWarnings("unchecked")
   public AbstractPluginManager(String pluginCategory) {
@@ -198,10 +197,11 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
   private void foundAvailablePlugins() {
     ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     ServiceLoader<T> buildInLoader = ServiceLoader.load(pluginType, classLoader);
+    addToFoundedPlugin(buildInLoader);
+
     try {
       Path pluginPath = Paths.get(pluginPath());
       if (!Files.exists(pluginPath) || !Files.isDirectory(pluginPath)) {
-        addToFoundedPlugin(buildInLoader);
         return;
       }
       Files.list(pluginPath)
@@ -214,9 +214,6 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
                   findClasspathExternalPlugins(file, classLoader);
                 }
               });
-      if (!builtInLoaded) {
-        addToFoundedPlugin(buildInLoader);
-      }
     } catch (IOException e) {
       throw new LoadingPluginException("Failed when discover available plugins", e);
     }
@@ -290,7 +287,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
     loader.forEach(
         plugin -> {
           T exists = foundedPlugins.putIfAbsent(plugin.name(), plugin);
-          if (exists != null) {
+          if (exists != null && !exists.getClass().equals(plugin.getClass())) {
             throw new IllegalStateException(
                 "Plugin name "
                     + plugin.name()
@@ -300,6 +297,5 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
                     + exists.getClass().getName());
           }
         });
-    builtInLoaded = true;
   }
 }
