@@ -287,7 +287,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
     loader.forEach(
         plugin -> {
           T exists = foundedPlugins.putIfAbsent(plugin.name(), plugin);
-          if (exists != null) {
+          if (exists != null && !exists.getClass().equals(plugin.getClass())) {
             throw new IllegalStateException(
                 "Plugin name "
                     + plugin.name()

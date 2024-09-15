@@ -225,6 +225,9 @@ public class OptimizingQueue extends PersistentBase {
     CompletableFuture.supplyAsync(() -> planInternal(tableRuntime), planExecutor)
         .whenComplete(
             (process, throwable) -> {
+              if (throwable != null) {
+                LOG.error("Failed to plan table {}", tableRuntime.getTableIdentifier(), throwable);
+              }
               long currentTime = System.currentTimeMillis();
               scheduleLock.lock();
               try {
@@ -466,8 +469,6 @@ public class OptimizingQueue extends PersistentBase {
             persistProcessCompleted(false);
           }
         }
-      } catch (Exception e) {
-        LOG.error("accept result error:", e);
       } finally {
         lock.unlock();
       }
