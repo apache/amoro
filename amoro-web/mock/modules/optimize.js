@@ -38,6 +38,15 @@ export default [
     }),
   },
   {
+    url: '/mock/ams/v1/optimize/action',
+    method: 'get',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: ['major', 'minor', 'clean']
+    }),
+  },
+  {
     url: '/mock/ams/v1/optimize/optimizerGroups/:groups/tables',
     method: 'get',
     response: () => ({
@@ -62,13 +71,14 @@ export default [
               }
             },
             "tableName": "test_catalog.db.user",
-            "optimizeStatus": "idle",
+            "status": "idle",
             "duration": 1195501081,
             "fileCount": 0,
             "fileSize": 0,
             "quota": 0.1,
             "quotaOccupation": 0.0,
-            "groupName": "local"
+            "groupName": "local",
+            "resource": "8c 16g"
           }
         ],
         "total": 1

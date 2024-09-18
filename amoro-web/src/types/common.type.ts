@@ -263,7 +263,7 @@ export interface ITableIdentifier {
 }
 export interface IOptimizeTableItem {
   tableName: string
-  optimizeStatus: string
+  status: string
   fileCount: number
   fileSize: number
   quota: number
@@ -271,10 +271,10 @@ export interface IOptimizeTableItem {
   quotaOccupationDesc: string
   duration: number
   durationDesc: string
-  durationDisplay: string
   fileSizeDesc: string
   tableIdentifier: ITableIdentifier
   tableNameOnly?: string
+  resource: string
 }
 
 export interface IIOptimizeGroupItem {
