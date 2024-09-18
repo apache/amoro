@@ -26,6 +26,7 @@ import { getOptimizerAction, getOptimizerTableList, getResourceGroupsListAPI, re
 import { usePagination } from '@/hooks/usePagination'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { bytesToSize, formatMS2DisplayTime, formatMS2Time } from '@/utils'
+import { getTableMaxWidth } from '@/utils/table'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -46,13 +47,13 @@ const optimizerGroupList = ref<ILableAndValue[]>([])
 
 const columns = computed(() => [
   { dataIndex: 'tableName', title: t('table'), width: 200, scopedSlots: { customRender: 'tableName' } },
-  { dataIndex: 'groupName', title: t('optimizerGroup'), width: '16%', ellipsis: true },
-  { dataIndex: 'status', title: t('status'), width: '16%', ellipsis: true },
-  { dataIndex: 'duration', title: t('duration'), width: '10%', ellipsis: true, sorter: true },
-  { dataIndex: 'fileCount', title: t('fileCount'), width: '10%', ellipsis: true },
-  { dataIndex: 'fileSizeDesc', title: t('fileSize'), width: '10%', ellipsis: true },
-  { dataIndex: 'quota', title: t('quota'), width: '10%', ellipsis: true },
-  { dataIndex: 'resource', title: t('resource'), width: '10%', ellipsis: true, sorter: true },
+  { dataIndex: 'groupName', title: t('optimizerGroup'), width: 180, ellipsis: true },
+  { dataIndex: 'status', title: t('status'), width: 240, ellipsis: true },
+  { dataIndex: 'duration', title: t('duration'), width: 150, ellipsis: true, sorter: true },
+  { dataIndex: 'fileCount', title: t('fileCount'), width: 150, ellipsis: true },
+  { dataIndex: 'fileSizeDesc', title: t('fileSize'), width: 150, ellipsis: true },
+  { dataIndex: 'quota', title: t('quota'), width: 150, ellipsis: true },
+  { dataIndex: 'resource', title: t('resource'), width: 150, ellipsis: true, sorter: true },
   { dataIndex: 'quotaOccupation', title: t('occupation'), width: 120, ellipsis: true, sorter: true },
 ])
 
@@ -70,7 +71,7 @@ const actions = ref<string[]>([])
 async function fetchOptimizerAction() {
   try {
     const res = await getOptimizerAction()
-    actions.value = (res || []).map((value: string) => ({ lable: value, value }))
+    actions.value = (res || []).map((value: string) => ({ label: value, value }))
   }
   catch (error) {
   }
@@ -210,8 +211,13 @@ onMounted(async () => {
       </a-button>
     </a-space>
     <a-table
-      class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"
-      :loading="loading" @change="changeTable"
+      :columns="columns"
+      :data-source="dataSource"
+      :pagination="pagination"
+      :loading="loading"
+      :scroll="{ x: getTableMaxWidth(columns) }"
+      class="ant-table-common"
+      @change="changeTable"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'tableName'">
