@@ -78,9 +78,9 @@ public class SchedulingPolicy {
 
   private Comparator<TableRuntime> createSorterByPolicy() {
     if (policyName.equalsIgnoreCase(QUOTA)) {
-        return new QuotaOccupySorter();
+      return new QuotaOccupySorter();
     } else if (policyName.equalsIgnoreCase(BALANCED)) {
-        return new BalancedSorter();
+      return new BalancedSorter();
     } else {
       throw new IllegalArgumentException("Illegal scheduling policy: " + policyName);
     }
