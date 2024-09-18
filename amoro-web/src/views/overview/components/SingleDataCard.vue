@@ -17,8 +17,6 @@ limitations under the License.
 / -->
 
 <script setup lang="ts">
-import { defineProps } from 'vue'
-
 const props = defineProps<{ title: string, value: string }>()
 </script>
 
