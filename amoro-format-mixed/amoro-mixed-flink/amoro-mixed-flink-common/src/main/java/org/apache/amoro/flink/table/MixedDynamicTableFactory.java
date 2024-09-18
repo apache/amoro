@@ -61,6 +61,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -68,18 +69,19 @@ import java.util.Properties;
 import java.util.Set;
 
 /** A factory generates {@link MixedFormatDynamicSource} and {@link MixedFormatDynamicSink} */
-public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTableSinkFactory {
-  private static final Logger LOG = LoggerFactory.getLogger(DynamicTableFactory.class);
+public class MixedDynamicTableFactory
+    implements DynamicTableSourceFactory, DynamicTableSinkFactory {
+  private static final Logger LOG = LoggerFactory.getLogger(MixedDynamicTableFactory.class);
   public static final String IDENTIFIER = "mixed-format";
   private InternalCatalogBuilder internalCatalogBuilder;
   private String internalCatalogName;
 
-  public DynamicTableFactory(MixedCatalog mixedCatalog) {
+  public MixedDynamicTableFactory(MixedCatalog mixedCatalog) {
     this.internalCatalogBuilder = mixedCatalog.catalogBuilder();
     this.internalCatalogName = mixedCatalog.amsCatalogName();
   }
 
-  public DynamicTableFactory() {}
+  public MixedDynamicTableFactory() {}
 
   @Override
   public DynamicTableSource createDynamicTableSource(Context context) {
@@ -95,15 +97,16 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
 
     // It denotes create table by ddl 'connector' option, not through catalog.db.tableName
     if (actualBuilder == null || actualCatalogName == null) {
-      String metastoreUrl = options.get(CatalogFactoryOptions.METASTORE_URL);
-      Preconditions.checkNotNull(
-          metastoreUrl, String.format("%s should be set", CatalogFactoryOptions.METASTORE_URL));
-      actualBuilder = InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl);
-
       actualCatalogName = options.get(MixedFormatValidator.MIXED_FORMAT_CATALOG);
       Preconditions.checkNotNull(
           actualCatalogName,
           String.format("%s should be set", MixedFormatValidator.MIXED_FORMAT_CATALOG.key()));
+      String metastoreUrl = options.get(CatalogFactoryOptions.METASTORE_URL);
+      actualBuilder =
+          InternalCatalogBuilder.builder()
+              .metastoreUrl(metastoreUrl)
+              .catalogName(actualCatalogName)
+              .properties(options.toMap());
     }
 
     if (options.containsKey(MixedFormatValidator.MIXED_FORMAT_DATABASE.key())
@@ -211,7 +214,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
 
   @Override
   public Set<ConfigOption<?>> requiredOptions() {
-    return new HashSet<>();
+    return Collections.emptySet();
   }
 
   @Override
@@ -247,8 +250,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     TableSchema physicalSchema = TableSchemaUtils.getPhysicalSchema(catalogTable.getSchema());
     Schema schema = FlinkSchemaUtil.convert(physicalSchema);
 
-    final Properties properties =
-        KafkaConnectorOptionsUtil.getKafkaProperties(mixedTable.properties());
+    final Properties properties = OptionsUtil.getKafkaProperties(mixedTable.properties());
 
     // add topic-partition discovery
     final Optional<Long> partitionDiscoveryInterval =

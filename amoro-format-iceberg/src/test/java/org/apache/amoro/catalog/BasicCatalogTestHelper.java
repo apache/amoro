@@ -25,7 +25,6 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.apache.amoro.utils.MixedFormatCatalogUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.catalog.Catalog;
@@ -100,7 +99,8 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
           "Cannot build mixed-tables for table format:" + tableFormat);
     }
     return new MixedTables(
-        catalogMeta.getCatalogProperties(), MixedFormatCatalogUtil.buildMetaStore(catalogMeta));
+        catalogMeta.getCatalogProperties(),
+        org.apache.amoro.utils.CatalogUtil.buildMetaStore(catalogMeta));
   }
 
   @Override

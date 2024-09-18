@@ -27,7 +27,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 import org.apache.amoro.NoSuchDatabaseException;
 import org.apache.amoro.flink.InternalCatalogBuilder;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
-import org.apache.amoro.flink.table.DynamicTableFactory;
+import org.apache.amoro.flink.table.MixedDynamicTableFactory;
 import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
 import org.apache.amoro.flink.util.MixedFormatUtils;
 import org.apache.amoro.mixed.MixedFormatCatalog;
@@ -237,7 +237,7 @@ public class MixedCatalog extends AbstractCatalog {
       return;
     }
 
-    properties.put(CONNECTOR.key(), DynamicTableFactory.IDENTIFIER);
+    properties.put(CONNECTOR.key(), MixedDynamicTableFactory.IDENTIFIER);
     properties.put(MixedFormatValidator.MIXED_FORMAT_CATALOG.key(), tableIdentifier.getCatalog());
     properties.put(MixedFormatValidator.MIXED_FORMAT_TABLE.key(), tableIdentifier.getTableName());
     properties.put(MixedFormatValidator.MIXED_FORMAT_DATABASE.key(), tableIdentifier.getDatabase());
@@ -611,7 +611,7 @@ public class MixedCatalog extends AbstractCatalog {
 
   @Override
   public Optional<Factory> getFactory() {
-    return Optional.of(new DynamicTableFactory(this));
+    return Optional.of(new MixedDynamicTableFactory(this));
   }
 
   public InternalCatalogBuilder catalogBuilder() {

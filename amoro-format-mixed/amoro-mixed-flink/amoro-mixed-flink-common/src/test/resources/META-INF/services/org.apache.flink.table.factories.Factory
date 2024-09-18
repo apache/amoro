@@ -17,4 +17,4 @@
 #
 
 org.apache.amoro.flink.catalog.factories.mixed.MixedCatalogFactory
-org.apache.amoro.flink.table.DynamicTableFactory
+org.apache.amoro.flink.table.MixedDynamicTableFactory
