@@ -502,6 +502,8 @@ public class TableController {
           } else if (format.equals(TableFormat.PAIMON)) {
             return TableMeta.TableType.PAIMON.toString();
           } else if (format.equals(TableFormat.ICEBERG)) {
+            return TableMeta.TableType.ICEBERG.toString();
+          } else if (format.equals(TableFormat.HUDI)) {
             return TableMeta.TableType.HUDI.toString();
           } else {
             return format.toString();

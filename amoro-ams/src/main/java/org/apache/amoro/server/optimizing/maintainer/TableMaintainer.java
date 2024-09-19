@@ -60,7 +60,7 @@ public interface TableMaintainer {
 
   static TableMaintainer ofTable(AmoroTable<?> amoroTable) {
     TableFormat format = amoroTable.format();
-    if (TableFormat.MIXED_HIVE.equals(format) || TableFormat.MIXED_ICEBERG.equals(format)) {
+    if (format.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG)) {
       return new MixedTableMaintainer((MixedTable) amoroTable.originalTable());
     } else if (TableFormat.ICEBERG.equals(format)) {
       return new IcebergTableMaintainer((Table) amoroTable.originalTable());

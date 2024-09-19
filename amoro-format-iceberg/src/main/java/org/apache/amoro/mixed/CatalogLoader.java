@@ -88,7 +88,7 @@ public class CatalogLoader {
         tableFormats.size() == 1, "Catalog support only one table format now.");
     TableFormat tableFormat = tableFormats.iterator().next();
     Preconditions.checkArgument(
-        TableFormat.MIXED_HIVE.equals(tableFormat) || TableFormat.MIXED_ICEBERG.equals(tableFormat),
+        tableFormat.in(TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE),
         "MixedCatalogLoader only support mixed-format, format: %s",
         tableFormat.name());
 

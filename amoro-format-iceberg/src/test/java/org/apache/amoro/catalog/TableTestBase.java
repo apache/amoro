@@ -46,7 +46,7 @@ public abstract class TableTestBase extends CatalogTestBase {
 
     getUnifiedCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     TableFormat format = getTestFormat();
-    if (TableFormat.MIXED_HIVE.equals(format) || TableFormat.MIXED_ICEBERG.equals(format)) {
+    if (format.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG)) {
       createMixedFormatTable();
     } else if (TableFormat.ICEBERG.equals(format)) {
       createIcebergFormatTable();
