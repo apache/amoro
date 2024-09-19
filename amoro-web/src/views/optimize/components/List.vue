@@ -88,7 +88,7 @@ async function getTableList() {
     const result = await getOptimizerTableList(params as any)
     const { list, total } = result
     pagination.total = total
-    dataSource.value = (list || []).forEach((p: IOptimizeTableItem) => {
+    dataSource.value = (list || []).map((p: IOptimizeTableItem) => {
       return {
         ...p,
         quotaOccupationDesc: p.quotaOccupation - 0.0005 > 0 ? `${(p.quotaOccupation * 100).toFixed(1)}%` : '0',
