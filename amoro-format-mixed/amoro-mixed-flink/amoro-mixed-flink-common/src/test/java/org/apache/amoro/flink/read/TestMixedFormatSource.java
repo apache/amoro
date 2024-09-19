@@ -234,6 +234,7 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
 
   @Test
   public void testDimTaskManagerFailover() throws Exception {
+    int restartAttempts = 10;
     List<RowData> updated = updateRecords();
     writeUpdate(updated);
     List<RowData> records = generateRecords(2, 1);
@@ -242,8 +243,8 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     MixedFormatSource<RowData> mixedFormatSource = initMixedFormatDimSource(true);
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     // enable checkpoint
-    env.enableCheckpointing(1000);
-    env.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, 0));
+    env.enableCheckpointing(3000);
+    env.setRestartStrategy(RestartStrategies.fixedDelayRestart(restartAttempts, 0));
 
     DataStream<RowData> input =
         env.fromSource(
@@ -262,8 +263,8 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
         WatermarkAwareFailWrapper::continueProcessing,
         miniClusterResource.getMiniCluster());
 
-    while (WatermarkAwareFailWrapper.watermarkCounter.get() != PARALLELISM) {
-      Thread.sleep(1000);
+    while (WatermarkAwareFailWrapper.watermarkCounter.get() != restartAttempts) {
+      Thread.sleep(2000);
       LOG.info("wait for watermark after failover");
     }
     Assert.assertEquals(Long.MAX_VALUE, WatermarkAwareFailWrapper.getWatermarkAfterFailover());
