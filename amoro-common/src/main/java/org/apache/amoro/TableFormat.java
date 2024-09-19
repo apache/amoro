@@ -18,9 +18,17 @@
 
 package org.apache.amoro;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -28,7 +36,7 @@ import java.util.Map;
  *
  * @since 0.4.0
  */
-public final class TableFormat {
+public final class TableFormat implements Serializable {
   private static final Map<String, TableFormat> registeredFormats = Maps.newConcurrentMap();
 
   /** Open-source table formats */
@@ -106,5 +114,30 @@ public final class TableFormat {
   @Override
   public int hashCode() {
     return this.name.hashCode();
+  }
+
+  /** Json deserializer for TableFormat */
+  public static class JsonDeserializer
+      extends com.fasterxml.jackson.databind.JsonDeserializer<TableFormat> {
+
+    @Override
+    public TableFormat deserialize(
+        JsonParser jsonParser, DeserializationContext deserializationContext)
+        throws IOException, JsonProcessingException {
+      TreeNode node = jsonParser.getCodec().readTree(jsonParser);
+      return TableFormat.valueOf(node.toString());
+    }
+  }
+
+  /** Json serializer for TableFormat */
+  public static class JsonSerializer
+      extends com.fasterxml.jackson.databind.JsonSerializer<TableFormat> {
+
+    @Override
+    public void serialize(
+        TableFormat tableFormat, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
+        throws IOException {
+      jsonGenerator.writeString(tableFormat.name());
+    }
   }
 }

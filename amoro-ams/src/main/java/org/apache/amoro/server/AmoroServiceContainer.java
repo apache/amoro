@@ -18,10 +18,14 @@
 
 package org.apache.amoro.server;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
+import io.javalin.plugin.json.JavalinJackson;
 import org.apache.amoro.Constants;
 import org.apache.amoro.OptimizerProperties;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.AmoroTableMetastore;
 import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.config.ConfigHelpers;
@@ -243,6 +247,12 @@ public class AmoroServiceContainer {
               config.addStaticFiles(dashboardServer.configStaticFiles());
               config.sessionHandler(SessionHandler::new);
               config.enableCorsForAllOrigins();
+              ObjectMapper mapper = new ObjectMapper();
+              SimpleModule module = new SimpleModule();
+              module.addSerializer(TableFormat.class, new TableFormat.JsonSerializer());
+              module.addDeserializer(TableFormat.class, new TableFormat.JsonDeserializer());
+              mapper.registerModule(module);
+              config.jsonMapper(new JavalinJackson(mapper));
               config.showJavalinBanner = false;
             });
     httpServer.routes(
