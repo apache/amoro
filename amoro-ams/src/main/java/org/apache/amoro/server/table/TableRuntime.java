@@ -188,13 +188,21 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void planFailed() {
-    invokeConsistency(
-        () -> {
-          OptimizingStatus originalStatus = optimizingStatus;
-          updateOptimizingStatus(OptimizingStatus.PENDING);
-          persistUpdatingRuntime();
-          tableHandler.handleTableChanged(this, originalStatus);
-        });
+    try {
+      invokeConsistency(
+          () -> {
+            OptimizingStatus originalStatus = optimizingStatus;
+            updateOptimizingStatus(OptimizingStatus.PENDING);
+            persistUpdatingRuntime();
+            tableHandler.handleTableChanged(this, originalStatus);
+          });
+    } catch (Exception e) {
+      OptimizingStatus originalStatus = optimizingStatus;
+      updateOptimizingStatus(OptimizingStatus.PENDING);
+      LOG.warn(
+          "Persistent database failed, only the optimizing state in the memory was changed.", e);
+      tableHandler.handleTableChanged(this, originalStatus);
+    }
   }
 
   public void beginProcess(OptimizingProcess optimizingProcess) {
@@ -413,7 +421,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void addTaskQuota(TaskRuntime.TaskQuota taskQuota) {
-    doAs(OptimizingMapper.class, mapper -> mapper.insertTaskQuota(taskQuota));
+    doAsIgnoreError(OptimizingMapper.class, mapper -> mapper.insertTaskQuota(taskQuota));
     taskQuotas.add(taskQuota);
     long validTime = System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
     this.taskQuotas.removeIf(task -> task.checkExpired(validTime));

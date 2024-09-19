@@ -60,7 +60,9 @@
                                 <includes>
                                     <include>org.apache.amoro:amoro-format-mixed-spark-3-common</include>
                                     <include>org.apache.amoro:amoro-format-mixed-spark-3.2</include>
-                                    <include>org.apache.amoro:amoro-core</include>
+                                    <include>org.apache.amoro:amoro-common</include>
+                                    <include>org.apache.amoro:amoro-format-iceberg</include>
+                                    <include>org.apache.amoro:amoro-mixed-hive</include>
                                     <include>org.apache.amoro:amoro-shade-guava-32</include>
                                     <include>org.apache.amoro:amoro-shade-jackson-2</include>
                                     <include>org.apache.amoro:amoro-shade-thrift</include>
@@ -108,6 +110,12 @@
                                     <artifact>*</artifact>
                                     <excludes>
                                         <exclude>org/apache/iceberg/spark/extensions/**</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter combine.children="append">
+                                    <artifact>org.apache.iceberg:iceberg-spark-3.2_2.12</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/services/org.apache.spark.sql.sources.DataSourceRegister</exclude>
                                     </excludes>
                                 </filter>
                             </filters>

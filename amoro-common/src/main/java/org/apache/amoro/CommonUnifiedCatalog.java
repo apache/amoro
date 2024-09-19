@@ -35,27 +35,48 @@ import java.util.stream.Stream;
 
 public class CommonUnifiedCatalog implements UnifiedCatalog {
 
+  private final String catalogName;
+  private final String metaStoreType;
   private final Supplier<CatalogMeta> metaSupplier;
+  // Client side catalog properties
+  private final Map<String, String> clientProperties;
+  // Catalog properties after merging the server and client
+  private Map<String, String> catalogProperties;
   private CatalogMeta meta;
-  private Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newHashMap();
-  private final Map<String, String> properties = Maps.newHashMap();
-
   private TableMetaStore tableMetaStore;
+  private Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newHashMap();
 
   public CommonUnifiedCatalog(
       Supplier<CatalogMeta> catalogMetaSupplier, Map<String, String> properties) {
     CatalogMeta catalogMeta = catalogMetaSupplier.get();
     CatalogUtil.mergeCatalogProperties(catalogMeta, properties);
     this.meta = catalogMeta;
+    this.catalogName = catalogMeta.getCatalogName();
+    this.metaStoreType = catalogMeta.getCatalogType();
     this.tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
-    this.properties.putAll(properties);
+    this.clientProperties = properties;
+    this.catalogProperties = catalogMeta.getCatalogProperties();
     this.metaSupplier = catalogMetaSupplier;
+    initializeFormatCatalogs();
+  }
+
+  public CommonUnifiedCatalog(
+      String catalogName,
+      String metaStoreType,
+      Map<String, String> properties,
+      TableMetaStore tableMetaStore) {
+    this.catalogName = catalogName;
+    this.metaStoreType = metaStoreType;
+    this.tableMetaStore = tableMetaStore;
+    this.clientProperties = properties;
+    this.catalogProperties = properties;
+    this.metaSupplier = null;
     initializeFormatCatalogs();
   }
 
   @Override
   public String metastoreType() {
-    return meta.getCatalogType();
+    return metaStoreType;
   }
 
   @Override
@@ -126,7 +147,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
 
   @Override
   public String name() {
-    return this.meta.getCatalogName();
+    return catalogName;
   }
 
   @Override
@@ -158,7 +179,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
             tableName -> {
               TableFormat format = tableNameToFormat.get(tableName);
               return TableIDWithFormat.of(
-                  TableIdentifier.of(this.meta.getCatalogName(), database, tableName), format);
+                  TableIdentifier.of(catalogName, database, tableName), format);
             })
         .collect(Collectors.toList());
   }
@@ -175,33 +196,34 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
 
   @Override
   public synchronized void refresh() {
-    CatalogMeta newMeta = metaSupplier.get();
-    CatalogUtil.mergeCatalogProperties(meta, properties);
-    if (newMeta.equals(this.meta)) {
-      return;
+    if (metaSupplier != null) {
+      CatalogMeta newMeta = metaSupplier.get();
+      CatalogUtil.mergeCatalogProperties(meta, clientProperties);
+      if (newMeta.equals(this.meta)) {
+        return;
+      }
+      this.catalogProperties = newMeta.getCatalogProperties();
+      this.tableMetaStore = CatalogUtil.buildMetaStore(newMeta);
+      this.meta = newMeta;
+      this.initializeFormatCatalogs();
     }
-    this.tableMetaStore = CatalogUtil.buildMetaStore(newMeta);
-    this.meta = newMeta;
-    this.initializeFormatCatalogs();
   }
 
   @Override
   public Map<String, String> properties() {
-    return this.meta.getCatalogProperties();
+    return catalogProperties;
   }
 
   protected void initializeFormatCatalogs() {
     ServiceLoader<FormatCatalogFactory> loader = ServiceLoader.load(FormatCatalogFactory.class);
-    Set<TableFormat> formats = CatalogUtil.tableFormats(this.meta);
-    TableMetaStore store = CatalogUtil.buildMetaStore(this.meta);
+    Set<TableFormat> formats = CatalogUtil.tableFormats(metaStoreType, catalogProperties);
     Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newConcurrentMap();
     for (FormatCatalogFactory factory : loader) {
       if (formats.contains(factory.format())) {
-        Map<String, String> catalogProperties =
-            factory.convertCatalogProperties(
-                name(), meta.getCatalogType(), meta.getCatalogProperties());
+        Map<String, String> formatCatalogProperties =
+            factory.convertCatalogProperties(name(), metaStoreType, this.catalogProperties);
         FormatCatalog catalog =
-            factory.create(name(), meta.getCatalogType(), catalogProperties, store);
+            factory.create(name(), metaStoreType, formatCatalogProperties, tableMetaStore);
         formatCatalogs.put(factory.format(), catalog);
       }
     }

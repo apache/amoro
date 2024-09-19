@@ -143,7 +143,7 @@ public class TableSummaryMetrics {
   private long dataFilesRecords = 0L;
   private long equalityDeleteFilesRecords = 0L;
   private long snapshots = 0L;
-  private long healthScore = 0L;
+  private long healthScore = -1L; // -1 means not calculated
 
   public TableSummaryMetrics(ServerTableIdentifier identifier) {
     this.identifier = identifier;

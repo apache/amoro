@@ -20,7 +20,9 @@ package org.apache.amoro;
 
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.table.TableMetaStore;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -60,11 +62,32 @@ public class TestUnifiedCatalog {
 
   @Test
   public void testCatalogLoader() {
-    UnifiedCatalog catalog =
+    UnifiedCatalog unifiedCatalog =
         UnifiedCatalogLoader.loadUnifiedCatalog(
             testAms.getServerUrl(), meta.getCatalogName(), Maps.newHashMap());
+    validateUnifiedCatalog(unifiedCatalog);
+  }
 
-    Assert.assertNotNull(catalog);
-    Assert.assertEquals(CommonUnifiedCatalog.class.getName(), catalog.getClass().getName());
+  @Test
+  public void testCreateUnifiedCatalog() {
+    UnifiedCatalog unifiedCatalog =
+        new CommonUnifiedCatalog(
+            meta.getCatalogName(),
+            meta.getCatalogType(),
+            meta.getCatalogProperties(),
+            TableMetaStore.EMPTY);
+    validateUnifiedCatalog(unifiedCatalog);
+  }
+
+  private void validateUnifiedCatalog(UnifiedCatalog unifiedCatalog) {
+    Assert.assertNotNull(unifiedCatalog);
+    Assert.assertEquals(CommonUnifiedCatalog.class.getName(), unifiedCatalog.getClass().getName());
+
+    unifiedCatalog.createDatabase(TableTestHelper.TEST_DB_NAME);
+    Assert.assertEquals(
+        Lists.newArrayList(TableTestHelper.TEST_DB_NAME), unifiedCatalog.listDatabases());
+    Assert.assertEquals(0, unifiedCatalog.listTables(TableTestHelper.TEST_DB_NAME).size());
+    unifiedCatalog.dropDatabase(TableTestHelper.TEST_DB_NAME);
+    unifiedCatalog.refresh();
   }
 }

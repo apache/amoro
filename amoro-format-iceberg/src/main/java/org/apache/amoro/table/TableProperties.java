@@ -173,6 +173,7 @@ public class TableProperties {
   public static final String MIN_ORPHAN_FILE_EXISTING_TIME =
       "clean-orphan-file.min-existing-time-minutes";
   public static final long MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = 2880; // 2 Days
+
   public static final String ENABLE_DANGLING_DELETE_FILES_CLEAN =
       "clean-dangling-delete-files.enabled";
   public static final boolean ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT = true;

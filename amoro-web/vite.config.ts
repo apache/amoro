@@ -24,6 +24,7 @@ import { vitePluginFakeServer } from 'vite-plugin-fake-server'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import ViteComponents from 'unplugin-vue-components/vite'
 import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers'
+import vueDevTools from 'vite-plugin-vue-devtools'
 
 const css = {
   preprocessorOptions: {
@@ -87,6 +88,7 @@ export default defineConfig({
         }),
       ],
     }),
+    vueDevTools(),
   ],
   server: {
     port: 8080,
