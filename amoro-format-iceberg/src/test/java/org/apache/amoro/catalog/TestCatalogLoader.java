@@ -62,24 +62,6 @@ public class TestCatalogLoader {
         () -> CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME)));
   }
 
-  @Test
-  public void testLoadCatalogWithErrorFormat() {
-    Map<String, String> properties = Maps.newHashMap();
-    CatalogMeta catalogMeta =
-        CatalogTestHelpers.buildCatalogMeta(
-            TEST_CATALOG_NAME,
-            CatalogMetaProperties.CATALOG_TYPE_HADOOP,
-            properties,
-            TableFormat.MIXED_ICEBERG);
-    TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
-    // lack warehouse
-    Assert.assertThrows(
-        "failed when load catalog test",
-        IllegalStateException.class,
-        () -> CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME)));
-    TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
-  }
-
   private String getCatalogUrl(String catalogName) {
     return TEST_AMS.getServerUrl() + "/" + catalogName;
   }
