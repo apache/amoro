@@ -44,7 +44,7 @@ Or create a mixed_catalog with local configurations with following properties:
 spark.sql.catalog.mixed_catalog=org.apache.amoro.spark.MixedFormatSparkCatalog
 # Configure mixed catalog type as you needed
 spark.sql.catalog.mixed_catalog.type=hadoop
-spark.sql.catalog.default.warehouse=/warehouse/hadoop_mixed_catalog
+spark.sql.catalog.mixed_catalog.warehouse=/warehouse/hadoop_mixed_catalog
 ```
 
 Then, execute the following SQL in the Spark SQL Client to switch to the corresponding catalog.
