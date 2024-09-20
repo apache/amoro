@@ -39,7 +39,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * AmoroDynamicTableFactory is a factory for creating dynamic table sources and sinks. It implements
+ * UnifiedDynamicTableFactory is a factory for creating dynamic table sources and sinks. It implements
  * both DynamicTableSourceFactory and DynamicTableSinkFactory interfaces.
  */
 public class UnifiedDynamicTableFactory

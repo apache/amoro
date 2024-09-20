@@ -197,7 +197,7 @@ public class CatalogUtil {
         tableMeta.getTableIdentifier().getTableName());
   }
 
-  public static org.apache.amoro.api.TableIdentifier amsTaleId(TableIdentifier tableIdentifier) {
+  public static org.apache.amoro.api.TableIdentifier amsTableId(TableIdentifier tableIdentifier) {
     return new org.apache.amoro.api.TableIdentifier(
         tableIdentifier.getCatalog(),
         tableIdentifier.getDatabase(),

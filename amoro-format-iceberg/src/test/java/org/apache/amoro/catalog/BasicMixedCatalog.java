@@ -215,7 +215,7 @@ public class BasicMixedCatalog implements MixedFormatCatalog {
   protected TableMeta getMixedTableMeta(TableIdentifier identifier) {
     TableMeta tableMeta;
     try {
-      tableMeta = getClient().getTable(CatalogUtil.amsTaleId(identifier));
+      tableMeta = getClient().getTable(CatalogUtil.amsTableId(identifier));
       return tableMeta;
     } catch (NoSuchObjectException e) {
       throw new NoSuchTableException(e, "load table failed %s.", identifier);
