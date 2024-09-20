@@ -37,7 +37,7 @@ please refer to the documentation at [Paimon Trino user manual](https://paimon.a
 ### Install
 
 - Create the {trino_home}/plugin/amoro directory in the Trino installation package,
-  and extract the contents of the amoro-trino package amoro-mixed-format-trino-xx.tar.gz to the {trino_home}/plugin/amoro directory.
+  and extract the contents of the amoro-trino package amoro-mixed-trino-xx.tar.gz to the {trino_home}/plugin/amoro directory.
 - Configure the Catalog configuration file for Amoro in the {trino_home}/etc/catalog directory, for example:
 ```tex
 connector.name=mixed-format

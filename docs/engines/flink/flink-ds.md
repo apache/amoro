@@ -33,10 +33,10 @@ To add a dependency on Mixed-format flink connector in Maven, add the following 
   ...
   <dependency>
     <groupId>org.apache.amoro</groupId>
-    <!-- For example: amoro-mixed-format-flink-runtime-1.15 -->
-    <artifactId>amoro-mixed-format-flink-runtime-${flink.minor-version}</artifactId>
+    <!-- For example: amoro-format-mixed-flink-runtime-1.15 -->
+    <artifactId>amoro-format-mixed-flink-runtime-${flink.minor-version}</artifactId>
     <!-- For example: 0.7.0-incubating -->
-    <version>${amoro-mixed-format-flink.version}</version>
+    <version>${amoro-format-mixed-flink.version}</version>
   </dependency>
   ...
 </dependencies>

@@ -31,11 +31,20 @@ menu:
 ### Using Mixed-Format in a standalone catalog
 
 Starting from version 3.x, Spark supports configuring an independent Catalog.
-If you want to use a Mixed-Format table in a standalone Catalog, you can configure it as follows:
+If you want to use a Mixed-Format table in a standalone Catalog, you can create a mixed_catalog and load catalog 
+metadata from AMS with following properties:
 
 ```properties
 spark.sql.catalog.mixed_catalog=org.apache.amoro.spark.MixedFormatSparkCatalog
 spark.sql.catalog.mixed_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HIVE}
+```
+
+Or create a mixed_catalog with local configurations with following properties:
+```properties
+spark.sql.catalog.mixed_catalog=org.apache.amoro.spark.MixedFormatSparkCatalog
+# Configure mixed catalog type as you needed
+spark.sql.catalog.mixed_catalog.type=hadoop
+spark.sql.catalog.mixed_catalog.warehouse=/warehouse/hadoop_mixed_catalog
 ```
 
 Then, execute the following SQL in the Spark SQL Client to switch to the corresponding catalog.
@@ -47,7 +56,7 @@ use mixed_catalog;
 Of course, you can also access Mixed-Format tables by directly using the triplet
 `mixed_catalog.{db_name}.{table_name}`.
 
-You can also set Spark's default Catalog to your configured Catalog using the following properties.
+You can also set Spark's default catalog to your configured catalog using the following properties.
 In this way, you don't need to use the `use {catalog}` command to switch the default catalog.
 
 ```properties
