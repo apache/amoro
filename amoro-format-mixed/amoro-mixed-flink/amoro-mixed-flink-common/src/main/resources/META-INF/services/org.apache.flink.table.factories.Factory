@@ -20,4 +20,4 @@ org.apache.amoro.flink.catalog.factories.mixed.MixedIcebergCatalogFactory
 org.apache.amoro.flink.catalog.factories.mixed.MixedHiveCatalogFactory
 org.apache.amoro.flink.catalog.factories.mixed.MixedCatalogFactory
 org.apache.amoro.flink.catalog.factories.FlinkUnifiedCatalogFactory
-org.apache.amoro.flink.table.DynamicTableFactory
+org.apache.amoro.flink.table.MixedDynamicTableFactory

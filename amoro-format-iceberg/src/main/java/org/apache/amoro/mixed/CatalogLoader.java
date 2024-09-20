@@ -31,6 +31,7 @@ import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.amoro.utils.MixedFormatCatalogUtil;
 import org.apache.iceberg.common.DynConstructors;
 
@@ -86,8 +87,7 @@ public class CatalogLoader {
         catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
         break;
       case CatalogMetaProperties.CATALOG_TYPE_HIVE:
-        Set<TableFormat> tableFormats =
-            MixedFormatCatalogUtil.tableFormats(metastoreType, catalogProperties);
+        Set<TableFormat> tableFormats = CatalogUtil.tableFormats(metastoreType, catalogProperties);
         if (tableFormats.contains(TableFormat.MIXED_HIVE)) {
           catalogImpl = HIVE_CATALOG_IMPL;
         } else {
@@ -142,7 +142,7 @@ public class CatalogLoader {
           catalogName,
           type,
           catalogMeta.getCatalogProperties(),
-          MixedFormatCatalogUtil.buildMetaStore(catalogMeta));
+          CatalogUtil.buildMetaStore(catalogMeta));
     } catch (NoSuchObjectException e1) {
       throw new IllegalArgumentException("catalog not found, please check catalog name", e1);
     } catch (Exception e) {

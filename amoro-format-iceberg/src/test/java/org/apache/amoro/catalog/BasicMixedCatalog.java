@@ -47,6 +47,7 @@ import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.blocker.BasicTableBlockerManager;
 import org.apache.amoro.table.blocker.TableBlockerManager;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.ConvertStructUtil;
 import org.apache.amoro.utils.MixedFormatCatalogUtil;
@@ -214,7 +215,7 @@ public class BasicMixedCatalog implements MixedFormatCatalog {
   protected TableMeta getMixedTableMeta(TableIdentifier identifier) {
     TableMeta tableMeta;
     try {
-      tableMeta = getClient().getTable(MixedFormatCatalogUtil.amsTaleId(identifier));
+      tableMeta = getClient().getTable(CatalogUtil.amsTableId(identifier));
       return tableMeta;
     } catch (NoSuchObjectException e) {
       throw new NoSuchTableException(e, "load table failed %s.", identifier);

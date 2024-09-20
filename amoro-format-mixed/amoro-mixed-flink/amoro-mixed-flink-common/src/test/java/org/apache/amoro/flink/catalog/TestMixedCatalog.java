@@ -34,7 +34,7 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestBase;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
-import org.apache.amoro.flink.table.DynamicTableFactory;
+import org.apache.amoro.flink.table.MixedDynamicTableFactory;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
@@ -406,11 +406,11 @@ public class TestMixedCatalog extends CatalogTestBase {
 
       // create Table with compute columns under default catalog
       props = Maps.newHashMap();
-      props.put("connector", DynamicTableFactory.IDENTIFIER);
+      props.put("connector", MixedDynamicTableFactory.IDENTIFIER);
       props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
-      props.put(DynamicTableFactory.IDENTIFIER + ".catalog", catalogName);
-      props.put(DynamicTableFactory.IDENTIFIER + ".database", DB);
-      props.put(DynamicTableFactory.IDENTIFIER + ".table", TABLE);
+      props.put(MixedDynamicTableFactory.IDENTIFIER + ".catalog", catalogName);
+      props.put(MixedDynamicTableFactory.IDENTIFIER + ".database", DB);
+      props.put(MixedDynamicTableFactory.IDENTIFIER + ".table", TABLE);
 
       sql(
           "CREATE TABLE default_catalog.default_database."

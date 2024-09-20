@@ -23,7 +23,7 @@ import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableBuilder;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.amoro.utils.MixedFormatCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -41,7 +41,7 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   @Before
   public void setupTable() {
-    this.tableMetaStore = MixedFormatCatalogUtil.buildMetaStore(getCatalogMeta());
+    this.tableMetaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
 
     getUnifiedCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     switch (getTestFormat()) {
