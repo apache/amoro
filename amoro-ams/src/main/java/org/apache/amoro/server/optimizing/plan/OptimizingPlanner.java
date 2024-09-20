@@ -153,7 +153,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       return cacheAndReturnTasks(Collections.emptyList());
     }
 
-    List<PartitionEvaluator> evaluators = new ArrayList<>(partitionPlanMap.values());
+    List<PartitionEvaluator> evaluators = new ArrayList<>(needOptimizingPlanMap.values());
     // prioritize partitions with high cost to avoid starvation
     evaluators.sort(Comparator.comparing(PartitionEvaluator::getWeight, Comparator.reverseOrder()));
 
