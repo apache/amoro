@@ -232,12 +232,20 @@ public class OptimizingQueue extends PersistentBase {
                 planningTables.remove(tableRuntime.getTableIdentifier());
                 if (process != null) {
                   tableQueue.offer(process);
+                  String skipIds =
+                      skipTables.stream()
+                          .map(ServerTableIdentifier::getId)
+                          .sorted()
+                          .map(item -> item + "")
+                          .collect(Collectors.joining(","));
                   LOG.info(
-                      "Completed planning on table {} with {} tasks with a total cost of {} ms, skipping tables {}",
+                      "Completed planning on table {} with {} tasks with a total cost of {} ms, skipping {} tables,"
+                          + " id list:{}",
                       tableRuntime.getTableIdentifier(),
                       process.getTaskMap().size(),
                       currentTime - startTime,
-                      skipTables);
+                      skipTables.size(),
+                      skipIds);
                 } else if (throwable == null) {
                   LOG.info(
                       "Skip planning table {} with a total cost of {} ms.",
