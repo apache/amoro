@@ -180,10 +180,10 @@ onMounted(() => {
       />
 
       <a-button type="primary" @click="refresh">
-        搜索
+        {{ t('search') }}
       </a-button>
       <a-button @click="reset">
-        重置
+        {{ t('reset') }}
       </a-button>
     </a-space>
     <a-table
