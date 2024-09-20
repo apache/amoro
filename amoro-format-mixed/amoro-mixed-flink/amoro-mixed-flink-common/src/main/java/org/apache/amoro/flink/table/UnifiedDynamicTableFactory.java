@@ -39,8 +39,8 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * UnifiedDynamicTableFactory is a factory for creating dynamic table sources and sinks. It implements
- * both DynamicTableSourceFactory and DynamicTableSinkFactory interfaces.
+ * UnifiedDynamicTableFactory is a factory for creating dynamic table sources and sinks. It
+ * implements both DynamicTableSourceFactory and DynamicTableSinkFactory interfaces.
  */
 public class UnifiedDynamicTableFactory
     implements DynamicTableSourceFactory, DynamicTableSinkFactory {
