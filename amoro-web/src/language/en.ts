@@ -191,6 +191,8 @@ export default {
   leavePageModalTitle: 'Leave this page？',
   leavePageModalContent: 'Changes you made may not be saved.',
   leave: 'Leave',
+  search: 'Search',
+  reset: 'Reset',
   invalidInput: 'Invalid input',
   addgroup: 'Add Group',
   editgroup: 'Edit Group',
