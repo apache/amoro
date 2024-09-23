@@ -28,8 +28,6 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -62,8 +60,8 @@ public class DerbyPersistence extends ExternalResource {
                     LOG.info("Deleted resources in derby persistent.");
                   }));
       truncateAllTables();
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
   }
 
