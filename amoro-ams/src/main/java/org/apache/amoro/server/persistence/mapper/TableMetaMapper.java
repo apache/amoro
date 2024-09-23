@@ -374,7 +374,7 @@ public interface TableMetaMapper {
           + " a.current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId,"
           + " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time,"
           + " a.optimizing_status_code, a.optimizing_status_start_time, a.optimizing_process_id,"
-          + " a.optimizer_group, a.table_config, a.pending_input, b.optimizing_type, b.target_snapshot_id,"
+          + " a.optimizer_group, a.table_config, a.pending_input, a.table_summary, b.optimizing_type, b.target_snapshot_id,"
           + " b.target_change_snapshot_id, b.plan_time, b.from_sequence, b.to_sequence FROM table_runtime a"
           + " INNER JOIN table_identifier i ON a.table_id = i.table_id "
           + " LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id")
@@ -448,7 +448,7 @@ public interface TableMetaMapper {
           + "current_change_snapshotId, last_optimized_snapshotId, last_optimized_change_snapshotId, "
           + "last_major_optimizing_time, last_minor_optimizing_time, last_full_optimizing_time, optimizing_status_code, "
           + "optimizing_status_start_time, optimizing_process_id, "
-          + "optimizer_group, table_config, pending_input FROM table_runtime "
+          + "optimizer_group, table_config, pending_input, table_summary FROM table_runtime "
           + "/* Debug: ${_databaseId} */"
           + "WHERE 1=1 "
           + "<if test='optimizerGroup != null'> AND optimizer_group = #{optimizerGroup} </if> "
@@ -496,6 +496,10 @@ public interface TableMetaMapper {
     @Result(
         property = "pendingInput",
         column = "pending_input",
+        typeHandler = JsonObjectConverter.class),
+    @Result(
+        property = "tableSummary",
+        column = "table_summary",
         typeHandler = JsonObjectConverter.class),
     @Result(
         property = "tableConfig",
