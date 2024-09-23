@@ -30,12 +30,6 @@ under the License.
     <suppress
             files="org[/\\]apache[/\\]amoro[/\\]server[/\\]RestCatalogService\.java"
             checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]server[/\\]AmoroServiceContainer\.java"
-            checks="Regexp"/>
-    <suppress
-            files="org[/\\]apache[/\\]amoro[/\\]TableFormat\.java"
-            checks="Regexp"/>
 
     <suppress
             files="org[/\\]apache[/\\]amoro[/\\]trino[/\\]iceberg[/\\]BaseConnectorTest\.java"

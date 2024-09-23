@@ -18,14 +18,14 @@
 
 package org.apache.amoro;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.TreeNode;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.SerializerProvider;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.core.JsonGenerator;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.core.JsonParser;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.core.TreeNode;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.DeserializationContext;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -118,7 +118,8 @@ public final class TableFormat implements Serializable {
 
   /** Json deserializer for TableFormat */
   public static class JsonDeserializer
-      extends com.fasterxml.jackson.databind.JsonDeserializer<TableFormat> {
+      extends org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.JsonDeserializer<
+          TableFormat> {
 
     @Override
     public TableFormat deserialize(
@@ -131,7 +132,8 @@ public final class TableFormat implements Serializable {
 
   /** Json serializer for TableFormat */
   public static class JsonSerializer
-      extends com.fasterxml.jackson.databind.JsonSerializer<TableFormat> {
+      extends org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.JsonSerializer<
+          TableFormat> {
 
     @Override
     public void serialize(
