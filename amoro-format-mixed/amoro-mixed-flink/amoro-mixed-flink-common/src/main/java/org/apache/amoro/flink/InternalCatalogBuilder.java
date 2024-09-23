@@ -18,18 +18,31 @@
 
 package org.apache.amoro.flink;
 
+import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HIVE;
+import static org.apache.iceberg.flink.FlinkCatalogFactory.HADOOP_CONF_DIR;
+import static org.apache.iceberg.flink.FlinkCatalogFactory.HIVE_CONF_DIR;
+
 import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
+import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.ConfigurationFileUtil;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.flink.configuration.GlobalConfiguration;
+import org.apache.flink.runtime.util.HadoopUtils;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.util.Preconditions;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.iceberg.flink.FlinkCatalogFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,12 +52,68 @@ public class InternalCatalogBuilder implements Serializable {
 
   private String metastoreUrl;
   private Map<String, String> properties = new HashMap<>(0);
+  private String catalogName;
 
   private MixedFormatCatalog createMixedFormatCatalog() {
-    Preconditions.checkArgument(
-        StringUtils.isNotBlank(metastoreUrl),
-        "metastoreUrl can not be empty. e.g: thrift://127.0.0.1:port/catalogName");
-    return CatalogLoader.load(metastoreUrl, properties);
+    if (metastoreUrl != null) {
+      return CatalogLoader.load(metastoreUrl, properties);
+    } else {
+      Preconditions.checkArgument(catalogName != null, "Catalog name cannot be empty");
+      String metastoreType = properties.get(FlinkCatalogFactory.ICEBERG_CATALOG_TYPE);
+      Preconditions.checkArgument(metastoreType != null, "Catalog type cannot be empty");
+      TableMetaStore tableMetaStore =
+          TableMetaStore.builder()
+              .withConfiguration(clusterHadoopConf(metastoreType, properties))
+              .build();
+      return CatalogLoader.createCatalog(catalogName, metastoreType, properties, tableMetaStore);
+    }
+  }
+
+  public static Configuration clusterHadoopConf(
+      String metastoreType, Map<String, String> properties) {
+    Configuration configuration =
+        HadoopUtils.getHadoopConfiguration(GlobalConfiguration.loadConfiguration());
+    if (ICEBERG_CATALOG_TYPE_HIVE.equals(metastoreType)) {
+      String hiveConfDir = properties.get(HIVE_CONF_DIR);
+      String hadoopConfDir = properties.get(HADOOP_CONF_DIR);
+      configuration = mergeHiveConf(configuration, hiveConfDir, hadoopConfDir);
+    }
+    return configuration;
+  }
+
+  private static Configuration mergeHiveConf(
+      Configuration hadoopConf, String hiveConfDir, String hadoopConfDir) {
+    Configuration newConf = new Configuration(hadoopConf);
+    if (!Strings.isNullOrEmpty(hiveConfDir)) {
+      Preconditions.checkState(
+          Files.exists(Paths.get(hiveConfDir, "hive-site.xml")),
+          "There should be a hive-site.xml file under the directory %s",
+          hiveConfDir);
+      newConf.addResource(new Path(hiveConfDir, "hive-site.xml"));
+    } else {
+      // If don't provide the hive-site.xml path explicitly, it will try to load resource from
+      // classpath. If still
+      // couldn't load the configuration file, then it will throw exception in HiveCatalog.
+      URL configFile = InternalCatalogBuilder.class.getClassLoader().getResource("hive-site.xml");
+      if (configFile != null) {
+        newConf.addResource(configFile);
+      }
+    }
+
+    if (!Strings.isNullOrEmpty(hadoopConfDir)) {
+      Preconditions.checkState(
+          Files.exists(Paths.get(hadoopConfDir, "hdfs-site.xml")),
+          "Failed to load Hadoop configuration: missing %s",
+          Paths.get(hadoopConfDir, "hdfs-site.xml"));
+      newConf.addResource(new Path(hadoopConfDir, "hdfs-site.xml"));
+      Preconditions.checkState(
+          Files.exists(Paths.get(hadoopConfDir, "core-site.xml")),
+          "Failed to load Hadoop configuration: missing %s",
+          Paths.get(hadoopConfDir, "core-site.xml"));
+      newConf.addResource(new Path(hadoopConfDir, "core-site.xml"));
+    }
+
+    return newConf;
   }
 
   public String getMetastoreUrl() {
@@ -66,9 +135,6 @@ public class InternalCatalogBuilder implements Serializable {
   }
 
   public InternalCatalogBuilder metastoreUrl(String metastoreUrl) {
-    Preconditions.checkArgument(
-        StringUtils.isNotBlank(metastoreUrl),
-        "metastore url can not be empty e.g: thrift://127.0.0.1:port/catalogName");
     this.metastoreUrl = metastoreUrl;
     return this;
   }
@@ -111,6 +177,11 @@ public class InternalCatalogBuilder implements Serializable {
       }
     }
     this.properties = finalProperties;
+    return this;
+  }
+
+  public InternalCatalogBuilder catalogName(String catalogName) {
+    this.catalogName = catalogName;
     return this;
   }
 }

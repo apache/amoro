@@ -16,24 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.server.optimizing;
 
-import org.apache.amoro.AmoroTable;
-import org.apache.amoro.ServerTableIdentifier;
+import static org.junit.Assert.assertEquals;
 
-public interface TableManager extends TableRuntimeHandler {
+import org.junit.Test;
 
-  /**
-   * load a managed table.
-   *
-   * @param tableIdentifier managed table identifier
-   * @return managed table.
-   */
-  AmoroTable<?> loadTable(ServerTableIdentifier tableIdentifier);
+public class OptimizingStatusTest {
+  @Test
+  public void testOptimizingStatusCodeValue() {
+    assertEquals(7, OptimizingStatus.values().length);
 
-  TableRuntime getRuntime(Long tableId);
-
-  default boolean contains(Long tableId) {
-    return getRuntime(tableId) != null;
+    assertEquals(OptimizingStatus.FULL_OPTIMIZING, OptimizingStatus.ofCode(100));
+    assertEquals(OptimizingStatus.MAJOR_OPTIMIZING, OptimizingStatus.ofCode(200));
+    assertEquals(OptimizingStatus.MINOR_OPTIMIZING, OptimizingStatus.ofCode(300));
+    assertEquals(OptimizingStatus.COMMITTING, OptimizingStatus.ofCode(400));
+    assertEquals(OptimizingStatus.PLANNING, OptimizingStatus.ofCode(500));
+    assertEquals(OptimizingStatus.PENDING, OptimizingStatus.ofCode(600));
+    assertEquals(OptimizingStatus.IDLE, OptimizingStatus.ofCode(700));
   }
 }

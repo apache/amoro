@@ -36,7 +36,6 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableRuntimeMeta;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -93,7 +92,7 @@ public class OptimizingQueue extends PersistentBase {
       ResourceGroup optimizerGroup,
       QuotaProvider quotaProvider,
       Executor planExecutor,
-      List<TableRuntimeMeta> tableRuntimeMetaList,
+      List<TableRuntime> tableRuntimeList,
       int maxPlanningParallelism) {
     Preconditions.checkNotNull(optimizerGroup, "Optimizer group can not be null");
     this.planExecutor = planExecutor;
@@ -106,14 +105,12 @@ public class OptimizingQueue extends PersistentBase {
         new OptimizerGroupMetrics(
             optimizerGroup.getName(), MetricManager.getInstance().getGlobalRegistry(), this);
     this.metrics.register();
-    tableRuntimeMetaList.forEach(this::initTableRuntime);
+    tableRuntimeList.forEach(this::initTableRuntime);
   }
 
-  private void initTableRuntime(TableRuntimeMeta tableRuntimeMeta) {
-    TableRuntime tableRuntime = tableRuntimeMeta.getTableRuntime();
-    if (tableRuntime.getOptimizingStatus().isProcessing()
-        && tableRuntimeMeta.getOptimizingProcessId() != 0) {
-      tableRuntime.recover(new TableOptimizingProcess(tableRuntimeMeta));
+  private void initTableRuntime(TableRuntime tableRuntime) {
+    if (tableRuntime.getOptimizingStatus().isProcessing() && tableRuntime.getProcessId() != 0) {
+      tableRuntime.recover(new TableOptimizingProcess(tableRuntime));
     }
 
     if (tableRuntime.isOptimizingEnabled()) {
@@ -122,7 +119,7 @@ public class OptimizingQueue extends PersistentBase {
       if (!tableRuntime.getOptimizingStatus().isProcessing()) {
         scheduler.addTable(tableRuntime);
       } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
-        tableQueue.offer(new TableOptimizingProcess(tableRuntimeMeta));
+        tableQueue.offer(new TableOptimizingProcess(tableRuntime));
       }
     } else {
       OptimizingProcess process = tableRuntime.getOptimizingProcess();
@@ -235,12 +232,20 @@ public class OptimizingQueue extends PersistentBase {
                 planningTables.remove(tableRuntime.getTableIdentifier());
                 if (process != null) {
                   tableQueue.offer(process);
+                  String skipIds =
+                      skipTables.stream()
+                          .map(ServerTableIdentifier::getId)
+                          .sorted()
+                          .map(item -> item + "")
+                          .collect(Collectors.joining(","));
                   LOG.info(
-                      "Completed planning on table {} with {} tasks with a total cost of {} ms, skipping tables {}",
+                      "Completed planning on table {} with {} tasks with a total cost of {} ms, skipping {} tables,"
+                          + " id list:{}",
                       tableRuntime.getTableIdentifier(),
                       process.getTaskMap().size(),
                       currentTime - startTime,
-                      skipTables);
+                      skipTables.size(),
+                      skipIds);
                 } else if (throwable == null) {
                   LOG.info(
                       "Skip planning table {} with a total cost of {} ms.",
@@ -379,21 +384,21 @@ public class OptimizingQueue extends PersistentBase {
       beginAndPersistProcess();
     }
 
-    public TableOptimizingProcess(TableRuntimeMeta tableRuntimeMeta) {
-      processId = tableRuntimeMeta.getOptimizingProcessId();
-      tableRuntime = tableRuntimeMeta.getTableRuntime();
-      optimizingType = tableRuntimeMeta.getOptimizingType();
-      targetSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
-      targetChangeSnapshotId = tableRuntimeMeta.getTargetChangeSnapshotId();
-      planTime = tableRuntimeMeta.getPlanTime();
-      if (tableRuntimeMeta.getFromSequence() != null) {
-        fromSequence = tableRuntimeMeta.getFromSequence();
+    public TableOptimizingProcess(TableRuntime tableRuntime) {
+      processId = tableRuntime.getProcessId();
+      this.tableRuntime = tableRuntime;
+      optimizingType = tableRuntime.getOptimizingType();
+      targetSnapshotId = tableRuntime.getTargetSnapshotId();
+      targetChangeSnapshotId = tableRuntime.getTargetChangeSnapshotId();
+      planTime = tableRuntime.getLastPlanTime();
+      if (tableRuntime.getFromSequence() != null) {
+        fromSequence = tableRuntime.getFromSequence();
       }
-      if (tableRuntimeMeta.getToSequence() != null) {
-        toSequence = tableRuntimeMeta.getToSequence();
+      if (tableRuntime.getToSequence() != null) {
+        toSequence = tableRuntime.getToSequence();
       }
       if (this.status != OptimizingProcess.Status.CLOSED) {
-        tableRuntimeMeta.getTableRuntime().recover(this);
+        tableRuntime.recover(this);
       }
       loadTaskRuntimes(this);
     }

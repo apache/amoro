@@ -19,14 +19,15 @@
 package org.apache.amoro.server.persistence.mapper;
 
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.converter.JsonObjectConverter;
 import org.apache.amoro.server.persistence.converter.Long2TsConverter;
 import org.apache.amoro.server.persistence.converter.Map2StringConverter;
 import org.apache.amoro.server.persistence.converter.MapLong2StringConverter;
+import org.apache.amoro.server.persistence.converter.OptimizingStatusConverter;
 import org.apache.amoro.server.persistence.converter.TableFormatConverter;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableRuntimeMeta;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
@@ -334,7 +335,8 @@ public interface TableMetaMapper {
           + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
           + " last_full_optimizing_time = #{runtime.lastFullOptimizingTime,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
-          + " optimizing_status = #{runtime.optimizingStatus},"
+          + " optimizing_status_code = #{runtime.optimizingStatus,"
+          + "typeHandler=org.apache.amoro.server.persistence.converter.OptimizingStatusConverter},"
           + " optimizing_status_start_time = #{runtime.currentStatusStartTime,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
           + " optimizing_process_id = #{runtime.processId},"
@@ -355,7 +357,7 @@ public interface TableMetaMapper {
       "INSERT INTO table_runtime (table_id, catalog_name, db_name, table_name, current_snapshot_id,"
           + " current_change_snapshotId, last_optimized_snapshotId, last_optimized_change_snapshotId,"
           + " last_major_optimizing_time, last_minor_optimizing_time,"
-          + " last_full_optimizing_time, optimizing_status, optimizing_status_start_time, optimizing_process_id,"
+          + " last_full_optimizing_time, optimizing_status_code, optimizing_status_start_time, optimizing_process_id,"
           + " optimizer_group, table_config, pending_input, table_summary) VALUES"
           + " (#{runtime.tableIdentifier.id}, #{runtime.tableIdentifier.catalog},"
           + " #{runtime.tableIdentifier.database}, #{runtime.tableIdentifier.tableName}, #{runtime"
@@ -367,7 +369,8 @@ public interface TableMetaMapper {
           + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
           + " #{runtime.lastFullOptimizingTime,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
-          + " #{runtime.optimizingStatus},"
+          + " #{runtime.optimizingStatus,"
+          + " typeHandler=org.apache.amoro.server.persistence.converter.OptimizingStatusConverter},"
           + " #{runtime.currentStatusStartTime, "
           + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
           + " #{runtime.processId}, #{runtime.optimizerGroup},"
@@ -380,11 +383,11 @@ public interface TableMetaMapper {
   void insertTableRuntime(@Param("runtime") TableRuntime runtime);
 
   @Select(
-      "SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, i.format, a.current_snapshot_id, a"
-          + ".current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId,"
-          + " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time, a.optimizing_status,"
-          + " a.optimizing_status_start_time, a.optimizing_process_id,"
-          + " a.optimizer_group, a.table_config, a.pending_input, a.table_summary, b.optimizing_type, b.target_snapshot_id,"
+      "SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, i.format, a.current_snapshot_id,"
+          + " a.current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId,"
+          + " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time,"
+          + " a.optimizing_status_code, a.optimizing_status_start_time, a.optimizing_process_id,"
+          + " a.optimizer_group, a.table_config, a.pending_input, b.optimizing_type, b.target_snapshot_id,"
           + " b.target_change_snapshot_id, b.plan_time, b.from_sequence, b.to_sequence FROM table_runtime a"
           + " INNER JOIN table_identifier i ON a.table_id = i.table_id "
           + " LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id")
@@ -412,7 +415,10 @@ public interface TableMetaMapper {
         property = "lastFullOptimizingTime",
         column = "last_full_optimizing_time",
         typeHandler = Long2TsConverter.class),
-    @Result(property = "tableStatus", column = "optimizing_status"),
+    @Result(
+        property = "tableStatus",
+        column = "optimizing_status_code",
+        typeHandler = OptimizingStatusConverter.class),
     @Result(
         property = "currentStatusStartTime",
         column = "optimizing_status_start_time",
@@ -433,7 +439,7 @@ public interface TableMetaMapper {
         typeHandler = JsonObjectConverter.class),
     @Result(property = "optimizingType", column = "optimizing_type"),
     @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
-    @Result(property = "targetChangeSnapshotId", column = "target_change_napshot_id"),
+    @Result(property = "targetChangeSnapshotId", column = "target_change_snapshot_id"),
     @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
     @Result(
         property = "fromSequence",
@@ -445,4 +451,74 @@ public interface TableMetaMapper {
         typeHandler = MapLong2StringConverter.class)
   })
   List<TableRuntimeMeta> selectTableRuntimeMetas();
+
+  @Select(
+      "<script>"
+          + "<bind name=\"isMySQL\" value=\"_databaseId == 'mysql'\" />"
+          + "<bind name=\"isPostgreSQL\" value=\"_databaseId == 'postgres'\" />"
+          + "<bind name=\"isDerby\" value=\"_databaseId == 'derby'\" />"
+          + "SELECT table_id, catalog_name, db_name, table_name, current_snapshot_id, "
+          + "current_change_snapshotId, last_optimized_snapshotId, last_optimized_change_snapshotId, "
+          + "last_major_optimizing_time, last_minor_optimizing_time, last_full_optimizing_time, optimizing_status_code, "
+          + "optimizing_status_start_time, optimizing_process_id, "
+          + "optimizer_group, table_config, pending_input FROM table_runtime "
+          + "/* Debug: ${_databaseId} */"
+          + "WHERE 1=1 "
+          + "<if test='optimizerGroup != null'> AND optimizer_group = #{optimizerGroup} </if> "
+          + "<if test='fuzzyDbName != null and isMySQL'> AND db_name like CONCAT('%', #{fuzzyDbName, jdbcType=VARCHAR}, '%') </if>"
+          + "<if test='fuzzyDbName != null and (isPostgreSQL or isDerby)'> AND db_name like '%' || #{fuzzyDbName, jdbcType=VARCHAR} || '%' </if>"
+          + "<if test='fuzzyTableName != null and isMySQL'> AND table_name like CONCAT('%', #{fuzzyTableName, jdbcType=VARCHAR}, '%') </if>"
+          + "<if test='fuzzyTableName != null and (isPostgreSQL or isDerby)'> AND table_name like '%' || #{fuzzyTableName, jdbcType=VARCHAR} || '%' </if>"
+          + "ORDER BY optimizing_status_code, optimizing_status_start_time DESC "
+          + "<if test='isMySQL or isPostgreSQL'> LIMIT #{limitCount} OFFSET #{offsetNum} </if>"
+          + "<if test='isDerby'> OFFSET #{offsetNum} ROWS FETCH FIRST #{limitCount} ROWS ONLY </if>"
+          + "</script>")
+  @Results({
+    @Result(property = "tableId", column = "table_id"),
+    @Result(property = "catalogName", column = "catalog_name"),
+    @Result(property = "dbName", column = "db_name"),
+    @Result(property = "tableName", column = "table_name"),
+    @Result(property = "currentSnapshotId", column = "current_snapshot_id"),
+    @Result(property = "currentChangeSnapshotId", column = "current_change_snapshotId"),
+    @Result(property = "lastOptimizedSnapshotId", column = "last_optimized_snapshotId"),
+    @Result(
+        property = "lastOptimizedChangeSnapshotId",
+        column = "last_optimized_change_snapshotId"),
+    @Result(
+        property = "lastMajorOptimizingTime",
+        column = "last_major_optimizing_time",
+        typeHandler = Long2TsConverter.class),
+    @Result(
+        property = "lastMinorOptimizingTime",
+        column = "last_minor_optimizing_time",
+        typeHandler = Long2TsConverter.class),
+    @Result(
+        property = "lastFullOptimizingTime",
+        column = "last_full_optimizing_time",
+        typeHandler = Long2TsConverter.class),
+    @Result(
+        property = "tableStatus",
+        column = "optimizing_status_code",
+        typeHandler = OptimizingStatusConverter.class),
+    @Result(
+        property = "currentStatusStartTime",
+        column = "optimizing_status_start_time",
+        typeHandler = Long2TsConverter.class),
+    @Result(property = "optimizingProcessId", column = "optimizing_process_id"),
+    @Result(property = "optimizerGroup", column = "optimizer_group"),
+    @Result(
+        property = "pendingInput",
+        column = "pending_input",
+        typeHandler = JsonObjectConverter.class),
+    @Result(
+        property = "tableConfig",
+        column = "table_config",
+        typeHandler = JsonObjectConverter.class),
+  })
+  List<TableRuntimeMeta> selectTableRuntimesForOptimizerGroup(
+      @Param("optimizerGroup") String optimizerGroup,
+      @Param("fuzzyDbName") String fuzzyDbName,
+      @Param("fuzzyTableName") String fuzzyTableName,
+      @Param("limitCount") int limitCount,
+      @Param("offsetNum") int offset);
 }

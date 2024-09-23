@@ -39,15 +39,15 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * AmoroDynamicTableFactory is a factory for creating dynamic table sources and sinks. It implements
- * both DynamicTableSourceFactory and DynamicTableSinkFactory interfaces.
+ * UnifiedDynamicTableFactory is a factory for creating dynamic table sources and sinks. It
+ * implements both DynamicTableSourceFactory and DynamicTableSinkFactory interfaces.
  */
-public class AmoroDynamicTableFactory
+public class UnifiedDynamicTableFactory
     implements DynamicTableSourceFactory, DynamicTableSinkFactory {
 
   private final Map<TableFormat, AbstractCatalog> availableCatalogs;
 
-  public AmoroDynamicTableFactory(Map<TableFormat, AbstractCatalog> availableCatalogs) {
+  public UnifiedDynamicTableFactory(Map<TableFormat, AbstractCatalog> availableCatalogs) {
     this.availableCatalogs =
         Preconditions.checkNotNull(availableCatalogs, "availableCatalogs cannot be null");
   }

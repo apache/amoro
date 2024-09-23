@@ -33,7 +33,7 @@ import org.apache.amoro.flink.catalog.factories.FlinkUnifiedCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.iceberg.IcebergFlinkCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.mixed.MixedCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.paimon.PaimonFlinkCatalogFactory;
-import org.apache.amoro.flink.table.AmoroDynamicTableFactory;
+import org.apache.amoro.flink.table.UnifiedDynamicTableFactory;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableIdentifier;
@@ -62,8 +62,6 @@ import org.apache.flink.table.catalog.stats.CatalogTableStatistics;
 import org.apache.flink.table.expressions.Expression;
 import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.Factory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -72,7 +70,6 @@ import java.util.Optional;
 
 /** This is a Flink catalog wrap a unified catalog. */
 public class FlinkUnifiedCatalog extends AbstractCatalog {
-  private static final Logger LOG = LoggerFactory.getLogger(FlinkUnifiedCatalog.class);
 
   private final UnifiedCatalog unifiedCatalog;
   private final String amsUri;
@@ -329,7 +326,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
 
   @Override
   public Optional<Factory> getFactory() {
-    return Optional.of(new AmoroDynamicTableFactory(availableCatalogs));
+    return Optional.of(new UnifiedDynamicTableFactory(availableCatalogs));
   }
 
   @Override

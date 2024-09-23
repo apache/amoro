@@ -67,7 +67,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -216,7 +215,7 @@ public class AmoroServiceContainer {
     MetricManager.dispose();
   }
 
-  private void initConfig() throws IOException {
+  private void initConfig() throws Exception {
     LOG.info("initializing configurations...");
     new ConfigurationHelper().init();
   }
@@ -409,14 +408,14 @@ public class AmoroServiceContainer {
 
     private JsonNode yamlConfig;
 
-    public void init() throws IOException {
+    public void init() throws Exception {
       Map<String, Object> envConfig = initEnvConfig();
       initServiceConfig(envConfig);
       setIcebergSystemProperties();
       initContainerConfig();
     }
 
-    private void initServiceConfig(Map<String, Object> envConfig) throws IOException {
+    private void initServiceConfig(Map<String, Object> envConfig) throws Exception {
       LOG.info("initializing service configuration...");
       String configPath = Environments.getConfigPath() + "/" + SERVER_CONFIG_FILENAME;
       LOG.info("load config from path: {}", configPath);

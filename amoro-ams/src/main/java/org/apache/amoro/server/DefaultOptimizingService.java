@@ -49,7 +49,6 @@ import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultTableService;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableRuntimeMeta;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
@@ -121,24 +120,24 @@ public class DefaultOptimizingService extends StatedPersistentBase
     return tableHandlerChain;
   }
 
-  private void loadOptimizingQueues(List<TableRuntimeMeta> tableRuntimeMetaList) {
+  private void loadOptimizingQueues(List<TableRuntime> tableRuntimeMetaList) {
     List<ResourceGroup> optimizerGroups =
         getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
     List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
-    Map<String, List<TableRuntimeMeta>> groupToTableRuntimes =
+    Map<String, List<TableRuntime>> groupToTableRuntimes =
         tableRuntimeMetaList.stream()
-            .collect(Collectors.groupingBy(TableRuntimeMeta::getOptimizerGroup));
+            .collect(Collectors.groupingBy(TableRuntime::getOptimizerGroup));
     optimizerGroups.forEach(
         group -> {
           String groupName = group.getName();
-          List<TableRuntimeMeta> tableRuntimeMetas = groupToTableRuntimes.remove(groupName);
+          List<TableRuntime> tableRuntimes = groupToTableRuntimes.remove(groupName);
           OptimizingQueue optimizingQueue =
               new OptimizingQueue(
                   tableService,
                   group,
                   this,
                   planExecutor,
-                  Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new),
+                  Optional.ofNullable(tableRuntimes).orElseGet(ArrayList::new),
                   maxPlanningParallelism);
           optimizingQueueByGroup.put(groupName, optimizingQueue);
         });
@@ -456,9 +455,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     @Override
-    protected void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
+    protected void initHandler(List<TableRuntime> tableRuntimeList) {
       LOG.info("OptimizerManagementService begin initializing");
-      loadOptimizingQueues(tableRuntimeMetaList);
+      loadOptimizingQueues(tableRuntimeList);
       optimizerKeeper.start();
       LOG.info("SuspendingDetector for Optimizer has been started.");
       LOG.info("OptimizerManagementService initializing has completed");

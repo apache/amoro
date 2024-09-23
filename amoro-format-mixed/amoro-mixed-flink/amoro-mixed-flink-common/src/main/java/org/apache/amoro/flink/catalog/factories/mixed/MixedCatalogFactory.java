@@ -18,22 +18,18 @@
 
 package org.apache.amoro.flink.catalog.factories.mixed;
 
-import static org.apache.amoro.flink.table.KafkaConnectorOptionsUtil.getKafkaParams;
-import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
+import static org.apache.amoro.flink.table.OptionsUtil.getCatalogProperties;
 
 import org.apache.amoro.flink.InternalCatalogBuilder;
 import org.apache.amoro.flink.catalog.MixedCatalog;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.Catalog;
+import org.apache.flink.table.catalog.CommonCatalogOptions;
 import org.apache.flink.table.factories.CatalogFactory;
-import org.apache.flink.table.factories.FactoryUtil;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /** Factory for {@link MixedCatalog} */
@@ -47,25 +43,20 @@ public class MixedCatalogFactory implements CatalogFactory {
   @Override
   public Catalog createCatalog(Context context) {
 
-    final FactoryUtil.CatalogFactoryHelper helper =
-        FactoryUtil.createCatalogFactoryHelper(this, context);
-    helper.validate();
+    final String defaultDatabase =
+        context
+            .getOptions()
+            .getOrDefault(CommonCatalogOptions.DEFAULT_DATABASE_KEY, MixedCatalog.DEFAULT_DB);
+    final String metastoreUrl = context.getOptions().get(CatalogFactoryOptions.METASTORE_URL.key());
+    final Map<String, String> catalogProperties = getCatalogProperties(context.getOptions());
 
-    final String defaultDatabase = helper.getOptions().get(CatalogFactoryOptions.DEFAULT_DATABASE);
-    String metastoreUrl = helper.getOptions().get(CatalogFactoryOptions.METASTORE_URL);
-    final Map<String, String> mixedCatalogProperties = getKafkaParams(context.getOptions());
-    final Map<String, String> catalogProperties = Maps.newHashMap(mixedCatalogProperties);
+    final InternalCatalogBuilder catalogBuilder =
+        InternalCatalogBuilder.builder()
+            .metastoreUrl(metastoreUrl)
+            .catalogName(context.getName())
+            .properties(catalogProperties);
 
-    Optional<String> tableFormatsOptional =
-        helper.getOptions().getOptional(CatalogFactoryOptions.FLINK_TABLE_FORMATS);
-    tableFormatsOptional.ifPresent(
-        tableFormats ->
-            catalogProperties.put(CatalogFactoryOptions.FLINK_TABLE_FORMATS.key(), tableFormats));
-
-    return new MixedCatalog(
-        context.getName(),
-        defaultDatabase,
-        InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl).properties(catalogProperties));
+    return new MixedCatalog(context.getName(), defaultDatabase, catalogBuilder);
   }
 
   @Override
@@ -75,22 +66,6 @@ public class MixedCatalogFactory implements CatalogFactory {
 
   @Override
   public Set<ConfigOption<?>> optionalOptions() {
-    final Set<ConfigOption<?>> options = new HashSet<>();
-    options.add(PROPERTY_VERSION);
-    options.add(CatalogFactoryOptions.METASTORE_URL);
-    options.add(CatalogFactoryOptions.DEFAULT_DATABASE);
-
-    // authorization config
-    options.add(CatalogFactoryOptions.AUTH_AMS_CONFIGS_DISABLE);
-    options.add(CatalogFactoryOptions.AUTH_METHOD);
-    options.add(CatalogFactoryOptions.SIMPLE_USER_NAME);
-    options.add(CatalogFactoryOptions.KEYTAB_LOGIN_USER);
-    options.add(CatalogFactoryOptions.KRB5_CONF_PATH);
-    options.add(CatalogFactoryOptions.KRB5_CONF_ENCODE);
-    options.add(CatalogFactoryOptions.KEYTAB_PATH);
-    options.add(CatalogFactoryOptions.KEYTAB_ENCODE);
-
-    options.add(CatalogFactoryOptions.FLINK_TABLE_FORMATS);
-    return options;
+    return Collections.emptySet();
   }
 }

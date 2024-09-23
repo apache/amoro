@@ -25,7 +25,6 @@ import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableRuntimeMeta;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -63,10 +62,9 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   }
 
   @Override
-  protected void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
-    tableRuntimeMetaList.stream()
-        .map(tableRuntimeMeta -> tableRuntimeMeta.getTableRuntime())
-        .filter(tableRuntime -> enabled(tableRuntime))
+  protected void initHandler(List<TableRuntime> tableRuntimeList) {
+    tableRuntimeList.stream()
+        .filter(this::enabled)
         .forEach(
             tableRuntime -> {
               if (scheduledTables.add(tableRuntime.getTableIdentifier())) {
@@ -109,7 +107,8 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   }
 
   private boolean isExecutable(TableRuntime tableRuntime) {
-    return tableManager.contains(tableRuntime.getTableIdentifier()) && enabled(tableRuntime);
+    return tableManager.contains(tableRuntime.getTableIdentifier().getId())
+        && enabled(tableRuntime);
   }
 
   @Override
