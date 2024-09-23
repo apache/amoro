@@ -24,7 +24,6 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.process.ProcessStatus;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Streams;
@@ -51,7 +50,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.paimon.CoreOptions;
 import org.apache.paimon.FileStore;
 import org.apache.paimon.Snapshot;
-import org.apache.paimon.branch.TableBranch;
 import org.apache.paimon.consumer.ConsumerManager;
 import org.apache.paimon.data.BinaryRow;
 import org.apache.paimon.io.DataFileMeta;
@@ -62,8 +60,12 @@ import org.apache.paimon.manifest.ManifestFileMeta;
 import org.apache.paimon.manifest.ManifestList;
 import org.apache.paimon.table.DataTable;
 import org.apache.paimon.table.FileStoreTable;
+import org.apache.paimon.utils.BranchManager;
 import org.apache.paimon.utils.FileStorePathFactory;
+import org.apache.paimon.utils.SnapshotManager;
 import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -182,22 +184,17 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     FileStoreTable table = getTable(amoroTable);
     List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
     Iterator<Snapshot> snapshots;
-    if (PAIMON_MAIN_BRANCH_NAME.equals(ref)) {
+    if (table.branchManager().branchExists(ref) || BranchManager.isMainBranch(ref)) {
+      SnapshotManager snapshotManager = table.snapshotManager().copyWithBranch(ref);
       try {
-        snapshots = table.snapshotManager().snapshots();
+        snapshots = snapshotManager.snapshots();
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
     } else {
-      if (table.branchManager().branchExists(ref)) {
-        snapshots =
-            table.snapshotManager().latestSnapshot(ref) == null
-                ? Collections.emptyIterator()
-                : Collections.singleton(table.snapshotManager().latestSnapshot(ref)).iterator();
-      } else {
-        snapshots = Collections.singleton(table.tagManager().taggedSnapshot(ref)).iterator();
-      }
+      snapshots = Collections.singleton(table.tagManager().taggedSnapshot(ref)).iterator();
     }
+
     FileStore<?> store = table.store();
     List<CompletableFuture<AmoroSnapshotsOfTable>> futures = new ArrayList<>();
     Predicate<Snapshot> predicate =
@@ -230,11 +227,16 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<PartitionFileBaseInfo> getSnapshotDetail(
-      AmoroTable<?> amoroTable, String snapshotId) {
+      AmoroTable<?> amoroTable, String snapshotId, @Nullable String ref) {
     FileStoreTable table = getTable(amoroTable);
     List<PartitionFileBaseInfo> amsDataFileInfos = new ArrayList<>();
     long commitId = Long.parseLong(snapshotId);
-    Snapshot snapshot = table.snapshotManager().snapshot(commitId);
+    Snapshot snapshot;
+    if (ref != null) {
+      snapshot = table.snapshotManager().copyWithBranch(ref).snapshot(commitId);
+    } else {
+      snapshot = table.snapshotManager().snapshot(commitId);
+    }
     FileStore<?> store = table.store();
     FileStorePathFactory fileStorePathFactory = store.pathFactory();
     ManifestList manifestList = store.manifestListFactory().create();
@@ -539,20 +541,12 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
     FileStoreTable table = getTable(amoroTable);
-    List<TableBranch> branches = table.branchManager().branches();
+    List<String> branches = table.branchManager().branches();
+
     List<TagOrBranchInfo> branchInfos =
         branches.stream()
-            .map(
-                branch -> {
-                  String branchName = branch.getBranchName();
-                  Long snapshot = branch.getCreatedFromSnapshot();
-                  if (snapshot == null) {
-                    // Indicates that this is an empty snapshot, temporarily use -1 to represent
-                    snapshot = -1L;
-                  }
-                  return new TagOrBranchInfo(
-                      branchName, snapshot, 0, 0L, 0L, TagOrBranchInfo.BRANCH);
-                })
+            .filter(name -> !BranchManager.isMainBranch(name))
+            .map(name -> new TagOrBranchInfo(name, -1, -1, 0L, 0L, TagOrBranchInfo.BRANCH))
             .collect(Collectors.toList());
     branchInfos.add(TagOrBranchInfo.MAIN_BRANCH);
     return branchInfos;
