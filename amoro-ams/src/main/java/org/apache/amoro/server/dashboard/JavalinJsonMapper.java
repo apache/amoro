@@ -29,9 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- * Json mapper to adapt shaded jackson.
- */
+/** Json mapper to adapt shaded jackson. */
 public class JavalinJsonMapper implements JsonMapper {
 
   private final ObjectMapper objectMapper;
