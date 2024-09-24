@@ -22,8 +22,6 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.commons.lang3.tuple.Pair;
 
-import javax.annotation.Nullable;
-
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -49,7 +47,7 @@ public interface FormatTableDescriptor {
 
   /** Get the snapshot detail information of the {@link AmoroTable}. */
   List<PartitionFileBaseInfo> getSnapshotDetail(
-      AmoroTable<?> amoroTable, String snapshotId, @Nullable String ref);
+      AmoroTable<?> amoroTable, String snapshotId, String ref);
 
   /** Get the DDL information of the {@link AmoroTable}. */
   List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable);

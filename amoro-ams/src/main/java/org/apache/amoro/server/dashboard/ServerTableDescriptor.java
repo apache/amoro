@@ -39,8 +39,6 @@ import org.apache.amoro.table.descriptor.TagOrBranchInfo;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.util.ThreadPools;
 
-import javax.annotation.Nullable;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +80,7 @@ public class ServerTableDescriptor extends PersistentBase {
   }
 
   public List<PartitionFileBaseInfo> getSnapshotDetail(
-      TableIdentifier tableIdentifier, String snapshotId, @Nullable String ref) {
+      TableIdentifier tableIdentifier, String snapshotId, String ref) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getSnapshotDetail(amoroTable, snapshotId, ref);
