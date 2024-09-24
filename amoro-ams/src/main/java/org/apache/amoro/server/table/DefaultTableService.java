@@ -658,7 +658,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     AmoroTable<?> table =
         catalog.loadTable(
             serverTableIdentifier.getDatabase(), serverTableIdentifier.getTableName());
-    if (TableFormat.ICEBERG == table.format()) {
+    if (TableFormat.ICEBERG.equals(table.format())) {
       if (TablePropertyUtil.isMixedTableStore(table.properties())) {
         return false;
       }
