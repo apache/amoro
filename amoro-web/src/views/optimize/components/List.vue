@@ -148,6 +148,13 @@ function goTableDetail(record: IOptimizeTableItem) {
   })
 }
 
+function reset() {
+  optimizerGroup.value = undefined
+  dbSearchInput.value = undefined
+  tableSearchInput.value = undefined
+  refresh(true)
+}
+
 onMounted(() => {
   refresh()
   getOptimizerGroupList()
@@ -165,14 +172,19 @@ onMounted(() => {
       <a-input
         v-model:value="dbSearchInput"
         :placeholder="placeholder.filterDBPh"
-        @change="refresh"
       />
 
       <a-input
         v-model:value="tableSearchInput"
         :placeholder="placeholder.filterTablePh"
-        @change="refresh"
       />
+
+      <a-button type="primary" @click="refresh">
+        {{ t('search') }}
+      </a-button>
+      <a-button @click="reset">
+        {{ t('reset') }}
+      </a-button>
     </a-space>
     <a-table
       class="ant-table-common" :columns="columns" :data-source="dataSource" :pagination="pagination"

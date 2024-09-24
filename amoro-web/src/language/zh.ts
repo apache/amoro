@@ -191,6 +191,8 @@ export default {
   leavePageModalTitle: '离开当前页面？',
   leavePageModalContent: '您所做的更改可能无法保存。',
   leave: '离开',
+  search: '搜索',
+  reset: '重置',
   invalidInput: '非法输入',
   addgroup: '添加组',
   editgroup: '编辑组',

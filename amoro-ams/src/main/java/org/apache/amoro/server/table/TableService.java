@@ -23,6 +23,9 @@ import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.Blocker;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.server.catalog.CatalogService;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
+
+import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -88,4 +91,22 @@ public interface TableService extends CatalogService, TableManager {
    * @return block list
    */
   List<Blocker> getBlockers(TableIdentifier tableIdentifier);
+
+  /**
+   * Get the table info from database for given parameters.
+   *
+   * @param optimizerGroup The optimizer group of the table associated to. will be if we want the
+   *     info for all groups.
+   * @param fuzzyDbName the fuzzy db name used to filter the result, will be null if no filter set.
+   * @param fuzzyTableName the fuzzy table name used to filter the result, will be null if no filter
+   *     set.
+   * @param limit How many entries we want to retrieve.
+   * @param offset The entries we'll skip when retrieving the entries.
+   */
+  List<TableRuntimeMeta> getTableRuntimes(
+      String optimizerGroup,
+      @Nullable String fuzzyDbName,
+      @Nullable String fuzzyTableName,
+      int limit,
+      int offset);
 }
