@@ -62,6 +62,12 @@ public class TableSummaryMetrics {
           .withTags("catalog", "database", "table")
           .build();
 
+  public static final MetricDefine TABLE_SUMMARY_DANGLING_DELETE_FILES =
+      defineGauge("table_summary_dangling_delete_files")
+          .withDescription("Number of dangling delete files in the table")
+          .withTags("catalog", "database", "table")
+          .build();
+
   // table summary files size metrics
   public static final MetricDefine TABLE_SUMMARY_TOTAL_FILES_SIZE =
       defineGauge("table_summary_total_files_size")
@@ -128,22 +134,10 @@ public class TableSummaryMetrics {
 
   private final ServerTableIdentifier identifier;
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
+  private OptimizingEvaluator.PendingInput tableSummary = new OptimizingEvaluator.PendingInput();
   private MetricRegistry globalRegistry;
 
-  private long totalFiles = 0L;
-  private long dataFiles = 0L;
-  private long positionDeleteFiles = 0L;
-  private long equalityDeleteFiles = 0L;
-  private long totalFilesSize = 0L;
-  private long positionDeleteFilesSize = 0L;
-  private long dataFilesSize = 0L;
-  private long equalityDeleteFilesSize = 0L;
-  private long positionDeleteFilesRecords = 0L;
-  private long totalRecords = 0L;
-  private long dataFilesRecords = 0L;
-  private long equalityDeleteFilesRecords = 0L;
   private long snapshots = 0L;
-  private long healthScore = -1L; // -1 means not calculated
 
   public TableSummaryMetrics(ServerTableIdentifier identifier) {
     this.identifier = identifier;
@@ -167,43 +161,71 @@ public class TableSummaryMetrics {
   public void register(MetricRegistry registry) {
     if (globalRegistry == null) {
       // register files number metrics
-      registerMetric(registry, TABLE_SUMMARY_TOTAL_FILES, (Gauge<Long>) () -> totalFiles);
-      registerMetric(registry, TABLE_SUMMARY_DATA_FILES, (Gauge<Long>) () -> dataFiles);
       registerMetric(
-          registry, TABLE_SUMMARY_POSITION_DELETE_FILES, (Gauge<Long>) () -> positionDeleteFiles);
+          registry,
+          TABLE_SUMMARY_TOTAL_FILES,
+          (Gauge<Long>) () -> (long) tableSummary.getTotalFileCount());
       registerMetric(
-          registry, TABLE_SUMMARY_EQUALITY_DELETE_FILES, (Gauge<Long>) () -> equalityDeleteFiles);
+          registry,
+          TABLE_SUMMARY_DATA_FILES,
+          (Gauge<Long>) () -> (long) tableSummary.getDataFileCount());
+      registerMetric(
+          registry,
+          TABLE_SUMMARY_POSITION_DELETE_FILES,
+          (Gauge<Long>) () -> (long) tableSummary.getPositionalDeleteFileCount());
+      registerMetric(
+          registry,
+          TABLE_SUMMARY_EQUALITY_DELETE_FILES,
+          (Gauge<Long>) () -> (long) tableSummary.getEqualityDeleteFileCount());
+      registerMetric(
+          registry,
+          TABLE_SUMMARY_DANGLING_DELETE_FILES,
+          (Gauge<Long>) () -> (long) tableSummary.getDanglingDeleteFileCount());
 
       // register files size metrics
-      registerMetric(registry, TABLE_SUMMARY_TOTAL_FILES_SIZE, (Gauge<Long>) () -> totalFilesSize);
-      registerMetric(registry, TABLE_SUMMARY_DATA_FILES_SIZE, (Gauge<Long>) () -> dataFilesSize);
+      registerMetric(
+          registry,
+          TABLE_SUMMARY_TOTAL_FILES_SIZE,
+          (Gauge<Long>) () -> tableSummary.getTotalFileSize());
+      registerMetric(
+          registry,
+          TABLE_SUMMARY_DATA_FILES_SIZE,
+          (Gauge<Long>) () -> tableSummary.getDataFileSize());
       registerMetric(
           registry,
           TABLE_SUMMARY_POSITION_DELETE_FILES_SIZE,
-          (Gauge<Long>) () -> positionDeleteFilesSize);
+          (Gauge<Long>) () -> tableSummary.getPositionalDeleteBytes());
       registerMetric(
           registry,
           TABLE_SUMMARY_EQUALITY_DELETE_FILES_SIZE,
-          (Gauge<Long>) () -> equalityDeleteFilesSize);
+          (Gauge<Long>) () -> tableSummary.getEqualityDeleteBytes());
 
       // register files records metrics
-      registerMetric(registry, TABLE_SUMMARY_TOTAL_RECORDS, (Gauge<Long>) () -> totalRecords);
       registerMetric(
-          registry, TABLE_SUMMARY_DATA_FILES_RECORDS, (Gauge<Long>) () -> dataFilesRecords);
+          registry,
+          TABLE_SUMMARY_TOTAL_RECORDS,
+          (Gauge<Long>) () -> tableSummary.getTotalFileRecords());
+      registerMetric(
+          registry,
+          TABLE_SUMMARY_DATA_FILES_RECORDS,
+          (Gauge<Long>) () -> tableSummary.getDataFileRecords());
       registerMetric(
           registry,
           TABLE_SUMMARY_POSITION_DELETE_FILES_RECORDS,
-          (Gauge<Long>) () -> positionDeleteFilesRecords);
+          (Gauge<Long>) () -> tableSummary.getPositionalDeleteFileRecords());
       registerMetric(
           registry,
           TABLE_SUMMARY_EQUALITY_DELETE_FILES_RECORDS,
-          (Gauge<Long>) () -> equalityDeleteFilesRecords);
+          (Gauge<Long>) () -> tableSummary.getEqualityDeleteFileRecords());
+
+      // register health score metric
+      registerMetric(
+          registry,
+          TABLE_SUMMARY_HEALTH_SCORE,
+          (Gauge<Long>) () -> (long) tableSummary.getHealthScore());
 
       // register snapshots number metric
       registerMetric(registry, TABLE_SUMMARY_SNAPSHOTS, (Gauge<Long>) () -> snapshots);
-
-      // register health score metric
-      registerMetric(registry, TABLE_SUMMARY_HEALTH_SCORE, (Gauge<Long>) () -> healthScore);
 
       globalRegistry = registry;
     }
@@ -219,31 +241,7 @@ public class TableSummaryMetrics {
     if (tableSummary == null) {
       return;
     }
-    totalFiles =
-        tableSummary.getDataFileCount()
-            + tableSummary.getEqualityDeleteFileCount()
-            + tableSummary.getPositionalDeleteFileCount();
-    dataFiles = tableSummary.getDataFileCount();
-    positionDeleteFiles = tableSummary.getPositionalDeleteFileCount();
-    equalityDeleteFiles = tableSummary.getEqualityDeleteFileCount();
-
-    totalFilesSize =
-        tableSummary.getDataFileSize()
-            + tableSummary.getEqualityDeleteBytes()
-            + tableSummary.getPositionalDeleteBytes();
-    positionDeleteFilesSize = tableSummary.getPositionalDeleteBytes();
-    dataFilesSize = tableSummary.getDataFileSize();
-    equalityDeleteFilesSize = tableSummary.getEqualityDeleteBytes();
-
-    totalRecords =
-        tableSummary.getDataFileRecords()
-            + tableSummary.getEqualityDeleteFileRecords()
-            + tableSummary.getPositionalDeleteFileRecords();
-    positionDeleteFilesRecords = tableSummary.getPositionalDeleteFileRecords();
-    dataFilesRecords = tableSummary.getDataFileRecords();
-    equalityDeleteFilesRecords = tableSummary.getEqualityDeleteFileRecords();
-
-    healthScore = tableSummary.getHealthScore();
+    this.tableSummary = tableSummary;
   }
 
   public void refreshSnapshots(MixedTable table) {
