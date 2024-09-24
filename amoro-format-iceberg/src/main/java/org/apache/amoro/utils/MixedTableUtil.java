@@ -53,7 +53,7 @@ public class MixedTableUtil {
   /** Return the table root location of the mixed-format table. */
   public static String tableRootLocation(MixedTable mixedTable) {
     String tableRootLocation;
-    if (TableFormat.ICEBERG != mixedTable.format() && mixedTable.isUnkeyedTable()) {
+    if (!TableFormat.ICEBERG.equals(mixedTable.format()) && mixedTable.isUnkeyedTable()) {
       tableRootLocation = TableFileUtil.getFileDir(mixedTable.location());
     } else {
       tableRootLocation = mixedTable.location();
@@ -179,7 +179,7 @@ public class MixedTableUtil {
    * Mix format table will return directly after checking}.
    */
   public static PartitionSpec getMixedTablePartitionSpecById(MixedTable mixedTable, int specId) {
-    if (mixedTable.format() == TableFormat.ICEBERG) {
+    if (TableFormat.ICEBERG.equals(mixedTable.format())) {
       return mixedTable.asUnkeyedTable().specs().get(specId);
     } else {
       PartitionSpec spec = mixedTable.spec();

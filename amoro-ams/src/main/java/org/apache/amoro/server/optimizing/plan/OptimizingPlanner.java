@@ -233,7 +233,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     }
 
     public PartitionEvaluator buildPartitionPlanner(Pair<Integer, StructLike> partition) {
-      if (TableFormat.ICEBERG == mixedTable.format()) {
+      if (TableFormat.ICEBERG.equals(mixedTable.format())) {
         return new IcebergPartitionPlan(tableRuntime, mixedTable, partition, planTime);
       } else {
         if (TableTypeUtil.isHive(mixedTable)) {

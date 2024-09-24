@@ -218,7 +218,7 @@ public class TestCreateTableSQL extends MixedTableTestBase {
 
     MixedTable actualTable = loadTable();
     Asserts.assertPartition(expectSpec, actualTable.spec());
-    if (TableFormat.MIXED_HIVE == format) {
+    if (TableFormat.MIXED_HIVE.equals(format)) {
       Table hiveTable = loadHiveTable();
       Asserts.assertHivePartition(expectSpec, hiveTable.getPartitionKeys());
     }
@@ -303,7 +303,7 @@ public class TestCreateTableSQL extends MixedTableTestBase {
 
     Asserts.assertType(expectSchema.asStruct(), tbl.schema().asStruct());
     Asserts.assertHashMapContainExpect(expectProperties, tbl.properties());
-    if (TableFormat.MIXED_HIVE == format) {
+    if (TableFormat.MIXED_HIVE.equals(format)) {
       Table hiveTable = loadHiveTable();
       Asserts.assertHiveColumns(
           expectSchema, PartitionSpec.unpartitioned(), hiveTable.getSd().getCols());

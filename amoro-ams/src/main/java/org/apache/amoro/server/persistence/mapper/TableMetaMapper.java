@@ -25,6 +25,7 @@ import org.apache.amoro.server.persistence.converter.Long2TsConverter;
 import org.apache.amoro.server.persistence.converter.Map2StringConverter;
 import org.apache.amoro.server.persistence.converter.MapLong2StringConverter;
 import org.apache.amoro.server.persistence.converter.OptimizingStatusConverter;
+import org.apache.amoro.server.persistence.converter.TableFormatConverter;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.ibatis.annotations.Delete;
@@ -78,7 +79,10 @@ public interface TableMetaMapper {
     @Result(property = "tableIdentifier.tableName", column = "table_name"),
     @Result(property = "tableIdentifier.database", column = "db_name"),
     @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
-    @Result(property = "tableIdentifier.format", column = "format"),
+    @Result(
+        property = "tableIdentifier.format",
+        column = "format",
+        typeHandler = TableFormatConverter.class),
     @Result(property = "primaryKey", column = "primary_key"),
     @Result(property = "tableLocation", column = "table_location"),
     @Result(property = "baseLocation", column = "base_location"),
@@ -113,7 +117,10 @@ public interface TableMetaMapper {
     @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
     @Result(property = "tableIdentifier.database", column = "db_name"),
     @Result(property = "tableIdentifier.tableName", column = "table_name"),
-    @Result(property = "tableIdentifier.format", column = "format"),
+    @Result(
+        property = "tableIdentifier.format",
+        column = "format",
+        typeHandler = TableFormatConverter.class),
     @Result(property = "primaryKey", column = "primary_key"),
     @Result(property = "tableLocation", column = "table_location"),
     @Result(property = "baseLocation", column = "base_location"),
@@ -183,7 +190,10 @@ public interface TableMetaMapper {
     @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
     @Result(property = "tableIdentifier.database", column = "db_name"),
     @Result(property = "tableIdentifier.tableName", column = "table_name"),
-    @Result(property = "tableIdentifier.format", column = "format"),
+    @Result(
+        property = "tableIdentifier.format",
+        column = "format",
+        typeHandler = TableFormatConverter.class),
     @Result(property = "primaryKey", column = "primary_key"),
     @Result(property = "tableLocation", column = "table_location"),
     @Result(property = "baseLocation", column = "base_location"),
@@ -218,7 +228,10 @@ public interface TableMetaMapper {
     @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
     @Result(property = "tableIdentifier.database", column = "db_name"),
     @Result(property = "tableIdentifier.tableName", column = "table_name"),
-    @Result(property = "tableIdentifier.format", column = "format"),
+    @Result(
+        property = "tableIdentifier.format",
+        column = "format",
+        typeHandler = TableFormatConverter.class),
     @Result(property = "primaryKey", column = "primary_key"),
     @Result(property = "tableLocation", column = "table_location"),
     @Result(property = "baseLocation", column = "base_location"),
@@ -245,7 +258,7 @@ public interface TableMetaMapper {
   @Insert(
       "INSERT INTO table_identifier(catalog_name, db_name, table_name, format) VALUES("
           + " #{tableIdentifier.catalog}, #{tableIdentifier.database}, #{tableIdentifier.tableName}, "
-          + " #{tableIdentifier.format})")
+          + " #{tableIdentifier.format, typeHandler=org.apache.amoro.server.persistence.converter.TableFormatConverter})")
   @Options(useGeneratedKeys = true, keyProperty = "tableIdentifier.id")
   void insertTable(@Param("tableIdentifier") ServerTableIdentifier tableIdentifier);
 
@@ -268,7 +281,7 @@ public interface TableMetaMapper {
     @Result(property = "tableName", column = "table_name"),
     @Result(property = "database", column = "db_name"),
     @Result(property = "catalog", column = "catalog_name"),
-    @Result(property = "format", column = "format"),
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
   })
   ServerTableIdentifier selectTableIdentifier(
       @Param("catalogName") String catalogName,
@@ -283,7 +296,7 @@ public interface TableMetaMapper {
     @Result(property = "catalog", column = "catalog_name"),
     @Result(property = "database", column = "db_name"),
     @Result(property = "tableName", column = "table_name"),
-    @Result(property = "format", column = "format")
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
   })
   List<ServerTableIdentifier> selectTableIdentifiersByDb(
       @Param("catalogName") String catalogName, @Param("databaseName") String databaseName);
@@ -296,7 +309,7 @@ public interface TableMetaMapper {
     @Result(property = "catalog", column = "catalog_name"),
     @Result(property = "database", column = "db_name"),
     @Result(property = "tableName", column = "table_name"),
-    @Result(property = "format", column = "format")
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
   })
   List<ServerTableIdentifier> selectTableIdentifiersByCatalog(
       @Param("catalogName") String catalogName);
@@ -307,7 +320,7 @@ public interface TableMetaMapper {
     @Result(property = "catalog", column = "catalog_name"),
     @Result(property = "database", column = "db_name"),
     @Result(property = "tableName", column = "table_name"),
-    @Result(property = "format", column = "format")
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
   })
   List<ServerTableIdentifier> selectAllTableIdentifiers();
 
@@ -374,7 +387,7 @@ public interface TableMetaMapper {
           + " a.current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId,"
           + " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time,"
           + " a.optimizing_status_code, a.optimizing_status_start_time, a.optimizing_process_id,"
-          + " a.optimizer_group, a.table_config, a.pending_input, b.optimizing_type, b.target_snapshot_id,"
+          + " a.optimizer_group, a.table_config, a.pending_input, a.table_summary, b.optimizing_type, b.target_snapshot_id,"
           + " b.target_change_snapshot_id, b.plan_time, b.from_sequence, b.to_sequence FROM table_runtime a"
           + " INNER JOIN table_identifier i ON a.table_id = i.table_id "
           + " LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id")
@@ -383,7 +396,7 @@ public interface TableMetaMapper {
     @Result(property = "catalogName", column = "catalog_name"),
     @Result(property = "dbName", column = "db_name"),
     @Result(property = "tableName", column = "table_name"),
-    @Result(property = "format", column = "format"),
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class),
     @Result(property = "currentSnapshotId", column = "current_snapshot_id"),
     @Result(property = "currentChangeSnapshotId", column = "current_change_snapshotId"),
     @Result(property = "lastOptimizedSnapshotId", column = "last_optimized_snapshotId"),
@@ -448,7 +461,7 @@ public interface TableMetaMapper {
           + "current_change_snapshotId, last_optimized_snapshotId, last_optimized_change_snapshotId, "
           + "last_major_optimizing_time, last_minor_optimizing_time, last_full_optimizing_time, optimizing_status_code, "
           + "optimizing_status_start_time, optimizing_process_id, "
-          + "optimizer_group, table_config, pending_input FROM table_runtime "
+          + "optimizer_group, table_config, pending_input, table_summary FROM table_runtime "
           + "/* Debug: ${_databaseId} */"
           + "WHERE 1=1 "
           + "<if test='optimizerGroup != null'> AND optimizer_group = #{optimizerGroup} </if> "
@@ -496,6 +509,10 @@ public interface TableMetaMapper {
     @Result(
         property = "pendingInput",
         column = "pending_input",
+        typeHandler = JsonObjectConverter.class),
+    @Result(
+        property = "tableSummary",
+        column = "table_summary",
         typeHandler = JsonObjectConverter.class),
     @Result(
         property = "tableConfig",

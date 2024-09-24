@@ -37,11 +37,14 @@ import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.Pair;
+import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +80,7 @@ public class OptimizingEvaluator {
   protected void initEvaluator() {
     long startTime = System.currentTimeMillis();
     TableFileScanHelper tableFileScanHelper;
-    if (TableFormat.ICEBERG == mixedTable.format()) {
+    if (TableFormat.ICEBERG.equals(mixedTable.format())) {
       tableFileScanHelper =
           new IcebergTableFileScanHelper(mixedTable.asUnkeyedTable(), currentSnapshot.snapshotId());
     } else {
@@ -142,7 +145,7 @@ public class OptimizingEvaluator {
   }
 
   protected PartitionEvaluator buildEvaluator(Pair<Integer, StructLike> partition) {
-    if (TableFormat.ICEBERG == mixedTable.format()) {
+    if (TableFormat.ICEBERG.equals(mixedTable.format())) {
       return new CommonPartitionEvaluator(tableRuntime, partition, System.currentTimeMillis());
     } else {
       Map<String, String> partitionProperties = partitionProperties(partition);
@@ -177,6 +180,13 @@ public class OptimizingEvaluator {
     if (!isInitialized) {
       initEvaluator();
     }
+    // Dangling delete files will cause the data scanned by TableScan
+    // to be inconsistent with the snapshot summary of iceberg
+    if (TableFormat.ICEBERG == mixedTable.format()) {
+      Snapshot snapshot = mixedTable.asUnkeyedTable().snapshot(currentSnapshot.snapshotId());
+      return new PendingInput(partitionPlanMap.values(), snapshot);
+    }
+
     return new PendingInput(partitionPlanMap.values());
   }
 
@@ -191,37 +201,73 @@ public class OptimizingEvaluator {
 
     @JsonIgnore private final Map<Integer, Set<StructLike>> partitions = Maps.newHashMap();
 
+    private int totalFileCount = 0;
+    private long totalFileSize = 0L;
+    private long totalFileRecords = 0L;
     private int dataFileCount = 0;
-    private long dataFileSize = 0;
-    private long dataFileRecords = 0;
+    private long dataFileSize = 0L;
+    private long dataFileRecords = 0L;
     private int equalityDeleteFileCount = 0;
     private int positionalDeleteFileCount = 0;
     private long positionalDeleteBytes = 0L;
     private long equalityDeleteBytes = 0L;
     private long equalityDeleteFileRecords = 0L;
     private long positionalDeleteFileRecords = 0L;
+    private int danglingDeleteFileCount = 0;
     private int healthScore = -1; // -1 means not calculated
 
     public PendingInput() {}
 
     public PendingInput(Collection<PartitionEvaluator> evaluators) {
+      initialize(evaluators);
+      totalFileCount = dataFileCount + positionalDeleteFileCount + equalityDeleteFileCount;
+      totalFileSize = dataFileSize + positionalDeleteBytes + equalityDeleteBytes;
+      totalFileRecords = dataFileRecords + positionalDeleteFileRecords + equalityDeleteFileRecords;
+    }
+
+    public PendingInput(Collection<PartitionEvaluator> evaluators, Snapshot snapshot) {
+      initialize(evaluators);
+      Map<String, String> summary = snapshot.summary();
+      int totalDeleteFiles =
+          PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_DELETE_FILES_PROP, 0);
+      int totalDataFiles =
+          PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
+      totalFileRecords = PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_RECORDS_PROP, 0);
+      totalFileSize = PropertyUtil.propertyAsLong(summary, SnapshotSummary.TOTAL_FILE_SIZE_PROP, 0);
+      totalFileCount = totalDeleteFiles + totalDataFiles;
+      danglingDeleteFileCount =
+          totalDeleteFiles - equalityDeleteFileCount - positionalDeleteFileCount;
+    }
+
+    private void initialize(Collection<PartitionEvaluator> evaluators) {
       double totalHealthScore = 0;
       for (PartitionEvaluator evaluator : evaluators) {
-        partitions
-            .computeIfAbsent(evaluator.getPartition().first(), ignore -> Sets.newHashSet())
-            .add(evaluator.getPartition().second());
-        dataFileCount += evaluator.getFragmentFileCount() + evaluator.getSegmentFileCount();
-        dataFileSize += evaluator.getFragmentFileSize() + evaluator.getSegmentFileSize();
-        dataFileRecords += evaluator.getFragmentFileRecords() + evaluator.getSegmentFileRecords();
-        positionalDeleteBytes += evaluator.getPosDeleteFileSize();
-        positionalDeleteFileRecords += evaluator.getPosDeleteFileRecords();
-        positionalDeleteFileCount += evaluator.getPosDeleteFileCount();
-        equalityDeleteBytes += evaluator.getEqualityDeleteFileSize();
-        equalityDeleteFileRecords += evaluator.getEqualityDeleteFileRecords();
-        equalityDeleteFileCount += evaluator.getEqualityDeleteFileCount();
+        addPartitionData(evaluator);
         totalHealthScore += evaluator.getHealthScore();
       }
-      healthScore = (int) Math.ceil(totalHealthScore / evaluators.size());
+      healthScore = avgHealthScore(totalHealthScore, evaluators.size());
+    }
+
+    private void addPartitionData(PartitionEvaluator evaluator) {
+      partitions
+          .computeIfAbsent(evaluator.getPartition().first(), ignore -> Sets.newHashSet())
+          .add(evaluator.getPartition().second());
+      dataFileCount += evaluator.getFragmentFileCount() + evaluator.getSegmentFileCount();
+      dataFileSize += evaluator.getFragmentFileSize() + evaluator.getSegmentFileSize();
+      dataFileRecords += evaluator.getFragmentFileRecords() + evaluator.getSegmentFileRecords();
+      positionalDeleteBytes += evaluator.getPosDeleteFileSize();
+      positionalDeleteFileRecords += evaluator.getPosDeleteFileRecords();
+      positionalDeleteFileCount += evaluator.getPosDeleteFileCount();
+      equalityDeleteBytes += evaluator.getEqualityDeleteFileSize();
+      equalityDeleteFileRecords += evaluator.getEqualityDeleteFileRecords();
+      equalityDeleteFileCount += evaluator.getEqualityDeleteFileCount();
+    }
+
+    private int avgHealthScore(double totalHealthScore, int partitionCount) {
+      if (partitionCount == 0) {
+        return 0;
+      }
+      return (int) Math.ceil(totalHealthScore / partitionCount);
     }
 
     public Map<Integer, Set<StructLike>> getPartitions() {
@@ -268,9 +314,28 @@ public class OptimizingEvaluator {
       return healthScore;
     }
 
+    public int getTotalFileCount() {
+      return totalFileCount;
+    }
+
+    public long getTotalFileSize() {
+      return totalFileSize;
+    }
+
+    public long getTotalFileRecords() {
+      return totalFileRecords;
+    }
+
+    public int getDanglingDeleteFileCount() {
+      return danglingDeleteFileCount;
+    }
+
     @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
+          .add("totalFileCount", totalFileCount)
+          .add("totalFileSize", totalFileSize)
+          .add("totalFileRecords", totalFileRecords)
           .add("partitions", partitions)
           .add("dataFileCount", dataFileCount)
           .add("dataFileSize", dataFileSize)
@@ -282,6 +347,7 @@ public class OptimizingEvaluator {
           .add("equalityDeleteFileRecords", equalityDeleteFileRecords)
           .add("positionalDeleteFileRecords", positionalDeleteFileRecords)
           .add("healthScore", healthScore)
+          .add("danglingDeleteFileCount", danglingDeleteFileCount)
           .toString();
     }
   }

@@ -174,18 +174,14 @@ public class AMSTableTestBase extends TableServiceTestBase {
       TableMetadata tableMetadata = tableMetadata();
       tableService().createTable(catalogMeta.getCatalogName(), tableMetadata);
     } else {
-      switch (catalogTestHelper.tableFormat()) {
-        case ICEBERG:
-          createIcebergTable();
-          break;
-        case MIXED_ICEBERG:
-          createMixedIcebergTable();
-          break;
-        case MIXED_HIVE:
-          createMixedHiveTable();
-          break;
-        default:
-          throw new IllegalStateException("un-support format");
+      if (catalogTestHelper.tableFormat().equals(TableFormat.ICEBERG)) {
+        createIcebergTable();
+      } else if (catalogTestHelper.tableFormat().equals(TableFormat.MIXED_ICEBERG)) {
+        createMixedIcebergTable();
+      } else if (catalogTestHelper.tableFormat().equals(TableFormat.MIXED_HIVE)) {
+        createMixedHiveTable();
+      } else {
+        throw new IllegalStateException("un-support format");
       }
       tableService().exploreExternalCatalog();
     }
