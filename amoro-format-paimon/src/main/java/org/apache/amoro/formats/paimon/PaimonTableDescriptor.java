@@ -65,8 +65,6 @@ import org.apache.paimon.utils.FileStorePathFactory;
 import org.apache.paimon.utils.SnapshotManager;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nullable;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -227,16 +225,17 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<PartitionFileBaseInfo> getSnapshotDetail(
-      AmoroTable<?> amoroTable, String snapshotId, @Nullable String ref) {
+      AmoroTable<?> amoroTable, String snapshotId, String ref) {
     FileStoreTable table = getTable(amoroTable);
     List<PartitionFileBaseInfo> amsDataFileInfos = new ArrayList<>();
     long commitId = Long.parseLong(snapshotId);
     Snapshot snapshot;
-    if (ref != null) {
+    if (BranchManager.isMainBranch(ref) || table.branchManager().branchExists(ref)) {
       snapshot = table.snapshotManager().copyWithBranch(ref).snapshot(commitId);
     } else {
-      snapshot = table.snapshotManager().snapshot(commitId);
+      snapshot = table.tagManager().tag(ref);
     }
+
     FileStore<?> store = table.store();
     FileStorePathFactory fileStorePathFactory = store.pathFactory();
     ManifestList manifestList = store.manifestListFactory().create();
@@ -542,10 +541,8 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
     FileStoreTable table = getTable(amoroTable);
     List<String> branches = table.branchManager().branches();
-
     List<TagOrBranchInfo> branchInfos =
         branches.stream()
-            .filter(name -> !BranchManager.isMainBranch(name))
             .map(name -> new TagOrBranchInfo(name, -1, -1, 0L, 0L, TagOrBranchInfo.BRANCH))
             .collect(Collectors.toList());
     branchInfos.add(TagOrBranchInfo.MAIN_BRANCH);
