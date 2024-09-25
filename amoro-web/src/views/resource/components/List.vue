@@ -25,8 +25,6 @@ import { getOptimizerResourceList, getResourceGroupsListAPI, groupDeleteAPI, gro
 import { usePagination } from '@/hooks/usePagination'
 import { dateFormat, mbToSize } from '@/utils'
 
-import ScaleOut from '@/views/resource/components/ScaleOut.vue'
-
 const props = defineProps<{ curGroupName?: string, type: string }>()
 
 const emit = defineEmits<{
@@ -249,12 +247,6 @@ onMounted(() => {
           </span>
         </template>
         <template v-if="column.dataIndex === 'operationGroup'">
-          <span
-            class="primary-link g-mr-12" :class="{ disabled: record.container === 'external' }"
-            @click="scaleOutGroup(record)"
-          >
-            {{ t('scaleOut') }}
-          </span>
           <span class="primary-link g-mr-12" @click="editGroup(record)">
             {{ t('edit') }}
           </span>
@@ -265,7 +257,6 @@ onMounted(() => {
       </template>
     </a-table>
   </div>
-  <ScaleOut v-if="scaleOutVisible" :group-record="groupRecord" @cancel="scaleOutVisible = false" @refresh="refresh" />
   <u-loading v-if="releaseLoading" />
 </template>
 
