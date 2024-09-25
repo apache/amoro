@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.table;
 
+import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_DANGLING_DELETE_FILES;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_DATA_FILES;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_DATA_FILES_RECORDS;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_DATA_FILES_SIZE;
@@ -104,7 +105,7 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
             .asUnkeyedTable();
     appendData(table);
     appendPosDelete(table);
-    TableRuntime runtime = tableService().getRuntime(serverTableIdentifier());
+    TableRuntime runtime = tableService().getRuntime(serverTableIdentifier().getId());
     runtime.refresh(tableService().loadTable(serverTableIdentifier()));
   }
 
@@ -142,7 +143,7 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
   void refreshPending() {
     TableRuntimeRefreshExecutor refresher =
         new TableRuntimeRefreshExecutor(tableService(), 1, Integer.MAX_VALUE);
-    refresher.execute(tableService().getRuntime(serverTableIdentifier()));
+    refresher.execute(tableService().getRuntime(serverTableIdentifier().getId()));
     refresher.dispose();
   }
 
@@ -154,6 +155,8 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
     Gauge<Long> dataFiles = getMetric(metrics, identifier, TABLE_SUMMARY_DATA_FILES);
     Gauge<Long> posDelFiles = getMetric(metrics, identifier, TABLE_SUMMARY_POSITION_DELETE_FILES);
     Gauge<Long> eqDelFiles = getMetric(metrics, identifier, TABLE_SUMMARY_EQUALITY_DELETE_FILES);
+    Gauge<Long> danglingDelFiles =
+        getMetric(metrics, identifier, TABLE_SUMMARY_DANGLING_DELETE_FILES);
 
     Gauge<Long> totalSize = getMetric(metrics, identifier, TABLE_SUMMARY_TOTAL_FILES_SIZE);
     Gauge<Long> dataSize = getMetric(metrics, identifier, TABLE_SUMMARY_DATA_FILES_SIZE);
@@ -177,6 +180,7 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
     Assertions.assertEquals(0, dataFiles.getValue());
     Assertions.assertEquals(0, posDelFiles.getValue());
     Assertions.assertEquals(0, eqDelFiles.getValue());
+    Assertions.assertEquals(0, danglingDelFiles.getValue());
 
     Assertions.assertEquals(0, totalSize.getValue());
     Assertions.assertEquals(0, dataSize.getValue());

@@ -234,7 +234,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
     TableFiles files = TestTableUtil.files(table);
     Asserts.assertAllFilesInBaseStore(files);
 
-    if (TableFormat.MIXED_HIVE == format) {
+    if (TableFormat.MIXED_HIVE.equals(format)) {
       Table hiveTable = loadHiveTable();
       Asserts.assertHiveColumns(expectSchema, ptSpec, hiveTable.getSd().getCols());
       Asserts.assertHivePartition(ptSpec, hiveTable.getPartitionKeys());

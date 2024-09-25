@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.server.persistence;
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.TableConfiguration;
@@ -27,6 +27,7 @@ import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 
 import java.util.Map;
 
+/** The class for table used when transfer data from/to database. */
 public class TableRuntimeMeta {
   private long tableId;
   private String catalogName;
@@ -58,23 +59,7 @@ public class TableRuntimeMeta {
   private Map<String, Long> fromSequence;
   private Map<String, Long> toSequence;
 
-  private TableRuntime tableRuntime;
-
   public TableRuntimeMeta() {}
-
-  public TableRuntime constructTableRuntime(TableManager initializer) {
-    if (tableRuntime == null) {
-      tableRuntime = new TableRuntime(this, initializer);
-    }
-    return tableRuntime;
-  }
-
-  public TableRuntime getTableRuntime() {
-    if (tableRuntime == null) {
-      throw new IllegalStateException("TableRuntime is not constructed yet.");
-    }
-    return tableRuntime;
-  }
 
   public long getTargetSnapshotId() {
     return targetSnapshotId;
@@ -210,10 +195,6 @@ public class TableRuntimeMeta {
 
   public void setTableSummary(OptimizingEvaluator.PendingInput tableSummary) {
     this.tableSummary = tableSummary;
-  }
-
-  public void setTableRuntime(TableRuntime tableRuntime) {
-    this.tableRuntime = tableRuntime;
   }
 
   public void setLastOptimizedChangeSnapshotId(long lastOptimizedChangeSnapshotId) {

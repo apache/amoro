@@ -121,7 +121,7 @@ public class SparkTestContext {
     }
     HiveConf hiveConf = hms.getHiveConf();
     for (TableFormat format : TableFormat.values()) {
-      if (format == TableFormat.HUDI) {
+      if (TableFormat.HUDI.equals(format)) {
         continue;
       }
       // create catalog for all formats in AMS with hive metastore.
@@ -140,7 +140,7 @@ public class SparkTestContext {
         Joiner.on(',')
             .join(
                 Arrays.stream(TableFormat.values())
-                    .filter(f -> TableFormat.HUDI != f)
+                    .filter(f -> !TableFormat.HUDI.equals(f))
                     .collect(Collectors.toList()));
     allFormats.putToCatalogProperties(CatalogMetaProperties.TABLE_FORMATS, formats);
     allFormats.setCatalogName(AMS_ALL_FORMAT_CATALOG_NAME);

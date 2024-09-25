@@ -18,16 +18,13 @@
 
 package org.apache.amoro.flink.catalog.factories;
 
-import static org.apache.amoro.flink.catalog.MixedCatalog.DEFAULT_DB;
 import static org.apache.amoro.properties.CatalogMetaProperties.TABLE_FORMATS;
 
 import org.apache.amoro.flink.catalog.FlinkUnifiedCatalog;
 import org.apache.amoro.flink.catalog.MixedCatalog;
-import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
-import org.apache.flink.table.catalog.CommonCatalogOptions;
 
 /** {@link ConfigOption}s for {@link MixedCatalog} and {@link FlinkUnifiedCatalog}. */
 @Internal
@@ -37,52 +34,8 @@ public class CatalogFactoryOptions {
   @Deprecated public static final String LEGACY_MIXED_IDENTIFIER = "arctic";
   public static final String UNIFIED_IDENTIFIER = "unified";
 
-  public static final ConfigOption<String> DEFAULT_DATABASE =
-      ConfigOptions.key(CommonCatalogOptions.DEFAULT_DATABASE_KEY)
-          .stringType()
-          .defaultValue(DEFAULT_DB);
-
-  public static final String PROPERTIES_PREFIX = "properties";
-
   public static final ConfigOption<String> METASTORE_URL =
       ConfigOptions.key("metastore.url").stringType().noDefaultValue();
-
-  // authorization configs
-  public static final ConfigOption<String> AUTH_AMS_CONFIGS_DISABLE =
-      ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.LOAD_AUTH_FROM_AMS)
-          .stringType()
-          .noDefaultValue();
-  public static final ConfigOption<String> AUTH_METHOD =
-      ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE)
-          .stringType()
-          .noDefaultValue();
-  public static final ConfigOption<String> SIMPLE_USER_NAME =
-      ConfigOptions.key(
-              PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME)
-          .stringType()
-          .noDefaultValue();
-  public static final ConfigOption<String> KEYTAB_LOGIN_USER =
-      ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL)
-          .stringType()
-          .noDefaultValue();
-  public static final ConfigOption<String> KRB5_CONF_PATH =
-      ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB_PATH)
-          .stringType()
-          .noDefaultValue();
-  public static final ConfigOption<String> KRB5_CONF_ENCODE =
-      ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB_ENCODE)
-          .stringType()
-          .noDefaultValue();
-  public static final ConfigOption<String> KEYTAB_PATH =
-      ConfigOptions.key(
-              PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_PATH)
-          .stringType()
-          .noDefaultValue();
-  public static final ConfigOption<String> KEYTAB_ENCODE =
-      ConfigOptions.key(
-              PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_ENCODE)
-          .stringType()
-          .noDefaultValue();
 
   public static final ConfigOption<String> FLINK_TABLE_FORMATS =
       ConfigOptions.key(TABLE_FORMATS)

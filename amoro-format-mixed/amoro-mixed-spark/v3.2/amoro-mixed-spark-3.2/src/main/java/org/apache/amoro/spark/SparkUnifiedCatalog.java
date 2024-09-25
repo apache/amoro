@@ -28,7 +28,6 @@ import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.catalog.functions.UnboundFunction;
 import org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog;
 
-/** @Auth: hzwangtao6 @Time: 2024/5/24 14:27 @Description: */
 public class SparkUnifiedCatalog extends SparkUnifiedCatalogBase
     implements TableCatalog, SupportsNamespaces, ProcedureCatalog, FunctionCatalog {
   /**

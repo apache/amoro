@@ -33,6 +33,7 @@ import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
@@ -94,7 +95,16 @@ public class TableRuntime extends StatedPersistentBase {
   private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
   private final TableSummaryMetrics tableSummaryMetrics;
 
-  protected TableRuntime(
+  private long targetSnapshotId;
+
+  private long targetChangeSnapshotId;
+
+  private Map<String, Long> fromSequence;
+  private Map<String, Long> toSequence;
+
+  private OptimizingType optimizingType;
+
+  public TableRuntime(
       ServerTableIdentifier tableIdentifier,
       TableRuntimeHandler tableHandler,
       Map<String, String> properties) {
@@ -110,9 +120,10 @@ public class TableRuntime extends StatedPersistentBase {
     tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
   }
 
-  protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
+  public TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
     Preconditions.checkNotNull(tableRuntimeMeta, "TableRuntimeMeta must not be null.");
     Preconditions.checkNotNull(tableHandler, "TableRuntimeHandler must not be null.");
+
     this.tableHandler = tableHandler;
     this.tableIdentifier =
         ServerTableIdentifier.of(
@@ -146,6 +157,12 @@ public class TableRuntime extends StatedPersistentBase {
     orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
     tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
     tableSummaryMetrics.refresh(tableSummary);
+
+    this.targetSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
+    this.targetChangeSnapshotId = tableRuntimeMeta.getTargetChangeSnapshotId();
+    this.fromSequence = tableRuntimeMeta.getFromSequence();
+    this.toSequence = tableRuntimeMeta.getToSequence();
+    this.optimizingType = tableRuntimeMeta.getOptimizingType();
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -188,13 +205,21 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void planFailed() {
-    invokeConsistency(
-        () -> {
-          OptimizingStatus originalStatus = optimizingStatus;
-          updateOptimizingStatus(OptimizingStatus.PENDING);
-          persistUpdatingRuntime();
-          tableHandler.handleTableChanged(this, originalStatus);
-        });
+    try {
+      invokeConsistency(
+          () -> {
+            OptimizingStatus originalStatus = optimizingStatus;
+            updateOptimizingStatus(OptimizingStatus.PENDING);
+            persistUpdatingRuntime();
+            tableHandler.handleTableChanged(this, originalStatus);
+          });
+    } catch (Exception e) {
+      OptimizingStatus originalStatus = optimizingStatus;
+      updateOptimizingStatus(OptimizingStatus.PENDING);
+      LOG.warn(
+          "Persistent database failed, only the optimizing state in the memory was changed.", e);
+      tableHandler.handleTableChanged(this, originalStatus);
+    }
   }
 
   public void beginProcess(OptimizingProcess optimizingProcess) {
@@ -413,7 +438,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void addTaskQuota(TaskRuntime.TaskQuota taskQuota) {
-    doAs(OptimizingMapper.class, mapper -> mapper.insertTaskQuota(taskQuota));
+    doAsIgnoreError(OptimizingMapper.class, mapper -> mapper.insertTaskQuota(taskQuota));
     taskQuotas.add(taskQuota);
     long validTime = System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
     this.taskQuotas.removeIf(task -> task.checkExpired(validTime));
@@ -523,6 +548,46 @@ public class TableRuntime extends StatedPersistentBase {
     this.lastPlanTime = lastPlanTime;
   }
 
+  public long getTargetSnapshotId() {
+    return targetSnapshotId;
+  }
+
+  public void setTargetSnapshotId(long targetSnapshotId) {
+    this.targetSnapshotId = targetSnapshotId;
+  }
+
+  public long getTargetChangeSnapshotId() {
+    return targetChangeSnapshotId;
+  }
+
+  public void setTargetChangeSnapshotId(long targetChangeSnapshotId) {
+    this.targetChangeSnapshotId = targetChangeSnapshotId;
+  }
+
+  public Map<String, Long> getFromSequence() {
+    return fromSequence;
+  }
+
+  public void setFromSequence(Map<String, Long> fromSequence) {
+    this.fromSequence = fromSequence;
+  }
+
+  public Map<String, Long> getToSequence() {
+    return toSequence;
+  }
+
+  public void setToSequence(Map<String, Long> toSequence) {
+    this.toSequence = toSequence;
+  }
+
+  public long getProcessId() {
+    return processId;
+  }
+
+  public OptimizingType getOptimizingType() {
+    return optimizingType;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
@@ -536,6 +601,10 @@ public class TableRuntime extends StatedPersistentBase {
         .add("lastFullOptimizingTime", lastFullOptimizingTime)
         .add("lastMinorOptimizingTime", lastMinorOptimizingTime)
         .add("tableConfiguration", tableConfiguration)
+        .add("targetSnapshotId", targetSnapshotId)
+        .add("targetChangeSnapshotId", targetChangeSnapshotId)
+        .add("fromSequence", fromSequence)
+        .add("toSequence", toSequence)
         .toString();
   }
 

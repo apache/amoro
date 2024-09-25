@@ -148,7 +148,7 @@ public class TableController {
             tableService.getServerTableIdentifier(
                 TableIdentifier.of(catalog, database, tableName).buildTableIdentifier()));
     if (serverTableIdentifier.isPresent()) {
-      TableRuntime tableRuntime = tableService.getRuntime(serverTableIdentifier.get());
+      TableRuntime tableRuntime = tableService.getRuntime(serverTableIdentifier.get().getId());
       tableSummary.setOptimizingStatus(tableRuntime.getOptimizingStatus().name());
       OptimizingEvaluator.PendingInput tableRuntimeSummary = tableRuntime.getTableSummary();
       if (tableRuntimeSummary != null) {
@@ -497,18 +497,16 @@ public class TableController {
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     Function<TableFormat, String> formatToType =
         format -> {
-          switch (format) {
-            case MIXED_HIVE:
-            case MIXED_ICEBERG:
-              return TableMeta.TableType.ARCTIC.toString();
-            case PAIMON:
-              return TableMeta.TableType.PAIMON.toString();
-            case ICEBERG:
-              return TableMeta.TableType.ICEBERG.toString();
-            case HUDI:
-              return TableMeta.TableType.HUDI.toString();
-            default:
-              throw new IllegalStateException("Unknown format");
+          if (format.equals(TableFormat.MIXED_HIVE) || format.equals(TableFormat.MIXED_ICEBERG)) {
+            return TableMeta.TableType.ARCTIC.toString();
+          } else if (format.equals(TableFormat.PAIMON)) {
+            return TableMeta.TableType.PAIMON.toString();
+          } else if (format.equals(TableFormat.ICEBERG)) {
+            return TableMeta.TableType.ICEBERG.toString();
+          } else if (format.equals(TableFormat.HUDI)) {
+            return TableMeta.TableType.HUDI.toString();
+          } else {
+            return format.toString();
           }
         };
 
@@ -656,7 +654,9 @@ public class TableController {
         tableService.getServerTableIdentifier(
             TableIdentifier.of(catalog, db, table).buildTableIdentifier());
     TableRuntime tableRuntime =
-        serverTableIdentifier != null ? tableService.getRuntime(serverTableIdentifier) : null;
+        serverTableIdentifier != null
+            ? tableService.getRuntime(serverTableIdentifier.getId())
+            : null;
 
     Preconditions.checkArgument(
         tableRuntime != null

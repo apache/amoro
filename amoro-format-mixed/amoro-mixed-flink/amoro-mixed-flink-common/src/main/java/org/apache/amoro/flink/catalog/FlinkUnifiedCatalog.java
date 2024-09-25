@@ -33,7 +33,7 @@ import org.apache.amoro.flink.catalog.factories.FlinkUnifiedCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.iceberg.IcebergFlinkCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.mixed.MixedCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.paimon.PaimonFlinkCatalogFactory;
-import org.apache.amoro.flink.table.AmoroDynamicTableFactory;
+import org.apache.amoro.flink.table.UnifiedDynamicTableFactory;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableIdentifier;
@@ -62,8 +62,6 @@ import org.apache.flink.table.catalog.stats.CatalogTableStatistics;
 import org.apache.flink.table.expressions.Expression;
 import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.Factory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -72,7 +70,6 @@ import java.util.Optional;
 
 /** This is a Flink catalog wrap a unified catalog. */
 public class FlinkUnifiedCatalog extends AbstractCatalog {
-  private static final Logger LOG = LoggerFactory.getLogger(FlinkUnifiedCatalog.class);
 
   private final UnifiedCatalog unifiedCatalog;
   private final String amsUri;
@@ -223,7 +220,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
       throws TableAlreadyExistException, DatabaseNotExistException, CatalogException {
     Configuration configuration = new Configuration();
     table.getOptions().forEach(configuration::setString);
-    TableFormat format = configuration.get(TABLE_FORMAT);
+    TableFormat format = TableFormat.valueOf(configuration.get(TABLE_FORMAT));
     TableIdentifier tableIdentifier =
         TableIdentifier.of(
             unifiedCatalog.name(), tablePath.getDatabaseName(), tablePath.getObjectName());
@@ -329,7 +326,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
 
   @Override
   public Optional<Factory> getFactory() {
-    return Optional.of(new AmoroDynamicTableFactory(availableCatalogs));
+    return Optional.of(new UnifiedDynamicTableFactory(availableCatalogs));
   }
 
   @Override
@@ -464,25 +461,19 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   private AbstractCatalog createOriginalCatalog(
       TableIdentifier tableIdentifier, TableFormat tableFormat) {
     CatalogFactory catalogFactory;
-
-    switch (tableFormat) {
-      case MIXED_ICEBERG:
-      case MIXED_HIVE:
-        catalogFactory = new MixedCatalogFactory();
-        break;
-      case ICEBERG:
-        catalogFactory = new IcebergFlinkCatalogFactory(hadoopConf);
-        break;
-      case PAIMON:
-        catalogFactory =
-            new PaimonFlinkCatalogFactory(
-                unifiedCatalog.properties(), unifiedCatalog.metastoreType());
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            String.format(
-                "Unsupported table format: [%s] in the unified catalog, table identifier is [%s], the supported table formats are [%s].",
-                tableFormat, tableIdentifier, FlinkUnifiedCatalogFactory.SUPPORTED_FORMATS));
+    if (tableFormat.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG)) {
+      catalogFactory = new MixedCatalogFactory();
+    } else if (tableFormat.equals(TableFormat.ICEBERG)) {
+      catalogFactory = new IcebergFlinkCatalogFactory(hadoopConf);
+    } else if (tableFormat.equals(TableFormat.PAIMON)) {
+      catalogFactory =
+          new PaimonFlinkCatalogFactory(
+              unifiedCatalog.properties(), unifiedCatalog.metastoreType());
+    } else {
+      throw new UnsupportedOperationException(
+          String.format(
+              "Unsupported table format: [%s] in the unified catalog, table identifier is [%s], the supported table formats are [%s].",
+              tableFormat, tableIdentifier, FlinkUnifiedCatalogFactory.SUPPORTED_FORMATS));
     }
 
     AbstractCatalog originalCatalog;

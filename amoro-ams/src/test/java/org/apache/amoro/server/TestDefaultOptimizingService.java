@@ -114,7 +114,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     appendData(mixedTable.asUnkeyedTable(), 1);
     appendData(mixedTable.asUnkeyedTable(), 2);
-    TableRuntime runtime = tableService().getRuntime(serverTableIdentifier());
+    TableRuntime runtime = tableService().getRuntime(serverTableIdentifier().getId());
 
     runtime.refresh(tableService().loadTable(serverTableIdentifier()));
   }
@@ -387,10 +387,13 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         0, optimizingService().listTasks(defaultResourceGroup().getName()).size());
     Assertions.assertEquals(
         OptimizingProcess.Status.RUNNING,
-        tableService().getRuntime(serverTableIdentifier()).getOptimizingProcess().getStatus());
+        tableService()
+            .getRuntime(serverTableIdentifier().getId())
+            .getOptimizingProcess()
+            .getStatus());
     Assertions.assertEquals(
         OptimizingStatus.COMMITTING,
-        tableService().getRuntime(serverTableIdentifier()).getOptimizingStatus());
+        tableService().getRuntime(serverTableIdentifier().getId()).getOptimizingStatus());
   }
 
   protected void reload() {
@@ -415,7 +418,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     }
 
     void refreshPending() {
-      execute(tableService().getRuntime(serverTableIdentifier()));
+      execute(tableService().getRuntime(serverTableIdentifier().getId()));
     }
   }
 

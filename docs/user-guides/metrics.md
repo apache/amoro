@@ -108,6 +108,7 @@ Amoro has supported built-in metrics to measure status of table self-optimizing 
 | table_summary_data_files                      | Gauge   | catalog, database, table | Number of data files in the table             |
 | table_summary_equality_delete_files           | Gauge   | catalog, database, table | Number of equality delete files in the table  |
 | table_summary_position_delete_files           | Gauge   | catalog, database, table | Number of position delete files in the table  |
+| table_summary_dangling_delete_files           | Gauge   | catalog, database, table | Number of dangling delete files in the table  |
 | table_summary_total_files_size                | Gauge   | catalog, database, table | Total size of files in the table              |
 | table_summary_data_files_size                 | Gauge   | catalog, database, table | Size of data files in the table               |
 | table_summary_equality_delete_files_size      | Gauge   | catalog, database, table | Size of equality delete files in the table    |

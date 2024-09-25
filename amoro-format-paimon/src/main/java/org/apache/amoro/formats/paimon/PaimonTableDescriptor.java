@@ -141,7 +141,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     Snapshot snapshot = store.snapshotManager().latestSnapshot();
     if (snapshot != null) {
       AmoroSnapshotsOfTable snapshotsOfTable =
-          manifestListInfo(store, snapshot, (m, s) -> s.dataManifests(m));
+          manifestListInfo(store, snapshot, ManifestList::readDataManifests);
       long fileSize = snapshotsOfTable.getOriginalFileSize();
       String totalSize = CommonUtil.byteToXB(fileSize);
       int fileCount = snapshotsOfTable.getFileCount();
@@ -231,7 +231,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     ManifestList manifestList = store.manifestListFactory().create();
     ManifestFile manifestFile = store.manifestFileFactory().create();
 
-    List<ManifestFileMeta> manifestFileMetas = snapshot.deltaManifests(manifestList);
+    List<ManifestFileMeta> manifestFileMetas = manifestList.readDeltaManifests(snapshot);
     for (ManifestFileMeta manifestFileMeta : manifestFileMetas) {
       manifestFileMeta.fileSize();
       List<ManifestEntry> manifestEntries = manifestFile.read(manifestFileMeta.fileName());
@@ -313,7 +313,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
       futures.add(
           CompletableFuture.runAsync(
               () -> {
-                List<ManifestFileMeta> deltaManifests = snapshot.deltaManifests(manifestList);
+                List<ManifestFileMeta> deltaManifests = manifestList.readDeltaManifests(snapshot);
                 for (ManifestFileMeta manifestFileMeta : deltaManifests) {
                   List<ManifestEntry> manifestEntries =
                       manifestFile.read(manifestFileMeta.fileName());
@@ -392,7 +392,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
                     FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
                     ManifestFile manifestFile = store.manifestFileFactory().create();
                     ManifestList manifestList = store.manifestListFactory().create();
-                    List<ManifestFileMeta> manifestFileMetas = s.deltaManifests(manifestList);
+                    List<ManifestFileMeta> manifestFileMetas = manifestList.readDeltaManifests(s);
                     boolean hasMaxLevels = false;
                     long minCreateTime = Long.MAX_VALUE;
                     long maxCreateTime = Long.MIN_VALUE;
@@ -469,12 +469,12 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
     // file number
     AmoroSnapshotsOfTable deltaSnapshotsOfTable =
-        manifestListInfo(store, snapshot, (m, s) -> s.deltaManifests(m));
+        manifestListInfo(store, snapshot, ManifestList::readDeltaManifests);
     int deltaFileCount = deltaSnapshotsOfTable.getFileCount();
     int dataFileCount =
-        manifestListInfo(store, snapshot, (m, s) -> s.dataManifests(m)).getFileCount();
-    int changeLogFileCount =
-        manifestListInfo(store, snapshot, (m, s) -> s.changelogManifests(m)).getFileCount();
+        manifestListInfo(store, snapshot, ManifestList::readDataManifests).getFileCount();
+    long changeLogFileCount =
+        manifestListInfo(store, snapshot, ManifestList::readChangelogManifests).getFileCount();
     summary.put("delta-files", String.valueOf(deltaFileCount));
     summary.put("data-files", String.valueOf(dataFileCount));
     summary.put("changelogs", String.valueOf(changeLogFileCount));
