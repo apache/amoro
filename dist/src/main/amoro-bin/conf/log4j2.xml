@@ -44,8 +44,6 @@
                 <!--Set the log base file size to trigger rolling log file updates if the size is exceeded-->
                 <SizeBasedTriggeringPolicy size="2048MB"/>
             </Policies>
-            <!--Set the maximum number of files in the log, the default is 7 if not set, it will be overwritten when
-             it exceeds the size; depends on %i in filePattern-->
             <DefaultRolloverStrategy max="25"/>
         </RollingFile>
 
@@ -63,13 +61,13 @@
                 <!--Set the log base file size to trigger rolling log file updates if the size is exceeded-->
                 <SizeBasedTriggeringPolicy size="2048MB"/>
             </Policies>
-            <!--Set the maximum number of files in the log, the default is 7 if not set, it will be overwritten when
-             it exceeds the size; depends on %i in filePattern-->
             <DefaultRolloverStrategy max="7">
                 <Delete basePath="${LOG_HOME}/history" maxDepth="1">
                     <IfFileName glob="*.log.gz"/>
-                    <IfLastModified age="7d"/>
-                    <IfAccumulatedFileSize exceeds="20GB" />
+                    <IfAny>
+                        <IfLastModified age="7d"/>
+                        <IfAccumulatedFileSize exceeds="20GB" />
+                    </IfAny>
                 </Delete>
             </DefaultRolloverStrategy>
         </RollingFile>
@@ -88,8 +86,6 @@
                 <!--Set the log base file size to trigger rolling log file updates if the size is exceeded-->
                 <SizeBasedTriggeringPolicy size="64MB"/>
             </Policies>
-            <!--Set the maximum number of files in the log, the default is 7 if not set, it will be overwritten when
-             it exceeds the size; depends on %i in filePattern-->
             <DefaultRolloverStrategy max="7"/>
         </RollingFile>
 
@@ -115,7 +111,7 @@
 
         <Root level="debug">
             <!--By default, debug logs are not printed-->
-<!--            <AppenderRef ref="debugFileAppender" level="debug"/>-->
+            <!--<AppenderRef ref="debugFileAppender" level="debug"/>-->
             <AppenderRef ref="infoFileAppender" level="info"/>
             <AppenderRef ref="errorFileAppender" level="error"/>
             <!-- SET CONSOLE_LOG_LEVEL=info to print console logger in docker -->
