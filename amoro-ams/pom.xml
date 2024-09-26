@@ -40,5 +40,4 @@
         <module>amoro-ams-metrics</module>
         <module>dist</module>
     </modules>
-
 </project>
