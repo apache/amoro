@@ -33,6 +33,7 @@ import org.apache.amoro.api.resource.Resource;
 import org.apache.amoro.api.resource.ResourceGroup;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.exception.ForbiddenException;
+import org.apache.amoro.server.exception.IllegalTaskStateException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
 import org.apache.amoro.server.exception.PluginRetryAuthException;
 import org.apache.amoro.server.exception.TaskNotFoundException;
@@ -148,8 +149,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
         .forEach(groupName -> LOG.warn("Unloaded task runtime in group {}", groupName));
   }
 
-  private void registerOptimizer(OptimizerInstance optimizer, boolean needPersistency) {
-    if (needPersistency) {
+  private void registerOptimizer(OptimizerInstance optimizer, boolean needPersistent) {
+    if (needPersistent) {
       doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
     }
 
@@ -566,7 +567,14 @@ public class DefaultOptimizingService extends StatedPersistentBase
           task.getTaskId(),
           task.getResourceDesc());
       // optimizing task of suspending optimizer would not be counted for retrying
-      queue.retryTask(task);
+      try {
+        queue.retryTask(task);
+      } catch (IllegalTaskStateException e) {
+        LOG.error(
+            "Retry task {} failed due to {}, will check it in next round",
+            task.getTaskId(),
+            e.getMessage());
+      }
     }
 
     private Predicate<TaskRuntime> buildSuspendingPredication(Set<String> activeTokens) {
