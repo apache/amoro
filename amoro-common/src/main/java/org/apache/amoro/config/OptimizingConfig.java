@@ -294,7 +294,8 @@ public class OptimizingConfig {
         && baseHashBucket == that.baseHashBucket
         && baseRefreshInterval == that.baseRefreshInterval
         && hiveRefreshInterval == that.hiveRefreshInterval
-        && Objects.equal(optimizerGroup, that.optimizerGroup);
+        && Objects.equal(optimizerGroup, that.optimizerGroup)
+        && Objects.equal(minPlanInterval, that.minPlanInterval);
   }
 
   @Override
@@ -318,7 +319,8 @@ public class OptimizingConfig {
         fullRewriteAllFiles,
         baseHashBucket,
         baseRefreshInterval,
-        hiveRefreshInterval);
+        hiveRefreshInterval,
+        minPlanInterval);
   }
 
   @Override
