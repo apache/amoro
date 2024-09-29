@@ -32,6 +32,7 @@ import org.apache.amoro.hive.catalog.MixedHiveCatalog;
 import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.hive.utils.UpgradeHiveTableUtil;
 import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.catalog.ServerCatalog;
@@ -308,6 +309,8 @@ public class TableController {
     String catalog = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
+    String type = ctx.queryParam("type");
+    String status = ctx.queryParam("status");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
@@ -319,13 +322,28 @@ public class TableController {
     Preconditions.checkState(serverCatalog.tableExists(db, table), "no such table");
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
+    ProcessStatus processStatus =
+        StringUtils.isBlank(status) ? null : ProcessStatus.valueOf(status);
     Pair<List<OptimizingProcessInfo>, Integer> optimizingProcessesInfo =
         tableDescriptor.getOptimizingProcessesInfo(
-            tableIdentifier.buildTableIdentifier(), limit, offset);
+            tableIdentifier.buildTableIdentifier(), type, processStatus, limit, offset);
     List<OptimizingProcessInfo> result = optimizingProcessesInfo.getLeft();
     int total = optimizingProcessesInfo.getRight();
 
     ctx.json(OkResponse.of(PageResult.of(result, total)));
+  }
+
+  public void getOptimizingTypes(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
+    ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
+    Preconditions.checkState(serverCatalog.tableExists(db, table), "no such table");
+
+    Map<String, String> values =
+        tableDescriptor.getTableOptimizingTypes(tableIdentifier.buildTableIdentifier());
+    ctx.json(OkResponse.of(values));
   }
 
   /**

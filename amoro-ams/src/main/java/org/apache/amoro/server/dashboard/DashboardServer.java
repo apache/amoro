@@ -222,6 +222,9 @@ public class DashboardServer {
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
                 tableController::getOptimizingProcesses);
             get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-types",
+                tableController::getOptimizingTypes);
+            get(
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/tasks",
                 tableController::getOptimizingProcessTasks);
             get(

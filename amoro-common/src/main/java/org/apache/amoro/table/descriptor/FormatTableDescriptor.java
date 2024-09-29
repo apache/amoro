@@ -20,9 +20,11 @@ package org.apache.amoro.table.descriptor;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 /** API for obtaining metadata information of various formats. */
@@ -60,7 +62,10 @@ public interface FormatTableDescriptor {
 
   /** Get the paged optimizing process information of the {@link AmoroTable} and total size. */
   Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, int limit, int offset);
+      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset);
+
+  /** Return the optimizing types of the {@link AmoroTable} is supported. */
+  Map<String, String> getTableOptimizingTypes(AmoroTable<?> amoroTable);
 
   /** Get the paged optimizing process tasks information of the {@link AmoroTable}. */
   List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, String processId);
