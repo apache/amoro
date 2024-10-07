@@ -32,6 +32,7 @@
 
     <properties>
         <flink.version>1.17.1</flink.version>
+        <root.dir>${project.parent.parent.parent.basedir}</root.dir>
     </properties>
 
     <dependencies>

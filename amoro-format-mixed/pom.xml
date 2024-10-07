@@ -33,6 +33,10 @@
     <name>Amoro Project Mixed Format Parent</name>
     <url>https://amoro.apache.org</url>
 
+    <properties>
+        <root.dir>${project.parent.basedir}</root.dir>
+    </properties>
+
     <modules>
         <module>amoro-mixed-flink</module>
         <module>amoro-mixed-spark</module>

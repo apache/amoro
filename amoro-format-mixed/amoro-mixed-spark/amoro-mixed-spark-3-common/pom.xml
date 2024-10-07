@@ -35,6 +35,7 @@
     <properties>
         <spark.version>3.2.4</spark.version>
         <scala.version>2.12.15</scala.version>
+        <root.dir>${project.parent.parent.parent.basedir}</root.dir>
     </properties>
     <dependencies>
 
