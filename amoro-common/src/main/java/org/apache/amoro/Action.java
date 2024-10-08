@@ -27,6 +27,7 @@ public class Action {
 
   /**
    * Create a new action
+   *
    * @param formats supported table formats of this action
    * @param code storage code of this action, normally this code should be identical within
    *     supported formats

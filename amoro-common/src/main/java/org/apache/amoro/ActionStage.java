@@ -25,8 +25,11 @@ public class ActionStage {
 
   /**
    * Action Stage description
-   * @param desc Action Stage description value, normally this value should be identical within certain actions
-   * @param weight the weight number of this action, the bigger the weight number, the higher position on front pages
+   *
+   * @param desc Action Stage description value, normally this value should be identical within
+   *     certain actions
+   * @param weight the weight number of this action, the bigger the weight number, the higher
+   *     position on front pages
    */
   public ActionStage(String desc, int weight) {
     this.desc = desc;
