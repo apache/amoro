@@ -19,9 +19,6 @@
 package org.apache.amoro.server.dashboard.controller;
 
 import io.javalin.http.Context;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.resource.ResourceType;
@@ -44,10 +41,13 @@ import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import javax.ws.rs.BadRequestException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /** The controller that handles optimizer requests. */
@@ -61,7 +61,6 @@ public class OptimizerGroupController {
     this.tableService = tableService;
     this.optimizerManager = optimizerManager;
   }
-
 
   public void getActions(Context ctx) {
     ctx.json(
