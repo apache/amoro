@@ -154,7 +154,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       return cacheAndReturnTasks(Collections.emptyList());
     }
 
-    List<PartitionEvaluator> evaluators = new ArrayList<>(partitionPlanMap.values());
+    List<PartitionEvaluator> evaluators = new ArrayList<>(needOptimizingPlanMap.values());
     // prioritize partitions with high cost to avoid starvation
     evaluators.sort(Comparator.comparing(PartitionEvaluator::getWeight, Comparator.reverseOrder()));
 
@@ -234,7 +234,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     }
 
     public PartitionEvaluator buildPartitionPlanner(Pair<Integer, StructLike> partition) {
-      if (TableFormat.ICEBERG == mixedTable.format()) {
+      if (TableFormat.ICEBERG.equals(mixedTable.format())) {
         return new IcebergPartitionPlan(tableRuntime, mixedTable, partition, planTime);
       } else {
         if (TableTypeUtil.isHive(mixedTable)) {

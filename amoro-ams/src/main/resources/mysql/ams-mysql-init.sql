@@ -122,7 +122,7 @@ CREATE TABLE `table_runtime`
     `last_major_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Major Optimize time for all partitions',
     `last_minor_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Minor Optimize time for all partitions',
     `last_full_optimizing_time`     timestamp NULL DEFAULT NULL COMMENT 'Latest Full Optimize time for all partitions',
-    `optimizing_status`             varchar(20) DEFAULT 'IDLE' COMMENT 'Table optimize status: FULL_OPTIMIZING, MAJOR_OPTIMIZING, MINOR_OPTIMIZING, COMMITTING, PENDING, IDLE',
+    `optimizing_status_code`        int DEFAULT 700 COMMENT 'Table optimize status code: 100(FULL_OPTIMIZING), 200(MAJOR_OPTIMIZING), 300(MINOR_OPTIMIZING), 400(COMMITTING), 500(PLANING), 600(PENDING), 700(IDLE)',
     `optimizing_status_start_time`  timestamp default CURRENT_TIMESTAMP COMMENT 'Table optimize status start time',
     `optimizing_process_id`         bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
     `optimizer_group`               varchar(64) NOT NULL,
@@ -131,7 +131,8 @@ CREATE TABLE `table_runtime`
     `pending_input`                 mediumtext,
     `table_summary`                 mediumtext,
     PRIMARY KEY (`table_id`),
-    UNIQUE KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
+    UNIQUE KEY `table_index` (`catalog_name`,`db_name`,`table_name`),
+    INDEX idx_optimizer_status_and_time (optimizing_status_code, optimizing_status_start_time DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize running information of each table' ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE `table_optimizing_process`

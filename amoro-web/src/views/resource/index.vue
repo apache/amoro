@@ -24,6 +24,7 @@ import {
   shallowReactive,
   toRefs,
   watch,
+  ref,
 } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -33,6 +34,7 @@ import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { usePagination } from '@/hooks/usePagination'
 import type { IIOptimizeGroupItem, ILableAndValue } from '@/types/common.type'
 import GroupModal from '@/views/resource/components/GroupModal.vue'
+import CreateOptimizerModal from '@/views/resource/components/CreateOptimizerModal.vue'
 
 export default defineComponent({
   name: 'Resource',
@@ -40,6 +42,7 @@ export default defineComponent({
     List,
     GroupModal,
     TableList,
+    CreateOptimizerModal,
   },
   setup() {
     const { t } = useI18n()
@@ -69,6 +72,9 @@ export default defineComponent({
       },
       groupKeyCount: 1,
       showTab: false as boolean,
+      showCreateOptimizer: false as boolean,
+      optimizerEdit: false,
+      optimizerEditRecord: null,
     })
 
     watch(
@@ -92,6 +98,16 @@ export default defineComponent({
       state.showGroupModal = true
     }
 
+    const createOptimizer = (editRecord: any | null) => {
+      if (editRecord) {
+        state.optimizerEdit = true
+        state.optimizerEditRecord = { ...editRecord }
+      } else {
+        state.optimizerEdit = false
+      }
+      state.showCreateOptimizer = true
+    }
+
     const onChangeTab = (key: string) => {
       const query = { ...route.query }
       query.tab = key
@@ -102,6 +118,7 @@ export default defineComponent({
       state.showTab = true
     })
 
+    let createOptimizer1 = createOptimizer;
     return {
       placeholder,
       pagination,
@@ -109,6 +126,7 @@ export default defineComponent({
       tabConfig,
       onChangeTab,
       editGroup,
+      createOptimizer,
       t,
     }
   },
@@ -136,6 +154,9 @@ export default defineComponent({
             :tab="t('optimizers')"
             :class="[activeTab === 'optimizers' ? 'active' : '']"
           >
+            <a-button type="primary" class="g-mb-16" @click="createOptimizer(null)">
+              {{ t("createOptimizer") }}
+            </a-button>
             <List type="optimizers" />
           </a-tab-pane>
           <a-tab-pane
@@ -164,6 +185,11 @@ export default defineComponent({
         groupKeyCount++;
         showGroupModal = false;
       "
+    />
+    <CreateOptimizerModal
+        v-if="showCreateOptimizer"
+        @cancel="showCreateOptimizer = false"
+        @refresh="showCreateOptimizer = false"
     />
   </div>
 </template>

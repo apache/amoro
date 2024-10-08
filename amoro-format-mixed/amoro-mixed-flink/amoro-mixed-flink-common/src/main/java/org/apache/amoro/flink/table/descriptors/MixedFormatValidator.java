@@ -283,18 +283,18 @@ public class MixedFormatValidator extends ConnectorDescriptorValidator {
                   + " of the key. Default is -1, means it is automatically determined: every shard will be at least 512KB and"
                   + " number of shard bits will not exceed 6.");
 
-  public static final ConfigOption<TableFormat> TABLE_FORMAT =
+  public static final ConfigOption<String> TABLE_FORMAT =
       ConfigOptions.key("table.format")
-          .enumType(TableFormat.class)
-          .defaultValue(TableFormat.MIXED_ICEBERG)
+          .stringType()
+          .defaultValue(TableFormat.MIXED_ICEBERG.name())
           .withDescription(
               String.format(
                   "The format of the table, valid values are %s, %s, %s or %s, and Flink choose '%s' as default format.",
-                  TableFormat.ICEBERG,
-                  TableFormat.MIXED_ICEBERG,
-                  TableFormat.MIXED_HIVE,
-                  TableFormat.PAIMON,
-                  TableFormat.MIXED_ICEBERG));
+                  TableFormat.ICEBERG.name(),
+                  TableFormat.MIXED_ICEBERG.name(),
+                  TableFormat.MIXED_HIVE.name(),
+                  TableFormat.PAIMON.name(),
+                  TableFormat.MIXED_ICEBERG.name()));
 
   public static final ConfigOption<Integer> SCAN_PARALLELISM =
       ConfigOptions.key("source.parallelism")

@@ -27,6 +27,7 @@ import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.config.ConfigHelpers;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.dashboard.DashboardServer;
+import org.apache.amoro.server.dashboard.JavalinJsonMapper;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
@@ -66,7 +67,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -215,7 +215,7 @@ public class AmoroServiceContainer {
     MetricManager.dispose();
   }
 
-  private void initConfig() throws IOException {
+  private void initConfig() throws Exception {
     LOG.info("initializing configurations...");
     new ConfigurationHelper().init();
   }
@@ -243,6 +243,7 @@ public class AmoroServiceContainer {
               config.addStaticFiles(dashboardServer.configStaticFiles());
               config.sessionHandler(SessionHandler::new);
               config.enableCorsForAllOrigins();
+              config.jsonMapper(JavalinJsonMapper.createDefaultJsonMapper());
               config.showJavalinBanner = false;
             });
     httpServer.routes(
@@ -407,14 +408,14 @@ public class AmoroServiceContainer {
 
     private JsonNode yamlConfig;
 
-    public void init() throws IOException {
+    public void init() throws Exception {
       Map<String, Object> envConfig = initEnvConfig();
       initServiceConfig(envConfig);
       setIcebergSystemProperties();
       initContainerConfig();
     }
 
-    private void initServiceConfig(Map<String, Object> envConfig) throws IOException {
+    private void initServiceConfig(Map<String, Object> envConfig) throws Exception {
       LOG.info("initializing service configuration...");
       String configPath = Environments.getConfigPath() + "/" + SERVER_CONFIG_FILENAME;
       LOG.info("load config from path: {}", configPath);
@@ -438,6 +439,8 @@ public class AmoroServiceContainer {
 
     private Map<String, Object> initEnvConfig() {
       LOG.info("initializing system env configuration...");
+      Map<String, String> envs = System.getenv();
+      envs.forEach((k, v) -> LOG.info("export {}={}", k, v));
       String prefix = AmoroManagementConf.SYSTEM_CONFIG.toUpperCase();
       return ConfigHelpers.convertConfigurationKeys(prefix, System.getenv());
     }

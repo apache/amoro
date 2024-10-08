@@ -18,10 +18,10 @@ limitations under the License.
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { defineProps } from 'vue'
 import type { IKeyAndValue } from '@/types/common.type'
 
 const props = defineProps<{ title: string, data: IKeyAndValue[] }>()
+
 const { t } = useI18n()
 </script>
 

@@ -22,19 +22,20 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { Modal } from 'ant-design-vue'
 import { usePagination } from '@/hooks/usePagination'
-import type { BreadcrumbOptimizingItem, IColumns } from '@/types/common.type'
-import { cancelOptimizingProcess, getOptimizingProcesses, getTasksByOptimizingProcessId } from '@/services/table.service'
+import type { BreadcrumbOptimizingItem, IColumns, ILableAndValue } from '@/types/common.type'
+import { cancelOptimizingProcess, getOptimizingProcesses, getTasksByOptimizingProcessId, getTableOptimizingTypes } from '@/services/table.service'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
 
 const hasBreadcrumb = ref<boolean>(false)
 
-// const statusMap = { RUNNING: 'RUNNING', CLOSED: 'CLOSED', SUCCESS: 'SUCCESS', FAILED: 'FAILED' }
-const STATUS_CONFIG = shallowReactive({
-  RUNNING: { title: 'RUNNING', color: '#1890ff' },
+const statusMap = {
+  PENDING: { title: 'PENDING', color: '#ffcc00'},
+  ACTIVE: { title: 'ACTIVE', color: '#1890ff' },
   CLOSED: { title: 'CLOSED', color: '#c9cdd4' },
   SUCCESS: { title: 'SUCCESS', color: '#0ad787' },
   FAILED: { title: 'FAILED', color: '#f5222d' },
-})
+}
+const STATUS_CONFIG = shallowReactive(statusMap)
 
 const TASK_STATUS_CONFIG = shallowReactive({
   PLANNED: { title: 'PLANNED', color: '#ffcc00' },
@@ -85,6 +86,19 @@ const sourceData = reactive({
   table: '',
   ...query,
 })
+const actionType = ref<ILableAndValue>()
+const actionTypeList = ref<ILableAndValue[]>([])
+const statusType = ref<ILableAndValue>()
+const statusTypeList = ref<ILableAndValue[]>([])
+
+async function getQueryDataDictList() {
+  const tableProcessTypes = await getTableOptimizingTypes({...sourceData})
+  const typesList = Object.entries(tableProcessTypes).map(([typeName, displayName]) => ({ label: displayName as string, value: typeName}))
+  const status = Object.entries(statusMap).map(([key, value]) => ({ label: value.title , value: key }));
+
+  actionTypeList.value = typesList
+  statusTypeList.value = status
+}
 
 async function refreshOptimizingProcesses() {
   try {
@@ -92,9 +106,11 @@ async function refreshOptimizingProcesses() {
     dataSource.length = 0
     const result = await getOptimizingProcesses({
       ...sourceData,
+      type: actionType.value || '',
+      status: statusType.value || '',
       page: pagination.current,
       pageSize: pagination.pageSize,
-    })
+    } as any)
     const { list, total = 0 } = result
     pagination.total = total
     dataSource.push(...[...list || []].map((item) => {
@@ -214,12 +230,23 @@ function toggleBreadcrumb(rowProcessId: number, status: string) {
 onMounted(() => {
   hasBreadcrumb.value = false
   refresh()
+  getQueryDataDictList()
 })
 </script>
 
 <template>
   <div class="table-optimizing">
     <template v-if="!hasBreadcrumb">
+      <a-space class="filter-form">
+        <a-select
+          v-model:value="actionType" allow-clear placeholder="Type" :options="actionTypeList"
+          style="min-width: 150px;" @change="refresh"
+        />
+        <a-select
+          v-model:value="statusType" allow-clear placeholder="Status" :options="statusTypeList"
+          style="min-width: 150px;" @change="refresh"
+        />
+      </a-space>
       <a-table
         row-key="processId" :columns="columns" :data-source="dataSource" :pagination="pagination"
         :loading="loading" @change="change"
@@ -279,7 +306,7 @@ onMounted(() => {
         </template>
         <template #expandedRowRender="{ record }">
           <a-row v-for="(value, key) in record.summary" :key="key" type="flex" :gutter="16">
-            <a-col flex="220px" style="text-align: right;">
+            <a-col flex="420px" style="text-align: right;">
               {{ key }} :
             </a-col>
             <a-col flex="auto">
@@ -362,7 +389,7 @@ onMounted(() => {
         </template>
         <template #expandedRowRender="{ record }">
           <a-row v-for="(value, key) in record.summary" :key="key" type="flex" :gutter="16">
-            <a-col flex="220px" style="text-align: right;">
+            <a-col flex="420px" style="text-align: right;">
               {{ key }} :
             </a-col>
             <a-col flex="auto">
@@ -408,6 +435,12 @@ onMounted(() => {
 
 <style lang="less">
 .table-optimizing {
+
+  .filter-form {
+    width: 100%;
+    margin-bottom: 16px;
+  }
+
   .text-active {
     color: #1890ff;
     cursor: pointer;

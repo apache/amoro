@@ -60,9 +60,9 @@ public interface TableMaintainer {
 
   static TableMaintainer ofTable(AmoroTable<?> amoroTable) {
     TableFormat format = amoroTable.format();
-    if (format == TableFormat.MIXED_HIVE || format == TableFormat.MIXED_ICEBERG) {
+    if (format.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG)) {
       return new MixedTableMaintainer((MixedTable) amoroTable.originalTable());
-    } else if (format == TableFormat.ICEBERG) {
+    } else if (TableFormat.ICEBERG.equals(format)) {
       return new IcebergTableMaintainer((Table) amoroTable.originalTable());
     } else {
       throw new RuntimeException("Unsupported table type" + amoroTable.originalTable().getClass());

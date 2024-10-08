@@ -33,7 +33,9 @@ import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.pool2.impl.BaseObjectPoolConfig;
 import org.apache.ibatis.jdbc.ScriptRunner;
+import org.apache.ibatis.mapping.DatabaseIdProvider;
 import org.apache.ibatis.mapping.Environment;
+import org.apache.ibatis.mapping.VendorDatabaseIdProvider;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -53,8 +55,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
+import java.util.Properties;
 
 public class SqlSessionFactoryProvider {
   private static final Logger LOG = LoggerFactory.getLogger(SqlSessionFactoryProvider.class);
@@ -73,7 +77,7 @@ public class SqlSessionFactoryProvider {
 
   private volatile SqlSessionFactory sqlSessionFactory;
 
-  public void init(Configurations config) {
+  public void init(Configurations config) throws SQLException {
     BasicDataSource dataSource = new BasicDataSource();
     dataSource.setUrl(config.getString(AmoroManagementConf.DB_CONNECTION_URL));
     dataSource.setDriverClassName(config.getString(AmoroManagementConf.DB_DRIVER_CLASS_NAME));
@@ -111,6 +115,14 @@ public class SqlSessionFactoryProvider {
     configuration.addMapper(PlatformFileMapper.class);
     configuration.addMapper(ResourceMapper.class);
     configuration.addMapper(TableBlockerMapper.class);
+
+    DatabaseIdProvider provider = new VendorDatabaseIdProvider();
+    Properties properties = new Properties();
+    properties.setProperty("MySQL", "mysql");
+    properties.setProperty("PostgreSQL", "postgres");
+    properties.setProperty("Derby", "derby");
+    provider.setProperties(properties);
+    configuration.setDatabaseId(provider.getDatabaseId(dataSource));
     if (sqlSessionFactory == null) {
       synchronized (this) {
         if (sqlSessionFactory == null) {

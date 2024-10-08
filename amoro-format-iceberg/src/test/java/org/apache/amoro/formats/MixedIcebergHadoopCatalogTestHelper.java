@@ -28,7 +28,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.MixedFormatCatalogUtil;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
@@ -63,7 +63,7 @@ public class MixedIcebergHadoopCatalogTestHelper
   @Override
   public AmoroCatalog amoroCatalog() {
     MixedIcebergCatalogFactory mixedIcebergCatalogFactory = new MixedIcebergCatalogFactory();
-    TableMetaStore metaStore = MixedFormatCatalogUtil.buildMetaStore(getCatalogMeta());
+    TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
     Map<String, String> properties =
         mixedIcebergCatalogFactory.convertCatalogProperties(
             catalogName, getMetastoreType(), catalogProperties);
@@ -74,7 +74,7 @@ public class MixedIcebergHadoopCatalogTestHelper
   @Override
   public MixedFormatCatalog originalCatalog() {
     CatalogMeta meta = getCatalogMeta();
-    TableMetaStore metaStore = MixedFormatCatalogUtil.buildMetaStore(meta);
+    TableMetaStore metaStore = CatalogUtil.buildMetaStore(meta);
     return CatalogLoader.createCatalog(
         catalogName(), meta.getCatalogType(), meta.getCatalogProperties(), metaStore);
   }

@@ -93,30 +93,28 @@ public class EnableCatalogSelectExtension implements BeforeEachMethodAdapter {
     Preconditions.condition(
         format == TableFormat.MIXED_ICEBERG || format == TableFormat.MIXED_HIVE,
         "must be a mixed-format");
-    switch (format) {
-      case MIXED_ICEBERG:
-        return SparkTestContext.SparkCatalogNames.MIXED_ICEBERG;
-      case MIXED_HIVE:
-        return SparkTestContext.SparkCatalogNames.MIXED_HIVE;
-      default:
-        throw new IllegalArgumentException("must be a mixed-format");
+    if (TableFormat.MIXED_HIVE.equals(format)) {
+      return SparkTestContext.SparkCatalogNames.MIXED_HIVE;
+    } else if (TableFormat.MIXED_ICEBERG.equals(format)) {
+      return SparkTestContext.SparkCatalogNames.MIXED_ICEBERG;
+    } else {
+      throw new IllegalArgumentException("must be a mixed-format");
     }
   }
 
   private String selectUnifiedCatalogByFormat(
       ExtensionContext context, ExtensionRegistry registry) {
     TableFormat format = formatFromMethodArgs(context, registry);
-    switch (format) {
-      case MIXED_ICEBERG:
-        return SparkTestContext.SparkCatalogNames.UNIFIED_MIXED_ICEBERG;
-      case MIXED_HIVE:
-        return SparkTestContext.SparkCatalogNames.UNIFIED_MIXED_HIVE;
-      case ICEBERG:
-        return SparkTestContext.SparkCatalogNames.UNIFIED_ICEBERG;
-      case PAIMON:
-        return SparkTestContext.SparkCatalogNames.UNIFIED_PAIMON;
-      default:
-        throw new IllegalArgumentException("unknown format");
+    if (TableFormat.MIXED_HIVE.equals(format)) {
+      return SparkTestContext.SparkCatalogNames.UNIFIED_MIXED_HIVE;
+    } else if (TableFormat.MIXED_ICEBERG.equals(format)) {
+      return SparkTestContext.SparkCatalogNames.UNIFIED_MIXED_ICEBERG;
+    } else if (TableFormat.ICEBERG.equals(format)) {
+      return SparkTestContext.SparkCatalogNames.UNIFIED_ICEBERG;
+    } else if (TableFormat.PAIMON.equals(format)) {
+      return SparkTestContext.SparkCatalogNames.UNIFIED_PAIMON;
+    } else {
+      throw new IllegalArgumentException("must be a mixed-format");
     }
   }
 

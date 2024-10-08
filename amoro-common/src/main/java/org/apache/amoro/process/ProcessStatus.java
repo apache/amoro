@@ -24,6 +24,7 @@ package org.apache.amoro.process;
  */
 public enum ProcessStatus {
   UNKNOWN,
+  PENDING,
 
   /** This status containing scheduled and running phases */
   ACTIVE,

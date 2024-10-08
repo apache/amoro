@@ -33,6 +33,7 @@ import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.exception.ForbiddenException;
+import org.apache.amoro.server.exception.IllegalTaskStateException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
 import org.apache.amoro.server.exception.PluginRetryAuthException;
 import org.apache.amoro.server.exception.TaskNotFoundException;
@@ -49,7 +50,6 @@ import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultTableService;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableRuntimeMeta;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
@@ -121,24 +121,24 @@ public class DefaultOptimizingService extends StatedPersistentBase
     return tableHandlerChain;
   }
 
-  private void loadOptimizingQueues(List<TableRuntimeMeta> tableRuntimeMetaList) {
+  private void loadOptimizingQueues(List<TableRuntime> tableRuntimeMetaList) {
     List<ResourceGroup> optimizerGroups =
         getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
     List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
-    Map<String, List<TableRuntimeMeta>> groupToTableRuntimes =
+    Map<String, List<TableRuntime>> groupToTableRuntimes =
         tableRuntimeMetaList.stream()
-            .collect(Collectors.groupingBy(TableRuntimeMeta::getOptimizerGroup));
+            .collect(Collectors.groupingBy(TableRuntime::getOptimizerGroup));
     optimizerGroups.forEach(
         group -> {
           String groupName = group.getName();
-          List<TableRuntimeMeta> tableRuntimeMetas = groupToTableRuntimes.remove(groupName);
+          List<TableRuntime> tableRuntimes = groupToTableRuntimes.remove(groupName);
           OptimizingQueue optimizingQueue =
               new OptimizingQueue(
                   tableService,
                   group,
                   this,
                   planExecutor,
-                  Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new),
+                  Optional.ofNullable(tableRuntimes).orElseGet(ArrayList::new),
                   maxPlanningParallelism);
           optimizingQueueByGroup.put(groupName, optimizingQueue);
         });
@@ -148,8 +148,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
         .forEach(groupName -> LOG.warn("Unloaded task runtime in group {}", groupName));
   }
 
-  private void registerOptimizer(OptimizerInstance optimizer, boolean needPersistency) {
-    if (needPersistency) {
+  private void registerOptimizer(OptimizerInstance optimizer, boolean needPersistent) {
+    if (needPersistent) {
       doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
     }
 
@@ -456,9 +456,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     @Override
-    protected void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
+    protected void initHandler(List<TableRuntime> tableRuntimeList) {
       LOG.info("OptimizerManagementService begin initializing");
-      loadOptimizingQueues(tableRuntimeMetaList);
+      loadOptimizingQueues(tableRuntimeList);
       optimizerKeeper.start();
       LOG.info("SuspendingDetector for Optimizer has been started.");
       LOG.info("OptimizerManagementService initializing has completed");
@@ -566,7 +566,14 @@ public class DefaultOptimizingService extends StatedPersistentBase
           task.getTaskId(),
           task.getResourceDesc());
       // optimizing task of suspending optimizer would not be counted for retrying
-      queue.retryTask(task);
+      try {
+        queue.retryTask(task);
+      } catch (IllegalTaskStateException e) {
+        LOG.error(
+            "Retry task {} failed due to {}, will check it in next round",
+            task.getTaskId(),
+            e.getMessage());
+      }
     }
 
     private Predicate<TaskRuntime> buildSuspendingPredication(Set<String> activeTokens) {

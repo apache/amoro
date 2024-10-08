@@ -19,7 +19,6 @@
 package org.apache.amoro.table;
 
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Charsets;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
@@ -39,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import sun.security.krb5.KrbException;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -48,6 +46,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PrivilegedAction;
@@ -70,7 +69,7 @@ public class TableMetaStore implements Serializable {
       new ConcurrentHashMap<>();
 
   public static final TableMetaStore EMPTY =
-      TableMetaStore.builder().withConfiguration(new Configuration()).buildForTest();
+      TableMetaStore.builder().withConfiguration(new Configuration()).build();
 
   public static final String HADOOP_CONF_DIR = "conf.hadoop.dir";
   public static final String HIVE_SITE = "hive-site";
@@ -126,13 +125,11 @@ public class TableMetaStore implements Serializable {
   private final byte[] krbConf;
   private final String krbPrincipal;
   private final boolean disableAuth;
+  private final String accessKey;
+  private final String secretKey;
 
   private transient RuntimeContext runtimeContext;
   private transient String authInformation;
-
-  private String accessKey;
-
-  private String secretKey;
 
   public static Builder builder() {
     return new Builder();
@@ -168,6 +165,21 @@ public class TableMetaStore implements Serializable {
     this.disableAuth = disableAuth;
     this.accessKey = accessKey;
     this.secretKey = secretKey;
+  }
+
+  private TableMetaStore(Configuration configuration) {
+    this.disableAuth = true;
+    this.metaStoreSite = null;
+    this.hdfsSite = null;
+    this.coreSite = null;
+    this.authMethod = null;
+    this.hadoopUsername = null;
+    this.krbKeyTab = null;
+    this.krbConf = null;
+    this.krbPrincipal = null;
+    this.accessKey = null;
+    this.secretKey = null;
+    getRuntimeContext().setConfiguration(configuration);
   }
 
   public byte[] getMetaStoreSite() {
@@ -218,7 +230,7 @@ public class TableMetaStore implements Serializable {
     return getRuntimeContext().getConfiguration();
   }
 
-  public synchronized UserGroupInformation getUGI() {
+  private synchronized UserGroupInformation getUGI() {
     return getRuntimeContext().getUGI();
   }
 
@@ -567,7 +579,6 @@ public class TableMetaStore implements Serializable {
     private byte[] krbKeyTab;
     private byte[] krbConf;
     private String krbPrincipal;
-
     private String accessKey;
     private String secretKey;
     private boolean disableAuth = true;
@@ -710,7 +721,7 @@ public class TableMetaStore implements Serializable {
 
     private byte[] readBytesFromFile(String filePath) {
       try {
-        return IOUtils.toByteArray(new FileInputStream(filePath));
+        return IOUtils.toByteArray(Files.newInputStream(Paths.get(filePath)));
       } catch (IOException e) {
         throw new UncheckedIOException("Read config failed:" + filePath, e);
       }
@@ -751,61 +762,46 @@ public class TableMetaStore implements Serializable {
     }
 
     public TableMetaStore build() {
-      readProperties();
-      if (!disableAuth & !AUTH_METHOD_AK_SK.equals(authMethod)) {
-        Preconditions.checkNotNull(hdfsSite);
-        Preconditions.checkNotNull(coreSite);
-      }
-      if (AUTH_METHOD_SIMPLE.equals(authMethod)) {
-        Preconditions.checkNotNull(hadoopUsername);
-      } else if (AUTH_METHOD_KERBEROS.equals(authMethod)) {
-        Preconditions.checkNotNull(krbConf);
-        Preconditions.checkNotNull(krbKeyTab);
-        Preconditions.checkNotNull(krbPrincipal);
-      } else if (AUTH_METHOD_AK_SK.equals(authMethod)) {
-        Preconditions.checkNotNull(accessKey);
-        Preconditions.checkNotNull(secretKey);
-      } else if (authMethod != null) {
-        throw new IllegalArgumentException("Unsupported auth method:" + authMethod);
-      }
+      if (disableAuth && configuration != null) {
+        LOG.info("Build table meta store with local configuration:" + configuration);
+        return new TableMetaStore(configuration);
+      } else {
+        readProperties();
+        if (AUTH_METHOD_SIMPLE.equals(authMethod) || AUTH_METHOD_KERBEROS.equals(authMethod)) {
+          Preconditions.checkNotNull(hdfsSite);
+          Preconditions.checkNotNull(coreSite);
+        }
+        if (AUTH_METHOD_SIMPLE.equals(authMethod)) {
+          Preconditions.checkNotNull(hadoopUsername);
+        } else if (AUTH_METHOD_KERBEROS.equals(authMethod)) {
+          Preconditions.checkNotNull(krbConf);
+          Preconditions.checkNotNull(krbKeyTab);
+          Preconditions.checkNotNull(krbPrincipal);
+        } else if (AUTH_METHOD_AK_SK.equals(authMethod)) {
+          Preconditions.checkNotNull(accessKey);
+          Preconditions.checkNotNull(secretKey);
+        } else if (authMethod != null) {
+          throw new IllegalArgumentException("Unsupported auth method:" + authMethod);
+        }
 
-      LOG.info(
-          "Construct TableMetaStore with authMethod:{}, hadoopUsername:{}, krbPrincipal:{}",
-          authMethod,
-          hadoopUsername,
-          krbPrincipal);
-      return new TableMetaStore(
-          metaStoreSite,
-          hdfsSite,
-          coreSite,
-          authMethod,
-          hadoopUsername,
-          krbKeyTab,
-          krbConf,
-          krbPrincipal,
-          accessKey,
-          secretKey,
-          disableAuth);
-    }
-
-    @VisibleForTesting
-    public TableMetaStore buildForTest() {
-      readProperties();
-      TableMetaStore tableMetaStore =
-          new TableMetaStore(
-              metaStoreSite,
-              hdfsSite,
-              coreSite,
-              authMethod,
-              hadoopUsername,
-              krbKeyTab,
-              krbConf,
-              krbPrincipal,
-              accessKey,
-              secretKey,
-              disableAuth);
-      tableMetaStore.getRuntimeContext().setConfiguration(configuration);
-      return tableMetaStore;
+        LOG.info(
+            "Build table meta store with configurations: authMethod:{}, hadoopUsername:{}, krbPrincipal:{}",
+            authMethod,
+            hadoopUsername,
+            krbPrincipal);
+        return new TableMetaStore(
+            metaStoreSite,
+            hdfsSite,
+            coreSite,
+            authMethod,
+            hadoopUsername,
+            krbKeyTab,
+            krbConf,
+            krbPrincipal,
+            accessKey,
+            secretKey,
+            disableAuth);
+      }
     }
   }
 }

@@ -62,14 +62,24 @@ export function scaleoutResource(
   return request.post(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/optimizers`, { parallelism })
 }
 
+export function createOptimizerResource(
+    params: {
+        optimizerGroup: string
+        parallelism: number
+    },
+) {
+    const { optimizerGroup, parallelism } = params
+    return request.post(`ams/v1/optimize/optimizers`, { optimizerGroup, parallelism })
+}
+
 export function releaseResource(
   params: {
     optimizerGroup: string
     jobId: string
   },
 ) {
-  const { optimizerGroup, jobId } = params
-  return request.delete(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/optimizers/${jobId}`)
+  const { jobId } = params
+  return request.delete(`ams/v1/optimize/optimizers/${jobId}`)
 }
 
 export async function getResourceGroupsListAPI() {

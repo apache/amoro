@@ -185,7 +185,8 @@ public class OverviewCache {
     long totalTableSize = 0L;
 
     // table size
-    List<MetricKey> metricKeys = metricDefineMap.get(TABLE_SUMMARY_TOTAL_FILES_SIZE);
+    List<MetricKey> metricKeys =
+        metricDefineMap.getOrDefault(TABLE_SUMMARY_TOTAL_FILES_SIZE, ImmutableList.of());
     for (MetricKey metricKey : metricKeys) {
       String tableName = fullTableName(metricKey);
       allCatalogs.add(catalog(metricKey));
@@ -197,7 +198,7 @@ public class OverviewCache {
     }
 
     // file count
-    metricKeys = metricDefineMap.get(TABLE_SUMMARY_TOTAL_FILES);
+    metricKeys = metricDefineMap.getOrDefault(TABLE_SUMMARY_TOTAL_FILES, ImmutableList.of());
     for (MetricKey metricKey : metricKeys) {
       String tableName = fullTableName(metricKey);
       allCatalogs.add(catalog(metricKey));
@@ -209,7 +210,7 @@ public class OverviewCache {
     }
 
     // health score
-    metricKeys = metricDefineMap.get(TABLE_SUMMARY_HEALTH_SCORE);
+    metricKeys = metricDefineMap.getOrDefault(TABLE_SUMMARY_HEALTH_SCORE, ImmutableList.of());
     for (MetricKey metricKey : metricKeys) {
       String tableName = fullTableName(metricKey);
       allCatalogs.add(catalog(metricKey));
@@ -221,7 +222,7 @@ public class OverviewCache {
 
     this.totalDataSize.set(totalTableSize);
     this.totalCatalog.set(allCatalogs.size());
-    this.totalTableCount.set(metricKeys.size());
+    this.totalTableCount.set(topTableItemMap.size());
     this.allTopTableItem = new ArrayList<>(topTableItemMap.values());
     addAndCheck(new OverviewDataSizeItem(ts, totalTableSize));
   }

@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -15,6 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# This file is used to export env variables for AMORO
 
-org.apache.amoro.flink.catalog.factories.mixed.MixedCatalogFactory
-org.apache.amoro.flink.table.MixedDynamicTableFactory
+# set your hadoop conf dir
+# export HADOOP_CONF_DIR=
+
+# set your hive conf dir
+# export HIVE_CONF_DIR=
+
+# set your addition classpath dir
+# export AMORO_ADDITION_CLASSPATH=
