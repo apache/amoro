@@ -24,6 +24,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.server.optimizing.ExecutingStageTask;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
 import org.apache.iceberg.DataFile;
@@ -66,7 +67,7 @@ public class TestOptimizingPlanner extends TestOptimizingEvaluator {
     super.testFragmentFiles();
     OptimizingPlanner optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertTrue(optimizingEvaluator.isNecessary());
-    List<TaskDescriptor> taskDescriptors = optimizingEvaluator.planTasks();
+    List<ExecutingStageTask> taskDescriptors = optimizingEvaluator.planTasks();
     Assert.assertEquals(1, taskDescriptors.size());
     List<DataFile> dataFiles =
         scanFiles().stream()

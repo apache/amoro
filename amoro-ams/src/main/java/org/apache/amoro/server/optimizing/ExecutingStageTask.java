@@ -42,17 +42,18 @@ public class ExecutingStageTask
 
   @Override
   protected void calculateSummary() {
-    if (input != null && output == null) {
+    if (input != null) {
       summary = new MetricsSummary(input);
-    } else {
-      summary.setNewDataFileCnt(OptimizingUtil.getFileCount(output.getDataFiles()));
-      summary.setNewDataSize(OptimizingUtil.getFileSize(output.getDataFiles()));
-      summary.setNewDataRecordCnt(OptimizingUtil.getRecordCnt(output.getDataFiles()));
-      summary.setNewDeleteFileCnt(OptimizingUtil.getFileCount(output.getDeleteFiles()));
-      summary.setNewDeleteSize(OptimizingUtil.getFileSize(output.getDeleteFiles()));
-      summary.setNewDeleteRecordCnt(OptimizingUtil.getRecordCnt(output.getDeleteFiles()));
-      summary.setNewFileSize(summary.getNewDataSize() + summary.getNewDeleteSize());
-      summary.setNewFileCnt(summary.getNewDataFileCnt() + summary.getNewDeleteFileCnt());
+      if (output != null) {
+        summary.setNewDataFileCnt(OptimizingUtil.getFileCount(output.getDataFiles()));
+        summary.setNewDataSize(OptimizingUtil.getFileSize(output.getDataFiles()));
+        summary.setNewDataRecordCnt(OptimizingUtil.getRecordCnt(output.getDataFiles()));
+        summary.setNewDeleteFileCnt(OptimizingUtil.getFileCount(output.getDeleteFiles()));
+        summary.setNewDeleteSize(OptimizingUtil.getFileSize(output.getDeleteFiles()));
+        summary.setNewDeleteRecordCnt(OptimizingUtil.getRecordCnt(output.getDeleteFiles()));
+        summary.setNewFileSize(summary.getNewDataSize() + summary.getNewDeleteSize());
+        summary.setNewFileCnt(summary.getNewDataFileCnt() + summary.getNewDeleteFileCnt());
+      }
     }
   }
 
