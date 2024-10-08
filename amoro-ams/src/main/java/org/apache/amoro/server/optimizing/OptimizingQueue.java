@@ -28,7 +28,6 @@ import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.exception.OptimizingClosedException;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
-import org.apache.amoro.server.optimizing.plan.TaskDescriptor;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
@@ -347,8 +346,9 @@ public class OptimizingQueue extends PersistentBase {
     private final long planTime;
     private final long targetSnapshotId;
     private final long targetChangeSnapshotId;
-    private final Map<OptimizingTaskId, TaskRuntime> taskMap = Maps.newHashMap();
-    private final Queue<TaskRuntime> taskQueue = new LinkedList<>();
+    private final Map<OptimizingTaskId, TaskRuntime<ExecutingStageTask>> taskMap =
+        Maps.newHashMap();
+    private final Queue<TaskRuntime<ExecutingStageTask>> taskQueue = new LinkedList<>();
     private final Lock lock = new ReentrantLock();
     private volatile Status status = OptimizingProcess.Status.RUNNING;
     private volatile String failedReason;
@@ -516,7 +516,7 @@ public class OptimizingQueue extends PersistentBase {
       return failedReason;
     }
 
-    private Map<OptimizingTaskId, TaskRuntime> getTaskMap() {
+    private Map<OptimizingTaskId, TaskRuntime<ExecutingStageTask>> getTaskMap() {
       return taskMap;
     }
 
@@ -662,7 +662,7 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     private void loadTaskRuntimes(OptimizingProcess optimizingProcess) {
-      List<TaskRuntime> taskRuntimes =
+      List<TaskRuntime<ExecutingStageTask>> taskRuntimes =
           getAs(
               OptimizingMapper.class,
               mapper ->
@@ -672,7 +672,9 @@ public class OptimizingQueue extends PersistentBase {
         taskRuntimes.forEach(
             taskRuntime -> {
               taskRuntime.claimOwnership(this);
-              taskRuntime.setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
+              taskRuntime
+                  .getTaskDescriptor()
+                  .setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
               taskMap.put(taskRuntime.getTaskId(), taskRuntime);
               if (taskRuntime.getStatus() == TaskRuntime.Status.PLANNED) {
                 taskQueue.offer(taskRuntime);
@@ -689,14 +691,11 @@ public class OptimizingQueue extends PersistentBase {
       }
     }
 
-    private void loadTaskRuntimes(List<TaskDescriptor> taskDescriptors) {
+    private void loadTaskRuntimes(List<ExecutingStageTask> taskDescriptors) {
       int taskId = 1;
-      for (TaskDescriptor taskDescriptor : taskDescriptors) {
-        TaskRuntime taskRuntime =
-            new TaskRuntime(
-                new OptimizingTaskId(processId, taskId++),
-                taskDescriptor,
-                taskDescriptor.properties());
+      for (ExecutingStageTask taskDescriptor : taskDescriptors) {
+        TaskRuntime<ExecutingStageTask> taskRuntime =
+            new TaskRuntime<>(new OptimizingTaskId(processId, taskId++), taskDescriptor);
         LOG.info(
             "{} plan new task {}, summary {}",
             tableRuntime.getTableIdentifier(),

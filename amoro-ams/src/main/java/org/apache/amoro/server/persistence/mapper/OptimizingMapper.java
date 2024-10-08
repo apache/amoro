@@ -20,17 +20,20 @@ package org.apache.amoro.server.persistence.mapper;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.server.optimizing.ExecutingStageTask;
 import org.apache.amoro.server.optimizing.MetricsSummary;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.OptimizingType;
+import org.apache.amoro.server.optimizing.StagedTaskDescriptor;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.converter.JsonObjectConverter;
 import org.apache.amoro.server.persistence.converter.Long2TsConverter;
 import org.apache.amoro.server.persistence.converter.Map2StringConverter;
 import org.apache.amoro.server.persistence.converter.MapLong2StringConverter;
 import org.apache.amoro.server.persistence.converter.Object2ByteArrayConvert;
+import org.apache.amoro.server.persistence.converter.TaskDescriptorTypeConverter;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -131,29 +134,33 @@ public interface OptimizingMapper {
         + "VALUES ",
     "<foreach collection='taskRuntimes' item='taskRuntime' index='index' separator=','>",
     "(#{taskRuntime.taskId.processId}, #{taskRuntime.taskId.taskId}, #{taskRuntime.runTimes},"
-        + " #{taskRuntime.tableId}, #{taskRuntime.partition}, "
+        + " #{taskRuntime.taskDescriptor.tableId}, #{taskRuntime.partition}, "
         + "#{taskRuntime.startTime, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
         + " #{taskRuntime.endTime, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}, "
         + "#{taskRuntime.status}, #{taskRuntime.failReason, jdbcType=VARCHAR},"
         + " #{taskRuntime.token, jdbcType=VARCHAR}, #{taskRuntime.threadId, "
-        + "jdbcType=INTEGER}, #{taskRuntime.output, jdbcType=BLOB, "
+        + "jdbcType=INTEGER}, #{taskRuntime.taskDescriptor.output, jdbcType=BLOB, "
         + " typeHandler=org.apache.amoro.server.persistence.converter.Object2ByteArrayConvert},"
-        + " #{taskRuntime.summary, typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
-        + "#{taskRuntime.properties, typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter})",
+        + " #{taskRuntime.taskDescriptor.summary, typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
+        + "#{taskRuntime.taskDescriptor.properties, typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter})",
     "</foreach>",
     "</script>"
   })
   void insertTaskRuntimes(@Param("taskRuntimes") List<TaskRuntime> taskRuntimes);
 
   @Select(
-      "SELECT process_id, task_id, retry_num, table_id, partition_data,  create_time, start_time, end_time,"
+      "SELECT process_id, task_id, 'executing' as stage, retry_num, table_id, partition_data,  create_time, start_time, end_time,"
           + " status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary, properties FROM "
           + "task_runtime WHERE table_id = #{table_id} AND process_id = #{process_id}")
   @Results({
     @Result(property = "taskId.processId", column = "process_id"),
     @Result(property = "taskId.taskId", column = "task_id"),
+    @Result(
+        property = "taskDescriptor",
+        column = "stage",
+        typeHandler = TaskDescriptorTypeConverter.class),
     @Result(property = "runTimes", column = "retry_num"),
-    @Result(property = "tableId", column = "table_id"),
+    @Result(property = "taskDescriptor.tableId", column = "table_id"),
     @Result(property = "partition", column = "partition_data"),
     @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConverter.class),
     @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConverter.class),
@@ -162,16 +169,16 @@ public interface OptimizingMapper {
     @Result(property = "token", column = "optimizer_token"),
     @Result(property = "threadId", column = "thread_id"),
     @Result(
-        property = "output",
+        property = "taskDescriptor.output",
         column = "rewrite_output",
         typeHandler = Object2ByteArrayConvert.class),
     @Result(
-        property = "summary",
+        property = "taskDescriptor.summary",
         column = "metrics_summary",
         typeHandler = JsonObjectConverter.class),
     @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
   })
-  List<TaskRuntime> selectTaskRuntimes(
+  List<TaskRuntime<ExecutingStageTask>> selectTaskRuntimes(
       @Param("table_id") long tableId, @Param("process_id") long processId);
 
   @Select(
@@ -215,15 +222,16 @@ public interface OptimizingMapper {
           + " fail_reason = #{taskRuntime.failReason, jdbcType=VARCHAR},"
           + " optimizer_token = #{taskRuntime.token, jdbcType=VARCHAR},"
           + " thread_id = #{taskRuntime.threadId, jdbcType=INTEGER},"
-          + " rewrite_output = #{taskRuntime.output, jdbcType=BLOB,"
+          + " rewrite_output = #{taskRuntime.taskDescriptor.output, jdbcType=BLOB,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.Object2ByteArrayConvert},"
-          + " metrics_summary = #{taskRuntime.summary,"
+          + " metrics_summary = #{taskRuntime.taskDescriptor.summary,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
-          + " properties = #{taskRuntime.properties,"
+          + " properties = #{taskRuntime.taskDescriptor.properties,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}"
           + " WHERE process_id = #{taskRuntime.taskId.processId} AND "
           + "task_id = #{taskRuntime.taskId.taskId}")
-  void updateTaskRuntime(@Param("taskRuntime") TaskRuntime taskRuntime);
+  void updateTaskRuntime(
+      @Param("taskRuntime") TaskRuntime<? extends StagedTaskDescriptor<?, ?, ?>> taskRuntime);
 
   @Delete("DELETE FROM task_runtime WHERE table_id = #{tableId} AND process_id < #{time}")
   void deleteTaskRuntimesBefore(@Param("tableId") long tableId, @Param("time") long time);

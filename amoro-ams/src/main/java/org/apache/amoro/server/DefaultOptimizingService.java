@@ -202,7 +202,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
       OptimizerThread optimizerThread = getAuthenticatedOptimizer(authToken).getThread(threadId);
       task.schedule(optimizerThread);
       LOG.info("OptimizerThread {} polled task {}", optimizerThread, task.getTaskId());
-      return task.getOptimizingTask();
+      return task.extractProtocolTask();
     } catch (Throwable throwable) {
       LOG.error("Schedule task {} failed, put it to retry queue", task.getTaskId(), throwable);
       queue.retryTask(task);
