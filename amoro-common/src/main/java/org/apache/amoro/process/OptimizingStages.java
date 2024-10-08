@@ -19,11 +19,15 @@
 package org.apache.amoro.process;
 
 import org.apache.amoro.ActionStage;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
+
+import java.util.Map;
+import java.util.Optional;
 
 /** The stage of the optimizing process. */
 public class OptimizingStages {
 
-  /** Minor optimizing executing phase */
+  /** optimizing executing phase including minor, major and full */
   public static final ActionStage RUNNING = new ActionStage("running", 19);
 
   /** Committing phase of optimizing */
@@ -42,4 +46,20 @@ public class OptimizingStages {
 
   /** When waiting for input data */
   public static final ActionStage IDLE = new ActionStage("idle", 1);
+
+  private static final Map<String, ActionStage> STAGES =
+      ImmutableMap.<String, ActionStage>builder()
+          .put(RUNNING.getDesc(), RUNNING)
+          .put(COMMITTING.getDesc(), COMMITTING)
+          .put(PLANNING.getDesc(), PLANNING)
+          .put(EVALUATING.getDesc(), EVALUATING)
+          .put(PENDING.getDesc(), PENDING)
+          .put(SUSPENDING.getDesc(), SUSPENDING)
+          .put(IDLE.getDesc(), IDLE)
+          .build();
+
+  public static ActionStage of(String desc) {
+    return Optional.ofNullable(STAGES.get(desc))
+        .orElseThrow(() -> new IllegalArgumentException("No optimizing stage with desc: " + desc));
+  }
 }

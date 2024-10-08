@@ -25,6 +25,14 @@ public class Action {
   private final int weight;
   private final String desc;
 
+  /**
+   * @param formats supported table formats of this action
+   * @param code storage code of this action, normally this code should be identical within
+   *     supported formats
+   * @param weight the weight number of this action, the bigger the weight number, the higher
+   *     positions of schedulers or front pages
+   * @param desc description of this action, will be shown in front pages
+   */
   Action(TableFormat[] formats, int code, int weight, String desc) {
     this.formats = formats;
     this.code = code;

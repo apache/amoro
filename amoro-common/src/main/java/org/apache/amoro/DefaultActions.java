@@ -33,7 +33,7 @@ public class DefaultActions {
   public static final Action DELETE_ORPHAN_FILES = new DefaultAction(5, 2, "delete-orphans");
   public static final Action SYNC_HIVE_COMMIT = new DefaultAction(6, 3, "sync-hive");
 
-  public static final Map<Integer, Action> ACTIONS =
+  private static final Map<Integer, Action> ACTIONS =
       ImmutableMap.<Integer, Action>builder()
           .put(MINOR_OPTIMIZING.getCode(), MINOR_OPTIMIZING)
           .put(MAJOR_OPTIMIZING.getCode(), MAJOR_OPTIMIZING)
