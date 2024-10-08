@@ -48,7 +48,7 @@ const optimizerGroupList = ref<ILableAndValue[]>([])
 const columns = computed(() => [
   { dataIndex: 'tableName', title: t('table'), width: 200, scopedSlots: { customRender: 'tableName' } },
   { dataIndex: 'groupName', title: t('optimizerGroup'), width: 180, ellipsis: true },
-  { dataIndex: 'status', title: t('status'), width: 240, ellipsis: true },
+  { dataIndex: 'optimizeStatus', title: t('optimizingStatus'), width: 240, ellipsis: true },
   { dataIndex: 'duration', title: t('duration'), width: 150, ellipsis: true, sorter: true },
   { dataIndex: 'fileCount', title: t('fileCount'), width: 150, ellipsis: true },
   { dataIndex: 'fileSizeDesc', title: t('fileSize'), width: 150, ellipsis: true },
@@ -240,12 +240,12 @@ onMounted(async () => {
             {{ record.quotaOccupationDesc }}
           </span>
         </template>
-        <template v-if="column.dataIndex === 'status'">
+        <template v-if="column.dataIndex === 'optimizeStatus'">
           <span
-            :style="{ 'background-color': (STATUS_CONFIG[record.status as keyof typeof STATUS_CONFIG] as any)?.color }"
+            :style="{ 'background-color': (STATUS_CONFIG[record.optimizeStatus as keyof typeof STATUS_CONFIG] as any)?.color }"
             class="status-icon"
           />
-          <span>{{ record.status }}</span>
+          <span>{{ record.optimizeStatus }}</span>
         </template>
         <template v-if="column.dataIndex === 'operation'">
           <span class="primary-link" :class="{ disabled: record.container === 'external' }" @click="releaseModal(record)">

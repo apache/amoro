@@ -71,7 +71,7 @@ export default [
               }
             },
             "tableName": "test_catalog.db.user",
-            "status": "full_optimizing.commtting",
+            "optimizeStatus": "idle",
             "duration": 1195501081,
             "fileCount": 0,
             "fileSize": 0,
