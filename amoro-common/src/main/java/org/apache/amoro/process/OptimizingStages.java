@@ -41,5 +41,5 @@ public class OptimizingStages {
   public static final ActionStage SUSPENDING = new ActionStage("suspending", 9);
 
   /** When waiting for input data */
-  public static final ActionStage IDLE = new ActionStage("idle", 8);
+  public static final ActionStage IDLE = new ActionStage("idle", 1);
 }
