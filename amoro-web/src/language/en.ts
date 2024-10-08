@@ -194,6 +194,7 @@ export default {
   search: 'Search',
   reset: 'Reset',
   invalidInput: 'Invalid input',
+  createOptimizer: 'Create Optimizer',
   addgroup: 'Add Group',
   editgroup: 'Edit Group',
   cannotDeleteGroupModalTitle: 'Can\'t remove this group.',
