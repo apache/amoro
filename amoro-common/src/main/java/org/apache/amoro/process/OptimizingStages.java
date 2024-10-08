@@ -18,54 +18,27 @@
 
 package org.apache.amoro.process;
 
+import org.apache.amoro.ActionStage;
+
 /** The stage of the optimizing process. */
-public enum OptimizingStage {
-
-  /** Full optimizing executing phase */
-  FULL_OPTIMIZING("full", true),
-
-  /** Major optimizing executing phase */
-  MAJOR_OPTIMIZING("major", true),
+public class OptimizingStages {
 
   /** Minor optimizing executing phase */
-  MINOR_OPTIMIZING("minor", true),
+  public static final ActionStage RUNNING = new ActionStage("running", 19);
 
   /** Committing phase of optimizing */
-  COMMITTING("committing", true),
+  public static final ActionStage COMMITTING = new ActionStage("committing", 18);
 
   /** Planning phase of optimizing */
-  PLANNING("planning", false),
+  public static final ActionStage PLANNING = new ActionStage("planning", 17);
+  public static final ActionStage EVALUATING = new ActionStage("evaluating", 16);
 
   /** When input data has been collected but waiting for quota available(not scheduled yet) */
-  PENDING("pending", false),
-
-  /** When waiting for input data */
-  IDLE("idle", false),
+  public static final ActionStage PENDING = new ActionStage("pending", 9);
 
   /** When the process has been scheduled but being waiting for quota available */
-  SUSPENDING("suspending", false),
+  public static final ActionStage SUSPENDING = new ActionStage("suspending", 9);
 
-  /** Mainly for external process submitting to external resources */
-  SUBMITTING("submitting", false);
-
-  /** The display description of the stage. */
-  private final String displayValue;
-
-  /*
-   * Whether the stage is an optimizing executing stage.
-   */
-  private final boolean isOptimizing;
-
-  OptimizingStage(String displayValue, boolean isProcessing) {
-    this.displayValue = displayValue;
-    this.isOptimizing = isProcessing;
-  }
-
-  public boolean isOptimizing() {
-    return isOptimizing;
-  }
-
-  public String displayValue() {
-    return displayValue;
-  }
+  /** When waiting for input data */
+  public static final ActionStage IDLE = new ActionStage("idle", 8);
 }
