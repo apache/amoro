@@ -439,6 +439,8 @@ public class AmoroServiceContainer {
 
     private Map<String, Object> initEnvConfig() {
       LOG.info("initializing system env configuration...");
+      Map<String, String> envs = System.getenv();
+      envs.forEach((k, v) -> LOG.info("export {}={}", k, v));
       String prefix = AmoroManagementConf.SYSTEM_CONFIG.toUpperCase();
       return ConfigHelpers.convertConfigurationKeys(prefix, System.getenv());
     }

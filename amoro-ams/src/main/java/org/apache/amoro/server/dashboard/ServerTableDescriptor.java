@@ -22,6 +22,7 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.table.TableService;
@@ -124,10 +125,11 @@ public class ServerTableDescriptor extends PersistentBase {
   }
 
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      TableIdentifier tableIdentifier, int limit, int offset) {
+      TableIdentifier tableIdentifier, String type, ProcessStatus status, int limit, int offset) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
-    return formatTableDescriptor.getOptimizingProcessesInfo(amoroTable, limit, offset);
+    return formatTableDescriptor.getOptimizingProcessesInfo(
+        amoroTable, type, status, limit, offset);
   }
 
   public List<OptimizingTaskInfo> getOptimizingProcessTaskInfos(
@@ -135,6 +137,12 @@ public class ServerTableDescriptor extends PersistentBase {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getOptimizingTaskInfos(amoroTable, processId);
+  }
+
+  public Map<String, String> getTableOptimizingTypes(TableIdentifier tableIdentifier) {
+    AmoroTable<?> amoroTable = loadTable(tableIdentifier);
+    FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
+    return formatTableDescriptor.getTableOptimizingTypes(amoroTable);
   }
 
   private AmoroTable<?> loadTable(TableIdentifier identifier) {
