@@ -28,7 +28,7 @@ import java.util.Optional;
 public class OptimizingStages {
 
   /** optimizing executing phase including minor, major and full */
-  public static final ActionStage RUNNING = new ActionStage("running", 19);
+  public static final ActionStage EXECUTING = new ActionStage("executing", 19);
 
   /** Committing phase of optimizing */
   public static final ActionStage COMMITTING = new ActionStage("committing", 18);
@@ -49,7 +49,7 @@ public class OptimizingStages {
 
   private static final Map<String, ActionStage> STAGES =
       ImmutableMap.<String, ActionStage>builder()
-          .put(RUNNING.getDesc(), RUNNING)
+          .put(EXECUTING.getDesc(), EXECUTING)
           .put(COMMITTING.getDesc(), COMMITTING)
           .put(PLANNING.getDesc(), PLANNING)
           .put(EVALUATING.getDesc(), EVALUATING)
