@@ -31,6 +31,7 @@ public class OptimizingStages {
 
   /** Planning phase of optimizing */
   public static final ActionStage PLANNING = new ActionStage("planning", 17);
+
   public static final ActionStage EVALUATING = new ActionStage("evaluating", 16);
 
   /** When input data has been collected but waiting for quota available(not scheduled yet) */
