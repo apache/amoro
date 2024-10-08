@@ -19,6 +19,9 @@
 package org.apache.amoro.server.dashboard.controller;
 
 import io.javalin.http.Context;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.resource.ResourceType;
@@ -29,6 +32,7 @@ import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.dashboard.utils.OptimizingUtil;
+import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.OptimizerInstance;
@@ -58,13 +62,25 @@ public class OptimizerGroupController {
     this.optimizerManager = optimizerManager;
   }
 
+
+  public void getActions(Context ctx) {
+    ctx.json(
+        OkResponse.of(
+            Arrays.stream(OptimizingStatus.values())
+                .map(OptimizingStatus::displayValue)
+                .collect(Collectors.toList())));
+  }
+
   /** Get optimize tables. * @return List of {@link TableOptimizingInfo} */
   public void getOptimizerTables(Context ctx) {
     String optimizerGroup = ctx.pathParam("optimizerGroup");
     String dbFilterStr = ctx.queryParam("dbSearchInput");
     String tableFilterStr = ctx.queryParam("tableSearchInput");
+    String[] requestedActions = ctx.queryParamAsClass("actions", String[].class).getOrDefault(null);
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    Set<String> actionFilter =
+        requestedActions == null ? null : new HashSet<>(Arrays.asList(requestedActions));
     int offset = (page - 1) * pageSize;
 
     String optimizerGroupUsedInDbFilter = ALL_GROUP.equals(optimizerGroup) ? null : optimizerGroup;
@@ -76,6 +92,11 @@ public class OptimizerGroupController {
     List<TableRuntime> tableRuntimes =
         tableRuntimeBeans.stream()
             .map(meta -> tableService.getRuntime(meta.getTableId()))
+            .filter(
+                tableRuntime ->
+                    actionFilter == null
+                        || actionFilter.isEmpty()
+                        || actionFilter.contains(tableRuntime.getOptimizingStatus().displayValue()))
             .collect(Collectors.toList());
 
     PageResult<TableOptimizingInfo> amsPageResult =

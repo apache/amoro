@@ -278,7 +278,7 @@ public class DashboardServer {
       path(
           "/optimize",
           () -> {
-            get("/actions", optimizerController::getActions);
+            get("/actions", optimizerGroupController::getActions);
             get(
                 "/optimizerGroups/{optimizerGroup}/tables",
                 optimizerGroupController::getOptimizerTables);
