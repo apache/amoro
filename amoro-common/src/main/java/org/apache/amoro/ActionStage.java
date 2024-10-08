@@ -20,9 +20,14 @@ package org.apache.amoro;
 
 public class ActionStage {
 
-  private String desc;
-  private int weight;
+  private final String desc;
+  private final int weight;
 
+  /**
+   * Action Stage description
+   * @param desc Action Stage description value, normally this value should be identical within certain actions
+   * @param weight the weight number of this action, the bigger the weight number, the higher position on front pages
+   */
   public ActionStage(String desc, int weight) {
     this.desc = desc;
     this.weight = weight;
