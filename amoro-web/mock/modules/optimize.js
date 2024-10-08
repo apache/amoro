@@ -43,7 +43,7 @@ export default [
     response: () => ({
       code: 200,
       msg: 'success',
-      result: ['major', 'minor', 'clean']
+      result: ['major', 'minor', 'clean', 'idle', 'pending']
     }),
   },
   {
@@ -77,8 +77,7 @@ export default [
             "fileSize": 0,
             "quota": 0.1,
             "quotaOccupation": 0.0,
-            "groupName": "local",
-            "resource": "8c 16g"
+            "groupName": "local"
           }
         ],
         "total": 1

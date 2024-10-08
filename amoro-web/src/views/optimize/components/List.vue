@@ -53,7 +53,6 @@ const columns = computed(() => [
   { dataIndex: 'fileCount', title: t('fileCount'), width: 150, ellipsis: true },
   { dataIndex: 'fileSizeDesc', title: t('fileSize'), width: 150, ellipsis: true },
   { dataIndex: 'quota', title: t('quota'), width: 150, ellipsis: true },
-  { dataIndex: 'resource', title: t('resource'), width: 150, ellipsis: true, sorter: true },
   { dataIndex: 'quotaOccupation', title: t('occupation'), width: 120, ellipsis: true, sorter: true },
 ])
 
