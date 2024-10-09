@@ -281,7 +281,8 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     RewriteFilesOutput output = new RewriteFilesOutput(dataOutput, deleteOutput, null);
 
     TaskRuntime<ExecutingStageTask> taskRuntime = Mockito.mock(TaskRuntime.class);
-    ExecutingStageTask task = taskRuntime.getTaskDescriptor();
+    ExecutingStageTask task = Mockito.mock(ExecutingStageTask.class);
+    Mockito.when(taskRuntime.getTaskDescriptor()).thenReturn(task);
     Mockito.when(task.getPartition()).thenReturn(partitionPath);
     Mockito.when(task.getInput()).thenReturn(input);
     Mockito.when(task.getOutput()).thenReturn(output);

@@ -168,6 +168,8 @@ public class CompleteOptimizingFlow {
     List<TaskRuntime<ExecutingStageTask>> list = new ArrayList<>();
     for (ExecutingStageTask taskDescriptor : taskDescriptors) {
       TaskRuntime<ExecutingStageTask> taskRuntime = Mockito.mock(TaskRuntime.class);
+      ExecutingStageTask task = Mockito.mock(ExecutingStageTask.class);
+      Mockito.when(taskRuntime.getTaskDescriptor()).thenReturn(task);
       Mockito.when(taskRuntime.getTaskDescriptor().getPartition())
           .thenReturn(taskDescriptor.getPartition());
       Mockito.when(taskRuntime.getTaskDescriptor().getInput())

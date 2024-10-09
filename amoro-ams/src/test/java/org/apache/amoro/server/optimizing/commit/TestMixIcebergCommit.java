@@ -130,7 +130,8 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
     StructLikeMap<Long> fromSequence = getFromSequenceOfPartitions(input);
     StructLikeMap<Long> toSequence = getToSequenceOfPartitions(input);
     TaskRuntime<ExecutingStageTask> taskRuntime = Mockito.mock(TaskRuntime.class);
-    ExecutingStageTask task = taskRuntime.getTaskDescriptor();
+    ExecutingStageTask task = Mockito.mock(ExecutingStageTask.class);
+    Mockito.when(taskRuntime.getTaskDescriptor()).thenReturn(task);
     Mockito.when(task.getPartition()).thenReturn(partitionPath);
     Mockito.when(task.getInput()).thenReturn(input);
     Mockito.when(task.getOutput()).thenReturn(output);
