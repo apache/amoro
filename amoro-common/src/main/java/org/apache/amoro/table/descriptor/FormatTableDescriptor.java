@@ -48,7 +48,8 @@ public interface FormatTableDescriptor {
       AmoroTable<?> amoroTable, String ref, OperationType operationType);
 
   /** Get the snapshot detail information of the {@link AmoroTable}. */
-  List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, String snapshotId);
+  List<PartitionFileBaseInfo> getSnapshotDetail(
+      AmoroTable<?> amoroTable, String snapshotId, String ref);
 
   /** Get the DDL information of the {@link AmoroTable}. */
   List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable);
