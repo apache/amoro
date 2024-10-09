@@ -134,7 +134,7 @@ public interface OptimizingMapper {
         + "VALUES ",
     "<foreach collection='taskRuntimes' item='taskRuntime' index='index' separator=','>",
     "(#{taskRuntime.taskId.processId}, #{taskRuntime.taskId.taskId}, #{taskRuntime.runTimes},"
-        + " #{taskRuntime.taskDescriptor.tableId}, #{taskRuntime.partition}, "
+        + " #{taskRuntime.taskDescriptor.tableId}, #{taskRuntime.taskDescriptor.partition}, "
         + "#{taskRuntime.startTime, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
         + " #{taskRuntime.endTime, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}, "
         + "#{taskRuntime.status}, #{taskRuntime.failReason, jdbcType=VARCHAR},"
@@ -146,7 +146,8 @@ public interface OptimizingMapper {
     "</foreach>",
     "</script>"
   })
-  void insertTaskRuntimes(@Param("taskRuntimes") List<TaskRuntime> taskRuntimes);
+  void insertTaskRuntimes(
+      @Param("taskRuntimes") List<TaskRuntime<ExecutingStageTask>> taskRuntimes);
 
   @Select(
       "SELECT process_id, task_id, 'executing' as stage, retry_num, table_id, partition_data,  create_time, start_time, end_time,"
@@ -161,7 +162,7 @@ public interface OptimizingMapper {
         typeHandler = TaskDescriptorTypeConverter.class),
     @Result(property = "runTimes", column = "retry_num"),
     @Result(property = "taskDescriptor.tableId", column = "table_id"),
-    @Result(property = "partition", column = "partition_data"),
+    @Result(property = "taskDescriptor.partition", column = "partition_data"),
     @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConverter.class),
     @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConverter.class),
     @Result(property = "status", column = "status"),
@@ -176,7 +177,10 @@ public interface OptimizingMapper {
         property = "taskDescriptor.summary",
         column = "metrics_summary",
         typeHandler = JsonObjectConverter.class),
-    @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
+    @Result(
+        property = "taskDescriptor.properties",
+        column = "properties",
+        typeHandler = Map2StringConverter.class)
   })
   List<TaskRuntime<ExecutingStageTask>> selectTaskRuntimes(
       @Param("table_id") long tableId, @Param("process_id") long processId);

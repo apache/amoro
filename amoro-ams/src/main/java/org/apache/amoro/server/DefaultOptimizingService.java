@@ -170,7 +170,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   @Override
   public void ping() {}
 
-  public List<TaskRuntime> listTasks(String optimizerGroup) {
+  public List<TaskRuntime<?>> listTasks(String optimizerGroup) {
     return getQueueByGroup(optimizerGroup).collectTasks();
   }
 
@@ -560,7 +560,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
       }
     }
 
-    private void retryTask(TaskRuntime task, OptimizingQueue queue) {
+    private void retryTask(TaskRuntime<?> task, OptimizingQueue queue) {
       LOG.info(
           "Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
           task.getTaskId(),
@@ -576,7 +576,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
       }
     }
 
-    private Predicate<TaskRuntime> buildSuspendingPredication(Set<String> activeTokens) {
+    private Predicate<TaskRuntime<?>> buildSuspendingPredication(Set<String> activeTokens) {
       return task ->
           StringUtils.isNotBlank(task.getToken())
                   && !activeTokens.contains(task.getToken())

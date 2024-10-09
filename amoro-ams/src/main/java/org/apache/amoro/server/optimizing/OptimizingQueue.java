@@ -74,7 +74,7 @@ public class OptimizingQueue extends PersistentBase {
 
   private final QuotaProvider quotaProvider;
   private final Queue<TableOptimizingProcess> tableQueue = new LinkedTransferQueue<>();
-  private final Queue<TaskRuntime> retryTaskQueue = new LinkedTransferQueue<>();
+  private final Queue<TaskRuntime<ExecutingStageTask>> retryTaskQueue = new LinkedTransferQueue<>();
   private final SchedulingPolicy scheduler;
   private final TableManager tableManager;
   private final Executor planExecutor;
@@ -281,7 +281,7 @@ public class OptimizingQueue extends PersistentBase {
     }
   }
 
-  public TaskRuntime getTask(OptimizingTaskId taskId) {
+  public TaskRuntime<?> getTask(OptimizingTaskId taskId) {
     return tableQueue.stream()
         .filter(p -> p.getProcessId() == taskId.getProcessId())
         .findFirst()
@@ -289,13 +289,13 @@ public class OptimizingQueue extends PersistentBase {
         .orElse(null);
   }
 
-  public List<TaskRuntime> collectTasks() {
+  public List<TaskRuntime<?>> collectTasks() {
     return tableQueue.stream()
         .flatMap(p -> p.getTaskMap().values().stream())
         .collect(Collectors.toList());
   }
 
-  public List<TaskRuntime> collectTasks(Predicate<TaskRuntime> predicate) {
+  public List<TaskRuntime<?>> collectTasks(Predicate<TaskRuntime<?>> predicate) {
     return tableQueue.stream()
         .flatMap(p -> p.getTaskMap().values().stream())
         .filter(predicate)
