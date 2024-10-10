@@ -83,7 +83,7 @@ if [ -z "$JAVA_OPTS" ]; then
 fi
 
 
-export CLASSPATH=$AMORO_CONF_DIR:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | sort | paste -sd':' -)
+export CLASSPATH=$AMORO_HOME/conf:$AMORO_CONF_DIR:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | sort | paste -sd':' -)
 
 if [ -n "${AMORO_ADDITION_CLASSPATH}" ]; then
     export CLASSPATH=$AMORO_ADDITION_CLASSPATH:$CLASSPATH
