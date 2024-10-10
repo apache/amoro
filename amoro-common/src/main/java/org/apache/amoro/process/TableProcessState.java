@@ -53,7 +53,7 @@ public class TableProcessState implements ProcessState {
   }
 
   public String getName() {
-    return action.getDescription();
+    return action.getDesc();
   }
 
   public Action getAction() {

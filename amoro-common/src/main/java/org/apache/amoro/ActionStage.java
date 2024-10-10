@@ -18,32 +18,22 @@
 
 package org.apache.amoro;
 
-public class Action {
+public class ActionStage {
 
-  private final TableFormat[] formats;
-  private final int code;
-  private final int weight;
   private final String desc;
+  private final int weight;
 
   /**
-   * Create a new action
+   * Action Stage description
    *
-   * @param formats supported table formats of this action
-   * @param code storage code of this action, normally this code should be identical within
-   *     supported formats
+   * @param desc Action Stage description value, normally this value should be identical within
+   *     certain actions
    * @param weight the weight number of this action, the bigger the weight number, the higher
-   *     positions of schedulers or front pages
-   * @param desc description of this action, will be shown in front pages
+   *     position on front pages
    */
-  Action(TableFormat[] formats, int code, int weight, String desc) {
-    this.formats = formats;
-    this.code = code;
+  public ActionStage(String desc, int weight) {
     this.desc = desc;
     this.weight = weight;
-  }
-
-  public int getCode() {
-    return code;
   }
 
   public String getDesc() {
@@ -52,9 +42,5 @@ public class Action {
 
   public int getWeight() {
     return weight;
-  }
-
-  public TableFormat[] supportedFormats() {
-    return formats;
   }
 }
