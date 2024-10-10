@@ -25,9 +25,7 @@ import java.util.Optional;
 
 public class DefaultActions {
 
-  public static final Action MINOR_OPTIMIZING = new DefaultAction(1, 10, "minor");
-  public static final Action MAJOR_OPTIMIZING = new DefaultAction(2, 11, "major");
-  public static final Action FULL_OPTIMIZING = new DefaultAction(3, 12, "full");
+  public static final Action DEFAULT_OPTIMIZING = new DefaultAction(1, 10, "default");
   // expire all metadata and data files necessarily.
   public static final Action EXPIRE_DATA = new DefaultAction(4, 1, "expire-data");
   public static final Action DELETE_ORPHAN_FILES = new DefaultAction(5, 2, "delete-orphans");
@@ -35,12 +33,10 @@ public class DefaultActions {
 
   private static final Map<Integer, Action> ACTIONS =
       ImmutableMap.<Integer, Action>builder()
-          .put(MINOR_OPTIMIZING.getCode(), MINOR_OPTIMIZING)
-          .put(MAJOR_OPTIMIZING.getCode(), MAJOR_OPTIMIZING)
+          .put(DEFAULT_OPTIMIZING.getCode(), DEFAULT_OPTIMIZING)
           .put(EXPIRE_DATA.getCode(), EXPIRE_DATA)
           .put(DELETE_ORPHAN_FILES.getCode(), DELETE_ORPHAN_FILES)
           .put(SYNC_HIVE_COMMIT.getCode(), SYNC_HIVE_COMMIT)
-          .put(FULL_OPTIMIZING.getCode(), FULL_OPTIMIZING)
           .build();
 
   public static Action of(int code) {

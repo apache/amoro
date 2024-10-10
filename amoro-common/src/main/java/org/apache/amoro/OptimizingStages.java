@@ -16,9 +16,8 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.process;
+package org.apache.amoro;
 
-import org.apache.amoro.ActionStage;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 
 import java.util.Map;
@@ -27,8 +26,14 @@ import java.util.Optional;
 /** The stage of the optimizing process. */
 public class OptimizingStages {
 
-  /** optimizing executing phase including minor, major and full */
-  public static final ActionStage EXECUTING = new ActionStage("executing", 19);
+  /** minor optimizing executing phase */
+  public static final ActionStage MINOR = new ActionStage("minor", 13);
+
+  /** major optimizing executing phase */
+  public static final ActionStage MAJOR = new ActionStage("major", 14);
+
+  /** full optimizing executing phase */
+  public static final ActionStage FULL = new ActionStage("full", 15);
 
   /** Committing phase of optimizing */
   public static final ActionStage COMMITTING = new ActionStage("committing", 18);
@@ -49,7 +54,9 @@ public class OptimizingStages {
 
   private static final Map<String, ActionStage> STAGES =
       ImmutableMap.<String, ActionStage>builder()
-          .put(EXECUTING.getDesc(), EXECUTING)
+          .put(MINOR.getDesc(), MINOR)
+          .put(MINOR.getDesc(), MAJOR)
+          .put(FULL.getDesc(), FULL)
           .put(COMMITTING.getDesc(), COMMITTING)
           .put(PLANNING.getDesc(), PLANNING)
           .put(EVALUATING.getDesc(), EVALUATING)
