@@ -20,6 +20,7 @@ package org.apache.amoro.server.persistence;
 
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
+import org.apache.amoro.server.optimizing.ExecutingStageTask;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.utils.CompressUtil;
@@ -35,11 +36,14 @@ public class TaskFilesPersistence {
 
   private static final DatabasePersistence persistence = new DatabasePersistence();
 
-  public static void persistTaskInputs(long processId, Collection<TaskRuntime> tasks) {
+  public static void persistTaskInputs(
+      long processId, Collection<TaskRuntime<ExecutingStageTask>> tasks) {
     persistence.persistTaskInputs(
         processId,
         tasks.stream()
-            .collect(Collectors.toMap(e -> e.getTaskId().getTaskId(), TaskRuntime::getInput)));
+            .collect(
+                Collectors.toMap(
+                    e -> e.getTaskId().getTaskId(), task -> task.getTaskDescriptor().getInput())));
   }
 
   public static Map<Integer, RewriteFilesInput> loadTaskInputs(long processId) {

@@ -22,6 +22,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.server.AmoroServiceConstants;
+import org.apache.amoro.server.optimizing.ExecutingStageTask;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.TableRuntime;
@@ -54,7 +55,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   private final long planTime;
   private OptimizingType optimizingType;
   private final PartitionPlannerFactory partitionPlannerFactory;
-  private List<TaskDescriptor> tasks;
+  private List<ExecutingStageTask> tasks;
 
   private List<AbstractPartitionPlan> actualPartitionPlans;
   private final long maxInputSizePerThread;
@@ -140,7 +141,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     return !planTasks().isEmpty();
   }
 
-  public List<TaskDescriptor> planTasks() {
+  public List<ExecutingStageTask> planTasks() {
     if (this.tasks != null) {
       return this.tasks;
     }
@@ -169,7 +170,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     }
 
     double avgThreadCost = actualInputSize / availableCore;
-    List<TaskDescriptor> tasks = Lists.newArrayList();
+    List<ExecutingStageTask> tasks = Lists.newArrayList();
     for (AbstractPartitionPlan partitionPlan : actualPartitionPlans) {
       tasks.addAll(partitionPlan.splitTasks((int) (actualInputSize / avgThreadCost)));
     }
@@ -197,7 +198,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     return cacheAndReturnTasks(tasks);
   }
 
-  private List<TaskDescriptor> cacheAndReturnTasks(List<TaskDescriptor> tasks) {
+  private List<ExecutingStageTask> cacheAndReturnTasks(List<ExecutingStageTask> tasks) {
     this.tasks = tasks;
     return this.tasks;
   }
