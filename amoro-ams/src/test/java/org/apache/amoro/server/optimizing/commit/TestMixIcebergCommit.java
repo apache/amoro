@@ -32,6 +32,7 @@ import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.server.exception.OptimizingCommitException;
 import org.apache.amoro.server.optimizing.KeyedTableCommit;
+import org.apache.amoro.server.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.iceberg.ContentFile;
@@ -128,10 +129,12 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
     RewriteFilesOutput output = new RewriteFilesOutput(dataOutput, deleteOutput, null);
     StructLikeMap<Long> fromSequence = getFromSequenceOfPartitions(input);
     StructLikeMap<Long> toSequence = getToSequenceOfPartitions(input);
-    TaskRuntime taskRuntime = Mockito.mock(TaskRuntime.class);
-    Mockito.when(taskRuntime.getPartition()).thenReturn(partitionPath);
-    Mockito.when(taskRuntime.getInput()).thenReturn(input);
-    Mockito.when(taskRuntime.getOutput()).thenReturn(output);
+    TaskRuntime<RewriteStageTask> taskRuntime = Mockito.mock(TaskRuntime.class);
+    RewriteStageTask task = Mockito.mock(RewriteStageTask.class);
+    Mockito.when(taskRuntime.getTaskDescriptor()).thenReturn(task);
+    Mockito.when(task.getPartition()).thenReturn(partitionPath);
+    Mockito.when(task.getInput()).thenReturn(input);
+    Mockito.when(task.getOutput()).thenReturn(output);
     KeyedTableCommit commit =
         new KeyedTableCommit(
             getMixedTable(),

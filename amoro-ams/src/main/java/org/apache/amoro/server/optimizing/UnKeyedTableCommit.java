@@ -75,10 +75,10 @@ public class UnKeyedTableCommit {
 
   private final Long targetSnapshotId;
   private final MixedTable table;
-  private final Collection<TaskRuntime> tasks;
+  private final Collection<TaskRuntime<RewriteStageTask>> tasks;
 
   public UnKeyedTableCommit(
-      Long targetSnapshotId, MixedTable table, Collection<TaskRuntime> tasks) {
+      Long targetSnapshotId, MixedTable table, Collection<TaskRuntime<RewriteStageTask>> tasks) {
     this.targetSnapshotId = targetSnapshotId;
     this.table = table;
     this.tasks = tasks;
@@ -97,8 +97,8 @@ public class UnKeyedTableCommit {
             : table.asKeyedTable().baseTable().spec().partitionType();
 
     List<DataFile> newTargetFiles = new ArrayList<>();
-    for (TaskRuntime taskRuntime : tasks) {
-      RewriteFilesOutput output = taskRuntime.getOutput();
+    for (TaskRuntime<RewriteStageTask> taskRuntime : tasks) {
+      RewriteFilesOutput output = taskRuntime.getTaskDescriptor().getOutput();
       DataFile[] dataFiles = output.getDataFiles();
       if (dataFiles == null) {
         continue;
@@ -116,7 +116,7 @@ public class UnKeyedTableCommit {
       for (DataFile targetFile : targetFiles) {
         String partitionPath =
             partitionPathMap.computeIfAbsent(
-                taskRuntime.getPartition(),
+                taskRuntime.getTaskDescriptor().getPartition(),
                 key -> getPartitionPath(hiveClient, maxTransactionId, targetFile, partitionSchema));
 
         DataFile finalDataFile = moveTargetFiles(targetFile, partitionPath);
@@ -192,26 +192,28 @@ public class UnKeyedTableCommit {
     Set<DataFile> removedDataFiles = Sets.newHashSet();
     Set<DeleteFile> addedDeleteFiles = Sets.newHashSet();
     Set<DeleteFile> removedDeleteFiles = Sets.newHashSet();
-    for (TaskRuntime task : tasks) {
-      if (CollectionUtils.isNotEmpty(hiveNewDataFiles)) {
-        addedDataFiles.addAll(hiveNewDataFiles);
-      } else if (task.getOutput().getDataFiles() != null) {
-        addedDataFiles.addAll(Arrays.asList(task.getOutput().getDataFiles()));
-      }
-      if (task.getOutput().getDeleteFiles() != null) {
-        addedDeleteFiles.addAll(Arrays.asList(task.getOutput().getDeleteFiles()));
-      }
-      if (task.getInput().rewrittenDataFiles() != null) {
-        removedDataFiles.addAll(Arrays.asList(task.getInput().rewrittenDataFiles()));
-      }
-      if (task.getInput().rewrittenDeleteFiles() != null) {
-        removedDeleteFiles.addAll(
-            Arrays.stream(task.getInput().rewrittenDeleteFiles())
-                .map(ContentFiles::asDeleteFile)
-                .collect(Collectors.toSet()));
-      }
-    }
-
+    tasks.stream()
+        .map(TaskRuntime::getTaskDescriptor)
+        .forEach(
+            task -> {
+              if (CollectionUtils.isNotEmpty(hiveNewDataFiles)) {
+                addedDataFiles.addAll(hiveNewDataFiles);
+              } else if (task.getOutput().getDataFiles() != null) {
+                addedDataFiles.addAll(Arrays.asList(task.getOutput().getDataFiles()));
+              }
+              if (task.getOutput().getDeleteFiles() != null) {
+                addedDeleteFiles.addAll(Arrays.asList(task.getOutput().getDeleteFiles()));
+              }
+              if (task.getInput().rewrittenDataFiles() != null) {
+                removedDataFiles.addAll(Arrays.asList(task.getInput().rewrittenDataFiles()));
+              }
+              if (task.getInput().rewrittenDeleteFiles() != null) {
+                removedDeleteFiles.addAll(
+                    Arrays.stream(task.getInput().rewrittenDeleteFiles())
+                        .map(ContentFiles::asDeleteFile)
+                        .collect(Collectors.toSet()));
+              }
+            });
     try {
       Transaction transaction = table.asUnkeyedTable().newTransaction();
       if (removedDeleteFiles.isEmpty() && !addedDeleteFiles.isEmpty()) {
