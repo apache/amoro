@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro;
+package org.apache.amoro.process;
 
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 
@@ -27,33 +27,26 @@ import java.util.Optional;
 public class OptimizingStages {
 
   /** minor optimizing executing phase */
-  public static final ActionStage MINOR = new ActionStage("minor", 13);
-
+  public static final ProcessStage MINOR = new ProcessStage("minor", 13);
   /** major optimizing executing phase */
-  public static final ActionStage MAJOR = new ActionStage("major", 14);
-
+  public static final ProcessStage MAJOR = new ProcessStage("major", 14);
   /** full optimizing executing phase */
-  public static final ActionStage FULL = new ActionStage("full", 15);
-
+  public static final ProcessStage FULL = new ProcessStage("full", 15);
   /** Committing phase of optimizing */
-  public static final ActionStage COMMITTING = new ActionStage("committing", 18);
-
+  public static final ProcessStage COMMITTING = new ProcessStage("committing", 18);
   /** Planning phase of optimizing */
-  public static final ActionStage PLANNING = new ActionStage("planning", 17);
-
-  public static final ActionStage EVALUATING = new ActionStage("evaluating", 16);
-
+  public static final ProcessStage PLANNING = new ProcessStage("planning", 17);
+  /** evaluating phase of optimizing */
+  public static final ProcessStage EVALUATING = new ProcessStage("evaluating", 16);
   /** When input data has been collected but waiting for quota available(not scheduled yet) */
-  public static final ActionStage PENDING = new ActionStage("pending", 9);
-
+  public static final ProcessStage PENDING = new ProcessStage("pending", 9);
   /** When the process has been scheduled but being waiting for quota available */
-  public static final ActionStage SUSPENDING = new ActionStage("suspending", 9);
-
+  public static final ProcessStage SUSPENDING = new ProcessStage("suspending", 9);
   /** When waiting for input data */
-  public static final ActionStage IDLE = new ActionStage("idle", 1);
+  public static final ProcessStage IDLE = new ProcessStage("idle", 1);
 
-  private static final Map<String, ActionStage> STAGES =
-      ImmutableMap.<String, ActionStage>builder()
+  private static final Map<String, ProcessStage> STAGES =
+      ImmutableMap.<String, ProcessStage>builder()
           .put(MINOR.getDesc(), MINOR)
           .put(MINOR.getDesc(), MAJOR)
           .put(FULL.getDesc(), FULL)
@@ -65,7 +58,7 @@ public class OptimizingStages {
           .put(IDLE.getDesc(), IDLE)
           .build();
 
-  public static ActionStage of(String desc) {
+  public static ProcessStage of(String desc) {
     return Optional.ofNullable(STAGES.get(desc))
         .orElseThrow(() -> new IllegalArgumentException("No optimizing stage with desc: " + desc));
   }

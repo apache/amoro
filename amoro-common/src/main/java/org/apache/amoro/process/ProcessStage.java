@@ -16,14 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.amoro;
+package org.apache.amoro.process;
 
-public class DefaultAction extends Action {
+public class ProcessStage {
 
-  private static final TableFormat[] DEFAULT_FORMATS =
-      new TableFormat[] {TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE};
+  /**
+   * Action Stage description value, normally this value should be identical within certain actions
+   */
+  private final String desc;
+  /**
+   * the weight number of this action, the bigger the weight number, the higher position on front
+   * pages
+   */
+  private final int weight;
 
-  DefaultAction(int code, int weight, String desc) {
-    super(DEFAULT_FORMATS, code, weight, desc);
+  public ProcessStage(String desc, int weight) {
+    this.desc = desc;
+    this.weight = weight;
+  }
+
+  public String getDesc() {
+    return desc;
+  }
+
+  public int getWeight() {
+    return weight;
   }
 }

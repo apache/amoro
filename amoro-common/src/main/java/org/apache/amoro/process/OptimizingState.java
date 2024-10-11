@@ -19,7 +19,6 @@
 package org.apache.amoro.process;
 
 import org.apache.amoro.Action;
-import org.apache.amoro.ActionStage;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.StateField;
 
@@ -28,7 +27,7 @@ public abstract class OptimizingState extends TableProcessState {
 
   @StateField private volatile long targetSnapshotId;
   @StateField private volatile long watermark;
-  @StateField private volatile ActionStage stage;
+  @StateField private volatile ProcessStage stage;
   @StateField private volatile long currentStageStartTime;
 
   public OptimizingState(Action action, ServerTableIdentifier tableIdentifier) {
@@ -39,12 +38,12 @@ public abstract class OptimizingState extends TableProcessState {
     super(id, action, tableIdentifier);
   }
 
-  protected void setStage(ActionStage stage) {
+  protected void setStage(ProcessStage stage) {
     this.stage = stage;
     this.currentStageStartTime = System.currentTimeMillis();
   }
 
-  protected void setStage(ActionStage stage, long stageStartTime) {
+  protected void setStage(ProcessStage stage, long stageStartTime) {
     this.stage = stage;
     this.currentStageStartTime = stageStartTime;
   }
@@ -61,7 +60,7 @@ public abstract class OptimizingState extends TableProcessState {
     return watermark;
   }
 
-  public ActionStage getStage() {
+  public ProcessStage getStage() {
     return stage;
   }
 
