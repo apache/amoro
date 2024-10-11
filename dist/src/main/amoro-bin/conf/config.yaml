@@ -54,6 +54,7 @@ ams:
     task-ack-timeout: 30000 # 30s
     polling-timeout: 3000 # 3s
     max-planning-parallelism: 1 # default 1
+    ignore-filter-partition-count: 100 # default 100
 
   blocker:
     timeout: 60000 # 1min

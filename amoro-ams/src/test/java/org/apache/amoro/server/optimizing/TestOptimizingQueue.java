@@ -112,7 +112,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         quotaProvider,
         planExecutor,
         Collections.singletonList(tableRuntime),
-        1);
+        1,
+        100);
   }
 
   private OptimizingQueue buildOptimizingGroupService() {
@@ -122,7 +123,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         quotaProvider,
         planExecutor,
         Collections.emptyList(),
-        1);
+        1,
+        100);
   }
 
   @Test

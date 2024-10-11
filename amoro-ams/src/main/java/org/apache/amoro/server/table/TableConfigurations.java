@@ -313,12 +313,7 @@ public class TableConfigurations {
             PropertyUtil.propertyAsLong(
                 properties,
                 TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL,
-                TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT))
-        .setMaxPartitionCount(
-            PropertyUtil.propertyAsInt(
-                properties,
-                TableProperties.SELF_OPTIMIZING_MAX_PARTITION_CNT,
-                TableProperties.SELF_OPTIMIZING_MAX_PARTITION_CNT_DEFAULT));
+                TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT));
   }
 
   /**

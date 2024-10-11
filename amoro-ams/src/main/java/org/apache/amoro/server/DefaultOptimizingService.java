@@ -100,12 +100,15 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final TableService tableService;
   private final RuntimeHandlerChain tableHandlerChain;
   private final ExecutorService planExecutor;
+  private final int ignoreFilterPartitions;
 
   public DefaultOptimizingService(Configurations serviceConfig, DefaultTableService tableService) {
     this.optimizerTouchTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT);
     this.taskAckTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT);
     this.maxPlanningParallelism =
         serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM);
+    this.ignoreFilterPartitions =
+        serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_IGNORE_FILTER_PARTITIONS);
     this.pollingTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT);
     this.tableService = tableService;
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
@@ -139,7 +142,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   this,
                   planExecutor,
                   Optional.ofNullable(tableRuntimes).orElseGet(ArrayList::new),
-                  maxPlanningParallelism);
+                  maxPlanningParallelism,
+                  ignoreFilterPartitions);
           optimizingQueueByGroup.put(groupName, optimizingQueue);
         });
     optimizers.forEach(optimizer -> registerOptimizer(optimizer, false));
@@ -314,7 +318,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   this,
                   planExecutor,
                   new ArrayList<>(),
-                  maxPlanningParallelism);
+                  maxPlanningParallelism,
+                  ignoreFilterPartitions);
           optimizingQueueByGroup.put(resourceGroup.getName(), optimizingQueue);
         });
   }

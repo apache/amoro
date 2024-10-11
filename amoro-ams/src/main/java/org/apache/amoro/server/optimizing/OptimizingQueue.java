@@ -84,6 +84,7 @@ public class OptimizingQueue extends PersistentBase {
   private final Lock scheduleLock = new ReentrantLock();
   private final Condition planningCompleted = scheduleLock.newCondition();
   private final int maxPlanningParallelism;
+  private final int ignoreFilterPartitionCount;
   private final OptimizerGroupMetrics metrics;
   private ResourceGroup optimizerGroup;
 
@@ -93,7 +94,8 @@ public class OptimizingQueue extends PersistentBase {
       QuotaProvider quotaProvider,
       Executor planExecutor,
       List<TableRuntime> tableRuntimeList,
-      int maxPlanningParallelism) {
+      int maxPlanningParallelism,
+      int ignoreFilterPartitionCount) {
     Preconditions.checkNotNull(optimizerGroup, "Optimizer group can not be null");
     this.planExecutor = planExecutor;
     this.optimizerGroup = optimizerGroup;
@@ -101,6 +103,7 @@ public class OptimizingQueue extends PersistentBase {
     this.scheduler = new SchedulingPolicy(optimizerGroup);
     this.tableManager = tableManager;
     this.maxPlanningParallelism = maxPlanningParallelism;
+    this.ignoreFilterPartitionCount = ignoreFilterPartitionCount;
     this.metrics =
         new OptimizerGroupMetrics(
             optimizerGroup.getName(), MetricManager.getInstance().getGlobalRegistry(), this);
@@ -268,7 +271,8 @@ public class OptimizingQueue extends PersistentBase {
               tableRuntime.refresh(table),
               (MixedTable) table.originalTable(),
               getAvailableCore(),
-              maxInputSizePerThread());
+              maxInputSizePerThread(),
+              ignoreFilterPartitionCount);
       if (planner.isNecessary()) {
         return new TableOptimizingProcess(planner);
       } else {

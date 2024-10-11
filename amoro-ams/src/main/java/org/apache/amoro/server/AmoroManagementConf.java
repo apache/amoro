@@ -332,6 +332,12 @@ public class AmoroManagementConf {
           .defaultValue(3000L)
           .withDescription("Optimizer polling task timeout.");
 
+  public static final ConfigOption<Integer> OPTIMIZER_IGNORE_FILTER_PARTITIONS =
+      ConfigOptions.key("optimizer.ignore-filter-partition-count")
+          .intType()
+          .defaultValue(100)
+          .withDescription("Filters will not be used beyond that number of partitions");
+
   /** config key prefix of terminal */
   public static final String TERMINAL_PREFIX = "terminal.";
 
