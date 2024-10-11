@@ -86,6 +86,9 @@ public class OptimizingConfig {
   // self-optimizing.min-plan-interval
   private long minPlanInterval;
 
+  // self-optimizing.max-partition-count
+  private int maxPartitionCount;
+
   public OptimizingConfig() {}
 
   public boolean isEnabled() {
@@ -267,6 +270,15 @@ public class OptimizingConfig {
     return this;
   }
 
+  public int getMaxPartitionCount() {
+    return maxPartitionCount;
+  }
+
+  public OptimizingConfig setMaxPartitionCount(int maxPartitionCount) {
+    this.maxPartitionCount = maxPartitionCount;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -295,7 +307,8 @@ public class OptimizingConfig {
         && baseRefreshInterval == that.baseRefreshInterval
         && hiveRefreshInterval == that.hiveRefreshInterval
         && Objects.equal(optimizerGroup, that.optimizerGroup)
-        && Objects.equal(minPlanInterval, that.minPlanInterval);
+        && Objects.equal(minPlanInterval, that.minPlanInterval)
+        && maxPartitionCount == that.maxPartitionCount;
   }
 
   @Override
@@ -320,7 +333,8 @@ public class OptimizingConfig {
         baseHashBucket,
         baseRefreshInterval,
         hiveRefreshInterval,
-        minPlanInterval);
+        minPlanInterval,
+        maxPartitionCount);
   }
 
   @Override
@@ -344,6 +358,7 @@ public class OptimizingConfig {
         .add("baseHashBucket", baseHashBucket)
         .add("baseRefreshInterval", baseRefreshInterval)
         .add("hiveRefreshInterval", hiveRefreshInterval)
+        .add("maxPartitionCount", maxPartitionCount)
         .toString();
   }
 }

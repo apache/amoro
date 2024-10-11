@@ -65,6 +65,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       double availableCore,
       long maxInputSizePerThread) {
     super(tableRuntime, table);
+    int maxPartitionCount = tableRuntime.getOptimizingConfig().getMaxPartitionCount();
     this.partitionFilter =
         tableRuntime.getPendingInput() == null
             ? Expressions.alwaysTrue()
@@ -72,7 +73,11 @@ public class OptimizingPlanner extends OptimizingEvaluator {
                 .map(
                     entry ->
                         ExpressionUtil.convertPartitionDataToDataFilter(
-                            table, entry.getKey(), entry.getValue()))
+                            table,
+                            entry.getKey(),
+                            entry.getValue().stream()
+                                .limit(maxPartitionCount)
+                                .collect(Collectors.toSet())))
                 .reduce(Expressions::or)
                 .orElse(Expressions.alwaysTrue());
     this.availableCore = availableCore;
