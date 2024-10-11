@@ -35,10 +35,10 @@ import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.KeyedTableCommit;
+import org.apache.amoro.server.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
-import org.apache.amoro.server.optimizing.plan.TaskDescriptor;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
@@ -109,12 +109,12 @@ public class CompleteOptimizingFlow {
 
   public void optimize() throws Exception {
     OptimizingPlanner planner = planner();
-    List<TaskDescriptor> taskDescriptors = planner.planTasks();
+    List<RewriteStageTask> taskDescriptors = planner.planTasks();
     if (CollectionUtils.isEmpty(taskDescriptors)) {
       check(taskDescriptors, planner, null);
       return;
     }
-    List<TaskRuntime> taskRuntimes = mockTaskRuntime(taskDescriptors);
+    List<TaskRuntime<RewriteStageTask>> taskRuntimes = mockTaskRuntime(taskDescriptors);
 
     asyncExecute(taskRuntimes);
 
@@ -132,7 +132,7 @@ public class CompleteOptimizingFlow {
     return checkers.stream().filter(s -> !s.senseHasChecked()).collect(Collectors.toList());
   }
 
-  private void asyncExecute(List<TaskRuntime> taskRuntimes)
+  private void asyncExecute(List<TaskRuntime<RewriteStageTask>> taskRuntimes)
       throws InterruptedException, ExecutionException {
     CompletableFuture.allOf(
             taskRuntimes.stream()
@@ -142,14 +142,17 @@ public class CompleteOptimizingFlow {
                           optimizingExecutor(taskRuntime);
                       return CompletableFuture.supplyAsync(
                               optimizingExecutor::execute, executorPool)
-                          .thenAccept(s -> Mockito.when(taskRuntime.getOutput()).thenReturn(s));
+                          .thenAccept(
+                              s ->
+                                  Mockito.when(taskRuntime.getTaskDescriptor().getOutput())
+                                      .thenReturn(s));
                     })
                 .toArray(CompletableFuture[]::new))
         .get();
   }
 
   private void check(
-      List<TaskDescriptor> taskDescriptors, OptimizingPlanner planner, UnKeyedTableCommit commit)
+      List<RewriteStageTask> taskDescriptors, OptimizingPlanner planner, UnKeyedTableCommit commit)
       throws Exception {
     for (Checker checker : checkers) {
       if (checker.condition(table, taskDescriptors, planner, commit)) {
@@ -158,13 +161,18 @@ public class CompleteOptimizingFlow {
     }
   }
 
-  private List<TaskRuntime> mockTaskRuntime(List<TaskDescriptor> taskDescriptors) {
-    List<TaskRuntime> list = new ArrayList<>();
-    for (TaskDescriptor taskDescriptor : taskDescriptors) {
-      TaskRuntime taskRuntime = Mockito.mock(TaskRuntime.class);
-      Mockito.when(taskRuntime.getPartition()).thenReturn(taskDescriptor.getPartition());
-      Mockito.when(taskRuntime.getInput()).thenReturn(taskDescriptor.getInput());
-      Mockito.when(taskRuntime.getProperties()).thenReturn(taskDescriptor.properties());
+  private List<TaskRuntime<RewriteStageTask>> mockTaskRuntime(
+      List<RewriteStageTask> taskDescriptors) {
+    List<TaskRuntime<RewriteStageTask>> list = new ArrayList<>();
+    for (RewriteStageTask taskDescriptor : taskDescriptors) {
+      TaskRuntime<RewriteStageTask> taskRuntime = Mockito.mock(TaskRuntime.class);
+      RewriteStageTask task = Mockito.mock(RewriteStageTask.class);
+      Mockito.when(taskRuntime.getTaskDescriptor()).thenReturn(task);
+      Mockito.when(taskRuntime.getTaskDescriptor().getPartition())
+          .thenReturn(taskDescriptor.getPartition());
+      Mockito.when(taskRuntime.getTaskDescriptor().getInput())
+          .thenReturn(taskDescriptor.getInput());
+      Mockito.when(taskRuntime.getProperties()).thenReturn(taskDescriptor.getProperties());
       list.add(taskRuntime);
     }
     return list;
@@ -198,13 +206,14 @@ public class CompleteOptimizingFlow {
     return tableConfiguration.getOptimizingConfig();
   }
 
-  private OptimizingExecutor<RewriteFilesOutput> optimizingExecutor(TaskRuntime taskRuntime) {
+  private OptimizingExecutor<RewriteFilesOutput> optimizingExecutor(
+      TaskRuntime<RewriteStageTask> taskRuntime) {
     if (table.format() == TableFormat.ICEBERG) {
       return new IcebergRewriteExecutor(
-          taskRuntime.getInput(), table, StructLikeCollections.DEFAULT);
+          taskRuntime.getTaskDescriptor().getInput(), table, StructLikeCollections.DEFAULT);
     } else {
       return new MixFormatRewriteExecutor(
-          taskRuntime.getInput(),
+          taskRuntime.getTaskDescriptor().getInput(),
           table,
           StructLikeCollections.DEFAULT,
           OptimizingInputProperties.parse(taskRuntime.getProperties()).getOutputDir());
@@ -212,7 +221,7 @@ public class CompleteOptimizingFlow {
   }
 
   private UnKeyedTableCommit committer(
-      List<TaskRuntime> taskRuntimes,
+      List<TaskRuntime<RewriteStageTask>> taskRuntimes,
       Map<String, Long> fromSequence,
       Map<String, Long> toSequence,
       Long formSnapshotId) {
@@ -264,7 +273,7 @@ public class CompleteOptimizingFlow {
 
     boolean condition(
         MixedTable table,
-        @Nullable List<TaskDescriptor> latestTaskDescriptors,
+        @Nullable List<RewriteStageTask> latestTaskDescriptors,
         OptimizingPlanner latestPlanner,
         @Nullable UnKeyedTableCommit latestCommit);
 
@@ -272,7 +281,7 @@ public class CompleteOptimizingFlow {
 
     void check(
         MixedTable table,
-        @Nullable List<TaskDescriptor> latestTaskDescriptors,
+        @Nullable List<RewriteStageTask> latestTaskDescriptors,
         OptimizingPlanner latestPlanner,
         @Nullable UnKeyedTableCommit latestCommit)
         throws Exception;

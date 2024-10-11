@@ -28,7 +28,6 @@ import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.exception.OptimizingClosedException;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
-import org.apache.amoro.server.optimizing.plan.TaskDescriptor;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
@@ -75,7 +74,7 @@ public class OptimizingQueue extends PersistentBase {
 
   private final QuotaProvider quotaProvider;
   private final Queue<TableOptimizingProcess> tableQueue = new LinkedTransferQueue<>();
-  private final Queue<TaskRuntime> retryTaskQueue = new LinkedTransferQueue<>();
+  private final Queue<TaskRuntime<RewriteStageTask>> retryTaskQueue = new LinkedTransferQueue<>();
   private final SchedulingPolicy scheduler;
   private final TableManager tableManager;
   private final Executor planExecutor;
@@ -286,7 +285,7 @@ public class OptimizingQueue extends PersistentBase {
     }
   }
 
-  public TaskRuntime getTask(OptimizingTaskId taskId) {
+  public TaskRuntime<?> getTask(OptimizingTaskId taskId) {
     return tableQueue.stream()
         .filter(p -> p.getProcessId() == taskId.getProcessId())
         .findFirst()
@@ -294,13 +293,13 @@ public class OptimizingQueue extends PersistentBase {
         .orElse(null);
   }
 
-  public List<TaskRuntime> collectTasks() {
+  public List<TaskRuntime<?>> collectTasks() {
     return tableQueue.stream()
         .flatMap(p -> p.getTaskMap().values().stream())
         .collect(Collectors.toList());
   }
 
-  public List<TaskRuntime> collectTasks(Predicate<TaskRuntime> predicate) {
+  public List<TaskRuntime<?>> collectTasks(Predicate<TaskRuntime<?>> predicate) {
     return tableQueue.stream()
         .flatMap(p -> p.getTaskMap().values().stream())
         .filter(predicate)
@@ -356,8 +355,8 @@ public class OptimizingQueue extends PersistentBase {
     private final long planTime;
     private final long targetSnapshotId;
     private final long targetChangeSnapshotId;
-    private final Map<OptimizingTaskId, TaskRuntime> taskMap = Maps.newHashMap();
-    private final Queue<TaskRuntime> taskQueue = new LinkedList<>();
+    private final Map<OptimizingTaskId, TaskRuntime<RewriteStageTask>> taskMap = Maps.newHashMap();
+    private final Queue<TaskRuntime<RewriteStageTask>> taskQueue = new LinkedList<>();
     private final Lock lock = new ReentrantLock();
     private volatile Status status = OptimizingProcess.Status.RUNNING;
     private volatile String failedReason;
@@ -525,7 +524,7 @@ public class OptimizingQueue extends PersistentBase {
       return failedReason;
     }
 
-    private Map<OptimizingTaskId, TaskRuntime> getTaskMap() {
+    private Map<OptimizingTaskId, TaskRuntime<RewriteStageTask>> getTaskMap() {
       return taskMap;
     }
 
@@ -671,7 +670,7 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     private void loadTaskRuntimes(OptimizingProcess optimizingProcess) {
-      List<TaskRuntime> taskRuntimes =
+      List<TaskRuntime<RewriteStageTask>> taskRuntimes =
           getAs(
               OptimizingMapper.class,
               mapper ->
@@ -681,7 +680,9 @@ public class OptimizingQueue extends PersistentBase {
         taskRuntimes.forEach(
             taskRuntime -> {
               taskRuntime.claimOwnership(this);
-              taskRuntime.setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
+              taskRuntime
+                  .getTaskDescriptor()
+                  .setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
               taskMap.put(taskRuntime.getTaskId(), taskRuntime);
               if (taskRuntime.getStatus() == TaskRuntime.Status.PLANNED) {
                 taskQueue.offer(taskRuntime);
@@ -698,14 +699,11 @@ public class OptimizingQueue extends PersistentBase {
       }
     }
 
-    private void loadTaskRuntimes(List<TaskDescriptor> taskDescriptors) {
+    private void loadTaskRuntimes(List<RewriteStageTask> taskDescriptors) {
       int taskId = 1;
-      for (TaskDescriptor taskDescriptor : taskDescriptors) {
-        TaskRuntime taskRuntime =
-            new TaskRuntime(
-                new OptimizingTaskId(processId, taskId++),
-                taskDescriptor,
-                taskDescriptor.properties());
+      for (RewriteStageTask taskDescriptor : taskDescriptors) {
+        TaskRuntime<RewriteStageTask> taskRuntime =
+            new TaskRuntime<>(new OptimizingTaskId(processId, taskId++), taskDescriptor);
         LOG.info(
             "{} plan new task {}, summary {}",
             tableRuntime.getTableIdentifier(),
