@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.optimizing.flow.checker;
 
-import org.apache.amoro.server.optimizing.ExecutingStageTask;
+import org.apache.amoro.server.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.flow.CompleteOptimizingFlow;
 import org.apache.amoro.server.optimizing.flow.DataReader;
@@ -45,7 +45,7 @@ public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
   @Override
   public boolean condition(
       MixedTable table,
-      @Nullable List<ExecutingStageTask> latestTaskDescriptors,
+      @Nullable List<RewriteStageTask> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit) {
     count++;
@@ -60,7 +60,7 @@ public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
   @Override
   public void check(
       MixedTable table,
-      @Nullable List<ExecutingStageTask> latestTaskDescriptors,
+      @Nullable List<RewriteStageTask> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit)
       throws Exception {

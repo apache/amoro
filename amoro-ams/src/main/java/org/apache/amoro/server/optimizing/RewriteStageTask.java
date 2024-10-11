@@ -26,15 +26,15 @@ import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 
 import java.util.Map;
 
-public class ExecutingStageTask
+public class RewriteStageTask
     extends StagedTaskDescriptor<RewriteFilesInput, RewriteFilesOutput, MetricsSummary> {
 
   private String partition;
 
   // only for mybatis and could be optimized by type handler afterward
-  public ExecutingStageTask() {}
+  public RewriteStageTask() {}
 
-  public ExecutingStageTask(
+  public RewriteStageTask(
       long tableId, String partition, RewriteFilesInput input, Map<String, String> properties) {
     super(tableId, input, properties);
     this.partition = partition;

@@ -54,7 +54,7 @@ public abstract class StagedTaskDescriptor<I, O, S> {
     return tableId;
   }
 
-  public void setOutput(byte[] outputBytes) {
+  public void setOutputBytes(byte[] outputBytes) {
     this.output = deserializeOutput(outputBytes);
     calculateSummary();
   }

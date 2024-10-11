@@ -30,8 +30,8 @@ import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
-import org.apache.amoro.server.optimizing.ExecutingStageTask;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
+import org.apache.amoro.server.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableRuntime;
@@ -125,7 +125,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
             getMixedTable(),
             tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
 
-    List<ExecutingStageTask> taskDescriptors = planWithCurrentFiles();
+    List<RewriteStageTask> taskDescriptors = planWithCurrentFiles();
     Assert.assertEquals(1, taskDescriptors.size());
     assertTask(
         taskDescriptors.get(0),
@@ -145,7 +145,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
         getMixedTable(),
         tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false));
 
-    List<ExecutingStageTask> taskDescriptors = planWithCurrentFiles();
+    List<RewriteStageTask> taskDescriptors = planWithCurrentFiles();
 
     Assert.assertTrue(taskDescriptors.isEmpty());
   }
@@ -178,7 +178,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     setFragmentRatio(dataFiles);
     assertSegmentFiles(dataFiles);
 
-    List<ExecutingStageTask> taskDescriptors = planWithCurrentFiles();
+    List<RewriteStageTask> taskDescriptors = planWithCurrentFiles();
 
     Assert.assertTrue(taskDescriptors.isEmpty());
 
@@ -277,7 +277,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     assertSegmentFiles(segmentFiles);
     assertFragmentFiles(fragmentFiles);
 
-    List<ExecutingStageTask> taskDescriptors = planWithCurrentFiles();
+    List<RewriteStageTask> taskDescriptors = planWithCurrentFiles();
     Assert.assertEquals(1, taskDescriptors.size());
 
     List<DataFile> rewrittenDataFiles = Lists.newArrayList();
@@ -329,7 +329,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     return OptimizingTestHelpers.appendBasePosDelete(getMixedTable(), posDeleteFiles);
   }
 
-  protected List<ExecutingStageTask> planWithCurrentFiles() {
+  protected List<RewriteStageTask> planWithCurrentFiles() {
     AbstractPartitionPlan partitionPlan = buildPlanWithCurrentFiles();
     if (partitionPlan.isNecessary()) {
       return partitionPlan.splitTasks(0);
@@ -498,7 +498,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   protected void assertTask(
-      ExecutingStageTask actual,
+      RewriteStageTask actual,
       List<DataFile> rewrittenDataFiles,
       List<DataFile> rePosDeletedDataFiles,
       List<? extends ContentFile<?>> readOnlyDeleteFiles,

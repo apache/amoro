@@ -34,8 +34,8 @@ import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.server.AmoroServiceConstants;
-import org.apache.amoro.server.optimizing.ExecutingStageTask;
 import org.apache.amoro.server.optimizing.KeyedTableCommit;
+import org.apache.amoro.server.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
@@ -109,12 +109,12 @@ public class CompleteOptimizingFlow {
 
   public void optimize() throws Exception {
     OptimizingPlanner planner = planner();
-    List<ExecutingStageTask> taskDescriptors = planner.planTasks();
+    List<RewriteStageTask> taskDescriptors = planner.planTasks();
     if (CollectionUtils.isEmpty(taskDescriptors)) {
       check(taskDescriptors, planner, null);
       return;
     }
-    List<TaskRuntime<ExecutingStageTask>> taskRuntimes = mockTaskRuntime(taskDescriptors);
+    List<TaskRuntime<RewriteStageTask>> taskRuntimes = mockTaskRuntime(taskDescriptors);
 
     asyncExecute(taskRuntimes);
 
@@ -132,7 +132,7 @@ public class CompleteOptimizingFlow {
     return checkers.stream().filter(s -> !s.senseHasChecked()).collect(Collectors.toList());
   }
 
-  private void asyncExecute(List<TaskRuntime<ExecutingStageTask>> taskRuntimes)
+  private void asyncExecute(List<TaskRuntime<RewriteStageTask>> taskRuntimes)
       throws InterruptedException, ExecutionException {
     CompletableFuture.allOf(
             taskRuntimes.stream()
@@ -152,9 +152,7 @@ public class CompleteOptimizingFlow {
   }
 
   private void check(
-      List<ExecutingStageTask> taskDescriptors,
-      OptimizingPlanner planner,
-      UnKeyedTableCommit commit)
+      List<RewriteStageTask> taskDescriptors, OptimizingPlanner planner, UnKeyedTableCommit commit)
       throws Exception {
     for (Checker checker : checkers) {
       if (checker.condition(table, taskDescriptors, planner, commit)) {
@@ -163,12 +161,12 @@ public class CompleteOptimizingFlow {
     }
   }
 
-  private List<TaskRuntime<ExecutingStageTask>> mockTaskRuntime(
-      List<ExecutingStageTask> taskDescriptors) {
-    List<TaskRuntime<ExecutingStageTask>> list = new ArrayList<>();
-    for (ExecutingStageTask taskDescriptor : taskDescriptors) {
-      TaskRuntime<ExecutingStageTask> taskRuntime = Mockito.mock(TaskRuntime.class);
-      ExecutingStageTask task = Mockito.mock(ExecutingStageTask.class);
+  private List<TaskRuntime<RewriteStageTask>> mockTaskRuntime(
+      List<RewriteStageTask> taskDescriptors) {
+    List<TaskRuntime<RewriteStageTask>> list = new ArrayList<>();
+    for (RewriteStageTask taskDescriptor : taskDescriptors) {
+      TaskRuntime<RewriteStageTask> taskRuntime = Mockito.mock(TaskRuntime.class);
+      RewriteStageTask task = Mockito.mock(RewriteStageTask.class);
       Mockito.when(taskRuntime.getTaskDescriptor()).thenReturn(task);
       Mockito.when(taskRuntime.getTaskDescriptor().getPartition())
           .thenReturn(taskDescriptor.getPartition());
@@ -208,7 +206,7 @@ public class CompleteOptimizingFlow {
   }
 
   private OptimizingExecutor<RewriteFilesOutput> optimizingExecutor(
-      TaskRuntime<ExecutingStageTask> taskRuntime) {
+      TaskRuntime<RewriteStageTask> taskRuntime) {
     if (table.format() == TableFormat.ICEBERG) {
       return new IcebergRewriteExecutor(
           taskRuntime.getTaskDescriptor().getInput(), table, StructLikeCollections.DEFAULT);
@@ -222,7 +220,7 @@ public class CompleteOptimizingFlow {
   }
 
   private UnKeyedTableCommit committer(
-      List<TaskRuntime<ExecutingStageTask>> taskRuntimes,
+      List<TaskRuntime<RewriteStageTask>> taskRuntimes,
       Map<String, Long> fromSequence,
       Map<String, Long> toSequence,
       Long formSnapshotId) {
@@ -274,7 +272,7 @@ public class CompleteOptimizingFlow {
 
     boolean condition(
         MixedTable table,
-        @Nullable List<ExecutingStageTask> latestTaskDescriptors,
+        @Nullable List<RewriteStageTask> latestTaskDescriptors,
         OptimizingPlanner latestPlanner,
         @Nullable UnKeyedTableCommit latestCommit);
 
@@ -282,7 +280,7 @@ public class CompleteOptimizingFlow {
 
     void check(
         MixedTable table,
-        @Nullable List<ExecutingStageTask> latestTaskDescriptors,
+        @Nullable List<RewriteStageTask> latestTaskDescriptors,
         OptimizingPlanner latestPlanner,
         @Nullable UnKeyedTableCommit latestCommit)
         throws Exception;

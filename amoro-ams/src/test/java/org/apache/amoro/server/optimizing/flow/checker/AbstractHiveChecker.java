@@ -20,7 +20,7 @@ package org.apache.amoro.server.optimizing.flow.checker;
 
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.table.SupportHive;
-import org.apache.amoro.server.optimizing.ExecutingStageTask;
+import org.apache.amoro.server.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.flow.view.MatchResult;
 import org.apache.amoro.server.optimizing.flow.view.TableDataView;
@@ -62,7 +62,7 @@ public abstract class AbstractHiveChecker extends OptimizingCountChecker {
   @Override
   public void check(
       MixedTable table,
-      @Nullable List<ExecutingStageTask> latestTaskDescriptors,
+      @Nullable List<RewriteStageTask> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit)
       throws Exception {

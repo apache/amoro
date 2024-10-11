@@ -20,12 +20,12 @@ package org.apache.amoro.server.persistence.mapper;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.optimizing.RewriteFilesInput;
-import org.apache.amoro.server.optimizing.ExecutingStageTask;
 import org.apache.amoro.server.optimizing.MetricsSummary;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.OptimizingType;
+import org.apache.amoro.server.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.StagedTaskDescriptor;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.converter.JsonObjectConverter;
@@ -146,8 +146,7 @@ public interface OptimizingMapper {
     "</foreach>",
     "</script>"
   })
-  void insertTaskRuntimes(
-      @Param("taskRuntimes") List<TaskRuntime<ExecutingStageTask>> taskRuntimes);
+  void insertTaskRuntimes(@Param("taskRuntimes") List<TaskRuntime<RewriteStageTask>> taskRuntimes);
 
   @Select(
       "SELECT process_id, task_id, 'executing' as stage, retry_num, table_id, partition_data,  create_time, start_time, end_time,"
@@ -182,7 +181,7 @@ public interface OptimizingMapper {
         column = "properties",
         typeHandler = Map2StringConverter.class)
   })
-  List<TaskRuntime<ExecutingStageTask>> selectTaskRuntimes(
+  List<TaskRuntime<RewriteStageTask>> selectTaskRuntimes(
       @Param("table_id") long tableId, @Param("process_id") long processId);
 
   @Select(

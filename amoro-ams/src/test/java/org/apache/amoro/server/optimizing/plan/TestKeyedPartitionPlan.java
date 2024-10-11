@@ -24,8 +24,8 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.data.ChangeAction;
-import org.apache.amoro.server.optimizing.ExecutingStageTask;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
+import org.apache.amoro.server.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.scan.KeyedTableFileScanHelper;
 import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -96,7 +96,7 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
                 .writeChangeStore(
                     getMixedTable(), transactionId, ChangeAction.INSERT, newRecords, false));
 
-    List<ExecutingStageTask> taskDescriptors = planWithCurrentFiles();
+    List<RewriteStageTask> taskDescriptors = planWithCurrentFiles();
 
     Assert.assertEquals(1, taskDescriptors.size());
 
@@ -152,7 +152,7 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
     Assert.assertEquals(fromSnapshot.sequenceNumber(), (long) plan.getFromSequence());
     Assert.assertEquals(toSnapshot.sequenceNumber(), (long) plan.getToSequence());
 
-    List<ExecutingStageTask> taskDescriptors = plan.splitTasks(0);
+    List<RewriteStageTask> taskDescriptors = plan.splitTasks(0);
 
     Assert.assertEquals(1, taskDescriptors.size());
 

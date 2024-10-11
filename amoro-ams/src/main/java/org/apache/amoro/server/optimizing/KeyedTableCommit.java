@@ -58,7 +58,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
 
   protected MixedTable table;
 
-  protected Collection<TaskRuntime<ExecutingStageTask>> tasks;
+  protected Collection<TaskRuntime<RewriteStageTask>> tasks;
 
   protected Long fromSnapshotId;
 
@@ -68,7 +68,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
 
   public KeyedTableCommit(
       MixedTable table,
-      Collection<TaskRuntime<ExecutingStageTask>> tasks,
+      Collection<TaskRuntime<RewriteStageTask>> tasks,
       Long fromSnapshotId,
       StructLikeMap<Long> fromSequenceOfPartitions,
       StructLikeMap<Long> toSequenceOfPartitions) {
@@ -99,7 +99,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
     StructLikeMap<Long> partitionOptimizedSequence =
         MixedTableUtil.readOptimizedSequence(table.asKeyedTable());
 
-    for (TaskRuntime<ExecutingStageTask> taskRuntime : tasks) {
+    for (TaskRuntime<RewriteStageTask> taskRuntime : tasks) {
       RewriteFilesInput input = taskRuntime.getTaskDescriptor().getInput();
       StructLike partition = partition(input);
 

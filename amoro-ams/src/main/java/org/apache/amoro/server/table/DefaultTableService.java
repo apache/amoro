@@ -489,7 +489,9 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
   @VisibleForTesting
   void exploreExternalCatalog() {
-    checkStarted();
+    if (!initialized.isDone()) {
+      throw new IllegalStateException("TableService is not initialized");
+    }
     long start = System.currentTimeMillis();
     LOG.info("Syncing external catalogs: {}", String.join(",", externalCatalogMap.keySet()));
     for (ExternalCatalog externalCatalog : externalCatalogMap.values()) {

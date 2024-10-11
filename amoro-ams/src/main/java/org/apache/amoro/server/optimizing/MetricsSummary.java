@@ -113,10 +113,10 @@ public class MetricsSummary {
     }
   }
 
-  public MetricsSummary(Collection<TaskRuntime<ExecutingStageTask>> taskRuntimes) {
+  public MetricsSummary(Collection<TaskRuntime<RewriteStageTask>> taskRuntimes) {
     taskRuntimes.stream()
         .map(TaskRuntime::getTaskDescriptor)
-        .map(ExecutingStageTask::getSummary)
+        .map(RewriteStageTask::getSummary)
         .forEach(
             metrics -> {
               newDataFileCnt += metrics.getNewDataFileCnt();

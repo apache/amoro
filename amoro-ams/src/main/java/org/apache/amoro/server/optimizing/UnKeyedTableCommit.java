@@ -75,10 +75,10 @@ public class UnKeyedTableCommit {
 
   private final Long targetSnapshotId;
   private final MixedTable table;
-  private final Collection<TaskRuntime<ExecutingStageTask>> tasks;
+  private final Collection<TaskRuntime<RewriteStageTask>> tasks;
 
   public UnKeyedTableCommit(
-      Long targetSnapshotId, MixedTable table, Collection<TaskRuntime<ExecutingStageTask>> tasks) {
+      Long targetSnapshotId, MixedTable table, Collection<TaskRuntime<RewriteStageTask>> tasks) {
     this.targetSnapshotId = targetSnapshotId;
     this.table = table;
     this.tasks = tasks;
@@ -97,7 +97,7 @@ public class UnKeyedTableCommit {
             : table.asKeyedTable().baseTable().spec().partitionType();
 
     List<DataFile> newTargetFiles = new ArrayList<>();
-    for (TaskRuntime<ExecutingStageTask> taskRuntime : tasks) {
+    for (TaskRuntime<RewriteStageTask> taskRuntime : tasks) {
       RewriteFilesOutput output = taskRuntime.getTaskDescriptor().getOutput();
       DataFile[] dataFiles = output.getDataFiles();
       if (dataFiles == null) {

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.persistence.converter;
 
-import org.apache.amoro.server.optimizing.ExecutingStageTask;
+import org.apache.amoro.server.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.StagedTaskDescriptor;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
@@ -39,18 +39,18 @@ public class TaskDescriptorTypeConverter implements TypeHandler<StagedTaskDescri
   @Override
   public StagedTaskDescriptor<?, ?, ?> getResult(ResultSet rs, String columnName)
       throws SQLException {
-    return new ExecutingStageTask();
+    return new RewriteStageTask();
   }
 
   @Override
   public StagedTaskDescriptor<?, ?, ?> getResult(ResultSet rs, int columnIndex)
       throws SQLException {
-    return new ExecutingStageTask();
+    return new RewriteStageTask();
   }
 
   @Override
   public StagedTaskDescriptor<?, ?, ?> getResult(CallableStatement cs, int columnIndex)
       throws SQLException {
-    return new ExecutingStageTask();
+    return new RewriteStageTask();
   }
 }

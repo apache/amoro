@@ -19,8 +19,8 @@
 package org.apache.amoro.server.optimizing.flow.checker;
 
 import org.apache.amoro.optimizing.OptimizingInputProperties;
-import org.apache.amoro.server.optimizing.ExecutingStageTask;
 import org.apache.amoro.server.optimizing.OptimizingType;
+import org.apache.amoro.server.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.flow.view.TableDataView;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
@@ -40,7 +40,7 @@ public class FullOptimizingWrite2HiveChecker extends AbstractHiveChecker {
   @Override
   protected boolean internalCondition(
       MixedTable table,
-      @Nullable List<ExecutingStageTask> latestTaskDescriptors,
+      @Nullable List<RewriteStageTask> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit) {
     return CollectionUtils.isNotEmpty(latestTaskDescriptors)

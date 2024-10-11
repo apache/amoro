@@ -51,9 +51,7 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
   @StateField private String failReason;
   private TaskOwner owner;
 
-  private TaskRuntime() {
-    this.taskDescriptor = (T) new ExecutingStageTask();
-  }
+  private TaskRuntime() {}
 
   public TaskRuntime(OptimizingTaskId taskId, T taskDescriptor) {
     this.taskId = taskId;
@@ -73,7 +71,7 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
             failReason = result.getErrorMessage();
           } else {
             statusMachine.accept(Status.SUCCESS);
-            taskDescriptor.setOutput(result.getTaskOutput());
+            taskDescriptor.setOutputBytes(result.getTaskOutput());
           }
           endTime = System.currentTimeMillis();
           costTime += endTime - startTime;

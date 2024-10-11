@@ -74,7 +74,7 @@ public class OptimizingQueue extends PersistentBase {
 
   private final QuotaProvider quotaProvider;
   private final Queue<TableOptimizingProcess> tableQueue = new LinkedTransferQueue<>();
-  private final Queue<TaskRuntime<ExecutingStageTask>> retryTaskQueue = new LinkedTransferQueue<>();
+  private final Queue<TaskRuntime<RewriteStageTask>> retryTaskQueue = new LinkedTransferQueue<>();
   private final SchedulingPolicy scheduler;
   private final TableManager tableManager;
   private final Executor planExecutor;
@@ -351,9 +351,8 @@ public class OptimizingQueue extends PersistentBase {
     private final long planTime;
     private final long targetSnapshotId;
     private final long targetChangeSnapshotId;
-    private final Map<OptimizingTaskId, TaskRuntime<ExecutingStageTask>> taskMap =
-        Maps.newHashMap();
-    private final Queue<TaskRuntime<ExecutingStageTask>> taskQueue = new LinkedList<>();
+    private final Map<OptimizingTaskId, TaskRuntime<RewriteStageTask>> taskMap = Maps.newHashMap();
+    private final Queue<TaskRuntime<RewriteStageTask>> taskQueue = new LinkedList<>();
     private final Lock lock = new ReentrantLock();
     private volatile Status status = OptimizingProcess.Status.RUNNING;
     private volatile String failedReason;
@@ -521,7 +520,7 @@ public class OptimizingQueue extends PersistentBase {
       return failedReason;
     }
 
-    private Map<OptimizingTaskId, TaskRuntime<ExecutingStageTask>> getTaskMap() {
+    private Map<OptimizingTaskId, TaskRuntime<RewriteStageTask>> getTaskMap() {
       return taskMap;
     }
 
@@ -667,7 +666,7 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     private void loadTaskRuntimes(OptimizingProcess optimizingProcess) {
-      List<TaskRuntime<ExecutingStageTask>> taskRuntimes =
+      List<TaskRuntime<RewriteStageTask>> taskRuntimes =
           getAs(
               OptimizingMapper.class,
               mapper ->
@@ -696,10 +695,10 @@ public class OptimizingQueue extends PersistentBase {
       }
     }
 
-    private void loadTaskRuntimes(List<ExecutingStageTask> taskDescriptors) {
+    private void loadTaskRuntimes(List<RewriteStageTask> taskDescriptors) {
       int taskId = 1;
-      for (ExecutingStageTask taskDescriptor : taskDescriptors) {
-        TaskRuntime<ExecutingStageTask> taskRuntime =
+      for (RewriteStageTask taskDescriptor : taskDescriptors) {
+        TaskRuntime<RewriteStageTask> taskRuntime =
             new TaskRuntime<>(new OptimizingTaskId(processId, taskId++), taskDescriptor);
         LOG.info(
             "{} plan new task {}, summary {}",
