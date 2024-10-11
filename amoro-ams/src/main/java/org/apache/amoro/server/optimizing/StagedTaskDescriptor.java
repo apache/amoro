@@ -24,6 +24,14 @@ import org.apache.amoro.utils.SerializationUtil;
 
 import java.util.Map;
 
+/**
+ * StagedTaskDescriptor is a descriptor for a task which contains input, output and summary.
+ * StagedTask could contain many stages, such as rewrite, plan, evaluate, commit, etc.
+ * Or just a single running stage of  {@link org.apache.amoro.process.TableProcess}
+ * @param <I>
+ * @param <O>
+ * @param <S>
+ */
 public abstract class StagedTaskDescriptor<I, O, S> {
 
   protected long tableId;
