@@ -62,7 +62,9 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -469,6 +471,33 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   public TableRuntime getRuntime(Long tableId) {
     checkStarted();
     return tableRuntimeMap.get(tableId);
+  }
+
+  public Map<Long, TableRuntime> listRuntimes(
+      @Nullable String dbFilter, @Nullable String tableFilter) {
+    checkStarted();
+    // no filter, will return all the table runtime.
+    if (dbFilter == null && tableFilter == null) {
+      return Collections.unmodifiableMap(tableRuntimeMap);
+    }
+
+    Map<Long, TableRuntime> filteredRuntimes = new HashMap<>();
+    for (Map.Entry<Long, TableRuntime> entry : tableRuntimeMap.entrySet()) {
+      ServerTableIdentifier identifier = entry.getValue().getTableIdentifier();
+      // skip the runtime which fails the db filter.
+      if (dbFilter != null && !identifier.getDatabase().contains(dbFilter)) {
+        continue;
+      }
+
+      // skip the runtime which fails the table filter.
+      if (tableFilter != null && !identifier.getTableName().contains(tableFilter)) {
+        continue;
+      }
+
+      filteredRuntimes.put(entry.getKey(), entry.getValue());
+    }
+
+    return filteredRuntimes;
   }
 
   @Override

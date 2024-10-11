@@ -32,7 +32,7 @@ public class TableProcessState implements ProcessState {
   private final ServerTableIdentifier tableIdentifier;
   @StateField private long startTime;
   @StateField private long endTime = -1L;
-  @StateField private ProcessStatus status = ProcessStatus.ACTIVE;
+  @StateField private ProcessStatus status = ProcessStatus.SUBMITTED;
   @StateField private volatile String failedReason;
   private volatile Map<String, String> summary;
 
@@ -108,7 +108,7 @@ public class TableProcessState implements ProcessState {
         || status == ProcessStatus.FAILED
         || status == ProcessStatus.CLOSED) {
       endTime = System.currentTimeMillis();
-    } else if (this.status != ProcessStatus.ACTIVE && status == ProcessStatus.ACTIVE) {
+    } else if (this.status != ProcessStatus.SUBMITTED && status == ProcessStatus.SUBMITTED) {
       endTime = -1L;
       failedReason = null;
       summary = null;

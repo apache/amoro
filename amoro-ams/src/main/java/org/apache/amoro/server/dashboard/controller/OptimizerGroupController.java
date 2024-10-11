@@ -99,7 +99,11 @@ public class OptimizerGroupController {
             .collect(Collectors.toList());
 
     PageResult<TableOptimizingInfo> amsPageResult =
-        PageResult.of(tableRuntimes, offset, pageSize, OptimizingUtil::buildTableOptimizeInfo);
+        PageResult.of(
+            tableRuntimes.stream()
+                .map(OptimizingUtil::buildTableOptimizeInfo)
+                .collect(Collectors.toList()),
+            tableService.listRuntimes(dbFilterStr, tableFilterStr).size());
     ctx.json(OkResponse.of(amsPageResult));
   }
 
