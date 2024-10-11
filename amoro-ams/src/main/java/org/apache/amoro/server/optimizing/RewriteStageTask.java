@@ -26,6 +26,10 @@ import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 
 import java.util.Map;
 
+/**
+ * RewriteStageTask is a task which contains the input and output of a rewrite stage task. Other
+ * stage task would include plan, evaluate, commit, etc.
+ */
 public class RewriteStageTask
     extends StagedTaskDescriptor<RewriteFilesInput, RewriteFilesOutput, MetricsSummary> {
 
