@@ -24,7 +24,6 @@ import {
   shallowReactive,
   toRefs,
   watch,
-  ref,
 } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -102,7 +101,8 @@ export default defineComponent({
       if (editRecord) {
         state.optimizerEdit = true
         state.optimizerEditRecord = { ...editRecord }
-      } else {
+      }
+      else {
         state.optimizerEdit = false
       }
       state.showCreateOptimizer = true
@@ -118,7 +118,6 @@ export default defineComponent({
       state.showTab = true
     })
 
-    let createOptimizer1 = createOptimizer;
     return {
       placeholder,
       pagination,
@@ -187,9 +186,9 @@ export default defineComponent({
       "
     />
     <CreateOptimizerModal
-        v-if="showCreateOptimizer"
-        @cancel="showCreateOptimizer = false"
-        @refresh="showCreateOptimizer = false"
+      v-if="showCreateOptimizer"
+      @cancel="showCreateOptimizer = false"
+      @refresh="showCreateOptimizer = false"
     />
   </div>
 </template>
