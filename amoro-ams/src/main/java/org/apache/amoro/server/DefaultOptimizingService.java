@@ -164,7 +164,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
     doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(token));
     OptimizingQueue optimizingQueue = optimizingQueueByToken.remove(token);
     OptimizerInstance optimizer = authOptimizers.remove(token);
-    optimizingQueue.removeOptimizer(optimizer);
+    if (optimizingQueue != null) {
+      optimizingQueue.removeOptimizer(optimizer);
+    }
   }
 
   @Override
