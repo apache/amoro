@@ -49,28 +49,26 @@ const columns = computed(() => [
   { dataIndex: 'tableName', title: t('table'), width: 200, scopedSlots: { customRender: 'tableName' } },
   { dataIndex: 'groupName', title: t('optimizerGroup'), width: 180, ellipsis: true },
   { dataIndex: 'optimizeStatus', title: t('optimizingStatus'), width: 240, ellipsis: true },
-  { dataIndex: 'duration', title: t('duration'), width: 150, ellipsis: true, sorter: true },
+  { dataIndex: 'duration', title: t('duration'), width: 150, ellipsis: true },
   { dataIndex: 'fileCount', title: t('fileCount'), width: 150, ellipsis: true },
   { dataIndex: 'fileSizeDesc', title: t('fileSize'), width: 150, ellipsis: true },
   { dataIndex: 'quota', title: t('quota'), width: 150, ellipsis: true },
-  { dataIndex: 'quotaOccupation', title: t('occupation'), width: 120, ellipsis: true, sorter: true },
+  { dataIndex: 'quotaOccupation', title: t('occupation'), width: 120, ellipsis: true },
 ])
 
 const pagination = reactive(usePagination())
 const dataSource = ref<IOptimizeTableItem[]>([])
 const optimizerGroup = ref<ILableAndValue>()
-const action = ref<string[]>()
+const actions = ref<string[]>()
 const dbSearchInput = ref<ILableAndValue>()
 const tableSearchInput = ref<ILableAndValue>()
 const placeholder = reactive(usePlaceholder())
 
-const sortField = ref<string>()
-
-const actions = ref<string[]>([])
+const actionOptions = ref<string[]>([])
 async function fetchOptimizerAction() {
   try {
     const res = await getOptimizerAction()
-    actions.value = (res || []).map((value: string) => ({ label: value, value }))
+    actionOptions.value = (res || []).map((value: string) => ({ label: value, value }))
   }
   catch (error) {
   }
@@ -98,8 +96,7 @@ async function getTableList() {
       tableSearchInput: tableSearchInput.value || '',
       page: pagination.current,
       pageSize: pagination.pageSize,
-      action: action.value,
-      sortField: sortField.value,
+      actions: actions.value,
     }
     const result = await getOptimizerTableList(params as any)
     const { list, total } = result
@@ -144,12 +141,11 @@ async function releaseJob(record: IOptimizeResourceTableItem) {
     releaseLoading.value = false
   }
 }
-function changeTable({ current = pagination.current, pageSize = pagination.pageSize }, _filters: any, sorter: { field: string, order: string }) {
+function changeTable({ current = pagination.current, pageSize = pagination.pageSize }) {
   pagination.current = current
   const resetPage = pageSize !== pagination.pageSize
   pagination.pageSize = pageSize
 
-  sortField.value = `${sorter.field}: ${sorter.order}`
   refresh(resetPage)
 }
 
@@ -198,7 +194,7 @@ onMounted(async () => {
       />
 
       <a-select
-        v-model:value="action" allow-clear placeholder="Action" :options="actions" mode="multiple"
+        v-model:value="actions" allow-clear placeholder="Action" :options="actionOptions" mode="multiple"
         style="min-width: 150px;" @change="refresh"
       />
 

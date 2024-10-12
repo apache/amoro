@@ -38,7 +38,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/optimize/action',
+    url: '/mock/ams/v1/optimize/actions',
     method: 'get',
     response: () => ({
       code: 200,
