@@ -18,6 +18,12 @@
 
 package org.apache.amoro.server.persistence;
 
+import static com.github.pagehelper.page.PageAutoDialect.registerDialectAlias;
+
+import com.github.pagehelper.PageInterceptor;
+import com.github.pagehelper.dialect.helper.MySqlDialect;
+import com.github.pagehelper.dialect.helper.PostgreSqlDialect;
+import com.github.pagehelper.dialect.helper.SqlServerDialect;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.persistence.mapper.ApiTokensMapper;
@@ -78,6 +84,9 @@ public class SqlSessionFactoryProvider {
   private volatile SqlSessionFactory sqlSessionFactory;
 
   public void init(Configurations config) throws SQLException {
+
+    registerDialectAliases();
+
     BasicDataSource dataSource = new BasicDataSource();
     dataSource.setUrl(config.getString(AmoroManagementConf.DB_CONNECTION_URL));
     dataSource.setDriverClassName(config.getString(AmoroManagementConf.DB_DRIVER_CLASS_NAME));
@@ -116,6 +125,12 @@ public class SqlSessionFactoryProvider {
     configuration.addMapper(ResourceMapper.class);
     configuration.addMapper(TableBlockerMapper.class);
 
+    PageInterceptor interceptor = new PageInterceptor();
+    Properties interceptorProperties = new Properties();
+    interceptorProperties.setProperty("reasonable", "false");
+    interceptor.setProperties(interceptorProperties);
+    configuration.addInterceptor(interceptor);
+
     DatabaseIdProvider provider = new VendorDatabaseIdProvider();
     Properties properties = new Properties();
     properties.setProperty("MySQL", "mysql");
@@ -131,6 +146,12 @@ public class SqlSessionFactoryProvider {
       }
     }
     createTablesIfNeed(config);
+  }
+
+  private void registerDialectAliases() {
+    registerDialectAlias("postgresql", PostgreSqlDialect.class);
+    registerDialectAlias("mysql", MySqlDialect.class);
+    registerDialectAlias("derby", SqlServerDialect.class);
   }
 
   /**

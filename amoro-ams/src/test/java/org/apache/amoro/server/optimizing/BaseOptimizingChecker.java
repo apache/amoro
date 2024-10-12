@@ -116,7 +116,9 @@ public class BaseOptimizingChecker extends PersistentBase {
                             mapper.selectOptimizingProcesses(
                                 tableIdentifier.getCatalog(),
                                 tableIdentifier.getDatabase(),
-                                tableIdentifier.getTableName()));
+                                tableIdentifier.getTableName(),
+                                0,
+                                Integer.MAX_VALUE));
                 if (tableOptimizingProcesses == null || tableOptimizingProcesses.isEmpty()) {
                   LOG.info("optimize history is empty");
                   return Status.RUNNING;
@@ -153,7 +155,9 @@ public class BaseOptimizingChecker extends PersistentBase {
                       mapper.selectOptimizingProcesses(
                           tableIdentifier.getCatalog(),
                           tableIdentifier.getDatabase(),
-                          tableIdentifier.getTableName()))
+                          tableIdentifier.getTableName(),
+                          0,
+                          Integer.MAX_VALUE))
               .stream()
               .filter(p -> p.getProcessId() > lastProcessId)
               .filter(p -> p.getStatus().equals(OptimizingProcess.Status.SUCCESS))
@@ -182,11 +186,13 @@ public class BaseOptimizingChecker extends PersistentBase {
                     mapper.selectOptimizingProcesses(
                         tableIdentifier.getCatalog(),
                         tableIdentifier.getDatabase(),
-                        tableIdentifier.getTableName()))
+                        tableIdentifier.getTableName(),
+                        0,
+                        Integer.MAX_VALUE))
             .stream()
             .filter(p -> p.getProcessId() > lastProcessId)
             .collect(Collectors.toList());
-    Assert.assertFalse("optimize is not stopped", tableOptimizingProcesses.size() > 0);
+    Assert.assertTrue("optimize is not stopped", tableOptimizingProcesses.isEmpty());
   }
 
   protected boolean waitUntilFinish(Supplier<Status> statusSupplier, final long timeout)

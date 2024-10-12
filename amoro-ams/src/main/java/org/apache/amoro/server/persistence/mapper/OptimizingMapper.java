@@ -124,7 +124,9 @@ public interface OptimizingMapper {
   List<OptimizingProcessMeta> selectOptimizingProcesses(
       @Param("catalogName") String catalogName,
       @Param("dbName") String dbName,
-      @Param("tableName") String tableName);
+      @Param("tableName") String tableName,
+      @Param("pageNum") int pageNum,
+      @Param("pageSize") int pageSize);
 
   /** Optimizing TaskRuntime operation below */
   @Insert({
