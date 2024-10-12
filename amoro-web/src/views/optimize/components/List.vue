@@ -165,6 +165,7 @@ function reset() {
   optimizerGroup.value = undefined
   dbSearchInput.value = undefined
   tableSearchInput.value = undefined
+  actions.value = undefined
   refresh(true)
 }
 
@@ -180,7 +181,7 @@ onMounted(async () => {
     <a-space class="filter-form">
       <a-select
         v-model:value="optimizerGroup" allow-clear placeholder="Optimizer group" :options="optimizerGroupList"
-        style="min-width: 150px;" @change="refresh"
+        style="min-width: 150px;"
       />
 
       <a-input
@@ -195,7 +196,7 @@ onMounted(async () => {
 
       <a-select
         v-model:value="actions" allow-clear placeholder="Action" :options="actionOptions" mode="multiple"
-        style="min-width: 150px;" @change="refresh"
+        style="min-width: 150px;"
       />
 
       <a-button type="primary" @click="refresh">
