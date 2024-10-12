@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 
 /** The controller that handles optimizer requests. */
 public class OptimizerGroupController {
@@ -75,11 +76,9 @@ public class OptimizerGroupController {
     String optimizerGroup = ctx.pathParam("optimizerGroup");
     String dbFilterStr = ctx.queryParam("dbSearchInput");
     String tableFilterStr = ctx.queryParam("tableSearchInput");
-    String[] requestedActions = ctx.queryParamAsClass("actions", String[].class).getOrDefault(null);
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
-    Set<String> actionFilter =
-        requestedActions == null ? null : new HashSet<>(Arrays.asList(requestedActions));
+    Set<String> actionFilter = new HashSet<>(ctx.queryParams("actions[]"));
     int offset = (page - 1) * pageSize;
 
     String optimizerGroupUsedInDbFilter = ALL_GROUP.equals(optimizerGroup) ? null : optimizerGroup;
@@ -92,9 +91,7 @@ public class OptimizerGroupController {
         tableRuntimeBeans.stream()
             .map(meta -> tableService.getRuntime(meta.getTableId()))
             .filter(
-                tableRuntime ->
-                    actionFilter == null
-                        || actionFilter.isEmpty()
+                tableRuntime -> actionFilter.isEmpty()
                         || actionFilter.contains(tableRuntime.getOptimizingStatus().displayValue()))
             .collect(Collectors.toList());
 
