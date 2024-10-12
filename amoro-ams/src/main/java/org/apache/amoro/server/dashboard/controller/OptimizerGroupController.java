@@ -49,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 
 /** The controller that handles optimizer requests. */
 public class OptimizerGroupController {
@@ -91,7 +90,8 @@ public class OptimizerGroupController {
         tableRuntimeBeans.stream()
             .map(meta -> tableService.getRuntime(meta.getTableId()))
             .filter(
-                tableRuntime -> actionFilter.isEmpty()
+                tableRuntime ->
+                    actionFilter.isEmpty()
                         || actionFilter.contains(tableRuntime.getOptimizingStatus().displayValue()))
             .collect(Collectors.toList());
 
