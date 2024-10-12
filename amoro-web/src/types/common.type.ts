@@ -271,7 +271,6 @@ export interface IOptimizeTableItem {
   quotaOccupationDesc: string
   duration: number
   durationDesc: string
-  durationDisplay: string
   fileSizeDesc: string
   tableIdentifier: ITableIdentifier
   tableNameOnly?: string
