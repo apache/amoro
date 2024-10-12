@@ -91,7 +91,7 @@ const isEdit = computed(() => {
   return props.isEdit
 })
 const uploadUrl = computed(() => {
-  return '/ams/v1/files'
+  return '/api/ams/v1/files'
 })
 const isNewCatalog = computed(() => {
   const catalog = (route.query?.catalogname || '').toString()

@@ -64,7 +64,7 @@ public class PlatformFileInfoController {
     Integer fid = platformFileInfoService.addFile(name, content);
     Map<String, String> result = new HashMap<>();
     result.put("id", String.valueOf(fid));
-    result.put("url", "/ams/v1/files/" + fid);
+    result.put("url", "/api/ams/v1/files/" + fid);
     ctx.json(OkResponse.of(result));
   }
 

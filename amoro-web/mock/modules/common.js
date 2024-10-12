@@ -18,7 +18,7 @@
 
 export default [
   {
-    url: '/mock/ams/v1/login/current',
+    url: '/mock/api/ams/v1/login/current',
     method: 'get',
     response: () => ({
       code: 200,
@@ -30,7 +30,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/login',
+    url: '/mock/api/ams/v1/login',
     method: 'post',
     response: () => ({
       code: 200,
@@ -39,7 +39,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/versionInfo',
+    url: '/mock/api/ams/v1/versionInfo',
     method: 'get',
     response: () => ({
       code: 200,
@@ -51,7 +51,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/upgrade/properties',
+    url: '/mock/api/ams/v1/upgrade/properties',
     method: 'get',
     response: () => ({
       code: 200,
@@ -63,7 +63,7 @@ export default [
     })
   },
   {
-    url: '/mock/ams/v1/logout',
+    url: '/mock/api/ams/v1/logout',
     method: 'post',
     response: () => ({
       code: 200,

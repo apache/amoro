@@ -18,7 +18,7 @@
 
 export default [
   {
-    url: '/mock/ams/v1/terminal/examples',
+    url: '/mock/api/ams/v1/terminal/examples',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -36,12 +36,12 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/terminal/latestInfos',
+    url: '/mock/api/ams/v1/terminal/latestInfos',
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": { "sessionId": "", "sql": "" } }),
   },
   {
-    url: '/mock/ams/v1/terminal/catalogs/:catalogName/execute',
+    url: '/mock/api/ams/v1/terminal/catalogs/:catalogName/execute',
     method: 'post',
     response: () => ({
       "message": "success",
@@ -52,7 +52,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/terminal/:sessionId/logs',
+    url: '/mock/api/ams/v1/terminal/:sessionId/logs',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -96,23 +96,23 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/terminal/:sessionId/result',
+    url: '/mock/api/ams/v1/terminal/:sessionId/result',
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": [] }),
   },
   {
-    url: '/mock/ams/v1/terminal/:sessionId/result',
+    url: '/mock/api/ams/v1/terminal/:sessionId/result',
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": [] }),
   },
   {
-    url: '/mock/ams/v1/terminal/:sessionId/stop',
+    url: '/mock/api/ams/v1/terminal/:sessionId/stop',
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": null }),
   },
 
   {
-    url: '/mock/ams/v1/terminal/examples/CreateTable',
+    url: '/mock/api/ams/v1/terminal/examples/CreateTable',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -121,12 +121,12 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/terminal/examples/DeleteTable',
+    url: '/mock/api/ams/v1/terminal/examples/DeleteTable',
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": "drop table db_name.table_name;" }),
   },
   {
-    url: '/mock/ams/v1/terminal/examples/EditTable',
+    url: '/mock/api/ams/v1/terminal/examples/EditTable',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -135,7 +135,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/terminal/examples/SetProperties',
+    url: '/mock/api/ams/v1/terminal/examples/SetProperties',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -144,7 +144,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/terminal/examples/UnsetProperties',
+    url: '/mock/api/ams/v1/terminal/examples/UnsetProperties',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -153,17 +153,17 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/terminal/examples/ShowDatabases',
+    url: '/mock/api/ams/v1/terminal/examples/ShowDatabases',
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": "show databases;" }),
   },
   {
-    url: '/mock/ams/v1/terminal/examples/ShowTables',
+    url: '/mock/api/ams/v1/terminal/examples/ShowTables',
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": "show tables;" }),
   },
   {
-    url: '/mock/ams/v1/terminal/examples/Describe',
+    url: '/mock/api/ams/v1/terminal/examples/Describe',
     method: 'get',
     response: () => ({"message":"success","code":200,"result":"desc db_name.table_name;"}),
   },

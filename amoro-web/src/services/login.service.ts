@@ -26,18 +26,18 @@ export class LoginService {
     user: string
     password: string
   }) {
-    return request.post('ams/v1/login', params, { returnCode: true })
+    return request.post('api/ams/v1/login', params, { returnCode: true })
   }
 
   public logout() {
-    return request.post('ams/v1/logout', { handleError: false, returnCode: true })
+    return request.post('api/ams/v1/logout', { handleError: false, returnCode: true })
   }
 
   /**
    * Check the login interface
    */
   public getCurUserInfo(token: string) {
-    return request.get('ams/v1/login/current', { handleError: false, params: { token } }).then((res) => {
+    return request.get('api/ams/v1/login/current', { handleError: false, params: { token } }).then((res) => {
       // if (res) {
       //   store.updateUserInfo({
       //     userName: res.userName
