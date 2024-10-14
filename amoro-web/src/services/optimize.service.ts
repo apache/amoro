@@ -68,13 +68,13 @@ export function scaleoutResource(
 }
 
 export function createOptimizerResource(
-    params: {
-        optimizerGroup: string
-        parallelism: number
-    },
+  params: {
+    optimizerGroup: string
+    parallelism: number
+  },
 ) {
-    const { optimizerGroup, parallelism } = params
-    return request.post(`ams/v1/optimize/optimizers`, { optimizerGroup, parallelism })
+  const { optimizerGroup, parallelism } = params
+  return request.post(`ams/v1/optimize/optimizers`, { optimizerGroup, parallelism })
 }
 
 export function releaseResource(
