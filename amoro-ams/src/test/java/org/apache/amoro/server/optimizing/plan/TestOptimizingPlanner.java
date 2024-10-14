@@ -100,7 +100,6 @@ public class TestOptimizingPlanner extends TestOptimizingEvaluator {
         getTableRuntime(),
         getMixedTable(),
         1,
-        OptimizerProperties.MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT,
-        100);
+        OptimizerProperties.MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT);
   }
 }

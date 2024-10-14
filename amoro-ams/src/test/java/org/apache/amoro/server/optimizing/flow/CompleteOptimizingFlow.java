@@ -196,8 +196,7 @@ public class CompleteOptimizingFlow {
         tableRuntime,
         table,
         availableCore,
-        OptimizerProperties.MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT,
-        100);
+        OptimizerProperties.MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT);
   }
 
   private OptimizingConfig optimizingConfig() {

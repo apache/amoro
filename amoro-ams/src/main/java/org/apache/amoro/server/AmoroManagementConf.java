@@ -162,6 +162,12 @@ public class AmoroManagementConf {
           .defaultValue(60000L)
           .withDescription("Interval for refreshing table metadata.");
 
+  public static final ConfigOption<Integer> REFRESH_MAX_PENDING_PARTITIONS =
+      ConfigOptions.key("refresh-tables.max-pending-partition-count")
+          .intType()
+          .defaultValue(100)
+          .withDescription("Filters will not be used beyond that number of partitions");
+
   public static final ConfigOption<Long> BLOCKER_TIMEOUT =
       ConfigOptions.key("blocker.timeout")
           .longType()
@@ -253,12 +259,6 @@ public class AmoroManagementConf {
           .defaultValue(1)
           .withDescription(
               "The number of hours that self-optimizing runtime data expire interval.");
-
-  public static final ConfigOption<Integer> OPTIMIZING_SKIP_FILTER_PARTITIONS =
-      ConfigOptions.key("self-optimizing.skip-filter-partition-count")
-          .intType()
-          .defaultValue(100)
-          .withDescription("Filters will not be used beyond that number of partitions");
 
   public static final ConfigOption<String> DB_TYPE =
       ConfigOptions.key("database.type")

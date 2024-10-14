@@ -43,7 +43,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class OptimizingPlanner extends OptimizingEvaluator {
@@ -65,15 +64,10 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       TableRuntime tableRuntime,
       MixedTable table,
       double availableCore,
-      long maxInputSizePerThread,
-      int ignoreFilterPartitionCount) {
-    super(tableRuntime, table);
+      long maxInputSizePerThread) {
+    super(tableRuntime, table, Integer.MAX_VALUE);
     this.partitionFilter =
-        (tableRuntime.getPendingInput() == null
-                || tableRuntime.getPendingInput().getPartitions().values().stream()
-                        .mapToInt(Set::size)
-                        .sum()
-                    > ignoreFilterPartitionCount)
+        tableRuntime.getPendingInput() == null
             ? Expressions.alwaysTrue()
             : tableRuntime.getPendingInput().getPartitions().entrySet().stream()
                 .map(
