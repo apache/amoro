@@ -22,6 +22,10 @@ export function getOptimizerGroups() {
   return request.get('ams/v1/optimize/optimizerGroups')
 }
 
+export function getOptimizerAction() {
+  return request.get('/ams/v1/optimize/actions')
+}
+
 export function getOptimizerTableList(
   params: {
     optimizerGroup: string
@@ -29,10 +33,11 @@ export function getOptimizerTableList(
     tableSearchInput: string
     page: number
     pageSize: number
+    actions: string[]
   },
 ) {
-  const { optimizerGroup, dbSearchInput, tableSearchInput, page, pageSize } = params
-  return request.get(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/tables`, { params: { dbSearchInput, tableSearchInput, page, pageSize } })
+  const { optimizerGroup, dbSearchInput, tableSearchInput, page, pageSize, actions } = params
+  return request.get(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/tables`, { params: { dbSearchInput, tableSearchInput, page, pageSize, actions } })
 }
 
 export function getOptimizerResourceList(
