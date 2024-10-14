@@ -261,7 +261,8 @@ optimizer:
     enabled: true
     properties:
       namespace: "default"
-      kube-config-path: "~/.kube/config"
+      # if service account rbac not have, need kube config set in optimizer deployment
+      #kube-config-path: "~/.kube/config"
       image: "apache/amoro:latest"
       pullPolicy: "IfNotPresent"
   extra: []
