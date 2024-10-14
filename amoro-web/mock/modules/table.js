@@ -18,7 +18,7 @@
 
 export default [
   {
-    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/details',
+    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/details',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -91,7 +91,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/partitions',
+    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/partitions',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -120,7 +120,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/branches',
+    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/branches',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -141,12 +141,12 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/tags',
+    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/tags',
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": { "list": [], "total": 0 } }),
   },
   {
-    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/snapshots',
+    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/snapshots',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -193,12 +193,12 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/operations',
+    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/operations',
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": { "list": [], "total": 0 } }),
   },
   {
-    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/partitions/:filter/files',
+    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/partitions/:filter/files',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -223,7 +223,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/snapshots/:snapshotId/detail',
+    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/snapshots/:snapshotId/detail',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -260,7 +260,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/optimizing-processes',
+    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/optimizing-processes',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -307,7 +307,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/optimizing-types',
+    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/optimizing-types',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -320,7 +320,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/operations',
+    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/operations',
     method: 'get',
     response: () => ({
       "message": "success",
