@@ -164,7 +164,7 @@ export default defineComponent({
             :class="[activeTab === 'optimizergroup' ? 'active' : '']"
           >
             <a-button type="primary" class="g-mb-16" @click="editGroup(null)">
-              {{ t("addgroup") }}
+              {{ t("addGroup") }}
             </a-button>
             <List
               :key="groupKeyCount"
