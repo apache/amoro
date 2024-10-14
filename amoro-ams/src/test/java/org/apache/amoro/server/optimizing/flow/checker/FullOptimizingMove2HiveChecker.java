@@ -20,10 +20,10 @@ package org.apache.amoro.server.optimizing.flow.checker;
 
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.server.optimizing.OptimizingType;
+import org.apache.amoro.server.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.flow.view.TableDataView;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
-import org.apache.amoro.server.optimizing.plan.TaskDescriptor;
 import org.apache.amoro.table.MixedTable;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -40,13 +40,13 @@ public class FullOptimizingMove2HiveChecker extends AbstractHiveChecker {
   @Override
   protected boolean internalCondition(
       MixedTable table,
-      @Nullable List<TaskDescriptor> latestTaskDescriptors,
+      @Nullable List<RewriteStageTask> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit) {
     return CollectionUtils.isNotEmpty(latestTaskDescriptors)
         && latestPlanner.getOptimizingType() == OptimizingType.FULL
         && OptimizingInputProperties.parse(
-                latestTaskDescriptors.stream().findAny().get().properties())
+                latestTaskDescriptors.stream().findAny().get().getProperties())
             .getMoveFile2HiveLocation();
   }
 }

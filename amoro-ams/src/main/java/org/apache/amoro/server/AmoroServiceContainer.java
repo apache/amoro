@@ -27,6 +27,7 @@ import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.config.ConfigHelpers;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.dashboard.DashboardServer;
+import org.apache.amoro.server.dashboard.JavalinJsonMapper;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
@@ -242,6 +243,7 @@ public class AmoroServiceContainer {
               config.addStaticFiles(dashboardServer.configStaticFiles());
               config.sessionHandler(SessionHandler::new);
               config.enableCorsForAllOrigins();
+              config.jsonMapper(JavalinJsonMapper.createDefaultJsonMapper());
               config.showJavalinBanner = false;
             });
     httpServer.routes(
@@ -437,6 +439,8 @@ public class AmoroServiceContainer {
 
     private Map<String, Object> initEnvConfig() {
       LOG.info("initializing system env configuration...");
+      Map<String, String> envs = System.getenv();
+      envs.forEach((k, v) -> LOG.info("export {}={}", k, v));
       String prefix = AmoroManagementConf.SYSTEM_CONFIG.toUpperCase();
       return ConfigHelpers.convertConfigurationKeys(prefix, System.getenv());
     }

@@ -307,6 +307,19 @@ export default [
     }),
   },
   {
+    url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/optimizing-types',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": {
+        "MINOR": "minor",
+        "MAJOR": "major",
+        "FULL": "full",
+      }
+    }),
+  },
+  {
     url: '/mock/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/operations',
     method: 'get',
     response: () => ({

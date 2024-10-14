@@ -22,30 +22,24 @@ import org.apache.amoro.StateField;
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
-import org.apache.amoro.optimizing.RewriteFilesInput;
-import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.server.AmoroServiceConstants;
-import org.apache.amoro.server.dashboard.utils.OptimizingUtil;
 import org.apache.amoro.server.exception.IllegalTaskStateException;
 import org.apache.amoro.server.exception.OptimizingClosedException;
 import org.apache.amoro.server.exception.TaskRuntimeException;
-import org.apache.amoro.server.optimizing.plan.TaskDescriptor;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
-import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet;
-import org.apache.amoro.utils.SerializationUtil;
 
 import java.util.Map;
 import java.util.Set;
 
-public class TaskRuntime extends StatedPersistentBase {
-  private long tableId;
-  private String partition;
+public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends StatedPersistentBase {
+
   private OptimizingTaskId taskId;
+  private T taskDescriptor;
   @StateField private Status status = Status.PLANNED;
   private final TaskStatusMachine statusMachine = new TaskStatusMachine();
   @StateField private int runTimes = 0;
@@ -56,21 +50,16 @@ public class TaskRuntime extends StatedPersistentBase {
   @StateField private int threadId = -1;
   @StateField private String failReason;
   private TaskOwner owner;
-  private RewriteFilesInput input;
-  @StateField private RewriteFilesOutput output;
-  @StateField private MetricsSummary summary;
-  private Map<String, String> properties;
 
   private TaskRuntime() {}
 
-  public TaskRuntime(
-      OptimizingTaskId taskId, TaskDescriptor taskDescriptor, Map<String, String> properties) {
+  public TaskRuntime(OptimizingTaskId taskId, T taskDescriptor) {
     this.taskId = taskId;
-    this.partition = taskDescriptor.getPartition();
-    this.input = taskDescriptor.getInput();
-    this.summary = new MetricsSummary(input);
-    this.tableId = taskDescriptor.getTableId();
-    this.properties = properties;
+    this.taskDescriptor = taskDescriptor;
+  }
+
+  public T getTaskDescriptor() {
+    return taskDescriptor;
   }
 
   public void complete(OptimizerThread thread, OptimizingTaskResult result) {
@@ -80,27 +69,14 @@ public class TaskRuntime extends StatedPersistentBase {
           if (result.getErrorMessage() != null) {
             statusMachine.accept(Status.FAILED);
             failReason = result.getErrorMessage();
-            endTime = System.currentTimeMillis();
-            costTime += endTime - startTime;
           } else {
             statusMachine.accept(Status.SUCCESS);
-            RewriteFilesOutput filesOutput =
-                TaskFilesPersistence.loadTaskOutput(result.getTaskOutput());
-            summary.setNewDataFileCnt(OptimizingUtil.getFileCount(filesOutput.getDataFiles()));
-            summary.setNewDataSize(OptimizingUtil.getFileSize(filesOutput.getDataFiles()));
-            summary.setNewDataRecordCnt(OptimizingUtil.getRecordCnt(filesOutput.getDataFiles()));
-            summary.setNewDeleteFileCnt(OptimizingUtil.getFileCount(filesOutput.getDeleteFiles()));
-            summary.setNewDeleteSize(OptimizingUtil.getFileSize(filesOutput.getDeleteFiles()));
-            summary.setNewDeleteRecordCnt(
-                OptimizingUtil.getRecordCnt(filesOutput.getDeleteFiles()));
-            summary.setNewFileSize(summary.getNewDataSize() + summary.getNewDeleteSize());
-            summary.setNewFileCnt(summary.getNewDataFileCnt() + summary.getNewDeleteFileCnt());
-            endTime = System.currentTimeMillis();
-            costTime += endTime - startTime;
-            output = filesOutput;
+            taskDescriptor.setOutputBytes(result.getTaskOutput());
           }
+          endTime = System.currentTimeMillis();
+          costTime += endTime - startTime;
           runTimes += 1;
-          persistTaskRuntime(this);
+          persistTaskRuntime();
           owner.acceptResult(this);
           token = null;
           threadId = -1;
@@ -117,10 +93,9 @@ public class TaskRuntime extends StatedPersistentBase {
           token = null;
           threadId = -1;
           failReason = null;
-          output = null;
-          summary = new MetricsSummary(input);
+          taskDescriptor.reset();
           // The cost time should not be reset since it is the total cost time of all runs.
-          persistTaskRuntime(this);
+          persistTaskRuntime();
         });
   }
 
@@ -131,7 +106,7 @@ public class TaskRuntime extends StatedPersistentBase {
           token = thread.getToken();
           threadId = thread.getThreadId();
           startTime = System.currentTimeMillis();
-          persistTaskRuntime(this);
+          persistTaskRuntime();
         });
   }
 
@@ -140,7 +115,7 @@ public class TaskRuntime extends StatedPersistentBase {
         () -> {
           validThread(thread);
           statusMachine.accept(Status.ACKED);
-          persistTaskRuntime(this);
+          persistTaskRuntime();
         });
   }
 
@@ -152,12 +127,12 @@ public class TaskRuntime extends StatedPersistentBase {
             if (startTime != AmoroServiceConstants.INVALID_TIME) {
               costTime += endTime - startTime;
             }
-            persistTaskRuntime(this);
+            persistTaskRuntime();
           }
         });
   }
 
-  public TaskRuntime claimOwnership(TaskOwner owner) {
+  public TaskRuntime<T> claimOwnership(TaskOwner owner) {
     this.owner = owner;
     return this;
   }
@@ -168,27 +143,8 @@ public class TaskRuntime extends StatedPersistentBase {
         || this.status == Status.CANCELED;
   }
 
-  protected void setInput(RewriteFilesInput input) {
-    if (input == null) {
-      throw new IllegalStateException("Optimizing input is null, id:" + taskId);
-    }
-    this.input = input;
-  }
-
-  public RewriteFilesInput getInput() {
-    return input;
-  }
-
-  public RewriteFilesOutput getOutput() {
-    return output;
-  }
-
   public Map<String, String> getProperties() {
-    return properties;
-  }
-
-  public void setProperties(Map<String, String> properties) {
-    this.properties = properties;
+    return taskDescriptor.getProperties();
   }
 
   public long getProcessId() {
@@ -207,11 +163,8 @@ public class TaskRuntime extends StatedPersistentBase {
     return threadId;
   }
 
-  public OptimizingTask getOptimizingTask() {
-    OptimizingTask optimizingTask = new OptimizingTask(taskId);
-    optimizingTask.setTaskInput(SerializationUtil.simpleSerialize(input));
-    optimizingTask.setProperties(properties);
-    return optimizingTask;
+  public OptimizingTask extractProtocolTask() {
+    return taskDescriptor.extractProtocolTask(taskId);
   }
 
   public long getStartTime() {
@@ -232,14 +185,6 @@ public class TaskRuntime extends StatedPersistentBase {
 
   public int getRetry() {
     return runTimes - 1;
-  }
-
-  public MetricsSummary getMetricsSummary() {
-    return summary;
-  }
-
-  public String getPartition() {
-    return partition;
   }
 
   public String getFailReason() {
@@ -269,24 +214,17 @@ public class TaskRuntime extends StatedPersistentBase {
     this.status = status;
   }
 
-  public MetricsSummary getSummary() {
-    return summary;
-  }
-
-  public void setSummary(MetricsSummary summary) {
-    this.summary = summary;
+  public String getSummary() {
+    return taskDescriptor.getSummary().toString();
   }
 
   public long getTableId() {
-    return tableId;
+    return taskDescriptor.getTableId();
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("tableId", tableId)
-        .add("partition", partition)
-        .add("taskId", taskId.getTaskId())
         .add("status", status)
         .add("runTimes", runTimes)
         .add("startTime", startTime)
@@ -294,8 +232,7 @@ public class TaskRuntime extends StatedPersistentBase {
         .add("costTime", costTime)
         .add("resourceThread", getResourceDesc())
         .add("failReason", failReason)
-        .add("summary", summary)
-        .add("properties", properties)
+        .add("taskDescriptor", taskDescriptor)
         .toString();
   }
 
@@ -310,8 +247,8 @@ public class TaskRuntime extends StatedPersistentBase {
     }
   }
 
-  private void persistTaskRuntime(TaskRuntime taskRuntime) {
-    doAs(OptimizingMapper.class, mapper -> mapper.updateTaskRuntime(taskRuntime));
+  private void persistTaskRuntime() {
+    doAs(OptimizingMapper.class, mapper -> mapper.updateTaskRuntime(this));
   }
 
   public TaskQuota getCurrentQuota() {

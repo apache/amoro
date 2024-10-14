@@ -22,6 +22,10 @@ export function getOptimizerGroups() {
   return request.get('ams/v1/optimize/optimizerGroups')
 }
 
+export function getOptimizerAction() {
+  return request.get('/ams/v1/optimize/actions')
+}
+
 export function getOptimizerTableList(
   params: {
     optimizerGroup: string
@@ -29,10 +33,11 @@ export function getOptimizerTableList(
     tableSearchInput: string
     page: number
     pageSize: number
+    actions: string[]
   },
 ) {
-  const { optimizerGroup, dbSearchInput, tableSearchInput, page, pageSize } = params
-  return request.get(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/tables`, { params: { dbSearchInput, tableSearchInput, page, pageSize } })
+  const { optimizerGroup, dbSearchInput, tableSearchInput, page, pageSize, actions } = params
+  return request.get(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/tables`, { params: { dbSearchInput, tableSearchInput, page, pageSize, actions } })
 }
 
 export function getOptimizerResourceList(
@@ -62,14 +67,24 @@ export function scaleoutResource(
   return request.post(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/optimizers`, { parallelism })
 }
 
+export function createOptimizerResource(
+  params: {
+    optimizerGroup: string
+    parallelism: number
+  },
+) {
+  const { optimizerGroup, parallelism } = params
+  return request.post(`ams/v1/optimize/optimizers`, { optimizerGroup, parallelism })
+}
+
 export function releaseResource(
   params: {
     optimizerGroup: string
     jobId: string
   },
 ) {
-  const { optimizerGroup, jobId } = params
-  return request.delete(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/optimizers/${jobId}`)
+  const { jobId } = params
+  return request.delete(`ams/v1/optimize/optimizers/${jobId}`)
 }
 
 export async function getResourceGroupsListAPI() {

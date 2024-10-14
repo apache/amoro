@@ -38,6 +38,15 @@ export default [
     }),
   },
   {
+    url: '/mock/ams/v1/optimize/actions',
+    method: 'get',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: ['major', 'minor', 'clean', 'idle', 'pending']
+    }),
+  },
+  {
     url: '/mock/ams/v1/optimize/optimizerGroups/:groups/tables',
     method: 'get',
     response: () => ({

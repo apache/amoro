@@ -194,6 +194,7 @@ export default {
   search: '搜索',
   reset: '重置',
   invalidInput: '非法输入',
+  createOptimizer: '创建优化器',
   addgroup: '添加组',
   editgroup: '编辑组',
   cannotDeleteGroupModalTitle: '不能移除这个组',

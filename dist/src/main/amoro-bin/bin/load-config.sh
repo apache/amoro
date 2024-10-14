@@ -38,6 +38,8 @@ if [ -z "$AMORO_LOG_CONF_FILE" ]; then
     export AMORO_LOG_CONF_FILE="${AMORO_CONF_DIR}/log4j2.xml"
 fi
 
+export AMORO_ENV_FILE=${AMORO_CONF_DIR}/env.sh
+
 JVM_PROPERTIES=${AMORO_CONF_DIR}/jvm.properties
 JVM_VALUE=
 parseJvmArgs() {
@@ -63,3 +65,20 @@ export JVM_XMX_CONFIG
 export JVM_XMS_CONFIG
 export JMX_REMOTE_PORT_CONFIG
 export JVM_EXTRA_CONFIG
+
+test -f ${AMORO_ENV_FILE} && source ${AMORO_ENV_FILE}
+
+# set env variable amoro-addition-classpath if not exists
+if [ -z "${AMORO_ADDITION_CLASSPATH}" ]; then
+    export AMORO_ADDITION_CLASSPATH=
+fi
+
+# add hadoop_conf_dir to amoro addition classpath
+if [ -n "${HADOOP_CONF_DIR}" ]; then
+    export AMORO_ADDITION_CLASSPATH=$AMORO_ADDITION_CLASSPATH:$HADOOP_CONF_DIR
+fi
+
+# add hive_conf_dir to amoro addition classpath
+if [ -n "${HIVE_CONF_DIR}" ]; then
+    export AMORO_ADDITION_CLASSPATH=${AMORO_ADDITION_CLASSPATH}:${HIVE_CONF_DIR}
+fi

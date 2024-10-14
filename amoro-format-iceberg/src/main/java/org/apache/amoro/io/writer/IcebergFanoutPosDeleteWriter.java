@@ -157,7 +157,10 @@ public class IcebergFanoutPosDeleteWriter<T>
           String fileDir = TableFileUtil.getFileDir(filePath.get().toString());
           String deleteFilePath =
               format.addExtension(
-                  String.format("%s/%s-delete-%s", fileDir, fileName, fileNameSuffix));
+                  String.format(
+                      "%s/%s",
+                      fileDir,
+                      TableFileUtil.optimizingPosDeleteFileName(fileName, fileNameSuffix)));
           EncryptedOutputFile outputFile =
               encryptionManager.encrypt(fileIO.newOutputFile(deleteFilePath));
 

@@ -57,7 +57,7 @@ public class UnifiedDynamicTableFactory
     ObjectIdentifier identifier = context.getObjectIdentifier();
     FactoryUtil.TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
     Configuration options = (Configuration) helper.getOptions();
-    TableFormat tableFormat = options.get(MixedFormatValidator.TABLE_FORMAT);
+    TableFormat tableFormat = TableFormat.valueOf(options.get(MixedFormatValidator.TABLE_FORMAT));
 
     return getOriginalCatalog(tableFormat)
         .flatMap(AbstractCatalog::getFactory)
@@ -76,7 +76,7 @@ public class UnifiedDynamicTableFactory
     ObjectIdentifier identifier = context.getObjectIdentifier();
     FactoryUtil.TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
     Configuration options = (Configuration) helper.getOptions();
-    TableFormat tableFormat = options.get(MixedFormatValidator.TABLE_FORMAT);
+    TableFormat tableFormat = TableFormat.valueOf(options.get(MixedFormatValidator.TABLE_FORMAT));
 
     return getOriginalCatalog(tableFormat)
         .flatMap(AbstractCatalog::getFactory)

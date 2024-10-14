@@ -59,9 +59,9 @@
             <fileMode>0644</fileMode>
         </file>
         <file>
-            <source>src/main/amoro-bin/conf/config.yaml</source>
+            <source>src/main/amoro-bin/conf/env.sh</source>
             <outputDirectory>conf</outputDirectory>
-            <fileMode>0644</fileMode>
+            <fileMode>0755</fileMode>
         </file>
         <file>
             <source>../LICENSE-binary</source>

@@ -22,6 +22,7 @@ import static org.apache.amoro.table.TableProperties.WRITE_DISTRIBUTION_MODE;
 import static org.apache.amoro.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
 import static org.apache.iceberg.spark.Spark3Util.toTransforms;
 
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.spark.table.MixedSparkTable;
@@ -186,12 +187,10 @@ public class MixedFormatSparkUtils {
   }
 
   public static String mixedTableProvider(MixedTable table) {
-    switch (table.format()) {
-      case MIXED_ICEBERG:
-      case MIXED_HIVE:
-        return table.format().name().toLowerCase(Locale.ROOT);
-      default:
-        throw new IllegalArgumentException("Not a mixed-format table:" + table.format());
+    if (table.format().in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG)) {
+      return table.format().name().toLowerCase(Locale.ROOT);
+    } else {
+      throw new IllegalArgumentException("Not a mixed-format table:" + table.format());
     }
   }
 }

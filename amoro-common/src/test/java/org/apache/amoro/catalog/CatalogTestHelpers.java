@@ -51,6 +51,10 @@ public class CatalogTestHelpers {
         CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, HADOOP_EMPTY_CONFIG_BASE64);
     storageConfig.put(
         CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, HADOOP_EMPTY_CONFIG_BASE64);
+    if (CatalogMetaProperties.CATALOG_TYPE_HIVE.equalsIgnoreCase(type)) {
+      storageConfig.put(
+          CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE, HADOOP_EMPTY_CONFIG_BASE64);
+    }
 
     Map<String, String> authConfig = new HashMap<>();
     authConfig.put(

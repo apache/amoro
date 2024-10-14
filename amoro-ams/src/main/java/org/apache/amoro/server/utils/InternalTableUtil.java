@@ -57,7 +57,7 @@ public class InternalTableUtil {
    */
   public static boolean isLegacyMixedIceberg(
       org.apache.amoro.server.table.TableMetadata internalTableMetadata) {
-    return TableFormat.MIXED_ICEBERG == internalTableMetadata.getFormat()
+    return TableFormat.MIXED_ICEBERG.equals(internalTableMetadata.getFormat())
         && !Boolean.parseBoolean(
             internalTableMetadata.getProperties().get(MIXED_ICEBERG_BASED_REST));
   }

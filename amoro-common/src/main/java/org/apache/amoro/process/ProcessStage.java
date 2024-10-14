@@ -16,39 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.plan;
+package org.apache.amoro.process;
 
-import org.apache.amoro.optimizing.RewriteFilesInput;
+public class ProcessStage {
 
-import java.util.Map;
+  /**
+   * Action Stage description value, normally this value should be identical within certain actions
+   */
+  private final String desc;
+  /**
+   * the weight number of this action, the bigger the weight number, the higher position on front
+   * pages
+   */
+  private final int weight;
 
-public class TaskDescriptor {
-  private final long tableId;
-  private final String partition;
-  private final RewriteFilesInput input;
-  private final Map<String, String> properties;
-
-  TaskDescriptor(
-      long tableId, String partition, RewriteFilesInput input, Map<String, String> properties) {
-    this.tableId = tableId;
-    this.partition = partition;
-    this.input = input;
-    this.properties = properties;
+  public ProcessStage(String desc, int weight) {
+    this.desc = desc;
+    this.weight = weight;
   }
 
-  public String getPartition() {
-    return partition;
+  public String getDesc() {
+    return desc;
   }
 
-  public RewriteFilesInput getInput() {
-    return input;
-  }
-
-  public Map<String, String> properties() {
-    return properties;
-  }
-
-  public long getTableId() {
-    return tableId;
+  public int getWeight() {
+    return weight;
   }
 }

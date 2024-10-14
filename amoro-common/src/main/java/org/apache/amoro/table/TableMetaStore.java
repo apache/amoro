@@ -767,7 +767,7 @@ public class TableMetaStore implements Serializable {
         return new TableMetaStore(configuration);
       } else {
         readProperties();
-        if (!AUTH_METHOD_AK_SK.equals(authMethod)) {
+        if (AUTH_METHOD_SIMPLE.equals(authMethod) || AUTH_METHOD_KERBEROS.equals(authMethod)) {
           Preconditions.checkNotNull(hdfsSite);
           Preconditions.checkNotNull(coreSite);
         }

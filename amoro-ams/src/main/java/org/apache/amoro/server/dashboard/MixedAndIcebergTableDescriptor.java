@@ -33,6 +33,7 @@ import org.apache.amoro.server.dashboard.utils.TableStatCollector;
 import org.apache.amoro.server.optimizing.MetricsSummary;
 import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
+import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
@@ -64,6 +65,7 @@ import org.apache.amoro.table.descriptor.TagOrBranchInfo;
 import org.apache.amoro.utils.MixedDataFiles;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.HasTableOperations;
@@ -501,7 +503,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, int limit, int offset) {
+      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
     TableIdentifier tableIdentifier = amoroTable.id();
     List<OptimizingProcessMeta> processMetaList =
         getAs(
@@ -511,6 +513,16 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                     tableIdentifier.getCatalog(),
                     tableIdentifier.getDatabase(),
                     tableIdentifier.getTableName()));
+
+    processMetaList =
+        processMetaList.stream()
+            .filter(
+                p ->
+                    StringUtils.isBlank(type)
+                        || type.equalsIgnoreCase(p.getOptimizingType().getStatus().displayValue()))
+            .filter(p -> status == null || status.name().equalsIgnoreCase(p.getStatus().name()))
+            .collect(Collectors.toList());
+
     int total = processMetaList.size();
     processMetaList =
         processMetaList.stream().skip(offset).limit(limit).collect(Collectors.toList());
@@ -530,6 +542,15 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             .map(p -> buildOptimizingProcessInfo(p, optimizingTasks.get(p.getProcessId())))
             .collect(Collectors.toList()),
         total);
+  }
+
+  @Override
+  public Map<String, String> getTableOptimizingTypes(AmoroTable<?> amoroTable) {
+    Map<String, String> types = Maps.newHashMap();
+    for (OptimizingType type : OptimizingType.values()) {
+      types.put(type.name(), type.getStatus().displayValue());
+    }
+    return types;
   }
 
   @Override
