@@ -18,7 +18,7 @@
 
 export default [
   {
-    url: '/mock/ams/v1/catalogs',
+    url: '/mock/api/ams/v1/catalogs',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -56,27 +56,27 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/catalogs',
+    url: '/mock/api/ams/v1/catalogs',
     method: 'post',
     response: () => ({"message":"success","code":200,"result":""}),
   },
 
   {
-    url: '/mock/ams/v1/catalogs/test_catalog/databases',
+    url: '/mock/api/ams/v1/catalogs/test_catalog/databases',
     method: 'get',
     response: () => {
       return { "message": "success", "code": 200, "result": ["db", "test", "acc"] }
     },
   },
   {
-    url: '/mock/ams/v1/catalogs/test_catalog/databases/db/tables',
+    url: '/mock/api/ams/v1/catalogs/test_catalog/databases/db/tables',
     method: 'get',
     response: () => {
       return { "message": "success", "code": 200, "result": [{ "name": "user", "type": "ICEBERG" },{ "name": "wf", "type": "ICEBERG" }, { "name": "xcvz", "type": "ICEBERG" }] };
     },
   },
   {
-    url: '/mock/ams/v1/catalogs/:id',
+    url: '/mock/api/ams/v1/catalogs/:id',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -92,15 +92,15 @@ export default [
           "storage.type": "Hadoop",
           "hive.site": {
             "fileName": "hive-site.xml",
-            "fileUrl": "/ams/v1/catalogs/test_catalog/config/storage-config/hive-site"
+            "fileUrl": "/api/ams/v1/catalogs/test_catalog/config/storage-config/hive-site"
           },
           "hadoop.core.site": {
             "fileName": "core-site.xml",
-            "fileUrl": "/ams/v1/catalogs/test_catalog/config/storage-config/hadoop-core-site"
+            "fileUrl": "/api/ams/v1/catalogs/test_catalog/config/storage-config/hadoop-core-site"
           },
           "hadoop.hdfs.site": {
             "fileName": "hdfs-site.xml",
-            "fileUrl": "/ams/v1/catalogs/test_catalog/config/storage-config/hadoop-hdfs-site"
+            "fileUrl": "/api/ams/v1/catalogs/test_catalog/config/storage-config/hadoop-hdfs-site"
           }
         },
         "authConfig": {
@@ -116,22 +116,22 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/catalogs/:id',
+    url: '/mock/api/ams/v1/catalogs/:id',
     method: 'put',
     response: () => ({ "message": "success", "code": 200, "result": null }),
   },
   {
-    url: '/mock/ams/v1/catalogs/:id',
+    url: '/mock/api/ams/v1/catalogs/:id',
     method: 'delete',
     response: () => ({ "message": "success", "code": 200, "result": true }),
   },
   {
-    url: '/mock/ams/v1/catalogs/:id/delete/check',
+    url: '/mock/api/ams/v1/catalogs/:id/delete/check',
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": true }),
   },
   {
-    url: '/mock/ams/v1/catalogs/metastore/types',
+    url: '/mock/api/ams/v1/catalogs/metastore/types',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -161,7 +161,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/optimizing-processes/:processesId/tasks',
+    url: '/mock/api/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/optimizing-processes/:processesId/tasks',
     method: 'get',
     response: () => ({
       "message": "success",

@@ -19,5 +19,5 @@
 import request from '@/utils/request'
 
 export function getVersionInfo() {
-  return request.get('ams/v1/versionInfo')
+  return request.get('api/ams/v1/versionInfo')
 }
