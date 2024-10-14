@@ -254,6 +254,12 @@ public class AmoroManagementConf {
           .withDescription(
               "The number of hours that self-optimizing runtime data expire interval.");
 
+  public static final ConfigOption<Integer> OPTIMIZING_SKIP_FILTER_PARTITIONS =
+      ConfigOptions.key("self-optimizing.skip-filter-partition-count")
+          .intType()
+          .defaultValue(100)
+          .withDescription("Filters will not be used beyond that number of partitions");
+
   public static final ConfigOption<String> DB_TYPE =
       ConfigOptions.key("database.type")
           .stringType()
@@ -331,12 +337,6 @@ public class AmoroManagementConf {
           .longType()
           .defaultValue(3000L)
           .withDescription("Optimizer polling task timeout.");
-
-  public static final ConfigOption<Integer> OPTIMIZER_IGNORE_FILTER_PARTITIONS =
-      ConfigOptions.key("optimizer.ignore-filter-partition-count")
-          .intType()
-          .defaultValue(100)
-          .withDescription("Filters will not be used beyond that number of partitions");
 
   /** config key prefix of terminal */
   public static final String TERMINAL_PREFIX = "terminal.";

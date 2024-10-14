@@ -48,13 +48,13 @@ ams:
     commit-thread-count: 10
     runtime-data-keep-days: 30
     runtime-data-expire-interval-hours: 1
+    skip-filter-partition-count: 100 # default 100
 
   optimizer:
     heart-beat-timeout: 60000 # 1min
     task-ack-timeout: 30000 # 30s
     polling-timeout: 3000 # 3s
     max-planning-parallelism: 1 # default 1
-    ignore-filter-partition-count: 100 # default 100
 
   blocker:
     timeout: 60000 # 1min

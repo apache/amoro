@@ -108,7 +108,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     this.maxPlanningParallelism =
         serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM);
     this.ignoreFilterPartitions =
-        serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_IGNORE_FILTER_PARTITIONS);
+        serviceConfig.getInteger(AmoroManagementConf.OPTIMIZING_SKIP_FILTER_PARTITIONS);
     this.pollingTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT);
     this.tableService = tableService;
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
