@@ -126,6 +126,10 @@ public class TableProcessState implements ProcessState {
     this.endTime = System.currentTimeMillis();
   }
 
+  public ProcessStage getStage() {
+    return status.toStage();
+  }
+
   protected void setId(long processId) {
     this.id = processId;
   }

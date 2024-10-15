@@ -18,6 +18,10 @@
 
 package org.apache.amoro.server.optimizing;
 
+import org.apache.amoro.process.OptimizingStages;
+import org.apache.amoro.process.ProcessStage;
+
+// TODO delete this class
 public enum OptimizingType {
   MINOR(OptimizingStatus.MINOR_OPTIMIZING),
   MAJOR(OptimizingStatus.MAJOR_OPTIMIZING),
@@ -31,5 +35,15 @@ public enum OptimizingType {
 
   public OptimizingStatus getStatus() {
     return status;
+  }
+
+  public ProcessStage getStage() {
+    if (status == OptimizingStatus.MINOR_OPTIMIZING) {
+      return OptimizingStages.MINOR;
+    } else if (status == OptimizingStatus.MAJOR_OPTIMIZING) {
+      return OptimizingStages.MAJOR;
+    } else {
+      return OptimizingStages.FULL;
+    }
   }
 }

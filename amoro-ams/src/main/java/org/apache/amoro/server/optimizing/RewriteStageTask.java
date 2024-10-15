@@ -20,6 +20,7 @@ package org.apache.amoro.server.optimizing;
 
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
+import org.apache.amoro.process.ProcessStage;
 import org.apache.amoro.server.dashboard.utils.OptimizingUtil;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
@@ -34,14 +35,20 @@ public class RewriteStageTask
     extends StagedTaskDescriptor<RewriteFilesInput, RewriteFilesOutput, MetricsSummary> {
 
   private String partition;
+  private ProcessStage stage;
 
   // only for mybatis and could be optimized by type handler afterward
   public RewriteStageTask() {}
 
   public RewriteStageTask(
-      long tableId, String partition, RewriteFilesInput input, Map<String, String> properties) {
+      OptimizingType optimizingType,
+      long tableId,
+      String partition,
+      RewriteFilesInput input,
+      Map<String, String> properties) {
     super(tableId, input, properties);
     this.partition = partition;
+    this.stage = optimizingType.getStage();
   }
 
   @Override
@@ -64,6 +71,11 @@ public class RewriteStageTask
   @Override
   protected RewriteFilesOutput deserializeOutput(byte[] outputBytes) {
     return TaskFilesPersistence.loadTaskOutput(outputBytes);
+  }
+
+  @Override
+  public ProcessStage getStage() {
+    return stage;
   }
 
   public String getPartition() {
