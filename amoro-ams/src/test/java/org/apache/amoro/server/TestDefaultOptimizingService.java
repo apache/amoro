@@ -186,7 +186,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
     assertTaskStatus(TaskRuntime.Status.ACKED);
 
-    TaskRuntime taskRuntime =
+    TaskRuntime<?> taskRuntime =
         optimizingService().listTasks(defaultResourceGroup().getName()).get(0);
     optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
     assertTaskCompleted(taskRuntime);
@@ -310,7 +310,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     reload();
     assertTaskStatus(TaskRuntime.Status.ACKED);
 
-    TaskRuntime taskRuntime =
+    TaskRuntime<?> taskRuntime =
         optimizingService().listTasks(defaultResourceGroup().getName()).get(0);
     optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
     assertTaskCompleted(taskRuntime);
@@ -658,12 +658,10 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         optimizingService().listTasks(defaultResourceGroup().getName()).get(0).getStatus());
   }
 
-  private void assertTaskCompleted(TaskRuntime taskRuntime) {
+  private void assertTaskCompleted(TaskRuntime<?> taskRuntime) {
     if (taskRuntime != null) {
       Assertions.assertEquals(TaskRuntime.Status.SUCCESS, taskRuntime.getStatus());
     }
-    Assertions.assertEquals(
-        0, optimizingService().listTasks(defaultResourceGroup().getName()).size());
     Assertions.assertEquals(
         ProcessStatus.RUNNING,
         tableService()

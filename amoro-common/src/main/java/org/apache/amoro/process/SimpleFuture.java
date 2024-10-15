@@ -71,18 +71,21 @@ public class SimpleFuture {
   public void reset() {
     triggerFuture = new CompletableFuture<>();
     callbackFuture = triggerFuture;
-    whenCompleted(() -> {});
     callbackMap.keySet().forEach(this::whenCompleted);
   }
 
   /**
    * This method will trigger all callback functions in the same thread and wait until all callback
-   * functions are completed. If throws exception, completedFuture is not done.
+   * functions are completed. If throws exception, completedFuture is not done. Pay attention that
+   * reset could be called during whenCompleted runnable, should ignore waiting
    */
   public void complete() {
     try {
+      CompletableFuture<?> originalFuture = triggerFuture;
       if (triggerFuture.complete(null)) {
-        callbackFuture.get();
+        if (triggerFuture == originalFuture) {
+          callbackFuture.get();
+        }
       }
     } catch (Throwable throwable) {
       throw normalize(throwable);
