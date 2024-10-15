@@ -44,7 +44,7 @@ import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.persistence.StatedPersistentBase;
+import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
@@ -84,7 +84,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-public class DefaultTableService extends StatedPersistentBase implements TableService {
+public class DefaultTableService extends PersistentBase implements TableService {
 
   public static final Logger LOG = LoggerFactory.getLogger(DefaultTableService.class);
   private static final int TABLE_BLOCKER_RETRY = 3;
