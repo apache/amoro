@@ -19,15 +19,15 @@
 import request from '@/utils/request'
 
 export function getJobDebugResult(sessionId: string) {
-  return request.get(`ams/v1/terminal/${sessionId}/result`)
+  return request.get(`api/ams/v1/terminal/${sessionId}/result`)
 }
 
 export function getShortcutsList() {
-  return request.get('ams/v1/terminal/examples')
+  return request.get('api/ams/v1/terminal/examples')
 }
 
 export function getExampleSqlCode(exampleName: string) {
-  return request.get(`ams/v1/terminal/examples/${exampleName}`)
+  return request.get(`api/ams/v1/terminal/examples/${exampleName}`)
 }
 
 export function executeSql(params: {
@@ -35,18 +35,18 @@ export function executeSql(params: {
   sql: string
 }) {
   const { catalog, sql } = params
-  return request.post(`ams/v1/terminal/catalogs/${catalog}/execute`, { sql })
+  return request.post(`api/ams/v1/terminal/catalogs/${catalog}/execute`, { sql })
 }
 
 export function stopSql(sessionId: string) {
-  return request.put(`ams/v1/terminal/${sessionId}/stop`)
+  return request.put(`api/ams/v1/terminal/${sessionId}/stop`)
 }
 
 export function getLogsResult(sessionId: string) {
-  return request.get(`ams/v1/terminal/${sessionId}/logs`)
+  return request.get(`api/ams/v1/terminal/${sessionId}/logs`)
 }
 
 // get the last executed sql and sessionId
 export function getLastDebugInfo() {
-  return request.get('ams/v1/terminal/latestInfos')
+  return request.get('api/ams/v1/terminal/latestInfos')
 }

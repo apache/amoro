@@ -74,6 +74,8 @@ public class DashboardServer {
   public static final Logger LOG = LoggerFactory.getLogger(DashboardServer.class);
 
   private static final String AUTH_TYPE_BASIC = "basic";
+  private static final String X_REQUEST_SOURCE_HEADER = "X-Request-Source";
+  private static final String X_REQUEST_SOURCE_WEB = "Web";
 
   private final CatalogController catalogController;
   private final HealthCheckController healthCheckController;
@@ -189,14 +191,13 @@ public class DashboardServer {
 
       // for dashboard api
       path(
-          "/ams/v1",
+          "/api/ams/v1",
           () -> {
             // login controller
             get("/login/current", loginController::getCurrent);
             post("/login", loginController::login);
             post("/logout", loginController::logout);
           });
-      path("ams/v1", apiGroup());
 
       // for open api
       path("/api/ams/v1", apiGroup());
@@ -278,6 +279,7 @@ public class DashboardServer {
       path(
           "/optimize",
           () -> {
+            get("/actions", optimizerGroupController::getActions);
             get(
                 "/optimizerGroups/{optimizerGroup}/tables",
                 optimizerGroupController::getOptimizerTables);
@@ -355,7 +357,8 @@ public class DashboardServer {
 
   public void preHandleRequest(Context ctx) {
     String uriPath = ctx.path();
-    if (needApiKeyCheck(uriPath)) {
+    String requestSource = ctx.header(X_REQUEST_SOURCE_HEADER);
+    if (needApiKeyCheck(uriPath) && !X_REQUEST_SOURCE_WEB.equalsIgnoreCase(requestSource)) {
       if (AUTH_TYPE_BASIC.equalsIgnoreCase(authType)) {
         BasicAuthCredentials cred = ctx.basicAuthCredentials();
         if (!(basicAuthUser.equals(cred.component1())
@@ -391,10 +394,10 @@ public class DashboardServer {
   }
 
   private static final String[] urlWhiteList = {
-    "/ams/v1/versionInfo",
-    "/ams/v1/login",
-    "/ams/v1/health/status",
-    "/ams/v1/login/current",
+    "/api/ams/v1/versionInfo",
+    "/api/ams/v1/login",
+    "/api/ams/v1/health/status",
+    "/api/ams/v1/login/current",
     "/",
     "/overview",
     "/introduce",

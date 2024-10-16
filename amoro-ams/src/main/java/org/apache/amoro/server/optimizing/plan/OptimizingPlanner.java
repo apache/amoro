@@ -65,7 +65,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       MixedTable table,
       double availableCore,
       long maxInputSizePerThread) {
-    super(tableRuntime, table);
+    super(tableRuntime, table, Integer.MAX_VALUE);
     this.partitionFilter =
         tableRuntime.getPendingInput() == null
             ? Expressions.alwaysTrue()

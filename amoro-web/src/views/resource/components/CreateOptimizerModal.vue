@@ -1,4 +1,3 @@
-
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -15,7 +14,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-/-->
+/ -->
 
 <script lang="ts" setup>
 import { onMounted, reactive, ref } from 'vue'
@@ -28,7 +27,7 @@ interface FormState {
   parallelism: number
 }
 
-const emit = defineEmits<{ (e: 'cancel'): void; (e: 'refresh'): void }>()
+const emit = defineEmits<{ (e: 'cancel'): void, (e: 'refresh'): void }>()
 
 const confirmLoading = ref<boolean>(false)
 const placeholder = reactive(usePlaceholder())
@@ -47,29 +46,29 @@ async function loadResourceGroups() {
       label: group.optimizerGroupName,
       value: group.optimizerGroupName,
     }))
-    console.log('Parsed resourceGroupOptions:', resourceGroupOptions.value)
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to load resource groups:', error)
   }
 }
 
 function handleOk() {
   formRef.value
-      .validateFields()
-      .then(async () => {
-        confirmLoading.value = true
-        await createOptimizerResource({
-          optimizerGroup: formState.resourceGroup || '',
-          parallelism: Number(formState.parallelism),
-        })
-        formRef.value.resetFields()
-        emit('cancel')
-        emit('refresh')
-        confirmLoading.value = false
+    .validateFields()
+    .then(async () => {
+      confirmLoading.value = true
+      await createOptimizerResource({
+        optimizerGroup: formState.resourceGroup || '',
+        parallelism: Number(formState.parallelism),
       })
-      .catch(() => {
-        confirmLoading.value = false
-      })
+      formRef.value.resetFields()
+      emit('cancel')
+      emit('refresh')
+      confirmLoading.value = false
+    })
+    .catch(() => {
+      confirmLoading.value = false
+    })
 }
 
 function handleCancel() {
@@ -84,41 +83,41 @@ onMounted(() => {
 
 <template>
   <AModal
-      :open="true"
-      :title="$t('createOptimizer')"
-      :confirm-loading="confirmLoading"
-      :closable="false"
-      @ok="handleOk"
-      @cancel="handleCancel"
+    :open="true"
+    :title="$t('createOptimizer')"
+    :confirm-loading="confirmLoading"
+    :closable="false"
+    @ok="handleOk"
+    @cancel="handleCancel"
   >
     <a-form ref="formRef" :model="formState" class="label-120">
       <a-form-item
-          name="resourceGroup"
-          :label="$t('resourceGroup')"
-          :rules="[{ required: true, message: `${placeholder.resourceGroupPh}` }]"
+        name="resourceGroup"
+        :label="$t('resourceGroup')"
+        :rules="[{ required: true, message: `${placeholder.resourceGroupPh}` }]"
       >
         <a-select
-            v-model:value="formState.resourceGroup"
-            :placeholder="placeholder.resourceGroupPh"
+          v-model:value="formState.resourceGroup"
+          :placeholder="placeholder.resourceGroupPh"
         >
           <a-select-option
-              v-for="option in resourceGroupOptions"
-              :key="option.value"
-              :value="option.value"
+            v-for="option in resourceGroupOptions"
+            :key="option.value"
+            :value="option.value"
           >
             {{ option.label }}
           </a-select-option>
         </a-select>
       </a-form-item>
       <a-form-item
-          name="parallelism"
-          :label="$t('parallelism')"
-          :rules="[{ required: true, message: `${placeholder.parallelismPh}` }]"
+        name="parallelism"
+        :label="$t('parallelism')"
+        :rules="[{ required: true, message: `${placeholder.parallelismPh}` }]"
       >
         <a-input
-            v-model:value="formState.parallelism"
-            type="number"
-            :placeholder="placeholder.parallelismPh"
+          v-model:value="formState.parallelism"
+          type="number"
+          :placeholder="placeholder.parallelismPh"
         />
       </a-form-item>
     </a-form>
