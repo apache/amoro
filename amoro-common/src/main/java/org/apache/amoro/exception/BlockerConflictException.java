@@ -16,18 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
-public class OptimizingClosedException extends AmoroRuntimeException {
+public class BlockerConflictException extends AmoroRuntimeException {
 
-  private final long processId;
-
-  public OptimizingClosedException(long processId) {
-    super("Optimizing process already closed, ignore " + processId);
-    this.processId = processId;
-  }
-
-  public long getProcessId() {
-    return processId;
+  public BlockerConflictException(String message) {
+    super(message);
   }
 }

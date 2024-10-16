@@ -16,16 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
-import org.apache.amoro.api.TableIdentifier;
+/** SignatureCheckException */
+public class SignatureCheckException extends AmoroRuntimeException {
 
-public class AlreadyExistsException extends AmoroRuntimeException {
-  public AlreadyExistsException(String object) {
-    super(object + " already exists.");
+  public SignatureCheckException() {}
+
+  public SignatureCheckException(String message) {
+    super(message);
   }
 
-  public AlreadyExistsException(TableIdentifier tableIdentifier) {
-    super(getObjectName(tableIdentifier) + " already exists.");
+  public SignatureCheckException(String message, Throwable throwable) {
+    super(message, throwable);
   }
 }

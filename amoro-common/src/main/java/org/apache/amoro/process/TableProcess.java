@@ -87,7 +87,7 @@ public abstract class TableProcess<T extends TableProcessState> implements Amoro
 
   @Override
   public SimpleFuture getSubmitFuture() {
-    return submitFuture.anyOf(completeFuture);
+    return submitFuture.or(completeFuture);
   }
 
   @Override

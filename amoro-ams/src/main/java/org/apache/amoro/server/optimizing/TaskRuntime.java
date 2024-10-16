@@ -22,10 +22,10 @@ import org.apache.amoro.StateField;
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
+import org.apache.amoro.exception.IllegalTaskStateException;
+import org.apache.amoro.exception.OptimizingClosedException;
+import org.apache.amoro.exception.TaskRuntimeException;
 import org.apache.amoro.server.AmoroServiceConstants;
-import org.apache.amoro.server.exception.IllegalTaskStateException;
-import org.apache.amoro.server.exception.OptimizingClosedException;
-import org.apache.amoro.server.exception.TaskRuntimeException;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.resource.OptimizerThread;
@@ -281,7 +281,7 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
         throw new OptimizingClosedException(taskId.getProcessId());
       }
       if (!getNext().contains(targetStatus)) {
-        throw new IllegalTaskStateException(taskId, status, targetStatus);
+        throw new IllegalTaskStateException(taskId, status.name(), targetStatus.name());
       }
       status = targetStatus;
     }

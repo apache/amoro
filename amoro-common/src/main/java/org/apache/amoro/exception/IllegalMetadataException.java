@@ -16,18 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
-/** SignatureCheckException */
-public class SignatureCheckException extends AmoroRuntimeException {
+public class IllegalMetadataException extends AmoroRuntimeException {
 
-  public SignatureCheckException() {}
-
-  public SignatureCheckException(String message) {
+  public IllegalMetadataException(String message) {
     super(message);
-  }
-
-  public SignatureCheckException(String message, Throwable throwable) {
-    super(message, throwable);
   }
 }

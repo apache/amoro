@@ -19,7 +19,7 @@
 package org.apache.amoro.server.dashboard.utils;
 
 import io.javalin.http.Context;
-import org.apache.amoro.server.exception.SignatureCheckException;
+import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.slf4j.Logger;

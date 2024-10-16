@@ -23,6 +23,7 @@ import static org.apache.amoro.hive.op.UpdateHiveFiles.SYNC_DATA_TO_HIVE;
 
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.data.FileNameRules;
+import org.apache.amoro.exception.OptimizingCommitException;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.HivePartitionUtil;
@@ -33,7 +34,6 @@ import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.AmoroServiceConstants;
-import org.apache.amoro.server.exception.OptimizingCommitException;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
