@@ -42,6 +42,7 @@ ams:
   refresh-tables:
     thread-count: 10
     interval: 60000 # 1min
+    max-pending-partition-count: 100 # default 100
 
   self-optimizing:
     commit-thread-count: 10

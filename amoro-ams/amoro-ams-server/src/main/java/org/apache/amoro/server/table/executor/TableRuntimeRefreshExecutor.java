@@ -31,10 +31,13 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   // 1 minutes
   private final long interval;
+  private final int maxPendingPartitions;
 
-  public TableRuntimeRefreshExecutor(TableManager tableRuntimes, int poolSize, long interval) {
+  public TableRuntimeRefreshExecutor(
+      TableManager tableRuntimes, int poolSize, long interval, int maxPendingPartitions) {
     super(tableRuntimes, poolSize);
     this.interval = interval;
+    this.maxPendingPartitions = maxPendingPartitions;
   }
 
   @Override
@@ -48,7 +51,8 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   private void tryEvaluatingPendingInput(TableRuntime tableRuntime, MixedTable table) {
     if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
-      OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
+      OptimizingEvaluator evaluator =
+          new OptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
       if (evaluator.isNecessary()) {
         OptimizingEvaluator.PendingInput pendingInput = evaluator.getPendingInput();
         logger.debug(

@@ -50,6 +50,7 @@ import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class OptimizingEvaluator {
 
@@ -58,14 +59,17 @@ public class OptimizingEvaluator {
   protected final MixedTable mixedTable;
   protected final TableRuntime tableRuntime;
   protected final TableSnapshot currentSnapshot;
+  protected final int maxPendingPartitions;
   protected boolean isInitialized = false;
 
   protected Map<String, PartitionEvaluator> partitionPlanMap = Maps.newHashMap();
 
-  public OptimizingEvaluator(TableRuntime tableRuntime, MixedTable table) {
+  public OptimizingEvaluator(
+      TableRuntime tableRuntime, MixedTable table, int maxPendingPartitions) {
     this.tableRuntime = tableRuntime;
     this.mixedTable = table;
     this.currentSnapshot = IcebergTableUtil.getSnapshot(table, tableRuntime);
+    this.maxPendingPartitions = maxPendingPartitions;
   }
 
   public TableRuntime getTableRuntime() {
@@ -129,7 +133,10 @@ public class OptimizingEvaluator {
         mixedTable.id(),
         count,
         System.currentTimeMillis() - startTime);
-    partitionPlanMap.values().removeIf(plan -> !plan.isNecessary());
+    partitionPlanMap = partitionPlanMap.entrySet().stream()
+        .filter(entry -> entry.getValue().isNecessary())
+        .limit(maxPendingPartitions)
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private Map<String, String> partitionProperties(Pair<Integer, StructLike> partition) {
