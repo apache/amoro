@@ -62,15 +62,18 @@ public class OptimizingEvaluator {
   protected final MixedTable mixedTable;
   protected final TableRuntime tableRuntime;
   protected final TableSnapshot currentSnapshot;
+  protected final int maxPendingPartitions;
   protected boolean isInitialized = false;
 
   protected Map<String, PartitionEvaluator> needOptimizingPlanMap = Maps.newHashMap();
   protected Map<String, PartitionEvaluator> partitionPlanMap = Maps.newHashMap();
 
-  public OptimizingEvaluator(TableRuntime tableRuntime, MixedTable table) {
+  public OptimizingEvaluator(
+      TableRuntime tableRuntime, MixedTable table, int maxPendingPartitions) {
     this.tableRuntime = tableRuntime;
     this.mixedTable = table;
     this.currentSnapshot = IcebergTableUtil.getSnapshot(table, tableRuntime);
+    this.maxPendingPartitions = maxPendingPartitions;
   }
 
   public TableRuntime getTableRuntime() {
@@ -137,6 +140,7 @@ public class OptimizingEvaluator {
     needOptimizingPlanMap.putAll(
         partitionPlanMap.entrySet().stream()
             .filter(entry -> entry.getValue().isNecessary())
+            .limit(maxPendingPartitions)
             .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue())));
   }
 
