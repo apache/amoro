@@ -175,11 +175,11 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       tasks.addAll(partitionPlan.splitTasks((int) (actualInputSize / avgThreadCost)));
     }
     if (!tasks.isEmpty()) {
-      if (evaluators.stream()
-          .anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.FULL)) {
+      if (actualPartitionPlans.stream()
+          .anyMatch(plan -> plan.getOptimizingType() == OptimizingType.FULL)) {
         optimizingType = OptimizingType.FULL;
-      } else if (evaluators.stream()
-          .anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.MAJOR)) {
+      } else if (actualPartitionPlans.stream()
+          .anyMatch(plan -> plan.getOptimizingType() == OptimizingType.MAJOR)) {
         optimizingType = OptimizingType.MAJOR;
       } else {
         optimizingType = OptimizingType.MINOR;
