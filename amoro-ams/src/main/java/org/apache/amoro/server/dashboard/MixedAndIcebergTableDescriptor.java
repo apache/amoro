@@ -717,10 +717,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                 .map(item -> buildColumnInfoFromPartitionSpec(table.spec().schema(), item))
                 .collect(Collectors.toList()));
       }
+    } else {
+      serverTableMeta.setPkList(
+          serverTableMeta.getSchema().stream()
+              .filter(s -> table.schema().identifierFieldNames().contains(s.getField()))
+              .collect(Collectors.toList()));
     }
-    if (serverTableMeta.getPkList() == null) {
-      serverTableMeta.setPkList(new ArrayList<>());
-    }
+
     return serverTableMeta;
   }
 
