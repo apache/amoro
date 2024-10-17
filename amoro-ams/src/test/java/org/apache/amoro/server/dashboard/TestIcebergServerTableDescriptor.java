@@ -55,6 +55,7 @@ import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -88,10 +89,11 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
   }
 
   @After
-  public void after() {
+  public void after() throws IOException {
     if (persistency != null) {
       persistency.truncateAllTables();
     }
+    super.after();
   }
 
   @Test
