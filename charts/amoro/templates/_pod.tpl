@@ -120,7 +120,7 @@ spark distribution package will be installed to here*/ -}}
 {{- if .Values.plugin.metricReporters }}
 {{- if .Values.plugin.metricReporters.prometheusExporter.enabled }}
 - name: prometheus
-  containerPort: {{ .Values.plugin.metricReporters.prometheusExporter.port }}
+  containerPort: {{ .Values.plugin.metricReporters.prometheusExporter.properties.port }}
 {{- end -}}
 {{- end -}}
 {{- end -}}

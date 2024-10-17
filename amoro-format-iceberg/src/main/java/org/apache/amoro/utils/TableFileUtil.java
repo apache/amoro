@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TableFileUtil {
   private static final Logger LOG = LoggerFactory.getLogger(TableFileUtil.class);
+  private static final String POS_DELETE_FILE_IDENTIFIER = "delete";
 
   /**
    * Parse file name form file path
@@ -191,5 +192,14 @@ public class TableFileUtil {
   public static String getParent(String path) {
     Path p = new Path(path);
     return p.getParent().toString();
+  }
+
+  public static String optimizingPosDeleteFileName(String dataFileName, String suffix) {
+    return String.format("%s-%s-%s", dataFileName, POS_DELETE_FILE_IDENTIFIER, suffix);
+  }
+
+  public static boolean isOptimizingPosDeleteFile(String dataFilePath, String posDeleteFilePath) {
+    return getFileName(posDeleteFilePath)
+        .startsWith(String.format("%s-%s", getFileName(dataFilePath), POS_DELETE_FILE_IDENTIFIER));
   }
 }

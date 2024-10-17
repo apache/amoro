@@ -16,11 +16,14 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
-public class IllegalMetadataException extends AmoroRuntimeException {
+public class UndefinedException extends AmoroRuntimeException {
+  public UndefinedException(Throwable throwable) {
+    super(throwable);
+  }
 
-  public IllegalMetadataException(String message) {
+  public UndefinedException(String message) {
     super(message);
   }
 }

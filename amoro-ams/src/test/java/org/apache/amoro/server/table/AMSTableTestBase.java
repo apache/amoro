@@ -80,32 +80,36 @@ public class AMSTableTestBase extends TableServiceTestBase {
 
   @Before
   public void init() throws IOException, TException {
-    catalogWarehouse = temp.newFolder().getPath();
-    catalogMeta = catalogTestHelper.buildCatalogMeta(catalogWarehouse);
-    // mixed-hive format only exists in external catalog
-    if (catalogTestHelper.isInternalCatalog()) {
-      if (TableFormat.MIXED_ICEBERG.equals(catalogTestHelper.tableFormat())) {
-        mixedTables = catalogTestHelper.buildMixedTables(catalogMeta);
-        tableMeta = buildTableMeta();
-      }
-    } else {
-      externalCatalog = new CommonUnifiedCatalog(() -> catalogMeta, Maps.newHashMap());
-      if (TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat())) {
-        tableMeta = buildTableMeta();
-      }
-    }
-
-    tableService().createCatalog(catalogMeta);
     try {
-      Database database = new Database();
-      database.setName(TableTestHelper.TEST_DB_NAME);
-      TEST_HMS.getHiveClient().createDatabase(database);
-    } catch (AlreadyExistsException e) {
-      // pass
-    }
-    if (autoInitTable) {
-      createDatabase();
-      createTable();
+      catalogWarehouse = temp.newFolder().getPath();
+      catalogMeta = catalogTestHelper.buildCatalogMeta(catalogWarehouse);
+      // mixed-hive format only exists in external catalog
+      if (catalogTestHelper.isInternalCatalog()) {
+        if (TableFormat.MIXED_ICEBERG.equals(catalogTestHelper.tableFormat())) {
+          mixedTables = catalogTestHelper.buildMixedTables(catalogMeta);
+          tableMeta = buildTableMeta();
+        }
+      } else {
+        externalCatalog = new CommonUnifiedCatalog(() -> catalogMeta, Maps.newHashMap());
+        if (TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat())) {
+          tableMeta = buildTableMeta();
+        }
+      }
+
+      tableService().createCatalog(catalogMeta);
+      try {
+        Database database = new Database();
+        database.setName(TableTestHelper.TEST_DB_NAME);
+        TEST_HMS.getHiveClient().createDatabase(database);
+      } catch (AlreadyExistsException e) {
+        // pass
+      }
+      if (autoInitTable) {
+        createDatabase();
+        createTable();
+      }
+    } catch (Throwable throwable) {
+      Assert.fail(throwable.getMessage());
     }
   }
 

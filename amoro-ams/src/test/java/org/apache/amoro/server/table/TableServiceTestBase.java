@@ -25,6 +25,7 @@ import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 
@@ -37,15 +38,19 @@ public abstract class TableServiceTestBase {
 
   @BeforeClass
   public static void initTableService() {
-    Configurations configurations = new Configurations();
-    configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, 800L);
-    TABLE_SERVICE = new DefaultTableService(new Configurations());
-    OPTIMIZING_SERVICE = new DefaultOptimizingService(configurations, TABLE_SERVICE);
-    TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
-    TABLE_SERVICE.initialize();
     try {
-      OPTIMIZING_SERVICE.createResourceGroup(defaultResourceGroup());
-    } catch (Throwable ignored) {
+      Configurations configurations = new Configurations();
+      configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, 800L);
+      TABLE_SERVICE = new DefaultTableService(new Configurations());
+      OPTIMIZING_SERVICE = new DefaultOptimizingService(configurations, TABLE_SERVICE);
+      TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
+      TABLE_SERVICE.initialize();
+      try {
+        OPTIMIZING_SERVICE.createResourceGroup(defaultResourceGroup());
+      } catch (Throwable ignored) {
+      }
+    } catch (Throwable throwable) {
+      Assert.fail(throwable.getMessage());
     }
   }
 

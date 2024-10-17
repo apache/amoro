@@ -20,7 +20,7 @@ package org.apache.amoro.server.persistence;
 
 import static org.mockito.Mockito.never;
 
-import org.apache.amoro.server.exception.UndefinedException;
+import org.apache.amoro.exception.UndefinedException;
 import org.apache.ibatis.session.SqlSession;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;

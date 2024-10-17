@@ -83,7 +83,7 @@ spec: {{/* TODO If Support Replica can be use more than 1 */}}
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             httpGet:
-              path: /ams/v1/health/status
+              path: /api/ams/v1/health/status
               port: rest
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
@@ -94,7 +94,7 @@ spec: {{/* TODO If Support Replica can be use more than 1 */}}
           {{- if .Values.readinessProbe.enabled }}
           readinessProbe:
             httpGet:
-              path: ams/v1/versionInfo
+              path: api/ams/v1/versionInfo
               port: rest
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}

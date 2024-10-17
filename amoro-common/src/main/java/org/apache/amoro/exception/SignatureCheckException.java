@@ -16,18 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
-public class OptimizingClosedException extends AmoroRuntimeException {
+/** SignatureCheckException */
+public class SignatureCheckException extends AmoroRuntimeException {
 
-  private final long processId;
+  public SignatureCheckException() {}
 
-  public OptimizingClosedException(long processId) {
-    super("Optimizing process already closed, ignore " + processId);
-    this.processId = processId;
+  public SignatureCheckException(String message) {
+    super(message);
   }
 
-  public long getProcessId() {
-    return processId;
+  public SignatureCheckException(String message, Throwable throwable) {
+    super(message, throwable);
   }
 }

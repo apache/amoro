@@ -32,6 +32,8 @@ import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.http.staticfiles.StaticFileConfig;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.exception.ForbiddenException;
+import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.RestCatalogService;
@@ -39,6 +41,7 @@ import org.apache.amoro.server.dashboard.controller.CatalogController;
 import org.apache.amoro.server.dashboard.controller.HealthCheckController;
 import org.apache.amoro.server.dashboard.controller.LoginController;
 import org.apache.amoro.server.dashboard.controller.OptimizerController;
+import org.apache.amoro.server.dashboard.controller.OptimizerGroupController;
 import org.apache.amoro.server.dashboard.controller.OverviewController;
 import org.apache.amoro.server.dashboard.controller.PlatformFileInfoController;
 import org.apache.amoro.server.dashboard.controller.SettingController;
@@ -47,8 +50,6 @@ import org.apache.amoro.server.dashboard.controller.TerminalController;
 import org.apache.amoro.server.dashboard.controller.VersionController;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.ParamSignatureCalculator;
-import org.apache.amoro.server.exception.ForbiddenException;
-import org.apache.amoro.server.exception.SignatureCheckException;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -73,10 +74,13 @@ public class DashboardServer {
   public static final Logger LOG = LoggerFactory.getLogger(DashboardServer.class);
 
   private static final String AUTH_TYPE_BASIC = "basic";
+  private static final String X_REQUEST_SOURCE_HEADER = "X-Request-Source";
+  private static final String X_REQUEST_SOURCE_WEB = "Web";
 
   private final CatalogController catalogController;
   private final HealthCheckController healthCheckController;
   private final LoginController loginController;
+  private final OptimizerGroupController optimizerGroupController;
   private final OptimizerController optimizerController;
   private final PlatformFileInfoController platformFileInfoController;
   private final SettingController settingController;
@@ -98,7 +102,8 @@ public class DashboardServer {
     this.catalogController = new CatalogController(tableService, platformFileManager);
     this.healthCheckController = new HealthCheckController();
     this.loginController = new LoginController(serviceConfig);
-    this.optimizerController = new OptimizerController(tableService, optimizerManager);
+    this.optimizerGroupController = new OptimizerGroupController(tableService, optimizerManager);
+    this.optimizerController = new OptimizerController(optimizerManager);
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
     this.settingController = new SettingController(serviceConfig, optimizerManager);
     ServerTableDescriptor tableDescriptor = new ServerTableDescriptor(tableService, serviceConfig);
@@ -186,14 +191,13 @@ public class DashboardServer {
 
       // for dashboard api
       path(
-          "/ams/v1",
+          "/api/ams/v1",
           () -> {
             // login controller
             get("/login/current", loginController::getCurrent);
             post("/login", loginController::login);
             post("/logout", loginController::logout);
           });
-      path("ams/v1", apiGroup());
 
       // for open api
       path("/api/ams/v1", apiGroup());
@@ -221,6 +225,9 @@ public class DashboardServer {
             get(
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
                 tableController::getOptimizingProcesses);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-types",
+                tableController::getOptimizingTypes);
             get(
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/tasks",
                 tableController::getOptimizingProcessTasks);
@@ -272,28 +279,32 @@ public class DashboardServer {
       path(
           "/optimize",
           () -> {
+            get("/actions", optimizerGroupController::getActions);
             get(
                 "/optimizerGroups/{optimizerGroup}/tables",
-                optimizerController::getOptimizerTables);
-            get("/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::getOptimizers);
-            get("/optimizerGroups", optimizerController::getOptimizerGroups);
+                optimizerGroupController::getOptimizerTables);
+            get(
+                "/optimizerGroups/{optimizerGroup}/optimizers",
+                optimizerGroupController::getOptimizers);
+            get("/optimizerGroups", optimizerGroupController::getOptimizerGroups);
             get(
                 "/optimizerGroups/{optimizerGroup}/info",
-                optimizerController::getOptimizerGroupInfo);
-            delete(
-                "/optimizerGroups/{optimizerGroup}/optimizers/{jobId}",
-                optimizerController::releaseOptimizer);
+                optimizerGroupController::getOptimizerGroupInfo);
             post(
                 "/optimizerGroups/{optimizerGroup}/optimizers",
-                optimizerController::scaleOutOptimizer);
-            get("/resourceGroups", optimizerController::getResourceGroup);
-            post("/resourceGroups", optimizerController::createResourceGroup);
-            put("/resourceGroups", optimizerController::updateResourceGroup);
-            delete("/resourceGroups/{resourceGroupName}", optimizerController::deleteResourceGroup);
+                optimizerGroupController::scaleOutOptimizer);
+            post("/optimizers", optimizerController::createOptimizer);
+            delete("/optimizers/{jobId}", optimizerController::releaseOptimizer);
+            get("/resourceGroups", optimizerGroupController::getResourceGroup);
+            post("/resourceGroups", optimizerGroupController::createResourceGroup);
+            put("/resourceGroups", optimizerGroupController::updateResourceGroup);
+            delete(
+                "/resourceGroups/{resourceGroupName}",
+                optimizerGroupController::deleteResourceGroup);
             get(
                 "/resourceGroups/{resourceGroupName}/delete/check",
-                optimizerController::deleteCheckResourceGroup);
-            get("/containers/get", optimizerController::getContainers);
+                optimizerGroupController::deleteCheckResourceGroup);
+            get("/containers/get", optimizerGroupController::getContainers);
           });
 
       // console apis
@@ -346,7 +357,8 @@ public class DashboardServer {
 
   public void preHandleRequest(Context ctx) {
     String uriPath = ctx.path();
-    if (needApiKeyCheck(uriPath)) {
+    String requestSource = ctx.header(X_REQUEST_SOURCE_HEADER);
+    if (needApiKeyCheck(uriPath) && !X_REQUEST_SOURCE_WEB.equalsIgnoreCase(requestSource)) {
       if (AUTH_TYPE_BASIC.equalsIgnoreCase(authType)) {
         BasicAuthCredentials cred = ctx.basicAuthCredentials();
         if (!(basicAuthUser.equals(cred.component1())
@@ -382,10 +394,10 @@ public class DashboardServer {
   }
 
   private static final String[] urlWhiteList = {
-    "/ams/v1/versionInfo",
-    "/ams/v1/login",
-    "/ams/v1/health/status",
-    "/ams/v1/login/current",
+    "/api/ams/v1/versionInfo",
+    "/api/ams/v1/login",
+    "/api/ams/v1/health/status",
+    "/api/ams/v1/login/current",
     "/",
     "/overview",
     "/introduce",

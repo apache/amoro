@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
 import org.apache.amoro.ErrorCodes;
 import org.apache.amoro.ServerTableIdentifier;
@@ -142,7 +142,7 @@ public class AmoroRuntimeException extends RuntimeException {
     }
   }
 
-  private static AmoroRuntimeException wrap(Throwable throwable) {
+  public static AmoroRuntimeException wrap(Throwable throwable) {
     return wrap(throwable, UndefinedException::new);
   }
 }

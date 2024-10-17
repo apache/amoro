@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.TableIdentifier;

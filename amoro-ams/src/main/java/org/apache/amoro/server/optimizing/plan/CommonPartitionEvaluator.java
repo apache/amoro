@@ -24,6 +24,7 @@ import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
@@ -226,8 +227,12 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   public boolean segmentShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
     Preconditions.checkArgument(!isFragmentFile(dataFile), "Unsupported fragment file.");
-    if (deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count()
-        >= 2) {
+    long posDeleteFileCount =
+        deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count();
+    if (posDeleteFileCount == 1) {
+      return !TableFileUtil.isOptimizingPosDeleteFile(
+          dataFile.path().toString(), deletes.get(0).path().toString());
+    } else if (posDeleteFileCount > 1) {
       combinePosSegmentFileCount++;
       return true;
     }

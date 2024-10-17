@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.utils;
 
-import org.apache.amoro.server.exception.AlreadyExistsException;
-import org.apache.amoro.server.exception.ObjectNotExistsException;
+import org.apache.amoro.exception.AlreadyExistsException;
+import org.apache.amoro.exception.ObjectNotExistsException;
 
 public class PreconditionUtils {
 

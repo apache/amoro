@@ -25,8 +25,6 @@ import { getOptimizerResourceList, getResourceGroupsListAPI, groupDeleteAPI, gro
 import { usePagination } from '@/hooks/usePagination'
 import { dateFormat, mbToSize } from '@/utils'
 
-import ScaleOut from '@/views/resource/components/ScaleOut.vue'
-
 const props = defineProps<{ curGroupName?: string, type: string }>()
 
 const emit = defineEmits<{
@@ -185,27 +183,6 @@ async function removeGroup(record: IIOptimizeGroupItem) {
   })
 }
 
-const groupRecord = ref<IIOptimizeGroupItem>({
-  resourceGroup: {
-    name: '',
-    container: '',
-    properties: {},
-  },
-  occupationCore: 0,
-  occupationMemory: 0,
-  name: '',
-  container: '',
-  resourceOccupation: '',
-})
-const scaleOutVisible = ref<boolean>(false)
-function scaleOutGroup(record: IIOptimizeGroupItem) {
-  if (record.container === 'external') {
-    return
-  }
-  groupRecord.value = { ...record }
-  scaleOutVisible.value = true
-}
-
 function changeTable({ current = pagination.current, pageSize = pagination.pageSize }) {
   pagination.current = current
   const resetPage = pageSize !== pagination.pageSize
@@ -249,12 +226,6 @@ onMounted(() => {
           </span>
         </template>
         <template v-if="column.dataIndex === 'operationGroup'">
-          <span
-            class="primary-link g-mr-12" :class="{ disabled: record.container === 'external' }"
-            @click="scaleOutGroup(record)"
-          >
-            {{ t('scaleOut') }}
-          </span>
           <span class="primary-link g-mr-12" @click="editGroup(record)">
             {{ t('edit') }}
           </span>
@@ -265,7 +236,6 @@ onMounted(() => {
       </template>
     </a-table>
   </div>
-  <ScaleOut v-if="scaleOutVisible" :group-record="groupRecord" @cancel="scaleOutVisible = false" @refresh="refresh" />
   <u-loading v-if="releaseLoading" />
 </template>
 

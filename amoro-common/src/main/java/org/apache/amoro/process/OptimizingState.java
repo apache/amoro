@@ -27,7 +27,7 @@ public abstract class OptimizingState extends TableProcessState {
 
   @StateField private volatile long targetSnapshotId;
   @StateField private volatile long watermark;
-  @StateField private volatile OptimizingStage stage;
+  @StateField private volatile ProcessStage stage;
   @StateField private volatile long currentStageStartTime;
 
   public OptimizingState(Action action, ServerTableIdentifier tableIdentifier) {
@@ -38,12 +38,12 @@ public abstract class OptimizingState extends TableProcessState {
     super(id, action, tableIdentifier);
   }
 
-  protected void setStage(OptimizingStage stage) {
+  protected void setStage(ProcessStage stage) {
     this.stage = stage;
     this.currentStageStartTime = System.currentTimeMillis();
   }
 
-  protected void setStage(OptimizingStage stage, long stageStartTime) {
+  protected void setStage(ProcessStage stage, long stageStartTime) {
     this.stage = stage;
     this.currentStageStartTime = stageStartTime;
   }
@@ -60,7 +60,7 @@ public abstract class OptimizingState extends TableProcessState {
     return watermark;
   }
 
-  public OptimizingStage getStage() {
+  public ProcessStage getStage() {
     return stage;
   }
 
@@ -74,6 +74,6 @@ public abstract class OptimizingState extends TableProcessState {
 
   @Override
   public String getName() {
-    return stage.displayValue();
+    return stage.getDesc();
   }
 }

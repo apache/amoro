@@ -26,6 +26,7 @@ import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Streams;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.descriptor.AMSColumnInfo;
@@ -45,6 +46,7 @@ import org.apache.amoro.table.descriptor.ServerTableMeta;
 import org.apache.amoro.table.descriptor.TableSummary;
 import org.apache.amoro.table.descriptor.TagOrBranchInfo;
 import org.apache.amoro.utils.CommonUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.paimon.CoreOptions;
 import org.apache.paimon.FileStore;
@@ -359,7 +361,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, int limit, int offset) {
+      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
     // Temporary solution for Paimon. TODO: Get compaction info from Paimon compaction task
     List<OptimizingProcessInfo> processInfoList = new ArrayList<>();
     TableIdentifier tableIdentifier = amoroTable.id();
@@ -367,18 +369,14 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     FileStore<?> store = fileStoreTable.store();
     boolean isPrimaryTable = !fileStoreTable.primaryKeys().isEmpty();
     int maxLevel = CoreOptions.fromMap(fileStoreTable.options()).numLevels() - 1;
-    int total;
     try {
       List<Snapshot> compactSnapshots =
           Streams.stream(store.snapshotManager().snapshots())
               .filter(s -> s.commitKind() == Snapshot.CommitKind.COMPACT)
               .collect(Collectors.toList());
-      total = compactSnapshots.size();
       processInfoList =
           compactSnapshots.stream()
               .sorted(Comparator.comparing(Snapshot::id).reversed())
-              .skip(offset)
-              .limit(limit)
               .map(
                   s -> {
                     OptimizingProcessInfo optimizingProcessInfo = new OptimizingProcessInfo();
@@ -438,7 +436,23 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+    processInfoList =
+        processInfoList.stream()
+            .filter(p -> StringUtils.isBlank(type) || type.equalsIgnoreCase(p.getOptimizingType()))
+            .filter(p -> status == null || status == p.getStatus())
+            .collect(Collectors.toList());
+    int total = processInfoList.size();
+    processInfoList =
+        processInfoList.stream().skip(offset).limit(limit).collect(Collectors.toList());
     return Pair.of(processInfoList, total);
+  }
+
+  @Override
+  public Map<String, String> getTableOptimizingTypes(AmoroTable<?> amoroTable) {
+    Map<String, String> types = Maps.newHashMap();
+    types.put("FULL", "full");
+    types.put("MINOR", "MINOR");
+    return types;
   }
 
   @Override
