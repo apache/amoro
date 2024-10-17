@@ -74,6 +74,8 @@ import org.apache.hudi.table.HoodieJavaTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -246,7 +248,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<PartitionFileBaseInfo> getSnapshotDetail(
-      AmoroTable<?> amoroTable, String snapshotId) {
+      AmoroTable<?> amoroTable, String snapshotId, @Nullable String ref) {
     HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
     SyncableFileSystemView fileSystemView = hoodieTable.getHoodieView();
     Map<String, Stream<FileSlice>> ptFsMap =
