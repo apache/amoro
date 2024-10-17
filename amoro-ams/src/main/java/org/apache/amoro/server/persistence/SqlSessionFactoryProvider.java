@@ -23,7 +23,7 @@ import static com.github.pagehelper.page.PageAutoDialect.registerDialectAlias;
 import com.github.pagehelper.PageInterceptor;
 import com.github.pagehelper.dialect.helper.MySqlDialect;
 import com.github.pagehelper.dialect.helper.PostgreSqlDialect;
-import com.github.pagehelper.dialect.helper.SqlServerDialect;
+import com.github.pagehelper.dialect.helper.SqlServer2012Dialect;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.persistence.mapper.ApiTokensMapper;
@@ -149,9 +149,9 @@ public class SqlSessionFactoryProvider {
   }
 
   private void registerDialectAliases() {
-    registerDialectAlias("postgresql", PostgreSqlDialect.class);
+    registerDialectAlias("postgres", PostgreSqlDialect.class);
     registerDialectAlias("mysql", MySqlDialect.class);
-    registerDialectAlias("derby", SqlServerDialect.class);
+    registerDialectAlias("derby", SqlServer2012Dialect.class);
   }
 
   /**

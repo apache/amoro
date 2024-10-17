@@ -117,6 +117,8 @@ public class BaseOptimizingChecker extends PersistentBase {
                                 tableIdentifier.getCatalog(),
                                 tableIdentifier.getDatabase(),
                                 tableIdentifier.getTableName(),
+                                null,
+                                null,
                                 0,
                                 Integer.MAX_VALUE));
                 if (tableOptimizingProcesses == null || tableOptimizingProcesses.isEmpty()) {
@@ -156,6 +158,8 @@ public class BaseOptimizingChecker extends PersistentBase {
                           tableIdentifier.getCatalog(),
                           tableIdentifier.getDatabase(),
                           tableIdentifier.getTableName(),
+                          null,
+                          null,
                           0,
                           Integer.MAX_VALUE))
               .stream()
@@ -187,6 +191,8 @@ public class BaseOptimizingChecker extends PersistentBase {
                         tableIdentifier.getCatalog(),
                         tableIdentifier.getDatabase(),
                         tableIdentifier.getTableName(),
+                        null,
+                        null,
                         0,
                         Integer.MAX_VALUE))
             .stream()

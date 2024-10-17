@@ -520,6 +520,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                       tableIdentifier.getCatalog(),
                       tableIdentifier.getDatabase(),
                       tableIdentifier.getTableName(),
+                      type,
+                      status,
                       offset,
                       limit));
       PageInfo<OptimizingProcessMeta> pageInfo = new PageInfo<>(processMetaList);
