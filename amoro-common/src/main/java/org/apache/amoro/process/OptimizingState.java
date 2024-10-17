@@ -60,6 +60,7 @@ public abstract class OptimizingState extends TableProcessState {
     return watermark;
   }
 
+  @Override
   public ProcessStage getStage() {
     return stage;
   }

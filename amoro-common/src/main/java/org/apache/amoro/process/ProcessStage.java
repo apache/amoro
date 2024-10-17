@@ -21,6 +21,12 @@ package org.apache.amoro.process;
 public class ProcessStage {
 
   /**
+   * An arbitrary stage belongs to processes which only contain one stage For those one stage
+   * processes, should transform ${@link ProcessStage} to ProcessStage for displaying
+   */
+  public static final ProcessStage ARBITRARY = new ProcessStage("", 0);
+
+  /**
    * Action Stage description value, normally this value should be identical within certain actions
    */
   private final String desc;
