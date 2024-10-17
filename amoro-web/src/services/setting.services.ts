@@ -20,16 +20,16 @@ import type { IMap } from '@/types/common.type'
 import request from '@/utils/request'
 
 export function getCatalogsTypes() {
-  return request.get('ams/v1/catalogs/metastore/types')
+  return request.get('api/ams/v1/catalogs/metastore/types')
 }
 export function getCatalogsSetting(catalogName: string) {
-  return request.get(`ams/v1/catalogs/${catalogName}`)
+  return request.get(`api/ams/v1/catalogs/${catalogName}`)
 }
 export function delCatalog(catalogName: string) {
-  return request.delete(`ams/v1/catalogs/${catalogName}`)
+  return request.delete(`api/ams/v1/catalogs/${catalogName}`)
 }
 export function checkCatalogStatus(catalogName: string) {
-  return request.get(`ams/v1/catalogs/${catalogName}/delete/check`)
+  return request.get(`api/ams/v1/catalogs/${catalogName}/delete/check`)
 }
 export function saveCatalogsSetting(params: {
   name: string
@@ -43,13 +43,13 @@ export function saveCatalogsSetting(params: {
   const { isCreate, name } = params
   delete params.isCreate
   if (isCreate) {
-    return request.post('ams/v1/catalogs', { ...params })
+    return request.post('api/ams/v1/catalogs', { ...params })
   }
-  return request.put(`ams/v1/catalogs/${name}`, { ...params })
+  return request.put(`api/ams/v1/catalogs/${name}`, { ...params })
 }
 export function getSystemSetting() {
-  return request.get('ams/v1/settings/system')
+  return request.get('api/ams/v1/settings/system')
 }
 export function getContainersSetting() {
-  return request.get('ams/v1/settings/containers')
+  return request.get('api/ams/v1/settings/containers')
 }

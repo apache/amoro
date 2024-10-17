@@ -666,12 +666,13 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     private void loadTaskRuntimes(OptimizingProcess optimizingProcess) {
-      List<TaskRuntime<RewriteStageTask>> taskRuntimes =
-          getAs(
-              OptimizingMapper.class,
-              mapper ->
-                  mapper.selectTaskRuntimes(tableRuntime.getTableIdentifier().getId(), processId));
       try {
+        List<TaskRuntime<RewriteStageTask>> taskRuntimes =
+            getAs(
+                OptimizingMapper.class,
+                mapper ->
+                    mapper.selectTaskRuntimes(
+                        tableRuntime.getTableIdentifier().getId(), processId));
         Map<Integer, RewriteFilesInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
         taskRuntimes.forEach(
             taskRuntime -> {

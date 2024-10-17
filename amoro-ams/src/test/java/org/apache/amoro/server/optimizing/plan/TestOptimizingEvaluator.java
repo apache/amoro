@@ -110,7 +110,7 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
   }
 
   protected OptimizingEvaluator buildOptimizingEvaluator() {
-    return new OptimizingEvaluator(getTableRuntime(), getMixedTable());
+    return new OptimizingEvaluator(getTableRuntime(), getMixedTable(), 100);
   }
 
   protected void assertEmptyInput(OptimizingEvaluator.PendingInput input) {

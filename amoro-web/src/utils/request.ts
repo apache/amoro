@@ -64,6 +64,7 @@ const DEFAULT_CONFIG = {
   timeout: 45000,
   headers: {
     'Content-Type': 'application/json',
+    'X-Request-Source' : 'Web'
   },
 }
 

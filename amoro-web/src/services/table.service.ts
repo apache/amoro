@@ -21,14 +21,14 @@ import type { ICatalogItem, IMap } from '@/types/common.type'
 import request from '@/utils/request'
 
 export function getCatalogList(): Promise<ICatalogItem[]> {
-  return request.get('ams/v1/catalogs')
+  return request.get('api/ams/v1/catalogs')
 }
 export function getDatabaseList(params: {
   catalog: string
   keywords: string
 }): Promise<string[]> {
   const { catalog, keywords } = params
-  return request.get(`ams/v1/catalogs/${catalog}/databases`, { params: { keywords } })
+  return request.get(`api/ams/v1/catalogs/${catalog}/databases`, { params: { keywords } })
 }
 
 export function getTableList(params: {
@@ -37,26 +37,26 @@ export function getTableList(params: {
   keywords: string
 }) {
   const { catalog, db, keywords } = params
-  return request.get(`ams/v1/catalogs/${catalog}/databases/${db}/tables`, { params: { keywords } })
+  return request.get(`api/ams/v1/catalogs/${catalog}/databases/${db}/tables`, { params: { keywords } })
 }
 
 // get tables detail
 export function getTableDetail(
   { catalog = '' as string, db = '' as string, table = '' as string, token = '' as string },
 ) {
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/details`, { params: { token } })
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/details`, { params: { token } })
 }
 
 export function getHiveTableDetail(
   { catalog = '' as string, db = '' as string, table = '' as string },
 ) {
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/hive/details`)
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/hive/details`)
 }
 
 export function getUpgradeStatus(
   { catalog = '' as string, db = '' as string, table = '' as string },
 ) {
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/upgrade/status`)
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/upgrade/status`)
 }
 // get partions table
 export function getPartitionTable(
@@ -71,7 +71,7 @@ export function getPartitionTable(
   },
 ) {
   const { catalog, db, table, filter, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { filter, page, pageSize, token } })
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { filter, page, pageSize, token } })
 }
 
 // get partions
@@ -86,7 +86,7 @@ export function getPartitions(
   },
 ) {
   const { catalog, db, table, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { page, pageSize, token } })
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { page, pageSize, token } })
 }
 // get partions-files
 export function getPartitionFiles(
@@ -102,7 +102,7 @@ export function getPartitionFiles(
   },
 ) {
   const { catalog, db, table, partition, specId, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions/${partition}/files`, { params: { specId, page, pageSize, token } })
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions/${partition}/files`, { params: { specId, page, pageSize, token } })
 }
 // get snapshots
 export function getSnapshots(
@@ -118,7 +118,7 @@ export function getSnapshots(
   },
 ) {
   const { catalog, db, table, page, pageSize, token, ref, operation } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots`, { params: { page, pageSize, token, ref, operation } })
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots`, { params: { page, pageSize, token, ref, operation } })
 }
 
 // get Snapshot detail
@@ -134,7 +134,7 @@ export function getDetailBySnapshotId(
   },
 ) {
   const { catalog, db, table, snapshotId, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots/${snapshotId}/detail`, { params: { page, pageSize, token } })
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots/${snapshotId}/detail`, { params: { page, pageSize, token } })
 }
 // get operations
 export function getOperations(
@@ -148,7 +148,7 @@ export function getOperations(
   },
 ) {
   const { catalog, db, table, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/operations`, { params: { page, pageSize, token } })
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/operations`, { params: { page, pageSize, token } })
 }
 // get optimizing processes
 export function getOptimizingProcesses(
@@ -164,7 +164,7 @@ export function getOptimizingProcesses(
   },
 ) {
   const { catalog, db, table, type, status, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes`, { params: { page, pageSize, token, type, status } })
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes`, { params: { page, pageSize, token, type, status } })
 }
 
 // get optimizing process types
@@ -177,7 +177,7 @@ export function getTableOptimizingTypes(
   },
 ) {
   const { catalog, db, table, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-types`, { params: { token } })
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-types`, { params: { token } })
 }
 
 // get optimizing taskes
@@ -193,38 +193,38 @@ export function getTasksByOptimizingProcessId(
   },
 ) {
   const { catalog, db, table, processId, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes/${processId}/tasks`, { params: { page, pageSize, token } })
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes/${processId}/tasks`, { params: { page, pageSize, token } })
 }
 
 export function upgradeHiveTable(
   { catalog = '' as string, db = '' as string, table = '' as string, properties = {} as IMap<string>, pkList = [] as IMap<string>[] },
 ) {
-  return request.post(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/upgrade`, {
+  return request.post(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/upgrade`, {
     properties,
     pkList,
   })
 }
 
 export function getUpgradeProperties() {
-  return request.get('ams/v1/upgrade/properties')
+  return request.get('api/ams/v1/upgrade/properties')
 }
 
 export function cancelOptimizingProcess(
   { catalog = '' as string, db = '' as string, table = '' as string, processId = '' as string },
 ) {
-  return request.post(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes/${processId}/cancel`)
+  return request.post(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes/${processId}/cancel`)
 }
 
 export function getBranches(params: { catalog: string, db: string, table: string }) {
   const { catalog, db, table } = params
-  return request.get(`/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/branches`)
+  return request.get(`/api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/branches`)
 }
 
 export function getTags(params: { catalog: string, db: string, table: string }) {
   const { catalog, db, table } = params
-  return request.get(`/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/tags`)
+  return request.get(`/api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/tags`)
 }
 export function getConsumers(params: { catalog: string, db: string, table: string }) {
   const { catalog, db, table } = params
-  return request.get(`/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/consumers`)
+  return request.get(`/api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/consumers`)
 }
