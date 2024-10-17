@@ -16,19 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
-import org.apache.amoro.api.OptimizingTaskId;
+public class OptimizingClosedException extends AmoroRuntimeException {
 
-public class TaskNotFoundException extends AmoroRuntimeException {
-  private final OptimizingTaskId taskId;
+  private final long processId;
 
-  public TaskNotFoundException(OptimizingTaskId taskId) {
-    super("Task " + taskId + " not found.");
-    this.taskId = taskId;
+  public OptimizingClosedException(long processId) {
+    super("Optimizing process already closed, ignore " + processId);
+    this.processId = processId;
   }
 
-  public OptimizingTaskId getTaskId() {
-    return taskId;
+  public long getProcessId() {
+    return processId;
   }
 }
