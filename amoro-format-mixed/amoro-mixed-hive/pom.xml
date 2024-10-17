@@ -31,6 +31,10 @@
     <name>Amoro Project Mixed Hive Format</name>
     <url>https://amoro.apache.org</url>
 
+    <properties>
+        <root.dir>${project.parent.parent.basedir}</root.dir>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
