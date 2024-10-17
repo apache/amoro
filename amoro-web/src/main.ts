@@ -71,16 +71,17 @@ RegisterComponents(app);
   finally {
     const store = useStore()
     router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
-      if (to.fullPath === '/login') {
-        if (store.userInfo.userName) {
-          return next('/')
-        }
+      // if no username in store and not go to login page, should redirect to login page
+      if (!store.userInfo.userName && to.path !== '/login') {
         store.setHistoryPath({
           path: from.path,
-          query: { ...from.query },
+          query: from.query,
         })
+        next('/login')
       }
-      next()
+      else {
+        next()
+      }
     })
 
     app.use(router)

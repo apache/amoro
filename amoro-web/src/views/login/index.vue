@@ -18,7 +18,7 @@ limitations under the License.
 
 <script lang="ts">
 import { message } from 'ant-design-vue'
-import { computed, defineComponent, onMounted, reactive } from 'vue'
+import { computed, defineComponent, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import loginService from '@/services/login.service'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
@@ -63,7 +63,7 @@ export default defineComponent({
     const disabled = computed(() => {
       return !(formState.username && formState.password)
     })
-    onMounted(() => {})
+
     return {
       placeholder,
       formState,
