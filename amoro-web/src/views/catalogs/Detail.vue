@@ -207,7 +207,7 @@ async function getOptimizerGroupList() {
       okText: t('goToButtonText'),
       onOk: async () => {
         try {
-          router.push({ path: '/optimizing', query: { tab: 'optimizergroup' } })
+          router.push({ path: '/optimizing', query: { tab: 'optimizerGroups' } })
         }
         catch (error) {
           console.error('Navigation error:', error)
