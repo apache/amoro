@@ -17,10 +17,10 @@
   */
 
 export default {
-  last1h: '最近 1小时',
-  last12h: '最近 12小时',
-  last24h: '最近 24小时',
-  last7day: '最近 7天',
+  last1h: '最近 1 小时',
+  last12h: '最近 12 小时',
+  last24h: '最近 24 小时',
+  last7day: '最近 7 天',
   healthScore: '健康度',
   overview: '总览',
   top10Tables: '表 TOP 10',
@@ -31,7 +31,6 @@ export default {
   optimizing: '优化',
   terminal: '终端',
   settings: '设置',
-  optimizergroup: '优化器组',
   systemSetting: '系统设置',
   containerSetting: '容器设置',
   backHome: '返回首页',
@@ -108,7 +107,6 @@ export default {
   container: '容器',
   status: '状态',
   optimizingStatus: '优化状态',
-  optimzerGroup: '优化器组',
   allGroups: '全部优化器',
   retry: '重试',
   costTime: '花费时长',
@@ -186,7 +184,6 @@ export default {
   cannotDeleteModalTitle: '不能移除这个目录',
   cannotDeleteModalContent: '这个目录已被使用',
   success: '成功',
-  optimzeGroup: '优化组',
   propertiesMemory: 'properties.{type}.memory',
   leavePageModalTitle: '离开当前页面？',
   leavePageModalContent: '您所做的更改可能无法保存。',
