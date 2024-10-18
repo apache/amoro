@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.optimizing;
 
+import org.apache.amoro.process.ProcessStatus;
+
 public interface OptimizingProcess {
 
   long getProcessId();
@@ -36,7 +38,7 @@ public interface OptimizingProcess {
 
   OptimizingType getOptimizingType();
 
-  Status getStatus();
+  ProcessStatus getStatus();
 
   long getRunningQuotaTime(long calculatingStartTime, long calculatingEndTime);
 
