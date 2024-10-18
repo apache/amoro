@@ -20,8 +20,8 @@ package org.apache.amoro.server.persistence.mapper;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.MetricsSummary;
-import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.OptimizingType;
@@ -69,7 +69,7 @@ public interface OptimizingMapper {
       @Param("processId") long processId,
       @Param("targetSnapshotId") long targetSnapshotId,
       @Param("targetChangeSnapshotId") long targetChangeSnapshotId,
-      @Param("status") OptimizingProcess.Status status,
+      @Param("status") ProcessStatus status,
       @Param("optimizingType") OptimizingType optimizingType,
       @Param("planTime") long planTime,
       @Param("summary") MetricsSummary summary,
@@ -85,19 +85,23 @@ public interface OptimizingMapper {
   void updateOptimizingProcess(
       @Param("tableId") long tableId,
       @Param("processId") long processId,
-      @Param("optimizingStatus") OptimizingProcess.Status status,
+      @Param("optimizingStatus") ProcessStatus status,
       @Param("endTime") long endTime,
       @Param("summary") MetricsSummary summary,
       @Param("failedReason") String failedReason);
 
   @Select(
-      "SELECT a.process_id, a.table_id, a.catalog_name, a.db_name, a.table_name, a.target_snapshot_id,"
+      "<script>"
+          + "SELECT a.process_id, a.table_id, a.catalog_name, a.db_name, a.table_name, a.target_snapshot_id,"
           + " a.target_change_snapshot_id, a.status, a.optimizing_type, a.plan_time, a.end_time,"
           + " a.fail_reason, a.summary, a.from_sequence, a.to_sequence FROM table_optimizing_process a"
           + " INNER JOIN table_identifier b ON a.table_id = b.table_id"
           + " WHERE a.catalog_name = #{catalogName} AND a.db_name = #{dbName} AND a.table_name = #{tableName}"
           + " AND b.catalog_name = #{catalogName} AND b.db_name = #{dbName} AND b.table_name = #{tableName}"
-          + " ORDER BY process_id desc")
+          + " <if test='optimizingType != null'> AND a.optimizing_type = #{optimizingType}</if>"
+          + " <if test='optimizingStatus != null'> AND a.status = #{optimizingStatus}</if>"
+          + " ORDER BY process_id desc"
+          + "</script>")
   @Results({
     @Result(property = "processId", column = "process_id"),
     @Result(property = "tableId", column = "table_id"),
@@ -124,7 +128,11 @@ public interface OptimizingMapper {
   List<OptimizingProcessMeta> selectOptimizingProcesses(
       @Param("catalogName") String catalogName,
       @Param("dbName") String dbName,
-      @Param("tableName") String tableName);
+      @Param("tableName") String tableName,
+      @Param("optimizingType") String optimizingType,
+      @Param("optimizingStatus") ProcessStatus optimizingStatus,
+      @Param("pageNum") int pageNum,
+      @Param("pageSize") int pageSize);
 
   /** Optimizing TaskRuntime operation below */
   @Insert({

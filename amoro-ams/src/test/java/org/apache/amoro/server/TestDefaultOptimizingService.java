@@ -33,7 +33,7 @@ import org.apache.amoro.exception.PluginRetryAuthException;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
-import org.apache.amoro.server.optimizing.OptimizingProcess;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.resource.OptimizerInstance;
@@ -386,7 +386,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     Assertions.assertEquals(
         0, optimizingService().listTasks(defaultResourceGroup().getName()).size());
     Assertions.assertEquals(
-        OptimizingProcess.Status.RUNNING,
+        ProcessStatus.RUNNING,
         tableService()
             .getRuntime(serverTableIdentifier().getId())
             .getOptimizingProcess()
