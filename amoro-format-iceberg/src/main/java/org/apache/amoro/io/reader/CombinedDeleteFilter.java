@@ -137,8 +137,8 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
             Set<Integer> eqFieldIds = Sets.newHashSet(delete.equalityFieldIds());
             deleteIds.addAll(eqFieldIds);
             eqDeleteFilesByDeleteIds.put(eqFieldIds, deleteFile);
-            deleteSchemaByDeleteIds.putIfAbsent(
-                eqFieldIds, TypeUtil.select(tableSchema, eqFieldIds));
+            deleteSchemaByDeleteIds.computeIfAbsent(
+                eqFieldIds, ids -> TypeUtil.select(tableSchema, ids));
             break;
           default:
             throw new UnsupportedOperationException(
