@@ -310,6 +310,12 @@ public class TableController {
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
     String type = ctx.queryParam("type");
+
+    if (StringUtils.isBlank(type)) {
+      // treat all blank string to null
+      type = null;
+    }
+
     String status = ctx.queryParam("status");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
