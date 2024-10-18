@@ -48,13 +48,13 @@ export default defineComponent({
     const router = useRouter()
     const route = useRoute()
     const tabConfig: ILableAndValue[] = shallowReactive([
-      { label: t('optimizergroup'), value: 'optimizergroup' },
+      { label: t('optimizerGroups'), value: 'optimizerGroups' },
       { label: t('optimizers'), value: 'optimizers' },
     ])
     const placeholder = reactive(usePlaceholder())
     const pagination = reactive(usePagination())
     const state = reactive({
-      activeTab: 'optimizergroup' as string,
+      activeTab: 'optimizerGroups' as string,
       showGroupModal: false as boolean,
       groupEdit: false,
       groupEditRecord: {
@@ -159,16 +159,16 @@ export default defineComponent({
             <List type="optimizers" />
           </a-tab-pane>
           <a-tab-pane
-            key="optimizergroup"
-            :tab="t('optimizergroup')"
-            :class="[activeTab === 'optimizergroup' ? 'active' : '']"
+            key="optimizerGroups"
+            :tab="t('optimizerGroups')"
+            :class="[activeTab === 'optimizerGroups' ? 'active' : '']"
           >
             <a-button type="primary" class="g-mb-16" @click="editGroup(null)">
-              {{ t("addgroup") }}
+              {{ t("addGroup") }}
             </a-button>
             <List
               :key="groupKeyCount"
-              type="optimizergroup"
+              type="optimizerGroups"
               @edit-group="editGroup"
             />
           </a-tab-pane>
