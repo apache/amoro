@@ -43,6 +43,7 @@ import org.apache.amoro.metrics.Gauge;
 import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.metrics.MetricRegistry;
@@ -219,14 +220,14 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
     // 7.commit
     OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
-    Assert.assertEquals(OptimizingProcess.Status.RUNNING, optimizingProcess.getStatus());
+    Assert.assertEquals(ProcessStatus.RUNNING, optimizingProcess.getStatus());
     optimizingProcess.commit();
-    Assert.assertEquals(OptimizingProcess.Status.SUCCESS, optimizingProcess.getStatus());
+    Assert.assertEquals(ProcessStatus.SUCCESS, optimizingProcess.getStatus());
     Assert.assertNull(tableRuntime.getOptimizingProcess());
 
     // 8.commit again, throw exceptions, and status not changed.
     Assert.assertThrows(IllegalStateException.class, optimizingProcess::commit);
-    Assert.assertEquals(OptimizingProcess.Status.SUCCESS, optimizingProcess.getStatus());
+    Assert.assertEquals(ProcessStatus.SUCCESS, optimizingProcess.getStatus());
 
     Assert.assertEquals(0, queue.collectTasks().size());
     queue.dispose();
