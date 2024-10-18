@@ -27,8 +27,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -37,45 +35,29 @@ public abstract class StatedPersistentBase extends PersistentBase {
   private static final Map<Class<? extends PersistentBase>, Field[]> metaCache =
       Maps.newConcurrentMap();
   private static final Object NULL_VALUE = new Object();
-  private final Lock stateLock = new ReentrantLock();
   private final Field[] consistentFields;
 
   protected StatedPersistentBase() {
     consistentFields = getOrCreateConsistentFields();
   }
 
-  protected final void invokeConsistency(Runnable runnable) {
-    stateLock.lock();
+  protected void invokeConsistency(Runnable runnable) {
     Map<Field, Object> states = retainStates();
     try {
       doAsTransaction(runnable);
     } catch (Throwable throwable) {
       restoreStates(states);
       throw throwable;
-    } finally {
-      stateLock.unlock();
     }
   }
 
-  protected final <T> T invokeConsistency(Supplier<T> supplier) {
-    stateLock.lock();
+  protected <T> T invokeConsistency(Supplier<T> supplier) {
     Map<Field, Object> states = retainStates();
     try {
       return supplier.get();
     } catch (Throwable throwable) {
       restoreStates(states);
       throw throwable;
-    } finally {
-      stateLock.unlock();
-    }
-  }
-
-  protected final void invokeInStateLock(Runnable runnable) {
-    stateLock.lock();
-    try {
-      runnable.run();
-    } finally {
-      stateLock.unlock();
     }
   }
 

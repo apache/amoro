@@ -48,7 +48,7 @@ public class OptimizingStages {
   private static final Map<String, ProcessStage> STAGES =
       ImmutableMap.<String, ProcessStage>builder()
           .put(MINOR.getDesc(), MINOR)
-          .put(MINOR.getDesc(), MAJOR)
+          .put(MAJOR.getDesc(), MAJOR)
           .put(FULL.getDesc(), FULL)
           .put(COMMITTING.getDesc(), COMMITTING)
           .put(PLANNING.getDesc(), PLANNING)

@@ -20,6 +20,7 @@ package org.apache.amoro.server.optimizing;
 
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;
+import org.apache.amoro.process.ProcessStage;
 import org.apache.amoro.utils.SerializationUtil;
 
 import java.util.Map;
@@ -54,6 +55,8 @@ public abstract class StagedTaskDescriptor<I, O, S> {
     this.output = null;
     calculateSummary();
   }
+
+  public abstract ProcessStage getStage();
 
   protected abstract void calculateSummary();
 

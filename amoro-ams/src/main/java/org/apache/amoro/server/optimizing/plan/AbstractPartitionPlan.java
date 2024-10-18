@@ -317,6 +317,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
           MixedTableUtil.getMixedTablePartitionSpecById(tableObject, partition.first());
       String partitionPath = spec.partitionToPath(partition.second());
       return new RewriteStageTask(
+          getOptimizingType(),
           tableRuntime.getTableIdentifier().getId(),
           partitionPath,
           input,
