@@ -20,17 +20,19 @@ package org.apache.amoro.io;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Predicate;
 
 public class CloseablePredicate<T> implements Predicate<T>, Closeable {
 
   private final Predicate<T> predicate;
 
-  private final Closeable closeable;
+  private final List<Closeable> closeable;
 
-  public CloseablePredicate(Predicate<T> predicate, Closeable closeable) {
+  public CloseablePredicate(Predicate<T> predicate, Closeable... closeable) {
     this.predicate = predicate;
-    this.closeable = closeable;
+    this.closeable = Arrays.asList(closeable);
   }
 
   @Override
@@ -40,6 +42,8 @@ public class CloseablePredicate<T> implements Predicate<T>, Closeable {
 
   @Override
   public void close() throws IOException {
-    closeable.close();
+    for (Closeable closeable : closeable) {
+      closeable.close();
+    }
   }
 }
