@@ -23,13 +23,13 @@ import { useRoute } from 'vue-router'
 import { Modal } from 'ant-design-vue'
 import { usePagination } from '@/hooks/usePagination'
 import type { BreadcrumbOptimizingItem, IColumns, ILableAndValue } from '@/types/common.type'
-import { cancelOptimizingProcess, getOptimizingProcesses, getTasksByOptimizingProcessId, getTableOptimizingTypes } from '@/services/table.service'
+import { cancelOptimizingProcess, getOptimizingProcesses, getTableOptimizingTypes, getTasksByOptimizingProcessId } from '@/services/table.service'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
 
 const hasBreadcrumb = ref<boolean>(false)
 
 const statusMap = {
-  PENDING: { title: 'PENDING', color: '#ffcc00'},
+  PENDING: { title: 'PENDING', color: '#ffcc00' },
   ACTIVE: { title: 'ACTIVE', color: '#1890ff' },
   CLOSED: { title: 'CLOSED', color: '#c9cdd4' },
   SUCCESS: { title: 'SUCCESS', color: '#0ad787' },
@@ -92,9 +92,9 @@ const statusType = ref<ILableAndValue>()
 const statusTypeList = ref<ILableAndValue[]>([])
 
 async function getQueryDataDictList() {
-  const tableProcessTypes = await getTableOptimizingTypes({...sourceData})
-  const typesList = Object.entries(tableProcessTypes).map(([typeName, displayName]) => ({ label: displayName as string, value: typeName}))
-  const status = Object.entries(statusMap).map(([key, value]) => ({ label: value.title , value: key }));
+  const tableProcessTypes = await getTableOptimizingTypes({ ...sourceData })
+  const typesList = Object.entries(tableProcessTypes).map(([typeName, displayName]) => ({ label: displayName as string, value: typeName }))
+  const status = Object.entries(statusMap).map(([key, value]) => ({ label: value.title, value: key }))
 
   actionTypeList.value = typesList
   statusTypeList.value = status

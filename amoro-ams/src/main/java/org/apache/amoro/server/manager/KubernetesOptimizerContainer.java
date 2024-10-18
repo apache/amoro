@@ -31,6 +31,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
 import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import org.apache.amoro.resource.Resource;
@@ -51,6 +52,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /** Kubernetes Optimizer Container with Standalone Optimizer */
@@ -77,8 +79,12 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
   public void init(String name, Map<String, String> containerProperties) {
     super.init(name, containerProperties);
     // start k8s job using k8s client
-    String kubeConfigPath = checkAndGetProperty(containerProperties, KUBE_CONFIG_PATH);
-    Config config = Config.fromKubeconfig(getKubeConfigContent(kubeConfigPath));
+    Optional<String> kubeConfigPath =
+        Optional.ofNullable(containerProperties.get(KUBE_CONFIG_PATH));
+    Config config =
+        kubeConfigPath
+            .map(path -> Config.fromKubeconfig(getKubeConfigContent(path)))
+            .orElseGet(() -> new ConfigBuilder().build());
     this.client = new KubernetesClientBuilder().withConfig(config).build();
   }
 

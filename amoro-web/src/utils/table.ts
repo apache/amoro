@@ -16,8 +16,11 @@
   * limitations under the License.
   */
 
-import request from '@/utils/request'
-
-export function getVersionInfo() {
-  return request.get('api/ams/v1/versionInfo')
+/**
+ * Calculate table max width
+ */
+export function getTableMaxWidth(columns: Array<{ width: number }>) {
+  return columns.reduce((pre: number, cur: { width: number }) => {
+    return pre + cur.width
+  }, 0)
 }

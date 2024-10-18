@@ -18,62 +18,113 @@
 
 package org.apache.amoro;
 
-import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.process.TableProcessState;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.thrift.org.apache.commons.lang3.tuple.Pair;
 
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-public enum Action {
-  MINOR_OPTIMIZING("minor-optimizing", 0),
-  MAJOR_OPTIMIZING("major-optimizing", 1),
-  EXTERNAL_OPTIMIZING("external-optimizing", 2),
-  // refresh all metadata including snapshots, watermark, configurations, schema, etc.
-  REFRESH_METADATA("refresh-metadata", 10),
-  // expire all metadata and data files necessarily.
-  EXPIRE_DATA("expire-data", 11),
-  DELETE_ORPHAN_FILES("delete-orphan-files", 12),
-  SYNC_HIVE_COMMIT("sync-hive-commit", 13);
+public final class Action {
 
+  private static final Map<Integer, Action> ACTIONS = Maps.newConcurrentMap();
+
+  private static final TableFormat[] DEFAULT_FORMATS =
+      new TableFormat[] {TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE};
+
+  static {
+    // default optimizing action
+    register(1, 10, "rewrite");
+    // expire all metadata and data files necessarily.
+    register(4, 1, "expire-data");
+    // delete orphan files
+    register(5, 2, "delete-orphans");
+    // sync optimizing commit to hive
+    register(6, 3, "sync-hive");
+  }
+
+  /** supported table formats of this action */
+  private final TableFormat[] formats;
   /**
-   * Arbitrary actions are actions that can be handled by a single optimizer. The processes they
-   * related to like refreshing, expiring, cleaning and syncing all share the same basic
-   * implementations which are {@link TableProcess} and {@link TableProcessState} and they won't
-   * have any spitted stages like optimizing processes(plan, execute, commit), so they can be easily
-   * triggered and managed. If you want to add a new action which is handled stand-alone, you should
-   * add it to this set, and you would find it's easy to implement the process and state.
+   * storage code of this action, normally this code should be identical within supported formats
    */
-  public static final Set<Action> ARBITRARY_ACTIONS =
-      Collections.unmodifiableSet(
-          Sets.newHashSet(REFRESH_METADATA, EXPIRE_DATA, DELETE_ORPHAN_FILES, SYNC_HIVE_COMMIT));
-
-  public static boolean isArbitrary(Action action) {
-    return ARBITRARY_ACTIONS.contains(action);
-  }
-
-  private final String description;
   private final int code;
+  /**
+   * the weight number of this action, the bigger the weight number, the higher positions of
+   * schedulers or front pages
+   */
+  private final int weight;
+  /** description of this action, will be shown in front pages */
+  private final String desc;
 
-  Action(String description, int dbValue) {
-    this.description = description;
-    this.code = dbValue;
+  private Action(TableFormat[] formats, int code, int weight, String desc) {
+    this.formats = formats;
+    this.code = code;
+    this.desc = desc;
+    this.weight = weight;
   }
 
-  public String getDescription() {
-    return description;
+  public static Action valueOf(int code) {
+    return ACTIONS.get(code);
+  }
+
+  public static synchronized void register(int code, int weight, String desc) {
+    register(DEFAULT_FORMATS, code, weight, desc);
+  }
+
+  public static synchronized void register(
+      TableFormat[] formats, int code, int weight, String desc) {
+    Map<TableFormat, Set<String>> format2Actions = buildMapFromActions();
+    for (TableFormat format : formats) {
+      if (format2Actions.get(format).contains(desc)) {
+        throw new IllegalArgumentException("Duplicated action: " + desc + " in format: " + format);
+      }
+    }
+    if (ACTIONS.put(code, new Action(formats, code, weight, desc)) != null) {
+      throw new IllegalArgumentException("Duplicated action code: " + code);
+    }
+  }
+
+  private static Map<TableFormat, Set<String>> buildMapFromActions() {
+    return ACTIONS.values().stream()
+        .flatMap(
+            action -> Arrays.stream(action.formats).map(format -> Pair.of(format, action.desc)))
+        .collect(
+            Collectors.groupingBy(
+                Pair::getKey, Collectors.mapping(Pair::getValue, Collectors.toSet())));
   }
 
   public int getCode() {
     return code;
   }
 
-  public static Action of(int code) {
-    for (Action action : Action.values()) {
-      if (action.code == code) {
-        return action;
-      }
+  public String getDesc() {
+    return desc;
+  }
+
+  public int getWeight() {
+    return weight;
+  }
+
+  public TableFormat[] supportedFormats() {
+    return formats;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
-    throw new IllegalArgumentException("No action with code: " + code);
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Action action = (Action) o;
+    return code == action.code;
+  }
+
+  @Override
+  public int hashCode() {
+    return code;
   }
 }

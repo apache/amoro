@@ -18,16 +18,12 @@
 
 package org.apache.amoro.process;
 
-/**
- * Status of any {@link AmoroProcess}. Only UNKNOWN, RUNNING, FINISHED(SUCCESS, CLOSED, FAILED) are
- * necessary Stage classes are used to define multiple phases of one process such as OptimizingStage
- */
+/** Status of any {@link AmoroProcess}. */
 public enum ProcessStatus {
   UNKNOWN,
   PENDING,
-
-  /** This status containing scheduled and running phases */
-  ACTIVE,
+  RUNNING,
+  SUBMITTED,
   SUCCESS,
   CLOSED,
   FAILED

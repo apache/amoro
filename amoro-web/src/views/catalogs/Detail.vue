@@ -91,7 +91,7 @@ const isEdit = computed(() => {
   return props.isEdit
 })
 const uploadUrl = computed(() => {
-  return '/ams/v1/files'
+  return '/api/ams/v1/files'
 })
 const isNewCatalog = computed(() => {
   const catalog = (route.query?.catalogname || '').toString()
@@ -207,7 +207,7 @@ async function getOptimizerGroupList() {
       okText: t('goToButtonText'),
       onOk: async () => {
         try {
-          router.push({ path: '/optimizing', query: { tab: 'optimizergroup' } })
+          router.push({ path: '/optimizing', query: { tab: 'optimizerGroups' } })
         }
         catch (error) {
           console.error('Navigation error:', error)

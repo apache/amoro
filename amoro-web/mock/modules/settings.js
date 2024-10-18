@@ -18,7 +18,7 @@
 
 export default [
   {
-    url: '/mock/ams/v1/settings/system',
+    url: '/mock/api/ams/v1/settings/system',
     method: 'get',
     response: () => ({
       code: 200,
@@ -30,7 +30,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/settings/containers',
+    url: '/mock/api/ams/v1/settings/containers',
     method: 'get',
     response: () => ({
       code: 200,

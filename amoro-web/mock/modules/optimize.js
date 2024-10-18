@@ -18,7 +18,7 @@
 
 export default [
   {
-    url: '/mock/ams/v1/optimize/resourceGroups/get',
+    url: '/mock/api/ams/v1/optimize/resourceGroups/get',
     method: 'get',
     response: () => ({
       code: 200,
@@ -29,7 +29,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/optimize/containers/get',
+    url: '/mock/api/ams/v1/optimize/containers/get',
     method: 'get',
     response: () => ({
       code: 200,
@@ -38,7 +38,16 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/optimize/optimizerGroups/:groups/tables',
+    url: '/mock/api/ams/v1/optimize/actions',
+    method: 'get',
+    response: () => ({
+      code: 200,
+      msg: 'success',
+      result: ['major', 'minor', 'clean', 'idle', 'pending']
+    }),
+  },
+  {
+    url: '/mock/api/ams/v1/optimize/optimizerGroups/:groups/tables',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -76,12 +85,12 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/optimize/optimizerGroups/local/optimizers',
+    url: '/mock/api/ams/v1/optimize/optimizerGroups/local/optimizers',
     method: 'post',
     response: () => ({ "message": "success", "code": 200, "result": "success to scaleOut optimizer" }),
   },
   {
-    url: '/mock/ams/v1/optimize/resourceGroups',
+    url: '/mock/api/ams/v1/optimize/resourceGroups',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -124,7 +133,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/optimize/resourceGroups',
+    url: '/mock/api/ams/v1/optimize/resourceGroups',
     method: 'put',
     response: () => ({
       "message": "success",
@@ -133,7 +142,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/optimize/resourceGroups',
+    url: '/mock/api/ams/v1/optimize/resourceGroups',
     method: 'post',
     response: () => ({
       "message": "success",
@@ -142,12 +151,12 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/optimize/resourceGroups/:id/delete/check',
+    url: '/mock/api/ams/v1/optimize/resourceGroups/:id/delete/check',
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": true }),
   },
   {
-    url: '/mock/ams/v1/optimize/resourceGroups/:id',
+    url: '/mock/api/ams/v1/optimize/resourceGroups/:id',
     method: 'delete',
     response: () => ({
       "message": "success",
@@ -156,7 +165,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/optimize/optimizerGroups/all/optimizers',
+    url: '/mock/api/ams/v1/optimize/optimizerGroups/all/optimizers',
     method: 'get',
     response: () => ({
       "message": "success",

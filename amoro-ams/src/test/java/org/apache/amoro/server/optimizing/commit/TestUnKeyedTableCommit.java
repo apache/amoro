@@ -24,9 +24,10 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
+import org.apache.amoro.exception.OptimizingCommitException;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
-import org.apache.amoro.server.exception.OptimizingCommitException;
+import org.apache.amoro.server.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.table.MixedTable;
@@ -279,10 +280,12 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     RewriteFilesInput input = getRewriteInput(rewriteData, rewritePos, deletes);
     RewriteFilesOutput output = new RewriteFilesOutput(dataOutput, deleteOutput, null);
 
-    TaskRuntime taskRuntime = Mockito.mock(TaskRuntime.class);
-    Mockito.when(taskRuntime.getPartition()).thenReturn(partitionPath);
-    Mockito.when(taskRuntime.getInput()).thenReturn(input);
-    Mockito.when(taskRuntime.getOutput()).thenReturn(output);
+    TaskRuntime<RewriteStageTask> taskRuntime = Mockito.mock(TaskRuntime.class);
+    RewriteStageTask task = Mockito.mock(RewriteStageTask.class);
+    Mockito.when(taskRuntime.getTaskDescriptor()).thenReturn(task);
+    Mockito.when(task.getPartition()).thenReturn(partitionPath);
+    Mockito.when(task.getInput()).thenReturn(input);
+    Mockito.when(task.getOutput()).thenReturn(output);
     UnKeyedTableCommit commit =
         new UnKeyedTableCommit(
             Optional.ofNullable(mixedTable.asUnkeyedTable().currentSnapshot())

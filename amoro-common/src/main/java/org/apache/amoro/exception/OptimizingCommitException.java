@@ -16,11 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
-public class BlockerConflictException extends AmoroRuntimeException {
+public class OptimizingCommitException extends Exception {
 
-  public BlockerConflictException(String message) {
+  private final boolean retryable;
+
+  public OptimizingCommitException(String message, boolean retryable) {
     super(message);
+    this.retryable = retryable;
+  }
+
+  public OptimizingCommitException(String message, Throwable cause) {
+    super(message, cause);
+    this.retryable = false;
+  }
+
+  public boolean isRetryable() {
+    return retryable;
   }
 }

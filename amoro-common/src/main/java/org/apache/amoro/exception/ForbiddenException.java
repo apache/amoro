@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
 /** forbiddenException */
 public class ForbiddenException extends AmoroRuntimeException {

@@ -28,11 +28,11 @@ import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.exception.IllegalTaskStateException;
+import org.apache.amoro.exception.PluginRetryAuthException;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
-import org.apache.amoro.server.exception.IllegalTaskStateException;
-import org.apache.amoro.server.exception.PluginRetryAuthException;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
@@ -414,7 +414,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   private class TableRuntimeRefresher extends TableRuntimeRefreshExecutor {
 
     public TableRuntimeRefresher() {
-      super(tableService(), 1, Integer.MAX_VALUE);
+      super(tableService(), 1, Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
 
     void refreshPending() {

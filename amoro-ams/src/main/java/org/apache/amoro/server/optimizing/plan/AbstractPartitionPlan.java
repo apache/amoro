@@ -22,6 +22,7 @@ import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.server.optimizing.OptimizingType;
+import org.apache.amoro.server.optimizing.RewriteStageTask;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -140,7 +141,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     deletes.stream().map(delete -> delete.path().toString()).forEach(reservedDeleteFiles::add);
   }
 
-  public List<TaskDescriptor> splitTasks(int targetTaskCount) {
+  public List<RewriteStageTask> splitTasks(int targetTaskCount) {
     if (taskSplitter == null) {
       taskSplitter = buildTaskSplitter();
     }
@@ -295,7 +296,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       return rewritePosDataFiles;
     }
 
-    public TaskDescriptor buildTask(OptimizingInputProperties properties) {
+    public RewriteStageTask buildTask(OptimizingInputProperties properties) {
       Set<ContentFile<?>> readOnlyDeleteFiles = Sets.newHashSet();
       Set<ContentFile<?>> rewriteDeleteFiles = Sets.newHashSet();
       for (ContentFile<?> deleteFile : deleteFiles) {
@@ -315,7 +316,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       PartitionSpec spec =
           MixedTableUtil.getMixedTablePartitionSpecById(tableObject, partition.first());
       String partitionPath = spec.partitionToPath(partition.second());
-      return new TaskDescriptor(
+      return new RewriteStageTask(
           tableRuntime.getTableIdentifier().getId(),
           partitionPath,
           input,

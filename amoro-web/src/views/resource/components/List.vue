@@ -183,27 +183,6 @@ async function removeGroup(record: IIOptimizeGroupItem) {
   })
 }
 
-const groupRecord = ref<IIOptimizeGroupItem>({
-  resourceGroup: {
-    name: '',
-    container: '',
-    properties: {},
-  },
-  occupationCore: 0,
-  occupationMemory: 0,
-  name: '',
-  container: '',
-  resourceOccupation: '',
-})
-const scaleOutVisible = ref<boolean>(false)
-function scaleOutGroup(record: IIOptimizeGroupItem) {
-  if (record.container === 'external') {
-    return
-  }
-  groupRecord.value = { ...record }
-  scaleOutVisible.value = true
-}
-
 function changeTable({ current = pagination.current, pageSize = pagination.pageSize }) {
   pagination.current = current
   const resetPage = pageSize !== pagination.pageSize
