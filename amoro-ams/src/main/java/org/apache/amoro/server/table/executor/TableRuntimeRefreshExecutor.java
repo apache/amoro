@@ -20,6 +20,7 @@ package org.apache.amoro.server.table.executor;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.table.TableManager;
@@ -73,8 +74,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     if (originalConfig.getOptimizingConfig().isEnabled()
         && !tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()) {
       OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
-      if (optimizingProcess != null
-          && optimizingProcess.getStatus() == OptimizingProcess.Status.RUNNING) {
+      if (optimizingProcess != null && optimizingProcess.getStatus() == ProcessStatus.RUNNING) {
         optimizingProcess.close();
       }
     }
