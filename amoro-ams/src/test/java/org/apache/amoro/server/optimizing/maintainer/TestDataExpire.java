@@ -194,17 +194,11 @@ public class TestDataExpire extends ExecutorTestBase {
 
     List<Record> expected;
     if (tableTestHelper().partitionSpec().isPartitioned()) {
-      if (expireByStringDate()) {
-        expected =
-            Lists.newArrayList(
-                createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
-      } else {
-        expected =
-            Lists.newArrayList(
-                createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
-                createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
-                createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00"));
-      }
+      expected =
+          Lists.newArrayList(
+              createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
+              createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
+              createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00"));
     } else {
       expected =
           Lists.newArrayList(
