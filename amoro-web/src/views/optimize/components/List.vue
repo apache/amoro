@@ -46,9 +46,9 @@ const releaseLoading = ref<boolean>(false)
 const optimizerGroupList = ref<ILableAndValue[]>([])
 
 const columns = computed(() => [
-  { dataIndex: 'tableName', title: t('table'), width: 200, scopedSlots: { customRender: 'tableName' } },
+  { dataIndex: 'tableName', title: t('table'), width: 300, scopedSlots: { customRender: 'tableName' } },
   { dataIndex: 'groupName', title: t('optimizerGroup'), width: 180, ellipsis: true },
-  { dataIndex: 'optimizeStatus', title: t('optimizingStatus'), width: 240, ellipsis: true },
+  { dataIndex: 'optimizeStatus', title: t('optimizingStatus'), width: 150, ellipsis: true },
   { dataIndex: 'duration', title: t('duration'), width: 150, ellipsis: true },
   { dataIndex: 'fileCount', title: t('fileCount'), width: 150, ellipsis: true },
   { dataIndex: 'fileSizeDesc', title: t('fileSize'), width: 150, ellipsis: true },
@@ -218,7 +218,7 @@ onMounted(async () => {
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'tableName'">
           <a-typography-text
-            style="width: 200px"
+            style="width: 300px"
             :ellipsis="{
               tooltip: record.tableName,
             }"
