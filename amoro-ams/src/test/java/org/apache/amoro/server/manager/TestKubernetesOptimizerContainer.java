@@ -415,7 +415,7 @@ public class TestKubernetesOptimizerContainer {
       // Create or replace the ConfigMap
       io.fabric8.kubernetes.client.dsl.Resource<ConfigMap> configMapResource =
           client.configMaps().inNamespace(namespace).resource(configMap);
-      configMapResource.createOrReplace();
+      configMapResource.create();
 
       return configMap;
     }
