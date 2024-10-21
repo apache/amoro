@@ -24,6 +24,7 @@ import org.apache.amoro.api.Blocker;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.server.catalog.CatalogService;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nullable;
 
@@ -100,13 +101,18 @@ public interface TableService extends CatalogService, TableManager {
    * @param fuzzyDbName the fuzzy db name used to filter the result, will be null if no filter set.
    * @param fuzzyTableName the fuzzy table name used to filter the result, will be null if no filter
    *     set.
+   * @param statusCodeFilters the status code used to filter the result, wil be null if no filter
+   *     set.
    * @param limit How many entries we want to retrieve.
    * @param offset The entries we'll skip when retrieving the entries.
+   * @return A pair with the first entry is the actual list under the filters with the offset and
+   *     limit, and second value will be the number of total entries under the filters.
    */
-  List<TableRuntimeMeta> getTableRuntimes(
+  Pair<List<TableRuntimeMeta>, Integer> getTableRuntimes(
       String optimizerGroup,
       @Nullable String fuzzyDbName,
       @Nullable String fuzzyTableName,
+      @Nullable List<Integer> statusCodeFilters,
       int limit,
       int offset);
 }

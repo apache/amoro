@@ -469,9 +469,12 @@ public interface TableMetaMapper {
           + "<if test='fuzzyDbName != null and (isPostgreSQL or isDerby)'> AND db_name like '%' || #{fuzzyDbName, jdbcType=VARCHAR} || '%' </if>"
           + "<if test='fuzzyTableName != null and isMySQL'> AND table_name like CONCAT('%', #{fuzzyTableName, jdbcType=VARCHAR}, '%') </if>"
           + "<if test='fuzzyTableName != null and (isPostgreSQL or isDerby)'> AND table_name like '%' || #{fuzzyTableName, jdbcType=VARCHAR} || '%' </if>"
+          + "<if test='statusCodeFilter != null and statusCodeFilter.size() > 0'>"
+          + "AND optimizing_status_code IN ("
+          + "<foreach item='item' collection='statusCodeFilter' separator=','>"
+          + "#{item}"
+          + "</foreach> ) </if>"
           + "ORDER BY optimizing_status_code, optimizing_status_start_time DESC "
-          + "<if test='isMySQL or isPostgreSQL'> LIMIT #{limitCount} OFFSET #{offsetNum} </if>"
-          + "<if test='isDerby'> OFFSET #{offsetNum} ROWS FETCH FIRST #{limitCount} ROWS ONLY </if>"
           + "</script>")
   @Results({
     @Result(property = "tableId", column = "table_id"),
@@ -523,6 +526,7 @@ public interface TableMetaMapper {
       @Param("optimizerGroup") String optimizerGroup,
       @Param("fuzzyDbName") String fuzzyDbName,
       @Param("fuzzyTableName") String fuzzyTableName,
-      @Param("limitCount") int limitCount,
-      @Param("offsetNum") int offset);
+      @Param("statusCodeFilter") List<Integer> statusCodeFilter,
+      @Param("pageNum") int pageNum,
+      @Param("pageSize") int pageSize);
 }

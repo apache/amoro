@@ -21,10 +21,6 @@ package org.apache.amoro.server.table;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
 
-import javax.annotation.Nullable;
-
-import java.util.Map;
-
 public interface TableManager extends TableRuntimeHandler {
 
   /**
@@ -36,9 +32,6 @@ public interface TableManager extends TableRuntimeHandler {
   AmoroTable<?> loadTable(ServerTableIdentifier tableIdentifier);
 
   TableRuntime getRuntime(Long tableId);
-
-  /** Return the table runtimes associated to the given filter. */
-  Map<Long, TableRuntime> listRuntimes(@Nullable String dbFilter, @Nullable String tableFilter);
 
   default boolean contains(Long tableId) {
     return getRuntime(tableId) != null;
