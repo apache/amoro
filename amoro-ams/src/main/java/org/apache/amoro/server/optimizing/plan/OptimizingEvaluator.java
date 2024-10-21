@@ -236,7 +236,8 @@ public class OptimizingEvaluator {
           PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_DELETE_FILES_PROP, 0);
       int totalDataFiles =
           PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
-      totalFileRecords = PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_RECORDS_PROP, 0);
+      totalFileRecords =
+          PropertyUtil.propertyAsLong(summary, SnapshotSummary.TOTAL_RECORDS_PROP, 0);
       totalFileSize = PropertyUtil.propertyAsLong(summary, SnapshotSummary.TOTAL_FILE_SIZE_PROP, 0);
       totalFileCount = totalDeleteFiles + totalDataFiles;
       danglingDeleteFileCount =
