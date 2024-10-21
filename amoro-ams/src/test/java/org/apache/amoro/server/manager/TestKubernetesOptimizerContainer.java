@@ -282,7 +282,7 @@ public class TestKubernetesOptimizerContainer {
   public void testAMSWithConfigMap() throws Exception {
     ConfigMap configMap = buildConfigMap();
 
-    // 和优化器的deployment对比
+    // Comparison with optimizer deployment
     PodTemplate podTemplate =
         kubernetesOptimizerContainer.initPodTemplateFromLocal(groupProperties);
     ResourceType resourceType = ResourceType.OPTIMIZER;
@@ -411,11 +411,6 @@ public class TestKubernetesOptimizerContainer {
               .addToData("podTemplate", podTemplate)
               .addToData("pullPolicy", "IfNotPresent")
               .build();
-
-      // Create or replace the ConfigMap
-      io.fabric8.kubernetes.client.dsl.Resource<ConfigMap> configMapResource =
-          client.configMaps().inNamespace(namespace).resource(configMap);
-      configMapResource.create();
 
       return configMap;
     }
