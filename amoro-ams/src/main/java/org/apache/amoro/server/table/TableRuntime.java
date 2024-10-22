@@ -611,11 +611,14 @@ public class TableRuntime extends StatedPersistentBase {
   public long getQuotaTime() {
     long calculatingEndTime = System.currentTimeMillis();
     long calculatingStartTime = calculatingEndTime - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
-    taskQuotas.removeIf(task -> task.checkExpired(calculatingStartTime));
-    long finishedTaskQuotaTime =
-        taskQuotas.stream()
-            .mapToLong(taskQuota -> taskQuota.getQuotaTime(calculatingStartTime))
-            .sum();
+    long finishedTaskQuotaTime;
+    synchronized (taskQuotas) {
+      taskQuotas.removeIf(task -> task.checkExpired(calculatingStartTime));
+      finishedTaskQuotaTime =
+          taskQuotas.stream()
+              .mapToLong(taskQuota -> taskQuota.getQuotaTime(calculatingStartTime))
+              .sum();
+    }
     return optimizingProcess == null
         ? finishedTaskQuotaTime
         : finishedTaskQuotaTime
