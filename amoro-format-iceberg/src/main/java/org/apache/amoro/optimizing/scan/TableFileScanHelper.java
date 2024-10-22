@@ -20,6 +20,7 @@ package org.apache.amoro.optimizing.scan;
 
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 
@@ -47,4 +48,6 @@ public interface TableFileScanHelper {
   CloseableIterable<FileScanResult> scan();
 
   TableFileScanHelper withPartitionFilter(Expression partitionFilter);
+
+  PartitionSpec getSpec(int specId);
 }
