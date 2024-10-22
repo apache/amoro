@@ -35,4 +35,17 @@ public class OptimizingStatusTest {
     assertEquals(OptimizingStatus.PENDING, OptimizingStatus.ofCode(600));
     assertEquals(OptimizingStatus.IDLE, OptimizingStatus.ofCode(700));
   }
+
+  @Test
+  public void testOptimizingStatusDisplayValue() {
+    assertEquals(7, OptimizingStatus.values().length);
+
+    assertEquals(OptimizingStatus.FULL_OPTIMIZING, OptimizingStatus.ofDisplayValue("full"));
+    assertEquals(OptimizingStatus.MAJOR_OPTIMIZING, OptimizingStatus.ofDisplayValue("major"));
+    assertEquals(OptimizingStatus.MINOR_OPTIMIZING, OptimizingStatus.ofDisplayValue("minor"));
+    assertEquals(OptimizingStatus.COMMITTING, OptimizingStatus.ofDisplayValue("committing"));
+    assertEquals(OptimizingStatus.PLANNING, OptimizingStatus.ofDisplayValue("planning"));
+    assertEquals(OptimizingStatus.PENDING, OptimizingStatus.ofDisplayValue("pending"));
+    assertEquals(OptimizingStatus.IDLE, OptimizingStatus.ofDisplayValue("idle"));
+  }
 }

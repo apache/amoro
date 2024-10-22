@@ -122,10 +122,6 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
 
   @Override
   public AmoroTable<?> loadTable(String database, String table) {
-    if (!databaseExists(database)) {
-      throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
-    }
-
     return formatCatalogAsOrder(
             TableFormat.MIXED_HIVE,
             TableFormat.MIXED_ICEBERG,

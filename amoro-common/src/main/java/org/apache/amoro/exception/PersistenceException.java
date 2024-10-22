@@ -16,14 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
-public class UndefinedException extends AmoroRuntimeException {
-  public UndefinedException(Throwable throwable) {
-    super(throwable);
+public class PersistenceException extends AmoroRuntimeException {
+  public PersistenceException(String message, Throwable cause) {
+    super(message, cause);
   }
 
-  public UndefinedException(String message) {
+  public PersistenceException(Throwable cause) {
+    super(cause);
+  }
+
+  public PersistenceException(String message) {
     super(message);
   }
 }

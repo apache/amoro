@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.persistence;
 
-import org.apache.amoro.server.exception.AmoroRuntimeException;
-import org.apache.amoro.server.exception.PersistenceException;
+import org.apache.amoro.exception.AmoroRuntimeException;
+import org.apache.amoro.exception.PersistenceException;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.ibatis.session.TransactionIsolationLevel;

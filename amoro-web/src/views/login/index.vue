@@ -126,12 +126,11 @@ export default defineComponent({
             html-type="submit"
             class="login-form-button"
           >
-            {{ $t("signin") }}
+            {{ $t("signIn") }}
           </a-button>
         </a-form-item>
       </a-form>
     </div>
-    <!-- <p class="desc">{{$t('welecomeTip')}}</p> -->
   </div>
 </template>
 
