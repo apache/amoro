@@ -18,6 +18,9 @@
 
 package org.apache.amoro.server.table;
 
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.NoSuchTableException;
 import org.apache.amoro.ServerTableIdentifier;
@@ -29,16 +32,16 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.exception.AlreadyExistsException;
+import org.apache.amoro.exception.BlockerConflictException;
+import org.apache.amoro.exception.IllegalMetadataException;
+import org.apache.amoro.exception.ObjectNotExistsException;
+import org.apache.amoro.exception.PersistenceException;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.catalog.CatalogBuilder;
 import org.apache.amoro.server.catalog.ExternalCatalog;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
-import org.apache.amoro.server.exception.AlreadyExistsException;
-import org.apache.amoro.server.exception.BlockerConflictException;
-import org.apache.amoro.server.exception.IllegalMetadataException;
-import org.apache.amoro.server.exception.ObjectNotExistsException;
-import org.apache.amoro.server.exception.PersistenceException;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
@@ -56,6 +59,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -342,18 +346,35 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public List<TableRuntimeMeta> getTableRuntimes(
+  public Pair<List<TableRuntimeMeta>, Integer> getTableRuntimes(
       String optimizerGroup,
       @Nullable String fuzzyDbName,
       @Nullable String fuzzyTableName,
+      @Nullable List<Integer> statusCodeFilters,
       int limit,
       int offset) {
     checkStarted();
-    return getAs(
-        TableMetaMapper.class,
-        mapper ->
-            mapper.selectTableRuntimesForOptimizerGroup(
-                optimizerGroup, fuzzyDbName, fuzzyTableName, limit, offset));
+
+    // page helper is 1-based
+    int pageNumber = (offset / limit) + 1;
+
+    try (Page<?> ignore = PageHelper.startPage(pageNumber, limit, true)) {
+      int total = 0;
+      List<TableRuntimeMeta> ret =
+          getAs(
+              TableMetaMapper.class,
+              mapper ->
+                  mapper.selectTableRuntimesForOptimizerGroup(
+                      optimizerGroup,
+                      fuzzyDbName,
+                      fuzzyTableName,
+                      statusCodeFilters,
+                      limit,
+                      offset));
+      PageInfo<TableRuntimeMeta> pageInfo = new PageInfo<>(ret);
+      total = (int) pageInfo.getTotal();
+      return Pair.of(ret, total);
+    }
   }
 
   public InternalCatalog getInternalCatalog(String catalogName) {
@@ -489,6 +510,9 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
   @VisibleForTesting
   void exploreExternalCatalog() {
+    if (!initialized.isDone()) {
+      throw new IllegalStateException("TableService is not initialized");
+    }
     long start = System.currentTimeMillis();
     LOG.info("Syncing external catalogs: {}", String.join(",", externalCatalogMap.keySet()));
     for (ExternalCatalog externalCatalog : externalCatalogMap.values()) {

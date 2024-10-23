@@ -18,7 +18,7 @@
 
 export default [
   {
-    url: '/mock/ams/v1/overview/summary',
+    url: '/mock/api/ams/v1/overview/summary',
     method: 'get',
     response: () => ({
       code: 200,
@@ -33,7 +33,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/overview/optimizing',
+    url: '/mock/api/ams/v1/overview/optimizing',
     method: 'get',
     response: () => ({
       code: 200,
@@ -48,7 +48,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/overview/top',
+    url: '/mock/api/ams/v1/overview/top',
     method: 'get',
     response: () => ({
       code: 200,
@@ -68,7 +68,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/overview/resource',
+    url: '/mock/api/ams/v1/overview/resource',
     method: 'get',
     response: () => ({
       code: 200,
@@ -97,7 +97,7 @@ export default [
     }),
   },
   {
-    url: '/mock/ams/v1/overview/dataSize',
+    url: '/mock/api/ams/v1/overview/dataSize',
     method: 'get',
     response: () => ({
       code: 200,

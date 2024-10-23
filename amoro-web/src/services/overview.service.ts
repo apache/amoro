@@ -19,19 +19,19 @@
 import request from '@/utils/request'
 
 export function getOverviewSummary() {
-  return request.get('ams/v1/overview/summary')
+  return request.get('api/ams/v1/overview/summary')
 }
 
 export function getOverviewFormat() {
-  return request.get('ams/v1/overview/format')
+  return request.get('api/ams/v1/overview/format')
 }
 
 export function getOverviewOptimizingStatus() {
-  return request.get('ams/v1/overview/optimizing')
+  return request.get('api/ams/v1/overview/optimizing')
 }
 
 export function getOverviewOperations() {
-  return request.get('ams/v1/overview/operations')
+  return request.get('api/ams/v1/overview/operations')
 }
 
 export function getTop10TableList(params: {
@@ -40,7 +40,7 @@ export function getTop10TableList(params: {
   count?: number
 }) {
   const { order, orderBy, count } = params
-  return request.get(`ams/v1/overview/top`, {
+  return request.get(`api/ams/v1/overview/top`, {
     params: {
       order: order || 'asc',
       orderBy: orderBy || 'healthScore',
@@ -50,9 +50,9 @@ export function getTop10TableList(params: {
 }
 
 export function getResourceUsageList(startTime: number) {
-  return request.get(`ams/v1/overview/resource`, { params: { startTime } })
+  return request.get(`api/ams/v1/overview/resource`, { params: { startTime } })
 }
 
 export function getDataSizeList(startTime: number) {
-  return request.get(`ams/v1/overview/dataSize`, { params: { startTime } })
+  return request.get(`api/ams/v1/overview/dataSize`, { params: { startTime } })
 }

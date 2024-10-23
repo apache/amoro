@@ -58,4 +58,13 @@ public enum OptimizingStatus {
     }
     return null;
   }
+
+  public static OptimizingStatus ofDisplayValue(String displayValue) {
+    for (OptimizingStatus status : values()) {
+      if (status.displayValue.equals(displayValue)) {
+        return status;
+      }
+    }
+    return null;
+  }
 }

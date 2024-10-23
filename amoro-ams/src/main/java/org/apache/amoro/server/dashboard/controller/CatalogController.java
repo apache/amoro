@@ -608,7 +608,7 @@ public class CatalogController {
   /** Construct a url */
   private String constructCatalogConfigFileUrl(String catalogName, String type, String key) {
     return String.format(
-        "/ams/v1/catalogs/%s/config/%s/%s", catalogName, type, key.replaceAll("\\.", "-"));
+        "/api/ams/v1/catalogs/%s/config/%s/%s", catalogName, type, key.replaceAll("\\.", "-"));
   }
 
   /** Get the config file content uri("/catalogs/{catalogName}/config/{type}/{key} */

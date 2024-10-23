@@ -24,7 +24,6 @@ import {
   shallowReactive,
   toRefs,
   watch,
-  ref,
 } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -49,13 +48,13 @@ export default defineComponent({
     const router = useRouter()
     const route = useRoute()
     const tabConfig: ILableAndValue[] = shallowReactive([
-      { label: t('optimizergroup'), value: 'optimizergroup' },
+      { label: t('optimizerGroups'), value: 'optimizerGroups' },
       { label: t('optimizers'), value: 'optimizers' },
     ])
     const placeholder = reactive(usePlaceholder())
     const pagination = reactive(usePagination())
     const state = reactive({
-      activeTab: 'optimizergroup' as string,
+      activeTab: 'optimizerGroups' as string,
       showGroupModal: false as boolean,
       groupEdit: false,
       groupEditRecord: {
@@ -102,7 +101,8 @@ export default defineComponent({
       if (editRecord) {
         state.optimizerEdit = true
         state.optimizerEditRecord = { ...editRecord }
-      } else {
+      }
+      else {
         state.optimizerEdit = false
       }
       state.showCreateOptimizer = true
@@ -118,7 +118,6 @@ export default defineComponent({
       state.showTab = true
     })
 
-    let createOptimizer1 = createOptimizer;
     return {
       placeholder,
       pagination,
@@ -160,16 +159,16 @@ export default defineComponent({
             <List type="optimizers" />
           </a-tab-pane>
           <a-tab-pane
-            key="optimizergroup"
-            :tab="t('optimizergroup')"
-            :class="[activeTab === 'optimizergroup' ? 'active' : '']"
+            key="optimizerGroups"
+            :tab="t('optimizerGroups')"
+            :class="[activeTab === 'optimizerGroups' ? 'active' : '']"
           >
             <a-button type="primary" class="g-mb-16" @click="editGroup(null)">
-              {{ t("addgroup") }}
+              {{ t("addGroup") }}
             </a-button>
             <List
               :key="groupKeyCount"
-              type="optimizergroup"
+              type="optimizerGroups"
               @edit-group="editGroup"
             />
           </a-tab-pane>
@@ -187,9 +186,9 @@ export default defineComponent({
       "
     />
     <CreateOptimizerModal
-        v-if="showCreateOptimizer"
-        @cancel="showCreateOptimizer = false"
-        @refresh="showCreateOptimizer = false"
+      v-if="showCreateOptimizer"
+      @cancel="showCreateOptimizer = false"
+      @refresh="showCreateOptimizer = false"
     />
   </div>
 </template>

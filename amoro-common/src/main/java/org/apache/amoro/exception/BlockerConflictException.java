@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
-public class PluginRetryAuthException extends AmoroRuntimeException {
+public class BlockerConflictException extends AmoroRuntimeException {
 
-  public PluginRetryAuthException(String message) {
+  public BlockerConflictException(String message) {
     super(message);
   }
 }

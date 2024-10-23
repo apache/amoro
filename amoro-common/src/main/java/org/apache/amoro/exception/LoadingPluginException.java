@@ -16,18 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
-public class PersistenceException extends AmoroRuntimeException {
-  public PersistenceException(String message, Throwable cause) {
-    super(message, cause);
-  }
+public class LoadingPluginException extends AmoroRuntimeException {
 
-  public PersistenceException(Throwable cause) {
-    super(cause);
-  }
-
-  public PersistenceException(String message) {
+  public LoadingPluginException(String message) {
     super(message);
+  }
+
+  public LoadingPluginException(String message, Throwable cause) {
+    super(message, cause);
   }
 }

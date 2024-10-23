@@ -261,7 +261,8 @@ optimizer:
     enabled: true
     properties:
       namespace: "default"
-      kube-config-path: "~/.kube/config"
+      # if service account rbac not have, need kube config set in optimizer deployment
+      #kube-config-path: "~/.kube/config"
       image: "apache/amoro:latest"
       pullPolicy: "IfNotPresent"
   extra: []
@@ -282,12 +283,12 @@ plugin:
 #      ## @param Enable or disable the Prometheus exporter
 #      ##
 #      enabled: true
-#      ## @param Prometheus port
-#      ##
-#      port: 7001
 #      ## @param Properties for the Prometheus exporter
 #      ##
-#      properties: ~
+#      properties:
+#      ## @param Prometheus port
+#      ##
+#        port: 7001
 
 ## Configure the ingress resource that allows you to access the
 ## Amoro installation. Set up the URL

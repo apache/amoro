@@ -144,7 +144,7 @@ onMounted(() => {
             <schema-field ref="schemaFieldRef" :loading="loading" :fields="field" />
           </a-form-item>
           <a-form-item
-            :label="$t('partitonField')"
+            :label="$t('partitionField')"
             name="partitonField"
           >
             <partition-field :loading="loading" :partition-fields="partitionFields" />

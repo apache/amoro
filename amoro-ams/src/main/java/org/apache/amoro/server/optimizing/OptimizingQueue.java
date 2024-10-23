@@ -22,13 +22,13 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.OptimizingTaskId;
+import org.apache.amoro.exception.OptimizingClosedException;
 import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
-import org.apache.amoro.server.exception.OptimizingClosedException;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
-import org.apache.amoro.server.optimizing.plan.TaskDescriptor;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
@@ -75,7 +75,7 @@ public class OptimizingQueue extends PersistentBase {
 
   private final QuotaProvider quotaProvider;
   private final Queue<TableOptimizingProcess> tableQueue = new LinkedTransferQueue<>();
-  private final Queue<TaskRuntime> retryTaskQueue = new LinkedTransferQueue<>();
+  private final Queue<TaskRuntime<RewriteStageTask>> retryTaskQueue = new LinkedTransferQueue<>();
   private final SchedulingPolicy scheduler;
   private final TableManager tableManager;
   private final Executor planExecutor;
@@ -282,7 +282,7 @@ public class OptimizingQueue extends PersistentBase {
     }
   }
 
-  public TaskRuntime getTask(OptimizingTaskId taskId) {
+  public TaskRuntime<?> getTask(OptimizingTaskId taskId) {
     return tableQueue.stream()
         .filter(p -> p.getProcessId() == taskId.getProcessId())
         .findFirst()
@@ -290,13 +290,13 @@ public class OptimizingQueue extends PersistentBase {
         .orElse(null);
   }
 
-  public List<TaskRuntime> collectTasks() {
+  public List<TaskRuntime<?>> collectTasks() {
     return tableQueue.stream()
         .flatMap(p -> p.getTaskMap().values().stream())
         .collect(Collectors.toList());
   }
 
-  public List<TaskRuntime> collectTasks(Predicate<TaskRuntime> predicate) {
+  public List<TaskRuntime<?>> collectTasks(Predicate<TaskRuntime<?>> predicate) {
     return tableQueue.stream()
         .flatMap(p -> p.getTaskMap().values().stream())
         .filter(predicate)
@@ -352,10 +352,10 @@ public class OptimizingQueue extends PersistentBase {
     private final long planTime;
     private final long targetSnapshotId;
     private final long targetChangeSnapshotId;
-    private final Map<OptimizingTaskId, TaskRuntime> taskMap = Maps.newHashMap();
-    private final Queue<TaskRuntime> taskQueue = new LinkedList<>();
+    private final Map<OptimizingTaskId, TaskRuntime<RewriteStageTask>> taskMap = Maps.newHashMap();
+    private final Queue<TaskRuntime<RewriteStageTask>> taskQueue = new LinkedList<>();
     private final Lock lock = new ReentrantLock();
-    private volatile Status status = OptimizingProcess.Status.RUNNING;
+    private volatile ProcessStatus status = ProcessStatus.RUNNING;
     private volatile String failedReason;
     private long endTime = AmoroServiceConstants.INVALID_TIME;
     private Map<String, Long> fromSequence = Maps.newHashMap();
@@ -397,7 +397,7 @@ public class OptimizingQueue extends PersistentBase {
       if (tableRuntime.getToSequence() != null) {
         toSequence = tableRuntime.getToSequence();
       }
-      if (this.status != OptimizingProcess.Status.CLOSED) {
+      if (this.status != ProcessStatus.CLOSED) {
         tableRuntime.recover(this);
       }
       loadTaskRuntimes(this);
@@ -414,7 +414,7 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     @Override
-    public Status getStatus() {
+    public ProcessStatus getStatus() {
       return status;
     }
 
@@ -422,10 +422,10 @@ public class OptimizingQueue extends PersistentBase {
     public void close() {
       lock.lock();
       try {
-        if (this.status != Status.RUNNING) {
+        if (this.status != ProcessStatus.RUNNING) {
           return;
         }
-        this.status = OptimizingProcess.Status.CLOSED;
+        this.status = ProcessStatus.CLOSED;
         this.endTime = System.currentTimeMillis();
         persistProcessCompleted(false);
         clearProcess(this);
@@ -469,7 +469,7 @@ public class OptimizingQueue extends PersistentBase {
           } else {
             clearProcess(this);
             this.failedReason = taskRuntime.getFailReason();
-            this.status = OptimizingProcess.Status.FAILED;
+            this.status = ProcessStatus.FAILED;
             this.endTime = taskRuntime.getEndTime();
             persistProcessCompleted(false);
           }
@@ -482,15 +482,14 @@ public class OptimizingQueue extends PersistentBase {
     // the cleanup of task should be done after unlock to avoid deadlock
     @Override
     public void releaseResourcesIfNecessary() {
-      if (this.status == OptimizingProcess.Status.FAILED
-          || this.status == OptimizingProcess.Status.CLOSED) {
+      if (this.status == ProcessStatus.FAILED || this.status == ProcessStatus.CLOSED) {
         cancelTasks();
       }
     }
 
     @Override
     public boolean isClosed() {
-      return status == OptimizingProcess.Status.CLOSED;
+      return status == ProcessStatus.CLOSED;
     }
 
     @Override
@@ -521,7 +520,7 @@ public class OptimizingQueue extends PersistentBase {
       return failedReason;
     }
 
-    private Map<OptimizingTaskId, TaskRuntime> getTaskMap() {
+    private Map<OptimizingTaskId, TaskRuntime<RewriteStageTask>> getTaskMap() {
       return taskMap;
     }
 
@@ -567,12 +566,12 @@ public class OptimizingQueue extends PersistentBase {
         try {
           hasCommitted = true;
           buildCommit().commit();
-          status = Status.SUCCESS;
+          status = ProcessStatus.SUCCESS;
           endTime = System.currentTimeMillis();
           persistProcessCompleted(true);
         } catch (Exception e) {
           LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
-          status = Status.FAILED;
+          status = ProcessStatus.FAILED;
           failedReason = ExceptionUtil.getErrorMessage(e, 4000);
           endTime = System.currentTimeMillis();
           persistProcessCompleted(false);
@@ -667,17 +666,20 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     private void loadTaskRuntimes(OptimizingProcess optimizingProcess) {
-      List<TaskRuntime> taskRuntimes =
-          getAs(
-              OptimizingMapper.class,
-              mapper ->
-                  mapper.selectTaskRuntimes(tableRuntime.getTableIdentifier().getId(), processId));
       try {
+        List<TaskRuntime<RewriteStageTask>> taskRuntimes =
+            getAs(
+                OptimizingMapper.class,
+                mapper ->
+                    mapper.selectTaskRuntimes(
+                        tableRuntime.getTableIdentifier().getId(), processId));
         Map<Integer, RewriteFilesInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
         taskRuntimes.forEach(
             taskRuntime -> {
               taskRuntime.claimOwnership(this);
-              taskRuntime.setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
+              taskRuntime
+                  .getTaskDescriptor()
+                  .setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
               taskMap.put(taskRuntime.getTaskId(), taskRuntime);
               if (taskRuntime.getStatus() == TaskRuntime.Status.PLANNED) {
                 taskQueue.offer(taskRuntime);
@@ -694,14 +696,11 @@ public class OptimizingQueue extends PersistentBase {
       }
     }
 
-    private void loadTaskRuntimes(List<TaskDescriptor> taskDescriptors) {
+    private void loadTaskRuntimes(List<RewriteStageTask> taskDescriptors) {
       int taskId = 1;
-      for (TaskDescriptor taskDescriptor : taskDescriptors) {
-        TaskRuntime taskRuntime =
-            new TaskRuntime(
-                new OptimizingTaskId(processId, taskId++),
-                taskDescriptor,
-                taskDescriptor.properties());
+      for (RewriteStageTask taskDescriptor : taskDescriptors) {
+        TaskRuntime<RewriteStageTask> taskRuntime =
+            new TaskRuntime<>(new OptimizingTaskId(processId, taskId++), taskDescriptor);
         LOG.info(
             "{} plan new task {}, summary {}",
             tableRuntime.getTableIdentifier(),

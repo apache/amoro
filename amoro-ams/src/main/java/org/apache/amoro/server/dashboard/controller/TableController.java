@@ -310,16 +310,20 @@ public class TableController {
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
     String type = ctx.queryParam("type");
+
+    if (StringUtils.isBlank(type)) {
+      // treat all blank string to null
+      type = null;
+    }
+
     String status = ctx.queryParam("status");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     int offset = (page - 1) * pageSize;
     int limit = pageSize;
-    ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     Preconditions.checkArgument(offset >= 0, "offset[%s] must >= 0", offset);
     Preconditions.checkArgument(limit >= 0, "limit[%s] must >= 0", limit);
-    Preconditions.checkState(serverCatalog.tableExists(db, table), "no such table");
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     ProcessStatus processStatus =
@@ -338,8 +342,6 @@ public class TableController {
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
-    ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
-    Preconditions.checkState(serverCatalog.tableExists(db, table), "no such table");
 
     Map<String, String> values =
         tableDescriptor.getTableOptimizingTypes(tableIdentifier.buildTableIdentifier());
@@ -361,10 +363,8 @@ public class TableController {
 
     int offset = (page - 1) * pageSize;
     int limit = pageSize;
-    ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     Preconditions.checkArgument(offset >= 0, "offset[%s] must >= 0", offset);
     Preconditions.checkArgument(limit >= 0, "limit[%s] must >= 0", limit);
-    Preconditions.checkState(serverCatalog.tableExists(db, table), "no such table");
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     List<OptimizingTaskInfo> optimizingTaskInfos =

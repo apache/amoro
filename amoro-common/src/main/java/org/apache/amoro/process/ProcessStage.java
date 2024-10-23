@@ -16,18 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.process;
 
-/** SignatureCheckException */
-public class SignatureCheckException extends AmoroRuntimeException {
+public class ProcessStage {
 
-  public SignatureCheckException() {}
+  /**
+   * Action Stage description value, normally this value should be identical within certain actions
+   */
+  private final String desc;
+  /**
+   * the weight number of this action, the bigger the weight number, the higher position on front
+   * pages
+   */
+  private final int weight;
 
-  public SignatureCheckException(String message) {
-    super(message);
+  public ProcessStage(String desc, int weight) {
+    this.desc = desc;
+    this.weight = weight;
   }
 
-  public SignatureCheckException(String message, Throwable throwable) {
-    super(message, throwable);
+  public String getDesc() {
+    return desc;
+  }
+
+  public int getWeight() {
+    return weight;
   }
 }

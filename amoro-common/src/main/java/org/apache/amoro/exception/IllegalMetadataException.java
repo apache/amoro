@@ -16,16 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
-import org.apache.amoro.api.TableIdentifier;
+public class IllegalMetadataException extends AmoroRuntimeException {
 
-public class AlreadyExistsException extends AmoroRuntimeException {
-  public AlreadyExistsException(String object) {
-    super(object + " already exists.");
-  }
-
-  public AlreadyExistsException(TableIdentifier tableIdentifier) {
-    super(getObjectName(tableIdentifier) + " already exists.");
+  public IllegalMetadataException(String message) {
+    super(message);
   }
 }

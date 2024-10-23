@@ -20,6 +20,7 @@ package org.apache.amoro.server.table.executor;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.table.TableManager;
@@ -31,10 +32,13 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   // 1 minutes
   private final long interval;
+  private final int maxPendingPartitions;
 
-  public TableRuntimeRefreshExecutor(TableManager tableRuntimes, int poolSize, long interval) {
+  public TableRuntimeRefreshExecutor(
+      TableManager tableRuntimes, int poolSize, long interval, int maxPendingPartitions) {
     super(tableRuntimes, poolSize);
     this.interval = interval;
+    this.maxPendingPartitions = maxPendingPartitions;
   }
 
   @Override
@@ -48,7 +52,8 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   private void tryEvaluatingPendingInput(TableRuntime tableRuntime, MixedTable table) {
     if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
-      OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
+      OptimizingEvaluator evaluator =
+          new OptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
       if (evaluator.isNecessary()) {
         OptimizingEvaluator.PendingInput pendingInput = evaluator.getOptimizingPendingInput();
         logger.debug(
@@ -69,8 +74,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     if (originalConfig.getOptimizingConfig().isEnabled()
         && !tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()) {
       OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
-      if (optimizingProcess != null
-          && optimizingProcess.getStatus() == OptimizingProcess.Status.RUNNING) {
+      if (optimizingProcess != null && optimizingProcess.getStatus() == ProcessStatus.RUNNING) {
         optimizingProcess.close();
       }
     }

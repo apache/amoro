@@ -24,13 +24,13 @@ import static org.apache.amoro.hive.op.UpdateHiveFiles.SYNC_DATA_TO_HIVE;
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.PrimaryKeyedFile;
+import org.apache.amoro.exception.OptimizingCommitException;
 import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.op.OverwriteBaseFiles;
 import org.apache.amoro.op.SnapshotSummary;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.server.AmoroServiceConstants;
-import org.apache.amoro.server.exception.OptimizingCommitException;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.amoro.utils.MixedTableUtil;
@@ -58,7 +58,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
 
   protected MixedTable table;
 
-  protected Collection<TaskRuntime> tasks;
+  protected Collection<TaskRuntime<RewriteStageTask>> tasks;
 
   protected Long fromSnapshotId;
 
@@ -68,7 +68,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
 
   public KeyedTableCommit(
       MixedTable table,
-      Collection<TaskRuntime> tasks,
+      Collection<TaskRuntime<RewriteStageTask>> tasks,
       Long fromSnapshotId,
       StructLikeMap<Long> fromSequenceOfPartitions,
       StructLikeMap<Long> toSequenceOfPartitions) {
@@ -99,8 +99,8 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
     StructLikeMap<Long> partitionOptimizedSequence =
         MixedTableUtil.readOptimizedSequence(table.asKeyedTable());
 
-    for (TaskRuntime taskRuntime : tasks) {
-      RewriteFilesInput input = taskRuntime.getInput();
+    for (TaskRuntime<RewriteStageTask> taskRuntime : tasks) {
+      RewriteFilesInput input = taskRuntime.getTaskDescriptor().getInput();
       StructLike partition = partition(input);
 
       // Check if the partition version has expired
@@ -125,7 +125,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
             .forEach(removedDeleteFiles::add);
       }
 
-      RewriteFilesOutput output = taskRuntime.getOutput();
+      RewriteFilesOutput output = taskRuntime.getTaskDescriptor().getOutput();
       if (CollectionUtils.isNotEmpty(hiveNewDataFiles)) {
         addedDataFiles.addAll(hiveNewDataFiles);
       } else if (output.getDataFiles() != null) {

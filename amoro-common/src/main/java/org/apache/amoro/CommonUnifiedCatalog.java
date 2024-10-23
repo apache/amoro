@@ -116,7 +116,6 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
 
   @Override
   public AmoroTable<?> loadTable(String database, String table) {
-
     return formatCatalogAsOrder(
             TableFormat.MIXED_HIVE,
             TableFormat.MIXED_ICEBERG,

@@ -16,15 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
-public class TaskRuntimeException extends AmoroRuntimeException {
+public class PluginRetryAuthException extends AmoroRuntimeException {
 
-  public TaskRuntimeException(String message) {
+  public PluginRetryAuthException(String message) {
     super(message);
-  }
-
-  public TaskRuntimeException(String format, Object... args) {
-    super(String.format(format, args));
   }
 }

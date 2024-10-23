@@ -8,7 +8,6 @@
     "build": "vite build",
     "gen:license": "node ./license.node.js",
     "preview": "vite preview",
-    "tslint": "npx vue-tsc --noEmit",
     "lint": "eslint ./src",
     "format": "eslint ./src --fix"
   },
@@ -45,20 +44,5 @@
   },
   "engines": {
     "node": ">=18.18.0"
-  },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
-  },
-  "gitHooks": {
-    "commit-msg": "commitlint -E GIT_PARAMS",
-    "pre-commit": "lint-staged"
-  },
-  "lint-staged": {
-    "*.{js,vue,ts}": [
-      "npm lint",
-      "git add"
-    ]
   }
 }

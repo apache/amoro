@@ -16,23 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
-public class OptimizingCommitException extends Exception {
+import org.apache.amoro.api.OptimizingTaskId;
 
-  private final boolean retryable;
+public class TaskNotFoundException extends AmoroRuntimeException {
+  private final OptimizingTaskId taskId;
 
-  public OptimizingCommitException(String message, boolean retryable) {
-    super(message);
-    this.retryable = retryable;
+  public TaskNotFoundException(OptimizingTaskId taskId) {
+    super("Task " + taskId + " not found.");
+    this.taskId = taskId;
   }
 
-  public OptimizingCommitException(String message, Throwable cause) {
-    super(message, cause);
-    this.retryable = false;
-  }
-
-  public boolean isRetryable() {
-    return retryable;
+  public OptimizingTaskId getTaskId() {
+    return taskId;
   }
 }

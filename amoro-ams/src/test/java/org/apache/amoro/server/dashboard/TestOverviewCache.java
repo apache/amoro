@@ -109,7 +109,7 @@ public class TestOverviewCache extends AMSTableTestBase {
 
   void refreshPending() {
     TableRuntimeRefreshExecutor refresher =
-        new TableRuntimeRefreshExecutor(tableService(), 1, Integer.MAX_VALUE);
+        new TableRuntimeRefreshExecutor(tableService(), 1, Integer.MAX_VALUE, Integer.MAX_VALUE);
     refresher.execute(tableService().getRuntime(serverTableIdentifier().getId()));
     refresher.dispose();
   }

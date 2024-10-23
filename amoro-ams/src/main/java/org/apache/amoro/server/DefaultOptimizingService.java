@@ -29,14 +29,14 @@ import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.exception.ForbiddenException;
+import org.apache.amoro.exception.IllegalTaskStateException;
+import org.apache.amoro.exception.ObjectNotExistsException;
+import org.apache.amoro.exception.PluginRetryAuthException;
+import org.apache.amoro.exception.TaskNotFoundException;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceGroup;
-import org.apache.amoro.server.exception.ForbiddenException;
-import org.apache.amoro.server.exception.IllegalTaskStateException;
-import org.apache.amoro.server.exception.ObjectNotExistsException;
-import org.apache.amoro.server.exception.PluginRetryAuthException;
-import org.apache.amoro.server.exception.TaskNotFoundException;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
@@ -164,13 +164,15 @@ public class DefaultOptimizingService extends StatedPersistentBase
     doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(token));
     OptimizingQueue optimizingQueue = optimizingQueueByToken.remove(token);
     OptimizerInstance optimizer = authOptimizers.remove(token);
-    optimizingQueue.removeOptimizer(optimizer);
+    if (optimizingQueue != null) {
+      optimizingQueue.removeOptimizer(optimizer);
+    }
   }
 
   @Override
   public void ping() {}
 
-  public List<TaskRuntime> listTasks(String optimizerGroup) {
+  public List<TaskRuntime<?>> listTasks(String optimizerGroup) {
     return getQueueByGroup(optimizerGroup).collectTasks();
   }
 
@@ -202,7 +204,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
       OptimizerThread optimizerThread = getAuthenticatedOptimizer(authToken).getThread(threadId);
       task.schedule(optimizerThread);
       LOG.info("OptimizerThread {} polled task {}", optimizerThread, task.getTaskId());
-      return task.getOptimizingTask();
+      return task.extractProtocolTask();
     } catch (Throwable throwable) {
       LOG.error("Schedule task {} failed, put it to retry queue", task.getTaskId(), throwable);
       queue.retryTask(task);
@@ -560,7 +562,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
       }
     }
 
-    private void retryTask(TaskRuntime task, OptimizingQueue queue) {
+    private void retryTask(TaskRuntime<?> task, OptimizingQueue queue) {
       LOG.info(
           "Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
           task.getTaskId(),
@@ -576,7 +578,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
       }
     }
 
-    private Predicate<TaskRuntime> buildSuspendingPredication(Set<String> activeTokens) {
+    private Predicate<TaskRuntime<?>> buildSuspendingPredication(Set<String> activeTokens) {
       return task ->
           StringUtils.isNotBlank(task.getToken())
                   && !activeTokens.contains(task.getToken())

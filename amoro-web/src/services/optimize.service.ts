@@ -19,7 +19,11 @@
 import request from '@/utils/request'
 
 export function getOptimizerGroups() {
-  return request.get('ams/v1/optimize/optimizerGroups')
+  return request.get('api/ams/v1/optimize/optimizerGroups')
+}
+
+export function getOptimizerAction() {
+  return request.get('api/ams/v1/optimize/actions')
 }
 
 export function getOptimizerTableList(
@@ -29,10 +33,11 @@ export function getOptimizerTableList(
     tableSearchInput: string
     page: number
     pageSize: number
+    actions: string[]
   },
 ) {
-  const { optimizerGroup, dbSearchInput, tableSearchInput, page, pageSize } = params
-  return request.get(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/tables`, { params: { dbSearchInput, tableSearchInput, page, pageSize } })
+  const { optimizerGroup, dbSearchInput, tableSearchInput, page, pageSize, actions } = params
+  return request.get(`api/ams/v1/optimize/optimizerGroups/${optimizerGroup}/tables`, { params: { dbSearchInput, tableSearchInput, page, pageSize, actions } })
 }
 
 export function getOptimizerResourceList(
@@ -43,13 +48,13 @@ export function getOptimizerResourceList(
   },
 ) {
   const { optimizerGroup, page, pageSize } = params
-  return request.get(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/optimizers`, { params: { page, pageSize } })
+  return request.get(`api/ams/v1/optimize/optimizerGroups/${optimizerGroup}/optimizers`, { params: { page, pageSize } })
 }
 
 export function getQueueResourceInfo(
   optimizerGroup: string,
 ) {
-  return request.get(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/info`)
+  return request.get(`api/ams/v1/optimize/optimizerGroups/${optimizerGroup}/info`)
 }
 
 export function scaleoutResource(
@@ -59,17 +64,17 @@ export function scaleoutResource(
   },
 ) {
   const { optimizerGroup, parallelism } = params
-  return request.post(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/optimizers`, { parallelism })
+  return request.post(`api/ams/v1/optimize/optimizerGroups/${optimizerGroup}/optimizers`, { parallelism })
 }
 
 export function createOptimizerResource(
-    params: {
-        optimizerGroup: string
-        parallelism: number
-    },
+  params: {
+    optimizerGroup: string
+    parallelism: number
+  },
 ) {
-    const { optimizerGroup, parallelism } = params
-    return request.post(`ams/v1/optimize/optimizers`, { optimizerGroup, parallelism })
+  const { optimizerGroup, parallelism } = params
+  return request.post(`api/ams/v1/optimize/optimizers`, { optimizerGroup, parallelism })
 }
 
 export function releaseResource(
@@ -79,31 +84,31 @@ export function releaseResource(
   },
 ) {
   const { jobId } = params
-  return request.delete(`ams/v1/optimize/optimizers/${jobId}`)
+  return request.delete(`api/ams/v1/optimize/optimizers/${jobId}`)
 }
 
 export async function getResourceGroupsListAPI() {
-  const result = await request.get('ams/v1/optimize/resourceGroups')
+  const result = await request.get('api/ams/v1/optimize/resourceGroups')
   return result
 }
 
 export async function getGroupContainerListAPI() {
-  const result = await request.get('ams/v1/optimize/containers/get')
+  const result = await request.get('api/ams/v1/optimize/containers/get')
   return result
 }
 
 export function addResourceGroupsAPI(params: { name: string, container: string, properties: { [prop: string]: string } }) {
-  return request.post('ams/v1/optimize/resourceGroups', params)
+  return request.post('api/ams/v1/optimize/resourceGroups', params)
 }
 
 export function updateResourceGroupsAPI(params: { name: string, container: string, properties: { [prop: string]: string } }) {
-  return request.put('ams/v1/optimize/resourceGroups', params)
+  return request.put('api/ams/v1/optimize/resourceGroups', params)
 }
 
 export function groupDeleteCheckAPI(params: { name: string }) {
-  return request.get(`/ams/v1/optimize/resourceGroups/${params.name}/delete/check`)
+  return request.get(`/api/ams/v1/optimize/resourceGroups/${params.name}/delete/check`)
 }
 
 export function groupDeleteAPI(params: { name: string }) {
-  return request.delete(`/ams/v1/optimize/resourceGroups/${params.name}`)
+  return request.delete(`/api/ams/v1/optimize/resourceGroups/${params.name}`)
 }

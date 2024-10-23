@@ -16,15 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
-public class LoadingPluginException extends AmoroRuntimeException {
+import org.apache.amoro.api.TableIdentifier;
 
-  public LoadingPluginException(String message) {
-    super(message);
+public class AlreadyExistsException extends AmoroRuntimeException {
+  public AlreadyExistsException(String object) {
+    super(object + " already exists.");
   }
 
-  public LoadingPluginException(String message, Throwable cause) {
-    super(message, cause);
+  public AlreadyExistsException(TableIdentifier tableIdentifier) {
+    super(getObjectName(tableIdentifier) + " already exists.");
   }
 }

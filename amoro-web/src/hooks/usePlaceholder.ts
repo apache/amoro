@@ -24,7 +24,7 @@ export function usePlaceholder() {
   const catalogPh = computed(() => t('catalog')).value
   const dbNamePh = computed(() => t('databaseName')).value
   const tableNamePh = computed(() => t('tableName')).value
-  const optimizerGroupPh = computed(() => t('optimzerGroup')).value
+  const optimizerGroupPh = computed(() => t('optimizerGroup')).value
   const resourceGroupPh = computed(() => t('resourceGroup')).value
   const parallelismPh = computed(() => t('parallelism')).value
   const usernamePh = computed(() => t('username')).value

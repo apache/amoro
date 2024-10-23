@@ -18,6 +18,9 @@
 
 package org.apache.amoro.server.dashboard;
 
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CommitMetaProducer;
@@ -65,7 +68,6 @@ import org.apache.amoro.table.descriptor.TagOrBranchInfo;
 import org.apache.amoro.utils.MixedDataFiles;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.HasTableOperations;
@@ -505,29 +507,34 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
     TableIdentifier tableIdentifier = amoroTable.id();
-    List<OptimizingProcessMeta> processMetaList =
-        getAs(
-            OptimizingMapper.class,
-            mapper ->
-                mapper.selectOptimizingProcesses(
-                    tableIdentifier.getCatalog(),
-                    tableIdentifier.getDatabase(),
-                    tableIdentifier.getTableName()));
-
-    processMetaList =
-        processMetaList.stream()
-            .filter(
-                p ->
-                    StringUtils.isBlank(type)
-                        || type.equalsIgnoreCase(p.getOptimizingType().getStatus().displayValue()))
-            .filter(p -> status == null || status.name().equalsIgnoreCase(p.getStatus().name()))
-            .collect(Collectors.toList());
-
-    int total = processMetaList.size();
-    processMetaList =
-        processMetaList.stream().skip(offset).limit(limit).collect(Collectors.toList());
-    if (CollectionUtils.isEmpty(processMetaList)) {
-      return Pair.of(Collections.emptyList(), 0);
+    int total = 0;
+    // page helper is 1-based
+    int pageNumber = (offset / limit) + 1;
+    List<OptimizingProcessMeta> processMetaList = Collections.emptyList();
+    try (Page<?> ignored = PageHelper.startPage(pageNumber, limit, true)) {
+      processMetaList =
+          getAs(
+              OptimizingMapper.class,
+              mapper ->
+                  mapper.selectOptimizingProcesses(
+                      tableIdentifier.getCatalog(),
+                      tableIdentifier.getDatabase(),
+                      tableIdentifier.getTableName(),
+                      type,
+                      status,
+                      offset,
+                      limit));
+      PageInfo<OptimizingProcessMeta> pageInfo = new PageInfo<>(processMetaList);
+      total = (int) pageInfo.getTotal();
+      LOG.info(
+          "Get optimizing processes total : {} , pageNumber:{}, limit:{}, offset:{}",
+          total,
+          pageNumber,
+          limit,
+          offset);
+      if (pageInfo.getSize() == 0) {
+        return Pair.of(Collections.emptyList(), 0);
+      }
     }
     List<Long> processIds =
         processMetaList.stream()
@@ -537,6 +544,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
         getAs(OptimizingMapper.class, mapper -> mapper.selectOptimizeTaskMetas(processIds)).stream()
             .collect(Collectors.groupingBy(OptimizingTaskMeta::getProcessId));
 
+    LOG.info("Get {} optimizing tasks. ", optimizingTasks.size());
     return Pair.of(
         processMetaList.stream()
             .map(p -> buildOptimizingProcessInfo(p, optimizingTasks.get(p.getProcessId())))
@@ -717,10 +725,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                 .map(item -> buildColumnInfoFromPartitionSpec(table.spec().schema(), item))
                 .collect(Collectors.toList()));
       }
+    } else {
+      serverTableMeta.setPkList(
+          serverTableMeta.getSchema().stream()
+              .filter(s -> table.schema().identifierFieldNames().contains(s.getField()))
+              .collect(Collectors.toList()));
     }
-    if (serverTableMeta.getPkList() == null) {
-      serverTableMeta.setPkList(new ArrayList<>());
-    }
+
     return serverTableMeta;
   }
 

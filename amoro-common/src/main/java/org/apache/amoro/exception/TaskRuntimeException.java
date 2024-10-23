@@ -16,39 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.plan;
+package org.apache.amoro.exception;
 
-import org.apache.amoro.optimizing.RewriteFilesInput;
+public class TaskRuntimeException extends AmoroRuntimeException {
 
-import java.util.Map;
-
-public class TaskDescriptor {
-  private final long tableId;
-  private final String partition;
-  private final RewriteFilesInput input;
-  private final Map<String, String> properties;
-
-  TaskDescriptor(
-      long tableId, String partition, RewriteFilesInput input, Map<String, String> properties) {
-    this.tableId = tableId;
-    this.partition = partition;
-    this.input = input;
-    this.properties = properties;
+  public TaskRuntimeException(String message) {
+    super(message);
   }
 
-  public String getPartition() {
-    return partition;
-  }
-
-  public RewriteFilesInput getInput() {
-    return input;
-  }
-
-  public Map<String, String> properties() {
-    return properties;
-  }
-
-  public long getTableId() {
-    return tableId;
+  public TaskRuntimeException(String format, Object... args) {
+    super(String.format(format, args));
   }
 }

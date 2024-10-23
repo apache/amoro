@@ -16,19 +16,17 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.exception;
+package org.apache.amoro.exception;
 
 import org.apache.amoro.api.OptimizingTaskId;
-import org.apache.amoro.server.optimizing.TaskRuntime;
 
 public class IllegalTaskStateException extends AmoroRuntimeException {
 
-  private final TaskRuntime.Status preStatus;
-  private final TaskRuntime.Status targetStatus;
+  private final String preStatus;
+  private final String targetStatus;
   private final OptimizingTaskId taskId;
 
-  public IllegalTaskStateException(
-      OptimizingTaskId taskId, TaskRuntime.Status preStatus, TaskRuntime.Status targetStatus) {
+  public IllegalTaskStateException(OptimizingTaskId taskId, String preStatus, String targetStatus) {
     super(
         String.format("Illegal Task of %s status from %s to %s", taskId, preStatus, targetStatus));
     this.taskId = taskId;
@@ -36,11 +34,11 @@ public class IllegalTaskStateException extends AmoroRuntimeException {
     this.targetStatus = targetStatus;
   }
 
-  public TaskRuntime.Status getPreStatus() {
+  public String getPreStatus() {
     return preStatus;
   }
 
-  public TaskRuntime.Status getTargetStatus() {
+  public String getTargetStatus() {
     return targetStatus;
   }
 
