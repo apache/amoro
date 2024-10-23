@@ -18,7 +18,7 @@
 
 import type { RouteRecordRaw } from 'vue-router'
 import { createRouter, createWebHistory } from 'vue-router'
-
+const SwaggerUI = () => import('@/components/SwaggerUI.vue')
 const Home = () => import('@/views/Home.vue')
 const Page404 = () => import('@/views/404.vue')
 const Catalogs = () => import('@/views/catalogs/index.vue')
@@ -102,6 +102,11 @@ const routes: Array<RouteRecordRaw> = [
     component: Login,
   },
   {
+    path: '/openapi-ui',
+    name: 'SwaggerUI',
+    component: SwaggerUI,
+  },
+  {
     path: '/404',
     name: 'Page404',
     component: Page404,
@@ -110,7 +115,7 @@ const routes: Array<RouteRecordRaw> = [
     path: '/:pathMatch(.*)*',
     name: 'Page404',
     component: Page404,
-  },
+  }
 ]
 
 const router = createRouter({

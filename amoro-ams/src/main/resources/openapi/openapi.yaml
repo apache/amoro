@@ -1,0 +1,982 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+openapi: 3.0.0
+info:
+  title: Amoro Server API
+  description: API documentation for Amoro Server
+  version: 1.0.0
+security:
+  - ApiKeyAuth: []
+  - SignatureAuth: []
+  - BasicAuth: []
+tags:
+  - name: Catalogs
+    description: Operations related to catalogs
+  - name: Optimize
+    description: Operations related to optimization
+  - name: Health
+    description: Health check operations
+  - name: Login
+    description: Login and logout operations
+  - name: Files
+    description: File operations
+  - name: Settings
+    description: System and container settings
+  - name: Overview
+    description: Overview operations
+paths:
+  /api/ams/v1/catalogs:
+    get:
+      tags:
+        - Catalogs
+      summary: Get list of catalogs
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CatalogMeta'
+    post:
+      tags:
+        - Catalogs
+      summary: Register catalog to ams
+      description: Register a new catalog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogRegisterInfo'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /api/ams/v1/catalogs/{catalogName}:
+    parameters:
+      - name: catalogName
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The name of the catalog
+    get:
+      tags:
+        - Catalogs
+      summary: Get detail of some catalog
+      description: Get detailed information of a specific catalog
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/CatalogSettingInfo'
+        '404':
+          description: Catalog not found
+    put:
+      tags:
+        - Catalogs
+      summary: Update catalog
+      description: Update the details of a specific catalog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogRegisterInfo'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+    delete:
+      tags:
+        - Catalogs
+      summary: Delete some catalog and information associated with the catalog
+      description: Delete a specific catalog
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /api/ams/v1/catalogs/{catalogName}/delete/check:
+    parameters:
+      - name: catalogName
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The name of the catalog
+    get:
+      tags:
+        - Catalogs
+      summary: Check whether we could delete the catalog
+      description: Check if a specific catalog can be deleted
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        type: boolean
+  /api/ams/v1/catalogs/{catalogName}/config/{type}/{key}:
+    get:
+      tags:
+        - Catalogs
+      summary: Get catalog config file content
+      description: Get the config file content uri("/api/ams/v1/catalogs/{catalogName}/config/{type}/{key}")
+      parameters:
+        - name: catalogName
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The name of the catalog
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The type of the config (e.g., storage-config, auth-config)
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The key of the config
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Catalog or config file not found
+  /api/ams/v1/optimize/optimizers/{jobId}:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The job ID of the optimizer
+    delete:
+      tags:
+        - Optimize
+      summary: Release optimizer
+      description: Release an optimizer by job ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /api/ams/v1/optimize/optimizers:
+    post:
+      tags:
+        - Optimize
+      summary: Scale out optimizers
+      description: Scale out optimizers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parallelism:
+                  type: integer
+                optimizerGroup:
+                  type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /api/ams/v1/optimize/containers/get:
+    get:
+      tags:
+        - Optimize
+      summary: Get containers
+      description: Get a list of containers
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        items:
+                          type: object
+  /api/ams/v1/health/status:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Perform a health check
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /api/ams/v1/login:
+    post:
+      tags:
+        - Login
+      summary: Handle login request
+      description: Handle login post request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /api/ams/v1/login/current:
+    get:
+      tags:
+        - Login
+      summary: Get current user
+      description: Get current user information
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/SessionInfo'
+  /api/ams/v1/logout:
+    post:
+      tags:
+        - Login
+      summary: Handle logout request
+      description: Handle logout post request
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /api/ams/v1/files:
+    post:
+      tags:
+        - Files
+      summary: Upload file
+      description: Upload a file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /api/ams/v1/files/{fileId}:
+    parameters:
+      - name: fileId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The ID of the file
+    get:
+      tags:
+        - Files
+      summary: Download file
+      description: Download a file by ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /api/ams/v1/settings/system:
+    get:
+      tags:
+        - Settings
+      summary: Get system settings
+      description: Get system settings
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/SystemSetting'
+  /api/ams/v1/settings/containers:
+    get:
+      tags:
+        - Settings
+      summary: Get container settings
+      description: Get container settings
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ContainerSetting'
+  /api/ams/v1/overview/resource:
+    get:
+      tags:
+        - Overview
+      summary: Get resource usage history
+      description: Get resource usage history
+      parameters:
+        - name: startTime
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The start time for the history
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ResourceUsageHistory'
+  /api/ams/v1/overview/dataSize:
+    get:
+      tags:
+        - Overview
+      summary: Get data size history
+      description: Get data size history
+      parameters:
+        - name: startTime
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The start time for the history
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/DataSizeHistory'
+  /api/ams/v1/overview/top:
+    get:
+      tags:
+        - Overview
+      summary: Get top tables
+      description: Get top tables based on specified criteria
+      parameters:
+        - name: order
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The order of sorting (asc or desc)
+        - name: orderBy
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The field to sort by (tableSize, fileCount, healthScore)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+          description: The number of top tables to return
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/OverviewTopTableItem'
+  /api/ams/v1/overview/summary:
+    get:
+      tags:
+        - Overview
+      summary: Get overview summary
+      description: Get an overview summary
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/OverviewSummary'
+  /api/ams/v1/overview/optimizing:
+    get:
+      tags:
+        - Overview
+      summary: Get optimizing status
+      description: Get the current optimizing status
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/OptimizingStatus'
+  /api/ams/v1/optimize/optimizerGroups:
+    get:
+      tags:
+        - Optimize
+      summary: Get optimizer groups
+      description: Get a list of optimizer groups
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        items:
+                          type: object
+    post:
+      tags:
+        - Optimize
+      summary: Create optimizer group
+      description: Create a new optimizer group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                container:
+                  type: string
+                properties:
+                  type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /api/ams/v1/optimize/optimizerGroups/{optimizerGroup}:
+    parameters:
+      - name: optimizerGroup
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The name of the optimizer group
+    get:
+      tags:
+        - Optimize
+      summary: Get optimizer group info
+      description: Get information about a specific optimizer group
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/OptimizerResourceInfo'
+    put:
+      tags:
+        - Optimize
+      summary: Update optimizer group
+      description: Update an existing optimizer group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                container:
+                  type: string
+                properties:
+                  type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+    delete:
+      tags:
+        - Optimize
+      summary: Delete optimizer group
+      description: Delete a specific optimizer group
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /api/ams/v1/optimize/optimizerGroups/{optimizerGroup}/optimizers:
+    post:
+      tags:
+        - Optimize
+      summary: Scale out optimizer
+      description: Scale out optimizers in a specific optimizer group
+      parameters:
+        - name: optimizerGroup
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The name of the optimizer group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parallelism:
+                  type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /api/ams/v1/optimize/resourceGroups:
+    get:
+      tags:
+        - Optimize
+      summary: Get resource groups
+      description: Get a list of resource groups
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        items:
+                          type: object
+    post:
+      tags:
+        - Optimize
+      summary: Create resource group
+      description: Create a new resource group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                container:
+                  type: string
+                properties:
+                  type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /api/ams/v1/optimize/resourceGroups/{resourceGroupName}:
+    parameters:
+      - name: resourceGroupName
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The name of the resource group
+    put:
+      tags:
+        - Optimize
+      summary: Update resource group
+      description: Update an existing resource group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                container:
+                  type: string
+                properties:
+                  type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+    delete:
+      tags:
+        - Optimize
+      summary: Delete resource group
+      description: Delete a specific resource group
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /api/ams/v1/optimize/resourceGroups/{resourceGroupName}/delete/check:
+    parameters:
+      - name: resourceGroupName
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The name of the resource group
+    get:
+      tags:
+        - Optimize
+      summary: Check if resource group can be deleted
+      description: Check if a specific resource group can be deleted
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        type: boolean
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: query
+      name: apikey
+    SignatureAuth:
+      type: apiKey
+      in: query
+      name: signature
+    BasicAuth:
+      type: http
+      scheme: basic
+  schemas:
+    Response:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: integer
+        result:
+          type: object
+    CatalogRegisterInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        authConfig:
+          type: object
+        storageConfig:
+          type: object
+        properties:
+          type: object
+        tableProperties:
+          type: object
+        tableFormatList:
+          type: array
+          items:
+            type: string
+    CatalogSettingInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        authConfig:
+          type: object
+        storageConfig:
+          type: object
+        properties:
+          type: object
+        tableProperties:
+          type: object
+        tableFormatList:
+          type: array
+          items:
+            type: string
+        optimizerGroup:
+          type: string
+    ConfigFileItem:
+      type: object
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+    SessionInfo:
+      type: object
+      properties:
+        userName:
+          type: string
+        loginTime:
+          type: string
+    OverviewResourceUsageItem:
+      type: object
+      properties:
+        timestamp:
+          type: integer
+        cpuUsage:
+          type: number
+        memoryUsage:
+          type: number
+    OverviewDataSizeItem:
+      type: object
+      properties:
+        timestamp:
+          type: integer
+        dataSize:
+          type: number
+    OverviewTopTableItem:
+      type: object
+      properties:
+        tableName:
+          type: string
+        tableSize:
+          type: integer
+        fileCount:
+          type: integer
+        healthScore:
+          type: integer
+    OverviewSummary:
+      type: object
+      properties:
+        totalCatalog:
+          type: integer
+        totalTableCount:
+          type: integer
+        totalDataSize:
+          type: integer
+        totalCpu:
+          type: integer
+        totalMemory:
+          type: integer
+    OptimizerResourceInfo:
+      type: object
+      properties:
+        resourceGroup:
+          type: object
+        occupationCore:
+          type: integer
+        occupationMemory:
+          type: integer
+    SystemSetting:
+      type: object
+      properties:
+        systemName:
+          type: string
+        version:
+          type: string
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+    ContainerSetting:
+      type: object
+      properties:
+        containerName:
+          type: string
+        containerType:
+          type: string
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+    ResourceUsageHistory:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        cpuUsage:
+          type: number
+        memoryUsage:
+          type: number
+    DataSizeHistory:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        dataSize:
+          type: number
+    OptimizingStatus:
+      type: object
+      properties:
+        status:
+          type: string
+        details:
+          type: object
+          additionalProperties:
+            type: string
+    CatalogMeta:
+      type: object
+      properties:
+        catalogName:
+          type: string
+        catalogType:
+          type: string
+        catalogProperties:
+          type: object
+          additionalProperties:
+            type: string
+        authConfigs:
+          type: object
+          additionalProperties:
+            type: string
+        storageConfigs:
+          type: object
+          additionalProperties:
+            type: string
