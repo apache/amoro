@@ -51,12 +51,11 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TableRuntime extends StatedPersistentBase {
 
@@ -64,8 +63,7 @@ public class TableRuntime extends StatedPersistentBase {
 
   private final TableRuntimeHandler tableHandler;
   private final ServerTableIdentifier tableIdentifier;
-  private final List<TaskRuntime.TaskQuota> taskQuotas =
-      Collections.synchronizedList(new ArrayList<>());
+  private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
 
   // for unKeyedTable or base table
   @StateField private volatile long currentSnapshotId = AmoroServiceConstants.INVALID_SNAPSHOT_ID;
@@ -611,14 +609,11 @@ public class TableRuntime extends StatedPersistentBase {
   public long getQuotaTime() {
     long calculatingEndTime = System.currentTimeMillis();
     long calculatingStartTime = calculatingEndTime - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
-    long finishedTaskQuotaTime;
-    synchronized (taskQuotas) {
-      taskQuotas.removeIf(task -> task.checkExpired(calculatingStartTime));
-      finishedTaskQuotaTime =
-          taskQuotas.stream()
-              .mapToLong(taskQuota -> taskQuota.getQuotaTime(calculatingStartTime))
-              .sum();
-    }
+    taskQuotas.removeIf(task -> task.checkExpired(calculatingStartTime));
+    long finishedTaskQuotaTime =
+        taskQuotas.stream()
+            .mapToLong(taskQuota -> taskQuota.getQuotaTime(calculatingStartTime))
+            .sum();
     return optimizingProcess == null
         ? finishedTaskQuotaTime
         : finishedTaskQuotaTime
