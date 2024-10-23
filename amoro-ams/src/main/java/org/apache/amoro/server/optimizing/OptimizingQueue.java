@@ -379,7 +379,9 @@ public class OptimizingQueue extends PersistentBase {
     public TaskRuntime<?> poll() {
       lock.lock();
       try {
-        return status != ProcessStatus.CLOSED && status != ProcessStatus.FAILED ? taskQueue.poll() : null;
+        return status != ProcessStatus.CLOSED && status != ProcessStatus.FAILED
+            ? taskQueue.poll()
+            : null;
       } finally {
         lock.unlock();
       }
