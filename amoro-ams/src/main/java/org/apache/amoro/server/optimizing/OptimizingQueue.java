@@ -200,8 +200,9 @@ public class OptimizingQueue extends PersistentBase {
     }
   }
 
-  private TaskRuntime fetchTask() {
-    return Optional.ofNullable(retryTaskQueue.poll()).orElseGet(this::fetchScheduledTask);
+  private TaskRuntime<?> fetchTask() {
+    TaskRuntime<?> task = retryTaskQueue.poll();
+    return task != null ? task : fetchScheduledTask();
   }
 
   private TaskRuntime<?> fetchScheduledTask() {
@@ -374,7 +375,7 @@ public class OptimizingQueue extends PersistentBase {
     public TaskRuntime<?> poll() {
       lock.lock();
       try {
-        return status != Status.CLOSED && status != Status.FAILED ? taskQueue.poll() : null;
+        return status != ProcessStatus.CLOSED && status != ProcessStatus.FAILED ? taskQueue.poll() : null;
       } finally {
         lock.unlock();
       }
@@ -454,6 +455,7 @@ public class OptimizingQueue extends PersistentBase {
               taskRuntime.getTaskId(),
               throwable);
         }
+        // task cancel means persistAndSetCompleted has been called
         if (taskRuntime.getStatus() == TaskRuntime.Status.CANCELED) {
           return;
         }
@@ -663,7 +665,6 @@ public class OptimizingQueue extends PersistentBase {
           () -> clearProcess(this));
     }
 
-    /** The cancellation should be invoked outside the process lock to avoid deadlock. */
     private void cancelTasks() {
       taskMap.values().forEach(TaskRuntime::tryCanceling);
     }
