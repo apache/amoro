@@ -30,7 +30,8 @@ const hasBreadcrumb = ref<boolean>(false)
 
 const statusMap = {
   PENDING: { title: 'PENDING', color: '#ffcc00' },
-  ACTIVE: { title: 'ACTIVE', color: '#1890ff' },
+  RUNNING: { title: 'RUNNING', color: '#1890ff' },
+  SUBMITTED: { title: 'SUBMITTED', color: '#4169E1' },
   CLOSED: { title: 'CLOSED', color: '#c9cdd4' },
   SUCCESS: { title: 'SUCCESS', color: '#0ad787' },
   FAILED: { title: 'FAILED', color: '#f5222d' },
