@@ -123,6 +123,10 @@ public class ServerTableIdentifier {
     return String.format("%s.%s.%s(tableId=%d)", catalog, database, tableName, id);
   }
 
+  public String getTableFullName() {
+    return String.format("%s.%s.%s", catalog, database, tableName);
+  }
+
   public static ServerTableIdentifier of(TableIdentifier tableIdentifier, TableFormat format) {
     return new ServerTableIdentifier(tableIdentifier, format);
   }

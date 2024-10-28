@@ -274,6 +274,33 @@ public class TableRuntime extends StatedPersistentBase {
         });
   }
 
+  public TableRuntime updateOptimizingQueue(String optimizerGroup) {
+    if (!optimizerGroup.equals(this.optimizerGroup)) {
+      return invokeConsistency(
+          () -> {
+            TableConfiguration configuration = null;
+            try {
+              configuration = tableConfiguration.clone();
+            } catch (Exception e) {
+              LOG.error("Failed to set table to optimizingConfig, group: {}", optimizerGroup);
+              return this;
+            }
+            // shutdown the process;
+            if (optimizingProcess != null) {
+              optimizingProcess.close();
+            }
+            // update runtime  optimizerGroup
+            this.optimizerGroup = optimizerGroup;
+            this.tableConfiguration.getOptimizingConfig().setOptimizerGroup(optimizerGroup);
+            // persist the configuration
+            persistUpdatingRuntime();
+            tableHandler.handleTableChanged(this, configuration);
+            return this;
+          });
+    }
+    return this;
+  }
+
   public void setTableSummary(OptimizingEvaluator.PendingInput tableSummary) {
     invokeConsistency(
         () -> {
@@ -421,15 +448,12 @@ public class TableRuntime extends StatedPersistentBase {
 
   private boolean updateConfigInternal(Map<String, String> properties) {
     TableConfiguration newTableConfig = TableConfigurations.parseTableConfig(properties);
+    // we don't compare the optimize group here!
+    OptimizingConfig optimizingConfig = newTableConfig.getOptimizingConfig();
+    optimizingConfig.setOptimizerGroup(
+        tableConfiguration.getOptimizingConfig().getOptimizerGroup());
     if (tableConfiguration.equals(newTableConfig)) {
       return false;
-    }
-    if (!Objects.equals(
-        this.optimizerGroup, newTableConfig.getOptimizingConfig().getOptimizerGroup())) {
-      if (optimizingProcess != null) {
-        optimizingProcess.close();
-      }
-      this.optimizerGroup = newTableConfig.getOptimizingConfig().getOptimizerGroup();
     }
     this.tableConfiguration = newTableConfig;
     return true;

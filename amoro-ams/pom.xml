@@ -443,6 +443,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- check regexp whether intersect -->
+        <!-- https://mvnrepository.com/artifact/dk.brics/automaton -->
+        <dependency>
+            <groupId>dk.brics</groupId>
+            <artifactId>automaton</artifactId>
+            <version>1.12-4</version>
+        </dependency>
 
     </dependencies>
 

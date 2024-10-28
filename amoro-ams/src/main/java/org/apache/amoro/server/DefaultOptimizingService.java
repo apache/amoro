@@ -319,6 +319,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   maxPlanningParallelism);
           optimizingQueueByGroup.put(resourceGroup.getName(), optimizingQueue);
         });
+    tableService.notify(TableService.NotifyEvent.RESOURCE_GROUP_INSERT, resourceGroup.getName());
   }
 
   @Override
@@ -327,6 +328,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
       doAs(ResourceMapper.class, mapper -> mapper.deleteResourceGroup(groupName));
       OptimizingQueue optimizingQueue = optimizingQueueByGroup.remove(groupName);
       optimizingQueue.dispose();
+      tableService.notify(TableService.NotifyEvent.RESOURCE_GROUP_DELETE, groupName);
     } else {
       throw new RuntimeException(
           String.format(
@@ -341,6 +343,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     Optional.ofNullable(optimizingQueueByGroup.get(resourceGroup.getName()))
         .ifPresent(queue -> queue.updateOptimizerGroup(resourceGroup));
     doAs(ResourceMapper.class, mapper -> mapper.updateResourceGroup(resourceGroup));
+    tableService.notify(TableService.NotifyEvent.RESOURCE_GROUP_UPDATE, resourceGroup);
   }
 
   @Override

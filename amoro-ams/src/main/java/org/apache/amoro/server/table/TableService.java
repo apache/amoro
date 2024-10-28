@@ -115,4 +115,12 @@ public interface TableService extends CatalogService, TableManager {
       @Nullable List<Integer> statusCodeFilters,
       int limit,
       int offset);
+
+  <T> void notify(NotifyEvent e, T param);
+
+  static enum NotifyEvent {
+    RESOURCE_GROUP_INSERT,
+    RESOURCE_GROUP_UPDATE,
+    RESOURCE_GROUP_DELETE
+  }
 }

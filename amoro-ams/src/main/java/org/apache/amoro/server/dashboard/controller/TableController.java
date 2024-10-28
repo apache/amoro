@@ -19,6 +19,7 @@
 package org.apache.amoro.server.dashboard.controller;
 
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_GROUP;
 
 import io.javalin.http.Context;
 import org.apache.amoro.Constants;
@@ -155,6 +156,12 @@ public class TableController {
       if (tableRuntimeSummary != null) {
         tableSummary.setHealthScore(tableRuntimeSummary.getHealthScore());
       }
+      // show the optimizeGroup in tableRuntime.
+      serverTableMeta
+          .getProperties()
+          .put(
+              SELF_OPTIMIZING_GROUP,
+              tableService.getRuntime(serverTableIdentifier.get().getId()).getOptimizerGroup());
     } else {
       tableSummary.setOptimizingStatus(OptimizingStatus.IDLE.name());
     }

@@ -24,7 +24,7 @@ import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonIgno
 import java.util.Optional;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TableConfiguration {
+public class TableConfiguration implements Cloneable {
   private boolean expireSnapshotEnabled;
   private long snapshotTTLMinutes;
   private int snapshotMinCount;
@@ -37,6 +37,21 @@ public class TableConfiguration {
   private TagConfiguration tagConfiguration;
 
   public TableConfiguration() {}
+
+  @Override
+  public TableConfiguration clone() throws CloneNotSupportedException {
+    return new TableConfiguration()
+        .setExpireSnapshotEnabled(this.expireSnapshotEnabled)
+        .setSnapshotTTLMinutes(this.snapshotTTLMinutes)
+        .setSnapshotMinCount(this.snapshotMinCount)
+        .setChangeDataTTLMinutes(this.changeDataTTLMinutes)
+        .setCleanOrphanEnabled(this.cleanOrphanEnabled)
+        .setOrphanExistingMinutes(this.orphanExistingMinutes)
+        .setDeleteDanglingDeleteFilesEnabled(this.deleteDanglingDeleteFilesEnabled)
+        .setOptimizingConfig(this.optimizingConfig)
+        .setExpiringDataConfig(this.expiringDataConfig)
+        .setTagConfiguration(this.tagConfiguration);
+  }
 
   public boolean isExpireSnapshotEnabled() {
     return expireSnapshotEnabled;

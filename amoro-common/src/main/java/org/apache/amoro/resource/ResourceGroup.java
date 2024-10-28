@@ -19,15 +19,40 @@
 package org.apache.amoro.resource;
 
 import org.apache.amoro.Constants;
+import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class ResourceGroup {
   private String name;
   private String container;
   private Map<String, String> properties;
+
+  public static String OPTIMIZE_GROUP_RULE_MATCH_KEY = "match.rules";
+
+  public static final String RULE_SEPARATOR = ",";
+  public static final String SPACE_SEPARATOR_REGEXP = "\\\\.";
+  public static final String SPACE_SEPARATOR = "\\.";
+
+  public static String getSpaceSeparator(String rule) {
+    if (rule.contains("\\.")) {
+      return SPACE_SEPARATOR_REGEXP;
+    } else {
+      return SPACE_SEPARATOR;
+    }
+  }
+
+  public static boolean validateRule(String rule) {
+    return rule.split(SPACE_SEPARATOR_REGEXP).length == 3
+        || rule.split(SPACE_SEPARATOR).length == 3;
+  }
 
   protected ResourceGroup() {}
 
@@ -50,6 +75,81 @@ public class ResourceGroup {
 
   public String getContainer() {
     return container;
+  }
+
+  public String getOptimizeGroupRule() {
+    return this.properties.getOrDefault(OPTIMIZE_GROUP_RULE_MATCH_KEY, null);
+  }
+
+  public boolean match(TableIdentifier tableIdentifier) {
+    return match(this.properties, tableIdentifier);
+  }
+
+  /**
+   * if only numbers, letters, and underscores are contained, then the rule is not regexp and the
+   * rule will overwrite the regexp rule
+   */
+  private boolean noRegExp(String rule) {
+    String fmtString = rule.replaceAll(getSpaceSeparator(rule), "");
+    if (fmtString.replaceAll("[a-zA-Z0-9_]", "").length() == 0) {
+      return true;
+    }
+    return false;
+  }
+
+  public List<String> getFullMatchNameInRules() {
+    return Arrays.stream(properties.getOrDefault(OPTIMIZE_GROUP_RULE_MATCH_KEY, "").split(","))
+        .filter(item -> noRegExp(item))
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Full match means we manually assign the table to this group.
+   *
+   * @param tableIdentifier
+   * @return
+   */
+  public boolean fullMatch(TableIdentifier tableIdentifier) {
+    final String tableName =
+        String.format(
+            "%s.%s.%s",
+            tableIdentifier.getCatalog(),
+            tableIdentifier.getDatabase(),
+            tableIdentifier.getTableName());
+    return Arrays.stream(properties.getOrDefault(OPTIMIZE_GROUP_RULE_MATCH_KEY, "").split(","))
+        .filter(item -> item.contains(tableName))
+        .findAny()
+        .isPresent();
+  }
+
+  private boolean match(Map<String, String> properties, TableIdentifier tableIdentifier) {
+    String rulePropertyKey = OPTIMIZE_GROUP_RULE_MATCH_KEY;
+    if (properties != null && properties.containsKey(rulePropertyKey)) {
+      List<String> matchRules =
+          Arrays.stream(properties.getOrDefault(rulePropertyKey, "").split(","))
+              .collect(Collectors.toList());
+
+      final String tableName =
+          String.format(
+              "%s.%s.%s",
+              tableIdentifier.getCatalog(),
+              tableIdentifier.getDatabase(),
+              tableIdentifier.getTableName());
+
+      return matchRules.stream()
+          .filter(
+              item -> {
+                item = item.trim();
+                // Compile the regex into a pattern
+                Pattern pattern = Pattern.compile(item);
+                // Create a matcher for the input
+                Matcher matcher = pattern.matcher(tableName);
+                return matcher.find();
+              })
+          .findFirst()
+          .isPresent();
+    }
+    return false;
   }
 
   // generate inner builder class, use addProperties instead of set

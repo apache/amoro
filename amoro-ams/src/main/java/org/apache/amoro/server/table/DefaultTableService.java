@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.table;
 
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_GROUP;
+
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -37,6 +39,8 @@ import org.apache.amoro.exception.BlockerConflictException;
 import org.apache.amoro.exception.IllegalMetadataException;
 import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.exception.PersistenceException;
+import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.catalog.CatalogBuilder;
 import org.apache.amoro.server.catalog.ExternalCatalog;
@@ -47,6 +51,7 @@ import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
+import org.apache.amoro.server.persistence.mapper.ResourceMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.blocker.TableBlocker;
@@ -65,13 +70,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -92,6 +91,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private final long blockerTimeout;
   private final Map<String, InternalCatalog> internalCatalogMap = new ConcurrentHashMap<>();
   private final Map<String, ExternalCatalog> externalCatalogMap = new ConcurrentHashMap<>();
+
+  private static final Map<String, ResourceGroup> optimizingGroupMap = new ConcurrentHashMap<>();
 
   private final Map<Long, TableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
 
@@ -412,6 +413,11 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     List<CatalogMeta> catalogMetas = getAs(CatalogMetaMapper.class, CatalogMetaMapper::getCatalogs);
     catalogMetas.forEach(this::initServerCatalog);
 
+    // cache resource groups
+    List<ResourceGroup> optimizerGroups =
+        getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
+    optimizerGroups.forEach(item -> optimizingGroupMap.put(item.getName(), item));
+
     List<TableRuntimeMeta> tableRuntimeMetaList =
         getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
     List<TableRuntime> tableRuntimes = new ArrayList<>(tableRuntimeMetaList.size());
@@ -496,6 +502,138 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   public boolean contains(Long tableId) {
     checkStarted();
     return tableRuntimeMap.containsKey(tableId);
+  }
+
+  @Override
+  public void notify(NotifyEvent e, Object param) {
+    synchronized (this) {
+      switch (e) {
+        case RESOURCE_GROUP_INSERT:
+          // refresh resource group cache
+          ResourceGroup rg = (ResourceGroup) param;
+          updateTableOptimizeGroup(rg, null);
+          optimizingGroupMap.put(rg.getName(), rg);
+          return;
+        case RESOURCE_GROUP_UPDATE:
+          // refresh resource group cache
+          ResourceGroup rgUpdated = (ResourceGroup) param;
+          updateTableOptimizeGroup(rgUpdated, optimizingGroupMap.get(rgUpdated.getName()));
+          optimizingGroupMap.put(rgUpdated.getName(), rgUpdated);
+          return;
+        case RESOURCE_GROUP_DELETE:
+          // refresh resource group cache
+          resetTableOptimizeGroup(optimizingGroupMap.remove(String.valueOf(param)));
+          return;
+        default:
+          throw new UnsupportedOperationException("Unsupported notify event: " + e);
+      }
+    }
+  }
+
+  private Map<String, String> getCatalogDefaultOptimizingGroup() {
+    Map<String, String> catalogDefaultGroupMap = new HashMap<>();
+    List<CatalogMeta> catalogMetas = getAs(CatalogMetaMapper.class, CatalogMetaMapper::getCatalogs);
+    catalogMetas.forEach(
+        item ->
+            catalogDefaultGroupMap.put(
+                item.getCatalogName(),
+                item.getCatalogProperties()
+                    .get(CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + SELF_OPTIMIZING_GROUP)));
+    return catalogDefaultGroupMap;
+  }
+
+  /**
+   * if the group is deleted, so we reset the table to default group
+   *
+   * @param groupDeleted, value before being deleted
+   */
+  private void resetTableOptimizeGroup(ResourceGroup groupDeleted) {
+    String groupName = groupDeleted.getName();
+    Map<String, String> catalogDefaultGroupMap = getCatalogDefaultOptimizingGroup();
+    List<String> tables = groupDeleted.getFullMatchNameInRules();
+    tableRuntimeMap
+        .values()
+        .forEach(
+            v -> {
+              ServerTableIdentifier sti = v.getTableIdentifier();
+              if (tables.contains(sti.getTableFullName())) {
+                // remove high prior match, so we rematch the rule.
+                v.updateOptimizingQueue(getOptimizingGroupByGroupRules(sti));
+              }
+              if (Objects.equal(v.getOptimizerGroup(), groupName)) {
+                v.updateOptimizingQueue(catalogDefaultGroupMap.get(sti.getCatalog()));
+              }
+            });
+  }
+
+  /**
+   * The updated logic is like this: 1、If a table that previously matched no longer matches, use the
+   * group's default values. 2、 3、Those groups are default tables, indicating that previous groups
+   * didn't match. There's no need to match again; just match with the current group.
+   *
+   * @param resourceGroup
+   */
+  private void updateTableOptimizeGroup(
+      ResourceGroup resourceGroup, ResourceGroup oldResourceGroup) {
+    Map<String, String> catalogDefaultGroupMap = getCatalogDefaultOptimizingGroup();
+    String groupName = resourceGroup.getName();
+
+    final List<String> oldFullMatchTables =
+        oldResourceGroup != null ? oldResourceGroup.getFullMatchNameInRules() : null;
+    final List<String> newFullMatchTables =
+        resourceGroup != null ? resourceGroup.getFullMatchNameInRules() : null;
+
+    tableRuntimeMap.forEach(
+        (k, v) -> {
+          String tableFullName = v.getTableIdentifier().getTableFullName();
+          ServerTableIdentifier sti = v.getTableIdentifier();
+          String catalogName = v.getTableIdentifier().getCatalog();
+
+          // 1 、 tables which use catalog default group
+          if (Objects.equal(catalogDefaultGroupMap.get(sti.getCatalog()), v.getOptimizerGroup())) {
+            // update with current group, we only check the table match current rule.
+            if (resourceGroup.match(sti.getIdentifier())) {
+              v.updateOptimizingQueue(groupName);
+            }
+          } else if (Objects.equal(v.getOptimizerGroup(), groupName)) {
+            // 2、the table belongs to the group, so we need check whether we should update it
+            if (oldFullMatchTables != null && oldFullMatchTables.contains(tableFullName)) {
+              // the full match rule is removed, so we need to rematch the table
+              if (!newFullMatchTables.contains(tableFullName)) {
+                v.updateOptimizingQueue(getOptimizingGroupByGroupRules(sti));
+              }
+            } else if (!resourceGroup.match(sti.getIdentifier())) {
+              // It no longer belongs to the current group. use catalog default group
+              v.updateOptimizingQueue(catalogDefaultGroupMap.get(sti.getCatalog()));
+            }
+          }
+        });
+  }
+
+  /**
+   * match the table with the group rules
+   *
+   * @return
+   */
+  private String getOptimizingGroupByGroupRules(ServerTableIdentifier identifier) {
+    // check whether we should change the group ruled by regexp
+    TableIdentifier tableIdentifier =
+        new TableIdentifier(
+            identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName());
+    Map<Boolean, List<ResourceGroup>> matchResourceGroup =
+        optimizingGroupMap.values().stream()
+            .filter(item -> item.match(tableIdentifier))
+            .collect(Collectors.partitioningBy(item -> item.fullMatch(tableIdentifier)));
+    if (matchResourceGroup != null) {
+      List<ResourceGroup> fullMatch = matchResourceGroup.get(true);
+      List<ResourceGroup> regMatch = matchResourceGroup.get(false);
+      if (fullMatch != null && fullMatch.size() > 0) {
+        return fullMatch.get(0).getName();
+      } else if (regMatch != null && regMatch.size() > 0) {
+        return regMatch.get(0).getName();
+      }
+    }
+    return null;
   }
 
   public void dispose() {
@@ -687,6 +825,14 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         return false;
       }
     }
+
+    Map<String, String> properties = new HashMap<>(table.properties());
+    // update tableRuntime optimize_group
+    String group = getOptimizingGroupByGroupRules(serverTableIdentifier);
+    if (group != null) {
+      properties.put(SELF_OPTIMIZING_GROUP, group);
+    }
+
     TableRuntime tableRuntime = new TableRuntime(serverTableIdentifier, this, table.properties());
     tableRuntimeMap.put(serverTableIdentifier.getId(), tableRuntime);
     tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
