@@ -42,6 +42,7 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.shade.guava32.com.google.common.base.Objects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -49,7 +50,14 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.BadRequestException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /** The controller that handles optimizer requests. */
@@ -85,7 +93,7 @@ public class OptimizerGroupController {
    * @param other
    * @return
    */
-  private boolean RegExpIntersect(String one, String other) {
+  private boolean regExpIntersect(String one, String other) {
     RegExp regExp1 = new RegExp(one);
     RegExp regExp2 = new RegExp(other);
     Automaton automaton1 = regExp1.toAutomaton();
@@ -110,9 +118,9 @@ public class OptimizerGroupController {
                       otherRule -> {
                         List<String> otherRuleSpace = splitRuleNamespace(otherRule);
                         // if there have some intersection, we return false;
-                        if (RegExpIntersect(newRuleSpace.get(2), otherRuleSpace.get(2))
-                            && RegExpIntersect(newRuleSpace.get(1), otherRuleSpace.get(1))
-                            && RegExpIntersect(newRuleSpace.get(0), otherRuleSpace.get(0))) {
+                        if (regExpIntersect(newRuleSpace.get(2), otherRuleSpace.get(2))
+                            && regExpIntersect(newRuleSpace.get(1), otherRuleSpace.get(1))
+                            && regExpIntersect(newRuleSpace.get(0), otherRuleSpace.get(0))) {
                           result.add(
                               String.format("%s -> %s:%s", newRule, otherGroupName, otherRule));
                         }
@@ -130,7 +138,7 @@ public class OptimizerGroupController {
   private List<List<String>> groupRuleOverlap(String newRules, String newName) {
     List<List<String>> result =
         optimizerManager.listResourceGroups().stream()
-            .filter(item -> !Objects.equals(item.getName(), newName))
+            .filter(item -> !Objects.equal(item.getName(), newName))
             .filter(item -> item.getOptimizeGroupRule() != null)
             .map(item -> groupRuleOverlap(newRules, item.getOptimizeGroupRule(), item.getName()))
             .filter(olItem -> olItem.size() > 0)
@@ -385,7 +393,7 @@ public class OptimizerGroupController {
     // check if the new rules is conflict with others
     String oldRules = optimizerManager.getResourceGroup(name).getOptimizeGroupRule();
     String newRules = newGroup.getOptimizeGroupRule();
-    if (!Objects.equals(oldRules, newRules)) {
+    if (!Objects.equal(oldRules, newRules)) {
       // only check the rule updated
       List<List<String>> intersectionMsg = groupRuleOverlap(newRules, name);
       if (intersectionMsg.size() > 0) {
