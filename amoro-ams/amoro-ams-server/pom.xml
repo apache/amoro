@@ -310,14 +310,14 @@
         <dependency>
             <groupId>org.apache.paimon</groupId>
             <artifactId>paimon-s3</artifactId>
-            <scope>runtime</scope>
+            <scope>${paimon-dependency-scope}</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.paimon</groupId>
             <artifactId>paimon-spark-common</artifactId>
             <version>${paimon.version}</version>
-            <scope>runtime</scope>
+            <scope>${paimon-dependency-scope}</scope>
         </dependency>
 
         <!-- test dependencies -->

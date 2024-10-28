@@ -143,6 +143,9 @@
 
         <rocksdb-dependency-scope>compile</rocksdb-dependency-scope>
         <lucene-dependency-scope>compile</lucene-dependency-scope>
+
+        <paimon-dependency-scope>runtime</paimon-dependency-scope>
+        <paimon-bundle-scope>compile</paimon-bundle-scope>
     </properties>
 
     <dependencies>
@@ -533,12 +536,14 @@
                 <groupId>org.apache.paimon</groupId>
                 <artifactId>paimon-bundle</artifactId>
                 <version>${paimon.version}</version>
+                <scope>${paimon-dependency-scope}</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.paimon</groupId>
                 <artifactId>paimon-s3</artifactId>
                 <version>${paimon.version}</version>
+                <scope>${paimon-dependency-scope}</scope>
             </dependency>
 
             <dependency>
@@ -1300,6 +1305,13 @@
             <properties>
                 <rocksdb-dependency-scope>provided</rocksdb-dependency-scope>
                 <lucene-dependency-scope>provided</lucene-dependency-scope>
+            </properties>
+        </profile>
+        <profile>
+            <id>no-option-dependency</id>
+            <properties>
+                <paimon-dependency-scope>provided</paimon-dependency-scope>
+                <paimon-bundle-scope>provided</paimon-bundle-scope>
             </properties>
         </profile>
     </profiles>
