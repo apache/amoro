@@ -49,7 +49,7 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
       ConfigOptions.key("kerberos.enabled").booleanType().defaultValue(false);
 
   public static ConfigOption<Boolean> LDAP_ENABLE =
-          ConfigOptions.key("ldap.enabled").booleanType().defaultValue(false);
+      ConfigOptions.key("ldap.enabled").booleanType().defaultValue(false);
 
   public static ConfigOption<Boolean> KERBEROS_PROXY_ENABLE =
       ConfigOptions.key("kerberos.proxy.enabled")
@@ -129,7 +129,9 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     sessionConf.put("jdbc.url", kyuubiJdbcUrl);
     Properties properties = new Properties();
 
-    if (!this.ldapEnabled && !metaStore.isKerberosAuthMethod() && Objects.nonNull(metaStore.getHadoopUsername())) {
+    if (!this.ldapEnabled
+        && !metaStore.isKerberosAuthMethod()
+        && Objects.nonNull(metaStore.getHadoopUsername())) {
       properties.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
       sessionConf.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
     }
