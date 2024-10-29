@@ -281,7 +281,7 @@ public class CatalogController {
             serverAuthConfig,
             catalogMeta.getCatalogProperties(),
             AUTH_CONFIGS_KEY_SECRET_KEY,
-            getStorageAccessKey(storageType));
+            getStorageSecretKey(storageType));
         break;
     }
     catalogMeta.setAuthConfigs(metaAuthConfig);
