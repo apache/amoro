@@ -339,7 +339,7 @@ public class CatalogController {
       return AliyunProperties.CLIENT_ACCESS_KEY_ID;
     }
     // default s3
-    return S3FileIOProperties.SECRET_ACCESS_KEY;
+    return S3FileIOProperties.ACCESS_KEY_ID;
   }
 
   private String getStorageSecretKey(String storageType) {
