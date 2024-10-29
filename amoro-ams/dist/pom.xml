@@ -30,6 +30,10 @@
     <name>Amoro Project AMS Dist</name>
     <url>https://amoro.apache.org</url>
 
+    <properties>
+        <assembly.descriptor.file>src/main/assemblies/bin.xml</assembly.descriptor.file>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
@@ -76,7 +80,7 @@
                         <phase>package</phase>
                         <configuration>
                             <descriptors>
-                                <descriptor>src/main/assemblies/bin.xml</descriptor>
+                                <descriptor>${assembly.descriptor.file}</descriptor>
                             </descriptors>
                             <finalName>apache-amoro-${project.version}-bin</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
@@ -94,4 +98,12 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>no-plugin-bin</id>
+            <properties>
+                <assembly.descriptor.file>src/main/assemblies/release-bin.xml</assembly.descriptor.file>
+            </properties>
+        </profile>
+    </profiles>
 </project>
