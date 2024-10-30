@@ -133,6 +133,7 @@
         <dependency>
             <groupId>org.apache.paimon</groupId>
             <artifactId>paimon-bundle</artifactId>
+            <scope>${paimon-bundle-scope}</scope>
         </dependency>
 
         <dependency>
