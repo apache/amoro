@@ -34,7 +34,7 @@ import org.apache.amoro.server.dashboard.model.TableBasicInfo;
 import org.apache.amoro.server.dashboard.model.TableStatistics;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.TableStatCollector;
-import org.apache.amoro.server.optimizing.MetricsSummary;
+import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;

@@ -32,6 +32,7 @@ import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.op.SnapshotSummary;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
+import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.utils.IcebergTableUtil;

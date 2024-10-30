@@ -35,7 +35,7 @@ import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.KeyedTableCommit;
-import org.apache.amoro.server.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;

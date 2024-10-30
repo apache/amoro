@@ -25,7 +25,7 @@ import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.server.AmoroServiceConstants;
-import org.apache.amoro.server.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableSnapshot;

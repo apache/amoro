@@ -20,7 +20,7 @@ package org.apache.amoro.server.optimizing.flow.checker;
 
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.table.SupportHive;
-import org.apache.amoro.server.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.flow.view.MatchResult;
 import org.apache.amoro.server.optimizing.flow.view.TableDataView;

@@ -23,7 +23,7 @@ import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
-import org.apache.amoro.server.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;

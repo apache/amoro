@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.optimizing;
 
+import org.apache.amoro.optimizing.MetricsSummary;
+
 import java.util.Map;
 
 /** A simplified meta of task, not include input/output files. */

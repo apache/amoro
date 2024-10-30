@@ -20,7 +20,7 @@ package org.apache.amoro.server.persistence;
 
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
-import org.apache.amoro.server.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.utils.CompressUtil;

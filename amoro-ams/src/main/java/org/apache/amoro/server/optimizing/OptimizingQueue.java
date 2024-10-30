@@ -23,8 +23,10 @@ import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.exception.OptimizingClosedException;
+import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
@@ -586,7 +588,12 @@ public class OptimizingQueue extends PersistentBase {
 
     @Override
     public MetricsSummary getSummary() {
-      return new MetricsSummary(taskMap.values());
+      List<MetricsSummary> taskSummaries = taskMap.values().stream()
+          .map(TaskRuntime::getTaskDescriptor)
+          .map(RewriteStageTask::getSummary)
+          .collect(Collectors.toList());
+
+       return new MetricsSummary(taskSummaries);
     }
 
     private UnKeyedTableCommit buildCommit() {

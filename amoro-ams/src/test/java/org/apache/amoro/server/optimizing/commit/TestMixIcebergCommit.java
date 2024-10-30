@@ -32,7 +32,7 @@ import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.server.optimizing.KeyedTableCommit;
-import org.apache.amoro.server.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.iceberg.ContentFile;

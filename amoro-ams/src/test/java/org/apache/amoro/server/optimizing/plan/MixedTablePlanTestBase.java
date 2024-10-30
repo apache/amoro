@@ -31,7 +31,7 @@ import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
-import org.apache.amoro.server.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableRuntime;

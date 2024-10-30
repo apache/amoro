@@ -16,15 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing;
+package org.apache.amoro.optimizing;
 
-import static org.apache.amoro.server.dashboard.utils.AmsUtil.byteToXB;
-
-import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.amoro.table.descriptor.FilesStatistics;
 import org.apache.amoro.table.descriptor.FilesStatisticsBuilder;
+import org.apache.amoro.utils.CommonUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
@@ -113,10 +111,8 @@ public class MetricsSummary {
     }
   }
 
-  public MetricsSummary(Collection<TaskRuntime<RewriteStageTask>> taskRuntimes) {
-    taskRuntimes.stream()
-        .map(TaskRuntime::getTaskDescriptor)
-        .map(RewriteStageTask::getSummary)
+  public MetricsSummary(Collection<MetricsSummary> taskSummaries) {
+    taskSummaries
         .forEach(
             metrics -> {
               newDataFileCnt += metrics.getNewDataFileCnt();
@@ -197,7 +193,7 @@ public class MetricsSummary {
   }
 
   private void put(Map<String, String> summary, String key, long value, boolean humanReadable) {
-    summary.put(key, humanReadable ? byteToXB(value) : String.valueOf(value));
+    summary.put(key, humanReadable ? CommonUtil.byteToXB(value) : String.valueOf(value));
   }
 
   public FilesStatistics getInputFilesStatistics() {

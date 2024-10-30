@@ -32,7 +32,7 @@ import org.apache.amoro.hive.formats.IcebergHiveCatalogTestHelper;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.server.optimizing.MetricsSummary;
+import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;

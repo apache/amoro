@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.optimizing;
 
+import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 
 import java.util.Map;
