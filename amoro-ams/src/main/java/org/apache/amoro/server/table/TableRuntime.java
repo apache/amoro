@@ -51,12 +51,11 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TableRuntime extends StatedPersistentBase {
 
@@ -64,8 +63,7 @@ public class TableRuntime extends StatedPersistentBase {
 
   private final TableRuntimeHandler tableHandler;
   private final ServerTableIdentifier tableIdentifier;
-  private final List<TaskRuntime.TaskQuota> taskQuotas =
-      Collections.synchronizedList(new ArrayList<>());
+  private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
 
   // for unKeyedTable or base table
   @StateField private volatile long currentSnapshotId = AmoroServiceConstants.INVALID_SNAPSHOT_ID;

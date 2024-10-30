@@ -18,10 +18,16 @@
 
 package org.apache.amoro.server.manager;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PodTemplate;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceType;
@@ -270,5 +276,143 @@ public class TestKubernetesOptimizerContainer {
             .getLimits()
             .get("memory")
             .toString());
+  }
+
+  @Test
+  public void testAMSWithConfigMap() throws Exception {
+    ConfigMap configMap = buildConfigMap();
+
+    // Comparison with optimizer deployment
+    PodTemplate podTemplate =
+        kubernetesOptimizerContainer.initPodTemplateFromLocal(groupProperties);
+    ResourceType resourceType = ResourceType.OPTIMIZER;
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put("memory", "1024");
+    Resource resource =
+        new Resource.Builder("KubernetesContainer", "k8s", resourceType)
+            .setMemoryMb(0)
+            .setThreadCount(1)
+            .setProperties(properties)
+            .build();
+    groupProperties.putAll(resource.getProperties());
+
+    // generate pod start args
+    long memoryPerThread;
+    long memory;
+
+    if (resource.getMemoryMb() > 0) {
+      memory = resource.getMemoryMb();
+    } else {
+      memoryPerThread = Long.parseLong(checkAndGetProperty(groupProperties, MEMORY_PROPERTY));
+      memory = memoryPerThread * resource.getThreadCount();
+    }
+    String startUpArgs =
+        String.format(
+            "/entrypoint.sh optimizer %s %s",
+            memory, kubernetesOptimizerContainer.buildOptimizerStartupArgsString(resource));
+    // read the image version from config and assert it , but not from podTemplate
+    String image = checkAndGetProperty(groupProperties, IMAGE);
+    String pullPolicy = checkAndGetProperty(groupProperties, PULL_POLICY);
+    String pullSecrets = groupProperties.getOrDefault(PULL_SECRETS, "");
+    String cpuLimitFactorString = groupProperties.getOrDefault(CPU_FACTOR_PROPERTY, "1.0");
+    double cpuLimitFactor = Double.parseDouble(cpuLimitFactorString);
+    int cpuLimit = (int) (Math.ceil(cpuLimitFactor * resource.getThreadCount()));
+
+    List<LocalObjectReference> imagePullSecretsList =
+        Arrays.stream(pullSecrets.split(";"))
+            .map(secret -> new LocalObjectReferenceBuilder().withName(secret).build())
+            .collect(Collectors.toList());
+
+    String resourceId = resource.getResourceId();
+    String groupName = resource.getGroupName();
+
+    Assert.assertEquals(1, podTemplate.getTemplate().getSpec().getContainers().size());
+    Assert.assertEquals(
+        "apache/amoro:0.6", podTemplate.getTemplate().getSpec().getContainers().get(0).getImage());
+
+    Deployment deployment =
+        kubernetesOptimizerContainer.initPodTemplateFromFrontEnd(
+            podTemplate,
+            image,
+            pullPolicy,
+            cpuLimit,
+            groupName,
+            resourceId,
+            startUpArgs,
+            memory,
+            imagePullSecretsList);
+
+    // Assert the Deployment
+    Assert.assertEquals("amoro-optimizer-" + resourceId, deployment.getMetadata().getName());
+    Assert.assertEquals(
+        "k8s",
+        deployment.getSpec().getTemplate().getMetadata().getLabels().get("AmoroOptimizerGroup"));
+    Assert.assertEquals(1, deployment.getSpec().getReplicas().intValue());
+    Assert.assertEquals(
+        "IfNotPresent",
+        deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
+
+    Assert.assertEquals(1, deployment.getSpec().getTemplate().getSpec().getContainers().size());
+    Assert.assertEquals(
+        "apache/amoro:0.7-SNAPSHOT",
+        podTemplate.getTemplate().getSpec().getContainers().get(0).getImage());
+    // Assert the ConfigMap
+    Assert.assertEquals("amoro/amoro:0.8-SNAPSHOT", configMap.getData().get("image"));
+    Assert.assertEquals("IfNotPresent", configMap.getData().get("pullPolicy"));
+  }
+
+  private static ConfigMap buildConfigMap() {
+    Config config = new ConfigBuilder().build();
+    try (KubernetesClient client = new KubernetesClientBuilder().withConfig(config).build()) {
+
+      String namespace = null;
+      if (namespace == null) {
+        namespace = client.getNamespace();
+      }
+      if (namespace == null) {
+        namespace = "default";
+      }
+
+      String name = "kubernetes-config";
+
+      // The YAML formatted podTemplate
+      String podTemplate =
+          "apiVersion: apps/v1\n"
+              + "kind: PodTemplate\n"
+              + "template:\n"
+              + "  metadata:\n"
+              + "    labels:\n"
+              + "      app: <NAME_PREFIX><resourceId>\n"
+              + "      AmoroOptimizerGroup: <groupName>\n"
+              + "      AmoroResourceId: <resourceId>\n"
+              + "  spec:\n"
+              + "    containers:\n"
+              + "      - name: optimizer\n"
+              + "        image: amoro/amoro:0.8-SNAPSHOT\n"
+              + "        resources:\n"
+              + "          limits:\n"
+              + "            memory: 2048Mi\n"
+              + "            cpu: 2\n"
+              + "          requests:\n"
+              + "            memory: 2048Mi\n"
+              + "            cpu: 2";
+
+      // Build ConfigMap with desired structure
+      ConfigMap configMap =
+          new ConfigMapBuilder()
+              .withNewMetadata()
+              .withName(name)
+              .endMetadata()
+              .addToData("name", "kubernetes")
+              .addToData(
+                  "container-impl", "org.apache.amoro.server.manager.KubernetesOptimizerContainer")
+              .addToData("image", "amoro/amoro:0.8-SNAPSHOT")
+              .addToData("namespace", "default")
+              .addToData("podTemplate", podTemplate)
+              .addToData("pullPolicy", "IfNotPresent")
+              .build();
+
+      return configMap;
+    }
   }
 }
