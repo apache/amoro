@@ -27,6 +27,8 @@ import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
 import org.apache.amoro.server.optimizing.scan.KeyedTableFileScanHelper;
 import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.optimizing.scan.UnkeyedTableFileScanHelper;
+import org.apache.amoro.server.table.TableSnapshot;
+import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -110,7 +112,15 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
   }
 
   protected OptimizingEvaluator buildOptimizingEvaluator() {
-    return new OptimizingEvaluator(getTableRuntime(), getMixedTable(), 100);
+    TableSnapshot snapshot = IcebergTableUtil.getSnapshot(getMixedTable(), tableRuntime);
+    return new OptimizingEvaluator(
+        tableRuntime.getTableIdentifier(),
+        tableRuntime.getOptimizingConfig(),
+        getMixedTable(),
+        snapshot,
+        100,
+        tableRuntime.getLastMinorOptimizingTime(),
+        tableRuntime.getLastFullOptimizingTime());
   }
 
   protected void assertEmptyInput(OptimizingEvaluator.PendingInput input) {

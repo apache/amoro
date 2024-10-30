@@ -18,9 +18,9 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.server.optimizing.OptimizingType;
-import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -40,10 +40,12 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   private static final Logger LOG = LoggerFactory.getLogger(CommonPartitionEvaluator.class);
 
   private final Set<String> deleteFileSet = Sets.newHashSet();
-  protected final TableRuntime tableRuntime;
 
   private final Pair<Integer, StructLike> partition;
+  protected final ServerTableIdentifier identifier;
   protected final OptimizingConfig config;
+  protected final long lastFullOptimizingTime;
+  protected final long lastMinorOptimizingTime;
   protected final long fragmentSize;
   protected final long minTargetSize;
   protected final long planTime;
@@ -83,10 +85,15 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   private String name;
 
   public CommonPartitionEvaluator(
-      TableRuntime tableRuntime, Pair<Integer, StructLike> partition, long planTime) {
+      ServerTableIdentifier identifier,
+      OptimizingConfig config,
+      Pair<Integer, StructLike> partition,
+      long planTime,
+      long lastMinorOptimizingTime,
+      long lastFullOptimizingTime) {
+    this.identifier = identifier;
+    this.config = config;
     this.partition = partition;
-    this.tableRuntime = tableRuntime;
-    this.config = tableRuntime.getOptimizingConfig();
     this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
     this.minTargetSize = (long) (config.getTargetSize() * config.getMinTargetSizeRatio());
     if (minTargetSize > config.getTargetSize() - fragmentSize) {
@@ -95,10 +102,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
               + "the another merge file.");
     }
     this.planTime = planTime;
+    this.lastMinorOptimizingTime = lastMinorOptimizingTime;
+    this.lastFullOptimizingTime = lastFullOptimizingTime;
     this.reachFullInterval =
         config.getFullTriggerInterval() >= 0
-            && planTime - tableRuntime.getLastFullOptimizingTime()
-                > config.getFullTriggerInterval();
+            && planTime - lastFullOptimizingTime > config.getFullTriggerInterval();
   }
 
   @Override
@@ -343,7 +351,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   protected boolean reachMinorInterval() {
     return config.getMinorLeastInterval() >= 0
-        && planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval();
+        && planTime - lastMinorOptimizingTime > config.getMinorLeastInterval();
   }
 
   protected boolean reachFullInterval() {
@@ -363,9 +371,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   protected String name() {
     if (name == null) {
-      name =
-          String.format(
-              "partition %s of %s", partition, tableRuntime.getTableIdentifier().toString());
+      name = String.format("partition %s of %s", partition, identifier.toString());
     }
     return name;
   }
@@ -509,9 +515,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
         .add("fragmentSize", fragmentSize)
         .add("undersizedSegmentSize", minTargetSize)
         .add("planTime", planTime)
-        .add("lastMinorOptimizeTime", tableRuntime.getLastMinorOptimizingTime())
-        .add("lastFullOptimizeTime", tableRuntime.getLastFullOptimizingTime())
-        .add("lastFullOptimizeTime", tableRuntime.getLastFullOptimizingTime())
+        .add("lastMinorOptimizeTime", lastMinorOptimizingTime)
+        .add("lastFullOptimizeTime", lastFullOptimizingTime)
         .add("fragmentFileCount", fragmentFileCount)
         .add("fragmentFileSize", fragmentFileSize)
         .add("fragmentFileRecords", fragmentFileRecords)

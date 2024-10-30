@@ -96,7 +96,7 @@ public class TestOptimizingPlanner extends TestOptimizingEvaluator {
 
   @Override
   protected OptimizingPlanner buildOptimizingEvaluator() {
-    return new OptimizingPlanner(
+    return OptimizingPlanner.createOptimizingPlanner(
         getTableRuntime(),
         getMixedTable(),
         1,
