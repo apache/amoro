@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.optimizing;
 
+import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;

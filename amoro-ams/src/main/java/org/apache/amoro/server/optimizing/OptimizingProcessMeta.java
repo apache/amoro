@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.optimizing;
 
+import org.apache.amoro.optimizing.OptimizingType;
+
 import java.util.Map;
 
 /** Meta of optimizing process. */

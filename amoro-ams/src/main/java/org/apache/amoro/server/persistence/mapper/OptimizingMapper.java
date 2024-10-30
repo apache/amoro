@@ -19,12 +19,12 @@
 package org.apache.amoro.server.persistence.mapper;
 
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.MetricsSummary;
 import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
-import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.StagedTaskDescriptor;
 import org.apache.amoro.server.optimizing.TaskRuntime;

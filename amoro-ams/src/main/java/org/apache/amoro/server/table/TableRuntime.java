@@ -25,11 +25,11 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
@@ -226,7 +226,8 @@ public class TableRuntime extends StatedPersistentBase {
           OptimizingStatus originalStatus = optimizingStatus;
           this.optimizingProcess = optimizingProcess;
           this.processId = optimizingProcess.getProcessId();
-          updateOptimizingStatus(optimizingProcess.getOptimizingType().getStatus());
+          updateOptimizingStatus(
+              OptimizingStatus.ofOptimizingType(optimizingProcess.getOptimizingType()));
           this.pendingInput = null;
           persistUpdatingRuntime();
           tableHandler.handleTableChanged(this, originalStatus);

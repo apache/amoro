@@ -20,9 +20,9 @@ package org.apache.amoro.server.persistence;
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 
 import java.util.Map;
