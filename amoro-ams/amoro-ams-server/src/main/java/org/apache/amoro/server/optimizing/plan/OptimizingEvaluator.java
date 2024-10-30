@@ -133,10 +133,11 @@ public class OptimizingEvaluator {
         mixedTable.id(),
         count,
         System.currentTimeMillis() - startTime);
-    partitionPlanMap = partitionPlanMap.entrySet().stream()
-        .filter(entry -> entry.getValue().isNecessary())
-        .limit(maxPendingPartitions)
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    partitionPlanMap =
+        partitionPlanMap.entrySet().stream()
+            .filter(entry -> entry.getValue().isNecessary())
+            .limit(maxPendingPartitions)
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private Map<String, String> partitionProperties(Pair<Integer, StructLike> partition) {
