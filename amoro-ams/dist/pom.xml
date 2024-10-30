@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-ams</artifactId>
-        <version>0.7.0-incubating</version>
+        <version>0.7.1-incubating</version>
     </parent>
 
     <artifactId>dist</artifactId>

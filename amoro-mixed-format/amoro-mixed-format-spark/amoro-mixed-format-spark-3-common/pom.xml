@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-mixed-format-spark</artifactId>
-        <version>0.7.0-incubating</version>
+        <version>0.7.1-incubating</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
