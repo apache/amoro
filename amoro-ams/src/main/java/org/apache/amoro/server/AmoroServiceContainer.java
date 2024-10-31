@@ -43,6 +43,7 @@ import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.executor.AsyncTableExecutors;
 import org.apache.amoro.server.terminal.TerminalManager;
+import org.apache.amoro.server.utils.IcebergThreadPools;
 import org.apache.amoro.server.utils.ThriftServiceProxy;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -449,10 +450,11 @@ public class AmoroServiceContainer {
     private void setIcebergSystemProperties() {
       int workerThreadPoolSize =
           Math.max(
-              Runtime.getRuntime().availableProcessors(),
+              Runtime.getRuntime().availableProcessors() / 2,
               serviceConfig.getInteger(AmoroManagementConf.TABLE_MANIFEST_IO_THREAD_COUNT));
       System.setProperty(
           SystemProperties.WORKER_THREAD_POOL_SIZE_PROP, String.valueOf(workerThreadPoolSize));
+      IcebergThreadPools.init(serviceConfig);
     }
 
     private void initContainerConfig() {
