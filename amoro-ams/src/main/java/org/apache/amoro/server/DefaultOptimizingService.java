@@ -319,7 +319,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   maxPlanningParallelism);
           optimizingQueueByGroup.put(resourceGroup.getName(), optimizingQueue);
         });
-    tableService.notify(TableService.NotifyEvent.RESOURCE_GROUP_INSERT, resourceGroup.getName());
+    tableService.notify(TableService.NotifyEvent.RESOURCE_GROUP_INSERT, resourceGroup);
   }
 
   @Override
