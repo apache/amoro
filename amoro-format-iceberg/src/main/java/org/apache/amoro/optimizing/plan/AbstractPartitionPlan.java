@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.plan;
+package org.apache.amoro.optimizing.plan;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.OptimizingConfig;

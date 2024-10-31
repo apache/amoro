@@ -16,14 +16,14 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.plan;
+package org.apache.amoro.optimizing.plan;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyedFile;
-import org.apache.amoro.hive.optimizing.MixFormatRewriteExecutorFactory;
+import org.apache.amoro.optimizing.MixedIcebergRewriteExecutorFactory;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -92,7 +92,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   @Override
   protected OptimizingInputProperties buildTaskProperties() {
     OptimizingInputProperties properties = new OptimizingInputProperties();
-    properties.setExecutorFactoryImpl(MixFormatRewriteExecutorFactory.class.getName());
+    properties.setExecutorFactoryImpl(MixedIcebergRewriteExecutorFactory.class.getName());
     return properties;
   }
 
@@ -122,7 +122,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
         lastFullOptimizingTime);
   }
 
-  protected static class MixedIcebergPartitionEvaluator extends CommonPartitionEvaluator {
+  public static class MixedIcebergPartitionEvaluator extends CommonPartitionEvaluator {
     protected final boolean keyedTable;
     protected boolean hasChangeFiles = false;
     private final boolean reachBaseRefreshInterval;

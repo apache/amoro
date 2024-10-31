@@ -56,6 +56,7 @@ public class GenericTaskWriters {
     private Long transactionId;
     private int partitionId = 0;
     private int taskId = 0;
+    private long targetFileSize = -1;
     private ChangeAction changeAction = ChangeAction.INSERT;
     private boolean orderedWriter = false;
 
@@ -87,6 +88,11 @@ public class GenericTaskWriters {
       return this;
     }
 
+    public Builder withTargetFileSize(long targetFileSize) {
+      this.targetFileSize = targetFileSize;
+      return this;
+    }
+
     public Builder withChangeAction(ChangeAction changeAction) {
       this.changeAction = changeAction;
       return this;
@@ -106,11 +112,17 @@ public class GenericTaskWriters {
                   .getOrDefault(
                       TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT)
                   .toUpperCase(Locale.ENGLISH)));
-      long fileSizeBytes =
-          PropertyUtil.propertyAsLong(
-              table.properties(),
-              TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-              TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+      long fileSizeBytes ;
+      if (this.targetFileSize > 0) {
+        fileSizeBytes = this.targetFileSize;
+      } else {
+        fileSizeBytes =
+            PropertyUtil.propertyAsLong(
+                table.properties(),
+                TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+                TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+      }
+
       long mask =
           PropertyUtil.propertyAsLong(
                   table.properties(),
@@ -187,11 +199,17 @@ public class GenericTaskWriters {
                       TableProperties.CHANGE_FILE_FORMAT,
                       TableProperties.CHANGE_FILE_FORMAT_DEFAULT)
                   .toUpperCase(Locale.ENGLISH)));
-      long fileSizeBytes =
-          PropertyUtil.propertyAsLong(
-              table.properties(),
-              TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-              TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+      long fileSizeBytes;
+      if (this.targetFileSize > 0) {
+        fileSizeBytes = this.targetFileSize;
+      } else {
+        fileSizeBytes =
+            PropertyUtil.propertyAsLong(
+                table.properties(),
+                TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+                TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+      }
+
       long mask =
           PropertyUtil.propertyAsLong(
                   table.properties(),

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.plan;
+package org.apache.amoro.optimizing.plan;
 
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.iceberg.ContentFile;

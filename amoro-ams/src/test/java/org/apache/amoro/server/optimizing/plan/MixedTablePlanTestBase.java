@@ -28,6 +28,7 @@ import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.optimizing.MixFormatRewriteExecutorFactory;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
