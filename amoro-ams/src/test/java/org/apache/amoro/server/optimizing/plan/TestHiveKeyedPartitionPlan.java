@@ -27,6 +27,8 @@ import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
+import org.apache.amoro.hive.optimizing.plan.MixedHivePartitionPlan;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -81,11 +83,14 @@ public class TestHiveKeyedPartitionPlan extends TestKeyedPartitionPlan {
     SupportHive hiveTable = (SupportHive) getMixedTable();
     String hiveLocation = hiveTable.hiveLocation();
     return new MixedHivePartitionPlan(
-        getTableRuntime(),
+        getTableRuntime().getTableIdentifier(),
         getMixedTable(),
+        getTableRuntime().getOptimizingConfig(),
         getPartition(),
         hiveLocation,
-        System.currentTimeMillis());
+        System.currentTimeMillis(),
+        getTableRuntime().getLastMinorOptimizingTime(),
+        getTableRuntime().getLastFullOptimizingTime());
   }
 
   @Test

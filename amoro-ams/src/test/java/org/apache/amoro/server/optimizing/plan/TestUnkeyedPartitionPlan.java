@@ -23,6 +23,8 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
+import org.apache.amoro.optimizing.plan.MixedIcebergPartitionPlan;
 import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import org.apache.amoro.server.utils.IcebergTableUtil;
@@ -75,7 +77,13 @@ public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
     return new MixedIcebergPartitionPlan(
-        getTableRuntime(), getMixedTable(), getPartition(), System.currentTimeMillis());
+        getTableRuntime().getTableIdentifier(),
+        getMixedTable(),
+        getTableRuntime().getOptimizingConfig(),
+        getPartition(),
+        System.currentTimeMillis(),
+        getTableRuntime().getLastMinorOptimizingTime(),
+        getTableRuntime().getLastFullOptimizingTime());
   }
 
   @Override

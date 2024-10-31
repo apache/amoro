@@ -25,6 +25,8 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.optimizing.IcebergRewriteExecutorFactory;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
+import org.apache.amoro.optimizing.plan.IcebergPartitionPlan;
 import org.apache.amoro.server.optimizing.scan.IcebergTableFileScanHelper;
 import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.table.TableRuntime;
