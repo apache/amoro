@@ -93,6 +93,11 @@ const isEdit = computed(() => {
 const uploadUrl = computed(() => {
   return '/api/ams/v1/files'
 })
+const uploadHeaders = computed(() => {
+  return {
+    'X-Request-Source': 'Web'
+  };
+});
 const isNewCatalog = computed(() => {
   const catalog = (route.query?.catalogname || '').toString()
   return decodeURIComponent(catalog) === 'new catalog'
@@ -709,6 +714,7 @@ onMounted(() => {
               <a-upload
                 v-if="isEdit" v-model:file-list="config.fileList" name="file" accept=".xml"
                 :show-upload-list="false" :action="uploadUrl" :disabled="config.uploadLoading"
+                :headers="uploadHeaders"
                 @change="(args: UploadChangeParam<UploadFile<any>>) => uploadFile(args, config, 'STORAGE')"
               >
                 <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">
@@ -758,6 +764,7 @@ onMounted(() => {
                 v-if="isEdit" v-model:file-list="config.fileList" name="file"
                 :accept="config.key === 'auth.kerberos.keytab' ? '.keytab' : '.conf'" :show-upload-list="false"
                 :action="uploadUrl" :disabled="config.uploadLoading"
+                :headers="uploadHeaders"
                 @change="(args: UploadChangeParam<UploadFile<any>>) => uploadFile(args, config)"
               >
                 <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">
