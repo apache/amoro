@@ -1,0 +1,37 @@
+### get catalog config
+GET http://localhost:1630/api/iceberg/rest/v1/config?warehouse=iceberg
+Content-Type: application/json
+
+### list namespace
+GET http://localhost:1630/api/iceberg/rest/v1/catalogs/iceberg/namespaces
+Content-Type: application/json
+
+### create namespace
+POST http://localhost:1630/api/iceberg/rest/v1/catalogs/iceberg/namespaces
+Content-Type: application/json
+
+{
+  "namespace": [
+    "test_db"
+  ]
+}
+
+### query namespace
+GET http://localhost:1630/api/iceberg/rest/v1/catalogs/iceberg/namespaces/test_db
+Content-Type: application/json
+
+### se namespace properties UnsupportedOperationException
+POST http://localhost:1630/api/iceberg/rest/v1/catalogs/iceberg/namespaces/test_db
+Content-Type: application/json
+
+### delete namespace
+DELETE http://localhost:1630/api/iceberg/rest/v1/catalogs/iceberg/namespaces/test_db
+Content-Type: application/json
+
+### list tables in namespace
+GET http://localhost:1630/api/iceberg/rest/v1/catalogs/iceberg/namespaces/sandbox/tables
+Content-Type: application/json
+
+### load table
+GET http://localhost:1630/api/iceberg/rest/v1/catalogs/iceberg/namespaces/sandbox/tables/veli_test
+Content-Type: application/json
