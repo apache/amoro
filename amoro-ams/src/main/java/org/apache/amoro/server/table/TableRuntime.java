@@ -41,6 +41,7 @@ import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.MixedTable;
@@ -49,6 +50,7 @@ import org.apache.iceberg.Snapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -280,9 +282,16 @@ public class TableRuntime extends StatedPersistentBase {
           () -> {
             TableConfiguration configuration = null;
             try {
-              configuration = tableConfiguration.clone();
-            } catch (Exception e) {
-              LOG.error("Failed to set table to optimizingConfig, group: {}", optimizerGroup);
+              ObjectMapper objectMapper = new ObjectMapper();
+              configuration =
+                  objectMapper.readValue(
+                      objectMapper.writeValueAsBytes(tableConfiguration), TableConfiguration.class);
+            } catch (IOException e) {
+              LOG.error(
+                  "[{}]Failed to update optimizerGroup {}",
+                  this.tableIdentifier.getTableFullName(),
+                  optimizerGroup,
+                  e);
               return this;
             }
             // shutdown the process;

@@ -136,6 +136,9 @@ public class OptimizerGroupController {
    * @return
    */
   private List<List<String>> groupRuleOverlap(String newRules, String newName) {
+    if (newRules == null) {
+      return new ArrayList<>();
+    }
     List<List<String>> result =
         optimizerManager.listResourceGroups().stream()
             .filter(item -> !Objects.equal(item.getName(), newName))
@@ -393,7 +396,7 @@ public class OptimizerGroupController {
     // check if the new rules is conflict with others
     String oldRules = optimizerManager.getResourceGroup(name).getOptimizeGroupRule();
     String newRules = newGroup.getOptimizeGroupRule();
-    if (!Objects.equal(oldRules, newRules)) {
+    if (newRules != null && !Objects.equal(oldRules, newRules)) {
       // only check the rule updated
       List<List<String>> intersectionMsg = groupRuleOverlap(newRules, name);
       if (intersectionMsg.size() > 0) {
