@@ -127,14 +127,15 @@ export function getDetailBySnapshotId(
     catalog: string
     db: string
     table: string
+    ref: string
     snapshotId: string
     page: number
     pageSize: number
     token?: string
   },
 ) {
-  const { catalog, db, table, snapshotId, page, pageSize, token } = params
-  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots/${snapshotId}/detail`, { params: { page, pageSize, token } })
+  const { catalog, db, table, snapshotId, page, pageSize, ref, token } = params
+  return request.get(`api/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots/${snapshotId}/detail`, { params: { page, pageSize, ref, token } })
 }
 // get operations
 export function getOperations(
