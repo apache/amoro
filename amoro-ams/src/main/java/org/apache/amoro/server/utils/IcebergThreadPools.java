@@ -24,7 +24,6 @@ import org.apache.iceberg.util.ThreadPools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
 public class IcebergThreadPools {
@@ -66,10 +65,28 @@ public class IcebergThreadPools {
   }
 
   public static ExecutorService getPlanningExecutor() {
-    return Objects.requireNonNull(planningExecutor, "planningExecutor must not null");
+    if (planningExecutor == null) {
+      synchronized (IcebergThreadPools.class) {
+        if (planningExecutor == null) {
+          planningExecutor =
+              ThreadPools.newWorkerPool(
+                  "iceberg-planning-pool", Runtime.getRuntime().availableProcessors());
+        }
+      }
+    }
+    return planningExecutor;
   }
 
   public static ExecutorService getCommitExecutor() {
-    return Objects.requireNonNull(commitExecutor, "commitExecutor must not null");
+    if (commitExecutor == null) {
+      synchronized (IcebergThreadPools.class) {
+        if (commitExecutor == null) {
+          commitExecutor =
+              ThreadPools.newWorkerPool(
+                  "iceberg-commit-pool", Runtime.getRuntime().availableProcessors());
+        }
+      }
+    }
+    return commitExecutor;
   }
 }
