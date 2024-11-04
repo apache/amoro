@@ -112,7 +112,7 @@ public class GenericTaskWriters {
                   .getOrDefault(
                       TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT)
                   .toUpperCase(Locale.ENGLISH)));
-      long fileSizeBytes ;
+      long fileSizeBytes;
       if (this.targetFileSize > 0) {
         fileSizeBytes = this.targetFileSize;
       } else {

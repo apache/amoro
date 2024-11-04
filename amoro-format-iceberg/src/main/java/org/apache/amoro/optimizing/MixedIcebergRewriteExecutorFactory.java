@@ -22,7 +22,8 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 
 import java.util.Map;
 
-public class MixedIcebergRewriteExecutorFactory implements OptimizingExecutorFactory<RewriteFilesInput> {
+public class MixedIcebergRewriteExecutorFactory
+    implements OptimizingExecutorFactory<RewriteFilesInput> {
   private Map<String, String> properties;
 
   @Override

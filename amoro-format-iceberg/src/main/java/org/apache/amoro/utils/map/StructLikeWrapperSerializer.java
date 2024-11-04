@@ -18,14 +18,15 @@
 
 package org.apache.amoro.utils.map;
 
+import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkNotNull;
+
 import org.apache.amoro.utils.SerializationUtil;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeWrapper;
 
-import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkNotNull;
-
-public class StructLikeWrapperSerializer implements SerializationUtil.SimpleSerializer<StructLikeWrapper> {
+public class StructLikeWrapperSerializer
+    implements SerializationUtil.SimpleSerializer<StructLikeWrapper> {
 
   protected final StructLikeWrapper structLikeWrapper;
 

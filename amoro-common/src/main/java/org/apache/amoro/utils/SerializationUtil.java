@@ -155,7 +155,6 @@ public class SerializationUtil {
     T deserialize(byte[] bytes);
   }
 
-
   public static class JavaSerializer<T extends Serializable> implements SimpleSerializer<T> {
 
     public static final JavaSerializer INSTANT = new JavaSerializer<>();
@@ -174,5 +173,4 @@ public class SerializationUtil {
       return SerializationUtil.kryoDeserialize(bytes);
     }
   }
-
 }

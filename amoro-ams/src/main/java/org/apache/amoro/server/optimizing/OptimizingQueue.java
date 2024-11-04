@@ -588,12 +588,13 @@ public class OptimizingQueue extends PersistentBase {
 
     @Override
     public MetricsSummary getSummary() {
-      List<MetricsSummary> taskSummaries = taskMap.values().stream()
-          .map(TaskRuntime::getTaskDescriptor)
-          .map(RewriteStageTask::getSummary)
-          .collect(Collectors.toList());
+      List<MetricsSummary> taskSummaries =
+          taskMap.values().stream()
+              .map(TaskRuntime::getTaskDescriptor)
+              .map(RewriteStageTask::getSummary)
+              .collect(Collectors.toList());
 
-       return new MetricsSummary(taskSummaries);
+      return new MetricsSummary(taskSummaries);
     }
 
     private UnKeyedTableCommit buildCommit() {

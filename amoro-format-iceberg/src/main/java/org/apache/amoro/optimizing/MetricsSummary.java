@@ -112,39 +112,36 @@ public class MetricsSummary {
   }
 
   public MetricsSummary(Collection<MetricsSummary> taskSummaries) {
-    taskSummaries
-        .forEach(
-            metrics -> {
-              newDataFileCnt += metrics.getNewDataFileCnt();
-              newDataSize += metrics.getNewDataSize();
-              newDataRecordCnt += metrics.getNewDataRecordCnt();
-              newDeleteSize += metrics.getNewDeleteSize();
-              newDeleteFileCnt += metrics.getNewDeleteFileCnt();
-              newDeleteRecordCnt += metrics.getNewDeleteRecordCnt();
-              rewriteDataFileCnt += metrics.getRewriteDataFileCnt();
-              // to be compatible with old metrics name when calculating total metrics of all tasks
-              reRowDeletedDataFileCnt +=
-                  Math.max(
-                      metrics.getReRowDeletedDataFileCnt(), metrics.getRewritePosDataFileCnt());
-              rewritePosDataFileCnt +=
-                  Math.max(
-                      metrics.getReRowDeletedDataFileCnt(), metrics.getRewritePosDataFileCnt());
-              rewriteDataSize += metrics.getRewriteDataSize();
-              rewritePosDataSize += metrics.getRewritePosDataSize();
-              posDeleteFileCnt += metrics.getPosDeleteFileCnt();
-              positionalDeleteSize +=
-                  Math.max(metrics.getPositionalDeleteSize(), metrics.getPositionDeleteSize());
-              positionDeleteSize +=
-                  Math.max(metrics.getPositionalDeleteSize(), metrics.getPositionDeleteSize());
-              eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
-              equalityDeleteSize += metrics.getEqualityDeleteSize();
-              rewriteDataRecordCnt += metrics.getRewriteDataRecordCnt();
-              rewritePosDataRecordCnt += metrics.getRewritePosDataRecordCnt();
-              eqDeleteRecordCnt += metrics.getEqDeleteRecordCnt();
-              posDeleteRecordCnt += metrics.getPosDeleteRecordCnt();
-              newFileCnt += metrics.getNewFileCnt();
-              newFileSize += metrics.getNewFileSize();
-            });
+    taskSummaries.forEach(
+        metrics -> {
+          newDataFileCnt += metrics.getNewDataFileCnt();
+          newDataSize += metrics.getNewDataSize();
+          newDataRecordCnt += metrics.getNewDataRecordCnt();
+          newDeleteSize += metrics.getNewDeleteSize();
+          newDeleteFileCnt += metrics.getNewDeleteFileCnt();
+          newDeleteRecordCnt += metrics.getNewDeleteRecordCnt();
+          rewriteDataFileCnt += metrics.getRewriteDataFileCnt();
+          // to be compatible with old metrics name when calculating total metrics of all tasks
+          reRowDeletedDataFileCnt +=
+              Math.max(metrics.getReRowDeletedDataFileCnt(), metrics.getRewritePosDataFileCnt());
+          rewritePosDataFileCnt +=
+              Math.max(metrics.getReRowDeletedDataFileCnt(), metrics.getRewritePosDataFileCnt());
+          rewriteDataSize += metrics.getRewriteDataSize();
+          rewritePosDataSize += metrics.getRewritePosDataSize();
+          posDeleteFileCnt += metrics.getPosDeleteFileCnt();
+          positionalDeleteSize +=
+              Math.max(metrics.getPositionalDeleteSize(), metrics.getPositionDeleteSize());
+          positionDeleteSize +=
+              Math.max(metrics.getPositionalDeleteSize(), metrics.getPositionDeleteSize());
+          eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
+          equalityDeleteSize += metrics.getEqualityDeleteSize();
+          rewriteDataRecordCnt += metrics.getRewriteDataRecordCnt();
+          rewritePosDataRecordCnt += metrics.getRewritePosDataRecordCnt();
+          eqDeleteRecordCnt += metrics.getEqDeleteRecordCnt();
+          posDeleteRecordCnt += metrics.getPosDeleteRecordCnt();
+          newFileCnt += metrics.getNewFileCnt();
+          newFileSize += metrics.getNewFileSize();
+        });
   }
 
   public Map<String, String> summaryAsMap(boolean humanReadable) {

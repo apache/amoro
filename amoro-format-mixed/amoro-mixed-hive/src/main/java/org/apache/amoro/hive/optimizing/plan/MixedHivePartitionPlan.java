@@ -24,7 +24,6 @@ import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.optimizing.MixFormatRewriteExecutorFactory;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.optimizing.MixedIcebergRewriteExecutorFactory;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.plan.CommonPartitionEvaluator;
 import org.apache.amoro.optimizing.plan.MixedIcebergPartitionPlan;

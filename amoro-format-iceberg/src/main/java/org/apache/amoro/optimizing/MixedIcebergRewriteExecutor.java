@@ -35,7 +35,10 @@ import java.util.List;
 public class MixedIcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   public MixedIcebergRewriteExecutor(
-      RewriteFilesInput input, MixedTable table, StructLikeCollections structLikeCollections, String outputDir) {
+      RewriteFilesInput input,
+      MixedTable table,
+      StructLikeCollections structLikeCollections,
+      String outputDir) {
     super(input, table, structLikeCollections);
   }
 
@@ -61,7 +64,8 @@ public class MixedIcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
   @Override
   protected TaskWriter<Record> dataWriter() {
     return GenericTaskWriters.builderFor(table)
-        .withTransactionId(table.isKeyedTable() ? getTransactionId(input.rewrittenDataFilesForMixed()) : null)
+        .withTransactionId(
+            table.isKeyedTable() ? getTransactionId(input.rewrittenDataFilesForMixed()) : null)
         .withTaskId(0)
         .withTargetFileSize(targetSize())
         .buildBaseWriter();
