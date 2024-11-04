@@ -20,18 +20,18 @@ package org.apache.amoro.server.utils;
 
 import org.apache.amoro.IcebergFileEntry;
 import org.apache.amoro.api.CommitMetaProducer;
+import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.scan.TableEntriesScan;
-import org.apache.amoro.server.AmoroServiceConstants;
-import org.apache.amoro.server.table.BasicTableSnapshot;
-import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableSnapshot;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.base.Predicate;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.table.BasicTableSnapshot;
+import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableSnapshot;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataOperations;
@@ -68,7 +68,7 @@ public class IcebergTableUtil {
   public static long getSnapshotId(Table table, boolean refresh) {
     Snapshot currentSnapshot = getSnapshot(table, refresh);
     if (currentSnapshot == null) {
-      return AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+      return Constants.INVALID_SNAPSHOT_ID;
     } else {
       return currentSnapshot.snapshotId();
     }

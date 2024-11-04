@@ -25,6 +25,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.metrics.MetricRegistry;
@@ -66,16 +67,13 @@ public class TableRuntime extends StatedPersistentBase {
   private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
 
   // for unKeyedTable or base table
-  @StateField private volatile long currentSnapshotId = AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+  @StateField private volatile long currentSnapshotId = Constants.INVALID_SNAPSHOT_ID;
 
-  @StateField
-  private volatile long lastOptimizedSnapshotId = AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+  @StateField private volatile long lastOptimizedSnapshotId = Constants.INVALID_SNAPSHOT_ID;
 
-  @StateField
-  private volatile long lastOptimizedChangeSnapshotId = AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+  @StateField private volatile long lastOptimizedChangeSnapshotId = Constants.INVALID_SNAPSHOT_ID;
   // for change table
-  @StateField
-  private volatile long currentChangeSnapshotId = AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+  @StateField private volatile long currentChangeSnapshotId = Constants.INVALID_SNAPSHOT_ID;
 
   @StateField private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   @StateField private volatile long currentStatusStartTime = System.currentTimeMillis();
@@ -399,7 +397,7 @@ public class TableRuntime extends StatedPersistentBase {
    * @return refreshed snapshotId
    */
   private long doRefreshSnapshots(UnkeyedTable table) {
-    long currentSnapshotId = AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+    long currentSnapshotId = Constants.INVALID_SNAPSHOT_ID;
     Snapshot currentSnapshot = IcebergTableUtil.getSnapshot(table, false);
     if (currentSnapshot != null) {
       currentSnapshotId = currentSnapshot.snapshotId();

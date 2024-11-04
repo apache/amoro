@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.table;
 
 public class KeyedTableSnapshot implements TableSnapshot {
   private final long baseSnapshotId;

@@ -26,7 +26,7 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteStageTask;
-import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
+import org.apache.amoro.optimizing.scan.TableFileScanHelper;
 import org.apache.iceberg.DataFile;
 import org.junit.Assert;
 import org.junit.Test;

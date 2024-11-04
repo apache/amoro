@@ -16,20 +16,20 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.scan;
+package org.apache.amoro.optimizing.scan;
 
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.DefaultKeyedFile;
 import org.apache.amoro.data.FileNameRules;
+import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
-import org.apache.amoro.server.AmoroServiceConstants;
-import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.KeyedTable;
+import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
@@ -162,9 +162,9 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     ChangeFiles changeFiles = new ChangeFiles(keyedTable);
     UnkeyedTable baseTable = keyedTable.baseTable();
     ChangeTable changeTable = keyedTable.changeTable();
-    if (changeSnapshotId != AmoroServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (changeSnapshotId != Constants.INVALID_SNAPSHOT_ID) {
       StructLikeMap<Long> optimizedSequence =
-          baseSnapshotId == AmoroServiceConstants.INVALID_SNAPSHOT_ID
+          baseSnapshotId == Constants.INVALID_SNAPSHOT_ID
               ? StructLikeMap.create(keyedTable.spec().partitionType())
               : MixedTableUtil.readOptimizedSequence(keyedTable, baseSnapshotId);
       long maxSequence = getMaxSequenceLimit(keyedTable, changeSnapshotId, optimizedSequence);
@@ -200,7 +200,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     }
 
     CloseableIterable<FileScanResult> baseScanResult = CloseableIterable.empty();
-    if (baseSnapshotId != AmoroServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (baseSnapshotId != Constants.INVALID_SNAPSHOT_ID) {
       baseScanResult =
           CloseableIterable.transform(
               baseTable.newScan().filter(partitionFilter).useSnapshot(baseSnapshotId).planFiles(),

@@ -24,6 +24,8 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.optimizing.scan.TableFileScanHelper;
+import org.apache.amoro.optimizing.scan.UnkeyedTableFileScanHelper;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;

@@ -29,12 +29,12 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.hive.optimizing.MixFormatRewriteExecutor;
+import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.optimizing.IcebergRewriteExecutor;
 import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.RewriteStageTask;
-import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.KeyedTableCommit;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
@@ -249,7 +249,7 @@ public class CompleteOptimizingFlow {
     if (table.isKeyedTable()) {
       return IcebergTableUtil.getSnapshotId(table.asKeyedTable().changeTable(), false);
     } else {
-      return AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+      return Constants.INVALID_SNAPSHOT_ID;
     }
   }
 

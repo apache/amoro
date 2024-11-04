@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.scan;
+package org.apache.amoro.optimizing.scan;
 
 import org.apache.amoro.data.DefaultKeyedFile;
 import org.apache.amoro.table.UnkeyedTable;

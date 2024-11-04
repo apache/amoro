@@ -16,17 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.iceberg;
 
-public class BasicTableSnapshot implements TableSnapshot {
-  private final long snapshotId;
+public class Constants {
 
-  public BasicTableSnapshot(long snapshotId) {
-    this.snapshotId = snapshotId;
-  }
-
-  @Override
-  public long snapshotId() {
-    return snapshotId;
-  }
+  public static final long INVALID_SNAPSHOT_ID = -1L;
 }

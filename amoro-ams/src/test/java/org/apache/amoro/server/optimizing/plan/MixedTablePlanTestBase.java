@@ -26,14 +26,14 @@ import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.optimizing.MixFormatRewriteExecutorFactory;
+import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
-import org.apache.amoro.server.AmoroServiceConstants;
+import org.apache.amoro.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
-import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
@@ -101,7 +101,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     if (getMixedTable().isKeyedTable()) {
       return IcebergTableUtil.getSnapshotId(getMixedTable().asKeyedTable().changeTable(), false);
     } else {
-      return AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+      return Constants.INVALID_SNAPSHOT_ID;
     }
   }
 

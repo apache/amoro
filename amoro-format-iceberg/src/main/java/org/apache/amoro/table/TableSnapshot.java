@@ -16,11 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server;
+package org.apache.amoro.table;
 
-public class AmoroServiceConstants {
+public interface TableSnapshot {
 
-  public static final long INVALID_TIME = 0;
-
-  public static final long QUOTA_LOOK_BACK_TIME = 60 * 60 * 1000;
+  long snapshotId();
 }

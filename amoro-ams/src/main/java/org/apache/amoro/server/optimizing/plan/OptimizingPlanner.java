@@ -24,19 +24,19 @@ import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.hive.optimizing.plan.MixedHivePartitionPlan;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.TableTypeUtil;
+import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
 import org.apache.amoro.optimizing.plan.IcebergPartitionPlan;
 import org.apache.amoro.optimizing.plan.MixedIcebergPartitionPlan;
 import org.apache.amoro.optimizing.plan.PartitionEvaluator;
-import org.apache.amoro.server.AmoroServiceConstants;
-import org.apache.amoro.server.table.KeyedTableSnapshot;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableSnapshot;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableSnapshot;
 import org.apache.amoro.utils.ExpressionUtil;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.iceberg.PartitionSpec;
@@ -177,7 +177,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     if (currentSnapshot instanceof KeyedTableSnapshot) {
       return ((KeyedTableSnapshot) currentSnapshot).changeSnapshotId();
     } else {
-      return AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+      return Constants.INVALID_SNAPSHOT_ID;
     }
   }
 
