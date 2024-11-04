@@ -19,10 +19,10 @@
 package org.apache.amoro.server.dashboard.utils;
 
 import org.apache.amoro.optimizing.MetricsSummary;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.table.descriptor.FilesStatistics;
 import org.apache.iceberg.ContentFile;
@@ -61,7 +61,7 @@ public class OptimizingUtil {
   }
 
   private static FilesStatistics collectPendingFileInfo(
-      OptimizingEvaluator.PendingInput pendingInput) {
+      AbstractOptimizingEvaluator.PendingInput pendingInput) {
     if (pendingInput == null) {
       return null;
     }

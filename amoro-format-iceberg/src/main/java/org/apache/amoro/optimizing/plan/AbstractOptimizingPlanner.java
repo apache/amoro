@@ -16,33 +16,21 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.plan;
+package org.apache.amoro.optimizing.plan;
 
 import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.OptimizingConfig;
-import org.apache.amoro.hive.optimizing.plan.MixedHivePartitionPlan;
-import org.apache.amoro.hive.table.SupportHive;
-import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteStageTask;
-import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
-import org.apache.amoro.optimizing.plan.IcebergPartitionPlan;
-import org.apache.amoro.optimizing.plan.MixedIcebergPartitionPlan;
-import org.apache.amoro.optimizing.plan.PartitionEvaluator;
-import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableSnapshot;
-import org.apache.amoro.utils.ExpressionUtil;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,50 +42,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class OptimizingPlanner extends OptimizingEvaluator {
-  private static final Logger LOG = LoggerFactory.getLogger(OptimizingPlanner.class);
+public abstract class AbstractOptimizingPlanner extends AbstractOptimizingEvaluator {
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizingPlanner.class);
 
   private final Expression partitionFilter;
   protected long processId;
   private final double availableCore;
-  private final long planTime;
+  protected final long planTime;
   private OptimizingType optimizingType;
-  private final PartitionPlannerFactory partitionPlannerFactory;
   private List<RewriteStageTask> tasks;
   private List<AbstractPartitionPlan> actualPartitionPlans;
   private final long maxInputSizePerThread;
 
-  public static OptimizingPlanner createOptimizingPlanner(
-      TableRuntime tableRuntime,
-      MixedTable table,
-      double availableCore,
-      long maxInputSizePerThread) {
-    Expression partitionFilter =
-        tableRuntime.getPendingInput() == null
-            ? Expressions.alwaysTrue()
-            : tableRuntime.getPendingInput().getPartitions().entrySet().stream()
-                .map(
-                    entry ->
-                        ExpressionUtil.convertPartitionDataToDataFilter(
-                            table, entry.getKey(), entry.getValue()))
-                .reduce(Expressions::or)
-                .orElse(Expressions.alwaysTrue());
-    long planTime = System.currentTimeMillis();
-
-    return new OptimizingPlanner(
-        tableRuntime.getTableIdentifier(),
-        tableRuntime.getOptimizingConfig(),
-        table,
-        IcebergTableUtil.getSnapshot(table, tableRuntime),
-        partitionFilter,
-        Math.max(tableRuntime.getNewestProcessId() + 1, planTime),
-        availableCore,
-        maxInputSizePerThread,
-        tableRuntime.getLastMinorOptimizingTime(),
-        tableRuntime.getLastFullOptimizingTime());
-  }
-
-  public OptimizingPlanner(
+  public AbstractOptimizingPlanner(
       ServerTableIdentifier identifier,
       OptimizingConfig config,
       MixedTable table,
@@ -120,20 +77,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     this.availableCore = availableCore;
     this.planTime = System.currentTimeMillis();
     this.processId = processId;
-    this.partitionPlannerFactory =
-        new PartitionPlannerFactory(
-            identifier,
-            config,
-            mixedTable,
-            planTime,
-            lastMinorOptimizingTime,
-            lastFullOptimizingTime);
     this.maxInputSizePerThread = maxInputSizePerThread;
-  }
-
-  @Override
-  protected PartitionEvaluator buildEvaluator(Pair<Integer, StructLike> partition) {
-    return partitionPlannerFactory.buildPartitionPlanner(partition);
   }
 
   public Map<String, Long> getFromSequence() {
@@ -261,69 +205,5 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
   public long getProcessId() {
     return processId;
-  }
-
-  private static class PartitionPlannerFactory {
-    protected final OptimizingConfig config;
-    protected final ServerTableIdentifier identifier;
-    protected final long lastMinorOptimizingTime;
-    protected final long lastFullOptimizingTime;
-    private final MixedTable mixedTable;
-    private final String hiveLocation;
-    private final long planTime;
-
-    public PartitionPlannerFactory(
-        ServerTableIdentifier identifier,
-        OptimizingConfig config,
-        MixedTable mixedTable,
-        long planTime,
-        long lastMinorOptimizingTime,
-        long lastFullOptimizingTime) {
-      this.identifier = identifier;
-      this.config = config;
-      this.mixedTable = mixedTable;
-      this.planTime = planTime;
-      this.lastFullOptimizingTime = lastFullOptimizingTime;
-      this.lastMinorOptimizingTime = lastMinorOptimizingTime;
-      if (TableTypeUtil.isHive(mixedTable)) {
-        this.hiveLocation = (((SupportHive) mixedTable).hiveLocation());
-      } else {
-        this.hiveLocation = null;
-      }
-    }
-
-    public PartitionEvaluator buildPartitionPlanner(Pair<Integer, StructLike> partition) {
-      if (TableFormat.ICEBERG.equals(mixedTable.format())) {
-        return new IcebergPartitionPlan(
-            identifier,
-            config,
-            mixedTable,
-            partition,
-            planTime,
-            lastMinorOptimizingTime,
-            lastFullOptimizingTime);
-      } else {
-        if (TableTypeUtil.isHive(mixedTable)) {
-          return new MixedHivePartitionPlan(
-              identifier,
-              mixedTable,
-              config,
-              partition,
-              hiveLocation,
-              planTime,
-              lastMinorOptimizingTime,
-              lastFullOptimizingTime);
-        } else {
-          return new MixedIcebergPartitionPlan(
-              identifier,
-              mixedTable,
-              config,
-              partition,
-              planTime,
-              lastMinorOptimizingTime,
-              lastFullOptimizingTime);
-        }
-      }
-    }
   }
 }

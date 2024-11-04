@@ -19,8 +19,19 @@
 package org.apache.amoro.server.utils;
 
 import org.apache.amoro.IcebergFileEntry;
+import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CommitMetaProducer;
+import org.apache.amoro.config.OptimizingConfig;
+import org.apache.amoro.hive.optimizing.plan.MixedHiveOptimizingEvaluator;
+import org.apache.amoro.hive.optimizing.plan.MixedHiveOptimizingPlanner;
 import org.apache.amoro.iceberg.Constants;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
+import org.apache.amoro.optimizing.plan.IcebergOptimizerEvaluator;
+import org.apache.amoro.optimizing.plan.IcebergOptimizingPlanner;
+import org.apache.amoro.optimizing.plan.MixedIcebergOptimizingEvaluator;
+import org.apache.amoro.optimizing.plan.MixedIcebergOptimizingPlanner;
 import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -32,6 +43,7 @@ import org.apache.amoro.table.BasicTableSnapshot;
 import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableSnapshot;
+import org.apache.amoro.utils.ExpressionUtil;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataOperations;
@@ -47,6 +59,8 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableScan;
+import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -201,5 +215,95 @@ public class IcebergTableUtil {
     }
 
     return allManifestFiles;
+  }
+
+  public static AbstractOptimizingEvaluator createOptimizingEvaluator(
+      TableRuntime tableRuntime,
+      MixedTable table,
+      TableSnapshot snapshot,
+      int maxPendingPartitions) {
+    ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
+    OptimizingConfig config = tableRuntime.getOptimizingConfig();
+    long lastMinor = tableRuntime.getLastMinorOptimizingTime();
+    long lastFull = tableRuntime.getLastFullOptimizingTime();
+    if (TableFormat.ICEBERG.in(table.format())) {
+      return new IcebergOptimizerEvaluator(
+          identifier, config, table, snapshot, maxPendingPartitions, lastMinor, lastFull);
+    } else if (TableFormat.MIXED_ICEBERG.in(table.format())) {
+      return new MixedIcebergOptimizingEvaluator(
+          identifier, config, table, snapshot, maxPendingPartitions, lastMinor, lastFull);
+    } else if (TableFormat.MIXED_HIVE.in(table.format())) {
+      return new MixedHiveOptimizingEvaluator(
+          identifier, config, table, snapshot, maxPendingPartitions, lastMinor, lastFull);
+    }
+    throw new IllegalStateException("Un-supported table-format:" + table.format().toString());
+  }
+
+  public static AbstractOptimizingEvaluator createOptimizingEvaluator(
+      TableRuntime tableRuntime, MixedTable table, int maxPendingPartitions) {
+    TableSnapshot snapshot = IcebergTableUtil.getSnapshot(table, tableRuntime);
+    return createOptimizingEvaluator(tableRuntime, table, snapshot, maxPendingPartitions);
+  }
+
+  public static AbstractOptimizingPlanner createOptimizingPlanner(
+      TableRuntime tableRuntime,
+      MixedTable table,
+      double availableCore,
+      long maxInputSizePerThread) {
+    Expression partitionFilter =
+        tableRuntime.getPendingInput() == null
+            ? Expressions.alwaysTrue()
+            : tableRuntime.getPendingInput().getPartitions().entrySet().stream()
+                .map(
+                    entry ->
+                        ExpressionUtil.convertPartitionDataToDataFilter(
+                            table, entry.getKey(), entry.getValue()))
+                .reduce(Expressions::or)
+                .orElse(Expressions.alwaysTrue());
+    long planTime = System.currentTimeMillis();
+    long processId = Math.max(tableRuntime.getNewestProcessId() + 1, planTime);
+    ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
+    OptimizingConfig config = tableRuntime.getOptimizingConfig();
+    long lastMinor = tableRuntime.getLastMinorOptimizingTime();
+    long lastFull = tableRuntime.getLastFullOptimizingTime();
+    TableSnapshot snapshot = IcebergTableUtil.getSnapshot(table, tableRuntime);
+    if (TableFormat.ICEBERG.in(table.format())) {
+      return new IcebergOptimizingPlanner(
+          identifier,
+          config,
+          table,
+          snapshot,
+          partitionFilter,
+          processId,
+          availableCore,
+          maxInputSizePerThread,
+          lastMinor,
+          lastFull);
+    } else if (TableFormat.MIXED_ICEBERG.in(table.format())) {
+      return new MixedIcebergOptimizingPlanner(
+          identifier,
+          config,
+          table,
+          snapshot,
+          partitionFilter,
+          processId,
+          availableCore,
+          maxInputSizePerThread,
+          lastMinor,
+          lastFull);
+    } else if (TableFormat.MIXED_HIVE.in(table.format())) {
+      return new MixedHiveOptimizingPlanner(
+          identifier,
+          config,
+          table,
+          snapshot,
+          partitionFilter,
+          processId,
+          availableCore,
+          maxInputSizePerThread,
+          lastMinor,
+          lastFull);
+    }
+    throw new IllegalStateException("Un-supported table-format:" + table.format().toString());
   }
 }

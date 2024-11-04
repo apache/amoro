@@ -27,12 +27,12 @@ import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.optimizing.OptimizingType;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
-import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
@@ -84,8 +84,8 @@ public class TableRuntime extends StatedPersistentBase {
   @StateField private volatile OptimizingProcess optimizingProcess;
   @StateField private volatile TableConfiguration tableConfiguration;
   @StateField private volatile long processId;
-  @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
-  @StateField private volatile OptimizingEvaluator.PendingInput tableSummary;
+  @StateField private volatile AbstractOptimizingEvaluator.PendingInput pendingInput;
+  @StateField private volatile AbstractOptimizingEvaluator.PendingInput tableSummary;
   private volatile long lastPlanTime;
   private final TableOptimizingMetrics optimizingMetrics;
   private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
@@ -242,7 +242,7 @@ public class TableRuntime extends StatedPersistentBase {
         });
   }
 
-  public void setPendingInput(OptimizingEvaluator.PendingInput pendingInput) {
+  public void setPendingInput(AbstractOptimizingEvaluator.PendingInput pendingInput) {
     invokeConsistency(
         () -> {
           this.pendingInput = pendingInput;
@@ -273,7 +273,7 @@ public class TableRuntime extends StatedPersistentBase {
         });
   }
 
-  public void setTableSummary(OptimizingEvaluator.PendingInput tableSummary) {
+  public void setTableSummary(AbstractOptimizingEvaluator.PendingInput tableSummary) {
     invokeConsistency(
         () -> {
           this.tableSummary = tableSummary;
@@ -410,11 +410,11 @@ public class TableRuntime extends StatedPersistentBase {
     return currentSnapshotId;
   }
 
-  public OptimizingEvaluator.PendingInput getPendingInput() {
+  public AbstractOptimizingEvaluator.PendingInput getPendingInput() {
     return pendingInput;
   }
 
-  public OptimizingEvaluator.PendingInput getTableSummary() {
+  public AbstractOptimizingEvaluator.PendingInput getTableSummary() {
     return tableSummary;
   }
 

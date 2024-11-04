@@ -32,6 +32,7 @@ import org.apache.amoro.hive.catalog.MixedHiveCatalog;
 import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.hive.utils.UpgradeHiveTableUtil;
 import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.properties.HiveTableProperties;
@@ -49,7 +50,6 @@ import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Function;
@@ -152,7 +152,8 @@ public class TableController {
       TableRuntime tableRuntime = tableService.getRuntime(serverTableIdentifier.get().getId());
       if (tableRuntime != null) {
         tableSummary.setOptimizingStatus(tableRuntime.getOptimizingStatus().name());
-        OptimizingEvaluator.PendingInput tableRuntimeSummary = tableRuntime.getTableSummary();
+        AbstractOptimizingEvaluator.PendingInput tableRuntimeSummary =
+            tableRuntime.getTableSummary();
         if (tableRuntimeSummary != null) {
           tableSummary.setHealthScore(tableRuntimeSummary.getHealthScore());
         }

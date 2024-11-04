@@ -38,11 +38,11 @@ import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
-import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.AMSTableTestBase;
@@ -397,7 +397,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
             tableService(),
             properties);
     // update status
-    pending1.setPendingInput(new OptimizingEvaluator.PendingInput());
+    pending1.setPendingInput(new AbstractOptimizingEvaluator.PendingInput());
 
     String pending2InGroup1 = "pending2InGroup1";
     TableRuntime pending2 =
@@ -406,7 +406,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
             tableService(),
             properties);
     // update status
-    pending2.setPendingInput(new OptimizingEvaluator.PendingInput());
+    pending2.setPendingInput(new AbstractOptimizingEvaluator.PendingInput());
 
     // 1.3 add tables with PLANNING status
     String db2 = "db2";

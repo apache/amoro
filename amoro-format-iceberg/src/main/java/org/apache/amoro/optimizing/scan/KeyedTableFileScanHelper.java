@@ -24,6 +24,7 @@ import org.apache.amoro.data.DefaultKeyedFile;
 import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.scan.ChangeTableIncrementalScan;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -85,7 +86,8 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
    * @return the max sequence of selected file, return Long.MAX_VALUE if all files should be
    *     selected, Long.MIN_VALUE means no files should be selected
    */
-  static long getMaxSequenceKeepingTxIdInOrder(
+  @VisibleForTesting
+  public static long getMaxSequenceKeepingTxIdInOrder(
       List<SnapshotFileGroup> snapshotFileGroups, long maxFileCntLimit) {
     if (maxFileCntLimit <= 0 || snapshotFileGroups == null || snapshotFileGroups.isEmpty()) {
       return Long.MIN_VALUE;
@@ -367,7 +369,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
   }
 
   /** Files grouped by snapshot, but only with the file cnt. */
-  static class SnapshotFileGroup implements Comparable<SnapshotFileGroup> {
+  public static class SnapshotFileGroup implements Comparable<SnapshotFileGroup> {
     private final long sequence;
     private final long transactionId;
     private int fileCnt = 0;

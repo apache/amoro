@@ -27,11 +27,11 @@ import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.manager.MetricManager;
-import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
@@ -39,6 +39,7 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -266,8 +267,8 @@ public class OptimizingQueue extends PersistentBase {
     tableRuntime.beginPlanning();
     try {
       AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
-      OptimizingPlanner planner =
-          OptimizingPlanner.createOptimizingPlanner(
+      AbstractOptimizingPlanner planner =
+          IcebergTableUtil.createOptimizingPlanner(
               tableRuntime.refresh(table),
               (MixedTable) table.originalTable(),
               getAvailableCore(),
@@ -374,7 +375,7 @@ public class OptimizingQueue extends PersistentBase {
       }
     }
 
-    public TableOptimizingProcess(OptimizingPlanner planner, TableRuntime tableRuntime) {
+    public TableOptimizingProcess(AbstractOptimizingPlanner planner, TableRuntime tableRuntime) {
       processId = planner.getProcessId();
       this.tableRuntime = tableRuntime;
       optimizingType = planner.getOptimizingType();

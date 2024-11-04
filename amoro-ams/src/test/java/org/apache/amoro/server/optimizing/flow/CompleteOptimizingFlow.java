@@ -35,10 +35,10 @@ import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
 import org.apache.amoro.server.optimizing.KeyedTableCommit;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
-import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
@@ -108,7 +108,7 @@ public class CompleteOptimizingFlow {
   }
 
   public void optimize() throws Exception {
-    OptimizingPlanner planner = planner();
+    AbstractOptimizingPlanner planner = planner();
     List<RewriteStageTask> taskDescriptors = planner.planTasks();
     if (CollectionUtils.isEmpty(taskDescriptors)) {
       check(taskDescriptors, planner, null);
@@ -152,7 +152,9 @@ public class CompleteOptimizingFlow {
   }
 
   private void check(
-      List<RewriteStageTask> taskDescriptors, OptimizingPlanner planner, UnKeyedTableCommit commit)
+      List<RewriteStageTask> taskDescriptors,
+      AbstractOptimizingPlanner planner,
+      UnKeyedTableCommit commit)
       throws Exception {
     for (Checker checker : checkers) {
       if (checker.condition(table, taskDescriptors, planner, commit)) {
@@ -178,7 +180,7 @@ public class CompleteOptimizingFlow {
     return list;
   }
 
-  private OptimizingPlanner planner() {
+  private AbstractOptimizingPlanner planner() {
     table.refresh();
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
     Mockito.when(tableRuntime.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
@@ -192,7 +194,7 @@ public class CompleteOptimizingFlow {
     Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> optimizingConfig());
     Mockito.when(tableRuntime.getTableIdentifier())
         .thenReturn(ServerTableIdentifier.of(1L, "a", "b", "c", table.format()));
-    return OptimizingPlanner.createOptimizingPlanner(
+    return IcebergTableUtil.createOptimizingPlanner(
         tableRuntime,
         table,
         availableCore,
@@ -273,7 +275,7 @@ public class CompleteOptimizingFlow {
     boolean condition(
         MixedTable table,
         @Nullable List<RewriteStageTask> latestTaskDescriptors,
-        OptimizingPlanner latestPlanner,
+        AbstractOptimizingPlanner latestPlanner,
         @Nullable UnKeyedTableCommit latestCommit);
 
     boolean senseHasChecked();
@@ -281,7 +283,7 @@ public class CompleteOptimizingFlow {
     void check(
         MixedTable table,
         @Nullable List<RewriteStageTask> latestTaskDescriptors,
-        OptimizingPlanner latestPlanner,
+        AbstractOptimizingPlanner latestPlanner,
         @Nullable UnKeyedTableCommit latestCommit)
         throws Exception;
   }

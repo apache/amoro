@@ -19,9 +19,9 @@
 package org.apache.amoro.server.optimizing.flow.checker;
 
 import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.flow.CompleteOptimizingFlow;
-import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
 import org.apache.amoro.table.MixedTable;
 
 import javax.annotation.Nullable;
@@ -42,7 +42,7 @@ public abstract class AbstractSceneCountChecker implements CompleteOptimizingFlo
   public boolean condition(
       MixedTable table,
       @Nullable List<RewriteStageTask> latestTaskDescriptors,
-      OptimizingPlanner latestPlanner,
+      AbstractOptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit) {
     if (internalCondition(table, latestTaskDescriptors, latestPlanner, latestCommit)) {
       count++;
@@ -54,7 +54,7 @@ public abstract class AbstractSceneCountChecker implements CompleteOptimizingFlo
   protected abstract boolean internalCondition(
       MixedTable table,
       @Nullable List<RewriteStageTask> latestTaskDescriptors,
-      OptimizingPlanner latestPlanner,
+      AbstractOptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit);
 
   @Override
@@ -66,7 +66,7 @@ public abstract class AbstractSceneCountChecker implements CompleteOptimizingFlo
   public void check(
       MixedTable table,
       @Nullable List<RewriteStageTask> latestTaskDescriptors,
-      OptimizingPlanner latestPlanner,
+      AbstractOptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit)
       throws Exception {}
 }

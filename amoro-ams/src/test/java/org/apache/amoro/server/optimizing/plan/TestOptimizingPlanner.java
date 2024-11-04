@@ -26,7 +26,9 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
 import org.apache.amoro.optimizing.scan.TableFileScanHelper;
+import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.iceberg.DataFile;
 import org.junit.Assert;
 import org.junit.Test;
@@ -65,7 +67,7 @@ public class TestOptimizingPlanner extends TestOptimizingEvaluator {
   @Override
   public void testFragmentFiles() {
     super.testFragmentFiles();
-    OptimizingPlanner optimizingEvaluator = buildOptimizingEvaluator();
+    AbstractOptimizingPlanner optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertTrue(optimizingEvaluator.isNecessary());
     List<RewriteStageTask> taskDescriptors = optimizingEvaluator.planTasks();
     Assert.assertEquals(1, taskDescriptors.size());
@@ -95,8 +97,8 @@ public class TestOptimizingPlanner extends TestOptimizingEvaluator {
   }
 
   @Override
-  protected OptimizingPlanner buildOptimizingEvaluator() {
-    return OptimizingPlanner.createOptimizingPlanner(
+  protected AbstractOptimizingPlanner buildOptimizingEvaluator() {
+    return IcebergTableUtil.createOptimizingPlanner(
         getTableRuntime(),
         getMixedTable(),
         1,
