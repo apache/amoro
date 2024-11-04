@@ -87,6 +87,8 @@ import org.apache.iceberg.util.SnapshotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -341,7 +343,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   @Override
   public List<PartitionFileBaseInfo> getSnapshotDetail(
-      AmoroTable<?> amoroTable, String snapshotId) {
+      AmoroTable<?> amoroTable, String snapshotId, @Nullable String ref) {
     MixedTable mixedTable = getTable(amoroTable);
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     long commitId = Long.parseLong(snapshotId);
