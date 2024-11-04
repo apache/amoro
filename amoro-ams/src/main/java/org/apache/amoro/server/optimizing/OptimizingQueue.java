@@ -264,13 +264,13 @@ public class OptimizingQueue extends PersistentBase {
     try {
       AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
       OptimizingPlanner planner =
-          new OptimizingPlanner(
+          OptimizingPlanner.createOptimizingPlanner(
               tableRuntime.refresh(table),
               (MixedTable) table.originalTable(),
               getAvailableCore(),
               maxInputSizePerThread());
       if (planner.isNecessary()) {
-        return new TableOptimizingProcess(planner);
+        return new TableOptimizingProcess(planner, tableRuntime);
       } else {
         tableRuntime.completeEmptyProcess();
         return null;
@@ -371,9 +371,9 @@ public class OptimizingQueue extends PersistentBase {
       }
     }
 
-    public TableOptimizingProcess(OptimizingPlanner planner) {
+    public TableOptimizingProcess(OptimizingPlanner planner, TableRuntime tableRuntime) {
       processId = planner.getProcessId();
-      tableRuntime = planner.getTableRuntime();
+      this.tableRuntime = tableRuntime;
       optimizingType = planner.getOptimizingType();
       planTime = planner.getPlanTime();
       targetSnapshotId = planner.getTargetSnapshotId();

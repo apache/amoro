@@ -75,7 +75,13 @@ public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
     return new MixedIcebergPartitionPlan(
-        getTableRuntime(), getMixedTable(), getPartition(), System.currentTimeMillis());
+        getTableRuntime().getTableIdentifier(),
+        getMixedTable(),
+        getTableRuntime().getOptimizingConfig(),
+        getPartition(),
+        System.currentTimeMillis(),
+        getTableRuntime().getLastMinorOptimizingTime(),
+        getTableRuntime().getLastFullOptimizingTime());
   }
 
   @Override
