@@ -53,7 +53,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
   private void tryEvaluatingPendingInput(TableRuntime tableRuntime, MixedTable table) {
     if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
       OptimizingEvaluator evaluator =
-          new OptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
+          OptimizingEvaluator.createOptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
       if (evaluator.isNecessary()) {
         OptimizingEvaluator.PendingInput pendingInput = evaluator.getOptimizingPendingInput();
         logger.debug(

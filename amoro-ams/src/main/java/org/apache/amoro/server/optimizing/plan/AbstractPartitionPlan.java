@@ -18,12 +18,12 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.RewriteStageTask;
-import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -48,7 +48,9 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
   protected final Pair<Integer, StructLike> partition;
   protected final OptimizingConfig config;
-  protected final TableRuntime tableRuntime;
+  protected final ServerTableIdentifier identifier;
+  protected final long lastMinorOptimizingTime;
+  protected final long lastFullOptimizingTime;
   private CommonPartitionEvaluator evaluator;
   private TaskSplitter taskSplitter;
   protected MixedTable tableObject;
@@ -74,15 +76,20 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   protected final Set<String> reservedDeleteFiles = Sets.newHashSet();
 
   public AbstractPartitionPlan(
-      TableRuntime tableRuntime,
+      ServerTableIdentifier identifier,
       MixedTable table,
+      OptimizingConfig config,
       Pair<Integer, StructLike> partition,
-      long planTime) {
+      long planTime,
+      long lastMinorOptimizingTime,
+      long lastFullOptimizingTime) {
+    this.identifier = identifier;
     this.partition = partition;
     this.tableObject = table;
-    this.config = tableRuntime.getOptimizingConfig();
-    this.tableRuntime = tableRuntime;
+    this.config = config;
     this.planTime = planTime;
+    this.lastMinorOptimizingTime = lastMinorOptimizingTime;
+    this.lastFullOptimizingTime = lastFullOptimizingTime;
   }
 
   @Override
@@ -98,7 +105,8 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   }
 
   protected CommonPartitionEvaluator buildEvaluator() {
-    return new CommonPartitionEvaluator(tableRuntime, partition, planTime);
+    return new CommonPartitionEvaluator(
+        identifier, config, partition, planTime, lastMinorOptimizingTime, lastFullOptimizingTime);
   }
 
   @Override
@@ -317,10 +325,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
           MixedTableUtil.getMixedTablePartitionSpecById(tableObject, partition.first());
       String partitionPath = spec.partitionToPath(partition.second());
       return new RewriteStageTask(
-          tableRuntime.getTableIdentifier().getId(),
-          partitionPath,
-          input,
-          properties.getProperties());
+          identifier.getId(), partitionPath, input, properties.getProperties());
     }
   }
 

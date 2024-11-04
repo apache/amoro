@@ -81,11 +81,14 @@ public class TestHiveKeyedPartitionPlan extends TestKeyedPartitionPlan {
     SupportHive hiveTable = (SupportHive) getMixedTable();
     String hiveLocation = hiveTable.hiveLocation();
     return new MixedHivePartitionPlan(
-        getTableRuntime(),
+        getTableRuntime().getTableIdentifier(),
         getMixedTable(),
+        getTableRuntime().getOptimizingConfig(),
         getPartition(),
         hiveLocation,
-        System.currentTimeMillis());
+        System.currentTimeMillis(),
+        getTableRuntime().getLastMinorOptimizingTime(),
+        getTableRuntime().getLastFullOptimizingTime());
   }
 
   @Test

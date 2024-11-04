@@ -18,12 +18,13 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
+import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.optimizing.MixFormatRewriteExecutorFactory;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
-import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -49,11 +50,21 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   protected final Map<String, String> partitionProperties;
 
   public MixedIcebergPartitionPlan(
-      TableRuntime tableRuntime,
+      ServerTableIdentifier identifier,
       MixedTable table,
+      OptimizingConfig config,
       Pair<Integer, StructLike> partition,
-      long planTime) {
-    super(tableRuntime, table, partition, planTime);
+      long planTime,
+      long lastMinorOptimizingTime,
+      long lastFullOptimizingTime) {
+    super(
+        identifier,
+        table,
+        config,
+        partition,
+        planTime,
+        lastMinorOptimizingTime,
+        lastFullOptimizingTime);
     this.partitionProperties = TablePropertyUtil.getPartitionProperties(table, partition.second());
   }
 
@@ -101,7 +112,14 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   @Override
   protected CommonPartitionEvaluator buildEvaluator() {
     return new MixedIcebergPartitionEvaluator(
-        tableRuntime, partition, partitionProperties, planTime, isKeyedTable());
+        identifier,
+        config,
+        partition,
+        partitionProperties,
+        planTime,
+        isKeyedTable(),
+        lastMinorOptimizingTime,
+        lastFullOptimizingTime);
   }
 
   protected static class MixedIcebergPartitionEvaluator extends CommonPartitionEvaluator {
@@ -110,12 +128,16 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     private final boolean reachBaseRefreshInterval;
 
     public MixedIcebergPartitionEvaluator(
-        TableRuntime tableRuntime,
+        ServerTableIdentifier identifier,
+        OptimizingConfig config,
         Pair<Integer, StructLike> partition,
         Map<String, String> partitionProperties,
         long planTime,
-        boolean keyedTable) {
-      super(tableRuntime, partition, planTime);
+        boolean keyedTable,
+        long lastMinorOptimizingTime,
+        long lastFullOptimizingTime) {
+      super(
+          identifier, config, partition, planTime, lastMinorOptimizingTime, lastFullOptimizingTime);
       this.keyedTable = keyedTable;
       String optimizedTime = partitionProperties.get(TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
       long lastBaseOptimizedTime = optimizedTime == null ? 0 : Long.parseLong(optimizedTime);

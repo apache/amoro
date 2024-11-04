@@ -150,10 +150,12 @@ public class TableController {
                 TableIdentifier.of(catalog, database, tableName).buildTableIdentifier()));
     if (serverTableIdentifier.isPresent()) {
       TableRuntime tableRuntime = tableService.getRuntime(serverTableIdentifier.get().getId());
-      tableSummary.setOptimizingStatus(tableRuntime.getOptimizingStatus().name());
-      OptimizingEvaluator.PendingInput tableRuntimeSummary = tableRuntime.getTableSummary();
-      if (tableRuntimeSummary != null) {
-        tableSummary.setHealthScore(tableRuntimeSummary.getHealthScore());
+      if (tableRuntime != null) {
+        tableSummary.setOptimizingStatus(tableRuntime.getOptimizingStatus().name());
+        OptimizingEvaluator.PendingInput tableRuntimeSummary = tableRuntime.getTableSummary();
+        if (tableRuntimeSummary != null) {
+          tableSummary.setHealthScore(tableRuntimeSummary.getHealthScore());
+        }
       }
     } else {
       tableSummary.setOptimizingStatus(OptimizingStatus.IDLE.name());

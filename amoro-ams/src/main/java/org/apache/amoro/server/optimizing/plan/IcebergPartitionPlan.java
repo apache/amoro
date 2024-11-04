@@ -18,9 +18,10 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
+import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.optimizing.IcebergRewriteExecutorFactory;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
-import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.util.Pair;
@@ -31,11 +32,21 @@ import java.util.stream.Collectors;
 public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
   protected IcebergPartitionPlan(
-      TableRuntime tableRuntime,
+      ServerTableIdentifier identifier,
+      OptimizingConfig config,
       MixedTable table,
       Pair<Integer, StructLike> partition,
-      long planTime) {
-    super(tableRuntime, table, partition, planTime);
+      long planTime,
+      long lastMinorOptimizingTime,
+      long lastFullOptimizingTime) {
+    super(
+        identifier,
+        table,
+        config,
+        partition,
+        planTime,
+        lastMinorOptimizingTime,
+        lastFullOptimizingTime);
   }
 
   @Override

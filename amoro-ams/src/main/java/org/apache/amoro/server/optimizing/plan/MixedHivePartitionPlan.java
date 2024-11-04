@@ -18,12 +18,13 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
+import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.properties.HiveTableProperties;
-import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.ContentFile;
@@ -40,12 +41,22 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   private String customHiveSubdirectory;
 
   public MixedHivePartitionPlan(
-      TableRuntime tableRuntime,
+      ServerTableIdentifier identifier,
       MixedTable table,
+      OptimizingConfig config,
       Pair<Integer, StructLike> partition,
       String hiveLocation,
-      long planTime) {
-    super(tableRuntime, table, partition, planTime);
+      long planTime,
+      long lastMinorOptimizingTime,
+      long lastFullOptimizingTime) {
+    super(
+        identifier,
+        table,
+        config,
+        partition,
+        planTime,
+        lastMinorOptimizingTime,
+        lastFullOptimizingTime);
     this.hiveLocation = hiveLocation;
   }
 
@@ -89,7 +100,15 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   @Override
   protected CommonPartitionEvaluator buildEvaluator() {
     return new MixedHivePartitionEvaluator(
-        tableRuntime, partition, partitionProperties, hiveLocation, planTime, isKeyedTable());
+        identifier,
+        config,
+        partition,
+        partitionProperties,
+        hiveLocation,
+        planTime,
+        isKeyedTable(),
+        lastMinorOptimizingTime,
+        lastFullOptimizingTime);
   }
 
   @Override
@@ -121,13 +140,24 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     private boolean filesNotInHiveLocation = false;
 
     public MixedHivePartitionEvaluator(
-        TableRuntime tableRuntime,
+        ServerTableIdentifier identifier,
+        OptimizingConfig config,
         Pair<Integer, StructLike> partition,
         Map<String, String> partitionProperties,
         String hiveLocation,
         long planTime,
-        boolean keyedTable) {
-      super(tableRuntime, partition, partitionProperties, planTime, keyedTable);
+        boolean keyedTable,
+        long lastMinorOptimizingTime,
+        long lastFullOptimizingTime) {
+      super(
+          identifier,
+          config,
+          partition,
+          partitionProperties,
+          planTime,
+          keyedTable,
+          lastMinorOptimizingTime,
+          lastFullOptimizingTime);
       this.hiveLocation = hiveLocation;
       String optimizedTime =
           partitionProperties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);

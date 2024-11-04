@@ -18,7 +18,9 @@
 
 package org.apache.amoro.server.optimizing.plan;
 
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.server.optimizing.scan.IcebergTableFileScanHelper;
@@ -59,25 +61,44 @@ public class OptimizingEvaluator {
 
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingEvaluator.class);
 
+  protected final ServerTableIdentifier identifier;
+  protected final OptimizingConfig config;
   protected final MixedTable mixedTable;
-  protected final TableRuntime tableRuntime;
   protected final TableSnapshot currentSnapshot;
+  protected final long lastFullOptimizingTime;
+  protected final long lastMinorOptimizingTime;
   protected final int maxPendingPartitions;
   protected boolean isInitialized = false;
-
   protected Map<String, PartitionEvaluator> needOptimizingPlanMap = Maps.newHashMap();
   protected Map<String, PartitionEvaluator> partitionPlanMap = Maps.newHashMap();
 
-  public OptimizingEvaluator(
+  public static OptimizingEvaluator createOptimizingEvaluator(
       TableRuntime tableRuntime, MixedTable table, int maxPendingPartitions) {
-    this.tableRuntime = tableRuntime;
-    this.mixedTable = table;
-    this.currentSnapshot = IcebergTableUtil.getSnapshot(table, tableRuntime);
-    this.maxPendingPartitions = maxPendingPartitions;
+    return new OptimizingEvaluator(
+        tableRuntime.getTableIdentifier(),
+        tableRuntime.getOptimizingConfig(),
+        table,
+        IcebergTableUtil.getSnapshot(table, tableRuntime),
+        maxPendingPartitions,
+        tableRuntime.getLastMinorOptimizingTime(),
+        tableRuntime.getLastFullOptimizingTime());
   }
 
-  public TableRuntime getTableRuntime() {
-    return tableRuntime;
+  public OptimizingEvaluator(
+      ServerTableIdentifier identifier,
+      OptimizingConfig config,
+      MixedTable table,
+      TableSnapshot currentSnapshot,
+      int maxPendingPartitions,
+      long lastMinorOptimizingTime,
+      long lastFullOptimizingTime) {
+    this.identifier = identifier;
+    this.config = config;
+    this.mixedTable = table;
+    this.currentSnapshot = currentSnapshot;
+    this.maxPendingPartitions = maxPendingPartitions;
+    this.lastFullOptimizingTime = lastFullOptimizingTime;
+    this.lastMinorOptimizingTime = lastMinorOptimizingTime;
   }
 
   protected void initEvaluator() {
@@ -150,25 +171,37 @@ public class OptimizingEvaluator {
 
   protected PartitionEvaluator buildEvaluator(Pair<Integer, StructLike> partition) {
     if (TableFormat.ICEBERG.equals(mixedTable.format())) {
-      return new CommonPartitionEvaluator(tableRuntime, partition, System.currentTimeMillis());
+      return new CommonPartitionEvaluator(
+          identifier,
+          config,
+          partition,
+          System.currentTimeMillis(),
+          lastMinorOptimizingTime,
+          lastFullOptimizingTime);
     } else {
       Map<String, String> partitionProperties = partitionProperties(partition);
       if (TableTypeUtil.isHive(mixedTable)) {
         String hiveLocation = (((SupportHive) mixedTable).hiveLocation());
         return new MixedHivePartitionPlan.MixedHivePartitionEvaluator(
-            tableRuntime,
+            identifier,
+            config,
             partition,
             partitionProperties,
             hiveLocation,
             System.currentTimeMillis(),
-            mixedTable.isKeyedTable());
+            mixedTable.isKeyedTable(),
+            lastMinorOptimizingTime,
+            lastFullOptimizingTime);
       } else {
         return new MixedIcebergPartitionPlan.MixedIcebergPartitionEvaluator(
-            tableRuntime,
+            identifier,
+            config,
             partition,
             partitionProperties,
             System.currentTimeMillis(),
-            mixedTable.isKeyedTable());
+            mixedTable.isKeyedTable(),
+            lastMinorOptimizingTime,
+            lastFullOptimizingTime);
       }
     }
   }
