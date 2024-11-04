@@ -150,10 +150,12 @@ public class TableController {
                 TableIdentifier.of(catalog, database, tableName).buildTableIdentifier()));
     if (serverTableIdentifier.isPresent()) {
       TableRuntime tableRuntime = tableService.getRuntime(serverTableIdentifier.get().getId());
-      tableSummary.setOptimizingStatus(tableRuntime.getOptimizingStatus().name());
-      OptimizingEvaluator.PendingInput tableRuntimeSummary = tableRuntime.getTableSummary();
-      if (tableRuntimeSummary != null) {
-        tableSummary.setHealthScore(tableRuntimeSummary.getHealthScore());
+      if (tableRuntime != null) {
+        tableSummary.setOptimizingStatus(tableRuntime.getOptimizingStatus().name());
+        OptimizingEvaluator.PendingInput tableRuntimeSummary = tableRuntime.getTableSummary();
+        if (tableRuntimeSummary != null) {
+          tableSummary.setHealthScore(tableRuntimeSummary.getHealthScore());
+        }
       }
     } else {
       tableSummary.setOptimizingStatus(OptimizingStatus.IDLE.name());
@@ -416,10 +418,13 @@ public class TableController {
     String snapshotId = ctx.pathParam("snapshotId");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    String ref = ctx.queryParamAsClass("ref", String.class).getOrDefault(null);
 
     List<PartitionFileBaseInfo> result =
         tableDescriptor.getSnapshotDetail(
-            TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(), snapshotId);
+            TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(),
+            snapshotId,
+            ref);
     int offset = (page - 1) * pageSize;
     PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(result, offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
