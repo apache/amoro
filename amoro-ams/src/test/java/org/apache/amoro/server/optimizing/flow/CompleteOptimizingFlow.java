@@ -28,7 +28,7 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.hive.optimizing.MixFormatRewriteExecutor;
+import org.apache.amoro.hive.optimizing.MixedHiveRewriteExecutor;
 import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.optimizing.IcebergRewriteExecutor;
 import org.apache.amoro.optimizing.OptimizingExecutor;
@@ -213,7 +213,7 @@ public class CompleteOptimizingFlow {
       return new IcebergRewriteExecutor(
           taskRuntime.getTaskDescriptor().getInput(), table, StructLikeCollections.DEFAULT);
     } else {
-      return new MixFormatRewriteExecutor(
+      return new MixedHiveRewriteExecutor(
           taskRuntime.getTaskDescriptor().getInput(),
           table,
           StructLikeCollections.DEFAULT,

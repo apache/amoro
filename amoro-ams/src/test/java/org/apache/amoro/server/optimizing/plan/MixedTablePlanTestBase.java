@@ -25,10 +25,8 @@ import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyedFile;
-import org.apache.amoro.hive.optimizing.MixFormatRewriteExecutorFactory;
 import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.io.MixedDataTestHelpers;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
 import org.apache.amoro.optimizing.scan.TableFileScanHelper;
@@ -464,13 +462,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     return targetFileSizeBytes / ratio;
   }
 
-  protected Map<String, String> buildProperties() {
-    Map<String, String> properties = Maps.newHashMap();
-    properties.put(
-        OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
-        MixFormatRewriteExecutorFactory.class.getName());
-    return properties;
-  }
+  protected abstract Map<String, String> buildProperties();
 
   protected Map<DataTreeNode, List<TableFileScanHelper.FileScanResult>> scanBaseFilesGroupByNode() {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();

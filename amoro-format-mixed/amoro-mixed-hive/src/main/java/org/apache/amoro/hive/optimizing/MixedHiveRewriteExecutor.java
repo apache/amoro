@@ -38,11 +38,11 @@ import org.apache.iceberg.io.TaskWriter;
 import java.util.List;
 
 /** OptimizingExecutor form mixed format */
-public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
+public class MixedHiveRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   private final String outputDir;
 
-  public MixFormatRewriteExecutor(
+  public MixedHiveRewriteExecutor(
       RewriteFilesInput input,
       MixedTable table,
       StructLikeCollections structLikeCollections,
@@ -53,7 +53,7 @@ public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   @Override
   protected OptimizingDataReader dataReader() {
-    return new MixFormatOptimizingDataReader(table, structLikeCollections, input);
+    return new MixedHiveOptimizingDataReader(table, structLikeCollections, input);
   }
 
   @Override

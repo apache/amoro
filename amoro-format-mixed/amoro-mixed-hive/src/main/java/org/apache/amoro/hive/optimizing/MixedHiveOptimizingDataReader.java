@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
  * file twice. Later on, it will be changed to read the delete file only once. Can read both
  * Mixed-hive and Mixed-iceberg format.
  */
-public class MixFormatOptimizingDataReader implements OptimizingDataReader {
+public class MixedHiveOptimizingDataReader implements OptimizingDataReader {
 
   private final MixedTable table;
 
@@ -56,7 +56,7 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
 
   private final RewriteFilesInput input;
 
-  public MixFormatOptimizingDataReader(
+  public MixedHiveOptimizingDataReader(
       MixedTable table, StructLikeCollections structLikeCollections, RewriteFilesInput input) {
     this.table = table;
     this.structLikeCollections = structLikeCollections;

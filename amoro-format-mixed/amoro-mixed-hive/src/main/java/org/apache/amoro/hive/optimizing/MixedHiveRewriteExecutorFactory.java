@@ -26,8 +26,8 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 
 import java.util.Map;
 
-/** A factory to create {@link MixFormatRewriteExecutor} */
-public class MixFormatRewriteExecutorFactory
+/** A factory to create {@link MixedHiveRewriteExecutor} */
+public class MixedHiveRewriteExecutorFactory
     implements OptimizingExecutorFactory<RewriteFilesInput> {
 
   private Map<String, String> properties;
@@ -40,7 +40,7 @@ public class MixFormatRewriteExecutorFactory
   @Override
   public OptimizingExecutor createExecutor(RewriteFilesInput input) {
     OptimizingInputProperties optimizingConfig = OptimizingInputProperties.parse(properties);
-    return new MixFormatRewriteExecutor(
+    return new MixedHiveRewriteExecutor(
         input,
         input.getTable(),
         optimizingConfig.getStructLikeCollections(),
