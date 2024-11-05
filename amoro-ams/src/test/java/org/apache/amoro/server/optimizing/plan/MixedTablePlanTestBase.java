@@ -462,7 +462,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     return targetFileSizeBytes / ratio;
   }
 
-  protected abstract Map<String, String> buildProperties();
+  protected abstract Map<String, String> buildTaskProperties();
 
   protected Map<DataTreeNode, List<TableFileScanHelper.FileScanResult>> scanBaseFilesGroupByNode() {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
@@ -501,7 +501,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     assertFiles(rewrittenDataFiles, actual.getInput().rewrittenDataFiles());
     assertFiles(readOnlyDeleteFiles, actual.getInput().readOnlyDeleteFiles());
     assertFiles(rePosDeletedDataFiles, actual.getInput().rePosDeletedDataFiles());
-    assertTaskProperties(buildProperties(), actual.getProperties());
+    assertTaskProperties(buildTaskProperties(), actual.getProperties());
   }
 
   protected void assertTaskProperties(Map<String, String> expect, Map<String, String> actual) {

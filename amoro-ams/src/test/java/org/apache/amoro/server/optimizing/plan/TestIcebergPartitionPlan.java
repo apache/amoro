@@ -92,7 +92,7 @@ public class TestIcebergPartitionPlan extends TestUnkeyedPartitionPlan {
     return new IcebergTableFileScanHelper(getMixedTable(), baseSnapshotId);
   }
 
-  protected Map<String, String> buildProperties() {
+  protected Map<String, String> buildTaskProperties() {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(
         OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
