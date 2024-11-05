@@ -45,11 +45,4 @@ public interface OptimizingProcess {
   void commit();
 
   MetricsSummary getSummary();
-
-  enum Status {
-    RUNNING,
-    CLOSED,
-    SUCCESS,
-    FAILED
-  }
 }
