@@ -177,6 +177,12 @@ amoroConf:
   ##    backend: kyuubi
   ##    kyuubiJdbcUrl: jdbc:hive2://127.0.0.1:10009/
 
+  ## Kyuubi terminal backend configuration with ldap authentication.
+  ##  terminal:
+  ##    backend: kyuubi
+  ##    kyuubiLdapEnabled: true
+  ##    kyuubiJdbcUrl:jdbc:hive2://127.0.0.1:10009/default?user=test;password=test;
+
   ## @param amoroDefaults The value (templated string) is used for conf.yaml file
   ## ref: https://github.com/apache/amoro/blob/master/dist/src/main/amoro-bin/conf/config.yaml
   ##
