@@ -24,11 +24,14 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.optimizing.MixedIcebergRewriteExecutorFactory;
+import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
 import org.apache.amoro.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.iceberg.DataFile;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,6 +40,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
@@ -103,5 +107,14 @@ public class TestOptimizingPlanner extends TestOptimizingEvaluator {
         getMixedTable(),
         1,
         OptimizerProperties.MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT);
+  }
+
+  @Override
+  protected Map<String, String> buildTaskProperties() {
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put(
+        OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
+        MixedIcebergRewriteExecutorFactory.class.getName());
+    return properties;
   }
 }
