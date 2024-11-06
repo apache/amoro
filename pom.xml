@@ -154,6 +154,7 @@
 
         <rocksdb-dependency-scope>compile</rocksdb-dependency-scope>
         <lucene-dependency-scope>compile</lucene-dependency-scope>
+        <aliyun-sdk-dependency-scope>compile</aliyun-sdk-dependency-scope>
     </properties>
 
     <dependencies>
@@ -361,6 +362,7 @@
                 <groupId>com.aliyun.oss</groupId>
                 <artifactId>aliyun-sdk-oss</artifactId>
                 <version>${aliyun-sdk-oss.version}</version>
+                <scope>${aliyun-sdk-dependency-scope}</scope>
             </dependency>
 
             <dependency>
@@ -1361,6 +1363,12 @@
             <properties>
                 <rocksdb-dependency-scope>provided</rocksdb-dependency-scope>
                 <lucene-dependency-scope>provided</lucene-dependency-scope>
+            </properties>
+        </profile>
+        <profile>
+            <id>no-aliyun-sdk</id>
+            <properties>
+                <aliyun-sdk-dependency-scope>provided</aliyun-sdk-dependency-scope>
             </properties>
         </profile>
     </profiles>
