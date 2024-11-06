@@ -60,7 +60,7 @@ public class AmoroManagementConf {
                   + "manifests in the base table implementation across all concurrent planning or commit operations.");
 
   public static final ConfigOption<Integer> TABLE_MANIFEST_IO_PLANNING_THREAD_COUNT =
-      ConfigOptions.key("table-manifest-io.planning.thread-count")
+      ConfigOptions.key("self-optimizing.plan-manifest-io-thread-count")
           .intType()
           .defaultValue(10)
           .withDescription(
@@ -68,7 +68,7 @@ public class AmoroManagementConf {
                   + "manifests in the base table implementation across all concurrent planning operations.");
 
   public static final ConfigOption<Integer> TABLE_MANIFEST_IO_COMMIT_THREAD_COUNT =
-      ConfigOptions.key("table-manifest-io.commit.thread-count")
+      ConfigOptions.key("self-optimizing.commit-manifest-io-thread-count")
           .intType()
           .defaultValue(10)
           .withDescription(
