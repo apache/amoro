@@ -117,7 +117,7 @@ Amoro is built using Maven with JDK 8 and JDK 17(only for `amoro-format-mixed/am
 * Build and skip tests: `mvn clean package -DskipTests`
 * Build and skip dashboard: `mvn clean package -Pskip-dashboard-build`
 * Build and disable disk storage, RocksDB will NOT be introduced to avoid memory overflow: `mvn clean package -DskipTests -Pno-extented-disk-storage`
-* Build and disable aliyun sdk: `mvn clean package -DskipTests -Pno-aliyun-sdk`
+* Build and disable aliyun sdk: `mvn clean package -DskipTests -Paliyun-oss-sdk`
 * Build with hadoop 2.x(the default is 3.x) dependencies: `mvn clean package -DskipTests -Phadoop2`
 * Specify Flink version for Flink optimizer(the default is 1.20.0): `mvn clean package -DskipTests -Dflink-optimizer.flink-version=1.20.0`
   * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-optimizer-pre-1.15` parameter: `mvn clean package -DskipTests -Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`
