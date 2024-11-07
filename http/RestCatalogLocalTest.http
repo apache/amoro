@@ -37,7 +37,7 @@ Content-Type: application/json
 GET http://localhost:1630/api/iceberg/rest/v1/catalogs/iceberg/namespaces/test_db
 Content-Type: application/json
 
-### se namespace properties UnsupportedOperationException
+### set namespace properties UnsupportedOperationException
 POST http://localhost:1630/api/iceberg/rest/v1/catalogs/iceberg/namespaces/test_db
 Content-Type: application/json
 
