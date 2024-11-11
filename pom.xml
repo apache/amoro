@@ -489,6 +489,12 @@
                 <artifactId>orc-core</artifactId>
                 <version>${orc-core.version}</version>
                 <classifier>nohive</classifier>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-client-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
