@@ -23,6 +23,7 @@ import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 
 import java.util.Map;
@@ -48,7 +49,7 @@ public class TableRuntimeMeta {
   private AbstractOptimizingEvaluator.PendingInput pendingInput;
   private AbstractOptimizingEvaluator.PendingInput tableSummary;
   private long optimizingProcessId = 0;
-  private OptimizingProcess.Status processStatus;
+  private ProcessStatus processStatus;
   private OptimizingType optimizingType;
   private long targetSnapshotId;
   private long targetChangeSnapshotId;
@@ -141,7 +142,7 @@ public class TableRuntimeMeta {
     return optimizingProcessId;
   }
 
-  public OptimizingProcess.Status getProcessStatus() {
+  public ProcessStatus getProcessStatus() {
     return processStatus;
   }
 
@@ -257,7 +258,7 @@ public class TableRuntimeMeta {
     this.optimizingProcessId = optimizingProcessId;
   }
 
-  public void setProcessStatus(OptimizingProcess.Status processStatus) {
+  public void setProcessStatus(ProcessStatus processStatus) {
     this.processStatus = processStatus;
   }
 

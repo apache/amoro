@@ -21,6 +21,8 @@ package org.apache.amoro.server.optimizing;
 import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 
+import org.apache.amoro.process.ProcessStatus;
+
 import java.util.Map;
 
 /** Meta of optimizing process. */
@@ -33,7 +35,7 @@ public class OptimizingProcessMeta {
   private String tableName;
   private Long targetSnapshotId;
   private Long targetChangeSnapshotId;
-  private OptimizingProcess.Status status;
+  private ProcessStatus processStatus;
   private OptimizingType optimizingType;
   private long planTime;
   private long endTime;
@@ -92,12 +94,12 @@ public class OptimizingProcessMeta {
     this.targetSnapshotId = targetSnapshotId;
   }
 
-  public OptimizingProcess.Status getStatus() {
-    return status;
+  public ProcessStatus getStatus() {
+    return processStatus;
   }
 
-  public void setStatus(OptimizingProcess.Status status) {
-    this.status = status;
+  public void setStatus(ProcessStatus processStatus) {
+    this.processStatus = processStatus;
   }
 
   public OptimizingType getOptimizingType() {
