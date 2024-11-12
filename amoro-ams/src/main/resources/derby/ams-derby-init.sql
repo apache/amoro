@@ -205,3 +205,19 @@ CREATE TABLE table_blocker (
   PRIMARY KEY (blocker_id),
   CONSTRAINT prev_uq UNIQUE (catalog_name, db_name, table_name, prev_blocker_id)
 );
+
+CREATE TABLE http_session (
+    session_id    VARCHAR(120) NOT NULL,
+    context_path  VARCHAR(60),
+    virtual_host  VARCHAR(60),
+    last_node     VARCHAR(60),
+    access_time   BIGINT,
+    last_access_time  BIGINT,
+    create_time   BIGINT,
+    cookie_time   BIGINT,
+    last_save_time BIGINT,
+    expiry_time   BIGINT,
+    max_interval  BIGINT,
+    data_store    BLOB,
+    PRIMARY KEY(session_id, context_path, virtual_host)
+);

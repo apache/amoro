@@ -225,3 +225,20 @@ CREATE TABLE `table_blocker` (
   PRIMARY KEY (`blocker_id`),
   UNIQUE KEY `uq_prev` (`catalog_name`,`db_name`,`table_name`, `prev_blocker_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Table blockers' ROW_FORMAT=DYNAMIC;
+
+CREATE TABLE `http_session` (
+    `session_id`    varchar(120) NOT NULL COMMENT 'HTTP Session ID',
+    `context_path`  varchar(60) COMMENT 'Jetty Context path',
+    `virtual_host`  varchar(60) COMMENT 'Jetty virtual host',
+    `last_node`     varchar(60) COMMENT 'Last node',
+    `access_time`   bigint(20) COMMENT 'Access time',
+    `last_access_time`  bigint(20) COMMENT 'Last access time',
+    `create_time`   bigint(20)  COMMENT 'Create time',
+    `cookie_time`   bigint(20)  COMMENT 'Cookie time',
+    `last_save_time` bigint(20) COMMENT 'Last save time',
+    `expiry_time`   bigint(20)  COMMENT 'Expiry time',
+    `max_interval`  bigint(20)  COMMENT 'Max internal',
+    `data_store`    blob        COMMENT 'Session data store',
+    PRIMARY KEY(`session_id`, `context_path`, `virtual_host`),
+    KEY `idx_session_expiry` (`expiry_time`)
+) ENGINE = InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Http session store' ROW_FORMAT=DYNAMIC;

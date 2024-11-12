@@ -20,6 +20,7 @@ package org.apache.amoro.server.table;
 
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.ibatis.session.SqlSession;
@@ -27,6 +28,8 @@ import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -50,7 +53,8 @@ public class DerbyPersistence extends ExternalResource {
       configurations.set(AmoroManagementConf.DB_TYPE, AmoroManagementConf.DB_TYPE_DERBY);
       configurations.set(
           AmoroManagementConf.DB_DRIVER_CLASS_NAME, "org.apache.derby.jdbc.EmbeddedDriver");
-      SqlSessionFactoryProvider.getInstance().init(configurations);
+      DataSource ds = DataSourceFactory.createDataSource(configurations);
+      SqlSessionFactoryProvider.getInstance().init(ds);
       LOG.info("Initialized derby persistent with url: {}", derbyUrl);
       Runtime.getRuntime()
           .addShutdownHook(

@@ -34,6 +34,8 @@ import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.persistence.DataSourceFactory;
+import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.OptimizerManager;
@@ -63,10 +65,11 @@ import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.JacksonUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.SystemProperties;
-import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+
+import javax.sql.DataSource;
 
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
@@ -87,6 +90,7 @@ public class AmoroServiceContainer {
   public static final String SERVER_CONFIG_FILENAME = "config.yaml";
 
   private final HighAvailabilityContainer haContainer;
+  private DataSource dataSource;
   private DefaultTableService tableService;
   private DefaultOptimizingService optimizingService;
   private TerminalManager terminalManager;
@@ -242,7 +246,7 @@ public class AmoroServiceContainer {
         Javalin.create(
             config -> {
               config.addStaticFiles(dashboardServer.configStaticFiles());
-              config.sessionHandler(SessionHandler::new);
+              config.sessionHandler(() -> HttpSessionHandlerFactory.createSessionHandler(dataSource, serviceConfig));
               config.enableCorsForAllOrigins();
               config.jsonMapper(JavalinJsonMapper.createDefaultJsonMapper());
               config.showJavalinBanner = false;
@@ -435,7 +439,8 @@ public class AmoroServiceContainer {
       expandedConfigurationMap.putAll(envConfig);
       serviceConfig = Configurations.fromObjectMap(expandedConfigurationMap);
       AmoroManagementConfValidator.validateConfig(serviceConfig);
-      SqlSessionFactoryProvider.getInstance().init(serviceConfig);
+      dataSource = DataSourceFactory.createDataSource(serviceConfig);
+      SqlSessionFactoryProvider.getInstance().init(dataSource);
     }
 
     private Map<String, Object> initEnvConfig() {
