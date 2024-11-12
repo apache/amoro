@@ -22,7 +22,6 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
-import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 
