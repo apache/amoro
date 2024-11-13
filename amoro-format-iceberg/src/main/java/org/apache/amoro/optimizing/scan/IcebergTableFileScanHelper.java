@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.scan;
+package org.apache.amoro.optimizing.scan;
 
-import org.apache.amoro.server.AmoroServiceConstants;
+import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Table;
@@ -38,7 +38,7 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
 
   @Override
   public CloseableIterable<FileScanResult> scan() {
-    if (snapshotId == AmoroServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (snapshotId == Constants.INVALID_SNAPSHOT_ID) {
       return CloseableIterable.empty();
     }
     return CloseableIterable.transform(

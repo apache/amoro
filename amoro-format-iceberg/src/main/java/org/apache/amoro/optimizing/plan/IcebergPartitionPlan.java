@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.plan;
+package org.apache.amoro.optimizing.plan;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.OptimizingConfig;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
-  protected IcebergPartitionPlan(
+  public IcebergPartitionPlan(
       ServerTableIdentifier identifier,
       OptimizingConfig config,
       MixedTable table,

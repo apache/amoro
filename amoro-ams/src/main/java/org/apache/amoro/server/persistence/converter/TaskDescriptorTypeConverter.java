@@ -18,8 +18,8 @@
 
 package org.apache.amoro.server.persistence.converter;
 
-import org.apache.amoro.server.optimizing.RewriteStageTask;
-import org.apache.amoro.server.optimizing.StagedTaskDescriptor;
+import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
 

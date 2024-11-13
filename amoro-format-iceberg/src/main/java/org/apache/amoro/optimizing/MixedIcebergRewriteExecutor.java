@@ -16,18 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.hive.optimizing;
+package org.apache.amoro.optimizing;
 
 import org.apache.amoro.data.PrimaryKeyedFile;
-import org.apache.amoro.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
+import org.apache.amoro.io.writer.GenericTaskWriters;
 import org.apache.amoro.io.writer.MixedTreeNodePosDeleteWriter;
-import org.apache.amoro.optimizing.AbstractRewriteFilesExecutor;
-import org.apache.amoro.optimizing.OptimizingDataReader;
-import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.table.MixedTable;
-import org.apache.amoro.table.WriteOperationKind;
 import org.apache.amoro.utils.map.StructLikeCollections;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.deletes.PositionDelete;
 import org.apache.iceberg.io.DeleteWriteResult;
@@ -37,23 +32,19 @@ import org.apache.iceberg.io.TaskWriter;
 
 import java.util.List;
 
-/** OptimizingExecutor form mixed format */
-public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
+public class MixedIcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
 
-  private final String outputDir;
-
-  public MixFormatRewriteExecutor(
+  public MixedIcebergRewriteExecutor(
       RewriteFilesInput input,
       MixedTable table,
       StructLikeCollections structLikeCollections,
       String outputDir) {
     super(input, table, structLikeCollections);
-    this.outputDir = outputDir;
   }
 
   @Override
   protected OptimizingDataReader dataReader() {
-    return new MixFormatOptimizingDataReader(table, structLikeCollections, input);
+    return new MixedIcebergOptimizingDataReader(table, structLikeCollections, input);
   }
 
   @Override
@@ -72,23 +63,19 @@ public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   @Override
   protected TaskWriter<Record> dataWriter() {
-    return AdaptHiveGenericTaskWriterBuilder.builderFor(table)
+    return GenericTaskWriters.builderFor(table)
         .withTransactionId(
             table.isKeyedTable() ? getTransactionId(input.rewrittenDataFilesForMixed()) : null)
         .withTaskId(0)
-        .withCustomHiveSubdirectory(outputDir)
         .withTargetFileSize(targetSize())
-        .buildWriter(
-            StringUtils.isBlank(outputDir)
-                ? WriteOperationKind.MAJOR_OPTIMIZE
-                : WriteOperationKind.FULL_OPTIMIZE);
+        .buildBaseWriter();
   }
 
-  public long getTransactionId(List<PrimaryKeyedFile> dataFiles) {
+  private long getTransactionId(List<PrimaryKeyedFile> dataFiles) {
     return dataFiles.stream().mapToLong(PrimaryKeyedFile::transactionId).max().orElse(0L);
   }
 
-  public String baseLocation() {
+  private String baseLocation() {
     if (table.isKeyedTable()) {
       return table.asKeyedTable().baseTable().location();
     } else {

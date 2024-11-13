@@ -16,35 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.scan;
+package org.apache.amoro.iceberg;
 
-import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.io.CloseableIterable;
+public class Constants {
 
-import java.util.List;
-
-public interface TableFileScanHelper {
-  class FileScanResult {
-    private final DataFile file;
-    private final List<ContentFile<?>> deleteFiles;
-
-    public FileScanResult(DataFile file, List<ContentFile<?>> deleteFiles) {
-      this.file = file;
-      this.deleteFiles = deleteFiles;
-    }
-
-    public DataFile file() {
-      return file;
-    }
-
-    public List<ContentFile<?>> deleteFiles() {
-      return deleteFiles;
-    }
-  }
-
-  CloseableIterable<FileScanResult> scan();
-
-  TableFileScanHelper withPartitionFilter(Expression partitionFilter);
+  public static final long INVALID_SNAPSHOT_ID = -1L;
 }

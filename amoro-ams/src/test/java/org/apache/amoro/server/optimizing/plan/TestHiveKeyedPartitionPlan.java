@@ -25,8 +25,11 @@ import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
+import org.apache.amoro.hive.optimizing.MixedHiveRewriteExecutorFactory;
+import org.apache.amoro.hive.optimizing.plan.MixedHivePartitionPlan;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -127,5 +130,14 @@ public class TestHiveKeyedPartitionPlan extends TestKeyedPartitionPlan {
         HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
         (System.currentTimeMillis() / 1000 + 1000) + "");
     Assert.assertEquals(0, planWithCurrentFiles().size());
+  }
+
+  @Override
+  protected Map<String, String> buildTaskProperties() {
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put(
+        OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
+        MixedHiveRewriteExecutorFactory.class.getName());
+    return properties;
   }
 }

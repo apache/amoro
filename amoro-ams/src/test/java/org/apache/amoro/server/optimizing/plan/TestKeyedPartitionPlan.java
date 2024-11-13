@@ -24,11 +24,16 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.data.ChangeAction;
+import org.apache.amoro.optimizing.MixedIcebergRewriteExecutorFactory;
+import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
+import org.apache.amoro.optimizing.plan.MixedIcebergPartitionPlan;
+import org.apache.amoro.optimizing.scan.KeyedTableFileScanHelper;
+import org.apache.amoro.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
-import org.apache.amoro.server.optimizing.RewriteStageTask;
-import org.apache.amoro.server.optimizing.scan.KeyedTableFileScanHelper;
-import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.DataFile;
@@ -42,6 +47,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @RunWith(Parameterized.class)
 public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
@@ -223,5 +229,14 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
   protected TableFileScanHelper getTableFileScanHelper() {
     return new KeyedTableFileScanHelper(
         getMixedTable(), OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getMixedTable()));
+  }
+
+  @Override
+  protected Map<String, String> buildTaskProperties() {
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put(
+        OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
+        MixedIcebergRewriteExecutorFactory.class.getName());
+    return properties;
   }
 }

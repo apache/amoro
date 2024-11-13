@@ -23,15 +23,17 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
+import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
+import org.apache.amoro.optimizing.scan.KeyedTableFileScanHelper;
+import org.apache.amoro.optimizing.scan.TableFileScanHelper;
+import org.apache.amoro.optimizing.scan.UnkeyedTableFileScanHelper;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
-import org.apache.amoro.server.optimizing.scan.KeyedTableFileScanHelper;
-import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
-import org.apache.amoro.server.optimizing.scan.UnkeyedTableFileScanHelper;
-import org.apache.amoro.server.table.TableSnapshot;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.table.TableSnapshot;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
@@ -40,6 +42,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,6 +53,11 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
   public TestOptimizingEvaluator(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
+  }
+
+  @Override
+  protected Map<String, String> buildTaskProperties() {
+    return Collections.emptyMap();
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
@@ -71,9 +79,10 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
 
   @Test
   public void testEmpty() {
-    OptimizingEvaluator optimizingEvaluator = buildOptimizingEvaluator();
+    AbstractOptimizingEvaluator optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertFalse(optimizingEvaluator.isNecessary());
-    OptimizingEvaluator.PendingInput pendingInput = optimizingEvaluator.getOptimizingPendingInput();
+    AbstractOptimizingEvaluator.PendingInput pendingInput =
+        optimizingEvaluator.getOptimizingPendingInput();
     assertEmptyInput(pendingInput);
   }
 
@@ -90,9 +99,10 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
             getMixedTable(),
             tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
 
-    OptimizingEvaluator optimizingEvaluator = buildOptimizingEvaluator();
+    AbstractOptimizingEvaluator optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertFalse(optimizingEvaluator.isNecessary());
-    OptimizingEvaluator.PendingInput pendingInput = optimizingEvaluator.getOptimizingPendingInput();
+    AbstractOptimizingEvaluator.PendingInput pendingInput =
+        optimizingEvaluator.getOptimizingPendingInput();
     assertEmptyInput(pendingInput);
 
     // add more files
@@ -111,19 +121,12 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
     assertInput(pendingInput, FileInfo.buildFileInfo(dataFiles));
   }
 
-  protected OptimizingEvaluator buildOptimizingEvaluator() {
+  protected AbstractOptimizingEvaluator buildOptimizingEvaluator() {
     TableSnapshot snapshot = IcebergTableUtil.getSnapshot(getMixedTable(), tableRuntime);
-    return new OptimizingEvaluator(
-        tableRuntime.getTableIdentifier(),
-        tableRuntime.getOptimizingConfig(),
-        getMixedTable(),
-        snapshot,
-        100,
-        tableRuntime.getLastMinorOptimizingTime(),
-        tableRuntime.getLastFullOptimizingTime());
+    return IcebergTableUtil.createOptimizingEvaluator(tableRuntime, getMixedTable(), snapshot, 100);
   }
 
-  protected void assertEmptyInput(OptimizingEvaluator.PendingInput input) {
+  protected void assertEmptyInput(AbstractOptimizingEvaluator.PendingInput input) {
     Assert.assertEquals(input.getPartitions().size(), 0);
     Assert.assertEquals(input.getDataFileCount(), 0);
     Assert.assertEquals(input.getDataFileSize(), 0);
@@ -133,7 +136,7 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
     Assert.assertEquals(input.getPositionalDeleteFileCount(), 0);
   }
 
-  protected void assertInput(OptimizingEvaluator.PendingInput input, FileInfo fileInfo) {
+  protected void assertInput(AbstractOptimizingEvaluator.PendingInput input, FileInfo fileInfo) {
     Assert.assertEquals(input.getPartitions(), fileInfo.getPartitions());
     Assert.assertEquals(input.getDataFileCount(), fileInfo.getDataFileCount());
     Assert.assertEquals(input.getDataFileSize(), fileInfo.getDataFileSize());

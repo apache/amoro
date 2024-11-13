@@ -16,28 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.plan;
+package org.apache.amoro.optimizing.plan;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.OptimizingConfig;
-import org.apache.amoro.hive.table.SupportHive;
-import org.apache.amoro.hive.utils.TableTypeUtil;
-import org.apache.amoro.server.optimizing.scan.IcebergTableFileScanHelper;
-import org.apache.amoro.server.optimizing.scan.KeyedTableFileScanHelper;
-import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
-import org.apache.amoro.server.optimizing.scan.UnkeyedTableFileScanHelper;
-import org.apache.amoro.server.table.KeyedTableSnapshot;
-import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableSnapshot;
-import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.optimizing.scan.IcebergTableFileScanHelper;
+import org.apache.amoro.optimizing.scan.KeyedTableFileScanHelper;
+import org.apache.amoro.optimizing.scan.TableFileScanHelper;
+import org.apache.amoro.optimizing.scan.UnkeyedTableFileScanHelper;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableSnapshot;
 import org.apache.amoro.utils.MixedTableUtil;
-import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
@@ -57,9 +52,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class OptimizingEvaluator {
+public abstract class AbstractOptimizingEvaluator {
 
-  private static final Logger LOG = LoggerFactory.getLogger(OptimizingEvaluator.class);
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizingEvaluator.class);
 
   protected final ServerTableIdentifier identifier;
   protected final OptimizingConfig config;
@@ -72,19 +67,7 @@ public class OptimizingEvaluator {
   protected Map<String, PartitionEvaluator> needOptimizingPlanMap = Maps.newHashMap();
   protected Map<String, PartitionEvaluator> partitionPlanMap = Maps.newHashMap();
 
-  public static OptimizingEvaluator createOptimizingEvaluator(
-      TableRuntime tableRuntime, MixedTable table, int maxPendingPartitions) {
-    return new OptimizingEvaluator(
-        tableRuntime.getTableIdentifier(),
-        tableRuntime.getOptimizingConfig(),
-        table,
-        IcebergTableUtil.getSnapshot(table, tableRuntime),
-        maxPendingPartitions,
-        tableRuntime.getLastMinorOptimizingTime(),
-        tableRuntime.getLastFullOptimizingTime());
-  }
-
-  public OptimizingEvaluator(
+  public AbstractOptimizingEvaluator(
       ServerTableIdentifier identifier,
       OptimizingConfig config,
       MixedTable table,
@@ -165,46 +148,7 @@ public class OptimizingEvaluator {
             .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue())));
   }
 
-  private Map<String, String> partitionProperties(Pair<Integer, StructLike> partition) {
-    return TablePropertyUtil.getPartitionProperties(mixedTable, partition.second());
-  }
-
-  protected PartitionEvaluator buildEvaluator(Pair<Integer, StructLike> partition) {
-    if (TableFormat.ICEBERG.equals(mixedTable.format())) {
-      return new CommonPartitionEvaluator(
-          identifier,
-          config,
-          partition,
-          System.currentTimeMillis(),
-          lastMinorOptimizingTime,
-          lastFullOptimizingTime);
-    } else {
-      Map<String, String> partitionProperties = partitionProperties(partition);
-      if (TableTypeUtil.isHive(mixedTable)) {
-        String hiveLocation = (((SupportHive) mixedTable).hiveLocation());
-        return new MixedHivePartitionPlan.MixedHivePartitionEvaluator(
-            identifier,
-            config,
-            partition,
-            partitionProperties,
-            hiveLocation,
-            System.currentTimeMillis(),
-            mixedTable.isKeyedTable(),
-            lastMinorOptimizingTime,
-            lastFullOptimizingTime);
-      } else {
-        return new MixedIcebergPartitionPlan.MixedIcebergPartitionEvaluator(
-            identifier,
-            config,
-            partition,
-            partitionProperties,
-            System.currentTimeMillis(),
-            mixedTable.isKeyedTable(),
-            lastMinorOptimizingTime,
-            lastFullOptimizingTime);
-      }
-    }
-  }
+  protected abstract PartitionEvaluator buildEvaluator(Pair<Integer, StructLike> partition);
 
   public boolean isNecessary() {
     if (!isInitialized) {

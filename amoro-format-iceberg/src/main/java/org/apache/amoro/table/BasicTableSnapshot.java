@@ -16,20 +16,17 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing;
+package org.apache.amoro.table;
 
-public enum OptimizingType {
-  MINOR(OptimizingStatus.MINOR_OPTIMIZING),
-  MAJOR(OptimizingStatus.MAJOR_OPTIMIZING),
-  FULL(OptimizingStatus.FULL_OPTIMIZING);
+public class BasicTableSnapshot implements TableSnapshot {
+  private final long snapshotId;
 
-  private final OptimizingStatus status;
-
-  OptimizingType(OptimizingStatus status) {
-    this.status = status;
+  public BasicTableSnapshot(long snapshotId) {
+    this.snapshotId = snapshotId;
   }
 
-  public OptimizingStatus getStatus() {
-    return status;
+  @Override
+  public long snapshotId() {
+    return snapshotId;
   }
 }

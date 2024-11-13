@@ -16,9 +16,35 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.optimizing.scan;
 
-public interface TableSnapshot {
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.io.CloseableIterable;
 
-  long snapshotId();
+import java.util.List;
+
+public interface TableFileScanHelper {
+  class FileScanResult {
+    private final DataFile file;
+    private final List<ContentFile<?>> deleteFiles;
+
+    public FileScanResult(DataFile file, List<ContentFile<?>> deleteFiles) {
+      this.file = file;
+      this.deleteFiles = deleteFiles;
+    }
+
+    public DataFile file() {
+      return file;
+    }
+
+    public List<ContentFile<?>> deleteFiles() {
+      return deleteFiles;
+    }
+  }
+
+  CloseableIterable<FileScanResult> scan();
+
+  TableFileScanHelper withPartitionFilter(Expression partitionFilter);
 }

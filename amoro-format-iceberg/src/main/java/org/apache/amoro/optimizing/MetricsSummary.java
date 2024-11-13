@@ -16,15 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing;
+package org.apache.amoro.optimizing;
 
-import static org.apache.amoro.server.dashboard.utils.AmsUtil.byteToXB;
-
-import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.amoro.table.descriptor.FilesStatistics;
 import org.apache.amoro.table.descriptor.FilesStatisticsBuilder;
+import org.apache.amoro.utils.CommonUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
@@ -113,42 +111,37 @@ public class MetricsSummary {
     }
   }
 
-  public MetricsSummary(Collection<TaskRuntime<RewriteStageTask>> taskRuntimes) {
-    taskRuntimes.stream()
-        .map(TaskRuntime::getTaskDescriptor)
-        .map(RewriteStageTask::getSummary)
-        .forEach(
-            metrics -> {
-              newDataFileCnt += metrics.getNewDataFileCnt();
-              newDataSize += metrics.getNewDataSize();
-              newDataRecordCnt += metrics.getNewDataRecordCnt();
-              newDeleteSize += metrics.getNewDeleteSize();
-              newDeleteFileCnt += metrics.getNewDeleteFileCnt();
-              newDeleteRecordCnt += metrics.getNewDeleteRecordCnt();
-              rewriteDataFileCnt += metrics.getRewriteDataFileCnt();
-              // to be compatible with old metrics name when calculating total metrics of all tasks
-              reRowDeletedDataFileCnt +=
-                  Math.max(
-                      metrics.getReRowDeletedDataFileCnt(), metrics.getRewritePosDataFileCnt());
-              rewritePosDataFileCnt +=
-                  Math.max(
-                      metrics.getReRowDeletedDataFileCnt(), metrics.getRewritePosDataFileCnt());
-              rewriteDataSize += metrics.getRewriteDataSize();
-              rewritePosDataSize += metrics.getRewritePosDataSize();
-              posDeleteFileCnt += metrics.getPosDeleteFileCnt();
-              positionalDeleteSize +=
-                  Math.max(metrics.getPositionalDeleteSize(), metrics.getPositionDeleteSize());
-              positionDeleteSize +=
-                  Math.max(metrics.getPositionalDeleteSize(), metrics.getPositionDeleteSize());
-              eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
-              equalityDeleteSize += metrics.getEqualityDeleteSize();
-              rewriteDataRecordCnt += metrics.getRewriteDataRecordCnt();
-              rewritePosDataRecordCnt += metrics.getRewritePosDataRecordCnt();
-              eqDeleteRecordCnt += metrics.getEqDeleteRecordCnt();
-              posDeleteRecordCnt += metrics.getPosDeleteRecordCnt();
-              newFileCnt += metrics.getNewFileCnt();
-              newFileSize += metrics.getNewFileSize();
-            });
+  public MetricsSummary(Collection<MetricsSummary> taskSummaries) {
+    taskSummaries.forEach(
+        metrics -> {
+          newDataFileCnt += metrics.getNewDataFileCnt();
+          newDataSize += metrics.getNewDataSize();
+          newDataRecordCnt += metrics.getNewDataRecordCnt();
+          newDeleteSize += metrics.getNewDeleteSize();
+          newDeleteFileCnt += metrics.getNewDeleteFileCnt();
+          newDeleteRecordCnt += metrics.getNewDeleteRecordCnt();
+          rewriteDataFileCnt += metrics.getRewriteDataFileCnt();
+          // to be compatible with old metrics name when calculating total metrics of all tasks
+          reRowDeletedDataFileCnt +=
+              Math.max(metrics.getReRowDeletedDataFileCnt(), metrics.getRewritePosDataFileCnt());
+          rewritePosDataFileCnt +=
+              Math.max(metrics.getReRowDeletedDataFileCnt(), metrics.getRewritePosDataFileCnt());
+          rewriteDataSize += metrics.getRewriteDataSize();
+          rewritePosDataSize += metrics.getRewritePosDataSize();
+          posDeleteFileCnt += metrics.getPosDeleteFileCnt();
+          positionalDeleteSize +=
+              Math.max(metrics.getPositionalDeleteSize(), metrics.getPositionDeleteSize());
+          positionDeleteSize +=
+              Math.max(metrics.getPositionalDeleteSize(), metrics.getPositionDeleteSize());
+          eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
+          equalityDeleteSize += metrics.getEqualityDeleteSize();
+          rewriteDataRecordCnt += metrics.getRewriteDataRecordCnt();
+          rewritePosDataRecordCnt += metrics.getRewritePosDataRecordCnt();
+          eqDeleteRecordCnt += metrics.getEqDeleteRecordCnt();
+          posDeleteRecordCnt += metrics.getPosDeleteRecordCnt();
+          newFileCnt += metrics.getNewFileCnt();
+          newFileSize += metrics.getNewFileSize();
+        });
   }
 
   public Map<String, String> summaryAsMap(boolean humanReadable) {
@@ -197,7 +190,7 @@ public class MetricsSummary {
   }
 
   private void put(Map<String, String> summary, String key, long value, boolean humanReadable) {
-    summary.put(key, humanReadable ? byteToXB(value) : String.valueOf(value));
+    summary.put(key, humanReadable ? CommonUtil.byteToXB(value) : String.valueOf(value));
   }
 
   public FilesStatistics getInputFilesStatistics() {

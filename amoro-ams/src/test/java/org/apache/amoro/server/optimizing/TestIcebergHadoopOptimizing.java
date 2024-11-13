@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.optimizing;
 
+import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.AmsEnvironment;
 import org.apache.amoro.server.RestCatalogService;

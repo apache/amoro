@@ -20,11 +20,12 @@ package org.apache.amoro.server.table.executor;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
-import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.table.MixedTable;
 
 /** Executor that refreshes table runtimes and evaluates optimizing status periodically. */
@@ -52,10 +53,11 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   private void tryEvaluatingPendingInput(TableRuntime tableRuntime, MixedTable table) {
     if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
-      OptimizingEvaluator evaluator =
-          OptimizingEvaluator.createOptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
+      AbstractOptimizingEvaluator evaluator =
+          IcebergTableUtil.createOptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
       if (evaluator.isNecessary()) {
-        OptimizingEvaluator.PendingInput pendingInput = evaluator.getOptimizingPendingInput();
+        AbstractOptimizingEvaluator.PendingInput pendingInput =
+            evaluator.getOptimizingPendingInput();
         logger.debug(
             "{} optimizing is necessary and get pending input {}",
             tableRuntime.getTableIdentifier(),
