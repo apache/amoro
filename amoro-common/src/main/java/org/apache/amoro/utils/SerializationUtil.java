@@ -25,9 +25,6 @@ import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import org.apache.avro.util.Utf8;
-import org.apache.iceberg.StructLike;
-import org.apache.iceberg.types.Types;
-import org.apache.iceberg.util.StructLikeWrapper;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import java.io.ByteArrayInputStream;
@@ -83,11 +80,6 @@ public class SerializationUtil {
 
   public static <T> SimpleSerializer<T> createJavaSimpleSerializer() {
     return JavaSerializer.INSTANT;
-  }
-
-  public static SimpleSerializer<StructLikeWrapper> createStructLikeWrapperSerializer(
-      StructLikeWrapper structLikeWrapper) {
-    return new StructLikeWrapperSerializer(structLikeWrapper);
   }
 
   private static class KryoSerializerInstance implements Serializable {
@@ -163,35 +155,6 @@ public class SerializationUtil {
     T deserialize(byte[] bytes);
   }
 
-  public static class StructLikeWrapperSerializer implements SimpleSerializer<StructLikeWrapper> {
-
-    protected final StructLikeWrapper structLikeWrapper;
-
-    public StructLikeWrapperSerializer(StructLikeWrapper structLikeWrapper) {
-      this.structLikeWrapper = structLikeWrapper;
-    }
-
-    public StructLikeWrapperSerializer(Types.StructType type) {
-      this.structLikeWrapper = StructLikeWrapper.forType(type);
-    }
-
-    @Override
-    public byte[] serialize(StructLikeWrapper structLikeWrapper) {
-      checkNotNull(structLikeWrapper);
-      StructLike copy = SerializationUtil.StructLikeCopy.copy(structLikeWrapper.get());
-      return SerializationUtil.kryoSerialize(copy);
-    }
-
-    @Override
-    public StructLikeWrapper deserialize(byte[] bytes) {
-      if (bytes == null) {
-        return null;
-      }
-      SerializationUtil.StructLikeCopy structLike = SerializationUtil.kryoDeserialize(bytes);
-      return structLikeWrapper.copyFor(structLike);
-    }
-  }
-
   public static class JavaSerializer<T extends Serializable> implements SimpleSerializer<T> {
 
     public static final JavaSerializer INSTANT = new JavaSerializer<>();
@@ -208,44 +171,6 @@ public class SerializationUtil {
         return null;
       }
       return SerializationUtil.kryoDeserialize(bytes);
-    }
-  }
-
-  public static class StructLikeCopy implements StructLike {
-
-    public static StructLike copy(StructLike struct) {
-      return struct != null ? new StructLikeCopy(struct) : null;
-    }
-
-    private final Object[] values;
-
-    private StructLikeCopy(StructLike toCopy) {
-      this.values = new Object[toCopy.size()];
-
-      for (int i = 0; i < values.length; i += 1) {
-        Object value = toCopy.get(i, Object.class);
-
-        if (value instanceof StructLike) {
-          values[i] = copy((StructLike) value);
-        } else {
-          values[i] = value;
-        }
-      }
-    }
-
-    @Override
-    public int size() {
-      return values.length;
-    }
-
-    @Override
-    public <T> T get(int pos, Class<T> javaClass) {
-      return javaClass.cast(values[pos]);
-    }
-
-    @Override
-    public <T> void set(int pos, T value) {
-      throw new UnsupportedOperationException("Struct copy cannot be modified");
     }
   }
 }

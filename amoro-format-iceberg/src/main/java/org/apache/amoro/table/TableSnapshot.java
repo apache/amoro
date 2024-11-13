@@ -16,23 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.io.reader;
+package org.apache.amoro.table;
 
-import org.apache.amoro.shade.guava32.com.google.common.hash.Funnel;
-import org.apache.amoro.shade.guava32.com.google.common.hash.PrimitiveSink;
-import org.apache.amoro.utils.SerializationUtil;
-import org.apache.amoro.utils.map.StructLikeWrapperSerializer;
-import org.apache.iceberg.StructLike;
-import org.jetbrains.annotations.NotNull;
+public interface TableSnapshot {
 
-public enum StructLikeFunnel implements Funnel<StructLike> {
-  INSTANCE;
-
-  StructLikeFunnel() {}
-
-  @Override
-  public void funnel(@NotNull StructLike structLike, PrimitiveSink primitiveSink) {
-    StructLike copy = StructLikeWrapperSerializer.StructLikeCopy.copy(structLike);
-    primitiveSink.putBytes(SerializationUtil.kryoSerialize(copy));
-  }
+  long snapshotId();
 }

@@ -16,17 +16,10 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.optimizing;
 
-public class BasicTableSnapshot implements TableSnapshot {
-  private final long snapshotId;
-
-  public BasicTableSnapshot(long snapshotId) {
-    this.snapshotId = snapshotId;
-  }
-
-  @Override
-  public long snapshotId() {
-    return snapshotId;
-  }
+public enum OptimizingType {
+  MINOR,
+  MAJOR,
+  FULL
 }

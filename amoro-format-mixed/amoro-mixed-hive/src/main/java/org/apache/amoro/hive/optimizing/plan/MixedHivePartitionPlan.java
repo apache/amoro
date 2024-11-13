@@ -16,14 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.plan;
+package org.apache.amoro.hive.optimizing.plan;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.PrimaryKeyedFile;
+import org.apache.amoro.hive.optimizing.MixedHiveRewriteExecutorFactory;
 import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.plan.CommonPartitionEvaluator;
+import org.apache.amoro.optimizing.plan.MixedIcebergPartitionPlan;
+import org.apache.amoro.optimizing.plan.PartitionEvaluator;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.MixedTable;
@@ -114,6 +118,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   @Override
   protected OptimizingInputProperties buildTaskProperties() {
     OptimizingInputProperties properties = super.buildTaskProperties();
+    properties.setExecutorFactoryImpl(MixedHiveRewriteExecutorFactory.class.getName());
     if (moveFiles2CurrentHiveLocation()) {
       properties.needMoveFile2HiveLocation();
     } else if (evaluator().isFullNecessary()) {
@@ -133,7 +138,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     return customHiveSubdirectory;
   }
 
-  protected static class MixedHivePartitionEvaluator extends MixedIcebergPartitionEvaluator {
+  public static class MixedHivePartitionEvaluator extends MixedIcebergPartitionEvaluator {
     private final String hiveLocation;
     private final boolean reachHiveRefreshInterval;
 

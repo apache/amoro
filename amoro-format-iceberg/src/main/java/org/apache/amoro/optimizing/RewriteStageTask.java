@@ -16,13 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing;
+package org.apache.amoro.optimizing;
 
-import org.apache.amoro.optimizing.RewriteFilesInput;
-import org.apache.amoro.optimizing.RewriteFilesOutput;
-import org.apache.amoro.server.dashboard.utils.OptimizingUtil;
-import org.apache.amoro.server.persistence.TaskFilesPersistence;
+import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
+import org.apache.amoro.utils.SerializationUtil;
+import org.apache.iceberg.ContentFile;
 
 import java.util.Map;
 
@@ -49,12 +48,12 @@ public class RewriteStageTask
     if (input != null) {
       summary = new MetricsSummary(input);
       if (output != null) {
-        summary.setNewDataFileCnt(OptimizingUtil.getFileCount(output.getDataFiles()));
-        summary.setNewDataSize(OptimizingUtil.getFileSize(output.getDataFiles()));
-        summary.setNewDataRecordCnt(OptimizingUtil.getRecordCnt(output.getDataFiles()));
-        summary.setNewDeleteFileCnt(OptimizingUtil.getFileCount(output.getDeleteFiles()));
-        summary.setNewDeleteSize(OptimizingUtil.getFileSize(output.getDeleteFiles()));
-        summary.setNewDeleteRecordCnt(OptimizingUtil.getRecordCnt(output.getDeleteFiles()));
+        summary.setNewDataFileCnt(getFileCount(output.getDataFiles()));
+        summary.setNewDataSize(getFileSize(output.getDataFiles()));
+        summary.setNewDataRecordCnt(getRecordCnt(output.getDataFiles()));
+        summary.setNewDeleteFileCnt(getFileCount(output.getDeleteFiles()));
+        summary.setNewDeleteSize(getFileSize(output.getDeleteFiles()));
+        summary.setNewDeleteRecordCnt(getRecordCnt(output.getDeleteFiles()));
         summary.setNewFileSize(summary.getNewDataSize() + summary.getNewDeleteSize());
         summary.setNewFileCnt(summary.getNewDataFileCnt() + summary.getNewDeleteFileCnt());
       }
@@ -63,7 +62,7 @@ public class RewriteStageTask
 
   @Override
   protected RewriteFilesOutput deserializeOutput(byte[] outputBytes) {
-    return TaskFilesPersistence.loadTaskOutput(outputBytes);
+    return SerializationUtil.simpleDeserialize(outputBytes);
   }
 
   public String getPartition() {
@@ -79,5 +78,29 @@ public class RewriteStageTask
         .add("output", output)
         .add("properties", properties)
         .toString();
+  }
+
+  private static long getFileSize(ContentFile<?>[] contentFiles) {
+    long size = 0;
+    if (contentFiles != null) {
+      for (ContentFile<?> contentFile : contentFiles) {
+        size += contentFile.fileSizeInBytes();
+      }
+    }
+    return size;
+  }
+
+  private static int getFileCount(ContentFile<?>[] contentFiles) {
+    return contentFiles == null ? 0 : contentFiles.length;
+  }
+
+  private static long getRecordCnt(ContentFile<?>[] contentFiles) {
+    int recordCnt = 0;
+    if (contentFiles != null) {
+      for (ContentFile<?> contentFile : contentFiles) {
+        recordCnt += contentFile.recordCount();
+      }
+    }
+    return recordCnt;
   }
 }

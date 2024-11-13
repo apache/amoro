@@ -18,13 +18,13 @@
 
 package org.apache.amoro.server.optimizing.flow.checker;
 
-import org.apache.amoro.server.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.flow.CompleteOptimizingFlow;
 import org.apache.amoro.server.optimizing.flow.DataReader;
 import org.apache.amoro.server.optimizing.flow.view.MatchResult;
 import org.apache.amoro.server.optimizing.flow.view.TableDataView;
-import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
 import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.data.Record;
 
@@ -46,7 +46,7 @@ public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
   public boolean condition(
       MixedTable table,
       @Nullable List<RewriteStageTask> latestTaskDescriptors,
-      OptimizingPlanner latestPlanner,
+      AbstractOptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit) {
     count++;
     return true;
@@ -61,7 +61,7 @@ public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
   public void check(
       MixedTable table,
       @Nullable List<RewriteStageTask> latestTaskDescriptors,
-      OptimizingPlanner latestPlanner,
+      AbstractOptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit)
       throws Exception {
     table.refresh();
