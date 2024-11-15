@@ -25,14 +25,13 @@ import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyedFile;
-import org.apache.amoro.hive.optimizing.MixFormatRewriteExecutorFactory;
+import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.io.MixedDataTestHelpers;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
-import org.apache.amoro.server.AmoroServiceConstants;
+import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
+import org.apache.amoro.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
-import org.apache.amoro.server.optimizing.RewriteStageTask;
-import org.apache.amoro.server.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
@@ -100,7 +99,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     if (getMixedTable().isKeyedTable()) {
       return IcebergTableUtil.getSnapshotId(getMixedTable().asKeyedTable().changeTable(), false);
     } else {
-      return AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+      return Constants.INVALID_SNAPSHOT_ID;
     }
   }
 
@@ -463,13 +462,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     return targetFileSizeBytes / ratio;
   }
 
-  protected Map<String, String> buildProperties() {
-    Map<String, String> properties = Maps.newHashMap();
-    properties.put(
-        OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
-        MixFormatRewriteExecutorFactory.class.getName());
-    return properties;
-  }
+  protected abstract Map<String, String> buildTaskProperties();
 
   protected Map<DataTreeNode, List<TableFileScanHelper.FileScanResult>> scanBaseFilesGroupByNode() {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
@@ -508,7 +501,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     assertFiles(rewrittenDataFiles, actual.getInput().rewrittenDataFiles());
     assertFiles(readOnlyDeleteFiles, actual.getInput().readOnlyDeleteFiles());
     assertFiles(rePosDeletedDataFiles, actual.getInput().rePosDeletedDataFiles());
-    assertTaskProperties(buildProperties(), actual.getProperties());
+    assertTaskProperties(buildTaskProperties(), actual.getProperties());
   }
 
   protected void assertTaskProperties(Map<String, String> expect, Map<String, String> actual) {

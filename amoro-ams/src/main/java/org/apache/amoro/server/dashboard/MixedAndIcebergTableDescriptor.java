@@ -26,6 +26,8 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.FileNameRules;
+import org.apache.amoro.optimizing.MetricsSummary;
+import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.ProcessTaskStatus;
 import org.apache.amoro.server.dashboard.component.reverser.IcebergTableMetaExtract;
@@ -33,10 +35,9 @@ import org.apache.amoro.server.dashboard.model.TableBasicInfo;
 import org.apache.amoro.server.dashboard.model.TableStatistics;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.TableStatCollector;
-import org.apache.amoro.server.optimizing.MetricsSummary;
 import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
+import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
-import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
@@ -558,7 +559,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   public Map<String, String> getTableOptimizingTypes(AmoroTable<?> amoroTable) {
     Map<String, String> types = Maps.newHashMap();
     for (OptimizingType type : OptimizingType.values()) {
-      types.put(type.name(), type.getStatus().displayValue());
+      types.put(type.name(), OptimizingStatus.ofOptimizingType(type).displayValue());
     }
     return types;
   }

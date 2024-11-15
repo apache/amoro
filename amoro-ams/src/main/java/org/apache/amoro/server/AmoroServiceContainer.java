@@ -43,7 +43,6 @@ import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.executor.AsyncTableExecutors;
 import org.apache.amoro.server.terminal.TerminalManager;
-import org.apache.amoro.server.utils.IcebergThreadPools;
 import org.apache.amoro.server.utils.ThriftServiceProxy;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -60,6 +59,7 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TNonblockingSer
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportFactory;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.layered.TFramedTransport;
+import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.JacksonUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.SystemProperties;
@@ -454,7 +454,16 @@ public class AmoroServiceContainer {
               serviceConfig.getInteger(AmoroManagementConf.TABLE_MANIFEST_IO_THREAD_COUNT));
       System.setProperty(
           SystemProperties.WORKER_THREAD_POOL_SIZE_PROP, String.valueOf(workerThreadPoolSize));
-      IcebergThreadPools.init(serviceConfig);
+      int planningThreadPoolSize =
+          Math.max(
+              Runtime.getRuntime().availableProcessors() / 2,
+              serviceConfig.getInteger(
+                  AmoroManagementConf.TABLE_MANIFEST_IO_PLANNING_THREAD_COUNT));
+      int commitThreadPoolSize =
+          Math.max(
+              Runtime.getRuntime().availableProcessors() / 2,
+              serviceConfig.getInteger(AmoroManagementConf.TABLE_MANIFEST_IO_COMMIT_THREAD_COUNT));
+      IcebergThreadPools.init(planningThreadPoolSize, commitThreadPoolSize);
     }
 
     private void initContainerConfig() {

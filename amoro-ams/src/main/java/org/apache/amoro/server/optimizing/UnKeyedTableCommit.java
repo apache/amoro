@@ -29,16 +29,17 @@ import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.HivePartitionUtil;
 import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.hive.utils.TableTypeUtil;
+import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.op.SnapshotSummary;
 import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
+import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.properties.HiveTableProperties;
-import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.utils.IcebergTableUtil;
-import org.apache.amoro.server.utils.IcebergThreadPools;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.ContentFiles;
+import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
@@ -264,7 +265,7 @@ public class UnKeyedTableCommit {
 
     RewriteFiles rewriteFiles =
         transaction.newRewrite().scanManifestsWith(IcebergThreadPools.getCommitExecutor());
-    if (targetSnapshotId != AmoroServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (targetSnapshotId != Constants.INVALID_SNAPSHOT_ID) {
       long sequenceNumber = table.asUnkeyedTable().snapshot(targetSnapshotId).sequenceNumber();
       rewriteFiles.validateFromSnapshot(targetSnapshotId).dataSequenceNumber(sequenceNumber);
     }
@@ -352,11 +353,11 @@ public class UnKeyedTableCommit {
   private static Set<String> getCommittedDataFilesFromSnapshotId(
       UnkeyedTable table, Long snapshotId) {
     long currentSnapshotId = IcebergTableUtil.getSnapshotId(table, true);
-    if (currentSnapshotId == AmoroServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (currentSnapshotId == Constants.INVALID_SNAPSHOT_ID) {
       return Collections.emptySet();
     }
 
-    if (snapshotId == AmoroServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (snapshotId == Constants.INVALID_SNAPSHOT_ID) {
       snapshotId = null;
     }
 
