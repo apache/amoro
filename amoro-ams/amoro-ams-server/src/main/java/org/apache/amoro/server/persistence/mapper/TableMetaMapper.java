@@ -412,7 +412,7 @@ public interface TableMetaMapper {
         typeHandler = JsonObjectConverter.class),
     @Result(property = "optimizingType", column = "optimizing_type"),
     @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
-    @Result(property = "targetChangeSnapshotId", column = "target_change_napshot_id"),
+    @Result(property = "targetChangeSnapshotId", column = "target_change_snapshot_id"),
     @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
     @Result(
         property = "fromSequence",
