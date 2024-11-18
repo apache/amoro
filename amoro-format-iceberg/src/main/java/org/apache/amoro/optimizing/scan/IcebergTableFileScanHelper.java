@@ -20,6 +20,7 @@ package org.apache.amoro.optimizing.scan;
 
 import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.expressions.Expression;
@@ -42,7 +43,12 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
       return CloseableIterable.empty();
     }
     return CloseableIterable.transform(
-        table.newScan().useSnapshot(snapshotId).filter(partitionFilter).planFiles(),
+        table
+            .newScan()
+            .planWith(IcebergThreadPools.getPlanningExecutor())
+            .useSnapshot(snapshotId)
+            .filter(partitionFilter)
+            .planFiles(),
         this::buildFileScanResult);
   }
 
