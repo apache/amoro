@@ -38,6 +38,8 @@ Apache Amoro (incubating) is a Lakehouse management system built on open data la
 Working with compute engines including Flink, Spark, and Trino, Amoro brings pluggable and self-managed features for Lakehouse to provide out-of-the-box data warehouse experience,
 and helps data platforms or products easily build infra-decoupled, stream-and-batch-fused and lake-native architecture.
 
+Learn more about Amoro at https://amoro.apache.org/, contact the developers and community on the [mailing list](https://amoro.apache.org/join-community/#mailing-lists) if you need any help.
+
 ## Architecture
 
 Here is the architecture diagram of Amoro:
