@@ -20,6 +20,7 @@ package org.apache.amoro.utils;
 
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.hadoop.fs.Path;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.io.BulkDeletionFailureException;
 import org.apache.iceberg.util.Tasks;
 import org.slf4j.Logger;
@@ -199,6 +200,11 @@ public class TableFileUtil {
   }
 
   public static boolean isOptimizingPosDeleteFile(String dataFilePath, String posDeleteFilePath) {
+    FileFormat fileFormat = FileFormat.fromFileName(dataFilePath);
+    if (fileFormat != null) {
+      dataFilePath =
+          dataFilePath.substring(0, dataFilePath.length() - fileFormat.name().length() - 1);
+    }
     return getFileName(posDeleteFilePath)
         .startsWith(String.format("%s-%s", getFileName(dataFilePath), POS_DELETE_FILE_IDENTIFIER));
   }
