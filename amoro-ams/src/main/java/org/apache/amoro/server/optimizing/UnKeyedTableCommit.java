@@ -39,6 +39,7 @@ import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.ContentFiles;
+import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
@@ -262,7 +263,8 @@ public class UnKeyedTableCommit {
       return;
     }
 
-    RewriteFiles rewriteFiles = transaction.newRewrite();
+    RewriteFiles rewriteFiles =
+        transaction.newRewrite().scanManifestsWith(IcebergThreadPools.getCommitExecutor());
     if (targetSnapshotId != Constants.INVALID_SNAPSHOT_ID) {
       long sequenceNumber = table.asUnkeyedTable().snapshot(targetSnapshotId).sequenceNumber();
       rewriteFiles.validateFromSnapshot(targetSnapshotId).dataSequenceNumber(sequenceNumber);
@@ -282,7 +284,8 @@ public class UnKeyedTableCommit {
   }
 
   private void addDeleteFiles(Transaction transaction, Set<DeleteFile> addDeleteFiles) {
-    RowDelta rowDelta = transaction.newRowDelta();
+    RowDelta rowDelta =
+        transaction.newRowDelta().scanManifestsWith(IcebergThreadPools.getCommitExecutor());
     addDeleteFiles.forEach(rowDelta::addDeletes);
     rowDelta.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
     rowDelta.commit();
