@@ -33,6 +33,8 @@ public class InternalTableConstants {
   public static final String HADOOP_FILE_IO_IMPL = "org.apache.iceberg.hadoop.HadoopFileIO";
   public static final String S3_FILE_IO_IMPL = "org.apache.iceberg.aws.s3.S3FileIO";
   public static final String S3_PROTOCOL_PREFIX = "s3://";
+  public static final String OSS_FILE_IO_IMPL = "org.apache.iceberg.aliyun.oss.OSSFileIO";
+  public static final String OSS_PROTOCOL_PREFIX = "oss://";
 
   public static final String CHANGE_STORE_TABLE_NAME_SUFFIX =
       InternalMixedIcebergCatalog.CHANGE_STORE_SEPARATOR
