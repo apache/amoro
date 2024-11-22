@@ -217,7 +217,7 @@ public class TableFileUtil {
   }
 
   public static boolean isOptimizingPosDeleteFile(String dataFilePath, String posDeleteFilePath) {
-    return getFileNameWithoutExt(posDeleteFilePath)
+    return getFileName(posDeleteFilePath)
         .startsWith(
             String.format(
                 "%s-%s", getFileNameWithoutExt(dataFilePath), POS_DELETE_FILE_IDENTIFIER));
