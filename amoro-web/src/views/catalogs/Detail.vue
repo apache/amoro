@@ -93,6 +93,11 @@ const isEdit = computed(() => {
 const uploadUrl = computed(() => {
   return '/api/ams/v1/files'
 })
+const uploadHeaders = computed(() => {
+  return {
+    'X-Request-Source': 'Web'
+  };
+});
 const isNewCatalog = computed(() => {
   const catalog = (route.query?.catalogname || '').toString()
   return decodeURIComponent(catalog) === 'new catalog'
@@ -160,6 +165,14 @@ const hadoopConfigTypeOps = reactive<ILableAndValue[]>([{
 }])
 
 const s3ConfigTypeOps = reactive<ILableAndValue[]>([{
+  label: 'AK/SK',
+  value: 'AK/SK',
+}, {
+  label: 'CUSTOM',
+  value: 'CUSTOM',
+}])
+
+const ossConfigTypeOps = reactive<ILableAndValue[]>([{
   label: 'AK/SK',
   value: 'AK/SK',
 }, {
@@ -361,9 +374,17 @@ async function changeProperties() {
   formState.properties = properties
 }
 
-const storageConfigTypeS3 = reactive<ILableAndValue[]>([{
+const storageConfigTypeS3Oss = reactive<ILableAndValue[]>([{
   label: 'S3',
   value: 'S3',
+}, {
+  label: 'OSS',
+  value: 'OSS',
+}])
+
+const storageConfigTypeOSS = reactive<ILableAndValue[]>([{
+  label: 'OSS',
+  value: 'OSS',
 }])
 
 const storageConfigTypeHadoop = reactive<ILableAndValue[]>([{
@@ -371,27 +392,30 @@ const storageConfigTypeHadoop = reactive<ILableAndValue[]>([{
   value: 'Hadoop',
 }])
 
-const storageConfigTypeHadoopS3 = reactive<ILableAndValue[]>([{
+const storageConfigTypeHadoopS3Oss = reactive<ILableAndValue[]>([{
   label: 'Hadoop',
   value: 'Hadoop',
 }, {
   label: 'S3',
   value: 'S3',
+}, {
+  label: 'OSS',
+  value: 'OSS',
 }])
 
 const storageConfigTypeOps = computed(() => {
   const type = formState.catalog.type
   if (type === 'ams' || type === 'custom') {
-    return storageConfigTypeHadoopS3
+    return storageConfigTypeHadoopS3Oss
   }
   else if (type === 'glue') {
-    return storageConfigTypeS3
+    return storageConfigTypeS3Oss
   }
   else if (type === 'hive') {
     return storageConfigTypeHadoop
   }
   else if (type === 'hadoop') {
-    return storageConfigTypeHadoopS3
+    return storageConfigTypeHadoopS3Oss
   }
   else {
     return null
@@ -405,6 +429,9 @@ const authTypeOptions = computed(() => {
   }
   else if (type === 'S3') {
     return s3ConfigTypeOps
+  }
+  else if (type === 'OSS') {
+    return ossConfigTypeOps
   }
 
   return null
@@ -672,6 +699,13 @@ onMounted(() => {
             <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.region']" />
             <span v-else class="config-value">{{ formState.storageConfig['storage.s3.region'] }}</span>
           </a-form-item>
+          <a-form-item
+              v-if="formState.storageConfig['storage.type'] === 'OSS'" label="Endpoint"
+              :name="['storageConfig', 'storage.oss.endpoint']" :rules="[{ required: false }]"
+          >
+            <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.oss.endpoint']" />
+            <span v-else class="config-value">{{ formState.storageConfig['storage.oss.endpoint'] }}</span>
+          </a-form-item>
           <div v-if="formState.storageConfig['storage.type'] === 'Hadoop'">
             <a-form-item
               v-for="config in formState.storageConfigArray" :key="config.label" :label="config.label"
@@ -680,6 +714,7 @@ onMounted(() => {
               <a-upload
                 v-if="isEdit" v-model:file-list="config.fileList" name="file" accept=".xml"
                 :show-upload-list="false" :action="uploadUrl" :disabled="config.uploadLoading"
+                :headers="uploadHeaders"
                 @change="(args: UploadChangeParam<UploadFile<any>>) => uploadFile(args, config, 'STORAGE')"
               >
                 <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">
@@ -729,6 +764,7 @@ onMounted(() => {
                 v-if="isEdit" v-model:file-list="config.fileList" name="file"
                 :accept="config.key === 'auth.kerberos.keytab' ? '.keytab' : '.conf'" :show-upload-list="false"
                 :action="uploadUrl" :disabled="config.uploadLoading"
+                :headers="uploadHeaders"
                 @change="(args: UploadChangeParam<UploadFile<any>>) => uploadFile(args, config)"
               >
                 <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">

@@ -37,6 +37,9 @@ import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.BadRequestException;
 
@@ -52,6 +55,8 @@ import java.util.stream.Collectors;
 
 /** The controller that handles optimizer requests. */
 public class OptimizerGroupController {
+  private static final Logger LOG = LoggerFactory.getLogger(OptimizerGroupController.class);
+
   private static final String ALL_GROUP = "all";
   private final TableService tableService;
   private final DefaultOptimizingService optimizerManager;
@@ -82,17 +87,32 @@ public class OptimizerGroupController {
 
     String optimizerGroupUsedInDbFilter = ALL_GROUP.equals(optimizerGroup) ? null : optimizerGroup;
     // get all info from underlying table table_runtime
-    List<TableRuntimeMeta> tableRuntimeBeans =
+    List<Integer> statusCodes = new ArrayList<>(actionFilter.size());
+    for (String action : actionFilter) {
+      OptimizingStatus status = OptimizingStatus.ofDisplayValue(action);
+      if (status == null) {
+        LOG.warn("Can't find optimizer status for action:{}, skip it.", action);
+      } else {
+        statusCodes.add(status.getCode());
+      }
+    }
+
+    // use null to mark the filter as null filter
+    if (statusCodes.isEmpty()) {
+      statusCodes = null;
+    }
+    Pair<List<TableRuntimeMeta>, Integer> tableRuntimeBeans =
         tableService.getTableRuntimes(
-            optimizerGroupUsedInDbFilter, dbFilterStr, tableFilterStr, pageSize, offset);
+            optimizerGroupUsedInDbFilter,
+            dbFilterStr,
+            tableFilterStr,
+            statusCodes,
+            pageSize,
+            offset);
 
     List<TableRuntime> tableRuntimes =
-        tableRuntimeBeans.stream()
+        tableRuntimeBeans.getLeft().stream()
             .map(meta -> tableService.getRuntime(meta.getTableId()))
-            .filter(
-                tableRuntime ->
-                    actionFilter.isEmpty()
-                        || actionFilter.contains(tableRuntime.getOptimizingStatus().displayValue()))
             .collect(Collectors.toList());
 
     PageResult<TableOptimizingInfo> amsPageResult =
@@ -100,7 +120,7 @@ public class OptimizerGroupController {
             tableRuntimes.stream()
                 .map(OptimizingUtil::buildTableOptimizeInfo)
                 .collect(Collectors.toList()),
-            tableService.listRuntimes(dbFilterStr, tableFilterStr).size());
+            tableRuntimeBeans.getRight());
     ctx.json(OkResponse.of(amsPageResult));
   }
 

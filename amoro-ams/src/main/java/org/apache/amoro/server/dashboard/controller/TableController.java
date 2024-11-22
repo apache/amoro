@@ -32,6 +32,7 @@ import org.apache.amoro.hive.catalog.MixedHiveCatalog;
 import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.hive.utils.UpgradeHiveTableUtil;
 import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.properties.HiveTableProperties;
@@ -49,7 +50,6 @@ import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Function;
@@ -150,10 +150,13 @@ public class TableController {
                 TableIdentifier.of(catalog, database, tableName).buildTableIdentifier()));
     if (serverTableIdentifier.isPresent()) {
       TableRuntime tableRuntime = tableService.getRuntime(serverTableIdentifier.get().getId());
-      tableSummary.setOptimizingStatus(tableRuntime.getOptimizingStatus().name());
-      OptimizingEvaluator.PendingInput tableRuntimeSummary = tableRuntime.getTableSummary();
-      if (tableRuntimeSummary != null) {
-        tableSummary.setHealthScore(tableRuntimeSummary.getHealthScore());
+      if (tableRuntime != null) {
+        tableSummary.setOptimizingStatus(tableRuntime.getOptimizingStatus().name());
+        AbstractOptimizingEvaluator.PendingInput tableRuntimeSummary =
+            tableRuntime.getTableSummary();
+        if (tableRuntimeSummary != null) {
+          tableSummary.setHealthScore(tableRuntimeSummary.getHealthScore());
+        }
       }
     } else {
       tableSummary.setOptimizingStatus(OptimizingStatus.IDLE.name());
@@ -310,16 +313,20 @@ public class TableController {
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
     String type = ctx.queryParam("type");
+
+    if (StringUtils.isBlank(type)) {
+      // treat all blank string to null
+      type = null;
+    }
+
     String status = ctx.queryParam("status");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     int offset = (page - 1) * pageSize;
     int limit = pageSize;
-    ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     Preconditions.checkArgument(offset >= 0, "offset[%s] must >= 0", offset);
     Preconditions.checkArgument(limit >= 0, "limit[%s] must >= 0", limit);
-    Preconditions.checkState(serverCatalog.tableExists(db, table), "no such table");
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     ProcessStatus processStatus =
@@ -412,10 +419,13 @@ public class TableController {
     String snapshotId = ctx.pathParam("snapshotId");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    String ref = ctx.queryParamAsClass("ref", String.class).getOrDefault(null);
 
     List<PartitionFileBaseInfo> result =
         tableDescriptor.getSnapshotDetail(
-            TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(), snapshotId);
+            TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(),
+            snapshotId,
+            ref);
     int offset = (page - 1) * pageSize;
     PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(result, offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));

@@ -81,10 +81,10 @@ public class ServerTableDescriptor extends PersistentBase {
   }
 
   public List<PartitionFileBaseInfo> getSnapshotDetail(
-      TableIdentifier tableIdentifier, String snapshotId) {
+      TableIdentifier tableIdentifier, String snapshotId, String ref) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
-    return formatTableDescriptor.getSnapshotDetail(amoroTable, snapshotId);
+    return formatTableDescriptor.getSnapshotDetail(amoroTable, snapshotId, ref);
   }
 
   public List<DDLInfo> getTableOperations(TableIdentifier tableIdentifier) {

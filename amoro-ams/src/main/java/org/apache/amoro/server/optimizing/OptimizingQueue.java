@@ -23,11 +23,15 @@ import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.exception.OptimizingClosedException;
+import org.apache.amoro.optimizing.MetricsSummary;
+import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.manager.MetricManager;
-import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
@@ -35,6 +39,7 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -262,14 +267,14 @@ public class OptimizingQueue extends PersistentBase {
     tableRuntime.beginPlanning();
     try {
       AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
-      OptimizingPlanner planner =
-          new OptimizingPlanner(
+      AbstractOptimizingPlanner planner =
+          IcebergTableUtil.createOptimizingPlanner(
               tableRuntime.refresh(table),
               (MixedTable) table.originalTable(),
               getAvailableCore(),
               maxInputSizePerThread());
       if (planner.isNecessary()) {
-        return new TableOptimizingProcess(planner);
+        return new TableOptimizingProcess(planner, tableRuntime);
       } else {
         tableRuntime.completeEmptyProcess();
         return null;
@@ -354,7 +359,7 @@ public class OptimizingQueue extends PersistentBase {
     private final Map<OptimizingTaskId, TaskRuntime<RewriteStageTask>> taskMap = Maps.newHashMap();
     private final Queue<TaskRuntime<RewriteStageTask>> taskQueue = new LinkedList<>();
     private final Lock lock = new ReentrantLock();
-    private volatile Status status = OptimizingProcess.Status.RUNNING;
+    private volatile ProcessStatus status = ProcessStatus.RUNNING;
     private volatile String failedReason;
     private long endTime = AmoroServiceConstants.INVALID_TIME;
     private Map<String, Long> fromSequence = Maps.newHashMap();
@@ -370,9 +375,9 @@ public class OptimizingQueue extends PersistentBase {
       }
     }
 
-    public TableOptimizingProcess(OptimizingPlanner planner) {
+    public TableOptimizingProcess(AbstractOptimizingPlanner planner, TableRuntime tableRuntime) {
       processId = planner.getProcessId();
-      tableRuntime = planner.getTableRuntime();
+      this.tableRuntime = tableRuntime;
       optimizingType = planner.getOptimizingType();
       planTime = planner.getPlanTime();
       targetSnapshotId = planner.getTargetSnapshotId();
@@ -396,7 +401,7 @@ public class OptimizingQueue extends PersistentBase {
       if (tableRuntime.getToSequence() != null) {
         toSequence = tableRuntime.getToSequence();
       }
-      if (this.status != OptimizingProcess.Status.CLOSED) {
+      if (this.status != ProcessStatus.CLOSED) {
         tableRuntime.recover(this);
       }
       loadTaskRuntimes(this);
@@ -413,7 +418,7 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     @Override
-    public Status getStatus() {
+    public ProcessStatus getStatus() {
       return status;
     }
 
@@ -421,10 +426,10 @@ public class OptimizingQueue extends PersistentBase {
     public void close() {
       lock.lock();
       try {
-        if (this.status != Status.RUNNING) {
+        if (this.status != ProcessStatus.RUNNING) {
           return;
         }
-        this.status = OptimizingProcess.Status.CLOSED;
+        this.status = ProcessStatus.CLOSED;
         this.endTime = System.currentTimeMillis();
         persistProcessCompleted(false);
         clearProcess(this);
@@ -468,7 +473,7 @@ public class OptimizingQueue extends PersistentBase {
           } else {
             clearProcess(this);
             this.failedReason = taskRuntime.getFailReason();
-            this.status = OptimizingProcess.Status.FAILED;
+            this.status = ProcessStatus.FAILED;
             this.endTime = taskRuntime.getEndTime();
             persistProcessCompleted(false);
           }
@@ -481,15 +486,14 @@ public class OptimizingQueue extends PersistentBase {
     // the cleanup of task should be done after unlock to avoid deadlock
     @Override
     public void releaseResourcesIfNecessary() {
-      if (this.status == OptimizingProcess.Status.FAILED
-          || this.status == OptimizingProcess.Status.CLOSED) {
+      if (this.status == ProcessStatus.FAILED || this.status == ProcessStatus.CLOSED) {
         cancelTasks();
       }
     }
 
     @Override
     public boolean isClosed() {
-      return status == OptimizingProcess.Status.CLOSED;
+      return status == ProcessStatus.CLOSED;
     }
 
     @Override
@@ -566,12 +570,12 @@ public class OptimizingQueue extends PersistentBase {
         try {
           hasCommitted = true;
           buildCommit().commit();
-          status = Status.SUCCESS;
+          status = ProcessStatus.SUCCESS;
           endTime = System.currentTimeMillis();
           persistProcessCompleted(true);
         } catch (Exception e) {
           LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
-          status = Status.FAILED;
+          status = ProcessStatus.FAILED;
           failedReason = ExceptionUtil.getErrorMessage(e, 4000);
           endTime = System.currentTimeMillis();
           persistProcessCompleted(false);
@@ -585,7 +589,13 @@ public class OptimizingQueue extends PersistentBase {
 
     @Override
     public MetricsSummary getSummary() {
-      return new MetricsSummary(taskMap.values());
+      List<MetricsSummary> taskSummaries =
+          taskMap.values().stream()
+              .map(TaskRuntime::getTaskDescriptor)
+              .map(RewriteStageTask::getSummary)
+              .collect(Collectors.toList());
+
+      return new MetricsSummary(taskSummaries);
     }
 
     private UnKeyedTableCommit buildCommit() {

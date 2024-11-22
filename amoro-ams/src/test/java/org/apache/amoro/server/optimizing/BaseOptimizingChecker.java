@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.optimizing;
 
+import org.apache.amoro.optimizing.OptimizingType;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -116,7 +118,11 @@ public class BaseOptimizingChecker extends PersistentBase {
                             mapper.selectOptimizingProcesses(
                                 tableIdentifier.getCatalog(),
                                 tableIdentifier.getDatabase(),
-                                tableIdentifier.getTableName()));
+                                tableIdentifier.getTableName(),
+                                null,
+                                null,
+                                0,
+                                Integer.MAX_VALUE));
                 if (tableOptimizingProcesses == null || tableOptimizingProcesses.isEmpty()) {
                   LOG.info("optimize history is empty");
                   return Status.RUNNING;
@@ -124,7 +130,7 @@ public class BaseOptimizingChecker extends PersistentBase {
                 Optional<OptimizingProcessMeta> any =
                     tableOptimizingProcesses.stream()
                         .filter(p -> p.getProcessId() > lastProcessId)
-                        .filter(p -> p.getStatus().equals(OptimizingProcess.Status.SUCCESS))
+                        .filter(p -> p.getStatus().equals(ProcessStatus.SUCCESS))
                         .findAny();
 
                 if (any.isPresent()) {
@@ -153,10 +159,14 @@ public class BaseOptimizingChecker extends PersistentBase {
                       mapper.selectOptimizingProcesses(
                           tableIdentifier.getCatalog(),
                           tableIdentifier.getDatabase(),
-                          tableIdentifier.getTableName()))
+                          tableIdentifier.getTableName(),
+                          null,
+                          null,
+                          0,
+                          Integer.MAX_VALUE))
               .stream()
               .filter(p -> p.getProcessId() > lastProcessId)
-              .filter(p -> p.getStatus().equals(OptimizingProcess.Status.SUCCESS))
+              .filter(p -> p.getStatus().equals(ProcessStatus.SUCCESS))
               .collect(Collectors.toList());
       if (result.size() == 1) {
         this.lastProcessId = result.get(0).getProcessId();
@@ -182,11 +192,15 @@ public class BaseOptimizingChecker extends PersistentBase {
                     mapper.selectOptimizingProcesses(
                         tableIdentifier.getCatalog(),
                         tableIdentifier.getDatabase(),
-                        tableIdentifier.getTableName()))
+                        tableIdentifier.getTableName(),
+                        null,
+                        null,
+                        0,
+                        Integer.MAX_VALUE))
             .stream()
             .filter(p -> p.getProcessId() > lastProcessId)
             .collect(Collectors.toList());
-    Assert.assertFalse("optimize is not stopped", tableOptimizingProcesses.size() > 0);
+    Assert.assertTrue("optimize is not stopped", tableOptimizingProcesses.isEmpty());
   }
 
   protected boolean waitUntilFinish(Supplier<Status> statusSupplier, final long timeout)

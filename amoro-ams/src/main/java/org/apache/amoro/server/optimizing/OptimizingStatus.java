@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.optimizing;
 
+import org.apache.amoro.optimizing.OptimizingType;
+
 public enum OptimizingStatus {
   FULL_OPTIMIZING("full", true, 100),
   MAJOR_OPTIMIZING("major", true, 200),
@@ -57,5 +59,27 @@ public enum OptimizingStatus {
       }
     }
     return null;
+  }
+
+  public static OptimizingStatus ofDisplayValue(String displayValue) {
+    for (OptimizingStatus status : values()) {
+      if (status.displayValue.equals(displayValue)) {
+        return status;
+      }
+    }
+    return null;
+  }
+
+  public static OptimizingStatus ofOptimizingType(OptimizingType optimizingType) {
+    switch (optimizingType) {
+      case FULL:
+        return FULL_OPTIMIZING;
+      case MAJOR:
+        return MAJOR_OPTIMIZING;
+      case MINOR:
+        return MINOR_OPTIMIZING;
+      default:
+        throw new IllegalStateException("unknown optimizing-type: " + optimizingType);
+    }
   }
 }

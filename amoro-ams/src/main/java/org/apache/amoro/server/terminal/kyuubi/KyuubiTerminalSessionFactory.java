@@ -48,6 +48,9 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
   public static ConfigOption<Boolean> KERBEROS_ENABLE =
       ConfigOptions.key("kerberos.enabled").booleanType().defaultValue(false);
 
+  public static ConfigOption<Boolean> LDAP_ENABLE =
+      ConfigOptions.key("ldap.enabled").booleanType().defaultValue(false);
+
   public static ConfigOption<Boolean> KERBEROS_PROXY_ENABLE =
       ConfigOptions.key("kerberos.proxy.enabled")
           .booleanType()
@@ -79,6 +82,7 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
   private String jdbcUrl;
   private boolean kyuubiKerberosEnable;
   private boolean proxyKerberosEnable;
+  private boolean ldapEnabled;
   private String username;
   private String password;
 
@@ -98,6 +102,7 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     this.proxyKerberosEnable = properties.getBoolean(KERBEROS_PROXY_ENABLE);
     this.username = properties.get(KYUUBI_USERNAME);
     this.password = properties.get(KYUUBI_PASSWORD);
+    this.ldapEnabled = properties.get(LDAP_ENABLE);
     try {
       this.params = Utils.extractURLComponents(jdbcUrl, new Properties());
     } catch (SQLException e) {
@@ -109,7 +114,7 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
   public TerminalSession create(TableMetaStore metaStore, Configurations configuration) {
     List<String> logs = Lists.newArrayList();
     JdbcConnectionParams connectionParams = new JdbcConnectionParams(this.params);
-    if (metaStore.isKerberosAuthMethod()) {
+    if (!this.ldapEnabled && metaStore.isKerberosAuthMethod()) {
       checkAndFillKerberosInfo(connectionParams, metaStore);
     }
 
@@ -124,7 +129,9 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     sessionConf.put("jdbc.url", kyuubiJdbcUrl);
     Properties properties = new Properties();
 
-    if (!metaStore.isKerberosAuthMethod() && Objects.nonNull(metaStore.getHadoopUsername())) {
+    if (!this.ldapEnabled
+        && !metaStore.isKerberosAuthMethod()
+        && Objects.nonNull(metaStore.getHadoopUsername())) {
       properties.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
       sessionConf.put(JdbcConnectionParams.AUTH_USER, metaStore.getHadoopUsername());
     }

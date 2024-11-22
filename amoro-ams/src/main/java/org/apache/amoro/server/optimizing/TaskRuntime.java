@@ -25,6 +25,7 @@ import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.exception.IllegalTaskStateException;
 import org.apache.amoro.exception.OptimizingClosedException;
 import org.apache.amoro.exception.TaskRuntimeException;
+import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;

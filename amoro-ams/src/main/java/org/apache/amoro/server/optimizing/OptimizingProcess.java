@@ -18,6 +18,10 @@
 
 package org.apache.amoro.server.optimizing;
 
+import org.apache.amoro.optimizing.MetricsSummary;
+import org.apache.amoro.optimizing.OptimizingType;
+import org.apache.amoro.process.ProcessStatus;
+
 public interface OptimizingProcess {
 
   long getProcessId();
@@ -36,18 +40,11 @@ public interface OptimizingProcess {
 
   OptimizingType getOptimizingType();
 
-  Status getStatus();
+  ProcessStatus getStatus();
 
   long getRunningQuotaTime(long calculatingStartTime, long calculatingEndTime);
 
   void commit();
 
   MetricsSummary getSummary();
-
-  enum Status {
-    RUNNING,
-    CLOSED,
-    SUCCESS,
-    FAILED
-  }
 }
