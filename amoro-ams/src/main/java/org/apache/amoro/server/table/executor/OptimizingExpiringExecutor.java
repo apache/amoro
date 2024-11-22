@@ -32,8 +32,8 @@ public class OptimizingExpiringExecutor extends BaseTableExecutor {
   private final long keepTime;
   private final long interval;
 
-  public OptimizingExpiringExecutor(TableManager tableRuntimes, int keepDays, int intervalHours) {
-    super(tableRuntimes, 1);
+  public OptimizingExpiringExecutor(TableManager tableManager, int keepDays, int intervalHours) {
+    super(tableManager, 1);
     this.keepTime = keepDays * 24 * 60 * 60 * 1000L;
     this.interval = intervalHours * 60 * 60 * 1000L;
   }

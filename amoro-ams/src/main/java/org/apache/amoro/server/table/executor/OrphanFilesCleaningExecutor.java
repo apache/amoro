@@ -32,8 +32,8 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(OrphanFilesCleaningExecutor.class);
   private final Duration interval;
 
-  public OrphanFilesCleaningExecutor(TableManager tableRuntimes, int poolSize, Duration interval) {
-    super(tableRuntimes, poolSize);
+  public OrphanFilesCleaningExecutor(TableManager tableManager, int poolSize, Duration interval) {
+    super(tableManager, poolSize);
     this.interval = interval;
   }
 
