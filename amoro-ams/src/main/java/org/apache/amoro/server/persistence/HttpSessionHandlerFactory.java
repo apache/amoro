@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -36,7 +37,8 @@ import java.time.Duration;
 public class HttpSessionHandlerFactory {
   private static final Logger LOG = LoggerFactory.getLogger(HttpSessionHandlerFactory.class);
 
-  public static SessionHandler createSessionHandler(DataSource dataSource, Configurations configurations) {
+  public static SessionHandler createSessionHandler(
+      DataSource dataSource, Configurations configurations) {
     DatabaseAdaptor adaptor = new DatabaseAdaptor();
     adaptor.setDatasource(dataSource);
 
@@ -56,6 +58,7 @@ public class HttpSessionHandlerFactory {
 
   private static class AmoroSessionTableSchema extends JDBCSessionDataStore.SessionTableSchema {
     private final DataSource dataSource;
+
     public AmoroSessionTableSchema(DataSource dataSource) {
       setTableName("http_session");
       setIdColumn("session_id");
@@ -77,7 +80,7 @@ public class HttpSessionHandlerFactory {
     public void prepareTables() throws SQLException {
       LOG.info("Skip jetty prepare http session tables.");
       try (Connection connection = dataSource.getConnection()) {
-        //make the id table
+        // make the id table
         connection.setAutoCommit(true);
         DatabaseMetaData metaData = connection.getMetaData();
         _dbAdaptor.adaptTo(metaData);

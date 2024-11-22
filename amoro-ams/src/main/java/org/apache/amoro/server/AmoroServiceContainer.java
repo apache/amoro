@@ -246,7 +246,8 @@ public class AmoroServiceContainer {
         Javalin.create(
             config -> {
               config.addStaticFiles(dashboardServer.configStaticFiles());
-              config.sessionHandler(() -> HttpSessionHandlerFactory.createSessionHandler(dataSource, serviceConfig));
+              config.sessionHandler(
+                  () -> HttpSessionHandlerFactory.createSessionHandler(dataSource, serviceConfig));
               config.enableCorsForAllOrigins();
               config.jsonMapper(JavalinJsonMapper.createDefaultJsonMapper());
               config.showJavalinBanner = false;
