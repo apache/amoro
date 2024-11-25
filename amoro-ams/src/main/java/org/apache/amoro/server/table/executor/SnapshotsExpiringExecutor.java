@@ -32,8 +32,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
 
   private static final long INTERVAL = 60 * 60 * 1000L; // 1 hour
 
-  public SnapshotsExpiringExecutor(TableManager tableRuntimes, int poolSize) {
-    super(tableRuntimes, poolSize);
+  public SnapshotsExpiringExecutor(TableManager tableManager, int poolSize) {
+    super(tableManager, poolSize);
   }
 
   @Override
