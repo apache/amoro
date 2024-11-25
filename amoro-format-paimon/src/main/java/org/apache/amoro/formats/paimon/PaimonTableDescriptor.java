@@ -24,7 +24,6 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.process.ProcessStatus;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Streams;
@@ -61,7 +60,9 @@ import org.apache.paimon.manifest.ManifestFileMeta;
 import org.apache.paimon.manifest.ManifestList;
 import org.apache.paimon.table.DataTable;
 import org.apache.paimon.table.FileStoreTable;
+import org.apache.paimon.utils.BranchManager;
 import org.apache.paimon.utils.FileStorePathFactory;
+import org.apache.paimon.utils.SnapshotManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -181,9 +182,10 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     FileStoreTable table = getTable(amoroTable);
     List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
     Iterator<Snapshot> snapshots;
-    if (PAIMON_MAIN_BRANCH_NAME.equals(ref)) {
+    if (table.branchManager().branchExists(ref) || BranchManager.isMainBranch(ref)) {
+      SnapshotManager snapshotManager = table.snapshotManager().copyWithBranch(ref);
       try {
-        snapshots = table.snapshotManager().snapshots();
+        snapshots = snapshotManager.snapshots();
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -223,11 +225,17 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<PartitionFileBaseInfo> getSnapshotDetail(
-      AmoroTable<?> amoroTable, String snapshotId) {
+      AmoroTable<?> amoroTable, String snapshotId, String ref) {
     FileStoreTable table = getTable(amoroTable);
     List<PartitionFileBaseInfo> amsDataFileInfos = new ArrayList<>();
     long commitId = Long.parseLong(snapshotId);
-    Snapshot snapshot = table.snapshotManager().snapshot(commitId);
+    Snapshot snapshot;
+    if (BranchManager.isMainBranch(ref) || table.branchManager().branchExists(ref)) {
+      snapshot = table.snapshotManager().copyWithBranch(ref).snapshot(commitId);
+    } else {
+      snapshot = table.tagManager().tag(ref);
+    }
+
     FileStore<?> store = table.store();
     FileStorePathFactory fileStorePathFactory = store.pathFactory();
     ManifestList manifestList = store.manifestListFactory().create();
@@ -531,7 +539,14 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
-    return ImmutableList.of(TagOrBranchInfo.MAIN_BRANCH);
+    FileStoreTable table = getTable(amoroTable);
+    List<String> branches = table.branchManager().branches();
+    List<TagOrBranchInfo> branchInfos =
+        branches.stream()
+            .map(name -> new TagOrBranchInfo(name, -1, -1, 0L, 0L, TagOrBranchInfo.BRANCH))
+            .collect(Collectors.toList());
+    branchInfos.add(TagOrBranchInfo.MAIN_BRANCH);
+    return branchInfos;
   }
 
   @Override

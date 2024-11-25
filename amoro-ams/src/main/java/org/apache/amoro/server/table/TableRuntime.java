@@ -25,13 +25,14 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.iceberg.Constants;
+import org.apache.amoro.optimizing.OptimizingType;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.TaskRuntime;
-import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
@@ -51,12 +52,11 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TableRuntime extends StatedPersistentBase {
 
@@ -64,20 +64,16 @@ public class TableRuntime extends StatedPersistentBase {
 
   private final TableRuntimeHandler tableHandler;
   private final ServerTableIdentifier tableIdentifier;
-  private final List<TaskRuntime.TaskQuota> taskQuotas =
-      Collections.synchronizedList(new ArrayList<>());
+  private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
 
   // for unKeyedTable or base table
-  @StateField private volatile long currentSnapshotId = AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+  @StateField private volatile long currentSnapshotId = Constants.INVALID_SNAPSHOT_ID;
 
-  @StateField
-  private volatile long lastOptimizedSnapshotId = AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+  @StateField private volatile long lastOptimizedSnapshotId = Constants.INVALID_SNAPSHOT_ID;
 
-  @StateField
-  private volatile long lastOptimizedChangeSnapshotId = AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+  @StateField private volatile long lastOptimizedChangeSnapshotId = Constants.INVALID_SNAPSHOT_ID;
   // for change table
-  @StateField
-  private volatile long currentChangeSnapshotId = AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+  @StateField private volatile long currentChangeSnapshotId = Constants.INVALID_SNAPSHOT_ID;
 
   @StateField private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   @StateField private volatile long currentStatusStartTime = System.currentTimeMillis();
@@ -88,8 +84,8 @@ public class TableRuntime extends StatedPersistentBase {
   @StateField private volatile OptimizingProcess optimizingProcess;
   @StateField private volatile TableConfiguration tableConfiguration;
   @StateField private volatile long processId;
-  @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
-  @StateField private volatile OptimizingEvaluator.PendingInput tableSummary;
+  @StateField private volatile AbstractOptimizingEvaluator.PendingInput pendingInput;
+  @StateField private volatile AbstractOptimizingEvaluator.PendingInput tableSummary;
   private volatile long lastPlanTime;
   private final TableOptimizingMetrics optimizingMetrics;
   private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
@@ -228,7 +224,8 @@ public class TableRuntime extends StatedPersistentBase {
           OptimizingStatus originalStatus = optimizingStatus;
           this.optimizingProcess = optimizingProcess;
           this.processId = optimizingProcess.getProcessId();
-          updateOptimizingStatus(optimizingProcess.getOptimizingType().getStatus());
+          updateOptimizingStatus(
+              OptimizingStatus.ofOptimizingType(optimizingProcess.getOptimizingType()));
           this.pendingInput = null;
           persistUpdatingRuntime();
           tableHandler.handleTableChanged(this, originalStatus);
@@ -245,7 +242,7 @@ public class TableRuntime extends StatedPersistentBase {
         });
   }
 
-  public void setPendingInput(OptimizingEvaluator.PendingInput pendingInput) {
+  public void setPendingInput(AbstractOptimizingEvaluator.PendingInput pendingInput) {
     invokeConsistency(
         () -> {
           this.pendingInput = pendingInput;
@@ -276,7 +273,7 @@ public class TableRuntime extends StatedPersistentBase {
         });
   }
 
-  public void setTableSummary(OptimizingEvaluator.PendingInput tableSummary) {
+  public void setTableSummary(AbstractOptimizingEvaluator.PendingInput tableSummary) {
     invokeConsistency(
         () -> {
           this.tableSummary = tableSummary;
@@ -400,7 +397,7 @@ public class TableRuntime extends StatedPersistentBase {
    * @return refreshed snapshotId
    */
   private long doRefreshSnapshots(UnkeyedTable table) {
-    long currentSnapshotId = AmoroServiceConstants.INVALID_SNAPSHOT_ID;
+    long currentSnapshotId = Constants.INVALID_SNAPSHOT_ID;
     Snapshot currentSnapshot = IcebergTableUtil.getSnapshot(table, false);
     if (currentSnapshot != null) {
       currentSnapshotId = currentSnapshot.snapshotId();
@@ -413,11 +410,11 @@ public class TableRuntime extends StatedPersistentBase {
     return currentSnapshotId;
   }
 
-  public OptimizingEvaluator.PendingInput getPendingInput() {
+  public AbstractOptimizingEvaluator.PendingInput getPendingInput() {
     return pendingInput;
   }
 
-  public OptimizingEvaluator.PendingInput getTableSummary() {
+  public AbstractOptimizingEvaluator.PendingInput getTableSummary() {
     return tableSummary;
   }
 

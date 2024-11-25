@@ -127,6 +127,8 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
                         dataDir, fileFormat.addExtension("data-1-delete-suffix")))
                 .toString());
     Assert.assertNotNull(deleteFile1);
+    Assert.assertTrue(
+        TableFileUtil.isOptimizingPosDeleteFile(dataFile1Path, deleteFile1.path().toString()));
     Assert.assertEquals(3, deleteFile1.recordCount());
     // Check whether the path-pos pairs are sorted as expected.
     Schema pathPosSchema = DeleteSchemaUtil.pathPosSchema();
@@ -147,6 +149,8 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
                         dataDir, fileFormat.addExtension("data-2-delete-suffix")))
                 .toString());
     Assert.assertNotNull(deleteFile2);
+    Assert.assertTrue(
+        TableFileUtil.isOptimizingPosDeleteFile(dataFile2Path, deleteFile2.path().toString()));
     Assert.assertEquals(
         new Path(
                 TableFileUtil.getNewFilePath(

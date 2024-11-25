@@ -102,15 +102,14 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
 
   @Override
   public void createDatabase(String database) {
-    if (databaseExists(database)) {
-      throw new AlreadyExistsException("Database: " + database + " already exists.");
-    }
-
     findFirstFormatCatalog(TableFormat.values()).createDatabase(database);
   }
 
   @Override
   public void dropDatabase(String database) {
+    if (!listTables(database).isEmpty()) {
+      throw new IllegalStateException("Database: " + database + " is not empty.");
+    }
     findFirstFormatCatalog(TableFormat.values()).dropDatabase(database);
   }
 

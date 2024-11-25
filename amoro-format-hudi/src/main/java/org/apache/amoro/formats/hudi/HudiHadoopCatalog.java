@@ -21,6 +21,7 @@ package org.apache.amoro.formats.hudi;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.DatabaseNotEmptyException;
 import org.apache.amoro.FormatCatalog;
+import org.apache.amoro.NoSuchDatabaseException;
 import org.apache.amoro.NoSuchTableException;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -155,7 +156,12 @@ public class HudiHadoopCatalog implements FormatCatalog {
         () -> {
           FileSystem fs = fs();
           Path databasePath = new Path(warehouse, database);
-          FileStatus[] items = fs.listStatus(databasePath);
+          FileStatus[] items;
+          try {
+            items = fs.listStatus(databasePath);
+          } catch (FileNotFoundException e) {
+            throw new NoSuchDatabaseException("Database: " + database + " is not exists", e);
+          }
           if (items == null || items.length == 0) {
             return Lists.newArrayList();
           }

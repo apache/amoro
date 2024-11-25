@@ -20,6 +20,7 @@ package org.apache.amoro.formats.mixed;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.FormatCatalog;
+import org.apache.amoro.NoSuchDatabaseException;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.table.MixedTable;
@@ -76,9 +77,13 @@ public class MixedCatalog implements FormatCatalog {
 
   @Override
   public List<String> listTables(String database) {
-    return catalog.listTables(database).stream()
-        .map(TableIdentifier::getTableName)
-        .collect(Collectors.toList());
+    try {
+      return catalog.listTables(database).stream()
+          .map(TableIdentifier::getTableName)
+          .collect(Collectors.toList());
+    } catch (Exception e) {
+      throw new NoSuchDatabaseException("Database: " + database + " is not exists", e);
+    }
   }
 
   @Override

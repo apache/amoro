@@ -121,6 +121,7 @@
         <mysql-jdbc.version>8.0.33</mysql-jdbc.version>
         <orc-core.version>1.8.3</orc-core.version>
         <awssdk.version>2.24.12</awssdk.version>
+        <aliyun-sdk-oss.version>3.10.2</aliyun-sdk-oss.version>
         <terminal.spark.version>3.3.2</terminal.spark.version>
         <terminal.spark.major.version>3.3</terminal.spark.major.version>
         <dropwizard.metrics.version>4.2.19</dropwizard.metrics.version>
@@ -153,6 +154,7 @@
 
         <rocksdb-dependency-scope>compile</rocksdb-dependency-scope>
         <lucene-dependency-scope>compile</lucene-dependency-scope>
+        <aliyun-sdk-dependency-scope>provided</aliyun-sdk-dependency-scope>
     </properties>
 
     <dependencies>
@@ -351,6 +353,19 @@
             </dependency>
 
             <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-aliyun</artifactId>
+                <version>${iceberg.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.aliyun.oss</groupId>
+                <artifactId>aliyun-sdk-oss</artifactId>
+                <version>${aliyun-sdk-oss.version}</version>
+                <scope>${aliyun-sdk-dependency-scope}</scope>
+            </dependency>
+
+            <dependency>
                 <groupId>org.apache.parquet</groupId>
                 <artifactId>parquet-avro</artifactId>
                 <version>${parquet-avro.version}</version>
@@ -489,6 +504,12 @@
                 <artifactId>orc-core</artifactId>
                 <version>${orc-core.version}</version>
                 <classifier>nohive</classifier>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-client-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -1386,6 +1407,12 @@
             <properties>
                 <rocksdb-dependency-scope>provided</rocksdb-dependency-scope>
                 <lucene-dependency-scope>provided</lucene-dependency-scope>
+            </properties>
+        </profile>
+        <profile>
+            <id>aliyun-oss-sdk</id>
+            <properties>
+                <aliyun-sdk-dependency-scope>compile</aliyun-sdk-dependency-scope>
             </properties>
         </profile>
     </profiles>

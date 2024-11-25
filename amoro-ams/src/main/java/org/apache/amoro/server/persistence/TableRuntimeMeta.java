@@ -20,10 +20,10 @@ package org.apache.amoro.server.persistence;
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.server.optimizing.OptimizingProcess;
+import org.apache.amoro.optimizing.OptimizingType;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.optimizing.OptimizingType;
-import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 
 import java.util.Map;
 
@@ -45,10 +45,10 @@ public class TableRuntimeMeta {
   private long currentStatusStartTime;
   private String optimizerGroup;
   private TableConfiguration tableConfig;
-  private OptimizingEvaluator.PendingInput pendingInput;
-  private OptimizingEvaluator.PendingInput tableSummary;
+  private AbstractOptimizingEvaluator.PendingInput pendingInput;
+  private AbstractOptimizingEvaluator.PendingInput tableSummary;
   private long optimizingProcessId = 0;
-  private OptimizingProcess.Status processStatus;
+  private ProcessStatus processStatus;
   private OptimizingType optimizingType;
   private long targetSnapshotId;
   private long targetChangeSnapshotId;
@@ -141,7 +141,7 @@ public class TableRuntimeMeta {
     return optimizingProcessId;
   }
 
-  public OptimizingProcess.Status getProcessStatus() {
+  public ProcessStatus getProcessStatus() {
     return processStatus;
   }
 
@@ -189,11 +189,11 @@ public class TableRuntimeMeta {
     this.lastOptimizedSnapshotId = lastOptimizedSnapshotId;
   }
 
-  public OptimizingEvaluator.PendingInput getTableSummary() {
+  public AbstractOptimizingEvaluator.PendingInput getTableSummary() {
     return tableSummary;
   }
 
-  public void setTableSummary(OptimizingEvaluator.PendingInput tableSummary) {
+  public void setTableSummary(AbstractOptimizingEvaluator.PendingInput tableSummary) {
     this.tableSummary = tableSummary;
   }
 
@@ -257,7 +257,7 @@ public class TableRuntimeMeta {
     this.optimizingProcessId = optimizingProcessId;
   }
 
-  public void setProcessStatus(OptimizingProcess.Status processStatus) {
+  public void setProcessStatus(ProcessStatus processStatus) {
     this.processStatus = processStatus;
   }
 
@@ -285,11 +285,11 @@ public class TableRuntimeMeta {
     this.summary = summary;
   }
 
-  public OptimizingEvaluator.PendingInput getPendingInput() {
+  public AbstractOptimizingEvaluator.PendingInput getPendingInput() {
     return pendingInput;
   }
 
-  public void setPendingInput(OptimizingEvaluator.PendingInput pendingInput) {
+  public void setPendingInput(AbstractOptimizingEvaluator.PendingInput pendingInput) {
     this.pendingInput = pendingInput;
   }
 }

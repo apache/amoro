@@ -41,12 +41,14 @@ import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIV
 import static org.apache.amoro.properties.CatalogMetaProperties.FILE_CONTENT_BASE64_SUFFIX;
 import static org.apache.amoro.properties.CatalogMetaProperties.KEY_WAREHOUSE;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE;
-import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_ENDPOINT;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE;
+import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_OSS_ENDPOINT;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_REGION;
+import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_S3_ENDPOINT;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP;
+import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_OSS;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_S3;
 import static org.apache.amoro.properties.CatalogMetaProperties.TABLE_FORMATS;
 
@@ -76,6 +78,7 @@ import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.CatalogUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.aliyun.AliyunProperties;
 import org.apache.iceberg.aws.AwsClientProperties;
 import org.apache.iceberg.aws.glue.GlueCatalog;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
@@ -116,6 +119,10 @@ public class CatalogController {
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_AMS, STORAGE_CONFIGS_VALUE_TYPE_S3, MIXED_ICEBERG));
     VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_AMS, STORAGE_CONFIGS_VALUE_TYPE_OSS, ICEBERG));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_AMS, STORAGE_CONFIGS_VALUE_TYPE_OSS, MIXED_ICEBERG));
+    VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_AMS, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, ICEBERG));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_AMS, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
@@ -146,6 +153,14 @@ public class CatalogController {
         CatalogDescriptor.of(CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_S3, ICEBERG));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, ICEBERG));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_HADOOP, STORAGE_CONFIGS_VALUE_TYPE_OSS, PAIMON));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_GLUE, STORAGE_CONFIGS_VALUE_TYPE_OSS, ICEBERG));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_GLUE, STORAGE_CONFIGS_VALUE_TYPE_OSS, MIXED_ICEBERG));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_OSS, ICEBERG));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(
             CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
@@ -180,10 +195,15 @@ public class CatalogController {
         String.valueOf(authConfig.get(AUTH_CONFIGS_KEY_TYPE)))) {
       hiddenProperties.add(S3FileIOProperties.ACCESS_KEY_ID);
       hiddenProperties.add(S3FileIOProperties.SECRET_ACCESS_KEY);
+      hiddenProperties.add(AliyunProperties.CLIENT_ACCESS_KEY_ID);
+      hiddenProperties.add(AliyunProperties.CLIENT_ACCESS_KEY_SECRET);
     }
     if (STORAGE_CONFIGS_VALUE_TYPE_S3.equals(storageConfig.get(STORAGE_CONFIGS_KEY_TYPE))) {
       hiddenProperties.add(AwsClientProperties.CLIENT_REGION);
       hiddenProperties.add(S3FileIOProperties.ENDPOINT);
+    }
+    if (STORAGE_CONFIGS_VALUE_TYPE_OSS.equals(storageConfig.get(STORAGE_CONFIGS_KEY_TYPE))) {
+      hiddenProperties.add(AliyunProperties.OSS_ENDPOINT);
     }
     return hiddenProperties;
   }
@@ -203,7 +223,10 @@ public class CatalogController {
   }
 
   private void fillAuthConfigs2CatalogMeta(
-      CatalogMeta catalogMeta, Map<String, String> serverAuthConfig, CatalogMeta oldCatalogMeta) {
+      CatalogMeta catalogMeta,
+      Map<String, String> serverAuthConfig,
+      CatalogMeta oldCatalogMeta,
+      String storageType) {
     Map<String, String> metaAuthConfig = new HashMap<>();
     String authType =
         serverAuthConfig
@@ -241,19 +264,19 @@ public class CatalogController {
             serverAuthConfig,
             catalogMeta.getCatalogProperties(),
             AUTH_CONFIGS_KEY_ACCESS_KEY,
-            S3FileIOProperties.ACCESS_KEY_ID);
+            getStorageAccessKey(storageType));
         CatalogUtil.copyProperty(
             serverAuthConfig,
             catalogMeta.getCatalogProperties(),
             AUTH_CONFIGS_KEY_SECRET_KEY,
-            S3FileIOProperties.SECRET_ACCESS_KEY);
+            getStorageSecretKey(storageType));
         break;
     }
     catalogMeta.setAuthConfigs(metaAuthConfig);
   }
 
   private Map<String, Object> extractAuthConfigsFromCatalogMeta(
-      String catalogName, CatalogMeta catalogMeta) {
+      String catalogName, CatalogMeta catalogMeta, String storageType) {
     Map<String, Object> serverAuthConfig = new HashMap<>();
     Map<String, String> metaAuthConfig = catalogMeta.getAuthConfigs();
     String authType =
@@ -286,12 +309,12 @@ public class CatalogController {
         CatalogUtil.copyProperty(
             catalogMeta.getCatalogProperties(),
             serverAuthConfig,
-            S3FileIOProperties.ACCESS_KEY_ID,
+            getStorageAccessKey(storageType),
             AUTH_CONFIGS_KEY_ACCESS_KEY);
         CatalogUtil.copyProperty(
             catalogMeta.getCatalogProperties(),
             serverAuthConfig,
-            S3FileIOProperties.SECRET_ACCESS_KEY,
+            getStorageSecretKey(storageType),
             AUTH_CONFIGS_KEY_SECRET_KEY);
         break;
     }
@@ -299,11 +322,25 @@ public class CatalogController {
     return serverAuthConfig;
   }
 
+  private String getStorageAccessKey(String storageType) {
+    if (STORAGE_CONFIGS_VALUE_TYPE_OSS.equals(storageType)) {
+      return AliyunProperties.CLIENT_ACCESS_KEY_ID;
+    }
+    // default s3
+    return S3FileIOProperties.ACCESS_KEY_ID;
+  }
+
+  private String getStorageSecretKey(String storageType) {
+    if (STORAGE_CONFIGS_VALUE_TYPE_OSS.equals(storageType)) {
+      return AliyunProperties.CLIENT_ACCESS_KEY_SECRET;
+    }
+    // default s3
+    return S3FileIOProperties.SECRET_ACCESS_KEY;
+  }
+
   private Map<String, Object> extractStorageConfigsFromCatalogMeta(
-      String catalogName, CatalogMeta catalogMeta) {
+      String catalogName, CatalogMeta catalogMeta, String storageType) {
     Map<String, Object> storageConfig = new HashMap<>();
-    Map<String, String> config = catalogMeta.getStorageConfigs();
-    String storageType = CatalogUtil.getCompatibleStorageType(config);
     storageConfig.put(STORAGE_CONFIGS_KEY_TYPE, storageType);
     if (STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equals(storageType)) {
       storageConfig.put(
@@ -342,7 +379,13 @@ public class CatalogController {
           catalogMeta.getCatalogProperties(),
           storageConfig,
           S3FileIOProperties.ENDPOINT,
-          STORAGE_CONFIGS_KEY_ENDPOINT);
+          STORAGE_CONFIGS_KEY_S3_ENDPOINT);
+    } else if (STORAGE_CONFIGS_VALUE_TYPE_OSS.equals(storageType)) {
+      CatalogUtil.copyProperty(
+          catalogMeta.getCatalogProperties(),
+          storageConfig,
+          AliyunProperties.OSS_ENDPOINT,
+          STORAGE_CONFIGS_KEY_OSS_ENDPOINT);
     }
 
     return storageConfig;
@@ -375,12 +418,12 @@ public class CatalogController {
           "Invalid table format list, " + String.join(",", info.getTableFormatList()));
     }
     catalogMeta.getCatalogProperties().put(CatalogMetaProperties.TABLE_FORMATS, tableFormats);
-    fillAuthConfigs2CatalogMeta(catalogMeta, info.getAuthConfig(), oldCatalogMeta);
-    // change fileId to base64Code
-    Map<String, String> metaStorageConfig = new HashMap<>();
     String storageType =
         info.getStorageConfig()
             .getOrDefault(STORAGE_CONFIGS_KEY_TYPE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP);
+    fillAuthConfigs2CatalogMeta(catalogMeta, info.getAuthConfig(), oldCatalogMeta, storageType);
+    // change fileId to base64Code
+    Map<String, String> metaStorageConfig = new HashMap<>();
     metaStorageConfig.put(STORAGE_CONFIGS_KEY_TYPE, storageType);
     if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_HADOOP)) {
       List<String> metaKeyList =
@@ -409,8 +452,14 @@ public class CatalogController {
       CatalogUtil.copyProperty(
           info.getStorageConfig(),
           catalogMeta.getCatalogProperties(),
-          STORAGE_CONFIGS_KEY_ENDPOINT,
+          STORAGE_CONFIGS_KEY_S3_ENDPOINT,
           S3FileIOProperties.ENDPOINT);
+    } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_OSS)) {
+      CatalogUtil.copyProperty(
+          info.getStorageConfig(),
+          catalogMeta.getCatalogProperties(),
+          STORAGE_CONFIGS_KEY_OSS_ENDPOINT,
+          AliyunProperties.OSS_ENDPOINT);
     } else {
       throw new RuntimeException("Invalid storage type " + storageType);
     }
@@ -539,8 +588,10 @@ public class CatalogController {
       } else {
         info.setType(catalogMeta.getCatalogType());
       }
-      info.setAuthConfig(extractAuthConfigsFromCatalogMeta(catalogName, catalogMeta));
-      info.setStorageConfig(extractStorageConfigsFromCatalogMeta(catalogName, catalogMeta));
+      String storageType = CatalogUtil.getCompatibleStorageType(catalogMeta.getStorageConfigs());
+      info.setAuthConfig(extractAuthConfigsFromCatalogMeta(catalogName, catalogMeta, storageType));
+      info.setStorageConfig(
+          extractStorageConfigsFromCatalogMeta(catalogName, catalogMeta, storageType));
       // we put the table format single
       String tableFormat =
           catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);

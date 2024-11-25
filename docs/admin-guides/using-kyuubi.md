@@ -50,3 +50,15 @@ To execute SQL in Terminal, you can refer to the following steps:：
 - Click the Execute button to run the SQL;
 
 ![terminal](../images/admin/terminal_introduce.png)
+
+## LDAP Authentication
+Except for the configuration of Kerberos authentication, everything else is the same. You can integrate with LDAP using the following configuration: 
+set kyuubi.ldap.enabled to true, and then specify the username and password for LDAP in the URL.
+```shell
+ams:
+    terminal:
+      backend: kyuubi
+      kyuubi.ldap.enabled: true
+      kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/default;user=test;password=test # kyuubi Connection Address
+```
+
