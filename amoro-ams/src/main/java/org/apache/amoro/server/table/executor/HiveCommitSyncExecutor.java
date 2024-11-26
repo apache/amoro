@@ -34,8 +34,8 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
   // 10 minutes
   private static final long INTERVAL = 10 * 60 * 1000L;
 
-  public HiveCommitSyncExecutor(TableManager tableRuntimes, int poolSize) {
-    super(tableRuntimes, poolSize);
+  public HiveCommitSyncExecutor(TableManager tableManager, int poolSize) {
+    super(tableManager, poolSize);
   }
 
   @Override

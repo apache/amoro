@@ -20,6 +20,7 @@ package org.apache.amoro.utils;
 
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.hadoop.fs.Path;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.io.BulkDeletionFailureException;
 import org.apache.iceberg.util.Tasks;
 import org.slf4j.Logger;
@@ -36,14 +37,31 @@ public class TableFileUtil {
   private static final String POS_DELETE_FILE_IDENTIFIER = "delete";
 
   /**
-   * Parse file name form file path
+   * Parse file name from file path.
    *
    * @param filePath file path
-   * @return file name parsed from file path
+   * @return file name parsed from file path, e.g. data-1.parquet.
    */
   public static String getFileName(String filePath) {
     int lastSlash = filePath.lastIndexOf('/');
     return filePath.substring(lastSlash + 1);
+  }
+
+  /**
+   * Parse file name without ext from file path.
+   *
+   * @param filePath file path
+   * @return file name without ext parsed from file path, e.g. data-1.
+   */
+  public static String getFileNameWithoutExt(String filePath) {
+    String fileName = getFileName(filePath);
+
+    FileFormat fileFormat = FileFormat.fromFileName(fileName);
+    if (fileFormat != null) {
+      return fileName.substring(0, fileName.length() - fileFormat.name().length() - 1);
+    }
+
+    return fileName;
   }
 
   /**
@@ -200,6 +218,8 @@ public class TableFileUtil {
 
   public static boolean isOptimizingPosDeleteFile(String dataFilePath, String posDeleteFilePath) {
     return getFileName(posDeleteFilePath)
-        .startsWith(String.format("%s-%s", getFileName(dataFilePath), POS_DELETE_FILE_IDENTIFIER));
+        .startsWith(
+            String.format(
+                "%s-%s", getFileNameWithoutExt(dataFilePath), POS_DELETE_FILE_IDENTIFIER));
   }
 }

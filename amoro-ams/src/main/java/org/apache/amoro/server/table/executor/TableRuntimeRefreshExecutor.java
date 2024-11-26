@@ -36,8 +36,8 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
   private final int maxPendingPartitions;
 
   public TableRuntimeRefreshExecutor(
-      TableManager tableRuntimes, int poolSize, long interval, int maxPendingPartitions) {
-    super(tableRuntimes, poolSize);
+      TableManager tableManager, int poolSize, long interval, int maxPendingPartitions) {
+    super(tableManager, poolSize);
     this.interval = interval;
     this.maxPendingPartitions = maxPendingPartitions;
   }

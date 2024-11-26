@@ -149,11 +149,7 @@ public class IcebergFanoutPosDeleteWriter<T>
             return;
           }
           posDeletes.sort(Comparator.comparingLong(PosRow::pos));
-          String fileName = TableFileUtil.getFileName(filePath.get().toString());
-          FileFormat fileFormat = FileFormat.fromFileName(fileName);
-          if (fileFormat != null) {
-            fileName = fileName.substring(0, fileName.length() - fileFormat.name().length() - 1);
-          }
+          String fileName = TableFileUtil.getFileNameWithoutExt(filePath.get().toString());
           String fileDir = TableFileUtil.getFileDir(filePath.get().toString());
           String deleteFilePath =
               format.addExtension(

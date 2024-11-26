@@ -29,8 +29,8 @@ public class OptimizingCommitExecutor extends BaseTableExecutor {
 
   private static final long INTERVAL = 60 * 1000L; // 1min
 
-  public OptimizingCommitExecutor(TableManager tableRuntimes, int poolSize) {
-    super(tableRuntimes, poolSize);
+  public OptimizingCommitExecutor(TableManager tableManager, int poolSize) {
+    super(tableManager, poolSize);
   }
 
   @Override

@@ -20,6 +20,7 @@ package org.apache.amoro.server;
 
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
+import io.javalin.http.staticfiles.Location;
 import org.apache.amoro.Constants;
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.api.AmoroTableMetastore;
@@ -246,12 +247,15 @@ public class AmoroServiceContainer {
         Javalin.create(
             config -> {
               config.addStaticFiles(dashboardServer.configStaticFiles());
+              config.addStaticFiles("/META-INF/resources/webjars", Location.CLASSPATH);
               config.sessionHandler(
                   () -> HttpSessionHandlerFactory.createSessionHandler(dataSource, serviceConfig));
               config.enableCorsForAllOrigins();
               config.jsonMapper(JavalinJsonMapper.createDefaultJsonMapper());
               config.showJavalinBanner = false;
+              config.enableWebjars();
             });
+
     httpServer.routes(
         () -> {
           dashboardServer.endpoints().addEndpoints();
