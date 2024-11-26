@@ -76,6 +76,7 @@ public class DashboardServer {
   private static final String AUTH_TYPE_BASIC = "basic";
   private static final String X_REQUEST_SOURCE_HEADER = "X-Request-Source";
   private static final String X_REQUEST_SOURCE_WEB = "Web";
+  private static final String SWAGGER_PATH = "/openapi-ui";
 
   private final CatalogController catalogController;
   private final HealthCheckController healthCheckController;
@@ -118,7 +119,6 @@ public class DashboardServer {
   }
 
   private String indexHtml = "";
-
   // read index.html content
   public String getIndexFileContent() {
     try {
@@ -170,6 +170,17 @@ public class DashboardServer {
       path(
           "",
           () -> {
+            get(
+                "/swagger-docs",
+                ctx -> {
+                  InputStream openapiStream =
+                      getClass().getClassLoader().getResourceAsStream("openapi/openapi.yaml");
+                  if (openapiStream == null) {
+                    ctx.status(404).result("OpenAPI specification file not found");
+                  } else {
+                    ctx.result(openapiStream);
+                  }
+                });
             // static files
             get(
                 "/{page}",
@@ -358,6 +369,9 @@ public class DashboardServer {
   public void preHandleRequest(Context ctx) {
     String uriPath = ctx.path();
     String requestSource = ctx.header(X_REQUEST_SOURCE_HEADER);
+    if (uriPath.startsWith(SWAGGER_PATH)) {
+      return;
+    }
     if (needApiKeyCheck(uriPath) && !X_REQUEST_SOURCE_WEB.equalsIgnoreCase(requestSource)) {
       if (AUTH_TYPE_BASIC.equalsIgnoreCase(authType)) {
         BasicAuthCredentials cred = ctx.basicAuthCredentials();
@@ -410,6 +424,9 @@ public class DashboardServer {
     "/index.html",
     "/favicon.ico",
     "/assets/*",
+    "/openapi-ui",
+    "/openapi-ui/*",
+    "/swagger-docs",
     RestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
   };
 
