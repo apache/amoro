@@ -142,6 +142,7 @@ amoroConf:
   ams:
     adminUsername: admin
     adminPassword: admin
+    restAuthType: token
 
   ## AMS database properties, default value is derby. For production environment, suggest to use mysql
   ##
