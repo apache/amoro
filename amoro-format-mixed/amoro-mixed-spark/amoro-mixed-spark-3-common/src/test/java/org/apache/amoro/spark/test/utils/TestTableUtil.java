@@ -72,17 +72,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class TestTableUtil {
-
-  private static Object[] recordToObjects(Record record) {
+  private static Object[] recordToObjects(Record record, double sparkVersion) {
     Object[] values = new Object[record.size()];
     for (int i = 0; i < values.length; i++) {
       Object v = record.get(i);
       if (v instanceof LocalDateTime) {
-        Timestamp ts =
-            Timestamp.valueOf(((LocalDateTime) v).atZone(ZoneOffset.UTC).toLocalDateTime());
-        Timestamp tsUTC = Timestamp.valueOf((LocalDateTime) v);
-        values[i] = ts;
-        continue;
+        if (Double.isNaN(sparkVersion) || sparkVersion < 3.4) {
+          Timestamp ts =
+              Timestamp.valueOf(((LocalDateTime) v).atZone(ZoneOffset.UTC).toLocalDateTime());
+          values[i] = ts;
+          continue;
+        }
       } else if (v instanceof OffsetDateTime) {
         v = new Timestamp(((OffsetDateTime) v).toInstant().toEpochMilli());
       }
@@ -92,7 +92,11 @@ public class TestTableUtil {
   }
 
   public static Row recordToRow(Record record) {
-    Object[] values = recordToObjects(record);
+    return recordToRow(record, Double.NaN);
+  }
+
+  public static Row recordToRow(Record record, double sparkVersion) {
+    Object[] values = recordToObjects(record, sparkVersion);
     return RowFactory.create(values);
   }
 
@@ -103,6 +107,10 @@ public class TestTableUtil {
   }
 
   public static Record rowToRecord(Row row, Types.StructType type) {
+    return rowToRecord(row, type, Double.NaN);
+  }
+
+  public static Record rowToRecord(Row row, Types.StructType type, double sparkVersion) {
     Record record = GenericRecord.create(type);
     for (int i = 0; i < type.fields().size(); i++) {
       Object v = row.get(i);
@@ -114,9 +122,14 @@ public class TestTableUtil {
         record.set(i, offsetDateTime);
         continue;
       } else if (field.type().equals(Types.TimestampType.withoutZone())) {
-        Preconditions.checkArgument(v instanceof Timestamp);
-        Object localDatetime = ((Timestamp) v).toLocalDateTime();
-        record.set(i, localDatetime);
+        if (Double.isNaN(sparkVersion) || sparkVersion < 3.4) {
+          Preconditions.checkArgument(v instanceof Timestamp);
+          Object localDatetime = ((Timestamp) v).toLocalDateTime();
+          record.set(i, localDatetime);
+        } else {
+          Preconditions.checkArgument(v instanceof LocalDateTime);
+          record.set(i, v);
+        }
         continue;
       }
       record.set(i, v);

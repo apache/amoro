@@ -18,7 +18,7 @@
 
 package org.apache.spark.sql.amoro.catalyst
 
-import java.util.UUID
+import java.util.{Optional, UUID}
 
 import org.apache.iceberg.Schema
 import org.apache.iceberg.spark.SparkSchemaUtil
@@ -29,14 +29,14 @@ import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.connector.expressions._
-import org.apache.spark.sql.connector.write.{ExtendedLogicalWriteInfoImpl, WriteBuilder}
+import org.apache.spark.sql.connector.write.{LogicalWriteInfoImpl, WriteBuilder}
 import org.apache.spark.sql.types.{DataType, LongType, StructType}
 
 import org.apache.amoro.data.PrimaryKeyData
 import org.apache.amoro.spark.SparkInternalRowWrapper
 import org.apache.amoro.spark.sql.connector.expressions.FileIndexBucket
 
-object MixedFormatSpark33Helper extends SQLConfHelper {
+object MixedFormatSpark35Helper extends SQLConfHelper {
 
   import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits._
 
@@ -149,9 +149,9 @@ object MixedFormatSpark33Helper extends SQLConfHelper {
       table: Table,
       rowSchema: StructType,
       writeOptions: Map[String, String],
-      rowIdSchema: StructType = null,
-      metadataSchema: StructType = null): WriteBuilder = {
-    val info = ExtendedLogicalWriteInfoImpl(
+      rowIdSchema: Optional[StructType] = null,
+      metadataSchema: Optional[StructType] = null): WriteBuilder = {
+    val info = LogicalWriteInfoImpl(
       queryId = UUID.randomUUID().toString,
       rowSchema,
       writeOptions.asOptions,

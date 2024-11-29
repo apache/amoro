@@ -23,11 +23,12 @@ import scala.collection.mutable
 
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.SQLConfHelper
-import org.apache.spark.sql.catalyst.expressions.{Alias, AnsiCast, Cast, CreateNamedStruct, Expression, GetStructField, Literal, NamedExpression}
-import org.apache.spark.sql.catalyst.expressions.AssignmentUtils._
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, CreateNamedStruct, EvalMode, Expression, ExtractValue, GetStructField, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical.{Assignment, LogicalPlan}
+import org.apache.spark.sql.catalyst.types.DataTypeUtils
+import org.apache.spark.sql.catalyst.util.CharVarcharUtils
 import org.apache.spark.sql.internal.SQLConf.StoreAssignmentPolicy
-import org.apache.spark.sql.types.{DataType, StructField, StructType}
+import org.apache.spark.sql.types.{StructField, StructType}
 
 trait MixedFormatAssignmentAlignmentSupport extends CastSupport {
 
@@ -108,7 +109,7 @@ trait MixedFormatAssignmentAlignmentSupport extends CastSupport {
               throw new AnalysisException(
                 "Updating nested fields is only supported for StructType " +
                   s"but $colName is of type $otherType",
-                Array.empty[String])
+                Map.empty[String, String])
           }
 
         // if there are conflicting updates, throw an exception
@@ -120,7 +121,7 @@ trait MixedFormatAssignmentAlignmentSupport extends CastSupport {
           throw new AnalysisException(
             "Updates are in conflict for these columns: " +
               conflictingCols.distinct.mkString(", "),
-            Array.empty[String])
+            Map.empty[String, String])
       }
     }
   }
@@ -164,13 +165,14 @@ trait MixedFormatAssignmentAlignmentSupport extends CastSupport {
         if (expr.nullable && !tableAttr.nullable) {
           throw new AnalysisException(
             s"Cannot write nullable values to non-null column '${tableAttr.name}'",
-            Array.empty[String])
+            Map.empty[String, String])
         }
 
         // use byName = true to catch cases when struct field names don't match
         // e.g. a struct with fields (a, b) is assigned as a struct with fields (a, c) or (b, a)
         val errors = new mutable.ArrayBuffer[String]()
-        val canWrite = DataType.canWrite(
+        val canWrite = DataTypeUtils.canWrite(
+          "",
           expr.dataType,
           tableAttr.dataType,
           byName = true,
@@ -182,7 +184,7 @@ trait MixedFormatAssignmentAlignmentSupport extends CastSupport {
         if (!canWrite) {
           throw new AnalysisException(
             s"Cannot write incompatible data:\n- ${errors.mkString("\n- ")}",
-            Array.empty[String])
+            Map.empty[String, String])
         }
 
       case _ => // OK
@@ -192,9 +194,48 @@ trait MixedFormatAssignmentAlignmentSupport extends CastSupport {
       case _ if tableAttr.dataType.sameType(expr.dataType) =>
         expr
       case StoreAssignmentPolicy.ANSI =>
-        AnsiCast(expr, tableAttr.dataType, Option(conf.sessionLocalTimeZone))
+        Cast(expr, tableAttr.dataType, Option(conf.sessionLocalTimeZone), evalMode = EvalMode.ANSI)
       case _ =>
         Cast(expr, tableAttr.dataType, Option(conf.sessionLocalTimeZone))
+    }
+  }
+
+  private def toAssignmentRef(expr: Expression): Seq[String] = expr match {
+    case attr: AttributeReference =>
+      Seq(attr.name)
+    case Alias(child, _) =>
+      toAssignmentRef(child)
+    case GetStructField(child, _, Some(name)) =>
+      toAssignmentRef(child) :+ name
+    case other: ExtractValue =>
+      throw new AnalysisException(
+        s"Updating nested fields is only supported for structs: $other",
+        Map.empty[String, String])
+    case other =>
+      throw new AnalysisException(
+        s"Cannot convert to a reference, unsupported expression: $other",
+        Map.empty[String, String])
+  }
+
+  private def handleCharVarcharLimits(assignment: Assignment): Assignment = {
+    val key = assignment.key
+    val value = assignment.value
+
+    val rawKeyType = key.transform {
+      case attr: AttributeReference =>
+        CharVarcharUtils.getRawType(attr.metadata)
+          .map(attr.withDataType)
+          .getOrElse(attr)
+    }.dataType
+
+    if (CharVarcharUtils.hasCharVarchar(rawKeyType)) {
+      val newKey = key.transform {
+        case attr: AttributeReference => CharVarcharUtils.cleanAttrMetadata(attr)
+      }
+      val newValue = CharVarcharUtils.stringLengthCheck(value, rawKeyType)
+      Assignment(newKey, newValue)
+    } else {
+      assignment
     }
   }
 }

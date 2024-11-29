@@ -18,6 +18,8 @@
 
 package org.apache.amoro.spark.writer;
 
+import static org.apache.amoro.spark.test.utils.TestTableUtil.recordToRow;
+
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.hive.io.HiveDataTestHelpers;
 import org.apache.amoro.hive.table.SupportHive;
@@ -28,7 +30,6 @@ import org.apache.amoro.spark.io.TaskWriters;
 import org.apache.amoro.spark.reader.SparkParquetReaders;
 import org.apache.amoro.spark.test.MixedTableTestBase;
 import org.apache.amoro.spark.test.utils.RecordGenerator;
-import org.apache.amoro.spark.test.utils.TestTableUtil;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
@@ -46,7 +47,10 @@ import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.data.SparkOrcReader;
 import org.apache.iceberg.types.Types;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
+import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.connector.write.DataWriter;
 import org.apache.spark.sql.connector.write.LogicalWriteInfoImpl;
@@ -67,6 +71,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -203,7 +208,12 @@ public class TestMixedWriter extends MixedTableTestBase {
   private void testWriteData(MixedTable table, Map<String, String> map) throws IOException {
     StructType structType = SparkSchemaUtil.convert(table.schema());
     LogicalWriteInfoImpl info =
-        new LogicalWriteInfoImpl("queryId", structType, new CaseInsensitiveStringMap(map));
+        new LogicalWriteInfoImpl(
+            "queryId",
+            structType,
+            new CaseInsensitiveStringMap(map),
+            Optional.empty(),
+            Optional.empty());
     MixedFormatSparkWriteBuilder builder = new MixedFormatSparkWriteBuilder(table, info, catalog());
     Write write = builder.build();
     DataWriter<InternalRow> writer =
@@ -283,7 +293,7 @@ public class TestMixedWriter extends MixedTableTestBase {
             .withDataSourceSchema(dsSchema)
             .newBaseWriter(true)) {
       records.stream()
-          .map(r -> TestTableUtil.recordToInternalRow(SCHEMA, r))
+          .map(r -> recordToInternalRow(SCHEMA, r))
           .forEach(
               i -> {
                 try {
@@ -299,5 +309,11 @@ public class TestMixedWriter extends MixedTableTestBase {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public static InternalRow recordToInternalRow(Schema schema, Record record) {
+    StructType structType = SparkSchemaUtil.convert(schema);
+    Row row = recordToRow(record);
+    return ExpressionEncoder.apply(RowEncoder.encoderFor(structType)).createSerializer().apply(row);
   }
 }

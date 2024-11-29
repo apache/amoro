@@ -34,7 +34,7 @@ import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.analysis.NoSuchPartitionException;
-import org.apache.spark.sql.catalyst.analysis.PartitionAlreadyExistsException;
+import org.apache.spark.sql.catalyst.analysis.PartitionsAlreadyExistException;
 import org.apache.spark.sql.connector.catalog.SupportsPartitionManagement;
 import org.apache.spark.sql.connector.catalog.SupportsRead;
 import org.apache.spark.sql.connector.catalog.SupportsWrite;
@@ -212,7 +212,7 @@ public class MixedSparkTable
 
   @Override
   public void createPartition(InternalRow ident, Map<String, String> properties)
-      throws PartitionAlreadyExistsException, UnsupportedOperationException {
+      throws PartitionsAlreadyExistException, UnsupportedOperationException {
     throw new UnsupportedOperationException("not supported create partition");
   }
 

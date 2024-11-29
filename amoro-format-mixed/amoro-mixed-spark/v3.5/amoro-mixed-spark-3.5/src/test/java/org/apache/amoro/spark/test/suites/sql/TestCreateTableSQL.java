@@ -47,29 +47,28 @@ public class TestCreateTableSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testTimestampHandleInCreateTable() {
     return Stream.of(
-        Arguments.arguments(TableFormat.MIXED_HIVE, true, Types.TimestampType.withoutZone()),
-        Arguments.arguments(TableFormat.MIXED_HIVE, false, Types.TimestampType.withoutZone()),
-        Arguments.arguments(TableFormat.MIXED_ICEBERG, true, Types.TimestampType.withoutZone()),
-        Arguments.arguments(TableFormat.MIXED_ICEBERG, false, Types.TimestampType.withZone()));
+        Arguments.arguments(TableFormat.MIXED_HIVE, "TIMESTAMP", Types.TimestampType.withZone()),
+        Arguments.arguments(
+            TableFormat.MIXED_HIVE, "TIMESTAMP_NTZ", Types.TimestampType.withoutZone()),
+        Arguments.arguments(TableFormat.MIXED_ICEBERG, "TIMESTAMP", Types.TimestampType.withZone()),
+        Arguments.arguments(
+            TableFormat.MIXED_ICEBERG, "TIMESTAMP_NTZ", Types.TimestampType.withoutZone()));
   }
 
-  @DisplayName("Test `use-timestamp-without-zone-in-new-tables`")
+  @DisplayName("Test `TIMESTAMP` and `TIMESTAMP_NTZ` ")
   @ParameterizedTest
   @MethodSource
   public void testTimestampHandleInCreateTable(
-      TableFormat format, boolean usingTimestampWithoutZone, Types.TimestampType expectType) {
+      TableFormat format, String sparkType, Types.TimestampType expectType) {
 
-    spark()
-        .conf()
-        .set(
-            SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
-            usingTimestampWithoutZone);
     String sqlText =
         "CREATE TABLE "
             + target()
             + "(\n"
             + "id INT, \n"
-            + "ts TIMESTAMP \n) using  "
+            + "ts "
+            + sparkType
+            + " \n) using  "
             + provider(format);
     sql(sqlText);
     MixedTable actual = loadTable();

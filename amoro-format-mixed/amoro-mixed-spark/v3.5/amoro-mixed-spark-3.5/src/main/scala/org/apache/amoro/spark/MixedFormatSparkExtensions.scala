@@ -69,13 +69,6 @@ class MixedFormatSparkExtensions extends (SparkSessionExtensions => Unit) {
 
     // optimizer extensions
     extensions.injectOptimizerRule { _ => ReplaceStaticInvoke }
-
-    // planner extensions
-    extensions.injectPlannerStrategy { spark => ExtendedDataSourceV2Strategy(spark) }
-
-    // iceberg sql parser extensions
-    extensions.injectParser { case (_, parser) => new IcebergSparkSqlExtensionsParser(parser) }
-
   }
 
 }

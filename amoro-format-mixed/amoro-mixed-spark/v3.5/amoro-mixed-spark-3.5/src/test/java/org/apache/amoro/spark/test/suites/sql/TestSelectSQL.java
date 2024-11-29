@@ -51,6 +51,7 @@ import java.util.stream.Stream;
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestSelectSQL extends MixedTableTestBase {
+  public static double SPARK_VERSION = 3.5;
 
   public static Stream<Arguments> testKeyedTableQuery() {
     List<TestTable> tests =
@@ -114,7 +115,7 @@ public class TestSelectSQL extends MixedTableTestBase {
     Dataset<Row> ds = sql("SELECT * FROM " + target() + " ORDER BY id");
     List<Record> actual =
         ds.collectAsList().stream()
-            .map(r -> TestTableUtil.rowToRecord(r, table.schema.asStruct()))
+            .map(r -> TestTableUtil.rowToRecord(r, table.schema.asStruct(), SPARK_VERSION))
             .collect(Collectors.toList());
     expects.sort(Comparator.comparing(r -> r.get(0, Integer.class)));
 
@@ -126,7 +127,7 @@ public class TestSelectSQL extends MixedTableTestBase {
 
     Schema changeSchema = MetadataColumns.appendChangeStoreMetadataColumns(table.schema);
     changeActual.stream()
-        .map(r -> TestTableUtil.rowToRecord(r, changeSchema.asStruct()))
+        .map(r -> TestTableUtil.rowToRecord(r, changeSchema.asStruct(), SPARK_VERSION))
         .forEach(
             r -> {
               Assertions.assertNotNull(r.getField(MetadataColumns.CHANGE_ACTION_NAME));

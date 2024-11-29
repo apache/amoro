@@ -18,11 +18,6 @@
 
 package org.apache.amoro.spark;
 
-import static org.apache.amoro.spark.mixed.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
-import static org.apache.amoro.spark.mixed.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
-import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
-
-import org.apache.amoro.hive.utils.CatalogUtil;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.spark.mixed.MixedSparkCatalogBase;
@@ -43,7 +38,6 @@ import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.spark.Spark3Util;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Types;
-import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.apache.spark.sql.catalyst.analysis.NonEmptyNamespaceException;
@@ -65,7 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class MixedFormatSparkCatalog extends MixedSparkCatalogBase {
+public class MixedFormatSparkCatalog extends MixedSparkCatalogBase implements SupportsFunctions {
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
@@ -137,25 +131,7 @@ public class MixedFormatSparkCatalog extends MixedSparkCatalogBase {
 
   private Schema checkAndConvertSchema(StructType schema, Map<String, String> properties) {
     Schema convertSchema;
-    boolean useTimestampWithoutZoneInNewTables;
-    SparkSession sparkSession = SparkSession.active();
-    if (CatalogUtil.isMixedHiveCatalog(catalog)) {
-      useTimestampWithoutZoneInNewTables = true;
-    } else {
-      useTimestampWithoutZoneInNewTables =
-          Boolean.parseBoolean(
-              sparkSession
-                  .conf()
-                  .get(
-                      USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
-                      USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT));
-    }
-    if (useTimestampWithoutZoneInNewTables) {
-      sparkSession.conf().set(HANDLE_TIMESTAMP_WITHOUT_TIMEZONE, true);
-      convertSchema = SparkSchemaUtil.convert(schema, true);
-    } else {
-      convertSchema = SparkSchemaUtil.convert(schema, false);
-    }
+    convertSchema = SparkSchemaUtil.convert(schema);
 
     // schema add primary keys
     if (properties.containsKey("primary.keys")) {

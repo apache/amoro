@@ -18,19 +18,13 @@
 
 package org.apache.amoro.spark;
 
-/**
- * A util class to load spark adapter via spark version. This util class will move to spark3-common
- * module if multi spark modules added.
- */
-public class SparkAdapterLoader {
-  private static final SparkAdapter adapter = new Spark35Adapter();
+import org.apache.amoro.spark.util.ExpressionHelper;
 
-  /**
-   * This method will implement as SPI if multi spark modules added.
-   *
-   * @return A SparkAdapter objects
-   */
-  public static SparkAdapter getOrLoad() {
-    return adapter;
+public class Spark35Adapter implements SparkAdapter {
+  ExpressionHelper expressionHelper = new ExpressionHelper();
+
+  @Override
+  public ExpressionHelper expressions() {
+    return expressionHelper;
   }
 }

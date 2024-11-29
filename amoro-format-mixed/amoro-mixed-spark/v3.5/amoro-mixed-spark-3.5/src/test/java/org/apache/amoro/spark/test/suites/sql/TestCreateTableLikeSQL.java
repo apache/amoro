@@ -39,6 +39,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @EnableCatalogSelect
@@ -47,28 +48,33 @@ public class TestCreateTableLikeSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testTimestampZoneHandle() {
     return Stream.of(
-        Arguments.of(TableFormat.MIXED_ICEBERG, false, Types.TimestampType.withZone()),
-        Arguments.of(TableFormat.MIXED_ICEBERG, true, Types.TimestampType.withoutZone()),
-        Arguments.of(TableFormat.MIXED_HIVE, false, Types.TimestampType.withoutZone()),
-        Arguments.of(TableFormat.MIXED_HIVE, true, Types.TimestampType.withoutZone()));
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            Types.TimestampType.withZone(),
+            Types.TimestampType.withZone()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            Types.TimestampType.withoutZone(),
+            Types.TimestampType.withoutZone()),
+        Arguments.of(
+            TableFormat.MIXED_HIVE, Types.TimestampType.withZone(), Types.TimestampType.withZone()),
+        Arguments.of(
+            TableFormat.MIXED_HIVE,
+            Types.TimestampType.withoutZone(),
+            Types.TimestampType.withoutZone()));
   }
 
   @DisplayName("TestSQL: CREATE TABLE LIKE handle timestamp type in new table.")
   @ParameterizedTest
   @MethodSource
   public void testTimestampZoneHandle(
-      TableFormat format, boolean newTableTimestampWithoutZone, Type expectTimestampType) {
+      TableFormat format, Type inputTimestampType, Type expectTimestampType) {
     Schema schema =
         new Schema(
             Types.NestedField.required(1, "id", Types.IntegerType.get()),
-            Types.NestedField.optional(2, "ts", Types.TimestampType.withZone()));
+            Types.NestedField.optional(2, "ts", inputTimestampType));
     createMixedFormatSource(schema, x -> {});
 
-    spark()
-        .conf()
-        .set(
-            SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
-            newTableTimestampWithoutZone);
     sql("CREATE TABLE " + target() + " LIKE " + source() + " USING " + provider(format));
 
     MixedTable table = loadTable();
@@ -92,7 +98,23 @@ public class TestCreateTableLikeSQL extends MixedTableTestBase {
     String sqlText = "CREATE TABLE " + target() + " LIKE " + source() + " USING arctic";
     sql(sqlText);
     MixedTable table = loadTable();
-    Asserts.assertType(source.schema.asStruct(), table.schema().asStruct());
+    List<Types.NestedField> expect =
+        source.schema.columns().stream()
+            .map(
+                f -> {
+                  if (f.type().equals(Types.TimestampType.withoutZone())) {
+                    return Types.NestedField.of(
+                        f.fieldId(),
+                        f.isOptional(),
+                        f.name(),
+                        Types.TimestampType.withZone(),
+                        f.doc());
+                  } else {
+                    return f;
+                  }
+                })
+            .collect(Collectors.toList());
+    Asserts.assertType(Types.StructType.of(expect), table.schema().asStruct());
     Asserts.assertPartition(source.ptSpec, table.spec());
     // CREATE TABLE LIKE do not copy properties.
     Assertions.assertFalse(table.properties().containsKey("k1"));

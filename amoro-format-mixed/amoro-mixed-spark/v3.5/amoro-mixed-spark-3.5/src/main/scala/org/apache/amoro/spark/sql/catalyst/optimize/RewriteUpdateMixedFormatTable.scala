@@ -21,7 +21,7 @@ package org.apache.amoro.spark.sql.catalyst.optimize
 import java.util
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.amoro.catalyst.MixedFormatSpark33Helper
+import org.apache.spark.sql.amoro.catalyst.MixedFormatSpark35Helper
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, AttributeReference, Cast, EqualTo, Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -84,7 +84,7 @@ case class RewriteUpdateMixedFormatTable(spark: SparkSession) extends Rule[Logic
       var options: Map[String, String] = Map.empty
       options += (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
       val writeBuilder =
-        MixedFormatSpark33Helper.newWriteBuilder(mixedTableRelation.table, query.schema, options)
+        MixedFormatSpark35Helper.newWriteBuilder(mixedTableRelation.table, query.schema, options)
       val write = writeBuilder.build()
       val projections = buildUpdateProjections(
         query,

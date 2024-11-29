@@ -16,15 +16,22 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.spark;
+package org.apache.spark.sql.connector.expressions
 
-import org.apache.amoro.spark.util.ExpressionHelper;
+import org.apache.spark.sql.types.IntegerType
 
-public class Spark33Adapter implements SparkAdapter {
-  ExpressionHelper expressionHelper = new ExpressionHelper();
-
-  @Override
-  public ExpressionHelper expressions() {
-    return expressionHelper;
+private[sql] object TruncateTransform {
+  def unapply(expr: Expression): Option[(Int, FieldReference)] = expr match {
+    case transform: Transform =>
+      transform match {
+        case NamedTransform("truncate", Seq(Ref(seq: Seq[String]), Lit(value: Int, IntegerType))) =>
+          Some((value, FieldReference(seq)))
+        case NamedTransform("truncate", Seq(Lit(value: Int, IntegerType), Ref(seq: Seq[String]))) =>
+          Some((value, FieldReference(seq)))
+        case _ =>
+          None
+      }
+    case _ =>
+      None
   }
 }

@@ -20,10 +20,10 @@ package org.apache.amoro.spark.sql.catalyst.analysis
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.{ResolvedDBObjectName, ResolvedTable}
+import org.apache.spark.sql.catalyst.analysis.{ResolvedIdentifier, ResolvedTable}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.connector.catalog.TableCatalog
+import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
 import org.apache.spark.sql.execution.command.CreateTableLikeCommand
 
 import org.apache.amoro.spark.{MixedFormatSparkCatalog, MixedFormatSparkSessionCatalog}
@@ -67,11 +67,12 @@ case class RewriteMixedFormatCommand(sparkSession: SparkSession) extends Rule[Lo
         TruncateMixedFormatTable(t.child)
 
       case c @ CreateTableAsSelect(
-            ResolvedDBObjectName(catalog: TableCatalog, _),
+            ResolvedIdentifier(catalog: TableCatalog, _),
             _,
             _,
-            tableSpec,
+            tableSpec: TableSpec,
             options,
+            _,
             _)
           if isCreateMixedFormatTable(catalog, tableSpec.provider) =>
         var propertiesMap: Map[String, String] = tableSpec.properties
@@ -80,6 +81,7 @@ case class RewriteMixedFormatCommand(sparkSession: SparkSession) extends Rule[Lo
           propertiesMap += ("primary.keys" -> options("primary.keys"))
         }
         optionsMap += (WriteMode.WRITE_MODE_KEY -> WriteMode.OVERWRITE_DYNAMIC.mode)
+
         val newTableSpec = tableSpec.copy(properties = propertiesMap)
         c.copy(tableSpec = newTableSpec, writeOptions = optionsMap)
       case CreateTableLikeCommand(targetTable, sourceTable, _, provider, properties, ifNotExists)
@@ -108,8 +110,9 @@ case class RewriteMixedFormatCommand(sparkSession: SparkSession) extends Rule[Lo
           comment = None,
           serde = None,
           external = false)
-        val seq: Seq[String] = Seq(targetTable.database.get, targetTable.identifier)
-        val name = ResolvedDBObjectName(targetCatalog, seq)
+        val identifier =
+          Identifier.of(Array.apply(targetTable.database.get), targetTable.identifier)
+        val name = ResolvedIdentifier(targetCatalog, identifier)
         CreateTable(name, table.schema(), table.partitioning(), tableSpec, ifNotExists)
       case _ => plan
     }

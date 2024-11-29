@@ -21,7 +21,7 @@ package org.apache.amoro.spark.test.suites.ut.sql.parser;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.spark.sql.catalyst.parser.MixedFormatSqlExtensionsParser;
 import org.apache.amoro.spark.test.utils.ScalaTestUtil;
-import org.apache.spark.sql.catalyst.analysis.UnresolvedDBObjectName;
+import org.apache.spark.sql.catalyst.analysis.UnresolvedIdentifier;
 import org.apache.spark.sql.catalyst.parser.AbstractSqlParser;
 import org.apache.spark.sql.catalyst.parser.AstBuilder;
 import org.apache.spark.sql.catalyst.parser.ParseException;
@@ -97,7 +97,7 @@ public class TestSqlExtendParser {
     CreateTable create = (CreateTable) plan;
 
     Seq<String> expectNameSeq = ScalaTestUtil.seq(expectTableName);
-    UnresolvedDBObjectName namePlan = (UnresolvedDBObjectName) create.name();
+    UnresolvedIdentifier namePlan = (UnresolvedIdentifier) create.name();
 
     Assertions.assertEquals(expectNameSeq, namePlan.nameParts());
     Assertions.assertEquals(expectSchema, create.tableSchema());

@@ -30,7 +30,8 @@ import org.apache.amoro.spark.command.{MigrateToMixedFormatCommand, MixedFormatS
 
 abstract class MixedFormatCommandExec(command: MixedFormatSparkCommand) extends V2CommandExec {
 
-  val rowEncoder: ExpressionEncoder[Row] = RowEncoder(command.outputType()).resolveAndBind()
+  val rowEncoder: ExpressionEncoder[Row] =
+    ExpressionEncoder(RowEncoder.encoderFor(command.outputType())).resolveAndBind()
 
   override def run(): Seq[InternalRow] = {
     val rows = command.execute().toSeq

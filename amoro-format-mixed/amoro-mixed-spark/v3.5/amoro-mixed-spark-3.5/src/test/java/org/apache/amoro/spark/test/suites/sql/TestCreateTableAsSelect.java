@@ -54,6 +54,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
   public static final Schema SIMPLE_SOURCE_SCHEMA = TestTables.MixedIceberg.NO_PK_PT.schema;
   public static final List<Record> SIMPLE_SOURCE_DATA =
       TestTables.MixedIceberg.PK_PT.newDateGen().records(10);
+  public static final double SPARK_VERSION = 3.5;
 
   public static Stream<Arguments> testTimestampZoneHandle() {
     return Stream.of(
@@ -62,7 +63,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
             "PRIMARY KEY(id, pt)",
             true,
             Types.TimestampType.withoutZone()),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "", false, Types.TimestampType.withZone()),
+        Arguments.of(TableFormat.MIXED_ICEBERG, "", false, Types.TimestampType.withoutZone()),
         Arguments.of(
             TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", true, Types.TimestampType.withoutZone()),
         Arguments.of(TableFormat.MIXED_HIVE, "", false, Types.TimestampType.withoutZone()));
@@ -75,7 +76,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
       String primaryKeyDDL,
       boolean timestampWithoutZone,
       Types.TimestampType expectType) {
-    createViewSource(SIMPLE_SOURCE_SCHEMA, SIMPLE_SOURCE_DATA);
+    createViewSource(SIMPLE_SOURCE_SCHEMA, SIMPLE_SOURCE_DATA, SPARK_VERSION);
 
     spark()
         .conf()
@@ -204,7 +205,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
       PrimaryKeySpec keySpec,
       PartitionSpec ptSpec) {
     spark().conf().set("spark.sql.session.timeZone", "UTC");
-    createViewSource(SIMPLE_SOURCE_SCHEMA, SIMPLE_SOURCE_DATA);
+    createViewSource(SIMPLE_SOURCE_SCHEMA, SIMPLE_SOURCE_DATA, SPARK_VERSION);
 
     spark().conf().set(SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, true);
 
@@ -270,7 +271,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
       String primaryKeyDDL,
       boolean duplicateCheckFailed) {
     spark().conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, "true");
-    createViewSource(SIMPLE_SOURCE_SCHEMA, sourceData);
+    createViewSource(SIMPLE_SOURCE_SCHEMA, sourceData, SPARK_VERSION);
     String sqlText =
         "CREATE TABLE "
             + target()
@@ -314,7 +315,7 @@ public class TestCreateTableAsSelect extends MixedTableTestBase {
       String primaryKeyDDL,
       String propertiesDDL,
       Map<String, String> expectProperties) {
-    createViewSource(SIMPLE_SOURCE_SCHEMA, SIMPLE_SOURCE_DATA);
+    createViewSource(SIMPLE_SOURCE_SCHEMA, SIMPLE_SOURCE_DATA, SPARK_VERSION);
     String sqlText =
         "CREATE TABLE "
             + target()
