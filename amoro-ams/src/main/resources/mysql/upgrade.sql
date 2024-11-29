@@ -49,3 +49,21 @@ SELECT  `table_id`,`catalog_name`, `db_name`, `table_name`, `current_snapshot_id
             END,
         `optimizing_status_start_time`, `optimizing_process_id`, `optimizer_group`, `table_config`, `optimizing_config`, `pending_input`,  `table_summary`
 FROM table_runtime_backup;
+
+-- database http session handler
+CREATE TABLE `http_session` (
+    `session_id`    varchar(120) NOT NULL COMMENT 'HTTP Session ID',
+    `context_path`  varchar(60) COMMENT 'Jetty Context path',
+    `virtual_host`  varchar(60) COMMENT 'Jetty virtual host',
+    `last_node`     varchar(60) COMMENT 'Last node',
+    `access_time`   bigint(20) COMMENT 'Access time',
+    `last_access_time`  bigint(20) COMMENT 'Last access time',
+    `create_time`   bigint(20)  COMMENT 'Create time',
+    `cookie_time`   bigint(20)  COMMENT 'Cookie time',
+    `last_save_time` bigint(20) COMMENT 'Last save time',
+    `expiry_time`   bigint(20)  COMMENT 'Expiry time',
+    `max_interval`  bigint(20)  COMMENT 'Max internal',
+    `data_store`    blob        COMMENT 'Session data store',
+    PRIMARY KEY(`session_id`, `context_path`, `virtual_host`),
+    KEY `idx_session_expiry` (`expiry_time`)
+) ENGINE = InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Http session store' ROW_FORMAT=DYNAMIC;

@@ -32,6 +32,7 @@ ams:
       bind-port: 1261
 
   http-server:
+    session-timeout: 7d
     bind-port: 1630
     rest-auth-type: token
 
