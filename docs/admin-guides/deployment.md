@@ -90,6 +90,7 @@ ams:
       bind-port: 1261 #The port for accessing AMS optimizing service.
 
   http-server:
+    session-timeout: 7d #Re-login after 7days
     bind-port: 1630 #The port for accessing AMS Dashboard.
 ```
 
