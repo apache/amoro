@@ -256,6 +256,12 @@ public class AmoroManagementConf {
           .defaultValue("token")
           .withDescription("The authentication used by REST APIs, token (default) or basic.");
 
+  public static final ConfigOption<Duration> HTTP_SERVER_SESSION_TIMEOUT =
+      ConfigOptions.key("http-server.session-timeout")
+          .durationType()
+          .defaultValue(Duration.ofDays(7))
+          .withDescription("Timeout for http session.");
+
   public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_COUNT =
       ConfigOptions.key("self-optimizing.commit-thread-count")
           .intType()
