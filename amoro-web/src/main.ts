@@ -36,7 +36,8 @@ import SvgIcon from '@/components/svg-icon.vue'
 
 import 'virtual:svg-icons-register'
 
-const app = createApp(App).use(createPinia())
+const pinia = createPinia()
+const app = createApp(App).use(pinia)
 app.component('svg-icon', SvgIcon)
 app.use(VueI18n)
 RegisterComponents(app);

@@ -50,8 +50,11 @@ export default defineComponent({
           return
         }
         const { path, query } = store.historyPathInfo
+
+        const backRoute = path && path !== '/login' ? path : '/'
+
         router.replace({
-          path: path || '/',
+          path: backRoute,
           query,
         })
       }
