@@ -33,6 +33,7 @@ import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
@@ -54,6 +55,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -328,7 +331,8 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
         configurations.set(AmoroManagementConf.DB_TYPE, AmoroManagementConf.DB_TYPE_DERBY);
         configurations.set(
             AmoroManagementConf.DB_DRIVER_CLASS_NAME, "org.apache.derby.jdbc.EmbeddedDriver");
-        SqlSessionFactoryProvider.getInstance().init(configurations);
+        DataSource ds = DataSourceFactory.createDataSource(configurations);
+        SqlSessionFactoryProvider.getInstance().init(ds);
         LOG.info("Initialized derby persistent with url: {}", derbyUrl);
         Runtime.getRuntime()
             .addShutdownHook(
