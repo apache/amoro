@@ -194,6 +194,7 @@ public class TestDataExpire extends ExecutorTestBase {
 
     List<Record> expected;
     if (tableTestHelper().partitionSpec().isPartitioned()) {
+      // retention time is 1 day, expire partitions that order than 2022-01-02
       expected =
           Lists.newArrayList(
               createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),

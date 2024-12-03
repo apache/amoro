@@ -705,9 +705,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
     ExpireFiles expiredFiles = new ExpireFiles();
     try (CloseableIterable<FileEntry> entries = fileScan(table, dataFilter, expirationConfig)) {
       boolean expireByPartitionSuccess = false;
-      if (expirationConfig
-          .getExpirationLevel()
-          .equals(DataExpirationConfig.ExpireLevel.PARTITION)) {
+      if (!table.specs().isEmpty()
+          && expirationConfig
+              .getExpirationLevel()
+              .equals(DataExpirationConfig.ExpireLevel.PARTITION)) {
         expireByPartitionSuccess =
             tryExpireByPartition(entries, expirationConfig, expireTimestamp, expiredFiles);
       }
@@ -786,6 +787,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   private Map<Integer, Map<Integer, PartitionField>> buildExpirePartitionFieldsMap(
       Types.NestedField expireField) {
+    // specId -> (partitionPos -> partitionField)
     Map<Integer, Map<Integer, PartitionField>> partitionFieldsMap = new HashMap<>();
     for (Map.Entry<Integer, PartitionSpec> entry : table.specs().entrySet()) {
       int pos = 0;
@@ -825,6 +827,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   private Comparable<?> getPartitionUpperBound(
       DataExpirationConfig expirationConfig, Types.NestedField field, long expireTimestamp) {
     switch (field.type().typeId()) {
+        // expireTimestamp is in milliseconds, TIMESTAMP type is in microseconds
       case TIMESTAMP:
         return expireTimestamp * 1000;
       case LONG:
