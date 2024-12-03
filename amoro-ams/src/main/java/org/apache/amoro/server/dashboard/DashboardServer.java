@@ -394,7 +394,7 @@ public class DashboardServer {
   public void handleException(Exception e, Context ctx) {
     if (e instanceof ForbiddenException) {
       // request doesn't start with /ams is  page request. we return index.html
-      if (!ctx.req.getRequestURI().startsWith("/ams")) {
+      if (!ctx.req.getRequestURI().startsWith("/api/ams")) {
         ctx.html(getIndexFileContent());
       } else {
         ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Please login first", ""));
