@@ -157,6 +157,7 @@ async function getBreadcrumbTable() {
     const params = {
       ...sourceData,
       snapshotId: snapshotId.value,
+      ref: tblRef.value,
       page: breadcrumbPagination.current,
       pageSize: breadcrumbPagination.pageSize,
     }

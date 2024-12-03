@@ -59,6 +59,22 @@ public class AmoroManagementConf {
               "Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing "
                   + "manifests in the base table implementation across all concurrent planning or commit operations.");
 
+  public static final ConfigOption<Integer> TABLE_MANIFEST_IO_PLANNING_THREAD_COUNT =
+      ConfigOptions.key("self-optimizing.plan-manifest-io-thread-count")
+          .intType()
+          .defaultValue(10)
+          .withDescription(
+              "Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing "
+                  + "manifests in the base table implementation across all concurrent planning operations.");
+
+  public static final ConfigOption<Integer> TABLE_MANIFEST_IO_COMMIT_THREAD_COUNT =
+      ConfigOptions.key("self-optimizing.commit-manifest-io-thread-count")
+          .intType()
+          .defaultValue(10)
+          .withDescription(
+              "Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing "
+                  + "manifests in the base table implementation across all concurrent commit operations.");
+
   public static final ConfigOption<Long> REFRESH_EXTERNAL_CATALOGS_INTERVAL =
       ConfigOptions.key("refresh-external-catalogs.interval")
           .longType()
@@ -239,6 +255,12 @@ public class AmoroManagementConf {
           .stringType()
           .defaultValue("token")
           .withDescription("The authentication used by REST APIs, token (default) or basic.");
+
+  public static final ConfigOption<Duration> HTTP_SERVER_SESSION_TIMEOUT =
+      ConfigOptions.key("http-server.session-timeout")
+          .durationType()
+          .defaultValue(Duration.ofDays(7))
+          .withDescription("Timeout for http session.");
 
   public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_COUNT =
       ConfigOptions.key("self-optimizing.commit-thread-count")

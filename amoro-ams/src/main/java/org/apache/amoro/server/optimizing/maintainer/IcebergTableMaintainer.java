@@ -23,10 +23,10 @@ import static org.apache.amoro.shade.guava32.com.google.common.primitives.Longs.
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.config.DataExpirationConfig;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.PathInfo;
 import org.apache.amoro.io.SupportsFileSystemOperations;
-import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
 import org.apache.amoro.server.table.TableRuntime;
@@ -665,7 +665,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
       return CloseableIterable.empty();
     }
     long snapshotId = snapshot.snapshotId();
-    if (snapshotId == AmoroServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (snapshotId == Constants.INVALID_SNAPSHOT_ID) {
       tasks = tableScan.planFiles();
     } else {
       tasks = tableScan.useSnapshot(snapshotId).planFiles();

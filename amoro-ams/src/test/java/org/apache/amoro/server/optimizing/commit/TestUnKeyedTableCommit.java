@@ -27,7 +27,7 @@ import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.exception.OptimizingCommitException;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
-import org.apache.amoro.server.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.table.MixedTable;

@@ -19,7 +19,6 @@
 package org.apache.amoro.server.persistence.converter;
 
 import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.utils.CompressUtil;
 import org.apache.amoro.utils.SerializationUtil;
 import org.apache.ibatis.type.JdbcType;
@@ -31,14 +30,17 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Locale;
 
 public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
 
   @Override
   public void setParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType)
       throws SQLException {
+    String dbName =
+        ps.getConnection().getMetaData().getDatabaseProductName().toLowerCase(Locale.ENGLISH);
     if (parameter == null) {
-      if (SqlSessionFactoryProvider.getDbType().equals(AmoroManagementConf.DB_TYPE_POSTGRES)) {
+      if (dbName.startsWith(AmoroManagementConf.DB_TYPE_POSTGRES)) {
         ps.setNull(i, Types.BINARY);
       } else {
         ps.setNull(i, Types.BLOB);

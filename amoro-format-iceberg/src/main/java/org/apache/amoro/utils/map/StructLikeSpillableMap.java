@@ -44,7 +44,7 @@ public class StructLikeSpillableMap<T> extends StructLikeBaseMap<T> {
         new SimpleSpillableMap<>(
             maxInMemorySizeInBytes,
             backendBaseDir,
-            SerializationUtil.createStructLikeWrapperSerializer(structLikeWrapper),
+            new StructLikeWrapperSerializer(structLikeWrapper),
             SerializationUtil.createJavaSimpleSerializer(),
             new StructLikeWrapperSizeEstimator(),
             new DefaultSizeEstimator<>());

@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server.optimizing.flow.checker;
 
-import org.apache.amoro.server.optimizing.OptimizingType;
-import org.apache.amoro.server.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.OptimizingType;
+import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
-import org.apache.amoro.server.optimizing.plan.OptimizingPlanner;
 import org.apache.amoro.table.MixedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.Nullable;
@@ -37,7 +37,7 @@ public class MajorOptimizingChecker extends AbstractSceneCountChecker {
   protected boolean internalCondition(
       MixedTable table,
       @Nullable List<RewriteStageTask> latestTaskDescriptors,
-      OptimizingPlanner latestPlanner,
+      AbstractOptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit) {
     return CollectionUtils.isNotEmpty(latestTaskDescriptors)
         && latestPlanner.getOptimizingType() == OptimizingType.MAJOR;

@@ -23,6 +23,8 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.optimizing.scan.IcebergTableFileScanHelper;
+import org.apache.amoro.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.iceberg.DataFile;
 import org.junit.runner.RunWith;

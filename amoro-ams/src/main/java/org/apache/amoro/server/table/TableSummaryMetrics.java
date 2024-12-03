@@ -25,8 +25,8 @@ import org.apache.amoro.metrics.Gauge;
 import org.apache.amoro.metrics.Metric;
 import org.apache.amoro.metrics.MetricDefine;
 import org.apache.amoro.metrics.MetricKey;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.server.metrics.MetricRegistry;
-import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
@@ -134,7 +134,8 @@ public class TableSummaryMetrics {
 
   private final ServerTableIdentifier identifier;
   private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
-  private OptimizingEvaluator.PendingInput tableSummary = new OptimizingEvaluator.PendingInput();
+  private AbstractOptimizingEvaluator.PendingInput tableSummary =
+      new AbstractOptimizingEvaluator.PendingInput();
   private MetricRegistry globalRegistry;
 
   private long snapshots = 0L;
@@ -237,7 +238,7 @@ public class TableSummaryMetrics {
     globalRegistry = null;
   }
 
-  public void refresh(OptimizingEvaluator.PendingInput tableSummary) {
+  public void refresh(AbstractOptimizingEvaluator.PendingInput tableSummary) {
     if (tableSummary == null) {
       return;
     }
