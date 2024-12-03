@@ -36,7 +36,8 @@ import SvgIcon from '@/components/svg-icon.vue'
 
 import 'virtual:svg-icons-register'
 
-const app = createApp(App).use(createPinia())
+const pinia = createPinia()
+const app = createApp(App).use(pinia)
 app.component('svg-icon', SvgIcon)
 app.use(VueI18n)
 RegisterComponents(app);
@@ -72,16 +73,11 @@ RegisterComponents(app);
     const store = useStore()
     router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
       // if no username in store and not go to login page, should redirect to login page
-      if (!store.userInfo.userName && to.path !== '/login') {
-        store.setHistoryPath({
-          path: from.path,
-          query: from.query,
-        })
-        next('/login')
-      }
-      else {
-        next()
-      }
+      store.setHistoryPath({
+        path: from.path,
+        query: from.query,
+      })
+      next()
     })
 
     app.use(router)
