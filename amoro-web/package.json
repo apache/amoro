@@ -18,13 +18,13 @@
     "dayjs": "^1.11.11",
     "echarts": "^5.5.0",
     "pinia": "^2.1.7",
+    "swagger-ui": "^5.17.14",
+    "swagger-ui-dist": "^5.17.14",
     "vue": "^3.4.27",
     "vue-clipboard3": "^2.0.0",
     "vue-i18n": "^9.13.1",
     "vue-router": "^4.3.3",
-    "vue-virtual-scroller": "2.0.0-beta.8",
-    "swagger-ui": "^5.17.14",
-    "swagger-ui-dist": "^5.17.14"
+    "vue-virtual-scroller": "2.0.0-beta.8"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^2.21.1",
@@ -41,7 +41,7 @@
     "vite": "^5.2.13",
     "vite-plugin-fake-server": "^2.1.1",
     "vite-plugin-svg-icons": "^2.0.1",
-    "vite-plugin-vue-devtools": "^7.4.5",
+    "vite-plugin-vue-devtools": "^7.6.7",
     "vue-tsc": "^2.0.21"
   },
   "engines": {
