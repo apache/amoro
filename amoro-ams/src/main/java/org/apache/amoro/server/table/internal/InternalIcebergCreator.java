@@ -28,13 +28,17 @@ import org.apache.amoro.properties.MetaTableProperties;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.utils.InternalTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.table.TableProperties;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.iceberg.MetricsModes;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.util.LocationUtil;
+
+import java.util.Map;
 
 /** Table creator for iceberg format */
 public class InternalIcebergCreator implements InternalTableCreator {
@@ -57,6 +61,8 @@ public class InternalIcebergCreator implements InternalTableCreator {
     this.tableName = tableName;
     this.request = request;
 
+    fixEventTimeFieldMetricMode(request.properties());
+
     String tableLocation = tableLocation();
     PartitionSpec spec = request.spec();
     SortOrder sortOrder = request.writeOrder();
@@ -67,6 +73,15 @@ public class InternalIcebergCreator implements InternalTableCreator {
             sortOrder != null ? sortOrder : SortOrder.unsorted(),
             tableLocation,
             request.properties());
+  }
+
+  private void fixEventTimeFieldMetricMode(Map<String, String> properties) {
+    String eventTimeField = properties.get(TableProperties.TABLE_EVENT_TIME_FIELD);
+    if (StringUtils.isNotBlank(eventTimeField)) {
+      properties.put(
+          org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + eventTimeField,
+          MetricsModes.Truncate.withLength(32).toString());
+    }
   }
 
   @Override
