@@ -86,6 +86,7 @@ server:
   rest:
     enabled: true
     port: 1630
+    restAuthType: token
     service:
       ## @param type Can set as "ClusterIP" or "NodePort". If set to "NodePort", @param nodePort below should set a value
       ##
