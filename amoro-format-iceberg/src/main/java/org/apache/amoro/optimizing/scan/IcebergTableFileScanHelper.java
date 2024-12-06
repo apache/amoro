@@ -22,19 +22,24 @@ import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 
+import java.util.Map;
+
 public class IcebergTableFileScanHelper implements TableFileScanHelper {
   private final Table table;
   private Expression partitionFilter = Expressions.alwaysTrue();
   private final long snapshotId;
+  private final Map<Integer, PartitionSpec> specs;
 
   public IcebergTableFileScanHelper(Table table, long snapshotId) {
     this.table = table;
     this.snapshotId = snapshotId;
+    this.specs = table.specs();
   }
 
   @Override
@@ -60,5 +65,10 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
   public TableFileScanHelper withPartitionFilter(Expression partitionFilter) {
     this.partitionFilter = partitionFilter;
     return this;
+  }
+
+  @Override
+  public PartitionSpec getSpec(int specId) {
+    return specs.get(specId);
   }
 }

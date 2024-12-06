@@ -32,7 +32,6 @@ import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonIgno
 import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableSnapshot;
-import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
@@ -121,9 +120,7 @@ public abstract class AbstractOptimizingEvaluator {
     try (CloseableIterable<TableFileScanHelper.FileScanResult> results =
         tableFileScanHelper.scan()) {
       for (TableFileScanHelper.FileScanResult fileScanResult : results) {
-        PartitionSpec partitionSpec =
-            MixedTableUtil.getMixedTablePartitionSpecById(
-                mixedTable, fileScanResult.file().specId());
+        PartitionSpec partitionSpec = tableFileScanHelper.getSpec(fileScanResult.file().specId());
         StructLike partition = fileScanResult.file().partition();
         String partitionPath = partitionSpec.partitionToPath(partition);
         PartitionEvaluator evaluator =
