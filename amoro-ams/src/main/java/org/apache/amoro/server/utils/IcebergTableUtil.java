@@ -149,8 +149,9 @@ public class IcebergTableUtil {
     if (internalTable.currentSnapshot() == null) {
       return Collections.emptySet();
     }
+    long snapshotId = internalTable.currentSnapshot().snapshotId();
     Set<String> deleteFilesPath = new HashSet<>();
-    TableScan tableScan = internalTable.newScan();
+    TableScan tableScan = internalTable.newScan().useSnapshot(snapshotId);
     try (CloseableIterable<FileScanTask> fileScanTasks = tableScan.planFiles()) {
       for (FileScanTask fileScanTask : fileScanTasks) {
         for (DeleteFile delete : fileScanTask.deletes()) {
@@ -165,7 +166,7 @@ public class IcebergTableUtil {
     Set<DeleteFile> danglingDeleteFiles = new HashSet<>();
     TableEntriesScan entriesScan =
         TableEntriesScan.builder(internalTable)
-            .useSnapshot(internalTable.currentSnapshot().snapshotId())
+            .useSnapshot(snapshotId)
             .includeFileContent(FileContent.EQUALITY_DELETES, FileContent.POSITION_DELETES)
             .build();
     try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {

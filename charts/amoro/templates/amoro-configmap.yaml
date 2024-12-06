@@ -52,6 +52,7 @@ data:
           bind-port: {{ .Values.server.optimizing.port }}
 
       http-server:
+        rest-auth-type: {{ .Values.server.rest.restAuthType }}
         bind-port: {{ .Values.server.rest.port }}
 
       refresh-external-catalogs:
