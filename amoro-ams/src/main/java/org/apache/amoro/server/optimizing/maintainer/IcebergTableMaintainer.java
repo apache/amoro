@@ -297,7 +297,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
             .toLocalDateTime(),
         table.name());
 
-    Expression dataFilter = getDataExpression(table.schema(), expirationConfig, expireTimestamp);
+    Expression dataFilter =
+        getDataExpression(table.schema(), table.spec(), expirationConfig, expireTimestamp);
 
     ExpireFiles expiredFiles = expiredFileScan(expirationConfig, dataFilter, expireTimestamp);
     expireFiles(expiredFiles, expireTimestamp);
@@ -696,10 +697,11 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   protected ExpireFiles expiredFileScan(
-      DataExpirationConfig expirationConfig, Expression dataFilter, long expireTimestamp) {
+      DataExpirationConfig config, Expression dataFilter, long expireTimestamp) {
     Map<StructLike, DataFileFreshness> partitionFreshness = Maps.newConcurrentMap();
     ExpireFiles expiredFiles = new ExpireFiles();
-    try (CloseableIterable<FileEntry> entries = fileScan(table, dataFilter, expirationConfig)) {
+
+    try (CloseableIterable<FileEntry> entries = fileScan(table, dataFilter, config)) {
       Queue<FileEntry> fileEntries = new LinkedTransferQueue<>();
       entries.forEach(
           e -> {
@@ -709,7 +711,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
           });
       fileEntries
           .parallelStream()
-          .filter(e -> willNotRetain(e, expirationConfig, partitionFreshness, table.spec()))
+          .filter(e -> willNotRetain(e, config, partitionFreshness))
           .forEach(expiredFiles::addFile);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -722,12 +724,24 @@ public class IcebergTableMaintainer implements TableMaintainer {
    * we need to collect the oldest files to determine if the partition is obsolete, so we will not
    * filter for expired files at the scanning stage
    *
+   * @param schema table schema
+   * @param spec current partition spec
    * @param expirationConfig expiration configuration
    * @param expireTimestamp expired timestamp
    */
   protected static Expression getDataExpression(
-      Schema schema, DataExpirationConfig expirationConfig, long expireTimestamp) {
+      Schema schema,
+      PartitionSpec spec,
+      DataExpirationConfig expirationConfig,
+      long expireTimestamp) {
     if (expirationConfig.getExpirationLevel().equals(DataExpirationConfig.ExpireLevel.PARTITION)) {
+      Set<String> currentPartitionColumns =
+          spec.fields().stream()
+              .map(p -> schema.findColumnName(p.sourceId()))
+              .collect(Collectors.toSet());
+      if (!currentPartitionColumns.contains(expirationConfig.getExpirationField())) {
+        return Expressions.alwaysFalse();
+      }
       return Expressions.alwaysTrue();
     }
 
@@ -889,21 +903,16 @@ public class IcebergTableMaintainer implements TableMaintainer {
   static boolean willNotRetain(
       FileEntry fileEntry,
       DataExpirationConfig expirationConfig,
-      Map<StructLike, DataFileFreshness> partitionFreshness,
-      PartitionSpec currentSpec) {
+      Map<StructLike, DataFileFreshness> partitionFreshness) {
     ContentFile<?> contentFile = fileEntry.getFile();
 
     switch (expirationConfig.getExpirationLevel()) {
       case PARTITION:
-        if (currentSpec.specId() != contentFile.specId()) {
-          return false;
-        } else {
-          // if only partial expired files in a partition, all the files in that partition should be
-          // preserved
-          return partitionFreshness.containsKey(contentFile.partition())
-              && partitionFreshness.get(contentFile.partition()).expiredDataFileCount
-                  == partitionFreshness.get(contentFile.partition()).totalDataFileCount;
-        }
+        // if only partial expired files in a partition, all the files in that partition should be
+        // preserved
+        return partitionFreshness.containsKey(contentFile.partition())
+            && partitionFreshness.get(contentFile.partition()).expiredDataFileCount
+                == partitionFreshness.get(contentFile.partition()).totalDataFileCount;
       case FILE:
         if (!contentFile.content().equals(FileContent.DATA)) {
           long seqUpperBound =
