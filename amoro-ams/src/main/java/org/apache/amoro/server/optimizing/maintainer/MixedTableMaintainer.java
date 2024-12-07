@@ -165,7 +165,7 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     Expression dataFilter =
         IcebergTableMaintainer.getDataExpression(
-            mixedTable.schema(), expirationConfig, expireTimestamp);
+            mixedTable.schema(), mixedTable.spec(), expirationConfig, expireTimestamp);
 
     Pair<IcebergTableMaintainer.ExpireFiles, IcebergTableMaintainer.ExpireFiles> mixedExpiredFiles =
         mixedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp);
