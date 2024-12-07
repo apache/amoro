@@ -217,7 +217,9 @@ public class MixedTableMaintainer implements TableMaintainer {
       fileEntries
           .parallelStream()
           .filter(
-              e -> IcebergTableMaintainer.willNotRetain(e, expirationConfig, partitionFreshness))
+              e ->
+                  IcebergTableMaintainer.willNotRetain(
+                      e, expirationConfig, partitionFreshness, mixedTable.spec()))
           .forEach(
               e -> {
                 if (e.isChange()) {

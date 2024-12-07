@@ -27,10 +27,8 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.PartitionSpec;
-import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-@RunWith(Parameterized.class)
 public class TestDataExpireIceberg extends TestDataExpire {
 
   @Parameterized.Parameters(name = "{0}, {1}")

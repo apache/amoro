@@ -45,6 +45,7 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Schema;
@@ -708,7 +709,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
           });
       fileEntries
           .parallelStream()
-          .filter(e -> willNotRetain(e, expirationConfig, partitionFreshness))
+          .filter(e -> willNotRetain(e, expirationConfig, partitionFreshness, table.spec()))
           .forEach(expiredFiles::addFile);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -888,16 +889,21 @@ public class IcebergTableMaintainer implements TableMaintainer {
   static boolean willNotRetain(
       FileEntry fileEntry,
       DataExpirationConfig expirationConfig,
-      Map<StructLike, DataFileFreshness> partitionFreshness) {
+      Map<StructLike, DataFileFreshness> partitionFreshness,
+      PartitionSpec currentSpec) {
     ContentFile<?> contentFile = fileEntry.getFile();
 
     switch (expirationConfig.getExpirationLevel()) {
       case PARTITION:
-        // if only partial expired files in a partition, all the files in that partition should be
-        // preserved
-        return partitionFreshness.containsKey(contentFile.partition())
-            && partitionFreshness.get(contentFile.partition()).expiredDataFileCount
-                == partitionFreshness.get(contentFile.partition()).totalDataFileCount;
+        if (currentSpec.specId() != contentFile.specId()) {
+          return false;
+        } else {
+          // if only partial expired files in a partition, all the files in that partition should be
+          // preserved
+          return partitionFreshness.containsKey(contentFile.partition())
+              && partitionFreshness.get(contentFile.partition()).expiredDataFileCount
+                  == partitionFreshness.get(contentFile.partition()).totalDataFileCount;
+        }
       case FILE:
         if (!contentFile.content().equals(FileContent.DATA)) {
           long seqUpperBound =

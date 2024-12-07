@@ -44,21 +44,27 @@ import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.UpdatePartitionSpec;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -283,6 +289,102 @@ public class TestDataExpire extends ExecutorTestBase {
               createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00"));
     }
     Assert.assertEquals(expected, records);
+  }
+
+  @Test
+  @DisplayName("Test expiring partition after drop the partition")
+  public void testKeyedPartitionLevelAfterDropping() {
+    Assume.assumeTrue(getMixedTable().isKeyedTable());
+    Assume.assumeTrue(getMixedTable().spec().isPartitioned());
+
+    KeyedTable keyedTable = getMixedTable().asKeyedTable();
+
+    ArrayList<Record> baseRecords =
+        Lists.newArrayList(
+            createRecord(
+                1, "Oliver Bennett", parseMillis("2024-10-01T12:00:00"), "2024-10-01T12:00:00"));
+    OptimizingTestHelpers.appendBase(
+        keyedTable, tableTestHelper().writeBaseStore(keyedTable, 0, baseRecords, false));
+
+    ArrayList<Record> newRecords =
+        Lists.newArrayList(
+            createRecord(
+                3, "Ethan Matthews", parseMillis("2024-01-02T18:00:00"), "2024-01-02T18:00:00"),
+            createRecord(
+                4, "Sophia Rivera", parseMillis("2024-12-30T19:00:00"), "2024-12-30T19:00:00"));
+    OptimizingTestHelpers.appendChange(
+        keyedTable,
+        tableTestHelper().writeChangeStore(keyedTable, 1L, ChangeAction.INSERT, newRecords, false));
+
+    CloseableIterable<TableFileScanHelper.FileScanResult> scan = buildKeyedFileScanHelper().scan();
+    assertScanResult(scan, baseRecords.size() + newRecords.size(), 0);
+
+    List<String> partitionColumns =
+        keyedTable.spec().fields().stream().map(PartitionField::name).collect(Collectors.toList());
+
+    UpdatePartitionSpec updateChangeTableSpec = keyedTable.changeTable().updateSpec();
+    UpdatePartitionSpec updateBaseTableSpec = keyedTable.baseTable().updateSpec();
+
+    for (String p : partitionColumns) {
+      updateChangeTableSpec.removeField(p);
+      updateBaseTableSpec.removeField(p);
+    }
+    updateChangeTableSpec.commit();
+    updateBaseTableSpec.commit();
+
+    Assertions.assertEquals(0, keyedTable.changeTable().spec().fields().size());
+    Assertions.assertEquals(0, keyedTable.baseTable().spec().fields().size());
+
+    // start expiring partitions that order than 2024-12-01 18:00:00.000
+    // All records should not be expired since the partition column has been dropped
+    DataExpirationConfig config = new DataExpirationConfig(keyedTable);
+    getMaintainerAndExpire(config, "2024-12-01T18:00:00.000");
+
+    CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire =
+        buildKeyedFileScanHelper().scan();
+
+    assertScanResult(scanAfterExpire, baseRecords.size() + newRecords.size(), 0);
+  }
+
+  @Test
+  public void testUnKeyedPartitionLevelAfterDropping() {
+    Assume.assumeTrue(getMixedTable().isUnkeyedTable());
+    Assume.assumeTrue(getMixedTable().spec().isPartitioned());
+
+    UnkeyedTable table = getMixedTable().asUnkeyedTable();
+
+    List<Record> records =
+        Lists.newArrayList(
+            createRecord(
+                1, "Oliver Bennett", parseMillis("2024-10-01T12:00:00"), "2024-10-01T12:00:00"),
+            createRecord(
+                2, "Ethan Matthews", parseMillis("2024-01-02T18:00:00"), "2024-01-02T18:00:00"),
+            createRecord(
+                3, "Sophia Rivera", parseMillis("2024-12-30T19:00:00"), "2024-12-30T19:00:00"));
+    OptimizingTestHelpers.appendBase(
+        table, tableTestHelper().writeBaseStore(table, 0, records, false));
+
+    List<String> partitionColumns =
+        table.spec().fields().stream().map(PartitionField::name).collect(Collectors.toList());
+
+    UpdatePartitionSpec updateBaseTableSpec = table.asUnkeyedTable().updateSpec();
+
+    for (String p : partitionColumns) {
+      updateBaseTableSpec.removeField(p);
+    }
+    updateBaseTableSpec.commit();
+
+    Assertions.assertEquals(0, table.spec().fields().size());
+
+    // start expiring partitions that order than 2024-12-01 18:00:00.000
+    // All records should not be expired since the partition column has been dropped
+    DataExpirationConfig config = new DataExpirationConfig(table);
+    getMaintainerAndExpire(config, "2024-12-01T18:00:00.000");
+
+    CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire =
+        getTableFileScanHelper().scan();
+
+    assertScanResult(scanAfterExpire, records.size(), 0);
   }
 
   @Test
