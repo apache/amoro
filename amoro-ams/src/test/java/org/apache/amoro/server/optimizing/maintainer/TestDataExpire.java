@@ -245,7 +245,6 @@ public class TestDataExpire extends ExecutorTestBase {
     CloseableIterable<TableFileScanHelper.FileScanResult> scan = buildKeyedFileScanHelper().scan();
     assertScanResult(scan, 4, 0);
 
-    // expire partitions that order than 2022-01-02 18:00:00.000
     DataExpirationConfig config = parseDataExpirationConfig(keyedTable);
     getMaintainerAndExpire(config, "2022-01-03T18:00:00.000");
 
