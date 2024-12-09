@@ -345,6 +345,11 @@ org.objenesis:objenesis
 org.mybatis:mybatis
 org.lz4:lz4-java
 org.jetbrains.kotlin:kotlin-*
+./charts/amoro/templates/common/_names.tpl
+./charts/amoro/templates/common/_capabilities.tpl
+./charts/amoro/templates/common/_tplvalues.tpl
+./charts/amoro/templates/common/_ingress.tpl
+./charts/amoro/templates/common/_labels.tpl
 
 The BSD License
 --------------
