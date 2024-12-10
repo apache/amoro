@@ -76,7 +76,7 @@ public class SparkUnifiedCatalogBase implements TableCatalog, SupportsNamespaces
           TableFormat.MIXED_ICEBERG, "org.apache.amoro.spark.MixedFormatSparkCatalog",
           TableFormat.PAIMON, "org.apache.paimon.spark.SparkCatalog");
 
-  private UnifiedCatalog unifiedCatalog;
+  protected UnifiedCatalog unifiedCatalog;
   private String name;
   private final Map<TableFormat, SparkTableFormat> tableFormats = Maps.newConcurrentMap();
   private final Map<TableFormat, TableCatalog> tableCatalogs = Maps.newConcurrentMap();
@@ -128,7 +128,7 @@ public class SparkUnifiedCatalogBase implements TableCatalog, SupportsNamespaces
     return name;
   }
 
-  private String namespaceToDatabase(String[] namespace) {
+  protected String namespaceToDatabase(String[] namespace) {
     Preconditions.checkArgument(namespace.length == 1, "only support namespace with 1 level.");
     return namespace[0];
   }
