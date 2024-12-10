@@ -19,6 +19,7 @@
 package org.apache.amoro.spark;
 
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableIDWithFormat;
 import org.apache.spark.sql.catalyst.analysis.NoSuchFunctionException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
@@ -30,6 +31,8 @@ import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.catalog.functions.UnboundFunction;
 import org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog;
+
+import java.util.List;
 
 public class SparkUnifiedCatalog extends SparkUnifiedCatalogBase
     implements TableCatalog, SupportsNamespaces, ProcedureCatalog, FunctionCatalog {
@@ -86,7 +89,20 @@ public class SparkUnifiedCatalog extends SparkUnifiedCatalogBase
   @Override
   public boolean dropNamespace(String[] namespace, boolean cascade)
       throws NoSuchNamespaceException, NonEmptyNamespaceException {
-    return false;
+    String database = namespaceToDatabase(namespace);
+    if (!unifiedCatalog.databaseExists(database)) {
+      throw new NoSuchNamespaceException(namespace);
+    }
+    List<TableIDWithFormat> tables = unifiedCatalog.listTables(database);
+    if (!tables.isEmpty() && !cascade) {
+      throw new NonEmptyNamespaceException(namespace);
+    }
+
+    for (TableIDWithFormat id : tables) {
+      unifiedCatalog.dropTable(database, id.getIdentifier().getTableName(), true);
+    }
+    unifiedCatalog.dropDatabase(database);
+    return !unifiedCatalog.databaseExists(database);
   }
 
   /**
