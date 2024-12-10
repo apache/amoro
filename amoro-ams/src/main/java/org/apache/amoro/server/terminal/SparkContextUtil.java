@@ -57,7 +57,9 @@ public class SparkContextUtil {
           sessionConfig.get(TerminalSessionFactory.SessionConfigOptions.catalogConnector(catalog));
       String catalogClassName;
       String sparkCatalogPrefix = "spark.sql.catalog." + catalog;
-      if ("arctic".equalsIgnoreCase(connector)) {
+      if ("arctic".equalsIgnoreCase(connector)
+          || "mixed_iceberg".equalsIgnoreCase(connector)
+          || "mixed_hive".equalsIgnoreCase(connector)) {
         catalogClassName = MIXED_FORMAT_CATALOG;
         String type =
             sessionConfig.get(
