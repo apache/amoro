@@ -487,9 +487,8 @@ public class TestDataExpire extends ExecutorTestBase {
     if (getTestFormat().equals(TableFormat.ICEBERG)) {
       Table table = getMixedTable().asUnkeyedTable();
       IcebergTableMaintainer icebergTableMaintainer = new IcebergTableMaintainer(table);
-      Types.NestedField field = table.schema().findField(config.getExpirationField());
       long lastSnapshotTime = table.currentSnapshot().timestampMillis();
-      long lastCommitTime = icebergTableMaintainer.expireBaseOnRule(config, field).toEpochMilli();
+      long lastCommitTime = icebergTableMaintainer.expireBaseOnRule(config).toEpochMilli();
       Assert.assertEquals(lastSnapshotTime, lastCommitTime);
     } else {
       MixedTable mixedTable = getMixedTable();
@@ -510,8 +509,7 @@ public class TestDataExpire extends ExecutorTestBase {
       } else {
         lastSnapshotTime = mixedTable.asUnkeyedTable().currentSnapshot().timestampMillis();
       }
-      long lastCommitTime =
-          mixedTableMaintainer.expireMixedBaseOnRule(config, field).toEpochMilli();
+      long lastCommitTime = mixedTableMaintainer.expireMixedBaseOnRule(config).toEpochMilli();
       Assert.assertEquals(lastSnapshotTime, lastCommitTime);
     }
   }
@@ -524,11 +522,9 @@ public class TestDataExpire extends ExecutorTestBase {
       icebergTableMaintainer.expireDataFrom(
           config,
           StringUtils.isBlank(datetime)
-              ? icebergTableMaintainer.expireBaseOnRule(config, field)
+              ? icebergTableMaintainer.expireBaseOnRule(config)
               : LocalDateTime.parse(datetime)
-                  .atZone(
-                      IcebergTableMaintainer.getDefaultZoneId(
-                          getMixedTable().schema().findField(config.getExpirationField())))
+                  .atZone(IcebergTableMaintainer.getDefaultZoneId(field))
                   .toInstant());
     } else {
       MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable());
@@ -536,11 +532,9 @@ public class TestDataExpire extends ExecutorTestBase {
       mixedTableMaintainer.expireDataFrom(
           config,
           StringUtils.isBlank(datetime)
-              ? mixedTableMaintainer.expireMixedBaseOnRule(config, field)
+              ? mixedTableMaintainer.expireMixedBaseOnRule(config)
               : LocalDateTime.parse(datetime)
-                  .atZone(
-                      IcebergTableMaintainer.getDefaultZoneId(
-                          getMixedTable().schema().findField(config.getExpirationField())))
+                  .atZone(IcebergTableMaintainer.getDefaultZoneId(field))
                   .toInstant());
     }
   }

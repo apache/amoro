@@ -45,7 +45,6 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Schema;
@@ -65,6 +64,7 @@ import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.ThreadPools;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -244,19 +244,14 @@ public class IcebergTableMaintainer implements TableMaintainer {
     try {
       DataExpirationConfig expirationConfig =
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
-      Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
-      if (!TableConfigurations.isValidDataExpirationField(expirationConfig, field, table.name())) {
-        return;
-      }
 
-      expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig, field));
+      expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig));
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
     }
   }
 
-  protected Instant expireBaseOnRule(
-      DataExpirationConfig expirationConfig, Types.NestedField field) {
+  protected Instant expireBaseOnRule(DataExpirationConfig expirationConfig) {
     switch (expirationConfig.getBaseOnRule()) {
       case CURRENT_TIME:
         return Instant.now();
@@ -283,22 +278,23 @@ public class IcebergTableMaintainer implements TableMaintainer {
    *     zone
    */
   @VisibleForTesting
-  public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+  public void expireDataFrom(DataExpirationConfig expirationConfig, @NotNull Instant instant) {
     if (instant.equals(Instant.MIN)) {
+      return;
+    }
+    Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
+    if (TableConfigurations.isInvalidDataExpirationField(
+        expirationConfig, field, table.spec(), table.name())) {
       return;
     }
 
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
     LOG.info(
         "Expiring data older than {} in table {} ",
-        Instant.ofEpochMilli(expireTimestamp)
-            .atZone(
-                getDefaultZoneId(table.schema().findField(expirationConfig.getExpirationField())))
-            .toLocalDateTime(),
+        Instant.ofEpochMilli(expireTimestamp).atZone(getDefaultZoneId(field)).toLocalDateTime(),
         table.name());
 
-    Expression dataFilter =
-        getDataExpression(table.schema(), table.spec(), expirationConfig, expireTimestamp);
+    Expression dataFilter = getDataExpression(table.schema(), expirationConfig, expireTimestamp);
 
     ExpireFiles expiredFiles = expiredFileScan(expirationConfig, dataFilter, expireTimestamp);
     expireFiles(expiredFiles, expireTimestamp);
@@ -725,23 +721,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
    * filter for expired files at the scanning stage
    *
    * @param schema table schema
-   * @param spec current partition spec
    * @param expirationConfig expiration configuration
    * @param expireTimestamp expired timestamp
    */
   protected static Expression getDataExpression(
-      Schema schema,
-      PartitionSpec spec,
-      DataExpirationConfig expirationConfig,
-      long expireTimestamp) {
+      Schema schema, DataExpirationConfig expirationConfig, long expireTimestamp) {
     if (expirationConfig.getExpirationLevel().equals(DataExpirationConfig.ExpireLevel.PARTITION)) {
-      Set<String> currentPartitionColumns =
-          spec.fields().stream()
-              .map(p -> schema.findColumnName(p.sourceId()))
-              .collect(Collectors.toSet());
-      if (!currentPartitionColumns.contains(expirationConfig.getExpirationField())) {
-        return Expressions.alwaysFalse();
-      }
       return Expressions.alwaysTrue();
     }
 

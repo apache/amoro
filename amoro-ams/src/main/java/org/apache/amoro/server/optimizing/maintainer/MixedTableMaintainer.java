@@ -56,6 +56,7 @@ import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,26 +122,19 @@ public class MixedTableMaintainer implements TableMaintainer {
     try {
       DataExpirationConfig expirationConfig =
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
-      Types.NestedField field =
-          mixedTable.schema().findField(expirationConfig.getExpirationField());
-      if (!TableConfigurations.isValidDataExpirationField(
-          expirationConfig, field, mixedTable.name())) {
-        return;
-      }
 
-      expireDataFrom(expirationConfig, expireMixedBaseOnRule(expirationConfig, field));
+      expireDataFrom(expirationConfig, expireMixedBaseOnRule(expirationConfig));
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
     }
   }
 
-  protected Instant expireMixedBaseOnRule(
-      DataExpirationConfig expirationConfig, Types.NestedField field) {
+  protected Instant expireMixedBaseOnRule(DataExpirationConfig expirationConfig) {
     Instant changeInstant =
         Optional.ofNullable(changeMaintainer).isPresent()
-            ? changeMaintainer.expireBaseOnRule(expirationConfig, field)
+            ? changeMaintainer.expireBaseOnRule(expirationConfig)
             : Instant.MIN;
-    Instant baseInstant = baseMaintainer.expireBaseOnRule(expirationConfig, field);
+    Instant baseInstant = baseMaintainer.expireBaseOnRule(expirationConfig);
     if (changeInstant.compareTo(baseInstant) >= 0) {
       return changeInstant;
     } else {
@@ -149,13 +143,17 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @VisibleForTesting
-  public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+  public void expireDataFrom(DataExpirationConfig expirationConfig, @NotNull Instant instant) {
     if (instant.equals(Instant.MIN)) {
+      return;
+    }
+    Types.NestedField field = mixedTable.schema().findField(expirationConfig.getExpirationField());
+    if (TableConfigurations.isInvalidDataExpirationField(
+        expirationConfig, field, mixedTable.spec(), mixedTable.name())) {
       return;
     }
 
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
-    Types.NestedField field = mixedTable.schema().findField(expirationConfig.getExpirationField());
     LOG.info(
         "Expiring data older than {} in mixed table {} ",
         Instant.ofEpochMilli(expireTimestamp)
@@ -165,7 +163,7 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     Expression dataFilter =
         IcebergTableMaintainer.getDataExpression(
-            mixedTable.schema(), mixedTable.spec(), expirationConfig, expireTimestamp);
+            mixedTable.schema(), expirationConfig, expireTimestamp);
 
     Pair<IcebergTableMaintainer.ExpireFiles, IcebergTableMaintainer.ExpireFiles> mixedExpiredFiles =
         mixedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp);
