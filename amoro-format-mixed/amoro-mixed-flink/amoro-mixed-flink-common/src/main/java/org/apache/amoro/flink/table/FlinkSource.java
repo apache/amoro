@@ -38,6 +38,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.InputFormatSourceFunction;
+import org.apache.flink.streaming.api.functions.source.ParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperatorFactory;
 import org.apache.flink.streaming.api.operators.StreamSource;
@@ -289,12 +290,13 @@ public class FlinkSource {
         DataStreamSource sourceStream =
             env.addSource(functionProxy, tfSource.getName(), tfSource.getOutputType());
         context.generateUid(MIXED_FORMAT_FILE_TRANSFORMATION).ifPresent(sourceStream::uid);
-        return sourceStream
-            .setParallelism(scanParallelism)
-            .transform(
-                tf.getName(),
-                tf.getOutputType(),
-                new UnkeyedInputFormatOperatorFactory(inputFormatProxyFactory));
+        if (sourceStream instanceof ParallelSourceFunction) {
+          sourceStream.setParallelism(scanParallelism);
+        }
+        return sourceStream.transform(
+            tf.getName(),
+            tf.getOutputType(),
+            new UnkeyedInputFormatOperatorFactory(inputFormatProxyFactory));
       }
 
       LegacySourceTransformation tfSource = (LegacySourceTransformation) origin;
