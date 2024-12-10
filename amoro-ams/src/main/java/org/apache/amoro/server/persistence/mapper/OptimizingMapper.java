@@ -130,9 +130,7 @@ public interface OptimizingMapper {
       @Param("dbName") String dbName,
       @Param("tableName") String tableName,
       @Param("optimizingType") String optimizingType,
-      @Param("optimizingStatus") ProcessStatus optimizingStatus,
-      @Param("pageNum") int pageNum,
-      @Param("pageSize") int pageSize);
+      @Param("optimizingStatus") ProcessStatus optimizingStatus);
 
   /** Optimizing TaskRuntime operation below */
   @Insert({

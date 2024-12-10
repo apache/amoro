@@ -526,7 +526,5 @@ public interface TableMetaMapper {
       @Param("optimizerGroup") String optimizerGroup,
       @Param("fuzzyDbName") String fuzzyDbName,
       @Param("fuzzyTableName") String fuzzyTableName,
-      @Param("statusCodeFilter") List<Integer> statusCodeFilter,
-      @Param("pageNum") int pageNum,
-      @Param("pageSize") int pageSize);
+      @Param("statusCodeFilter") List<Integer> statusCodeFilter);
 }
