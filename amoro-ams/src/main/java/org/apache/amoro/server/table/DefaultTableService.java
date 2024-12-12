@@ -365,12 +365,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
               TableMetaMapper.class,
               mapper ->
                   mapper.selectTableRuntimesForOptimizerGroup(
-                      optimizerGroup,
-                      fuzzyDbName,
-                      fuzzyTableName,
-                      statusCodeFilters,
-                      limit,
-                      offset));
+                      optimizerGroup, fuzzyDbName, fuzzyTableName, statusCodeFilters));
       PageInfo<TableRuntimeMeta> pageInfo = new PageInfo<>(ret);
       total = (int) pageInfo.getTotal();
       return Pair.of(ret, total);
