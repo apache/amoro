@@ -181,8 +181,6 @@ public class AmoroServiceContainer {
   }
 
   public void dispose() {
-    //TODO if has optimizer, try to stop and wait it all stop
-
     if (tableManagementServer != null && tableManagementServer.isServing()) {
       LOG.info("Stopping table management server...");
       tableManagementServer.stop();
