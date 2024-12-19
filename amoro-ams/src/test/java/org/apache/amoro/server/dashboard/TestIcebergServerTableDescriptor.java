@@ -18,6 +18,9 @@
 
 package org.apache.amoro.server.dashboard;
 
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
@@ -48,13 +51,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-
 @RunWith(Parameterized.class)
 public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor {
-  @Rule
-  public DerbyPersistence derbyPersistence = new DerbyPersistence();
+  @Rule public DerbyPersistence derbyPersistence = new DerbyPersistence();
 
   public TestIcebergServerTableDescriptor(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
     super(amoroCatalogTestHelper);
@@ -75,7 +74,6 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
         .addColumn("new_col", Types.IntegerType.get())
         .commit();
   }
-
 
   @Test
   public void testOptimizingProcess() {
@@ -289,9 +287,7 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
     return (Table) getAmoroCatalog().loadTable(TEST_DB, TEST_TABLE).originalTable();
   }
 
-  /**
-   * Test descriptor class, add insert table/optimizing process methods for test.
-   */
+  /** Test descriptor class, add insert table/optimizing process methods for test. */
   private static class TestMixedAndIcebergTableDescriptor extends MixedAndIcebergTableDescriptor {
 
     public void insertTable(ServerTableIdentifier identifier) {
