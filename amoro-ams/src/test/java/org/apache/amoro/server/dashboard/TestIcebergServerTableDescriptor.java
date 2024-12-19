@@ -100,8 +100,8 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
   }
 
   @Test
-  public void testOptimizingPorcess() {
-    Persistency persistency = new Persistency();
+  public void testOptimizingProcess() {
+    persistency = new Persistency();
 
     String catalogName = "catalog1";
     String dbName = "db1";
@@ -316,7 +316,7 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
    * underly db.
    */
   private static class Persistency extends MixedAndIcebergTableDescriptor {
-    private static final Logger LOG = LoggerFactory.getLogger(DerbyPersistence.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Persistency.class);
 
     private static TemporaryFolder SINGLETON_FOLDER;
 
