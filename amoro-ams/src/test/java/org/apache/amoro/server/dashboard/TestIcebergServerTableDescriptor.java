@@ -37,7 +37,6 @@ import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
-import org.apache.amoro.server.table.DerbyPersistence;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.descriptor.FormatTableDescriptor;
