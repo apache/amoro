@@ -85,8 +85,8 @@ public class SparkUnifiedCatalog extends SparkUnifiedCatalogBase
    */
   @Override
   public boolean dropNamespace(String[] namespace, boolean cascade)
-      throws NoSuchNamespaceException, NonEmptyNamespaceException {
-    return false;
+      throws NoSuchNamespaceException {
+    return super.dropNamespace(namespace, cascade);
   }
 
   /**

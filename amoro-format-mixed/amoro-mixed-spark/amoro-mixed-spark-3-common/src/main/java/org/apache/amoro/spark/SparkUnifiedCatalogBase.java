@@ -173,15 +173,27 @@ public class SparkUnifiedCatalogBase implements TableCatalog, SupportsNamespaces
     throw new UnsupportedOperationException("Cannot apply namespace change");
   }
 
-  @Override
-  public boolean dropNamespace(String[] namespace) {
+  public boolean dropNamespace(String[] namespace, boolean cascade)
+      throws NoSuchNamespaceException {
     String database = namespaceToDatabase(namespace);
+    if (!unifiedCatalog.databaseExists(database)) {
+      throw new NoSuchNamespaceException(namespace);
+    }
     List<TableIDWithFormat> tables = unifiedCatalog.listTables(database);
+    if (!tables.isEmpty() && !cascade) {
+      throw new IllegalStateException("Namespace '" + database + "' is non empty.");
+    }
+
     for (TableIDWithFormat id : tables) {
       unifiedCatalog.dropTable(database, id.getIdentifier().getTableName(), true);
     }
     unifiedCatalog.dropDatabase(database);
     return !unifiedCatalog.databaseExists(database);
+  }
+
+  @Override
+  public boolean dropNamespace(String[] namespace) throws NoSuchNamespaceException {
+    return dropNamespace(namespace, false);
   }
 
   @Override
