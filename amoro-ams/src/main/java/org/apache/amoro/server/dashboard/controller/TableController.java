@@ -52,6 +52,7 @@ import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.utils.OptimizingProcessInfoDecorateUtils;
 import org.apache.amoro.shade.guava32.com.google.common.base.Function;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -336,7 +337,7 @@ public class TableController {
             tableIdentifier.buildTableIdentifier(), type, processStatus, limit, offset);
     List<OptimizingProcessInfo> result = optimizingProcessesInfo.getLeft();
     int total = optimizingProcessesInfo.getRight();
-
+    OptimizingProcessInfoDecorateUtils.decorate(result);
     ctx.json(OkResponse.of(PageResult.of(result, total)));
   }
 

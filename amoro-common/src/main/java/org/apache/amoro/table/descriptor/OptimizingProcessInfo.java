@@ -34,6 +34,7 @@ public class OptimizingProcessInfo {
   private ProcessStatus status;
   private String failReason;
   private long duration;
+  private String durationDescriptor;
   private int successTasks;
   private int totalTasks;
   private int runningTasks;
@@ -176,5 +177,13 @@ public class OptimizingProcessInfo {
 
   public void setSummary(Map<String, String> summary) {
     this.summary = summary;
+  }
+
+  public String getDurationDescriptor() {
+    return durationDescriptor;
+  }
+
+  public void setDurationDescriptor(String durationDescriptor) {
+    this.durationDescriptor = durationDescriptor;
   }
 }
