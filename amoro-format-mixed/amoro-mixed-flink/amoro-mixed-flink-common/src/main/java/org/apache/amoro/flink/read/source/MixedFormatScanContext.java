@@ -33,9 +33,11 @@ import org.apache.iceberg.flink.source.StreamingStartingStrategy;
 
 import java.io.Serializable;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /** This is an mixed-format source scan context. */
 public class MixedFormatScanContext extends ScanContext implements Serializable {
@@ -64,10 +66,13 @@ public class MixedFormatScanContext extends ScanContext implements Serializable 
         builder.filters,
         builder.limit,
         builder.includeColumnStats,
+        builder.includeStatsForColumns,
         builder.exposeLocality,
         builder.planParallelism,
         builder.maxPlanningSnapshotCount,
         builder.maxAllowedPlanningFailures,
+        builder.watermarkColumn,
+        builder.watermarkColumnTimeUnit,
         builder.branch,
         builder.tag,
         builder.startTag,
@@ -182,6 +187,11 @@ public class MixedFormatScanContext extends ScanContext implements Serializable 
 
     private String endTag = FlinkReadOptions.END_TAG.defaultValue();
     private String scanStartupMode;
+    private Collection<String> includeStatsForColumns = null;
+    private String watermarkColumn = FlinkReadOptions.WATERMARK_COLUMN_OPTION.defaultValue();
+    private TimeUnit watermarkColumnTimeUnit =
+        FlinkReadOptions.WATERMARK_COLUMN_TIME_UNIT_OPTION.defaultValue();
+
     private boolean batchMode = false;
 
     private Builder() {}
@@ -321,6 +331,21 @@ public class MixedFormatScanContext extends ScanContext implements Serializable 
       return this;
     }
 
+    public Builder includeColumnStats(Collection<String> newIncludeStatsForColumns) {
+      this.includeStatsForColumns = newIncludeStatsForColumns;
+      return this;
+    }
+
+    public Builder watermarkColumn(String newWatermarkColumn) {
+      this.watermarkColumn = newWatermarkColumn;
+      return this;
+    }
+
+    public Builder watermarkColumnTimeUnit(TimeUnit newWatermarkTimeUnit) {
+      this.watermarkColumnTimeUnit = newWatermarkTimeUnit;
+      return this;
+    }
+
     public Builder fromProperties(Map<String, String> properties) {
       Configuration config = new Configuration();
       properties.forEach(config::setString);
@@ -344,8 +369,11 @@ public class MixedFormatScanContext extends ScanContext implements Serializable 
           .nameMapping(properties.get(DEFAULT_NAME_MAPPING))
           .scanStartupMode(properties.get(MixedFormatValidator.SCAN_STARTUP_MODE.key()))
           .includeColumnStats(config.get(INCLUDE_COLUMN_STATS))
+          .includeColumnStats(includeStatsForColumns)
           .maxPlanningSnapshotCount(config.get(MAX_PLANNING_SNAPSHOT_COUNT))
-          .maxAllowedPlanningFailures(maxAllowedPlanningFailures);
+          .maxAllowedPlanningFailures(maxAllowedPlanningFailures)
+          .watermarkColumn(watermarkColumn)
+          .watermarkColumnTimeUnit(watermarkColumnTimeUnit);
     }
 
     public MixedFormatScanContext build() {
