@@ -84,8 +84,9 @@ public class SparkUnifiedCatalog extends SparkUnifiedCatalogBase
    * @throws UnsupportedOperationException If drop is not a supported operation
    */
   @Override
-  public boolean dropNamespace(String[] namespace, boolean cascade) {
-    return super.dropNamespace(namespace, false);
+  public boolean dropNamespace(String[] namespace, boolean cascade)
+      throws NoSuchNamespaceException {
+    return super.dropNamespace(namespace, cascade);
   }
 
   /**
