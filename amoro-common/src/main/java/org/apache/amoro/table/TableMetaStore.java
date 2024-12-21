@@ -27,7 +27,9 @@ import org.apache.amoro.shade.guava32.com.google.common.hash.Hashing;
 import org.apache.amoro.shade.guava32.com.google.common.io.ByteStreams;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.JavaVersion;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
@@ -35,7 +37,6 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.authentication.util.KerberosName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.security.krb5.KrbException;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
@@ -44,6 +45,7 @@ import java.io.Serializable;
 import java.io.UncheckedIOException;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -383,7 +385,7 @@ public class TableMetaStore implements Serializable {
             constructKerberosUgi();
           }
           LOG.info("Completed to build ugi {}", authInformation());
-        } catch (IOException | KrbException e) {
+        } catch (Exception e) {
           throw new RuntimeException("Fail to init user group information", e);
         }
       } else {
@@ -407,13 +409,22 @@ public class TableMetaStore implements Serializable {
       return ugi;
     }
 
-    private void constructKerberosUgi() throws IOException, KrbException {
+    private void constructKerberosUgi() throws Exception {
       Path confPath = generateKrbConfPath();
       String krbConfFile = saveConfInPath(confPath, KRB_CONF_FILE_NAME, krbConf);
       String keyTabFile = saveConfInPath(confPath, KEY_TAB_FILE_NAME, krbKeyTab);
       System.clearProperty(HADOOP_USER_PROPERTY);
       System.setProperty(KRB5_CONF_PROPERTY, krbConfFile);
-      sun.security.krb5.Config.refresh();
+      if (SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8)) {
+        Class<?> classRef;
+        if (System.getProperty("java.vendor").contains("IBM")) {
+          classRef = Class.forName("com.ibm.security.krb5.internal.Config");
+        } else {
+          classRef = Class.forName("sun.security.krb5.Config");
+        }
+        Method method = classRef.getDeclaredMethod("refresh");
+        method.invoke(null);
+      }
       UserGroupInformation.setConfiguration(getConfiguration());
       KerberosName.resetDefaultRealm();
       this.ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(krbPrincipal, keyTabFile);
