@@ -415,16 +415,9 @@ public class TableMetaStore implements Serializable {
       String keyTabFile = saveConfInPath(confPath, KEY_TAB_FILE_NAME, krbKeyTab);
       System.clearProperty(HADOOP_USER_PROPERTY);
       System.setProperty(KRB5_CONF_PROPERTY, krbConfFile);
-      if (SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8)) {
-        Class<?> classRef;
-        if (System.getProperty("java.vendor").contains("IBM")) {
-          classRef = Class.forName("com.ibm.security.krb5.internal.Config");
-        } else {
-          classRef = Class.forName("sun.security.krb5.Config");
-        }
-        Method method = classRef.getDeclaredMethod("refresh");
-        method.invoke(null);
-      }
+      Class<?> classRef = Class.forName("sun.security.krb5.Config");
+      Method method = classRef.getDeclaredMethod("refresh");
+      method.invoke(null);
       UserGroupInformation.setConfiguration(getConfiguration());
       KerberosName.resetDefaultRealm();
       this.ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(krbPrincipal, keyTabFile);
