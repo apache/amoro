@@ -7,10 +7,10 @@ import java.util.Map;
 
 public class ReflectionUtils {
 
-    private final static Map<String,Class> CLASS_MAP = new HashMap<>();
+    private final static Map<String, Class> CLASS_MAP = new HashMap<>();
 
     public static Object invoke(String className, String methodName) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
-        Class<?> classRef =  CLASS_MAP.computeIfAbsent(className, key-> {
+        Class<?> classRef = CLASS_MAP.computeIfAbsent(className, key -> {
             try {
                 return Class.forName(className);
             } catch (ClassNotFoundException e) {
