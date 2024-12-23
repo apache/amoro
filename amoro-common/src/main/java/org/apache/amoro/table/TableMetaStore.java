@@ -44,7 +44,6 @@ import java.io.Serializable;
 import java.io.UncheckedIOException;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -415,9 +414,9 @@ public class TableMetaStore implements Serializable {
       System.clearProperty(HADOOP_USER_PROPERTY);
       System.setProperty(KRB5_CONF_PROPERTY, krbConfFile);
       if (System.getProperty("java.vendor").contains("IBM")) {
-        ReflectionUtils.invoke("com.ibm.security.krb5.internal.Config","refresh");
+        ReflectionUtils.invoke("com.ibm.security.krb5.internal.Config", "refresh");
       } else {
-        ReflectionUtils.invoke("sun.security.krb5.Config","refresh");
+        ReflectionUtils.invoke("sun.security.krb5.Config", "refresh");
       }
       UserGroupInformation.setConfiguration(getConfiguration());
       KerberosName.resetDefaultRealm();
