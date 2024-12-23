@@ -18,7 +18,6 @@
 
 package org.apache.amoro.utils;
 
-import org.apache.amoro.table.TableMetaStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,27 +29,27 @@ import java.util.Objects;
 
 public class ReflectionUtils {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ReflectionUtils.class);
-    private static final Map<String, Class> CLASS_MAP = new HashMap<>();
+  private static final Logger LOG = LoggerFactory.getLogger(ReflectionUtils.class);
+  private static final Map<String, Class> CLASS_MAP = new HashMap<>();
 
-    public static Object invoke(String className, String methodName)
-            throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
-        Class<?> classRef =
-                CLASS_MAP.computeIfAbsent(
-                        className,
-                        key -> {
-                            try {
-                                return Class.forName(className);
-                            } catch (ClassNotFoundException e) {
-                                //ignore error
-                                return null;
-                            }
-                        });
-        if (Objects.isNull(classRef)) {
-            LOG.warn("cannot load class {}, skip execute method {}" ,className, methodName);
-            return null;
-        }
-        Method method = classRef.getDeclaredMethod(methodName);
-        return method.invoke(null);
+  public static Object invoke(String className, String methodName)
+      throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+    Class<?> classRef =
+        CLASS_MAP.computeIfAbsent(
+            className,
+            key -> {
+              try {
+                return Class.forName(className);
+              } catch (ClassNotFoundException e) {
+                // ignore error
+                return null;
+              }
+            });
+    if (Objects.isNull(classRef)) {
+      LOG.warn("cannot load class {}, skip execute method {}", className, methodName);
+      return null;
     }
+    Method method = classRef.getDeclaredMethod(methodName);
+    return method.invoke(null);
+  }
 }
