@@ -81,9 +81,19 @@ export function formatMS2Time(ms: number): string {
     { value: seconds, unit: 's' },
   ]
 
-  return times.reduce((pre: string, cur: { value: number, unit: string }) => {
-    return cur.value > 0 ? `${pre}${cur.value} ${cur.unit} ` : pre
-  }, '')
+  let result = ''
+  let count = 0
+
+  // Only add at most two non-zero time units to the result
+  for (const time of times) {
+    if (time.value > 0 && count < 2) {
+      result += `${time.value}${time.unit} `
+      count++
+    }
+  }
+
+  // Trim any trailing spaces and return the formatted result
+  return result.trim()
 }
 /**
  * Convert milliseconds to d h min s format
