@@ -25,6 +25,7 @@ import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.hash.Hashing;
 import org.apache.amoro.shade.guava32.com.google.common.io.ByteStreams;
+import org.apache.amoro.utils.ReflectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -413,9 +414,11 @@ public class TableMetaStore implements Serializable {
       String keyTabFile = saveConfInPath(confPath, KEY_TAB_FILE_NAME, krbKeyTab);
       System.clearProperty(HADOOP_USER_PROPERTY);
       System.setProperty(KRB5_CONF_PROPERTY, krbConfFile);
-      Class<?> classRef = Class.forName("sun.security.krb5.Config");
-      Method method = classRef.getDeclaredMethod("refresh");
-      method.invoke(null);
+      if (System.getProperty("java.vendor").contains("IBM")) {
+        ReflectionUtils.invoke("com.ibm.security.krb5.internal.Config","refresh");
+      } else {
+        ReflectionUtils.invoke("sun.security.krb5.Config","refresh");
+      }
       UserGroupInformation.setConfiguration(getConfiguration());
       KerberosName.resetDefaultRealm();
       this.ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(krbPrincipal, keyTabFile);
