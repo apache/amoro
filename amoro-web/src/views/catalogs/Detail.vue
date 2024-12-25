@@ -470,6 +470,10 @@ async function changeMetastore() {
 }
 
 async function changeTableFormat() {
+  if (formState.tableFormatList.length > 1) {
+    const lastSelected = formState.tableFormatList[formState.tableFormatList.length - 1];
+    formState.tableFormatList = [lastSelected];
+  }
   await changeProperties()
 }
 
