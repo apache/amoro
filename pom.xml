@@ -151,10 +151,12 @@
         <guava.version>32.1.1-jre</guava.version>
         <hudi.version>0.14.1</hudi.version>
         <pagehelper.version>6.1.0</pagehelper.version>
+        <mysql-connector-j.version>9.1.0</mysql-connector-j.version>
 
         <rocksdb-dependency-scope>compile</rocksdb-dependency-scope>
         <lucene-dependency-scope>compile</lucene-dependency-scope>
         <aliyun-sdk-dependency-scope>provided</aliyun-sdk-dependency-scope>
+        <mysql-j-dependency-scope>provided</mysql-j-dependency-scope>
     </properties>
 
     <dependencies>
@@ -624,12 +626,6 @@
                 <groupId>org.apache.derby</groupId>
                 <artifactId>derby</artifactId>
                 <version>${derby-jdbc.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql-jdbc.version}</version>
             </dependency>
 
             <dependency>
@@ -1375,6 +1371,12 @@
             <id>aliyun-oss-sdk</id>
             <properties>
                 <aliyun-sdk-dependency-scope>compile</aliyun-sdk-dependency-scope>
+            </properties>
+        </profile>
+        <profile>
+            <id>mysql-j</id>
+            <properties>
+                <mysql-j-dependency-scope>compile</mysql-j-dependency-scope>
             </properties>
         </profile>
     </profiles>
