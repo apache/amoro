@@ -101,7 +101,7 @@
         <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
         <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
 
-        <iceberg.version>1.4.3</iceberg.version>
+        <iceberg.version>1.6.1</iceberg.version>
         <paimon.version>0.9.0</paimon.version>
         <hive.version>3.1.1</hive.version>
         <hadoop.version>3.4.0</hadoop.version>
@@ -122,7 +122,7 @@
         <orc-core.version>1.8.3</orc-core.version>
         <awssdk.version>2.24.12</awssdk.version>
         <aliyun-sdk-oss.version>3.10.2</aliyun-sdk-oss.version>
-        <terminal.spark.version>3.3.2</terminal.spark.version>
+        <terminal.spark.version>3.3.4</terminal.spark.version>
         <terminal.spark.major.version>3.3</terminal.spark.major.version>
         <dropwizard.metrics.version>4.2.19</dropwizard.metrics.version>
         <caffeine.version>2.9.3</caffeine.version>
@@ -1360,8 +1360,8 @@
                 <guava.version>14.0.1</guava.version>
                 <hive.version>2.3.9</hive.version>
                 <hadoop.version>2.10.2</hadoop.version>
-                <terminal.spark.version>3.2.4</terminal.spark.version>
-                <terminal.spark.major.version>3.2</terminal.spark.major.version>
+                <terminal.spark.version>3.3.4</terminal.spark.version>
+                <terminal.spark.major.version>3.3</terminal.spark.major.version>
             </properties>
         </profile>
         <profile>

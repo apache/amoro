@@ -240,7 +240,7 @@ public class FlinkSource {
               .project(org.apache.amoro.flink.FlinkSchemaUtil.filterWatermark(projectedSchema))
               .tableLoader(tableLoader)
               .filters(filters)
-              .properties(properties)
+              .setAll(properties)
               .flinkConf(flinkConf)
               .limit(limit);
       if (MixedFormatValidator.SCAN_STARTUP_MODE_LATEST.equalsIgnoreCase(scanStartupMode)) {
