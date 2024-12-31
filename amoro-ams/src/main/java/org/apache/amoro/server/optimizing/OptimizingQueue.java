@@ -23,6 +23,7 @@ import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.exception.OptimizingClosedException;
+import org.apache.amoro.exception.PersistenceException;
 import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
@@ -564,7 +565,15 @@ public class OptimizingQueue extends PersistentBase {
       lock.lock();
       try {
         if (hasCommitted) {
-          LOG.warn("{} has already committed, give up", tableRuntime.getTableIdentifier());
+          LOG.warn(
+              "{} has already committed, give up, last error: {}",
+              tableRuntime.getTableIdentifier(),
+              failedReason);
+          try {
+            persistProcessCompleted(status == ProcessStatus.SUCCESS);
+          } catch (Exception ignore) {
+            // ignore
+          }
           throw new IllegalStateException("repeat commit, and last error " + failedReason);
         }
         try {
@@ -573,6 +582,11 @@ public class OptimizingQueue extends PersistentBase {
           status = ProcessStatus.SUCCESS;
           endTime = System.currentTimeMillis();
           persistProcessCompleted(true);
+        } catch (PersistenceException e) {
+          LOG.warn(
+              "{} failed to persist process completed, will retry next commit",
+              tableRuntime.getTableIdentifier(),
+              e);
         } catch (Exception e) {
           LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
           status = ProcessStatus.FAILED;
