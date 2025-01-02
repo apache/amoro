@@ -21,10 +21,7 @@ package org.apache.amoro.spark;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
-import org.apache.spark.sql.connector.catalog.Identifier;
-import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
-import org.apache.spark.sql.connector.catalog.Table;
-import org.apache.spark.sql.connector.catalog.TableCatalog;
+import org.apache.spark.sql.connector.catalog.*;
 import org.apache.spark.sql.connector.iceberg.catalog.Procedure;
 import org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
@@ -32,7 +29,8 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
-public abstract class SparkUnifiedSessionCatalogBase<T extends TableCatalog & SupportsNamespaces>
+public abstract class SparkUnifiedSessionCatalogBase<
+        T extends TableCatalog & SupportsNamespaces & FunctionCatalog>
     extends SessionCatalogBase<T> implements ProcedureCatalog {
 
   protected final Map<TableFormat, SparkTableFormat> tableFormats = Maps.newConcurrentMap();
