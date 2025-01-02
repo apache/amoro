@@ -25,14 +25,15 @@ import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.data.Record;
 import org.junit.ClassRule;
-import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
-@RunWith(Parameterized.class)
 public class TestDataExpireHive extends TestDataExpire {
 
   @ClassRule public static TestHMS TEST_HMS = new TestHMS();
@@ -74,5 +75,12 @@ public class TestDataExpireHive extends TestDataExpire {
         opTime + "Z",
         new BigDecimal("0"),
         opTime.substring(0, 10));
+  }
+
+  protected static Map<String, String> getDefaultProp() {
+    return ImmutableMap.of(
+        TableProperties.ENABLE_DATA_EXPIRATION, "true",
+        TableProperties.DATA_EXPIRATION_FIELD, "op_time_day",
+        TableProperties.DATA_EXPIRATION_RETENTION_TIME, "1d");
   }
 }
