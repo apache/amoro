@@ -35,7 +35,6 @@ public class IcebergSparkFormat implements SparkTableFormat {
   private static final Pattern TAG = Pattern.compile("tag_(.*)");
   private static final Pattern CHANGES = Pattern.compile("changes");
 
-
   @Override
   public TableFormat format() {
     return TableFormat.ICEBERG;
