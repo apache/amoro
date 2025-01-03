@@ -245,10 +245,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
         posDeleteFileCount++;
       }
     }
-    if (equalDeleteFileCount > 0) {
-      return true;
-    } else if (posDeleteFileCount > 1) {
+    if (posDeleteFileCount > 1) {
       combinePosSegmentFileCount++;
+      return true;
+    } else if (equalDeleteFileCount > 0) {
       return true;
     } else if (posDeleteFileCount == 1) {
       return !TableFileUtil.isOptimizingPosDeleteFile(
