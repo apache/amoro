@@ -91,6 +91,9 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     long count = sql(sqlText).count();
     Assertions.assertEquals(expect, count);
 
+    // create and drop namespace
+    testNamespaceWithSql();
+
     // visit sub tables.
     testVisitSubTable(format, sessionCatalog);
 
@@ -106,6 +109,17 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
 
     sql("DROP TABLE " + target() + " PURGE");
     Assertions.assertFalse(unifiedCatalog().tableExists(target().database, target().table));
+  }
+
+  private void testNamespaceWithSql() {
+    // Use SparkTestBase::sql method to test SparkUnifiedCatalog instead of CommonUnifiedCatalog.
+    String createDatabase = "CREATE DATABASE test_unified_catalog";
+    sql(createDatabase);
+    Assertions.assertTrue(unifiedCatalog().databaseExists("test_unified_catalog"));
+
+    String dropDatabase = "DROP DATABASE test_unified_catalog";
+    sql(dropDatabase);
+    Assertions.assertFalse(unifiedCatalog().databaseExists("test_unified_catalog"));
   }
 
   private String pkDDL(TableFormat format) {
