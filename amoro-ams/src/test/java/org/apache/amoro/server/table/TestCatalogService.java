@@ -60,18 +60,18 @@ public class TestCatalogService extends TableServiceTestBase {
   public void testCreateAndDropCatalog() {
     CatalogMeta catalogMeta = catalogTestHelper.buildCatalogMeta("/tmp");
     // test create catalog
-    tableService().createCatalog(catalogMeta);
+    CATALOG_MANAGER.createCatalog(catalogMeta);
 
     // test create duplicate catalog
     Assert.assertThrows(
-        AlreadyExistsException.class, () -> tableService().createCatalog(catalogMeta));
+        AlreadyExistsException.class, () -> CATALOG_MANAGER.createCatalog(catalogMeta));
 
     // test get catalog
-    CatalogMeta readCatalogMeta = tableService().getCatalogMeta(catalogMeta.getCatalogName());
+    CatalogMeta readCatalogMeta = CATALOG_MANAGER.getCatalogMeta(catalogMeta.getCatalogName());
     Assert.assertEquals(catalogMeta, readCatalogMeta);
 
     // test get catalog list
-    List<CatalogMeta> catalogMetas = tableService().listCatalogMetas();
+    List<CatalogMeta> catalogMetas = CATALOG_MANAGER.listCatalogMetas();
     Assert.assertEquals(1, catalogMetas.size());
     Assert.assertEquals(
         catalogMeta,
@@ -81,57 +81,57 @@ public class TestCatalogService extends TableServiceTestBase {
             .orElseThrow(() -> new IllegalStateException("Cannot find expect catalog")));
 
     // test catalogExist
-    Assert.assertTrue(tableService().catalogExist(catalogMeta.getCatalogName()));
+    Assert.assertTrue(CATALOG_MANAGER.catalogExist(catalogMeta.getCatalogName()));
 
     // test drop catalog
-    tableService().dropCatalog(catalogMeta.getCatalogName());
+    CATALOG_MANAGER.dropCatalog(catalogMeta.getCatalogName());
 
     // test drop not existed catalog
     Assert.assertThrows(
         ObjectNotExistsException.class,
-        () -> tableService().getCatalogMeta(catalogMeta.getCatalogName()));
+        () -> CATALOG_MANAGER.getCatalogMeta(catalogMeta.getCatalogName()));
 
-    Assert.assertFalse(tableService().catalogExist(catalogMeta.getCatalogName()));
+    Assert.assertFalse(CATALOG_MANAGER.catalogExist(catalogMeta.getCatalogName()));
   }
 
   @Test
   public void testUpdateCatalog() {
     CatalogMeta catalogMeta = catalogTestHelper.buildCatalogMeta("/tmp");
-    tableService().createCatalog(catalogMeta);
+    CATALOG_MANAGER.createCatalog(catalogMeta);
 
     CatalogMeta updateCatalogMeta = new CatalogMeta(catalogMeta);
     updateCatalogMeta.getCatalogProperties().put("k2", "V2");
     updateCatalogMeta.getCatalogProperties().put("k3", "v3");
-    tableService().updateCatalog(updateCatalogMeta);
-    CatalogMeta getCatalogMeta = tableService().getCatalogMeta(catalogMeta.getCatalogName());
+    CATALOG_MANAGER.updateCatalog(updateCatalogMeta);
+    CatalogMeta getCatalogMeta = CATALOG_MANAGER.getCatalogMeta(catalogMeta.getCatalogName());
     Assert.assertEquals("V2", getCatalogMeta.getCatalogProperties().get("k2"));
     Assert.assertEquals("v3", getCatalogMeta.getCatalogProperties().get("k3"));
     Assert.assertEquals(
-        updateCatalogMeta, tableService().getCatalogMeta(catalogMeta.getCatalogName()));
+        updateCatalogMeta, CATALOG_MANAGER.getCatalogMeta(catalogMeta.getCatalogName()));
 
     // test update catalog type
     final CatalogMeta updateCatalogMeta2 = new CatalogMeta(updateCatalogMeta);
     updateCatalogMeta2.setCatalogType(CatalogMetaProperties.CATALOG_TYPE_CUSTOM);
     Assert.assertThrows(
-        IllegalMetadataException.class, () -> tableService().updateCatalog(updateCatalogMeta2));
+        IllegalMetadataException.class, () -> CATALOG_MANAGER.updateCatalog(updateCatalogMeta2));
 
     // test update unknown catalog
-    tableService().dropCatalog(catalogMeta.getCatalogName());
+    CATALOG_MANAGER.dropCatalog(catalogMeta.getCatalogName());
     Assert.assertThrows(
-        ObjectNotExistsException.class, () -> tableService().updateCatalog(catalogMeta));
+        ObjectNotExistsException.class, () -> CATALOG_MANAGER.updateCatalog(catalogMeta));
   }
 
   @Test
   public void testDropCatalogWithDatabase() {
     Assume.assumeTrue(catalogTestHelper.tableFormat().equals(TableFormat.MIXED_ICEBERG));
     CatalogMeta catalogMeta = catalogTestHelper.buildCatalogMeta("/tmp");
-    tableService().createCatalog(catalogMeta);
-    InternalCatalog catalog = tableService().getInternalCatalog(catalogMeta.getCatalogName());
+    CATALOG_MANAGER.createCatalog(catalogMeta);
+    InternalCatalog catalog = CATALOG_MANAGER.getInternalCatalog(catalogMeta.getCatalogName());
     catalog.createDatabase("test_db");
     Assert.assertThrows(
         IllegalMetadataException.class,
-        () -> tableService().dropCatalog(catalogMeta.getCatalogName()));
+        () -> CATALOG_MANAGER.dropCatalog(catalogMeta.getCatalogName()));
     catalog.dropDatabase("test_db");
-    tableService().dropCatalog(catalogMeta.getCatalogName());
+    CATALOG_MANAGER.dropCatalog(catalogMeta.getCatalogName());
   }
 }

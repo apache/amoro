@@ -96,7 +96,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
         }
       }
 
-      tableService().createCatalog(catalogMeta);
+      CATALOG_MANAGER.createCatalog(catalogMeta);
       try {
         Database database = new Database();
         database.setName(TableTestHelper.TEST_DB_NAME);
@@ -120,7 +120,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
       dropDatabase();
     }
     if (catalogMeta != null) {
-      tableService().dropCatalog(catalogMeta.getCatalogName());
+      CATALOG_MANAGER.dropCatalog(catalogMeta.getCatalogName());
       TEST_HMS.getHiveClient().dropDatabase(TableTestHelper.TEST_DB_NAME, false, true);
     }
   }
@@ -146,7 +146,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
   protected void createDatabase() {
     if (externalCatalog == null) {
       InternalCatalog catalog =
-          tableService().getInternalCatalog(TableTestHelper.TEST_CATALOG_NAME);
+          CATALOG_MANAGER.getInternalCatalog(TableTestHelper.TEST_CATALOG_NAME);
       if (!catalog.listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
         catalog.createDatabase(TableTestHelper.TEST_DB_NAME);
       }
@@ -161,7 +161,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
   protected void dropDatabase() {
     if (externalCatalog == null) {
       InternalCatalog catalog =
-          tableService().getInternalCatalog(TableTestHelper.TEST_CATALOG_NAME);
+          CATALOG_MANAGER.getInternalCatalog(TableTestHelper.TEST_CATALOG_NAME);
       catalog.dropDatabase(TableTestHelper.TEST_DB_NAME);
     } else {
       externalCatalog.dropDatabase(TableTestHelper.TEST_DB_NAME);

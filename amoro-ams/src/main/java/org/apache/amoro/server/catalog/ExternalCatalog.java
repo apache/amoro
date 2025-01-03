@@ -28,8 +28,6 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.apache.amoro.table.TableMetaStore;
-import org.apache.amoro.utils.CatalogUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,18 +38,21 @@ import java.util.stream.Collectors;
 public class ExternalCatalog extends ServerCatalog {
 
   UnifiedCatalog unifiedCatalog;
-  TableMetaStore tableMetaStore;
   private Pattern tableFilterPattern;
   private Pattern databaseFilterPattern;
 
   protected ExternalCatalog(CatalogMeta metadata) {
     super(metadata);
-    this.tableMetaStore = CatalogUtil.buildMetaStore(metadata);
     this.unifiedCatalog =
-        this.tableMetaStore.doAs(
-            () -> new CommonUnifiedCatalog(this::getMetadata, Maps.newHashMap()));
-    updateTableFilter(metadata);
-    updateDatabaseFilter(metadata);
+        metaStore.doAs(() -> new CommonUnifiedCatalog(this::getMetadata, Maps.newHashMap()));
+    catalogMetadataChanged();
+  }
+
+  @Override
+  protected void catalogMetadataChanged() {
+    this.unifiedCatalog.refresh();
+    updateDatabaseFilter(getMetadata());
+    updateTableFilter(getMetadata());
   }
 
   public void syncTable(String database, String tableName, TableFormat format) {
@@ -71,15 +72,6 @@ public class ExternalCatalog extends ServerCatalog {
     doAs(
         TableMetaMapper.class,
         mapper -> mapper.deleteTableIdByName(getMetadata().getCatalogName(), database, tableName));
-  }
-
-  @Override
-  public void updateMetadata(CatalogMeta metadata) {
-    super.updateMetadata(metadata);
-    this.tableMetaStore = CatalogUtil.buildMetaStore(metadata);
-    this.unifiedCatalog.refresh();
-    updateDatabaseFilter(metadata);
-    updateTableFilter(metadata);
   }
 
   @Override
@@ -158,6 +150,6 @@ public class ExternalCatalog extends ServerCatalog {
   }
 
   private <T> T doAs(Callable<T> callable) {
-    return tableMetaStore.doAs(callable);
+    return metaStore.doAs(callable);
   }
 }

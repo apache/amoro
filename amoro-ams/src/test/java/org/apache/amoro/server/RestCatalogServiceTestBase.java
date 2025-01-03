@@ -23,6 +23,7 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.TableRuntime;
@@ -75,6 +76,7 @@ public abstract class RestCatalogServiceTestBase {
 
   protected abstract String catalogName();
 
+  protected CatalogManager catalogManager;
   protected TableService tableService;
   protected InternalCatalog serverCatalog;
 
@@ -82,8 +84,9 @@ public abstract class RestCatalogServiceTestBase {
 
   @BeforeEach
   public void before() {
+    catalogManager = ams.serviceContainer().getCatalogManager();
     tableService = ams.serviceContainer().getTableService();
-    serverCatalog = (InternalCatalog) tableService.getServerCatalog(catalogName());
+    serverCatalog = catalogManager.getInternalCatalog(catalogName());
     location =
         serverCatalog.getMetadata().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE)
             + "/"
@@ -114,7 +117,7 @@ public abstract class RestCatalogServiceTestBase {
   }
 
   protected TableMetadata getTableMetadata(TableIdentifier identifier) {
-    InternalCatalog internalCatalog = tableService.getInternalCatalog(identifier.getCatalog());
+    InternalCatalog internalCatalog = catalogManager.getInternalCatalog(identifier.getCatalog());
     return internalCatalog.loadTableMetadata(identifier.getDatabase(), identifier.getTableName());
   }
 

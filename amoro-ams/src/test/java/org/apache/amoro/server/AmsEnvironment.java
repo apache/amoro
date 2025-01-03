@@ -29,6 +29,7 @@ import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.optimizer.standalone.StandaloneOptimizer;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.resource.ResourceGroup;
+import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.ResourceContainers;
@@ -67,6 +68,7 @@ public class AmsEnvironment {
   private static final String OPTIMIZE_GROUP = "default";
   private final AmoroServiceContainer serviceContainer;
   private Configurations serviceConfig;
+  private DefaultCatalogManager catalogManager;
   private DefaultTableService tableService;
   private final AtomicBoolean amsExit;
   private int tableServiceBindPort;
@@ -139,6 +141,9 @@ public class AmsEnvironment {
     startAms();
     DynFields.UnboundField<DefaultTableService> amsTableServiceField =
         DynFields.builder().hiddenImpl(AmoroServiceContainer.class, "tableService").build();
+    DynFields.UnboundField<DefaultCatalogManager> amsCatalogManagerField =
+        DynFields.builder().hiddenImpl(AmoroServiceContainer.class, "catalogManager").build();
+    catalogManager = amsCatalogManagerField.bind(serviceContainer).get();
     tableService = amsTableServiceField.bind(serviceContainer).get();
     DynFields.UnboundField<CompletableFuture<Boolean>> tableServiceField =
         DynFields.builder().hiddenImpl(DefaultTableService.class, "initialized").build();
@@ -194,7 +199,7 @@ public class AmsEnvironment {
   }
 
   public boolean tableExist(TableIdentifier tableIdentifier) {
-    ServerCatalog catalog = tableService.getServerCatalog(tableIdentifier.getCatalog());
+    ServerCatalog catalog = catalogManager.getServerCatalog(tableIdentifier.getCatalog());
     return catalog.tableExists(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 
@@ -221,7 +226,7 @@ public class AmsEnvironment {
             properties,
             TableFormat.ICEBERG);
 
-    tableService.createCatalog(catalogMeta);
+    catalogManager.createCatalog(catalogMeta);
   }
 
   private void createExternalIcebergCatalog() {
@@ -235,7 +240,7 @@ public class AmsEnvironment {
             CatalogMetaProperties.CATALOG_TYPE_HADOOP,
             properties,
             TableFormat.ICEBERG);
-    tableService.createCatalog(catalogMeta);
+    catalogManager.createCatalog(catalogMeta);
   }
 
   private void createInternalMixIcebergCatalog() {
@@ -249,7 +254,7 @@ public class AmsEnvironment {
             CatalogMetaProperties.CATALOG_TYPE_AMS,
             properties,
             TableFormat.MIXED_ICEBERG);
-    tableService.createCatalog(catalogMeta);
+    catalogManager.createCatalog(catalogMeta);
     catalogs.put(
         INTERNAL_MIXED_ICEBERG_CATALOG,
         CatalogLoader.load(getTableServiceUrl() + "/" + INTERNAL_MIXED_ICEBERG_CATALOG));
@@ -260,7 +265,7 @@ public class AmsEnvironment {
     CatalogMeta catalogMeta =
         CatalogTestHelpers.buildHiveCatalogMeta(
             MIXED_HIVE_CATALOG, properties, testHMS.hiveConf(), TableFormat.MIXED_HIVE);
-    tableService.createCatalog(catalogMeta);
+    catalogManager.createCatalog(catalogMeta);
     catalogs.put(
         MIXED_HIVE_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + MIXED_HIVE_CATALOG));
   }

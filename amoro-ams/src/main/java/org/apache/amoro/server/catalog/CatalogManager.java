@@ -22,8 +22,8 @@ import org.apache.amoro.api.CatalogMeta;
 
 import java.util.List;
 
-/** The CatalogService interface defines the operations that can be performed on catalogs. */
-public interface CatalogService {
+/** The CatalogManager interface defines the operations that can be performed on catalogs. */
+public interface CatalogManager {
   /**
    * Returns a list of CatalogMeta objects.
    *
@@ -61,6 +61,13 @@ public interface CatalogService {
    * @return the InternalCatalog object matching the catalogName, or null if no catalog exists
    */
   InternalCatalog getInternalCatalog(String catalogName);
+
+  /**
+   * Retrieves all ExternalCatalogs.
+   *
+   * @return a list of ExternalCatalogs
+   */
+  List<ExternalCatalog> getExternalCatalogs();
 
   /**
    * Creates a catalog based on the provided catalog meta information. The catalog name is obtained

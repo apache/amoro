@@ -52,13 +52,13 @@ public class TableCatalogTestBase extends TableServiceTestBase {
     amoroCatalogTestHelper.initWarehouse(path);
     amoroCatalogTestHelper.initHiveConf(TEST_HMS.getHiveConf());
     this.amoroCatalog = amoroCatalogTestHelper.amoroCatalog();
-    tableService().createCatalog(amoroCatalogTestHelper.getCatalogMeta());
+    CATALOG_MANAGER.createCatalog(amoroCatalogTestHelper.getCatalogMeta());
     this.originalCatalog = amoroCatalogTestHelper.originalCatalog();
   }
 
   @After
   public void clean() {
-    tableService().dropCatalog(amoroCatalogTestHelper.catalogName());
+    CATALOG_MANAGER.dropCatalog(amoroCatalogTestHelper.catalogName());
     amoroCatalogTestHelper.clean();
   }
 

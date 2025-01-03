@@ -74,7 +74,7 @@ public interface CatalogMetaMapper {
         column = "catalog_properties",
         typeHandler = Map2StringConverter.class)
   })
-  List<CatalogMeta> getCatalog(@Param("catalogName") String catalogName);
+  CatalogMeta getCatalog(@Param("catalogName") String catalogName);
 
   @Insert(
       "INSERT INTO "
