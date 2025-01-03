@@ -59,6 +59,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 public class MixedHiveTables {
 
@@ -510,6 +511,11 @@ public class MixedHiveTables {
       TableMeta meta, Schema schema, PartitionSpec partitionSpec) {
     final long currentTimeMillis = System.currentTimeMillis();
 
+    // set table comment here!
+    Map<String, String> parameters = new HashMap<>();
+    Optional<String> comment = Optional.ofNullable(meta.getProperties().get("comment"));
+    comment.ifPresent(val -> parameters.put("comment", val));
+
     org.apache.hadoop.hive.metastore.api.Table newTable =
         new org.apache.hadoop.hive.metastore.api.Table(
             meta.getTableIdentifier().getTableName(),
@@ -521,7 +527,7 @@ public class MixedHiveTables {
             Integer.MAX_VALUE,
             null,
             HiveSchemaUtil.hivePartitionFields(schema, partitionSpec),
-            new HashMap<>(),
+            parameters,
             null,
             null,
             TableType.EXTERNAL_TABLE.toString());
