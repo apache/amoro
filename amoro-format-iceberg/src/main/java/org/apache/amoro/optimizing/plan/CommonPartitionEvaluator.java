@@ -235,16 +235,27 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   public boolean segmentShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
     Preconditions.checkArgument(!isFragmentFile(dataFile), "Unsupported fragment file.");
-    long posDeleteFileCount =
-        deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count();
-    if (posDeleteFileCount == 1) {
-      return !TableFileUtil.isOptimizingPosDeleteFile(
-          dataFile.path().toString(), deletes.get(0).path().toString());
-    } else if (posDeleteFileCount > 1) {
+    long equalDeleteFileCount = 0;
+    long posDeleteFileCount = 0;
+
+    for (ContentFile<?> delete : deletes) {
+      if (delete.content() == FileContent.EQUALITY_DELETES) {
+        equalDeleteFileCount++;
+      } else if (delete.content() == FileContent.POSITION_DELETES) {
+        posDeleteFileCount++;
+      }
+    }
+    if (posDeleteFileCount > 1) {
       combinePosSegmentFileCount++;
       return true;
+    } else if (equalDeleteFileCount > 0) {
+      return true;
+    } else if (posDeleteFileCount == 1) {
+      return !TableFileUtil.isOptimizingPosDeleteFile(
+          dataFile.path().toString(), deletes.get(0).path().toString());
+    } else {
+      return false;
     }
-    return deletes.stream().anyMatch(delete -> delete.content() == FileContent.EQUALITY_DELETES);
   }
 
   protected boolean isFullOptimizing() {
