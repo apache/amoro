@@ -39,6 +39,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.events.IcebergReportEvent;
 import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.manager.EventsManager;
@@ -106,9 +107,11 @@ public class RestCatalogService extends PersistentBase {
 
   private final JavalinJackson jsonMapper;
 
+  private final CatalogManager catalogManager;
   private final TableService tableService;
 
-  public RestCatalogService(TableService tableService) {
+  public RestCatalogService(CatalogManager catalogManager, TableService tableService) {
+    this.catalogManager = catalogManager;
     this.tableService = tableService;
     ObjectMapper objectMapper = jsonMapper();
     this.jsonMapper = new JavalinJackson(objectMapper);
@@ -432,7 +435,7 @@ public class RestCatalogService extends PersistentBase {
 
   private InternalCatalog getCatalog(String catalog) {
     Preconditions.checkNotNull(catalog, "lack required path variables: catalog");
-    ServerCatalog internalCatalog = tableService.getServerCatalog(catalog);
+    ServerCatalog internalCatalog = catalogManager.getServerCatalog(catalog);
     Preconditions.checkArgument(
         internalCatalog instanceof InternalCatalog, "The catalog is not an iceberg rest catalog");
     Set<TableFormat> tableFormats = CatalogUtil.tableFormats(internalCatalog.getMetadata());
