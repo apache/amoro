@@ -26,7 +26,7 @@ import org.apache.amoro.config.Configurations;
  */
 public interface ConfigShade {
   /**
-   * Initializes the custom instance using the pipeline configuration.
+   * Initializes the custom instance using the AMS configuration.
    *
    * <p>This method can be useful when decryption requires an external file (e.g. a key file)
    * defined in the service configs.
@@ -34,7 +34,7 @@ public interface ConfigShade {
   default void initialize(Configurations serviceConfig) throws Exception {}
 
   /**
-   * The unique identifier of the current interface, used it to select the correct {@link
+   * The unique identifier of the current interface, used it to select the expected {@link
    * ConfigShade}.
    */
   String getIdentifier();

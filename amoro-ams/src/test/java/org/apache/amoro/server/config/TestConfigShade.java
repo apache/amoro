@@ -51,6 +51,9 @@ public class TestConfigShade {
   public void testDecryptOptions() {
     String encryptUsername = getBase64EncodedText(USERNAME);
     String encryptPassword = getBase64EncodedText(PASSWORD);
+    Assertions.assertEquals(encryptUsername, "YWRtaW4=");
+    Assertions.assertEquals(encryptPassword, "cGFzc3dvcmQ=");
+
     String decryptUsername =
         ConfigShadeUtils.decryptOption(BASE64_CONFIG_SHADE_IDENTIFIER, encryptUsername);
     String decryptPassword =
@@ -110,7 +113,7 @@ public class TestConfigShade {
           .put("database.jdbc-driver-class", "com.mysql.cj.jdbc.Driver")
           .put(
               "database.url",
-              "jdbc:mysql://127.0.0.1:3306/amoro-jzjsnow?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&allowPublicKeyRetrieval=true&useSSL=false")
+              "jdbc:mysql://127.0.0.1:3306/amoro?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&allowPublicKeyRetrieval=true&useSSL=false")
           .put("database.username", "root")
           .put("database.password", "password")
           .build();
@@ -127,7 +130,7 @@ public class TestConfigShade {
           .put("database.jdbc-driver-class", "com.mysql.cj.jdbc.Driver")
           .put(
               "database.url",
-              "jdbc:mysql://127.0.0.1:3306/amoro-jzjsnow?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&allowPublicKeyRetrieval=true&useSSL=false")
+              "jdbc:mysql://127.0.0.1:3306/amoro?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&allowPublicKeyRetrieval=true&useSSL=false")
           .put("database.username", "root")
           .put("database.password", "password")
           .build();
