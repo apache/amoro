@@ -45,7 +45,8 @@ public abstract class TableServiceTestBase {
       configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, 800L);
       CATALOG_MANAGER = new DefaultCatalogManager(configurations);
       TABLE_SERVICE = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
-      OPTIMIZING_SERVICE = new DefaultOptimizingService(configurations, TABLE_SERVICE);
+      OPTIMIZING_SERVICE =
+          new DefaultOptimizingService(configurations, CATALOG_MANAGER, TABLE_SERVICE);
       TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
       TABLE_SERVICE.initialize();
       try {

@@ -151,7 +151,7 @@ public class AmoroServiceContainer {
 
     catalogManager = new DefaultCatalogManager(serviceConfig);
     tableService = new DefaultTableService(serviceConfig, catalogManager);
-    optimizingService = new DefaultOptimizingService(serviceConfig, tableService);
+    optimizingService = new DefaultOptimizingService(serviceConfig, catalogManager, tableService);
 
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
@@ -168,7 +168,7 @@ public class AmoroServiceContainer {
     addHandlerChain(AsyncTableExecutors.getInstance().getTagsAutoCreatingExecutor());
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
-    terminalManager = new TerminalManager(serviceConfig, tableService);
+    terminalManager = new TerminalManager(serviceConfig, catalogManager, tableService);
 
     initThriftService();
     startThriftService();
