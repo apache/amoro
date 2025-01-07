@@ -23,6 +23,7 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.AlreadyExistsException;
 import org.apache.amoro.exception.IllegalMetadataException;
 import org.apache.amoro.exception.ObjectNotExistsException;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class DefaultCatalogManager extends PersistentBase implements CatalogManager {
@@ -59,26 +61,34 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
 
   @Override
   public CatalogMeta getCatalogMeta(String catalogName) {
-    return getAs(
-        CatalogMetaMapper.class, catalogMetaMapper -> catalogMetaMapper.getCatalog(catalogName));
+    return getCatalogMetaOptional(catalogName)
+        .orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
+  }
+
+  private Optional<CatalogMeta> getCatalogMetaOptional(String catalogName) {
+    return Optional.ofNullable(
+        getAs(
+            CatalogMetaMapper.class,
+            catalogMetaMapper -> catalogMetaMapper.getCatalog(catalogName)));
   }
 
   @Override
   public boolean catalogExist(String catalogName) {
-    return getCatalogMeta(catalogName) != null;
+    return getCatalogMetaOptional(catalogName).isPresent();
   }
 
   @Override
   public ServerCatalog getServerCatalog(String catalogName) {
-    CatalogMeta catalogMeta = getCatalogMeta(catalogName);
-    if (catalogMeta == null) {
+    Optional<CatalogMeta> catalogMeta = getCatalogMetaOptional(catalogName);
+    if (!catalogMeta.isPresent()) {
       // remove if catalog is deleted
       disposeCatalog(catalogName);
-      return null;
+      throw new ObjectNotExistsException("Catalog " + catalogName);
     }
     ServerCatalog serverCatalog =
         serverCatalogMap.computeIfAbsent(
-            catalogName, n -> CatalogBuilder.buildServerCatalog(catalogMeta, serverConfiguration));
+            catalogName,
+            n -> CatalogBuilder.buildServerCatalog(catalogMeta.get(), serverConfiguration));
     serverCatalog.reload();
     return serverCatalog;
   }
@@ -120,7 +130,21 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
 
   @Override
   public void dropCatalog(String catalogName) {
-    doAs(CatalogMetaMapper.class, mapper -> mapper.deleteCatalog(catalogName));
+    doAs(
+        CatalogMetaMapper.class,
+        mapper -> {
+          CatalogMeta meta = mapper.getCatalog(catalogName);
+          if (isInternal(meta)) {
+            int dbCount = mapper.selectDatabaseCount(catalogName);
+            int tblCount = mapper.selectTableCount(catalogName);
+            if (dbCount > 0 || tblCount > 0) {
+              throw new IllegalMetadataException(
+                  "Cannot drop internal catalog with databases or tables");
+            }
+          }
+          mapper.deleteCatalog(catalogName);
+        });
+
     disposeCatalog(catalogName);
   }
 
@@ -146,5 +170,9 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
           c.dispose();
           return null;
         });
+  }
+
+  private boolean isInternal(CatalogMeta meta) {
+    return CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(meta.getCatalogType());
   }
 }

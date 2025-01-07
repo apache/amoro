@@ -21,7 +21,6 @@ package org.apache.amoro.server.catalog;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.exception.IllegalMetadataException;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
 import org.apache.amoro.table.TableMetaStore;
@@ -81,14 +80,7 @@ public abstract class ServerCatalog extends PersistentBase {
   public abstract AmoroTable<?> loadTable(String database, String tableName);
 
   public void dispose() {
-    doAsTransaction(
-        () ->
-            doAsExisted(
-                CatalogMetaMapper.class,
-                mapper -> mapper.deleteCatalog(name()),
-                () ->
-                    new IllegalMetadataException(
-                        "Catalog " + name() + " has more than one database or table")));
+    // do resource clean up
   }
 
   public boolean isInternal() {
