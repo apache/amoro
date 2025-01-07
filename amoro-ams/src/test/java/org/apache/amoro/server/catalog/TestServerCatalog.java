@@ -135,6 +135,6 @@ public class TestServerCatalog extends TableCatalogTestBase {
   }
 
   private ServerCatalog getServerCatalog() {
-    return tableService().getServerCatalog(getAmoroCatalogTestHelper().catalogName());
+    return CATALOG_MANAGER.getServerCatalog(getAmoroCatalogTestHelper().catalogName());
   }
 }
