@@ -91,7 +91,10 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
   void reset() {
     invokeConsistency(
         () -> {
-          statusMachine.accept(Status.SCHEDULED);
+          if (status == Status.PLANNED) {
+            return;
+          }
+          statusMachine.accept(Status.PLANNED);
           startTime = AmoroServiceConstants.INVALID_TIME;
           endTime = AmoroServiceConstants.INVALID_TIME;
           token = null;
@@ -99,7 +102,6 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
           failReason = null;
           taskDescriptor.reset();
           future.reset();
-          statusMachine.accept(Status.PLANNED);
           // The cost time should not be reset since it is the total cost time of all runs.
           persistTaskRuntime();
         });
@@ -267,8 +269,8 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
           .put(Status.SCHEDULED, ImmutableSet.of(Status.PLANNED, Status.ACKED, Status.CANCELED))
           .put(
               Status.ACKED,
-              ImmutableSet.of(Status.SCHEDULED, Status.SUCCESS, Status.FAILED, Status.CANCELED))
-          .put(Status.FAILED, ImmutableSet.of(Status.SCHEDULED))
+              ImmutableSet.of(Status.PLANNED, Status.SUCCESS, Status.FAILED, Status.CANCELED))
+          .put(Status.FAILED, ImmutableSet.of(Status.PLANNED))
           .put(Status.CANCELED, ImmutableSet.of())
           .put(Status.SUCCESS, ImmutableSet.of())
           .build();
