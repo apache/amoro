@@ -62,8 +62,11 @@ public final class ConfigShadeUtils {
     it.forEachRemaining(
         configShade -> {
           CONFIG_SHADES.put(configShade.getIdentifier(), configShade);
+          LOG.info(
+              "Load config shade spi [{}] from {}",
+              configShade.getIdentifier(),
+              configShade.getClass());
         });
-    LOG.info("Load config shade spi: {}", CONFIG_SHADES.keySet());
   }
 
   @VisibleForTesting

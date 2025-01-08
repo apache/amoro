@@ -19,8 +19,6 @@
 package org.apache.amoro.config.shade;
 
 import org.apache.amoro.config.Configurations;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The interface that provides the ability to decrypt {@link

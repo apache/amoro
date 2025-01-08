@@ -44,16 +44,17 @@ public class TestConfigShade {
   private static final String USERNAME = "admin";
   private static final String PASSWORD = "password";
 
-  private final String base64ConfigShadeIdentifier = new Base64ConfigShade().getIdentifier();
+  private static final String BASE64_CONFIG_SHADE_IDENTIFIER =
+      new Base64ConfigShade().getIdentifier();
 
   @Test
   public void testDecryptOptions() {
     String encryptUsername = getBase64EncodedText(USERNAME);
     String encryptPassword = getBase64EncodedText(PASSWORD);
     String decryptUsername =
-        ConfigShadeUtils.decryptOption(base64ConfigShadeIdentifier, encryptUsername);
+        ConfigShadeUtils.decryptOption(BASE64_CONFIG_SHADE_IDENTIFIER, encryptUsername);
     String decryptPassword =
-        ConfigShadeUtils.decryptOption(base64ConfigShadeIdentifier, encryptPassword);
+        ConfigShadeUtils.decryptOption(BASE64_CONFIG_SHADE_IDENTIFIER, encryptPassword);
     Assertions.assertEquals(decryptUsername, USERNAME);
     Assertions.assertEquals(decryptPassword, PASSWORD);
   }
