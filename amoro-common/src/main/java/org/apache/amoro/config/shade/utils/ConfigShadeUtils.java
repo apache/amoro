@@ -23,7 +23,6 @@ import org.apache.amoro.config.ConfigOptions;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.shade.ConfigShade;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
-import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +79,6 @@ public final class ConfigShadeUtils {
     return decryptConfig(identifier, configMap, sensitiveOptions, serviceConfig);
   }
 
-  @SuppressWarnings("unchecked")
   public static Map<String, Object> decryptConfig(
       String identifier,
       Map<String, Object> configMap,
@@ -101,9 +99,6 @@ public final class ConfigShadeUtils {
     LOG.info("Use config shade: {}", identifier);
     BiFunction<String, Object, String> processFunction =
         (key, value) -> configShade.decrypt(value.toString());
-
-    Preconditions.checkArgument(
-        !configMap.isEmpty(), "Miss ams config! Please check the config file.");
 
     for (String sensitiveOption : sensitiveOptions) {
       try {

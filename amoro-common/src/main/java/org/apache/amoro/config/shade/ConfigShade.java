@@ -27,8 +27,6 @@ import org.slf4j.LoggerFactory;
  * org.apache.amoro.config.Configurations}.
  */
 public interface ConfigShade {
-  Logger LOG = LoggerFactory.getLogger(ConfigShade.class);
-
   /**
    * Initializes the custom instance using the pipeline configuration.
    *
