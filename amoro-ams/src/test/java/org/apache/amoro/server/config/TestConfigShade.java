@@ -20,6 +20,7 @@ package org.apache.amoro.server.config;
 
 import static org.apache.amoro.server.AmoroServiceContainer.expandConfigMap;
 
+import org.apache.amoro.config.shade.impl.Base64ConfigShade;
 import org.apache.amoro.config.shade.utils.ConfigShadeUtils;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
@@ -33,22 +34,32 @@ import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.Map;
 
 public class TestConfigShade {
   private static final String USERNAME = "admin";
   private static final String PASSWORD = "password";
 
+  private final String base64ConfigShadeIdentifier = new Base64ConfigShade().getIdentifier();
+
   @Test
   public void testDecryptOptions() {
-    String encryptUsername = "YWRtaW4=";
-    String encryptPassword = "cGFzc3dvcmQ=";
-    String decryptUsername = ConfigShadeUtils.decryptOption("base64", encryptUsername);
-    String decryptPassword = ConfigShadeUtils.decryptOption("base64", encryptPassword);
+    String encryptUsername = getBase64EncodedText(USERNAME);
+    String encryptPassword = getBase64EncodedText(PASSWORD);
+    String decryptUsername =
+        ConfigShadeUtils.decryptOption(base64ConfigShadeIdentifier, encryptUsername);
+    String decryptPassword =
+        ConfigShadeUtils.decryptOption(base64ConfigShadeIdentifier, encryptPassword);
     Assertions.assertEquals(decryptUsername, USERNAME);
     Assertions.assertEquals(decryptPassword, PASSWORD);
+  }
+
+  private String getBase64EncodedText(String plaintext) {
+    return Base64.getEncoder().encodeToString(plaintext.getBytes(StandardCharsets.UTF_8));
   }
 
   @Test
