@@ -37,6 +37,7 @@ import org.apache.amoro.exception.TaskNotFoundException;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceGroup;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
@@ -97,17 +98,22 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
   private final Map<String, OptimizerInstance> authOptimizers = new ConcurrentHashMap<>();
   private final OptimizerKeeper optimizerKeeper = new OptimizerKeeper();
+  private final CatalogManager catalogManager;
   private final TableService tableService;
   private final RuntimeHandlerChain tableHandlerChain;
   private final ExecutorService planExecutor;
 
-  public DefaultOptimizingService(Configurations serviceConfig, DefaultTableService tableService) {
+  public DefaultOptimizingService(
+      Configurations serviceConfig,
+      CatalogManager catalogManager,
+      DefaultTableService tableService) {
     this.optimizerTouchTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT);
     this.taskAckTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT);
     this.maxPlanningParallelism =
         serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM);
     this.pollingTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT);
     this.tableService = tableService;
+    this.catalogManager = catalogManager;
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
     this.planExecutor =
         Executors.newCachedThreadPool(
@@ -391,7 +397,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   }
 
   public boolean canDeleteResourceGroup(String name) {
-    for (CatalogMeta catalogMeta : tableService.listCatalogMetas()) {
+    for (CatalogMeta catalogMeta : catalogManager.listCatalogMetas()) {
       if (catalogMeta.getCatalogProperties() != null
           && catalogMeta
               .getCatalogProperties()

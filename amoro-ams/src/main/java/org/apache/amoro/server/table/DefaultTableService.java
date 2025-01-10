@@ -22,7 +22,6 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.apache.amoro.AmoroTable;
-import org.apache.amoro.NoSuchTableException;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableIDWithFormat;
@@ -38,7 +37,7 @@ import org.apache.amoro.exception.IllegalMetadataException;
 import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.exception.PersistenceException;
 import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.server.catalog.CatalogBuilder;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.ExternalCatalog;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
@@ -46,7 +45,6 @@ import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
-import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.blocker.TableBlocker;
@@ -90,8 +88,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private static final int TABLE_BLOCKER_RETRY = 3;
   private final long externalCatalogRefreshingInterval;
   private final long blockerTimeout;
-  private final Map<String, InternalCatalog> internalCatalogMap = new ConcurrentHashMap<>();
-  private final Map<String, ExternalCatalog> externalCatalogMap = new ConcurrentHashMap<>();
 
   private final Map<Long, TableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
 
@@ -103,94 +99,16 @@ public class DefaultTableService extends PersistentBase implements TableService 
               .build());
   private final CompletableFuture<Boolean> initialized = new CompletableFuture<>();
   private final Configurations serverConfiguration;
+  private final CatalogManager catalogManager;
   private RuntimeHandlerChain headHandler;
   private ExecutorService tableExplorerExecutors;
 
-  public DefaultTableService(Configurations configuration) {
+  public DefaultTableService(Configurations configuration, CatalogManager catalogManager) {
+    this.catalogManager = catalogManager;
     this.externalCatalogRefreshingInterval =
         configuration.getLong(AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL);
     this.blockerTimeout = configuration.getLong(AmoroManagementConf.BLOCKER_TIMEOUT);
     this.serverConfiguration = configuration;
-  }
-
-  @Override
-  public List<CatalogMeta> listCatalogMetas() {
-    checkStarted();
-    List<CatalogMeta> catalogs =
-        internalCatalogMap.values().stream()
-            .map(ServerCatalog::getMetadata)
-            .collect(Collectors.toList());
-    catalogs.addAll(
-        externalCatalogMap.values().stream()
-            .map(ServerCatalog::getMetadata)
-            .collect(Collectors.toList()));
-    return catalogs;
-  }
-
-  @Override
-  public CatalogMeta getCatalogMeta(String catalogName) {
-    checkStarted();
-    ServerCatalog catalog = getServerCatalog(catalogName);
-    return catalog.getMetadata();
-  }
-
-  @Override
-  public boolean catalogExist(String catalogName) {
-    checkStarted();
-    return internalCatalogMap.containsKey(catalogName)
-        || externalCatalogMap.containsKey(catalogName);
-  }
-
-  @Override
-  public ServerCatalog getServerCatalog(String catalogName) {
-    ServerCatalog catalog =
-        Optional.ofNullable((ServerCatalog) internalCatalogMap.get(catalogName))
-            .orElse(externalCatalogMap.get(catalogName));
-    return Optional.ofNullable(catalog)
-        .orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
-  }
-
-  @Override
-  public void createCatalog(CatalogMeta catalogMeta) {
-    checkStarted();
-    if (catalogExist(catalogMeta.getCatalogName())) {
-      throw new AlreadyExistsException("Catalog " + catalogMeta.getCatalogName());
-    }
-    doAsTransaction(
-        () -> doAs(CatalogMetaMapper.class, mapper -> mapper.insertCatalog(catalogMeta)),
-        () -> initServerCatalog(catalogMeta));
-  }
-
-  private void initServerCatalog(CatalogMeta catalogMeta) {
-    ServerCatalog catalog = CatalogBuilder.buildServerCatalog(catalogMeta, serverConfiguration);
-    if (catalog instanceof InternalCatalog) {
-      internalCatalogMap.put(catalogMeta.getCatalogName(), (InternalCatalog) catalog);
-    } else {
-      externalCatalogMap.put(catalogMeta.getCatalogName(), (ExternalCatalog) catalog);
-    }
-  }
-
-  @Override
-  public void dropCatalog(String catalogName) {
-    checkStarted();
-    ServerCatalog serverCatalog = getServerCatalog(catalogName);
-    if (serverCatalog == null) {
-      throw new ObjectNotExistsException("Catalog " + catalogName);
-    }
-
-    // TableRuntime cleanup is responsibility by exploreExternalCatalog method
-    serverCatalog.dispose();
-    internalCatalogMap.remove(catalogName);
-    externalCatalogMap.remove(catalogName);
-  }
-
-  @Override
-  public void updateCatalog(CatalogMeta catalogMeta) {
-    checkStarted();
-    ServerCatalog catalog = getServerCatalog(catalogMeta.getCatalogName());
-    validateCatalogUpdate(catalog.getMetadata(), catalogMeta);
-    doAs(CatalogMetaMapper.class, mapper -> mapper.updateCatalog(catalogMeta));
-    catalog.updateMetadata(catalogMeta);
   }
 
   @Override
@@ -206,7 +124,8 @@ public class DefaultTableService extends PersistentBase implements TableService 
       throw new IllegalMetadataException("database is blank");
     }
 
-    InternalCatalog internalCatalog = getInternalCatalog(tableIdentifier.getCatalog());
+    InternalCatalog internalCatalog =
+        catalogManager.getInternalCatalog(tableIdentifier.getCatalog());
     String database = tableIdentifier.getDatabase();
     String table = tableIdentifier.getTableName();
     if (!internalCatalog.tableExists(database, table)) {
@@ -227,7 +146,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   @Override
   public void createTable(String catalogName, TableMetadata tableMetadata) {
     checkStarted();
-    InternalCatalog catalog = getInternalCatalog(catalogName);
+    InternalCatalog catalog = catalogManager.getInternalCatalog(catalogName);
     String database = tableMetadata.getTableIdentifier().getDatabase();
     String table = tableMetadata.getTableIdentifier().getTableName();
     if (catalog.tableExists(database, table)) {
@@ -248,7 +167,8 @@ public class DefaultTableService extends PersistentBase implements TableService 
   @Override
   public AmoroTable<?> loadTable(ServerTableIdentifier tableIdentifier) {
     checkStarted();
-    return getServerCatalog(tableIdentifier.getCatalog())
+    return catalogManager
+        .getServerCatalog(tableIdentifier.getCatalog())
         .loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 
@@ -372,11 +292,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
     }
   }
 
-  public InternalCatalog getInternalCatalog(String catalogName) {
-    return Optional.ofNullable(internalCatalogMap.get(catalogName))
-        .orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
-  }
-
   @Override
   public void addHandlerChain(RuntimeHandlerChain handler) {
     checkNotStarted();
@@ -404,8 +319,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
   @Override
   public void initialize() {
     checkNotStarted();
-    List<CatalogMeta> catalogMetas = getAs(CatalogMetaMapper.class, CatalogMetaMapper::getCatalogs);
-    catalogMetas.forEach(this::initServerCatalog);
 
     List<TableRuntimeMeta> tableRuntimeMetaList =
         getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
@@ -461,26 +374,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
             mapper.selectTableIdentifier(id.getCatalog(), id.getDatabase(), id.getTableName()));
   }
 
-  private ServerTableIdentifier getOrSyncServerTableIdentifier(TableIdentifier id) {
-    ServerTableIdentifier serverTableIdentifier = getServerTableIdentifier(id);
-    if (serverTableIdentifier != null) {
-      return serverTableIdentifier;
-    }
-    ServerCatalog serverCatalog = getServerCatalog(id.getCatalog());
-    if (serverCatalog instanceof InternalCatalog) {
-      return null;
-    }
-    try {
-      AmoroTable<?> table = serverCatalog.loadTable(id.database, id.getTableName());
-      TableIdentity identity =
-          new TableIdentity(id.getDatabase(), id.getTableName(), table.format());
-      syncTable((ExternalCatalog) serverCatalog, identity);
-      return getServerTableIdentifier(id);
-    } catch (NoSuchTableException e) {
-      return null;
-    }
-  }
-
   @Override
   public TableRuntime getRuntime(Long tableId) {
     checkStarted();
@@ -509,8 +402,11 @@ public class DefaultTableService extends PersistentBase implements TableService 
       throw new IllegalStateException("TableService is not initialized");
     }
     long start = System.currentTimeMillis();
-    LOG.info("Syncing external catalogs: {}", String.join(",", externalCatalogMap.keySet()));
-    for (ExternalCatalog externalCatalog : externalCatalogMap.values()) {
+    List<ExternalCatalog> externalCatalogs = catalogManager.getExternalCatalogs();
+    List<String> externalCatalogNames =
+        externalCatalogs.stream().map(ExternalCatalog::name).collect(Collectors.toList());
+    LOG.info("Syncing external catalogs: {}", String.join(",", externalCatalogNames));
+    for (ExternalCatalog externalCatalog : externalCatalogs) {
       try {
         final List<CompletableFuture<Set<TableIdentity>>> tableIdentifiersFutures =
             Lists.newArrayList();
@@ -618,7 +514,9 @@ public class DefaultTableService extends PersistentBase implements TableService 
     // It is permissible to have some erroneous states in the middle, as long as the final data is
     // consistent.
     Set<String> catalogNames =
-        listCatalogMetas().stream().map(CatalogMeta::getCatalogName).collect(Collectors.toSet());
+        catalogManager.listCatalogMetas().stream()
+            .map(CatalogMeta::getCatalogName)
+            .collect(Collectors.toSet());
     for (TableRuntime tableRuntime : tableRuntimeMap.values()) {
       if (!catalogNames.contains(tableRuntime.getTableIdentifier().getCatalog())) {
         disposeTable(tableRuntime.getTableIdentifier());
