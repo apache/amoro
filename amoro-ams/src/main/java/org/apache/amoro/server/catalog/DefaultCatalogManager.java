@@ -89,7 +89,7 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
         serverCatalogMap.computeIfAbsent(
             catalogName,
             n -> CatalogBuilder.buildServerCatalog(catalogMeta.get(), serverConfiguration));
-    serverCatalog.reload();
+    serverCatalog.reload(catalogMeta.get());
     return serverCatalog;
   }
 
@@ -108,8 +108,16 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
   @Override
   public List<ExternalCatalog> getExternalCatalogs() {
     return listCatalogMetas().stream()
-        .map(c -> getServerCatalog(c.getCatalogName()))
-        .filter(c -> !c.isInternal())
+        .filter(c -> !isInternal(c))
+        .map(
+            c -> {
+              ServerCatalog serverCatalog =
+                  serverCatalogMap.computeIfAbsent(
+                      c.getCatalogName(),
+                      n -> CatalogBuilder.buildServerCatalog(c, serverConfiguration));
+              serverCatalog.reload(c);
+              return serverCatalog;
+            })
         .map(c -> (ExternalCatalog) c)
         .collect(Collectors.toList());
   }

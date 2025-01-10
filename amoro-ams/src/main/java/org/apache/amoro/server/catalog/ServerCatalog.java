@@ -59,6 +59,10 @@ public abstract class ServerCatalog extends PersistentBase {
     if (meta == null) {
       throw new IllegalStateException("Catalog " + metadata.getCatalogName() + " is dropped.");
     }
+    this.reload(meta);
+  }
+
+  public void reload(CatalogMeta meta) {
     if (this.metadata.equals(meta)) {
       return;
     }
