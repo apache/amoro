@@ -24,39 +24,66 @@ import org.apache.amoro.exception.AlreadyExistsException;
 import org.apache.amoro.exception.IllegalMetadataException;
 import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
+import org.apache.amoro.shade.guava32.com.google.common.cache.CacheBuilder;
+import org.apache.amoro.shade.guava32.com.google.common.cache.CacheLoader;
+import org.apache.amoro.shade.guava32.com.google.common.cache.LoadingCache;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 public class DefaultCatalogManager extends PersistentBase implements CatalogManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultCatalogManager.class);
   protected final Configurations serverConfiguration;
+  private final LoadingCache<String, Optional<CatalogMeta>> metaCache;
 
   private final Map<String, ServerCatalog> serverCatalogMap = Maps.newConcurrentMap();
 
   public DefaultCatalogManager(Configurations serverConfiguration) {
     this.serverConfiguration = serverConfiguration;
+    Duration cacheTtl = serverConfiguration.get(AmoroManagementConf.CACHE_CATALOG_META_DURATION);
+    metaCache =
+        CacheBuilder.newBuilder()
+            .maximumSize(100)
+            .expireAfterWrite(cacheTtl)
+            .build(
+                new CacheLoader<String, Optional<CatalogMeta>>() {
+                  @Override
+                  public @NotNull Optional<CatalogMeta> load(@NotNull String key) throws Exception {
+                    return Optional.ofNullable(
+                        getAs(CatalogMetaMapper.class, mapper -> mapper.getCatalog(key)));
+                  }
+                });
+
     listCatalogMetas()
         .forEach(
             c -> {
               ServerCatalog serverCatalog =
                   CatalogBuilder.buildServerCatalog(c, serverConfiguration);
               serverCatalogMap.put(c.getCatalogName(), serverCatalog);
+              metaCache.put(c.getCatalogName(), Optional.of(c));
+              LOG.info("Load catalog {}, type:{}", c.getCatalogName(), c.getCatalogType());
             });
     LOG.info("DefaultCatalogManager initialized, total catalogs: {}", serverCatalogMap.size());
   }
 
   @Override
   public List<CatalogMeta> listCatalogMetas() {
-    return getAs(CatalogMetaMapper.class, CatalogMetaMapper::getCatalogs);
+    return getAs(CatalogMetaMapper.class, CatalogMetaMapper::getCatalogs)
+        .stream()
+        .peek(c -> metaCache.put(c.getCatalogName(), Optional.of(c)))
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -66,10 +93,11 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
   }
 
   private Optional<CatalogMeta> getCatalogMetaOptional(String catalogName) {
-    return Optional.ofNullable(
-        getAs(
-            CatalogMetaMapper.class,
-            catalogMetaMapper -> catalogMetaMapper.getCatalog(catalogName)));
+    try {
+      return metaCache.get(catalogName);
+    } catch (ExecutionException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -151,6 +179,7 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
             }
           }
           mapper.deleteCatalog(catalogName);
+          metaCache.invalidate(catalogName);
         });
 
     disposeCatalog(catalogName);
@@ -160,6 +189,8 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
   public void updateCatalog(CatalogMeta catalogMeta) {
     ServerCatalog catalog = getServerCatalog(catalogMeta.getCatalogName());
     validateCatalogUpdate(catalog.getMetadata(), catalogMeta);
+
+    metaCache.invalidate(catalogMeta.getCatalogName());
     catalog.updateMetadata(catalogMeta);
     LOG.info("Update catalog metadata: {}", catalogMeta.getCatalogName());
   }
@@ -178,9 +209,10 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
           c.dispose();
           return null;
         });
+    metaCache.invalidate(name);
   }
 
-  private boolean isInternal(CatalogMeta meta) {
+  private static boolean isInternal(CatalogMeta meta) {
     return CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(meta.getCatalogType());
   }
 }

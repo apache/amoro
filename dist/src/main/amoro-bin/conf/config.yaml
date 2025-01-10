@@ -91,6 +91,10 @@ ams:
   table-manifest-io:
     thread-count: 20
 
+  cache:
+    catalog-meta:
+      duration: 60s
+
   database:
     type: derby
     jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
