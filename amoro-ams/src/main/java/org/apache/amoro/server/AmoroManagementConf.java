@@ -51,8 +51,8 @@ public class AmoroManagementConf {
           .defaultValue("admin")
           .withDescription("The administrator password");
 
-  public static final ConfigOption<Duration> CACHE_CATALOG_META_DURATION =
-      ConfigOptions.key("cache.catalog-meta.duration")
+  public static final ConfigOption<Duration> CATALOG_META_CACHE_EXPIRATION_INTERVAL =
+      ConfigOptions.key("catalog-meta-cache.expiration-interval")
           .durationType()
           .defaultValue(Duration.ofSeconds(60))
           .withDescription("TTL for catalog metadata.");

@@ -91,9 +91,8 @@ ams:
   table-manifest-io:
     thread-count: 20
 
-  cache:
-    catalog-meta:
-      duration: 60s
+  catalog-meta-cache:
+    expiration-interval: 60s
 
   database:
     type: derby

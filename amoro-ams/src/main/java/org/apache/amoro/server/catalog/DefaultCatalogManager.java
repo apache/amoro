@@ -52,7 +52,8 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
 
   public DefaultCatalogManager(Configurations serverConfiguration) {
     this.serverConfiguration = serverConfiguration;
-    Duration cacheTtl = serverConfiguration.get(AmoroManagementConf.CACHE_CATALOG_META_DURATION);
+    Duration cacheTtl =
+        serverConfiguration.get(AmoroManagementConf.CATALOG_META_CACHE_EXPIRATION_INTERVAL);
     metaCache =
         CacheBuilder.newBuilder()
             .maximumSize(100)
@@ -80,8 +81,7 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
 
   @Override
   public List<CatalogMeta> listCatalogMetas() {
-    return getAs(CatalogMetaMapper.class, CatalogMetaMapper::getCatalogs)
-        .stream()
+    return getAs(CatalogMetaMapper.class, CatalogMetaMapper::getCatalogs).stream()
         .peek(c -> metaCache.put(c.getCatalogName(), Optional.of(c)))
         .collect(Collectors.toList());
   }
