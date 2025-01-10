@@ -33,6 +33,7 @@ public class IcebergSparkFormat implements SparkTableFormat {
   private static final Pattern SNAPSHOT_ID = Pattern.compile("snapshot_id_(\\d+)");
   private static final Pattern BRANCH = Pattern.compile("branch_(.*)");
   private static final Pattern TAG = Pattern.compile("tag_(.*)");
+  private static final Pattern CHANGES = Pattern.compile("changes");
 
   @Override
   public TableFormat format() {
@@ -45,6 +46,7 @@ public class IcebergSparkFormat implements SparkTableFormat {
         || AT_TIMESTAMP.matcher(tableName).matches()
         || SNAPSHOT_ID.matcher(tableName).matches()
         || TAG.matcher(tableName).matches()
+        || CHANGES.matcher(tableName).matches()
         || BRANCH.matcher(tableName).matches();
   }
 
