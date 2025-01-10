@@ -407,7 +407,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
   private Table createIcebergTable(String catalog, PartitionSpec spec, int formatVersion) {
     ServerCatalog serverCatalog =
-        amsEnv.serviceContainer().getTableService().getServerCatalog(catalog);
+        amsEnv.serviceContainer().getCatalogManager().getServerCatalog(catalog);
     if (serverCatalog instanceof InternalCatalog) {
       this.serverCatalog = (InternalCatalog) serverCatalog;
       if (!this.serverCatalog.databaseExists(DATABASE)) {

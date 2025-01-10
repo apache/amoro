@@ -37,6 +37,7 @@ import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.RestCatalogService;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.controller.CatalogController;
 import org.apache.amoro.server.dashboard.controller.HealthCheckController;
 import org.apache.amoro.server.dashboard.controller.LoginController;
@@ -96,19 +97,22 @@ public class DashboardServer {
 
   public DashboardServer(
       Configurations serviceConfig,
+      CatalogManager catalogManager,
       TableService tableService,
       DefaultOptimizingService optimizerManager,
       TerminalManager terminalManager) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
-    this.catalogController = new CatalogController(tableService, platformFileManager);
+    this.catalogController = new CatalogController(catalogManager, platformFileManager);
     this.healthCheckController = new HealthCheckController();
     this.loginController = new LoginController(serviceConfig);
     this.optimizerGroupController = new OptimizerGroupController(tableService, optimizerManager);
     this.optimizerController = new OptimizerController(optimizerManager);
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
     this.settingController = new SettingController(serviceConfig, optimizerManager);
-    ServerTableDescriptor tableDescriptor = new ServerTableDescriptor(tableService, serviceConfig);
-    this.tableController = new TableController(tableService, tableDescriptor, serviceConfig);
+    ServerTableDescriptor tableDescriptor =
+        new ServerTableDescriptor(catalogManager, tableService, serviceConfig);
+    this.tableController =
+        new TableController(catalogManager, tableService, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
     this.overviewController = new OverviewController();

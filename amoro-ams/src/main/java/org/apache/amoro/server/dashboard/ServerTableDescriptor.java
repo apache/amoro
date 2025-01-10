@@ -23,6 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.table.TableService;
@@ -50,10 +51,13 @@ public class ServerTableDescriptor extends PersistentBase {
 
   private final Map<TableFormat, FormatTableDescriptor> formatDescriptorMap = new HashMap<>();
 
+  private final CatalogManager catalogManager;
   private final TableService tableService;
 
-  public ServerTableDescriptor(TableService tableService, Configurations serviceConfig) {
+  public ServerTableDescriptor(
+      CatalogManager catalogManager, TableService tableService, Configurations serviceConfig) {
     this.tableService = tableService;
+    this.catalogManager = catalogManager;
 
     // All table formats will jointly reuse the work thread pool named iceberg-worker-pool-%d
     ExecutorService executorService = ThreadPools.getWorkerPool();
@@ -146,7 +150,7 @@ public class ServerTableDescriptor extends PersistentBase {
   }
 
   private AmoroTable<?> loadTable(TableIdentifier identifier) {
-    ServerCatalog catalog = tableService.getServerCatalog(identifier.getCatalog());
+    ServerCatalog catalog = catalogManager.getServerCatalog(identifier.getCatalog());
     return catalog.loadTable(identifier.getDatabase(), identifier.getTableName());
   }
 }

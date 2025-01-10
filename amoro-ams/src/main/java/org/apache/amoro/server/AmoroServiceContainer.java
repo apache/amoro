@@ -28,6 +28,8 @@ import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.config.ConfigHelpers;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.AmoroRuntimeException;
+import org.apache.amoro.server.catalog.CatalogManager;
+import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.dashboard.DashboardServer;
 import org.apache.amoro.server.dashboard.JavalinJsonMapper;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
@@ -92,6 +94,7 @@ public class AmoroServiceContainer {
 
   private final HighAvailabilityContainer haContainer;
   private DataSource dataSource;
+  private CatalogManager catalogManager;
   private DefaultTableService tableService;
   private DefaultOptimizingService optimizingService;
   private TerminalManager terminalManager;
@@ -146,8 +149,9 @@ public class AmoroServiceContainer {
     EventsManager.getInstance();
     MetricManager.getInstance();
 
-    tableService = new DefaultTableService(serviceConfig);
-    optimizingService = new DefaultOptimizingService(serviceConfig, tableService);
+    catalogManager = new DefaultCatalogManager(serviceConfig);
+    tableService = new DefaultTableService(serviceConfig, catalogManager);
+    optimizingService = new DefaultOptimizingService(serviceConfig, catalogManager, tableService);
 
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
@@ -164,7 +168,7 @@ public class AmoroServiceContainer {
     addHandlerChain(AsyncTableExecutors.getInstance().getTagsAutoCreatingExecutor());
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
-    terminalManager = new TerminalManager(serviceConfig, tableService);
+    terminalManager = new TerminalManager(serviceConfig, catalogManager, tableService);
 
     initThriftService();
     startThriftService();
@@ -240,8 +244,9 @@ public class AmoroServiceContainer {
 
   private void initHttpService() {
     DashboardServer dashboardServer =
-        new DashboardServer(serviceConfig, tableService, optimizingService, terminalManager);
-    RestCatalogService restCatalogService = new RestCatalogService(tableService);
+        new DashboardServer(
+            serviceConfig, catalogManager, tableService, optimizingService, terminalManager);
+    RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableService);
 
     httpServer =
         Javalin.create(
@@ -333,7 +338,7 @@ public class AmoroServiceContainer {
         new AmoroTableMetastore.Processor<>(
             ThriftServiceProxy.createProxy(
                 AmoroTableMetastore.Iface.class,
-                new TableManagementService(tableService),
+                new TableManagementService(catalogManager, tableService),
                 AmoroRuntimeException::normalizeCompatibly));
     tableManagementServer =
         createThriftServer(
@@ -534,6 +539,11 @@ public class AmoroServiceContainer {
   @VisibleForTesting
   public TableService getTableService() {
     return this.tableService;
+  }
+
+  @VisibleForTesting
+  public CatalogManager getCatalogManager() {
+    return this.catalogManager;
   }
 
   @VisibleForTesting

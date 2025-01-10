@@ -56,7 +56,7 @@ public class TestDatabaseService extends AMSTableTestBase {
 
   @Test
   public void testCreateAndDropDatabase() {
-    InternalCatalog catalog = tableService().getInternalCatalog(TEST_CATALOG_NAME);
+    InternalCatalog catalog = CATALOG_MANAGER.getInternalCatalog(TEST_CATALOG_NAME);
     // test create database
     catalog.createDatabase(TEST_DB_NAME);
 
@@ -78,7 +78,7 @@ public class TestDatabaseService extends AMSTableTestBase {
   public void testDropDatabaseWithTable() {
     Assume.assumeTrue(catalogTestHelper().tableFormat().equals(TableFormat.MIXED_ICEBERG));
     Assume.assumeTrue(catalogTestHelper().isInternalCatalog());
-    InternalCatalog catalog = tableService().getInternalCatalog(TEST_CATALOG_NAME);
+    InternalCatalog catalog = CATALOG_MANAGER.getInternalCatalog(TEST_CATALOG_NAME);
     catalog.createDatabase(TEST_DB_NAME);
 
     createTable();

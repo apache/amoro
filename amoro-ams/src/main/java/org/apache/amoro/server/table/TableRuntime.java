@@ -57,11 +57,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class TableRuntime extends StatedPersistentBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(TableRuntime.class);
-
+  private final Lock tableLock = new ReentrantLock();
   private final TableRuntimeHandler tableHandler;
   private final ServerTableIdentifier tableIdentifier;
   private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
@@ -90,14 +92,10 @@ public class TableRuntime extends StatedPersistentBase {
   private final TableOptimizingMetrics optimizingMetrics;
   private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
   private final TableSummaryMetrics tableSummaryMetrics;
-
   private long targetSnapshotId;
-
   private long targetChangeSnapshotId;
-
   private Map<String, Long> fromSequence;
   private Map<String, Long> toSequence;
-
   private OptimizingType optimizingType;
 
   public TableRuntime(
@@ -176,15 +174,17 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void dispose() {
-    invokeInStateLock(
-        () -> {
-          doAsTransaction(
-              () -> Optional.ofNullable(optimizingProcess).ifPresent(OptimizingProcess::close),
-              () ->
-                  doAs(
-                      TableMetaMapper.class,
-                      mapper -> mapper.deleteOptimizingRuntime(tableIdentifier.getId())));
-        });
+    tableLock.lock();
+    try {
+      doAsTransaction(
+          () -> Optional.ofNullable(optimizingProcess).ifPresent(OptimizingProcess::close),
+          () ->
+              doAs(
+                  TableMetaMapper.class,
+                  mapper -> mapper.deleteOptimizingRuntime(tableIdentifier.getId())));
+    } finally {
+      tableLock.unlock();
+    }
     optimizingMetrics.unregister();
     orphanFilesCleaningMetrics.unregister();
     tableSummaryMetrics.unregister();
@@ -318,15 +318,16 @@ public class TableRuntime extends StatedPersistentBase {
    * @param startTimeMills
    */
   public void resetTaskQuotas(long startTimeMills) {
-    invokeInStateLock(
-        () -> {
-          taskQuotas.clear();
-          taskQuotas.addAll(
-              getAs(
-                  OptimizingMapper.class,
-                  mapper ->
-                      mapper.selectTaskQuotasByTime(tableIdentifier.getId(), startTimeMills)));
-        });
+    tableLock.lock();
+    try {
+      taskQuotas.clear();
+      taskQuotas.addAll(
+          getAs(
+              OptimizingMapper.class,
+              mapper -> mapper.selectTaskQuotasByTime(tableIdentifier.getId(), startTimeMills)));
+    } finally {
+      tableLock.unlock();
+    }
   }
 
   public void completeProcess(boolean success) {
@@ -645,5 +646,15 @@ public class TableRuntime extends StatedPersistentBase {
                     tableIdentifier.getTableName(),
                     System.currentTimeMillis()));
     return TableBlocker.conflict(operation, tableBlockers);
+  }
+
+  @Override
+  protected void invokeConsistency(Runnable runnable) {
+    tableLock.lock();
+    try {
+      super.invokeConsistency(runnable);
+    } finally {
+      tableLock.unlock();
+    }
   }
 }
