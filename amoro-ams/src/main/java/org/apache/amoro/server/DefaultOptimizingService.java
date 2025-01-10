@@ -199,7 +199,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   }
 
   private OptimizingTask extractOptimizingTask(
-      TaskRuntime task, String authToken, int threadId, OptimizingQueue queue) {
+      TaskRuntime<?> task, String authToken, int threadId, OptimizingQueue queue) {
     try {
       OptimizerThread optimizerThread = getAuthenticatedOptimizer(authToken).getThread(threadId);
       task.schedule(optimizerThread);
