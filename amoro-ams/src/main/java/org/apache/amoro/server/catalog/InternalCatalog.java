@@ -45,6 +45,11 @@ public abstract class InternalCatalog extends ServerCatalog {
   }
 
   @Override
+  public boolean isInternal() {
+    return true;
+  }
+
+  @Override
   public List<String> listDatabases() {
     return getAs(
         TableMetaMapper.class, mapper -> mapper.selectDatabases(getMetadata().getCatalogName()));

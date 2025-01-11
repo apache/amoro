@@ -95,7 +95,7 @@ public class RewriteStageTask
   }
 
   private static long getRecordCnt(ContentFile<?>[] contentFiles) {
-    int recordCnt = 0;
+    long recordCnt = 0;
     if (contentFiles != null) {
       for (ContentFile<?> contentFile : contentFiles) {
         recordCnt += contentFile.recordCount();
