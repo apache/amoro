@@ -20,7 +20,7 @@ namespace java org.apache.amoro.api
 
 include "amoro_commons.thrift"
 
-struct ContorolTask {
+struct ControlTask {
 
 }
 struct OptimizingTask {
@@ -55,7 +55,7 @@ service OptimizingService {
 
     void ping()
 
-    ContorolTask pollTask(1: string authToken, 2: i32 threadId)
+    ControlTask pollTask(1: string authToken, 2: i32 threadId)
                 throws (1: amoro_commons.AmoroException e1)
 
     void touch(1: string authToken) throws(1: amoro_commons.AmoroException e1)
