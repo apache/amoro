@@ -116,6 +116,9 @@ public class AmoroServiceContainer {
           .addShutdownHook(
               new Thread(
                   () -> {
+                    //TODO close optimizer
+                    optimizingService.sendClose();
+                    //END
                     LOG.info("AMS service is shutting down...");
                     service.dispose();
                     LOG.info("AMS service has been shut down");
