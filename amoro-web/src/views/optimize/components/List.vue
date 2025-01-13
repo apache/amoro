@@ -91,7 +91,7 @@ async function getTableList() {
   try {
     loading.value = true
     const params = {
-      optimizerGroup: optimizerGroup.value || 'all',
+      optimizerGroup: optimizerGroup.value ? encodeURIComponent(optimizerGroup.value) : 'all',
       dbSearchInput: dbSearchInput.value || '',
       tableSearchInput: tableSearchInput.value || '',
       page: pagination.current,
