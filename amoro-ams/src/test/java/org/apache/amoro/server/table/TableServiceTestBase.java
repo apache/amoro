@@ -35,7 +35,7 @@ public abstract class TableServiceTestBase {
   @ClassRule public static DerbyPersistence DERBY = new DerbyPersistence();
 
   protected static DefaultCatalogManager CATALOG_MANAGER = null;
-  private static DefaultTableService TABLE_SERVICE = null;
+  private static DefaultTableServiceOld TABLE_SERVICE = null;
   private static DefaultOptimizingService OPTIMIZING_SERVICE = null;
 
   @BeforeClass
@@ -44,7 +44,7 @@ public abstract class TableServiceTestBase {
       Configurations configurations = new Configurations();
       configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, 800L);
       CATALOG_MANAGER = new DefaultCatalogManager(configurations);
-      TABLE_SERVICE = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
+      TABLE_SERVICE = new DefaultTableServiceOld(new Configurations(), CATALOG_MANAGER);
       OPTIMIZING_SERVICE =
           new DefaultOptimizingService(configurations, CATALOG_MANAGER, TABLE_SERVICE);
       TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
@@ -65,7 +65,7 @@ public abstract class TableServiceTestBase {
     EventsManager.dispose();
   }
 
-  protected DefaultTableService tableService() {
+  protected DefaultTableServiceOld tableService() {
     return TABLE_SERVICE;
   }
 

@@ -48,10 +48,12 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
-import org.apache.amoro.server.table.DefaultTableService;
+import org.apache.amoro.server.table.DefaultTableServiceOld;
+import org.apache.amoro.server.table.MaintainedTableManager;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.table.TableServiceOld;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -100,13 +102,15 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final OptimizerKeeper optimizerKeeper = new OptimizerKeeper();
   private final CatalogManager catalogManager;
   private final TableService tableService;
+  private final MaintainedTableManager tableManager;
   private final RuntimeHandlerChain tableHandlerChain;
   private final ExecutorService planExecutor;
 
   public DefaultOptimizingService(
       Configurations serviceConfig,
       CatalogManager catalogManager,
-      DefaultTableService tableService) {
+      MaintainedTableManager tableManager,
+      TableService tableService) {
     this.optimizerTouchTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT);
     this.taskAckTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT);
     this.maxPlanningParallelism =
@@ -114,6 +118,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     this.pollingTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT);
     this.tableService = tableService;
     this.catalogManager = catalogManager;
+    this.tableManager = tableManager;
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
     this.planExecutor =
         Executors.newCachedThreadPool(
@@ -414,7 +419,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
         return false;
       }
     }
-    for (ServerTableIdentifier identifier : tableService.listManagedTables()) {
+    for (ServerTableIdentifier identifier : tableManager.listManagedTables()) {
       if (optimizingQueueByGroup.containsKey(name)
           && optimizingQueueByGroup.get(name).containsTable(identifier)) {
         return false;

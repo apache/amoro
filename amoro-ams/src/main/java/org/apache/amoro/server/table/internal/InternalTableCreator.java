@@ -19,7 +19,7 @@
 package org.apache.amoro.server.table.internal;
 
 import org.apache.amoro.server.table.TableMetadata;
-import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.table.TableServiceOld;
 
 import java.io.Closeable;
 
@@ -28,7 +28,7 @@ public interface InternalTableCreator extends Closeable {
 
   /**
    * Do all things about create an internal table, and prepare the {@link TableMetadata} for {@link
-   * TableService#createTable(java.lang.String, TableMetadata)}
+   * TableServiceOld#createTable(java.lang.String, TableMetadata)}
    */
   TableMetadata create();
 

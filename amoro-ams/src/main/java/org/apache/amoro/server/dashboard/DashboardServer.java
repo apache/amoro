@@ -51,7 +51,8 @@ import org.apache.amoro.server.dashboard.controller.TerminalController;
 import org.apache.amoro.server.dashboard.controller.VersionController;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.ParamSignatureCalculator;
-import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.table.TableManager;
+import org.apache.amoro.server.table.TableServiceOld;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.lang3.StringUtils;
@@ -98,7 +99,7 @@ public class DashboardServer {
   public DashboardServer(
       Configurations serviceConfig,
       CatalogManager catalogManager,
-      TableService tableService,
+      TableManager tableManager,
       DefaultOptimizingService optimizerManager,
       TerminalManager terminalManager) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
@@ -110,7 +111,7 @@ public class DashboardServer {
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
     this.settingController = new SettingController(serviceConfig, optimizerManager);
     ServerTableDescriptor tableDescriptor =
-        new ServerTableDescriptor(catalogManager, tableService, serviceConfig);
+        new ServerTableDescriptor(catalogManager, tableManager, serviceConfig);
     this.tableController =
         new TableController(catalogManager, tableService, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);

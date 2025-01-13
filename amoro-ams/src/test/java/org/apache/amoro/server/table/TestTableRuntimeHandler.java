@@ -46,7 +46,7 @@ import java.util.List;
 @RunWith(Parameterized.class)
 public class TestTableRuntimeHandler extends AMSTableTestBase {
 
-  private DefaultTableService tableService;
+  private DefaultTableServiceOld tableService;
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
@@ -67,7 +67,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
 
   @Test
   public void testInitialize() throws Exception {
-    tableService = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
+    tableService = new DefaultTableServiceOld(new Configurations(), CATALOG_MANAGER);
     TestHandler handler = new TestHandler();
     tableService.addHandlerChain(handler);
     tableService.initialize();
@@ -86,7 +86,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     Assert.assertTrue(handler.isDisposed());
 
     // initialize with a history table
-    tableService = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
+    tableService = new DefaultTableServiceOld(new Configurations(), CATALOG_MANAGER);
     handler = new TestHandler();
     tableService.addHandlerChain(handler);
     tableService.initialize();
@@ -122,7 +122,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     tableService = null;
   }
 
-  protected DefaultTableService tableService() {
+  protected DefaultTableServiceOld tableService() {
     if (tableService != null) {
       return tableService;
     } else {

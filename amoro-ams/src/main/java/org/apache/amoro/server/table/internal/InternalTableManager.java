@@ -16,25 +16,26 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.server.table.internal;
 
-import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.server.catalog.InternalCatalog;
+import org.apache.amoro.api.TableIdentifier;
+import org.apache.amoro.server.table.TableMetadata;
 
-public interface TableService extends TableRuntimeHandler {
+public interface InternalTableManager {
 
-  void initialize();
-  void dispose();
+  /**
+   * create table metadata
+   *
+   * @param catalogName internal catalog to create the table
+   * @param tableMeta table metadata info
+   */
+  void createTable(String catalogName, TableMetadata tableMeta);
 
-  void onTableCreated(InternalCatalog catalog, ServerTableIdentifier identifier);
-
-  void onTableDropped(InternalCatalog catalog, ServerTableIdentifier identifier);
-
-
-  TableRuntime getRuntime(Long tableId);
-
-
-  default boolean contains(Long tableId) {
-    return getRuntime(tableId) != null;
-  }
+  /**
+   * delete the table metadata
+   *
+   * @param tableIdentifier table id
+   * @param deleteData if delete the external table
+   */
+  void dropTableMetadata(TableIdentifier tableIdentifier, boolean deleteData);
 }

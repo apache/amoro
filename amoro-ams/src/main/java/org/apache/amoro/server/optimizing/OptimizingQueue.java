@@ -37,7 +37,7 @@ import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.QuotaProvider;
-import org.apache.amoro.server.table.TableManager;
+import org.apache.amoro.server.table.TableManagerOld;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
@@ -81,7 +81,7 @@ public class OptimizingQueue extends PersistentBase {
   private final Queue<TableOptimizingProcess> tableQueue = new LinkedTransferQueue<>();
   private final Queue<TaskRuntime<?>> retryTaskQueue = new LinkedTransferQueue<>();
   private final SchedulingPolicy scheduler;
-  private final TableManager tableManager;
+  private final TableManagerOld tableManager;
   private final Executor planExecutor;
   // Keep all planning table identifiers
   private final Set<ServerTableIdentifier> planningTables = new HashSet<>();
@@ -92,7 +92,7 @@ public class OptimizingQueue extends PersistentBase {
   private ResourceGroup optimizerGroup;
 
   public OptimizingQueue(
-      TableManager tableManager,
+      TableManagerOld tableManager,
       ResourceGroup optimizerGroup,
       QuotaProvider quotaProvider,
       Executor planExecutor,

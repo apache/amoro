@@ -52,7 +52,7 @@ import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.table.TableServiceOld;
 import org.apache.amoro.shade.guava32.com.google.common.base.Function;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -101,7 +101,7 @@ public class TableController {
   private static final long UPGRADE_INFO_EXPIRE_INTERVAL = 60 * 60 * 1000;
 
   private final CatalogManager catalogManager;
-  private final TableService tableService;
+  private final TableServiceOld tableService;
   private final ServerTableDescriptor tableDescriptor;
   private final Configurations serviceConfig;
   private final ConcurrentHashMap<TableIdentifier, UpgradeRunningInfo> upgradeRunningInfo =
@@ -110,7 +110,7 @@ public class TableController {
 
   public TableController(
       CatalogManager catalogManager,
-      TableService tableService,
+      TableServiceOld tableService,
       ServerTableDescriptor tableDescriptor,
       Configurations serviceConfig) {
     this.catalogManager = catalogManager;

@@ -21,7 +21,7 @@ package org.apache.amoro.server.table.executor;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
-import org.apache.amoro.server.table.TableManager;
+import org.apache.amoro.server.table.TableManagerOld;
 import org.apache.amoro.server.table.TableRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +33,7 @@ public class DanglingDeleteFilesCleaningExecutor extends BaseTableExecutor {
 
   private static final long INTERVAL = 24 * 60 * 60 * 1000L;
 
-  protected DanglingDeleteFilesCleaningExecutor(TableManager tableManager, int poolSize) {
+  protected DanglingDeleteFilesCleaningExecutor(TableManagerOld tableManager, int poolSize) {
     super(tableManager, poolSize);
   }
 

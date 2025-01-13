@@ -33,7 +33,7 @@ import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.ResourceContainers;
-import org.apache.amoro.server.table.DefaultTableService;
+import org.apache.amoro.server.table.DefaultTableServiceOld;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.io.MoreFiles;
 import org.apache.amoro.shade.guava32.com.google.common.io.RecursiveDeleteOption;
@@ -69,7 +69,7 @@ public class AmsEnvironment {
   private final AmoroServiceContainer serviceContainer;
   private Configurations serviceConfig;
   private DefaultCatalogManager catalogManager;
-  private DefaultTableService tableService;
+  private DefaultTableServiceOld tableService;
   private final AtomicBoolean amsExit;
   private int tableServiceBindPort;
   private int optimizingServiceBindPort;
@@ -139,14 +139,14 @@ public class AmsEnvironment {
 
     testHMS.start();
     startAms();
-    DynFields.UnboundField<DefaultTableService> amsTableServiceField =
+    DynFields.UnboundField<DefaultTableServiceOld> amsTableServiceField =
         DynFields.builder().hiddenImpl(AmoroServiceContainer.class, "tableService").build();
     DynFields.UnboundField<DefaultCatalogManager> amsCatalogManagerField =
         DynFields.builder().hiddenImpl(AmoroServiceContainer.class, "catalogManager").build();
     catalogManager = amsCatalogManagerField.bind(serviceContainer).get();
     tableService = amsTableServiceField.bind(serviceContainer).get();
     DynFields.UnboundField<CompletableFuture<Boolean>> tableServiceField =
-        DynFields.builder().hiddenImpl(DefaultTableService.class, "initialized").build();
+        DynFields.builder().hiddenImpl(DefaultTableServiceOld.class, "initialized").build();
     boolean tableServiceIsStart = false;
     long startTime = System.currentTimeMillis();
     while (!tableServiceIsStart) {

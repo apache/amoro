@@ -23,7 +23,7 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
-import org.apache.amoro.server.table.TableManager;
+import org.apache.amoro.server.table.TableManagerOld;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
@@ -46,11 +46,11 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   private static final long START_DELAY = 10 * 1000L;
 
   private final ScheduledExecutorService executor;
-  private final TableManager tableManager;
+  private final TableManagerOld tableManager;
   private final Set<ServerTableIdentifier> scheduledTables =
       Collections.synchronizedSet(new HashSet<>());
 
-  protected BaseTableExecutor(TableManager tableManager, int poolSize) {
+  protected BaseTableExecutor(TableManagerOld tableManager, int poolSize) {
     this.tableManager = tableManager;
     this.executor =
         Executors.newScheduledThreadPool(

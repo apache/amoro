@@ -47,7 +47,7 @@ import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.table.TableServiceOld;
 import org.apache.amoro.server.table.executor.TableRuntimeRefreshExecutor;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -358,7 +358,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     assertTaskStatus(TaskRuntime.Status.PLANNED);
   }
 
-  /** Test the logic for {@link TableService#getTableRuntimes}. */
+  /** Test the logic for {@link TableServiceOld#getTableRuntimes}. */
   @Test
   public void testGetRuntimes() {
     String catalog = "catalog";

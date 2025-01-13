@@ -20,7 +20,7 @@ package org.apache.amoro.server.table.executor;
 
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
-import org.apache.amoro.server.table.TableManager;
+import org.apache.amoro.server.table.TableManagerOld;
 import org.apache.amoro.server.table.TableRuntime;
 
 public class BlockerExpiringExecutor extends BaseTableExecutor {
@@ -29,7 +29,7 @@ public class BlockerExpiringExecutor extends BaseTableExecutor {
 
   private static final long INTERVAL = 60 * 60 * 1000L; // 1 hour
 
-  public BlockerExpiringExecutor(TableManager tableManager) {
+  public BlockerExpiringExecutor(TableManagerOld tableManager) {
     super(tableManager, 1);
   }
 

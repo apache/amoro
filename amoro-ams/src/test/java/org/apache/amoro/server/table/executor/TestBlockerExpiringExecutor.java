@@ -23,7 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
-import org.apache.amoro.server.table.TableManager;
+import org.apache.amoro.server.table.TableManagerOld;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableServiceTestBase;
 import org.apache.amoro.server.table.blocker.TableBlocker;
@@ -42,12 +42,12 @@ public class TestBlockerExpiringExecutor extends TableServiceTestBase {
 
   private final Persistency persistency = new Persistency();
   private TableRuntime tableRuntime;
-  private TableManager tableManager;
+  private TableManagerOld tableManager;
 
   @Before
   public void mock() {
     tableRuntime = Mockito.mock(TableRuntime.class);
-    tableManager = Mockito.mock(TableManager.class);
+    tableManager = Mockito.mock(TableManagerOld.class);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(tableIdentifier);
   }
 

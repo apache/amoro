@@ -19,22 +19,25 @@
 package org.apache.amoro.server.table;
 
 import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.server.catalog.InternalCatalog;
+import org.apache.amoro.api.TableIdentifier;
 
-public interface TableService extends TableRuntimeHandler {
+import java.util.List;
 
-  void initialize();
-  void dispose();
-
-  void onTableCreated(InternalCatalog catalog, ServerTableIdentifier identifier);
-
-  void onTableDropped(InternalCatalog catalog, ServerTableIdentifier identifier);
+public interface MaintainedTableManager {
 
 
-  TableRuntime getRuntime(Long tableId);
+  /**
+   * Load all managed tables. Managed tables means the tables which are managed by AMS, AMS will
+   * watch their change and make them health.
+   *
+   * @return {@link ServerTableIdentifier} list
+   */
+  List<ServerTableIdentifier> listManagedTables();
 
-
-  default boolean contains(Long tableId) {
-    return getRuntime(tableId) != null;
-  }
+  /**
+   * Get the ServerTableIdentifier instance of the specified table identifier
+   *
+   * @return the {@link ServerTableIdentifier} instance
+   */
+  ServerTableIdentifier getServerTableIdentifier(TableIdentifier id);
 }

@@ -35,7 +35,7 @@ import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.table.TableServiceOld;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -58,11 +58,11 @@ public class OptimizerGroupController {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerGroupController.class);
 
   private static final String ALL_GROUP = "all";
-  private final TableService tableService;
+  private final TableServiceOld tableService;
   private final DefaultOptimizingService optimizerManager;
 
   public OptimizerGroupController(
-      TableService tableService, DefaultOptimizingService optimizerManager) {
+      TableServiceOld tableService, DefaultOptimizingService optimizerManager) {
     this.tableService = tableService;
     this.optimizerManager = optimizerManager;
   }

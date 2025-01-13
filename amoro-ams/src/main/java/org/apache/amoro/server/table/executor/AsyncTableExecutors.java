@@ -20,7 +20,7 @@ package org.apache.amoro.server.table.executor;
 
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.server.table.TableManager;
+import org.apache.amoro.server.table.TableManagerOld;
 
 public class AsyncTableExecutors {
 
@@ -40,7 +40,7 @@ public class AsyncTableExecutors {
     return instance;
   }
 
-  public void setup(TableManager tableManager, Configurations conf) {
+  public void setup(TableManagerOld tableManager, Configurations conf) {
     if (conf.getBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
       this.snapshotsExpiringExecutor =
           new SnapshotsExpiringExecutor(

@@ -28,6 +28,7 @@ import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.table.TableServiceOld;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableIdentifier;

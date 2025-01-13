@@ -20,7 +20,7 @@ package org.apache.amoro.server.table.executor;
 
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
-import org.apache.amoro.server.table.TableManager;
+import org.apache.amoro.server.table.TableManagerOld;
 import org.apache.amoro.server.table.TableRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +32,7 @@ public class OptimizingExpiringExecutor extends BaseTableExecutor {
   private final long keepTime;
   private final long interval;
 
-  public OptimizingExpiringExecutor(TableManager tableManager, int keepDays, int intervalHours) {
+  public OptimizingExpiringExecutor(TableManagerOld tableManager, int keepDays, int intervalHours) {
     super(tableManager, 1);
     this.keepTime = keepDays * 24 * 60 * 60 * 1000L;
     this.interval = intervalHours * 60 * 60 * 1000L;
