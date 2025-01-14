@@ -34,6 +34,7 @@
     <url>https://amoro.apache.org</url>
 
     <properties>
+        <iceberg.version>1.4.3</iceberg.version>
         <hive.version>2.3.9</hive.version>
         <spark.version>3.2.4</spark.version>
         <scala.version>2.12.15</scala.version>
