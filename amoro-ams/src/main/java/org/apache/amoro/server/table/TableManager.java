@@ -21,7 +21,8 @@ package org.apache.amoro.server.table;
 import org.apache.amoro.server.table.blocker.TableBlockerManager;
 import org.apache.amoro.server.table.internal.InternalTableManager;
 
-public interface TableManager extends MaintainedTableManager, InternalTableManager, TableBlockerManager {
+public interface TableManager
+    extends MaintainedTableManager, InternalTableManager, TableBlockerManager {
 
   void setTableService(TableService service);
 }

@@ -20,11 +20,14 @@ package org.apache.amoro.server.table;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.TableIdentifier;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.commons.lang3.tuple.Pair;
+
+import javax.annotation.Nullable;
 
 import java.util.List;
 
 public interface MaintainedTableManager {
-
 
   /**
    * Load all managed tables. Managed tables means the tables which are managed by AMS, AMS will
@@ -40,4 +43,27 @@ public interface MaintainedTableManager {
    * @return the {@link ServerTableIdentifier} instance
    */
   ServerTableIdentifier getServerTableIdentifier(TableIdentifier id);
+
+  /**
+   * Get the table info from database for given parameters.
+   *
+   * @param optimizerGroup The optimizer group of the table associated to. will be if we want the
+   *     info for all groups.
+   * @param fuzzyDbName the fuzzy db name used to filter the result, will be null if no filter set.
+   * @param fuzzyTableName the fuzzy table name used to filter the result, will be null if no filter
+   *     set.
+   * @param statusCodeFilters the status code used to filter the result, wil be null if no filter
+   *     set.
+   * @param limit How many entries we want to retrieve.
+   * @param offset The entries we'll skip when retrieving the entries.
+   * @return A pair with the first entry is the actual list under the filters with the offset and
+   *     limit, and second value will be the number of total entries under the filters.
+   */
+  Pair<List<TableRuntimeMeta>, Integer> queryTableRuntimeMetas(
+      String optimizerGroup,
+      @Nullable String fuzzyDbName,
+      @Nullable String fuzzyTableName,
+      @Nullable List<Integer> statusCodeFilters,
+      int limit,
+      int offset);
 }

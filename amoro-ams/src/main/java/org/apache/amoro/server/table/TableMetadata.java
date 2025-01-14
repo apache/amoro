@@ -97,7 +97,7 @@ public class TableMetadata implements Serializable {
 
   public TableMeta buildTableMeta() {
     TableMeta meta = new TableMeta();
-    meta.setTableIdentifier(tableIdentifier.getIdentifier());
+    meta.setTableIdentifier(tableIdentifier.getIdentifier().buildTableIdentifier());
     Map<String, String> locations = new HashMap<>();
     PropertiesUtil.putNotNullProperties(
         locations, MetaTableProperties.LOCATION_KEY_TABLE, tableLocation);

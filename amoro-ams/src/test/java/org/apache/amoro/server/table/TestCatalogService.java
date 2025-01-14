@@ -28,6 +28,7 @@ import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.server.AMSServiceTestBase;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -39,7 +40,7 @@ import org.junit.runners.Parameterized;
 import java.util.List;
 
 @RunWith(Parameterized.class)
-public class TestCatalogService extends TableServiceTestBase {
+public class TestCatalogService extends AMSServiceTestBase {
   @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   private final CatalogTestHelper catalogTestHelper;

@@ -45,11 +45,9 @@ import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.DefaultTableManager;
 import org.apache.amoro.server.table.DefaultTableService;
-import org.apache.amoro.server.table.DefaultTableServiceOld;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableService;
-import org.apache.amoro.server.table.TableServiceOld;
 import org.apache.amoro.server.table.executor.AsyncTableExecutors;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.server.utils.ThriftServiceProxy;
@@ -155,10 +153,11 @@ public class AmoroServiceContainer {
     MetricManager.getInstance();
 
     catalogManager = new DefaultCatalogManager(serviceConfig);
-
     tableManager = new DefaultTableManager(serviceConfig, catalogManager);
+
     tableService = new DefaultTableService(serviceConfig, catalogManager);
-    optimizingService = new DefaultOptimizingService(serviceConfig, catalogManager, tableService);
+    optimizingService =
+        new DefaultOptimizingService(serviceConfig, catalogManager, tableManager, tableService);
 
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
@@ -253,7 +252,12 @@ public class AmoroServiceContainer {
   private void initHttpService() {
     DashboardServer dashboardServer =
         new DashboardServer(
-            serviceConfig, catalogManager, tableManager, optimizingService, terminalManager);
+            serviceConfig,
+            catalogManager,
+            tableManager,
+            optimizingService,
+            terminalManager,
+            tableService);
     RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableManager);
 
     httpServer =

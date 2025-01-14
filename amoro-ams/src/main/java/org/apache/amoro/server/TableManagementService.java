@@ -32,10 +32,8 @@ import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
-import org.apache.amoro.server.table.MaintainedTableManager;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableMetadata;
-import org.apache.amoro.server.table.TableServiceOld;
 import org.apache.amoro.server.utils.InternalTableUtil;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 
@@ -91,7 +89,10 @@ public class TableManagementService implements AmoroTableMetastore.Iface {
     }
     ServerTableIdentifier identifier =
         ServerTableIdentifier.of(
-            tableMeta.getTableIdentifier(), TableFormat.valueOf(tableMeta.getFormat()));
+            tableMeta.getTableIdentifier().getCatalog(),
+            tableMeta.getTableIdentifier().getDatabase(),
+            tableMeta.getTableIdentifier().getTableName(),
+            TableFormat.valueOf(tableMeta.getFormat()));
     InternalCatalog catalog = catalogManager.getInternalCatalog(identifier.getCatalog());
     CatalogMeta catalogMeta = catalog.getMetadata();
     TableMetadata tableMetadata = new TableMetadata(identifier, tableMeta, catalogMeta);

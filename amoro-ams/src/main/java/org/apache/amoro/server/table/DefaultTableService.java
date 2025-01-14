@@ -183,7 +183,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
     return tableRuntime;
   }
 
-
   @Override
   public TableRuntime getRuntime(Long tableId) {
     checkStarted();
@@ -194,6 +193,11 @@ public class DefaultTableService extends PersistentBase implements TableService 
   public boolean contains(Long tableId) {
     checkStarted();
     return tableRuntimeMap.containsKey(tableId);
+  }
+
+  @Override
+  public AmoroTable<?> loadTable(ServerTableIdentifier identifier) {
+    return catalogManager.loadTable(identifier.getIdentifier());
   }
 
   @Override

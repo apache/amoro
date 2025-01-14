@@ -18,7 +18,7 @@
 
 package org.apache.amoro;
 
-import org.apache.amoro.api.TableIdentifier;
+import org.apache.amoro.table.TableIdentifier;
 
 import java.util.Objects;
 
@@ -138,6 +138,6 @@ public class ServerTableIdentifier {
   }
 
   public TableIdentifier getIdentifier() {
-    return new TableIdentifier(catalog, database, tableName);
+    return TableIdentifier.of(catalog, database, tableName);
   }
 }

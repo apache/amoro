@@ -48,12 +48,10 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
-import org.apache.amoro.server.table.DefaultTableServiceOld;
 import org.apache.amoro.server.table.MaintainedTableManager;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
-import org.apache.amoro.server.table.TableServiceOld;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -145,7 +143,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
           List<TableRuntime> tableRuntimes = groupToTableRuntimes.remove(groupName);
           OptimizingQueue optimizingQueue =
               new OptimizingQueue(
-                  tableService,
+                  catalogManager,
                   group,
                   this,
                   planExecutor,
@@ -322,7 +320,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
           doAs(ResourceMapper.class, mapper -> mapper.insertResourceGroup(resourceGroup));
           OptimizingQueue optimizingQueue =
               new OptimizingQueue(
-                  tableService,
+                  catalogManager,
                   resourceGroup,
                   this,
                   planExecutor,

@@ -52,7 +52,7 @@ import org.apache.amoro.server.dashboard.controller.VersionController;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.ParamSignatureCalculator;
 import org.apache.amoro.server.table.TableManager;
-import org.apache.amoro.server.table.TableServiceOld;
+import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.lang3.StringUtils;
@@ -101,19 +101,24 @@ public class DashboardServer {
       CatalogManager catalogManager,
       TableManager tableManager,
       DefaultOptimizingService optimizerManager,
-      TerminalManager terminalManager) {
+      TerminalManager terminalManager,
+      TableService tableService) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.catalogController = new CatalogController(catalogManager, platformFileManager);
     this.healthCheckController = new HealthCheckController();
     this.loginController = new LoginController(serviceConfig);
-    this.optimizerGroupController = new OptimizerGroupController(tableService, optimizerManager);
+    // TODO: remove table service from OptimizerGroupController
+    this.optimizerGroupController =
+        new OptimizerGroupController(tableManager, tableService, optimizerManager);
     this.optimizerController = new OptimizerController(optimizerManager);
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
     this.settingController = new SettingController(serviceConfig, optimizerManager);
     ServerTableDescriptor tableDescriptor =
         new ServerTableDescriptor(catalogManager, tableManager, serviceConfig);
+    // TODO: remove table service from TableController
     this.tableController =
-        new TableController(catalogManager, tableService, tableDescriptor, serviceConfig);
+        new TableController(
+            catalogManager, tableManager, tableService, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
     this.overviewController = new OverviewController();

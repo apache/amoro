@@ -16,26 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.server;
 
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.resource.ResourceGroup;
-import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.server.DefaultOptimizingService;
-import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.table.DefaultTableService;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 
-public abstract class TableServiceTestBase {
-
-  @ClassRule public static DerbyPersistence DERBY = new DerbyPersistence();
-
-  protected static DefaultCatalogManager CATALOG_MANAGER = null;
-  private static DefaultTableServiceOld TABLE_SERVICE = null;
+public abstract class AMSServiceTestBase extends AMSManagerTestBase {
+  private static DefaultTableService TABLE_SERVICE = null;
   private static DefaultOptimizingService OPTIMIZING_SERVICE = null;
 
   @BeforeClass
@@ -43,10 +36,10 @@ public abstract class TableServiceTestBase {
     try {
       Configurations configurations = new Configurations();
       configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, 800L);
-      CATALOG_MANAGER = new DefaultCatalogManager(configurations);
-      TABLE_SERVICE = new DefaultTableServiceOld(new Configurations(), CATALOG_MANAGER);
+      TABLE_SERVICE = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
       OPTIMIZING_SERVICE =
-          new DefaultOptimizingService(configurations, CATALOG_MANAGER, TABLE_SERVICE);
+          new DefaultOptimizingService(
+              configurations, CATALOG_MANAGER, TABLE_MANAGER, TABLE_SERVICE);
       TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
       TABLE_SERVICE.initialize();
       try {
@@ -65,7 +58,7 @@ public abstract class TableServiceTestBase {
     EventsManager.dispose();
   }
 
-  protected DefaultTableServiceOld tableService() {
+  protected DefaultTableService tableService() {
     return TABLE_SERVICE;
   }
 

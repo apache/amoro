@@ -18,6 +18,9 @@
 
 package org.apache.amoro.server.table;
 
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.Blocker;
@@ -32,15 +35,18 @@ import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.persistence.PersistentBase;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -101,7 +107,8 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
     String database = tableMetadata.getTableIdentifier().getDatabase();
     String table = tableMetadata.getTableIdentifier().getTableName();
     if (catalog.tableExists(database, table)) {
-      throw new AlreadyExistsException(tableMetadata.getTableIdentifier().getIdentifier());
+      throw new AlreadyExistsException(
+          tableMetadata.getTableIdentifier().getIdentifier().buildTableIdentifier());
     }
 
     TableMetadata metadata = catalog.createTable(tableMetadata);
@@ -212,5 +219,31 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
         TableMetaMapper.class,
         mapper ->
             mapper.selectTableIdentifier(id.getCatalog(), id.getDatabase(), id.getTableName()));
+  }
+
+  @Override
+  public Pair<List<TableRuntimeMeta>, Integer> queryTableRuntimeMetas(
+      String optimizerGroup,
+      @Nullable String fuzzyDbName,
+      @Nullable String fuzzyTableName,
+      @Nullable List<Integer> statusCodeFilters,
+      int limit,
+      int offset) {
+
+    // page helper is 1-based
+    int pageNumber = (offset / limit) + 1;
+
+    try (Page<?> ignore = PageHelper.startPage(pageNumber, limit, true)) {
+      int total = 0;
+      List<TableRuntimeMeta> ret =
+          getAs(
+              TableMetaMapper.class,
+              mapper ->
+                  mapper.selectTableRuntimesForOptimizerGroup(
+                      optimizerGroup, fuzzyDbName, fuzzyTableName, statusCodeFilters));
+      PageInfo<TableRuntimeMeta> pageInfo = new PageInfo<>(ret);
+      total = (int) pageInfo.getTotal();
+      return Pair.of(ret, total);
+    }
   }
 }

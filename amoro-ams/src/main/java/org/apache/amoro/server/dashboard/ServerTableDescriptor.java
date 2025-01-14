@@ -27,7 +27,6 @@ import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.table.TableManager;
-import org.apache.amoro.server.table.TableServiceOld;
 import org.apache.amoro.table.descriptor.AmoroSnapshotsOfTable;
 import org.apache.amoro.table.descriptor.ConsumerInfo;
 import org.apache.amoro.table.descriptor.DDLInfo;

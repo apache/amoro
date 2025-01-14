@@ -18,23 +18,31 @@
 
 package org.apache.amoro.server.table;
 
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.server.catalog.InternalCatalog;
 
 public interface TableService extends TableRuntimeHandler {
 
   void initialize();
+
   void dispose();
 
   void onTableCreated(InternalCatalog catalog, ServerTableIdentifier identifier);
 
   void onTableDropped(InternalCatalog catalog, ServerTableIdentifier identifier);
 
-
   TableRuntime getRuntime(Long tableId);
-
 
   default boolean contains(Long tableId) {
     return getRuntime(tableId) != null;
   }
+
+  /**
+   * load a table via server catalog.
+   *
+   * @param identifier managed table identifier
+   * @return managed table.
+   */
+  AmoroTable<?> loadTable(ServerTableIdentifier identifier);
 }

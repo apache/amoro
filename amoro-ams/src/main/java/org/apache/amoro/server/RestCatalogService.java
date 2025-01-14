@@ -44,7 +44,6 @@ import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.persistence.PersistentBase;
-import org.apache.amoro.server.table.TableServiceOld;
 import org.apache.amoro.server.table.internal.InternalTableCreator;
 import org.apache.amoro.server.table.internal.InternalTableHandler;
 import org.apache.amoro.server.table.internal.InternalTableManager;
@@ -348,7 +347,8 @@ public class RestCatalogService extends PersistentBase {
               Boolean.parseBoolean(
                   Optional.ofNullable(ctx.req.getParameter("purgeRequested")).orElse("false"));
           org.apache.amoro.server.table.TableMetadata tableMetadata = handler.tableMetadata();
-          tableManager.dropTableMetadata(tableMetadata.getTableIdentifier().getIdentifier(), purge);
+          tableManager.dropTableMetadata(
+              tableMetadata.getTableIdentifier().getIdentifier().buildTableIdentifier(), purge);
           handler.dropTable(purge);
           return null;
         });
