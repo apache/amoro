@@ -21,18 +21,21 @@ package org.apache.amoro.server.catalog;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.exception.IllegalMetadataException;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
+import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.utils.CatalogUtil;
 
 import java.util.List;
 
 public abstract class ServerCatalog extends PersistentBase {
 
   private volatile CatalogMeta metadata;
+  protected volatile TableMetaStore metaStore;
 
   protected ServerCatalog(CatalogMeta metadata) {
     this.metadata = metadata;
+    this.metaStore = CatalogUtil.buildMetaStore(metadata);
   }
 
   public String name() {
@@ -46,6 +49,26 @@ public abstract class ServerCatalog extends PersistentBase {
   public void updateMetadata(CatalogMeta metadata) {
     doAs(CatalogMetaMapper.class, mapper -> mapper.updateCatalog(metadata));
     this.metadata = metadata;
+    this.metaStore = CatalogUtil.buildMetaStore(metadata);
+    catalogMetadataChanged();
+  }
+
+  public void reload() {
+    CatalogMeta meta =
+        getAs(CatalogMetaMapper.class, mapper -> mapper.getCatalog(metadata.getCatalogName()));
+    if (meta == null) {
+      throw new IllegalStateException("Catalog " + metadata.getCatalogName() + " is dropped.");
+    }
+    this.reload(meta);
+  }
+
+  public void reload(CatalogMeta meta) {
+    if (this.metadata.equals(meta)) {
+      return;
+    }
+    this.metadata = meta;
+    this.metaStore = CatalogUtil.buildMetaStore(meta);
+    catalogMetadataChanged();
   }
 
   public abstract boolean databaseExists(String database);
@@ -61,13 +84,13 @@ public abstract class ServerCatalog extends PersistentBase {
   public abstract AmoroTable<?> loadTable(String database, String tableName);
 
   public void dispose() {
-    doAsTransaction(
-        () ->
-            doAsExisted(
-                CatalogMetaMapper.class,
-                mapper -> mapper.deleteCatalog(name()),
-                () ->
-                    new IllegalMetadataException(
-                        "Catalog " + name() + " has more than one database or table")));
+    // do resource clean up
   }
+
+  public boolean isInternal() {
+    return false;
+  }
+
+  /** Called when catalog metadata is changed. */
+  protected void catalogMetadataChanged() {}
 }

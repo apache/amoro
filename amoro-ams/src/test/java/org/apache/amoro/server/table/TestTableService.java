@@ -74,7 +74,7 @@ public class TestTableService extends AMSTableTestBase {
 
   @Test
   public void testCreateAndDropTable() {
-    ServerCatalog serverCatalog = tableService().getServerCatalog(TEST_CATALOG_NAME);
+    ServerCatalog serverCatalog = CATALOG_MANAGER.getServerCatalog(TEST_CATALOG_NAME);
     InternalCatalog internalCatalog =
         catalogTestHelper().isInternalCatalog() ? (InternalCatalog) serverCatalog : null;
 
@@ -94,7 +94,7 @@ public class TestTableService extends AMSTableTestBase {
 
     // test list tables
     List<TableIDWithFormat> tableIdentifierList =
-        tableService().getServerCatalog(TEST_CATALOG_NAME).listTables(TEST_DB_NAME);
+        CATALOG_MANAGER.getServerCatalog(TEST_CATALOG_NAME).listTables(TEST_DB_NAME);
     Assert.assertEquals(1, tableIdentifierList.size());
     Assert.assertEquals(
         tableMeta().getTableIdentifier(),

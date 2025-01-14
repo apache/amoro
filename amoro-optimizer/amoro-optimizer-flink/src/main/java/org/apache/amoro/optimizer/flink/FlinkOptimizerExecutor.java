@@ -75,8 +75,9 @@ public class FlinkOptimizerExecutor extends OptimizerExecutor {
       if (runtimeContext != null && !runtimeContext.isEmpty()) {
         runtimeContext.forEach((k, v) -> sb.append(k).append("=").append(v).append("\n"));
       }
+      String errorMsg = sb + result.getErrorMessage();
       result.setErrorMessage(
-          (sb + result.getErrorMessage()).substring(0, ERROR_MESSAGE_MAX_LENGTH));
+          errorMsg.substring(0, Math.min(ERROR_MESSAGE_MAX_LENGTH, errorMsg.length())));
     }
     return result;
   }
