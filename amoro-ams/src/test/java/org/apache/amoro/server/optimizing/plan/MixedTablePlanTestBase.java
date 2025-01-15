@@ -30,7 +30,6 @@ import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
 import org.apache.amoro.optimizing.scan.TableFileScanHelper;
-import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableRuntime;
@@ -77,8 +76,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   @Before
   public void mock() {
     tableRuntime = Mockito.mock(TableRuntime.class);
-    ServerTableIdentifier id =
-        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(getMixedTable().id()), getTestFormat());
+    ServerTableIdentifier id = ServerTableIdentifier.of(getMixedTable().id(), getTestFormat());
     id.setId(0L);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(id);
     Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> getConfig());
