@@ -39,7 +39,7 @@ public abstract class AMSManagerTestBase {
   protected static DefaultTableManager TABLE_MANAGER = null;
 
   @BeforeClass
-  public static void initTableService() {
+  public static void initTableManger() {
     try {
       Configurations configurations = new Configurations();
       CATALOG_MANAGER = new DefaultCatalogManager(configurations);
