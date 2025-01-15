@@ -19,7 +19,6 @@
 package org.apache.amoro.spark;
 
 import org.apache.amoro.TableFormat;
-import org.apache.iceberg.spark.functions.SparkFunctions;
 import org.apache.spark.sql.catalyst.analysis.NoSuchFunctionException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
@@ -68,38 +67,13 @@ public class SparkUnifiedSessionCatalog<
     }
   }
 
-  /**
-   * List the functions in a namespace from the catalog.
-   *
-   * <p>If there are no functions in the namespace, implementations should return an empty array.
-   *
-   * @param namespace a multi-part namespace
-   * @return an array of Identifiers for functions
-   * @throws NoSuchNamespaceException If the namespace does not exist (optional).
-   */
-  @Override
-  public Identifier[] listFunctions(String[] namespace) throws NoSuchNamespaceException {
-    SparkUnifiedCatalog catalog = (SparkUnifiedCatalog) getTargetCatalog();
-    return catalog.listFunctions(namespace);
-  }
-
   @Override
   public UnboundFunction loadFunction(Identifier ident) throws NoSuchFunctionException {
-    String[] namespace = ident.namespace();
-    String name = ident.name();
-
-    // Allow for empty namespace, as Spark's storage partitioned joins look up
-    // the corresponding functions to generate transforms for partitioning
-    // with an empty namespace, such as `bucket`.
-    // Otherwise, use `system` namespace.
-    if (namespace.length == 0 || isSystemNamespace(namespace)) {
-      UnboundFunction func = SparkFunctions.load(name);
-      if (func != null) {
-        return func;
-      }
+    try {
+      return super.loadFunction(ident);
+    } catch (NoSuchFunctionException e) {
+      return getSessionCatalog().loadFunction(ident);
     }
-
-    throw new NoSuchFunctionException(ident);
   }
 
   private static boolean isSystemNamespace(String[] namespace) {
@@ -123,7 +97,6 @@ public class SparkUnifiedSessionCatalog<
   @Override
   public boolean dropNamespace(String[] namespace, boolean cascade)
       throws NoSuchNamespaceException, NonEmptyNamespaceException {
-    SparkUnifiedCatalog catalog = (SparkUnifiedCatalog) getTargetCatalog();
-    return catalog.dropNamespace(namespace, cascade);
+    return getSessionCatalog().dropNamespace(namespace, cascade);
   }
 }
