@@ -25,7 +25,6 @@ import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.exception.IllegalMetadataException;
 import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.catalog.CatalogManager;
@@ -64,6 +63,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class DefaultTableService extends PersistentBase implements TableService {
@@ -170,7 +170,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
                   .build());
     }
     tableExplorerScheduler.scheduleAtFixedRate(
-        this::exploreExternalCatalog, 0, externalCatalogRefreshingInterval, TimeUnit.MILLISECONDS);
+        this::exploreTableRuntimes, 0, externalCatalogRefreshingInterval, TimeUnit.MILLISECONDS);
     initialized.complete(true);
   }
 
@@ -212,114 +212,27 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   @VisibleForTesting
-  void exploreExternalCatalog() {
+  void exploreTableRuntimes() {
     if (!initialized.isDone()) {
       throw new IllegalStateException("TableService is not initialized");
     }
     long start = System.currentTimeMillis();
-    List<ExternalCatalog> externalCatalogs = catalogManager.getExternalCatalogs();
+    List<ServerCatalog> externalCatalogs = catalogManager.getServerCatalogs();
     List<String> externalCatalogNames =
-        externalCatalogs.stream().map(ExternalCatalog::name).collect(Collectors.toList());
-    LOG.info("Syncing external catalogs: {}", String.join(",", externalCatalogNames));
-    for (ExternalCatalog externalCatalog : externalCatalogs) {
+        externalCatalogs.stream().map(ServerCatalog::name).collect(Collectors.toList());
+    LOG.info("Syncing server catalogs: {}", String.join(",", externalCatalogNames));
+    for (ServerCatalog serverCatalog : externalCatalogs) {
       try {
-        final List<CompletableFuture<Set<TableIdentity>>> tableIdentifiersFutures =
-            Lists.newArrayList();
-        externalCatalog
-            .listDatabases()
-            .forEach(
-                database -> {
-                  try {
-                    tableIdentifiersFutures.add(
-                        CompletableFuture.supplyAsync(
-                            () -> {
-                              try {
-                                return externalCatalog.listTables(database).stream()
-                                    .map(TableIdentity::new)
-                                    .collect(Collectors.toSet());
-                              } catch (Exception e) {
-                                LOG.error(
-                                    "TableExplorer list tables in database {} error", database, e);
-                                return new HashSet<>();
-                              }
-                            },
-                            tableExplorerExecutors));
-                  } catch (RejectedExecutionException e) {
-                    LOG.error(
-                        "The queue of table explorer is full, please increase the queue size or thread count.");
-                  }
-                });
-        Set<TableIdentity> tableIdentifiers =
-            tableIdentifiersFutures.stream()
-                .map(CompletableFuture::join)
-                .reduce(
-                    (a, b) -> {
-                      a.addAll(b);
-                      return a;
-                    })
-                .orElse(Sets.newHashSet());
-        LOG.info(
-            "Loaded {} tables from external catalog {}.",
-            tableIdentifiers.size(),
-            externalCatalog.name());
-        Map<TableIdentity, ServerTableIdentifier> serverTableIdentifiers =
-            getAs(
-                    TableMetaMapper.class,
-                    mapper -> mapper.selectTableIdentifiersByCatalog(externalCatalog.name()))
-                .stream()
-                .collect(Collectors.toMap(TableIdentity::new, tableIdentifier -> tableIdentifier));
-        LOG.info(
-            "Loaded {} tables from Amoro server catalog {}.",
-            serverTableIdentifiers.size(),
-            externalCatalog.name());
-        final List<CompletableFuture<Void>> taskFutures = Lists.newArrayList();
-        Sets.difference(tableIdentifiers, serverTableIdentifiers.keySet())
-            .forEach(
-                tableIdentity -> {
-                  try {
-                    taskFutures.add(
-                        CompletableFuture.runAsync(
-                            () -> {
-                              try {
-                                syncTable(externalCatalog, tableIdentity);
-                              } catch (Exception e) {
-                                LOG.error(
-                                    "TableExplorer sync table {} error",
-                                    tableIdentity.toString(),
-                                    e);
-                              }
-                            },
-                            tableExplorerExecutors));
-                  } catch (RejectedExecutionException e) {
-                    LOG.error(
-                        "The queue of table explorer is full, please increase the queue size or thread count.");
-                  }
-                });
-        Sets.difference(serverTableIdentifiers.keySet(), tableIdentifiers)
-            .forEach(
-                tableIdentity -> {
-                  try {
-                    taskFutures.add(
-                        CompletableFuture.runAsync(
-                            () -> {
-                              try {
-                                disposeTable(serverTableIdentifiers.get(tableIdentity));
-                              } catch (Exception e) {
-                                LOG.error(
-                                    "TableExplorer dispose table {} error",
-                                    tableIdentity.toString(),
-                                    e);
-                              }
-                            },
-                            tableExplorerExecutors));
-                  } catch (RejectedExecutionException e) {
-                    LOG.error(
-                        "The queue of table explorer is full, please increase the queue size or thread count.");
-                  }
-                });
-        taskFutures.forEach(CompletableFuture::join);
+        if (serverCatalog.isInternal()) {
+          exploreInternalCatalog((InternalCatalog) serverCatalog);
+        } else {
+          exploreExternalCatalog((ExternalCatalog) serverCatalog);
+        }
       } catch (Throwable e) {
-        LOG.error("TableExplorer error", e);
+        LOG.error(
+            "TableExplorer error when explore table runtimes for catalog:{}",
+            serverCatalog.name(),
+            e);
       }
     }
 
@@ -342,10 +255,140 @@ public class DefaultTableService extends PersistentBase implements TableService 
     LOG.info("Syncing external catalogs took {} ms.", end - start);
   }
 
-  private void validateCatalogUpdate(CatalogMeta oldMeta, CatalogMeta newMeta) {
-    if (!oldMeta.getCatalogType().equals(newMeta.getCatalogType())) {
-      throw new IllegalMetadataException("Cannot update catalog type");
-    }
+  private void exploreExternalCatalog(ExternalCatalog externalCatalog) {
+    final List<CompletableFuture<Set<TableIdentity>>> tableIdentifiersFutures =
+        Lists.newArrayList();
+    externalCatalog
+        .listDatabases()
+        .forEach(
+            database -> {
+              try {
+                tableIdentifiersFutures.add(
+                    CompletableFuture.supplyAsync(
+                        () -> {
+                          try {
+                            return externalCatalog.listTables(database).stream()
+                                .map(TableIdentity::new)
+                                .collect(Collectors.toSet());
+                          } catch (Exception e) {
+                            LOG.error(
+                                "TableExplorer list tables in database {} error", database, e);
+                            return new HashSet<>();
+                          }
+                        },
+                        tableExplorerExecutors));
+              } catch (RejectedExecutionException e) {
+                LOG.error(
+                    "The queue of table explorer is full, please increase the queue size or thread count.");
+              }
+            });
+    Set<TableIdentity> tableIdentifiers =
+        tableIdentifiersFutures.stream()
+            .map(CompletableFuture::join)
+            .reduce(
+                (a, b) -> {
+                  a.addAll(b);
+                  return a;
+                })
+            .orElse(Sets.newHashSet());
+    LOG.info(
+        "Loaded {} tables from external catalog {}.",
+        tableIdentifiers.size(),
+        externalCatalog.name());
+    Map<TableIdentity, ServerTableIdentifier> serverTableIdentifiers =
+        getAs(
+                TableMetaMapper.class,
+                mapper -> mapper.selectTableIdentifiersByCatalog(externalCatalog.name()))
+            .stream()
+            .collect(Collectors.toMap(TableIdentity::new, tableIdentifier -> tableIdentifier));
+    LOG.info(
+        "Loaded {} tables from Amoro server catalog {}.",
+        serverTableIdentifiers.size(),
+        externalCatalog.name());
+    final List<CompletableFuture<Void>> taskFutures = Lists.newArrayList();
+    Sets.difference(tableIdentifiers, serverTableIdentifiers.keySet())
+        .forEach(
+            tableIdentity -> {
+              try {
+                taskFutures.add(
+                    CompletableFuture.runAsync(
+                        () -> {
+                          try {
+                            syncTable(externalCatalog, tableIdentity);
+                          } catch (Exception e) {
+                            LOG.error(
+                                "TableExplorer sync table {} error", tableIdentity.toString(), e);
+                          }
+                        },
+                        tableExplorerExecutors));
+              } catch (RejectedExecutionException e) {
+                LOG.error(
+                    "The queue of table explorer is full, please increase the queue size or thread count.");
+              }
+            });
+    Sets.difference(serverTableIdentifiers.keySet(), tableIdentifiers)
+        .forEach(
+            tableIdentity -> {
+              try {
+                taskFutures.add(
+                    CompletableFuture.runAsync(
+                        () -> {
+                          try {
+                            disposeTable(serverTableIdentifiers.get(tableIdentity));
+                          } catch (Exception e) {
+                            LOG.error(
+                                "TableExplorer dispose table {} error",
+                                tableIdentity.toString(),
+                                e);
+                          }
+                        },
+                        tableExplorerExecutors));
+              } catch (RejectedExecutionException e) {
+                LOG.error(
+                    "The queue of table explorer is full, please increase the queue size or thread count.");
+              }
+            });
+    taskFutures.forEach(CompletableFuture::join);
+  }
+
+  private void exploreInternalCatalog(InternalCatalog internalCatalog) {
+    LOG.info("Start explore internal catalog {}", internalCatalog.name());
+    List<ServerTableIdentifier> identifiers =
+        getAs(
+            TableMetaMapper.class, m -> m.selectTableIdentifiersByCatalog(internalCatalog.name()));
+    AtomicInteger addedCount = new AtomicInteger();
+    identifiers.stream()
+        .filter(i -> !tableRuntimeMap.containsKey(i.getId()))
+        .peek(
+            i ->
+                LOG.info(
+                    "Found new table {} in internal catalog {}, create table runtime for it.",
+                    i,
+                    internalCatalog.name()))
+        .peek(i -> addedCount.incrementAndGet())
+        .forEach(i -> triggerTableAdded(internalCatalog, i));
+
+    Set<Long> tableIds =
+        identifiers.stream().map(ServerTableIdentifier::getId).collect(Collectors.toSet());
+    Set<ServerTableIdentifier> tablesToBeDisposed = Sets.newHashSet();
+    tableRuntimeMap.forEach(
+        (id, tableRuntime) -> {
+          if (tableRuntime.getTableIdentifier().getCatalog().equals(internalCatalog.name())) {
+            if (!tableIds.contains(id)) {
+              LOG.info(
+                  "Found table {} in internal catalog {} is removed, dispose table runtime for it.",
+                  id,
+                  internalCatalog.name());
+              tablesToBeDisposed.add(tableRuntime.getTableIdentifier());
+            }
+          }
+        });
+    tablesToBeDisposed.forEach(this::disposeTable);
+    LOG.info(
+        "Explore internal catalog {} finished, {} tables are added, {} tables are disposed.",
+        internalCatalog.name(),
+        addedCount.get(),
+        tablesToBeDisposed.size());
   }
 
   private void checkStarted() {

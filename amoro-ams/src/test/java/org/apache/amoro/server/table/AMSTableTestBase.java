@@ -189,7 +189,7 @@ public class AMSTableTestBase extends AMSServiceTestBase {
         throw new IllegalStateException("un-support format");
       }
     }
-    tableService().exploreExternalCatalog();
+    tableService().exploreTableRuntimes();
 
     serverTableIdentifier = tableManager().listManagedTables().get(0);
   }
@@ -246,7 +246,7 @@ public class AMSTableTestBase extends AMSServiceTestBase {
       String table = tableTestHelper.id().getTableName();
       externalCatalog.dropTable(database, table, true);
     }
-    tableService().exploreExternalCatalog();
+    tableService().exploreTableRuntimes();
   }
 
   protected CatalogTestHelper catalogTestHelper() {

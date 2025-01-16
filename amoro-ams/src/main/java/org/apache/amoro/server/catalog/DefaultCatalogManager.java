@@ -136,9 +136,8 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
   }
 
   @Override
-  public List<ExternalCatalog> getExternalCatalogs() {
+  public List<ServerCatalog> getServerCatalogs() {
     return listCatalogMetas().stream()
-        .filter(c -> !isInternal(c))
         .map(
             c -> {
               ServerCatalog serverCatalog =
@@ -148,7 +147,6 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
               serverCatalog.reload(c);
               return serverCatalog;
             })
-        .map(c -> (ExternalCatalog) c)
         .collect(Collectors.toList());
   }
 
