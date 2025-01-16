@@ -21,7 +21,7 @@ package org.apache.amoro.server.catalog;
 import org.apache.amoro.AmoroCatalog;
 import org.apache.amoro.formats.AmoroCatalogTestHelper;
 import org.apache.amoro.hive.TestHMS;
-import org.apache.amoro.server.table.TableServiceTestBase;
+import org.apache.amoro.server.AMSServiceTestBase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -30,7 +30,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
 
-public class TableCatalogTestBase extends TableServiceTestBase {
+public class TableCatalogTestBase extends AMSServiceTestBase {
 
   @Rule public TemporaryFolder temp = new TemporaryFolder();
 

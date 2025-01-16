@@ -84,7 +84,7 @@ public class InternalIcebergCreator implements InternalTableCreator {
 
     ServerTableIdentifier serverTableIdentifier =
         ServerTableIdentifier.of(catalogMeta.getCatalogName(), database, tableName, format());
-    meta.setTableIdentifier(serverTableIdentifier.getIdentifier());
+    meta.setTableIdentifier(serverTableIdentifier.getIdentifier().buildTableIdentifier());
     // write metadata file.
     OutputFile outputFile = io.newOutputFile(icebergMetadataFileLocation);
     this.metadataFileLocation = icebergMetadataFileLocation;

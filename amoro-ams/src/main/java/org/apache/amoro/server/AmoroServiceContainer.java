@@ -43,8 +43,10 @@ import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.ResourceContainers;
+import org.apache.amoro.server.table.DefaultTableManager;
 import org.apache.amoro.server.table.DefaultTableService;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
+import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.executor.AsyncTableExecutors;
 import org.apache.amoro.server.terminal.TerminalManager;
@@ -95,7 +97,8 @@ public class AmoroServiceContainer {
   private final HighAvailabilityContainer haContainer;
   private DataSource dataSource;
   private CatalogManager catalogManager;
-  private DefaultTableService tableService;
+  private TableManager tableManager;
+  private TableService tableService;
   private DefaultOptimizingService optimizingService;
   private TerminalManager terminalManager;
   private Configurations serviceConfig;
@@ -150,8 +153,11 @@ public class AmoroServiceContainer {
     MetricManager.getInstance();
 
     catalogManager = new DefaultCatalogManager(serviceConfig);
+    tableManager = new DefaultTableManager(serviceConfig, catalogManager);
+
     tableService = new DefaultTableService(serviceConfig, catalogManager);
-    optimizingService = new DefaultOptimizingService(serviceConfig, catalogManager, tableService);
+    optimizingService =
+        new DefaultOptimizingService(serviceConfig, catalogManager, tableManager, tableService);
 
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
@@ -168,7 +174,8 @@ public class AmoroServiceContainer {
     addHandlerChain(AsyncTableExecutors.getInstance().getTagsAutoCreatingExecutor());
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
-    terminalManager = new TerminalManager(serviceConfig, catalogManager, tableService);
+    tableManager.setTableService(tableService);
+    terminalManager = new TerminalManager(serviceConfig, catalogManager);
 
     initThriftService();
     startThriftService();
@@ -245,8 +252,13 @@ public class AmoroServiceContainer {
   private void initHttpService() {
     DashboardServer dashboardServer =
         new DashboardServer(
-            serviceConfig, catalogManager, tableService, optimizingService, terminalManager);
-    RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableService);
+            serviceConfig,
+            catalogManager,
+            tableManager,
+            optimizingService,
+            terminalManager,
+            tableService);
+    RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableManager);
 
     httpServer =
         Javalin.create(
@@ -338,7 +350,7 @@ public class AmoroServiceContainer {
         new AmoroTableMetastore.Processor<>(
             ThriftServiceProxy.createProxy(
                 AmoroTableMetastore.Iface.class,
-                new TableManagementService(catalogManager, tableService),
+                new TableManagementService(catalogManager, tableManager),
                 AmoroRuntimeException::normalizeCompatibly));
     tableManagementServer =
         createThriftServer(

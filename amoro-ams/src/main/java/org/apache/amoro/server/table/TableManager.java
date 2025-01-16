@@ -18,22 +18,11 @@
 
 package org.apache.amoro.server.table;
 
-import org.apache.amoro.AmoroTable;
-import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.server.table.blocker.TableBlockerManager;
+import org.apache.amoro.server.table.internal.InternalTableManager;
 
-public interface TableManager extends TableRuntimeHandler {
+public interface TableManager
+    extends MaintainedTableManager, InternalTableManager, TableBlockerManager {
 
-  /**
-   * load a managed table.
-   *
-   * @param tableIdentifier managed table identifier
-   * @return managed table.
-   */
-  AmoroTable<?> loadTable(ServerTableIdentifier tableIdentifier);
-
-  TableRuntime getRuntime(Long tableId);
-
-  default boolean contains(Long tableId) {
-    return getRuntime(tableId) != null;
-  }
+  void setTableService(TableService service);
 }

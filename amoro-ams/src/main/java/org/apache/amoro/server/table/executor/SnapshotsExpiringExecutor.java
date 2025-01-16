@@ -21,8 +21,8 @@ package org.apache.amoro.server.table.executor;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
-import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,8 +32,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
 
   private static final long INTERVAL = 60 * 60 * 1000L; // 1 hour
 
-  public SnapshotsExpiringExecutor(TableManager tableManager, int poolSize) {
-    super(tableManager, poolSize);
+  public SnapshotsExpiringExecutor(TableService tableService, int poolSize) {
+    super(tableService, poolSize);
   }
 
   @Override

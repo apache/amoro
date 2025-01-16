@@ -21,8 +21,8 @@ package org.apache.amoro.server.table.executor;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
-import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,8 +34,8 @@ public class DataExpiringExecutor extends BaseTableExecutor {
 
   private final Duration interval;
 
-  protected DataExpiringExecutor(TableManager tableManager, int poolSize, Duration interval) {
-    super(tableManager, poolSize);
+  protected DataExpiringExecutor(TableService tableService, int poolSize, Duration interval) {
+    super(tableService, poolSize);
     this.interval = interval;
   }
 

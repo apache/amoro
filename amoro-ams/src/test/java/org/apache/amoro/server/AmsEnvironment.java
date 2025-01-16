@@ -69,7 +69,6 @@ public class AmsEnvironment {
   private final AmoroServiceContainer serviceContainer;
   private Configurations serviceConfig;
   private DefaultCatalogManager catalogManager;
-  private DefaultTableService tableService;
   private final AtomicBoolean amsExit;
   private int tableServiceBindPort;
   private int optimizingServiceBindPort;
@@ -144,8 +143,8 @@ public class AmsEnvironment {
     DynFields.UnboundField<DefaultCatalogManager> amsCatalogManagerField =
         DynFields.builder().hiddenImpl(AmoroServiceContainer.class, "catalogManager").build();
     catalogManager = amsCatalogManagerField.bind(serviceContainer).get();
-    tableService = amsTableServiceField.bind(serviceContainer).get();
-    DynFields.UnboundField<CompletableFuture<Boolean>> tableServiceField =
+    DefaultTableService tableService = amsTableServiceField.bind(serviceContainer).get();
+    DynFields.UnboundField<CompletableFuture<Boolean>> tableServiceInitializedField =
         DynFields.builder().hiddenImpl(DefaultTableService.class, "initialized").build();
     boolean tableServiceIsStart = false;
     long startTime = System.currentTimeMillis();
@@ -154,7 +153,7 @@ public class AmsEnvironment {
         throw new RuntimeException("table service not start yet after 10s");
       }
       try {
-        tableServiceField.bind(tableService).get().get();
+        tableServiceInitializedField.bind(tableService).get().get();
         tableServiceIsStart = true;
       } catch (RuntimeException e) {
         LOG.info("table service not start yet");
