@@ -144,6 +144,12 @@ amoroConf:
     adminUsername: admin
     adminPassword: admin
 
+  ## AMS config shade properties
+  ##
+  shade:
+    identifier: ~
+    sensitiveKeywords: ~
+
   ## AMS database properties, default value is derby. For production environment, suggest to use mysql
   ##
   database:
