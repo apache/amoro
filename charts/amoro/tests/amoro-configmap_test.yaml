@@ -73,6 +73,34 @@ tests:
           pattern:
             |
             kyuubi.jdbc.url: "jdbc:hive2://127.0.0.1:10009/"
+  - it: Amoro configMap should show shade configs if shade.identifier is set
+    set:
+      amoroConf:
+        shade:
+          identifier: base64
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "shade:\\s*identifier: base64"
+  - it: Amoro configMap should show shade configs if shade.sensitiveKeywords is set
+    set:
+      amoroConf:
+        shade:
+          sensitiveKeywords: admin-password;database.password
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "shade:\\s*sensitive-keywords: admin-password;database.password"
+  - it: Amoro configMap should show shade configs if both shade.identifier and shade.sensitiveKeywords are set
+    set:
+      amoroConf:
+        shade:
+          identifier: base64
+          sensitiveKeywords: admin-password;database.password
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "shade:\\s*identifier: base64\\s*sensitive-keywords: admin-password;database.password"
   - it: Amoro configMap should show flink if flink optimizer enabled is set true
     set:
       optimizer:
