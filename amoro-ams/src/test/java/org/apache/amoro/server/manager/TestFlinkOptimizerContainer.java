@@ -42,17 +42,36 @@ public class TestFlinkOptimizerContainer {
 
   @Test
   public void testParseMemorySize() {
-    Assert.assertEquals(100, container.parseMemorySize("100"));
-    Assert.assertEquals(100, container.parseMemorySize("100m"));
-    Assert.assertEquals(100, container.parseMemorySize("100 m"));
-    Assert.assertEquals(100, container.parseMemorySize("100M"));
-    Assert.assertEquals(100, container.parseMemorySize("100 M"));
-    Assert.assertEquals(102400, container.parseMemorySize("100g"));
-    Assert.assertEquals(102400, container.parseMemorySize("100 g"));
-    Assert.assertEquals(102400, container.parseMemorySize("100G"));
-    Assert.assertEquals(102400, container.parseMemorySize("100 G"));
-    Assert.assertEquals(0, container.parseMemorySize("G100G"));
+    Assert.assertEquals(0, container.parseMemorySize("100"));
+    Assert.assertEquals(0, container.parseMemorySize("100k"));
     Assert.assertEquals(0, container.parseMemorySize("100kb"));
+    Assert.assertEquals(0, container.parseMemorySize("100 k"));
+    Assert.assertEquals(0, container.parseMemorySize("100 kb"));
+    Assert.assertEquals(0, container.parseMemorySize("100K"));
+    Assert.assertEquals(0, container.parseMemorySize("100KB"));
+    Assert.assertEquals(0, container.parseMemorySize("100 K"));
+    Assert.assertEquals(0, container.parseMemorySize("100 KB"));
+    Assert.assertEquals(100, container.parseMemorySize("100m"));
+    Assert.assertEquals(100, container.parseMemorySize("100mb"));
+    Assert.assertEquals(100, container.parseMemorySize("100 m"));
+    Assert.assertEquals(100, container.parseMemorySize("100 mb"));
+    Assert.assertEquals(100, container.parseMemorySize("100M"));
+    Assert.assertEquals(100, container.parseMemorySize("100MB"));
+    Assert.assertEquals(100, container.parseMemorySize("100 M"));
+    Assert.assertEquals(100, container.parseMemorySize("100 MB"));
+    Assert.assertEquals(102400, container.parseMemorySize("100g"));
+    Assert.assertEquals(102400, container.parseMemorySize("100gb"));
+    Assert.assertEquals(102400, container.parseMemorySize("100 g"));
+    Assert.assertEquals(102400, container.parseMemorySize("100 gb"));
+    Assert.assertEquals(102400, container.parseMemorySize("100G"));
+    Assert.assertEquals(102400, container.parseMemorySize("100GB"));
+    Assert.assertEquals(102400, container.parseMemorySize("100 G"));
+    Assert.assertEquals(102400, container.parseMemorySize("100 GB"));
+    try {
+      Assert.assertEquals(0, container.parseMemorySize("G100G"));
+    } catch (NumberFormatException e) {
+      Assert.assertEquals("text does not start with a number", e.getMessage());
+    }
   }
 
   @Test
@@ -110,11 +129,11 @@ public class TestFlinkOptimizerContainer {
         FlinkOptimizerContainer.FlinkConf.buildFor(prop, Maps.newHashMap()).build();
 
     Assert.assertEquals(
-        100L,
+        0,
         container.getMemorySizeValue(
             prop, conf, FlinkOptimizerContainer.FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY));
     Assert.assertEquals(
-        100L,
+        0,
         container.getMemorySizeValue(
             prop, conf, FlinkOptimizerContainer.FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY));
 
@@ -124,7 +143,7 @@ public class TestFlinkOptimizerContainer {
     conf = FlinkOptimizerContainer.FlinkConf.buildFor(prop, containerProperties).build();
     prop.clear();
     Assert.assertEquals(
-        200L,
+        0,
         container.getMemorySizeValue(
             prop, conf, FlinkOptimizerContainer.FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY));
     Assert.assertEquals(
@@ -143,7 +162,7 @@ public class TestFlinkOptimizerContainer {
         container.getMemorySizeValue(
             prop, conf, FlinkOptimizerContainer.FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY));
     Assert.assertEquals(
-        300L,
+        0,
         container.getMemorySizeValue(
             prop, conf, FlinkOptimizerContainer.FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY));
 
@@ -155,6 +174,18 @@ public class TestFlinkOptimizerContainer {
             prop, conf, FlinkOptimizerContainer.FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY));
     Assert.assertEquals(
         0L,
+        container.getMemorySizeValue(
+            prop, conf, FlinkOptimizerContainer.FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY));
+
+    prop.put(FlinkOptimizerContainer.FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY, "400 MB");
+    prop.put(FlinkOptimizerContainer.FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY, "400 MB");
+    conf = FlinkOptimizerContainer.FlinkConf.buildFor(prop, Maps.newHashMap()).build();
+    Assert.assertEquals(
+        400L,
+        container.getMemorySizeValue(
+            prop, conf, FlinkOptimizerContainer.FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY));
+    Assert.assertEquals(
+        400L,
         container.getMemorySizeValue(
             prop, conf, FlinkOptimizerContainer.FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY));
   }

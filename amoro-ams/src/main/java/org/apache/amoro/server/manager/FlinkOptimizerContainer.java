@@ -29,6 +29,7 @@ import org.apache.amoro.shade.guava32.com.google.common.base.Supplier;
 import org.apache.amoro.shade.guava32.com.google.common.base.Suppliers;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.amoro.utils.MemorySize;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.client.program.rest.RestClusterClient;
@@ -228,9 +229,11 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
             properties, resourceFlinkConf, FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY);
 
     resourceFlinkConf.putToOptions(
-        FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY, jobManagerMemory + "m");
+        FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY,
+        MemorySize.ofMebiBytes(jobManagerMemory).toString());
     resourceFlinkConf.putToOptions(
-        FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY, taskManagerMemory + "m");
+        FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY,
+        MemorySize.ofMebiBytes(taskManagerMemory).toString());
     resourceFlinkConf.putToOptions(
         FlinkConfKeys.YARN_APPLICATION_JOB_NAME,
         String.join(
@@ -354,28 +357,8 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     if (memoryStr == null || memoryStr.isEmpty()) {
       return 0;
     }
-    memoryStr = memoryStr.toLowerCase().trim().replaceAll("\\s", "");
-    Matcher matcher = Pattern.compile("(\\d+)([mg])").matcher(memoryStr);
-    if (matcher.matches()) {
-      long size = Long.parseLong(matcher.group(1));
-      String unit = matcher.group(2);
-      switch (unit) {
-        case "m":
-          return size;
-        case "g":
-          return size * 1024;
-        default:
-          LOG.error("Invalid memory size unit: {}, Please use m or g as the unit", unit);
-          return 0;
-      }
-    } else {
-      try {
-        return Long.parseLong(memoryStr);
-      } catch (NumberFormatException e) {
-        LOG.error("Invalid memory size format: {}", memoryStr);
-        return 0;
-      }
-    }
+
+    return MemorySize.parse(memoryStr).getMebiBytes();
   }
 
   private <T> T fetchCommandOutput(Process exec, Function<String, T> commandReader) {

@@ -67,3 +67,11 @@ CREATE TABLE `http_session` (
     PRIMARY KEY(`session_id`, `context_path`, `virtual_host`),
     KEY `idx_session_expiry` (`expiry_time`)
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Http session store' ROW_FORMAT=DYNAMIC;
+
+-- update resource group memory unit
+update resource_group set properties = JSON_SET(properties, '$."flink-conf.jobmanager.memory.process.size"', CONCAT(JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.jobmanager.memory.process.size"')), 'MB')) WHERE JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.jobmanager.memory.process.size"')) REGEXP '^[0-9]+$';
+update resource_group set properties = JSON_SET(properties, '$."flink-conf.taskmanager.memory.process.size"', CONCAT(JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.taskmanager.memory.process.size"')), 'MB')) WHERE JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.taskmanager.memory.process.size"')) REGEXP '^[0-9]+$';
+
+-- update resource memory unit
+update resource set properties = JSON_SET(properties, '$."flink-conf.jobmanager.memory.process.size"', CONCAT(JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.jobmanager.memory.process.size"')), 'MB')) WHERE JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.jobmanager.memory.process.size"')) REGEXP '^[0-9]+$';
+update resource set properties = JSON_SET(properties, '$."flink-conf.taskmanager.memory.process.size"', CONCAT(JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.taskmanager.memory.process.size"')), 'MB')) WHERE JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.taskmanager.memory.process.size"')) REGEXP '^[0-9]+$';
