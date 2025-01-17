@@ -22,7 +22,6 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.Blocker;
 import org.apache.amoro.api.TableIdentifier;
-import org.apache.amoro.server.catalog.CatalogService;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -31,7 +30,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
-public interface TableService extends CatalogService, TableManager {
+public interface TableService extends TableManager {
 
   void initialize();
 

@@ -103,7 +103,7 @@ public class TestServerCatalog extends TableCatalogTestBase {
     metadata
         .getCatalogProperties()
         .put(CatalogMetaProperties.KEY_TABLE_FILTER, dbWithFilter + "." + tableWithFilter1);
-    getServerCatalog().updateMetadata(metadata);
+    CATALOG_MANAGER.updateCatalog(metadata);
     Assert.assertEquals(1, getServerCatalog().listTables(dbWithFilter).size());
     Assert.assertEquals(
         tableWithFilter1,
@@ -113,20 +113,20 @@ public class TestServerCatalog extends TableCatalogTestBase {
     metadata
         .getCatalogProperties()
         .put(CatalogMetaProperties.KEY_TABLE_FILTER, dbWithFilter + "\\." + ".+");
-    getServerCatalog().updateMetadata(metadata2);
+    CATALOG_MANAGER.updateCatalog(metadata2);
     Assert.assertEquals(2, getServerCatalog().listTables(dbWithFilter).size());
 
     CatalogMeta metadata3 = getServerCatalog().getMetadata();
     metadata
         .getCatalogProperties()
         .put(CatalogMetaProperties.KEY_TABLE_FILTER, testDatabaseName + "\\." + ".+");
-    getServerCatalog().updateMetadata(metadata3);
+    CATALOG_MANAGER.updateCatalog(metadata3);
     Assert.assertEquals(1, getServerCatalog().listTables(testDatabaseName).size());
     Assert.assertTrue(getServerCatalog().listTables(dbWithFilter).isEmpty());
 
     CatalogMeta metadata4 = getServerCatalog().getMetadata();
     metadata.getCatalogProperties().remove(CatalogMetaProperties.KEY_TABLE_FILTER);
-    getServerCatalog().updateMetadata(metadata4);
+    CATALOG_MANAGER.updateCatalog(metadata4);
   }
 
   @Test
@@ -135,6 +135,6 @@ public class TestServerCatalog extends TableCatalogTestBase {
   }
 
   private ServerCatalog getServerCatalog() {
-    return tableService().getServerCatalog(getAmoroCatalogTestHelper().catalogName());
+    return CATALOG_MANAGER.getServerCatalog(getAmoroCatalogTestHelper().catalogName());
   }
 }

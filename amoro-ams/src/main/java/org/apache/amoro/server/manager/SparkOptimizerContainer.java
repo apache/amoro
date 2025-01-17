@@ -117,6 +117,7 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
       if (deployedOnKubernetes()) {
         SparkOptimizerContainer.SparkConf sparkConf =
             SparkOptimizerContainer.SparkConf.buildFor(loadSparkConfig(), getContainerProperties())
+                .withGroupProperties(resource.getProperties())
                 .build();
         String namespace =
             StringUtils.defaultIfEmpty(

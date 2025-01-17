@@ -56,7 +56,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.server.catalog.CatalogService;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.dashboard.PlatformFileManager;
@@ -66,7 +66,6 @@ import org.apache.amoro.server.dashboard.model.CatalogSettingInfo.ConfigFileItem
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.dashboard.utils.DesensitizationUtil;
 import org.apache.amoro.server.dashboard.utils.PropertiesUtil;
-import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Objects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
@@ -166,10 +165,11 @@ public class CatalogController {
   }
 
   private final PlatformFileManager platformFileInfoService;
-  private final CatalogService tableService;
+  private final CatalogManager catalogService;
 
-  public CatalogController(TableService tableService, PlatformFileManager platformFileInfoService) {
-    this.tableService = tableService;
+  public CatalogController(
+      CatalogManager catalogService, PlatformFileManager platformFileInfoService) {
+    this.catalogService = catalogService;
     this.platformFileInfoService = platformFileInfoService;
   }
 
@@ -544,11 +544,11 @@ public class CatalogController {
   public void createCatalog(Context ctx) {
     CatalogRegisterInfo info = ctx.bodyAsClass(CatalogRegisterInfo.class);
     validateCatalogRegisterInfo(info);
-    if (tableService.catalogExist(info.getName())) {
+    if (catalogService.catalogExist(info.getName())) {
       throw new RuntimeException("Duplicate catalog name!");
     }
     CatalogMeta catalogMeta = constructCatalogMeta(info, null);
-    tableService.createCatalog(catalogMeta);
+    catalogService.createCatalog(catalogMeta);
     ctx.json(OkResponse.of(""));
   }
 
@@ -578,10 +578,10 @@ public class CatalogController {
   /** Get detail of some catalog. */
   public void getCatalogDetail(Context ctx) {
     String catalogName = ctx.pathParam("catalogName");
-    CatalogMeta catalogMeta = tableService.getCatalogMeta(catalogName);
+    CatalogMeta catalogMeta = catalogService.getCatalogMeta(catalogName);
     CatalogSettingInfo info = new CatalogSettingInfo();
 
-    if (tableService.catalogExist(catalogName)) {
+    if (catalogService.catalogExist(catalogName)) {
       info.setName(catalogMeta.getCatalogName());
       // We create ams catalog with type hadoop in v0.3, we should be compatible with it.
       if (CATALOG_TYPE_HADOOP.equals(catalogMeta.getCatalogType())
@@ -626,13 +626,13 @@ public class CatalogController {
   public void updateCatalog(Context ctx) {
     CatalogRegisterInfo info = ctx.bodyAsClass(CatalogRegisterInfo.class);
     validateCatalogRegisterInfo(info);
-    CatalogMeta optCatalog = tableService.getCatalogMeta(info.getName());
+    CatalogMeta optCatalog = catalogService.getCatalogMeta(info.getName());
     Preconditions.checkNotNull(optCatalog, "Catalog not exist!");
 
     unMaskSensitiveData(info, optCatalog);
     // check only some item can be modified!
     CatalogMeta catalogMeta = constructCatalogMeta(info, optCatalog);
-    tableService.updateCatalog(catalogMeta);
+    catalogService.updateCatalog(catalogMeta);
     ctx.json(OkResponse.ok());
   }
 
@@ -641,7 +641,7 @@ public class CatalogController {
     String catalogName = ctx.pathParam("catalogName");
     Preconditions.checkArgument(
         StringUtils.isNotEmpty(ctx.pathParam("catalogName")), "Catalog name is empty!");
-    ServerCatalog serverCatalog = tableService.getServerCatalog(catalogName);
+    ServerCatalog serverCatalog = catalogService.getServerCatalog(catalogName);
     if (serverCatalog instanceof InternalCatalog) {
       ctx.json(OkResponse.of(serverCatalog.listTables().size() == 0));
     } else {
@@ -654,7 +654,7 @@ public class CatalogController {
     String catalogName = ctx.pathParam("catalogName");
     Preconditions.checkArgument(
         StringUtils.isNotEmpty(ctx.pathParam("catalogName")), "Catalog name is empty!");
-    tableService.dropCatalog(catalogName);
+    catalogService.dropCatalog(catalogName);
     ctx.json(OkResponse.of("OK"));
   }
 
@@ -675,7 +675,7 @@ public class CatalogController {
             && StringUtils.isNotEmpty(configKey),
         "Catalog name or auth type or config key is null!");
 
-    CatalogMeta catalogMeta = tableService.getCatalogMeta(catalogName);
+    CatalogMeta catalogMeta = catalogService.getCatalogMeta(catalogName);
     if (CONFIG_TYPE_STORAGE.equalsIgnoreCase(confType)) {
       Map<String, String> storageConfig = catalogMeta.getStorageConfigs();
       String key = configKey.replaceAll("-", "\\.");

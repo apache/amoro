@@ -75,7 +75,7 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
       CatalogMeta oldMeta = meta.deepCopy();
       meta.putToCatalogProperties("cache-enabled", "false");
       meta.putToCatalogProperties("cache.expiration-interval-ms", "10000");
-      serverCatalog.updateMetadata(meta);
+      catalogManager.updateCatalog(meta);
       String warehouseInAMS = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
 
       Map<String, String> clientSideConfiguration = Maps.newHashMap();
@@ -91,7 +91,7 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
       } catch (IOException e) {
         throw new RuntimeException(e);
       } finally {
-        serverCatalog.updateMetadata(oldMeta);
+        catalogManager.updateCatalog(oldMeta);
       }
     }
   }

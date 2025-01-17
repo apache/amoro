@@ -23,8 +23,8 @@ import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.exception.IllegalTaskStateException;
-import org.apache.amoro.exception.OptimizingClosedException;
 import org.apache.amoro.exception.TaskRuntimeException;
+import org.apache.amoro.process.SimpleFuture;
 import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
@@ -39,10 +39,11 @@ import java.util.Set;
 
 public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends StatedPersistentBase {
 
+  private final SimpleFuture future = new SimpleFuture();
+  private final TaskStatusMachine statusMachine = new TaskStatusMachine();
   private OptimizingTaskId taskId;
   private T taskDescriptor;
   @StateField private Status status = Status.PLANNED;
-  private final TaskStatusMachine statusMachine = new TaskStatusMachine();
   @StateField private int runTimes = 0;
   @StateField private long startTime = AmoroServiceConstants.INVALID_TIME;
   @StateField private long endTime = AmoroServiceConstants.INVALID_TIME;
@@ -50,7 +51,6 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
   @StateField private String token;
   @StateField private int threadId = -1;
   @StateField private String failReason;
-  private TaskOwner owner;
 
   private TaskRuntime() {}
 
@@ -61,6 +61,10 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
 
   public T getTaskDescriptor() {
     return taskDescriptor;
+  }
+
+  public SimpleFuture getCompletedFuture() {
+    return future;
   }
 
   public void complete(OptimizerThread thread, OptimizingTaskResult result) {
@@ -78,16 +82,18 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
           costTime += endTime - startTime;
           runTimes += 1;
           persistTaskRuntime();
-          owner.acceptResult(this);
+          future.complete();
           token = null;
           threadId = -1;
         });
-    owner.releaseResourcesIfNecessary();
   }
 
   void reset() {
     invokeConsistency(
         () -> {
+          if (status == Status.PLANNED) {
+            return;
+          }
           statusMachine.accept(Status.PLANNED);
           startTime = AmoroServiceConstants.INVALID_TIME;
           endTime = AmoroServiceConstants.INVALID_TIME;
@@ -95,6 +101,7 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
           threadId = -1;
           failReason = null;
           taskDescriptor.reset();
+          future.reset();
           // The cost time should not be reset since it is the total cost time of all runs.
           persistTaskRuntime();
         });
@@ -129,13 +136,9 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
               costTime += endTime - startTime;
             }
             persistTaskRuntime();
+            future.complete();
           }
         });
-  }
-
-  public TaskRuntime<T> claimOwnership(TaskOwner owner) {
-    this.owner = owner;
-    return this;
   }
 
   public boolean finished() {
@@ -262,25 +265,19 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
 
   private static final Map<Status, Set<Status>> nextStatusMap =
       ImmutableMap.<Status, Set<Status>>builder()
-          .put(Status.PLANNED, ImmutableSet.of(Status.PLANNED, Status.SCHEDULED, Status.CANCELED))
-          .put(
-              Status.SCHEDULED,
-              ImmutableSet.of(Status.PLANNED, Status.SCHEDULED, Status.ACKED, Status.CANCELED))
+          .put(Status.PLANNED, ImmutableSet.of(Status.SCHEDULED, Status.CANCELED))
+          .put(Status.SCHEDULED, ImmutableSet.of(Status.PLANNED, Status.ACKED, Status.CANCELED))
           .put(
               Status.ACKED,
-              ImmutableSet.of(
-                  Status.PLANNED, Status.ACKED, Status.SUCCESS, Status.FAILED, Status.CANCELED))
-          .put(Status.FAILED, ImmutableSet.of(Status.PLANNED, Status.FAILED))
-          .put(Status.SUCCESS, ImmutableSet.of(Status.SUCCESS))
-          .put(Status.CANCELED, ImmutableSet.of(Status.CANCELED))
+              ImmutableSet.of(Status.PLANNED, Status.SUCCESS, Status.FAILED, Status.CANCELED))
+          .put(Status.FAILED, ImmutableSet.of(Status.PLANNED))
+          .put(Status.CANCELED, ImmutableSet.of())
+          .put(Status.SUCCESS, ImmutableSet.of())
           .build();
 
   private class TaskStatusMachine {
 
     public void accept(Status targetStatus) {
-      if (owner.isClosed()) {
-        throw new OptimizingClosedException(taskId.getProcessId());
-      }
       if (!getNext().contains(targetStatus)) {
         throw new IllegalTaskStateException(taskId, status.name(), targetStatus.name());
       }
@@ -321,7 +318,7 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
 
     public TaskQuota() {}
 
-    public TaskQuota(TaskRuntime task) {
+    public TaskQuota(TaskRuntime<?> task) {
       this.startTime = task.getStartTime();
       this.endTime = task.getEndTime();
       this.processId = task.getTaskId().getProcessId();
@@ -366,13 +363,5 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
     public boolean checkExpired(long validTime) {
       return endTime <= validTime;
     }
-  }
-
-  public interface TaskOwner {
-    void acceptResult(TaskRuntime taskRuntime);
-
-    void releaseResourcesIfNecessary();
-
-    boolean isClosed();
   }
 }

@@ -22,6 +22,7 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.DefaultOptimizingService;
+import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.junit.AfterClass;
@@ -33,6 +34,7 @@ public abstract class TableServiceTestBase {
 
   @ClassRule public static DerbyPersistence DERBY = new DerbyPersistence();
 
+  protected static DefaultCatalogManager CATALOG_MANAGER = null;
   private static DefaultTableService TABLE_SERVICE = null;
   private static DefaultOptimizingService OPTIMIZING_SERVICE = null;
 
@@ -41,8 +43,10 @@ public abstract class TableServiceTestBase {
     try {
       Configurations configurations = new Configurations();
       configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, 800L);
-      TABLE_SERVICE = new DefaultTableService(new Configurations());
-      OPTIMIZING_SERVICE = new DefaultOptimizingService(configurations, TABLE_SERVICE);
+      CATALOG_MANAGER = new DefaultCatalogManager(configurations);
+      TABLE_SERVICE = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
+      OPTIMIZING_SERVICE =
+          new DefaultOptimizingService(configurations, CATALOG_MANAGER, TABLE_SERVICE);
       TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
       TABLE_SERVICE.initialize();
       try {

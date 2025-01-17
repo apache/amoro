@@ -174,12 +174,12 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntimeMeta);
 
     // 1.poll task
-    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> task = queue.pollTask(MAX_POLLING_TIME);
     Assert.assertNotNull(task);
 
     for (int i = 0; i < TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT; i++) {
       queue.retryTask(task);
-      TaskRuntime retryTask = queue.pollTask(MAX_POLLING_TIME);
+      TaskRuntime<?> retryTask = queue.pollTask(MAX_POLLING_TIME);
       Assert.assertEquals(retryTask.getTaskId(), task.getTaskId());
       retryTask.schedule(optimizerThread);
       retryTask.ack(optimizerThread);
@@ -190,7 +190,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     }
 
     queue.retryTask(task);
-    TaskRuntime retryTask = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> retryTask = queue.pollTask(MAX_POLLING_TIME);
     Assert.assertEquals(retryTask.getTaskId(), task.getTaskId());
     retryTask.schedule(optimizerThread);
     retryTask.ack(optimizerThread);

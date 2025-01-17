@@ -51,6 +51,12 @@ public class AmoroManagementConf {
           .defaultValue("admin")
           .withDescription("The administrator password");
 
+  public static final ConfigOption<Duration> CATALOG_META_CACHE_EXPIRATION_INTERVAL =
+      ConfigOptions.key("catalog-meta-cache.expiration-interval")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(60))
+          .withDescription("TTL for catalog metadata.");
+
   public static final ConfigOption<Integer> TABLE_MANIFEST_IO_THREAD_COUNT =
       ConfigOptions.key("table-manifest-io.thread-count")
           .intType()
