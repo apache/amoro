@@ -243,19 +243,14 @@ public class IcebergTableMaintainer implements TableMaintainer {
     try {
       DataExpirationConfig expirationConfig =
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
-      Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
-      if (!TableConfigurations.isValidDataExpirationField(expirationConfig, field, table.name())) {
-        return;
-      }
 
-      expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig, field));
+      expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig));
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
     }
   }
 
-  protected Instant expireBaseOnRule(
-      DataExpirationConfig expirationConfig, Types.NestedField field) {
+  protected Instant expireBaseOnRule(DataExpirationConfig expirationConfig) {
     switch (expirationConfig.getBaseOnRule()) {
       case CURRENT_TIME:
         return Instant.now();
@@ -282,18 +277,20 @@ public class IcebergTableMaintainer implements TableMaintainer {
    *     zone
    */
   @VisibleForTesting
-  public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+  void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
     if (instant.equals(Instant.MIN)) {
+      return;
+    }
+    Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
+    if (TableConfigurations.isInvalidDataExpirationField(
+        expirationConfig, field, table.spec(), table.name())) {
       return;
     }
 
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
     LOG.info(
         "Expiring data older than {} in table {} ",
-        Instant.ofEpochMilli(expireTimestamp)
-            .atZone(
-                getDefaultZoneId(table.schema().findField(expirationConfig.getExpirationField())))
-            .toLocalDateTime(),
+        Instant.ofEpochMilli(expireTimestamp).atZone(getDefaultZoneId(field)).toLocalDateTime(),
         table.name());
 
     Expression dataFilter = getDataExpression(table.schema(), expirationConfig, expireTimestamp);
@@ -695,10 +692,11 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   protected ExpireFiles expiredFileScan(
-      DataExpirationConfig expirationConfig, Expression dataFilter, long expireTimestamp) {
+      DataExpirationConfig config, Expression dataFilter, long expireTimestamp) {
     Map<StructLike, DataFileFreshness> partitionFreshness = Maps.newConcurrentMap();
     ExpireFiles expiredFiles = new ExpireFiles();
-    try (CloseableIterable<FileEntry> entries = fileScan(table, dataFilter, expirationConfig)) {
+
+    try (CloseableIterable<FileEntry> entries = fileScan(table, dataFilter, config)) {
       Queue<FileEntry> fileEntries = new LinkedTransferQueue<>();
       entries.forEach(
           e -> {
@@ -708,7 +706,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
           });
       fileEntries
           .parallelStream()
-          .filter(e -> willNotRetain(e, expirationConfig, partitionFreshness))
+          .filter(e -> willNotRetain(e, config, partitionFreshness))
           .forEach(expiredFiles::addFile);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -721,6 +719,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
    * we need to collect the oldest files to determine if the partition is obsolete, so we will not
    * filter for expired files at the scanning stage
    *
+   * @param schema table schema
    * @param expirationConfig expiration configuration
    * @param expireTimestamp expired timestamp
    */

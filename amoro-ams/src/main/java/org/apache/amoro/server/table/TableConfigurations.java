@@ -31,6 +31,7 @@ import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.PropertyUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
@@ -168,42 +169,52 @@ public class TableConfigurations {
   }
 
   /**
-   * Check if the given field is valid for data expiration.
+   * Check if the given field is invalid for data expiration.
    *
    * @param config data expiration config
    * @param field table nested field
-   * @param name table name
-   * @return true if field is valid
+   * @param tableName table name
+   * @return true if field is invalid
    */
-  public static boolean isValidDataExpirationField(
-      DataExpirationConfig config, Types.NestedField field, String name) {
-    return config.isEnabled()
-        && config.getRetentionTime() > 0
-        && validateExpirationField(field, name, config.getExpirationField());
+  public static boolean isInvalidDataExpirationField(
+      DataExpirationConfig config, Types.NestedField field, PartitionSpec spec, String tableName) {
+    return !config.isEnabled()
+        || config.getRetentionTime() <= 0
+        || !validateExpirationField(config, field, spec, tableName);
   }
 
   public static final Set<Type.TypeID> DATA_EXPIRATION_FIELD_TYPES =
       Sets.newHashSet(Type.TypeID.TIMESTAMP, Type.TypeID.STRING, Type.TypeID.LONG);
 
   private static boolean validateExpirationField(
-      Types.NestedField field, String name, String expirationField) {
+      DataExpirationConfig config, Types.NestedField field, PartitionSpec spec, String tableName) {
+    String expirationField = config.getExpirationField();
+
     if (StringUtils.isBlank(expirationField) || null == field) {
       LOG.warn(
-          String.format(
-              "Field(%s) used to determine data expiration is illegal for table(%s)",
-              expirationField, name));
+          "Field({}) used to determine data expiration is illegal for table({})",
+          expirationField,
+          tableName);
       return false;
     }
     Type.TypeID typeID = field.type().typeId();
     if (!DATA_EXPIRATION_FIELD_TYPES.contains(typeID)) {
       LOG.warn(
-          String.format(
-              "Table(%s) field(%s) type(%s) is not supported for data expiration, please use the "
-                  + "following types: %s",
-              name,
-              expirationField,
-              typeID.name(),
-              StringUtils.join(DATA_EXPIRATION_FIELD_TYPES, ", ")));
+          "Table({}) field({}) type({}) is not supported for data expiration, please use the "
+              + "following types: {}",
+          tableName,
+          expirationField,
+          typeID.name(),
+          StringUtils.join(DATA_EXPIRATION_FIELD_TYPES, ", "));
+      return false;
+    }
+    DataExpirationConfig.ExpireLevel level = config.getExpirationLevel();
+    if (level == DataExpirationConfig.ExpireLevel.PARTITION
+        && spec.getFieldsBySourceId(field.fieldId()).isEmpty()) {
+      LOG.warn(
+          "Expiration field({}) must be a partition field for the table({})",
+          expirationField,
+          tableName);
       return false;
     }
 
