@@ -69,7 +69,7 @@ public interface CatalogManager {
    *
    * @return a list of ExternalCatalogs
    */
-  List<ExternalCatalog> getExternalCatalogs();
+  List<ServerCatalog> getServerCatalogs();
 
   /**
    * Creates a catalog based on the provided catalog meta information. The catalog name is obtained
