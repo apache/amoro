@@ -21,15 +21,13 @@ package org.apache.amoro.spark.mixed;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet;
 import org.apache.amoro.spark.SessionCatalogBase;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.spark.sql.connector.catalog.Identifier;
-import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
-import org.apache.spark.sql.connector.catalog.Table;
-import org.apache.spark.sql.connector.catalog.TableCatalog;
+import org.apache.spark.sql.connector.catalog.*;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 import java.util.Set;
 
-public abstract class MixedSessionCatalogBase<T extends TableCatalog & SupportsNamespaces>
+public abstract class MixedSessionCatalogBase<
+        T extends TableCatalog & SupportsNamespaces & FunctionCatalog>
     extends SessionCatalogBase<T> {
 
   /** Using {@link #MIXED_ICEBERG_PROVIDER} or {@link #MIXED_HIVE_PROVIDER} instead. */
