@@ -34,6 +34,7 @@ import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.ResourceContainers;
+import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -58,11 +59,15 @@ public class OptimizerGroupController {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerGroupController.class);
 
   private static final String ALL_GROUP = "all";
+  private final TableManager tableManager;
   private final TableService tableService;
   private final DefaultOptimizingService optimizerManager;
 
   public OptimizerGroupController(
-      TableService tableService, DefaultOptimizingService optimizerManager) {
+      TableManager tableManager,
+      TableService tableService,
+      DefaultOptimizingService optimizerManager) {
+    this.tableManager = tableManager;
     this.tableService = tableService;
     this.optimizerManager = optimizerManager;
   }
@@ -102,7 +107,7 @@ public class OptimizerGroupController {
       statusCodes = null;
     }
     Pair<List<TableRuntimeMeta>, Integer> tableRuntimeBeans =
-        tableService.getTableRuntimes(
+        tableManager.queryTableRuntimeMetas(
             optimizerGroupUsedInDbFilter,
             dbFilterStr,
             tableFilterStr,

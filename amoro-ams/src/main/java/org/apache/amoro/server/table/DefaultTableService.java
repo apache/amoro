@@ -18,24 +18,14 @@
 
 package org.apache.amoro.server.table;
 
-import com.github.pagehelper.Page;
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableIDWithFormat;
-import org.apache.amoro.api.BlockableOperation;
-import org.apache.amoro.api.Blocker;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.exception.AlreadyExistsException;
-import org.apache.amoro.exception.BlockerConflictException;
-import org.apache.amoro.exception.IllegalMetadataException;
 import org.apache.amoro.exception.ObjectNotExistsException;
-import org.apache.amoro.exception.PersistenceException;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.ExternalCatalog;
@@ -45,9 +35,7 @@ import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
-import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
-import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Objects;
@@ -56,15 +44,10 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.amoro.utils.TablePropertyUtil;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -80,14 +63,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class DefaultTableService extends PersistentBase implements TableService {
 
   public static final Logger LOG = LoggerFactory.getLogger(DefaultTableService.class);
-  private static final int TABLE_BLOCKER_RETRY = 3;
   private final long externalCatalogRefreshingInterval;
-  private final long blockerTimeout;
 
   private final Map<Long, TableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
 
@@ -107,33 +89,17 @@ public class DefaultTableService extends PersistentBase implements TableService 
     this.catalogManager = catalogManager;
     this.externalCatalogRefreshingInterval =
         configuration.getLong(AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL);
-    this.blockerTimeout = configuration.getLong(AmoroManagementConf.BLOCKER_TIMEOUT);
     this.serverConfiguration = configuration;
   }
 
   @Override
-  public void dropTableMetadata(TableIdentifier tableIdentifier, boolean deleteData) {
-    checkStarted();
-    if (StringUtils.isBlank(tableIdentifier.getTableName())) {
-      throw new IllegalMetadataException("table name is blank");
-    }
-    if (StringUtils.isBlank(tableIdentifier.getCatalog())) {
-      throw new IllegalMetadataException("catalog is blank");
-    }
-    if (StringUtils.isBlank(tableIdentifier.getDatabase())) {
-      throw new IllegalMetadataException("database is blank");
-    }
+  public void onTableCreated(InternalCatalog catalog, ServerTableIdentifier identifier) {
+    triggerTableAdded(catalog, identifier);
+  }
 
-    InternalCatalog internalCatalog =
-        catalogManager.getInternalCatalog(tableIdentifier.getCatalog());
-    String database = tableIdentifier.getDatabase();
-    String table = tableIdentifier.getTableName();
-    if (!internalCatalog.tableExists(database, table)) {
-      throw new ObjectNotExistsException(tableIdentifier);
-    }
-
-    ServerTableIdentifier serverTableIdentifier = internalCatalog.dropTable(database, table);
-    Optional.ofNullable(tableRuntimeMap.remove(serverTableIdentifier.getId()))
+  @Override
+  public void onTableDropped(InternalCatalog catalog, ServerTableIdentifier identifier) {
+    Optional.ofNullable(tableRuntimeMap.remove(identifier.getId()))
         .ifPresent(
             tableRuntime -> {
               if (headHandler != null) {
@@ -141,155 +107,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
               }
               tableRuntime.dispose();
             });
-  }
-
-  @Override
-  public void createTable(String catalogName, TableMetadata tableMetadata) {
-    checkStarted();
-    InternalCatalog catalog = catalogManager.getInternalCatalog(catalogName);
-    String database = tableMetadata.getTableIdentifier().getDatabase();
-    String table = tableMetadata.getTableIdentifier().getTableName();
-    if (catalog.tableExists(database, table)) {
-      throw new AlreadyExistsException(tableMetadata.getTableIdentifier().getIdentifier());
-    }
-
-    TableMetadata metadata = catalog.createTable(tableMetadata);
-
-    triggerTableAdded(catalog, metadata.getTableIdentifier());
-  }
-
-  @Override
-  public List<ServerTableIdentifier> listManagedTables() {
-    checkStarted();
-    return getAs(TableMetaMapper.class, TableMetaMapper::selectAllTableIdentifiers);
-  }
-
-  @Override
-  public AmoroTable<?> loadTable(ServerTableIdentifier tableIdentifier) {
-    checkStarted();
-    return catalogManager
-        .getServerCatalog(tableIdentifier.getCatalog())
-        .loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
-  }
-
-  @Override
-  public Blocker block(
-      TableIdentifier tableIdentifier,
-      List<BlockableOperation> operations,
-      Map<String, String> properties) {
-    Preconditions.checkNotNull(operations, "operations should not be null");
-    Preconditions.checkArgument(!operations.isEmpty(), "operations should not be empty");
-    Preconditions.checkArgument(blockerTimeout > 0, "blocker timeout must > 0");
-    String catalog = tableIdentifier.getCatalog();
-    String database = tableIdentifier.getDatabase();
-    String table = tableIdentifier.getTableName();
-    int tryCount = 0;
-    while (tryCount++ < TABLE_BLOCKER_RETRY) {
-      long now = System.currentTimeMillis();
-      doAs(
-          TableBlockerMapper.class,
-          mapper -> mapper.deleteExpiredBlockers(catalog, database, table, now));
-      List<TableBlocker> tableBlockers =
-          getAs(
-              TableBlockerMapper.class,
-              mapper ->
-                  mapper.selectBlockers(
-                      tableIdentifier.getCatalog(),
-                      tableIdentifier.getDatabase(),
-                      tableIdentifier.getTableName(),
-                      now));
-      if (TableBlocker.conflict(operations, tableBlockers)) {
-        throw new BlockerConflictException(operations + " is conflict with " + tableBlockers);
-      }
-      Optional<Long> maxBlockerOpt =
-          tableBlockers.stream()
-              .map(TableBlocker::getBlockerId)
-              .max(Comparator.comparingLong(l -> l));
-      long prevBlockerId = maxBlockerOpt.orElse(-1L);
-
-      TableBlocker tableBlocker =
-          TableBlocker.buildTableBlocker(
-              tableIdentifier, operations, properties, now, blockerTimeout, prevBlockerId);
-      try {
-        doAs(TableBlockerMapper.class, mapper -> mapper.insert(tableBlocker));
-        if (tableBlocker.getBlockerId() > 0) {
-          return tableBlocker.buildBlocker();
-        }
-      } catch (PersistenceException e) {
-        LOG.warn("An exception occurs when creating a blocker:{}", tableBlocker, e);
-      }
-    }
-    throw new BlockerConflictException("Failed to create a blocker: conflict meet max retry");
-  }
-
-  @Override
-  public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
-    doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlocker(Long.parseLong(blockerId)));
-  }
-
-  @Override
-  public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) {
-    int retry = 0;
-    while (retry++ < TABLE_BLOCKER_RETRY) {
-      long now = System.currentTimeMillis();
-      long id = Long.parseLong(blockerId);
-      TableBlocker tableBlocker =
-          getAs(TableBlockerMapper.class, mapper -> mapper.selectBlocker(id, now));
-      if (tableBlocker == null) {
-        throw new ObjectNotExistsException("Blocker " + blockerId + " of " + tableIdentifier);
-      }
-      long current = System.currentTimeMillis();
-      long expirationTime = now + blockerTimeout;
-      long effectRow =
-          updateAs(
-              TableBlockerMapper.class, mapper -> mapper.renewBlocker(id, current, expirationTime));
-      if (effectRow > 0) {
-        return expirationTime;
-      }
-    }
-    throw new BlockerConflictException("Failed to renew a blocker: conflict meet max retry");
-  }
-
-  @Override
-  public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
-    return getAs(
-            TableBlockerMapper.class,
-            mapper ->
-                mapper.selectBlockers(
-                    tableIdentifier.getCatalog(),
-                    tableIdentifier.getDatabase(),
-                    tableIdentifier.getTableName(),
-                    System.currentTimeMillis()))
-        .stream()
-        .map(TableBlocker::buildBlocker)
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  public Pair<List<TableRuntimeMeta>, Integer> getTableRuntimes(
-      String optimizerGroup,
-      @Nullable String fuzzyDbName,
-      @Nullable String fuzzyTableName,
-      @Nullable List<Integer> statusCodeFilters,
-      int limit,
-      int offset) {
-    checkStarted();
-
-    // page helper is 1-based
-    int pageNumber = (offset / limit) + 1;
-
-    try (Page<?> ignore = PageHelper.startPage(pageNumber, limit, true)) {
-      int total = 0;
-      List<TableRuntimeMeta> ret =
-          getAs(
-              TableMetaMapper.class,
-              mapper ->
-                  mapper.selectTableRuntimesForOptimizerGroup(
-                      optimizerGroup, fuzzyDbName, fuzzyTableName, statusCodeFilters));
-      PageInfo<TableRuntimeMeta> pageInfo = new PageInfo<>(ret);
-      total = (int) pageInfo.getTotal();
-      return Pair.of(ret, total);
-    }
   }
 
   @Override
@@ -353,7 +170,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
                   .build());
     }
     tableExplorerScheduler.scheduleAtFixedRate(
-        this::exploreExternalCatalog, 0, externalCatalogRefreshingInterval, TimeUnit.MILLISECONDS);
+        this::exploreTableRuntimes, 0, externalCatalogRefreshingInterval, TimeUnit.MILLISECONDS);
     initialized.complete(true);
   }
 
@@ -364,14 +181,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
       throw new ObjectNotExistsException(tableIdentifier);
     }
     return tableRuntime;
-  }
-
-  @Override
-  public ServerTableIdentifier getServerTableIdentifier(TableIdentifier id) {
-    return getAs(
-        TableMetaMapper.class,
-        mapper ->
-            mapper.selectTableIdentifier(id.getCatalog(), id.getDatabase(), id.getTableName()));
   }
 
   @Override
@@ -386,6 +195,12 @@ public class DefaultTableService extends PersistentBase implements TableService 
     return tableRuntimeMap.containsKey(tableId);
   }
 
+  @Override
+  public AmoroTable<?> loadTable(ServerTableIdentifier identifier) {
+    return catalogManager.loadTable(identifier.getIdentifier());
+  }
+
+  @Override
   public void dispose() {
     tableExplorerScheduler.shutdown();
     if (tableExplorerExecutors != null) {
@@ -397,114 +212,27 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   @VisibleForTesting
-  void exploreExternalCatalog() {
+  void exploreTableRuntimes() {
     if (!initialized.isDone()) {
       throw new IllegalStateException("TableService is not initialized");
     }
     long start = System.currentTimeMillis();
-    List<ExternalCatalog> externalCatalogs = catalogManager.getExternalCatalogs();
+    List<ServerCatalog> externalCatalogs = catalogManager.getServerCatalogs();
     List<String> externalCatalogNames =
-        externalCatalogs.stream().map(ExternalCatalog::name).collect(Collectors.toList());
-    LOG.info("Syncing external catalogs: {}", String.join(",", externalCatalogNames));
-    for (ExternalCatalog externalCatalog : externalCatalogs) {
+        externalCatalogs.stream().map(ServerCatalog::name).collect(Collectors.toList());
+    LOG.info("Syncing server catalogs: {}", String.join(",", externalCatalogNames));
+    for (ServerCatalog serverCatalog : externalCatalogs) {
       try {
-        final List<CompletableFuture<Set<TableIdentity>>> tableIdentifiersFutures =
-            Lists.newArrayList();
-        externalCatalog
-            .listDatabases()
-            .forEach(
-                database -> {
-                  try {
-                    tableIdentifiersFutures.add(
-                        CompletableFuture.supplyAsync(
-                            () -> {
-                              try {
-                                return externalCatalog.listTables(database).stream()
-                                    .map(TableIdentity::new)
-                                    .collect(Collectors.toSet());
-                              } catch (Exception e) {
-                                LOG.error(
-                                    "TableExplorer list tables in database {} error", database, e);
-                                return new HashSet<>();
-                              }
-                            },
-                            tableExplorerExecutors));
-                  } catch (RejectedExecutionException e) {
-                    LOG.error(
-                        "The queue of table explorer is full, please increase the queue size or thread count.");
-                  }
-                });
-        Set<TableIdentity> tableIdentifiers =
-            tableIdentifiersFutures.stream()
-                .map(CompletableFuture::join)
-                .reduce(
-                    (a, b) -> {
-                      a.addAll(b);
-                      return a;
-                    })
-                .orElse(Sets.newHashSet());
-        LOG.info(
-            "Loaded {} tables from external catalog {}.",
-            tableIdentifiers.size(),
-            externalCatalog.name());
-        Map<TableIdentity, ServerTableIdentifier> serverTableIdentifiers =
-            getAs(
-                    TableMetaMapper.class,
-                    mapper -> mapper.selectTableIdentifiersByCatalog(externalCatalog.name()))
-                .stream()
-                .collect(Collectors.toMap(TableIdentity::new, tableIdentifier -> tableIdentifier));
-        LOG.info(
-            "Loaded {} tables from Amoro server catalog {}.",
-            serverTableIdentifiers.size(),
-            externalCatalog.name());
-        final List<CompletableFuture<Void>> taskFutures = Lists.newArrayList();
-        Sets.difference(tableIdentifiers, serverTableIdentifiers.keySet())
-            .forEach(
-                tableIdentity -> {
-                  try {
-                    taskFutures.add(
-                        CompletableFuture.runAsync(
-                            () -> {
-                              try {
-                                syncTable(externalCatalog, tableIdentity);
-                              } catch (Exception e) {
-                                LOG.error(
-                                    "TableExplorer sync table {} error",
-                                    tableIdentity.toString(),
-                                    e);
-                              }
-                            },
-                            tableExplorerExecutors));
-                  } catch (RejectedExecutionException e) {
-                    LOG.error(
-                        "The queue of table explorer is full, please increase the queue size or thread count.");
-                  }
-                });
-        Sets.difference(serverTableIdentifiers.keySet(), tableIdentifiers)
-            .forEach(
-                tableIdentity -> {
-                  try {
-                    taskFutures.add(
-                        CompletableFuture.runAsync(
-                            () -> {
-                              try {
-                                disposeTable(serverTableIdentifiers.get(tableIdentity));
-                              } catch (Exception e) {
-                                LOG.error(
-                                    "TableExplorer dispose table {} error",
-                                    tableIdentity.toString(),
-                                    e);
-                              }
-                            },
-                            tableExplorerExecutors));
-                  } catch (RejectedExecutionException e) {
-                    LOG.error(
-                        "The queue of table explorer is full, please increase the queue size or thread count.");
-                  }
-                });
-        taskFutures.forEach(CompletableFuture::join);
+        if (serverCatalog.isInternal()) {
+          exploreInternalCatalog((InternalCatalog) serverCatalog);
+        } else {
+          exploreExternalCatalog((ExternalCatalog) serverCatalog);
+        }
       } catch (Throwable e) {
-        LOG.error("TableExplorer error", e);
+        LOG.error(
+            "TableExplorer error when explore table runtimes for catalog:{}",
+            serverCatalog.name(),
+            e);
       }
     }
 
@@ -527,10 +255,140 @@ public class DefaultTableService extends PersistentBase implements TableService 
     LOG.info("Syncing external catalogs took {} ms.", end - start);
   }
 
-  private void validateCatalogUpdate(CatalogMeta oldMeta, CatalogMeta newMeta) {
-    if (!oldMeta.getCatalogType().equals(newMeta.getCatalogType())) {
-      throw new IllegalMetadataException("Cannot update catalog type");
-    }
+  private void exploreExternalCatalog(ExternalCatalog externalCatalog) {
+    final List<CompletableFuture<Set<TableIdentity>>> tableIdentifiersFutures =
+        Lists.newArrayList();
+    externalCatalog
+        .listDatabases()
+        .forEach(
+            database -> {
+              try {
+                tableIdentifiersFutures.add(
+                    CompletableFuture.supplyAsync(
+                        () -> {
+                          try {
+                            return externalCatalog.listTables(database).stream()
+                                .map(TableIdentity::new)
+                                .collect(Collectors.toSet());
+                          } catch (Exception e) {
+                            LOG.error(
+                                "TableExplorer list tables in database {} error", database, e);
+                            return new HashSet<>();
+                          }
+                        },
+                        tableExplorerExecutors));
+              } catch (RejectedExecutionException e) {
+                LOG.error(
+                    "The queue of table explorer is full, please increase the queue size or thread count.");
+              }
+            });
+    Set<TableIdentity> tableIdentifiers =
+        tableIdentifiersFutures.stream()
+            .map(CompletableFuture::join)
+            .reduce(
+                (a, b) -> {
+                  a.addAll(b);
+                  return a;
+                })
+            .orElse(Sets.newHashSet());
+    LOG.info(
+        "Loaded {} tables from external catalog {}.",
+        tableIdentifiers.size(),
+        externalCatalog.name());
+    Map<TableIdentity, ServerTableIdentifier> serverTableIdentifiers =
+        getAs(
+                TableMetaMapper.class,
+                mapper -> mapper.selectTableIdentifiersByCatalog(externalCatalog.name()))
+            .stream()
+            .collect(Collectors.toMap(TableIdentity::new, tableIdentifier -> tableIdentifier));
+    LOG.info(
+        "Loaded {} tables from Amoro server catalog {}.",
+        serverTableIdentifiers.size(),
+        externalCatalog.name());
+    final List<CompletableFuture<Void>> taskFutures = Lists.newArrayList();
+    Sets.difference(tableIdentifiers, serverTableIdentifiers.keySet())
+        .forEach(
+            tableIdentity -> {
+              try {
+                taskFutures.add(
+                    CompletableFuture.runAsync(
+                        () -> {
+                          try {
+                            syncTable(externalCatalog, tableIdentity);
+                          } catch (Exception e) {
+                            LOG.error(
+                                "TableExplorer sync table {} error", tableIdentity.toString(), e);
+                          }
+                        },
+                        tableExplorerExecutors));
+              } catch (RejectedExecutionException e) {
+                LOG.error(
+                    "The queue of table explorer is full, please increase the queue size or thread count.");
+              }
+            });
+    Sets.difference(serverTableIdentifiers.keySet(), tableIdentifiers)
+        .forEach(
+            tableIdentity -> {
+              try {
+                taskFutures.add(
+                    CompletableFuture.runAsync(
+                        () -> {
+                          try {
+                            disposeTable(serverTableIdentifiers.get(tableIdentity));
+                          } catch (Exception e) {
+                            LOG.error(
+                                "TableExplorer dispose table {} error",
+                                tableIdentity.toString(),
+                                e);
+                          }
+                        },
+                        tableExplorerExecutors));
+              } catch (RejectedExecutionException e) {
+                LOG.error(
+                    "The queue of table explorer is full, please increase the queue size or thread count.");
+              }
+            });
+    taskFutures.forEach(CompletableFuture::join);
+  }
+
+  private void exploreInternalCatalog(InternalCatalog internalCatalog) {
+    LOG.info("Start explore internal catalog {}", internalCatalog.name());
+    List<ServerTableIdentifier> identifiers =
+        getAs(
+            TableMetaMapper.class, m -> m.selectTableIdentifiersByCatalog(internalCatalog.name()));
+    AtomicInteger addedCount = new AtomicInteger();
+    identifiers.stream()
+        .filter(i -> !tableRuntimeMap.containsKey(i.getId()))
+        .peek(
+            i ->
+                LOG.info(
+                    "Found new table {} in internal catalog {}, create table runtime for it.",
+                    i,
+                    internalCatalog.name()))
+        .peek(i -> addedCount.incrementAndGet())
+        .forEach(i -> triggerTableAdded(internalCatalog, i));
+
+    Set<Long> tableIds =
+        identifiers.stream().map(ServerTableIdentifier::getId).collect(Collectors.toSet());
+    Set<ServerTableIdentifier> tablesToBeDisposed = Sets.newHashSet();
+    tableRuntimeMap.forEach(
+        (id, tableRuntime) -> {
+          if (tableRuntime.getTableIdentifier().getCatalog().equals(internalCatalog.name())) {
+            if (!tableIds.contains(id)) {
+              LOG.info(
+                  "Found table {} in internal catalog {} is removed, dispose table runtime for it.",
+                  id,
+                  internalCatalog.name());
+              tablesToBeDisposed.add(tableRuntime.getTableIdentifier());
+            }
+          }
+        });
+    tablesToBeDisposed.forEach(this::disposeTable);
+    LOG.info(
+        "Explore internal catalog {} finished, {} tables are added, {} tables are disposed.",
+        internalCatalog.name(),
+        addedCount.get(),
+        tablesToBeDisposed.size());
   }
 
   private void checkStarted() {

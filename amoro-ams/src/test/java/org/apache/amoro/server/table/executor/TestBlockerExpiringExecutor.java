@@ -21,11 +21,11 @@ package org.apache.amoro.server.table.executor;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.BlockableOperation;
+import org.apache.amoro.server.AMSServiceTestBase;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
-import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableServiceTestBase;
+import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,27 +35,27 @@ import org.mockito.Mockito;
 import java.util.Collections;
 import java.util.List;
 
-public class TestBlockerExpiringExecutor extends TableServiceTestBase {
+public class TestBlockerExpiringExecutor extends AMSServiceTestBase {
   private final ServerTableIdentifier tableIdentifier =
       ServerTableIdentifier.of(
           0L, "test_catalog", "test_db", "test_table_blocker", TableFormat.MIXED_ICEBERG);
 
   private final Persistency persistency = new Persistency();
   private TableRuntime tableRuntime;
-  private TableManager tableManager;
+  private TableService tableService;
 
   @Before
   public void mock() {
     tableRuntime = Mockito.mock(TableRuntime.class);
-    tableManager = Mockito.mock(TableManager.class);
+    tableService = Mockito.mock(TableService.class);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(tableIdentifier);
   }
 
   @Test
   public void testExpireBlocker() {
-    BlockerExpiringExecutor blockerExpiringExecutor = new BlockerExpiringExecutor(tableManager);
+    BlockerExpiringExecutor blockerExpiringExecutor = new BlockerExpiringExecutor(tableService);
     TableBlocker tableBlocker = new TableBlocker();
-    tableBlocker.setTableIdentifier(tableIdentifier.getIdentifier());
+    tableBlocker.setTableIdentifier(tableIdentifier.getIdentifier().buildTableIdentifier());
     tableBlocker.setExpirationTime(System.currentTimeMillis() - 10);
     tableBlocker.setCreateTime(System.currentTimeMillis() - 20);
     tableBlocker.setOperations(Collections.singletonList(BlockableOperation.OPTIMIZE.name()));
@@ -63,7 +63,7 @@ public class TestBlockerExpiringExecutor extends TableServiceTestBase {
     persistency.insertTableBlocker(tableBlocker);
 
     TableBlocker tableBlocker2 = new TableBlocker();
-    tableBlocker2.setTableIdentifier(tableIdentifier.getIdentifier());
+    tableBlocker2.setTableIdentifier(tableIdentifier.getIdentifier().buildTableIdentifier());
     tableBlocker2.setExpirationTime(System.currentTimeMillis() + 100000);
     tableBlocker2.setCreateTime(System.currentTimeMillis() - 20);
     tableBlocker2.setOperations(Collections.singletonList(BlockableOperation.BATCH_WRITE.name()));

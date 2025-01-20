@@ -27,7 +27,6 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
-import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
 import org.apache.amoro.server.table.TableRuntime;
@@ -398,16 +397,14 @@ public class TestOrphanFileClean extends ExecutorTestBase {
 
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
     Mockito.when(tableRuntime.getTableIdentifier())
-        .thenReturn(
-            ServerTableIdentifier.of(AmsUtil.toTableIdentifier(baseTable.id()), getTestFormat()));
+        .thenReturn(ServerTableIdentifier.of(baseTable.id(), getTestFormat()));
     Mockito.when(tableRuntime.getTableConfiguration())
         .thenReturn(TableConfigurations.parseTableConfig(baseTable.properties()));
 
     Mockito.when(tableRuntime.getOrphanFilesCleaningMetrics())
         .thenReturn(
             new TableOrphanFilesCleaningMetrics(
-                ServerTableIdentifier.of(
-                    AmsUtil.toTableIdentifier(baseTable.id()), getTestFormat())));
+                ServerTableIdentifier.of(baseTable.id(), getTestFormat())));
 
     MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable());
     maintainer.cleanOrphanFiles(tableRuntime);

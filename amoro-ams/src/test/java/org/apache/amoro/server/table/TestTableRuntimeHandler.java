@@ -76,7 +76,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
       createDatabase();
     }
     createTable();
-    ServerTableIdentifier createTableId = tableService().listManagedTables().get(0);
+    ServerTableIdentifier createTableId = tableManager().listManagedTables().get(0);
     Assert.assertEquals(1, handler.getAddedTables().size());
     validateMixedTable(handler.getAddedTables().get(0).first());
     validateTableRuntime(handler.getAddedTables().get(0).second());
