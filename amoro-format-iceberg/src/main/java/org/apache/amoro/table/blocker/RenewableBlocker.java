@@ -21,6 +21,7 @@ package org.apache.amoro.table.blocker;
 import org.apache.amoro.AmsClient;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.NoSuchObjectException;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.amoro.table.TableIdentifier;
@@ -101,6 +102,11 @@ public class RenewableBlocker implements Blocker {
     this.renewTaskFuture =
         getExecutorService()
             .scheduleAtFixedRate(this::doRenew, interval, interval, TimeUnit.MILLISECONDS);
+  }
+
+  @VisibleForTesting
+  public ScheduledFuture getRenewTaskFuture() {
+    return this.renewTaskFuture;
   }
 
   private void doRenew() {
