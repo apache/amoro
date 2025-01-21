@@ -43,9 +43,4 @@ public class MixedFormatSparkSessionCatalog<
     newCatalog.initialize(name, options);
     return newCatalog;
   }
-
-  @Override
-  public Procedure loadProcedure(Identifier ident) throws NoSuchProcedureException {
-    throw new NoSuchProcedureException(ident);
-  }
 }
