@@ -34,13 +34,16 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 
 /**
- * MemorySize is a representation of a number of bytes, viewable in different units. Copied from
- * Apache Flink.
+ * MemorySize is a representation of a number of bytes, viewable in different units.
  *
  * <h2>Parsing</h2>
  *
  * <p>The size can be parsed from a text expression. If the expression is a pure number, the value
  * will be interpreted as bytes.
+ *
+ * <p>This class was originally copied from <a href="https://github.com/apache/flink">Apache
+ * Flink</a>. For any inquiries regarding the original code, please refer to <a
+ * href="https://github.com/apache/flink/blob/master/flink-core-api/src/main/java/org/apache/flink/configuration/MemorySize.java">org.apache.flink.configuration.MemorySize</a>.
  */
 public class MemorySize implements java.io.Serializable, Comparable<MemorySize> {
 
