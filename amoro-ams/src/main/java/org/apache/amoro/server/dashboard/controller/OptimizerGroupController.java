@@ -99,7 +99,7 @@ public class OptimizerGroupController {
       statusCodes = null;
     }
     Pair<List<TableOptimizingInfo>, Integer> tableRuntimeBeans =
-        tableManager.queryTableRuntimeMetas(
+        tableManager.queryTableOptimizingInfo(
             optimizerGroupUsedInDbFilter,
             dbFilterStr,
             tableFilterStr,

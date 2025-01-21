@@ -51,6 +51,7 @@ import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
@@ -157,11 +158,11 @@ public class TableController {
             tableManager.getServerTableIdentifier(
                 TableIdentifier.of(catalog, database, tableName).buildTableIdentifier()));
     if (serverTableIdentifier.isPresent()) {
-      TableRuntime tableRuntime = tableService.getRuntime(serverTableIdentifier.get().getId());
-      if (tableRuntime != null) {
-        tableSummary.setOptimizingStatus(tableRuntime.getOptimizingStatus().name());
+      TableRuntimeMeta tableRuntimeMeta = tableManager.getTableRuntimeMata(serverTableIdentifier.get());
+      if (tableRuntimeMeta != null) {
+        tableSummary.setOptimizingStatus(tableRuntimeMeta.getTableStatus().name());
         AbstractOptimizingEvaluator.PendingInput tableRuntimeSummary =
-            tableRuntime.getTableSummary();
+            tableRuntimeMeta.getTableSummary();
         if (tableRuntimeSummary != null) {
           tableSummary.setHealthScore(tableRuntimeSummary.getHealthScore());
         }

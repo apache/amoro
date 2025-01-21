@@ -229,7 +229,12 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
   }
 
   @Override
-  public Pair<List<TableOptimizingInfo>, Integer> queryTableRuntimeMetas(
+  public TableRuntimeMeta getTableRuntimeMata(ServerTableIdentifier id) {
+    return getAs(TableMetaMapper.class, mapper -> mapper.getTableRuntimeMeta(id.getId()));
+  }
+
+  @Override
+  public Pair<List<TableOptimizingInfo>, Integer> queryTableOptimizingInfo(
       String optimizerGroup,
       @Nullable String fuzzyDbName,
       @Nullable String fuzzyTableName,
