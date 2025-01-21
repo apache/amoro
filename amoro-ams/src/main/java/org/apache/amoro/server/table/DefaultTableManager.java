@@ -21,6 +21,7 @@ package org.apache.amoro.server.table;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.google.common.collect.Lists;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.Blocker;
@@ -32,10 +33,16 @@ import org.apache.amoro.exception.IllegalMetadataException;
 import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.exception.PersistenceException;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.InternalCatalog;
+import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
+import org.apache.amoro.server.dashboard.utils.OptimizingUtil;
+import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
+import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.blocker.TableBlocker;
@@ -222,7 +229,7 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
   }
 
   @Override
-  public Pair<List<TableRuntimeMeta>, Integer> queryTableRuntimeMetas(
+  public Pair<List<TableOptimizingInfo>, Integer> queryTableRuntimeMetas(
       String optimizerGroup,
       @Nullable String fuzzyDbName,
       @Nullable String fuzzyTableName,
@@ -232,10 +239,10 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
 
     // page helper is 1-based
     int pageNumber = (offset / limit) + 1;
-
+    int total = 0;
+    List<TableRuntimeMeta> ret;
     try (Page<?> ignore = PageHelper.startPage(pageNumber, limit, true)) {
-      int total = 0;
-      List<TableRuntimeMeta> ret =
+      ret =
           getAs(
               TableMetaMapper.class,
               mapper ->
@@ -243,7 +250,54 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
                       optimizerGroup, fuzzyDbName, fuzzyTableName, statusCodeFilters));
       PageInfo<TableRuntimeMeta> pageInfo = new PageInfo<>(ret);
       total = (int) pageInfo.getTotal();
-      return Pair.of(ret, total);
     }
+    List<Long> processIds =
+        ret.stream()
+            .map(TableRuntimeMeta::getOptimizingProcessId)
+            .filter(i -> i != -1)
+            .collect(Collectors.toList());
+    List<Long> tableIds =
+        ret.stream().map(TableRuntimeMeta::getTableId).collect(Collectors.toList());
+
+    List<OptimizingTaskMeta> taskMetas =
+        getAs(
+            OptimizingMapper.class,
+            m -> {
+              if (processIds.isEmpty()) {
+                return Lists.newArrayList();
+              } else {
+                return m.selectOptimizeTaskMetas(processIds);
+              }
+            });
+    Map<Long, List<OptimizingTaskMeta>> tableTaskMetaMap =
+        taskMetas.stream()
+            .collect(Collectors.groupingBy(OptimizingTaskMeta::getTableId, Collectors.toList()));
+
+    // load quota info
+    Map<Long, List<TaskRuntime.TaskQuota>> tableQuotaMap = getQuotaTime(tableIds);
+
+    List<TableOptimizingInfo> infos =
+        ret.stream()
+            .map(
+                meta -> {
+                  List<OptimizingTaskMeta> tasks = tableTaskMetaMap.get(meta.getTableId());
+                  List<TaskRuntime.TaskQuota> quotas = tableQuotaMap.get(meta.getTableId());
+                  return OptimizingUtil.buildTableOptimizeInfo(meta, tasks, quotas);
+                })
+            .collect(Collectors.toList());
+    return Pair.of(infos, total);
+  }
+
+  private Map<Long, List<TaskRuntime.TaskQuota>> getQuotaTime(List<Long> tableIds) {
+    long calculatingEndTime = System.currentTimeMillis();
+    long calculatingStartTime = calculatingEndTime - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
+
+    List<TaskRuntime.TaskQuota> quotas =
+        getAs(
+            OptimizingMapper.class,
+            mapper -> mapper.selectTableQuotas(tableIds, calculatingStartTime));
+
+    return quotas.stream()
+        .collect(Collectors.groupingBy(TaskRuntime.TaskQuota::getTableId, Collectors.toList()));
   }
 }

@@ -34,15 +34,19 @@ import org.apache.amoro.server.persistence.converter.Map2StringConverter;
 import org.apache.amoro.server.persistence.converter.MapLong2StringConverter;
 import org.apache.amoro.server.persistence.converter.Object2ByteArrayConvert;
 import org.apache.amoro.server.persistence.converter.TaskDescriptorTypeConverter;
+import org.apache.amoro.server.persistence.extension.InListExtendedLanguageDriver;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Lang;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.ResultMap;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.type.JdbcType;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -261,17 +265,30 @@ public interface OptimizingMapper {
   @Select(
       "SELECT process_id, task_id, retry_num, table_id, start_time, end_time, fail_reason "
           + "FROM optimizing_task_quota WHERE table_id = #{tableId} AND process_id >= #{startTime}")
-  @Results({
-    @Result(property = "processId", column = "process_id"),
-    @Result(property = "taskId", column = "task_id"),
-    @Result(property = "retryNum", column = "retry_num"),
-    @Result(property = "tableId", column = "table_id"),
-    @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConverter.class),
-    @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConverter.class),
-    @Result(property = "failReason", column = "fail_reason")
-  })
+  @Results(
+      id = "taskQuota",
+      value = {
+        @Result(property = "processId", column = "process_id"),
+        @Result(property = "taskId", column = "task_id"),
+        @Result(property = "retryNum", column = "retry_num"),
+        @Result(property = "tableId", column = "table_id"),
+        @Result(
+            property = "startTime",
+            column = "start_time",
+            typeHandler = Long2TsConverter.class),
+        @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConverter.class),
+        @Result(property = "failReason", column = "fail_reason")
+      })
   List<TaskRuntime.TaskQuota> selectTaskQuotasByTime(
       @Param("tableId") long tableId, @Param("startTime") long startTime);
+
+  @Select(
+      "SELECT process_id, task_id, retry_num, table_id, start_time, end_time, fail_reason "
+          + "FROM optimizing_task_quota WHERE table_id in #{tables::number[]} AND process_id >= #{startTime}")
+  @Lang(InListExtendedLanguageDriver.class)
+  @ResultMap("taskQuota")
+  List<TaskRuntime.TaskQuota> selectTableQuotas(
+      @Param("tables") Collection<Long> tables, @Param("startTime") long startTime);
 
   @Insert(
       "INSERT INTO optimizing_task_quota (process_id, task_id, retry_num, table_id, start_time, end_time,"

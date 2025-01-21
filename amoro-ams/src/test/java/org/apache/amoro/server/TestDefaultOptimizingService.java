@@ -40,10 +40,10 @@ import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
-import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.TableManager;
@@ -558,7 +558,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
     // 2 test and assert the result
     // 2.1 only optimize group filter set
-    Pair<List<TableRuntimeMeta>, Integer> res =
+    Pair<List<TableOptimizingInfo>, Integer> res =
         tableManager()
             .queryTableRuntimeMetas(optimizerGroup1, null, null, Collections.emptyList(), 10, 0);
     Integer expectedTotalinGroup1 = 14;

@@ -28,15 +28,11 @@ import org.apache.amoro.server.dashboard.model.OptimizerResourceInfo;
 import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.dashboard.response.PageResult;
-import org.apache.amoro.server.dashboard.utils.OptimizingUtil;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.TableManager;
-import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -60,15 +56,11 @@ public class OptimizerGroupController {
 
   private static final String ALL_GROUP = "all";
   private final TableManager tableManager;
-  private final TableService tableService;
   private final DefaultOptimizingService optimizerManager;
 
   public OptimizerGroupController(
-      TableManager tableManager,
-      TableService tableService,
-      DefaultOptimizingService optimizerManager) {
+      TableManager tableManager, DefaultOptimizingService optimizerManager) {
     this.tableManager = tableManager;
-    this.tableService = tableService;
     this.optimizerManager = optimizerManager;
   }
 
@@ -106,7 +98,7 @@ public class OptimizerGroupController {
     if (statusCodes.isEmpty()) {
       statusCodes = null;
     }
-    Pair<List<TableRuntimeMeta>, Integer> tableRuntimeBeans =
+    Pair<List<TableOptimizingInfo>, Integer> tableRuntimeBeans =
         tableManager.queryTableRuntimeMetas(
             optimizerGroupUsedInDbFilter,
             dbFilterStr,
@@ -114,18 +106,8 @@ public class OptimizerGroupController {
             statusCodes,
             pageSize,
             offset);
-
-    List<TableRuntime> tableRuntimes =
-        tableRuntimeBeans.getLeft().stream()
-            .map(meta -> tableService.getRuntime(meta.getTableId()))
-            .collect(Collectors.toList());
-
     PageResult<TableOptimizingInfo> amsPageResult =
-        PageResult.of(
-            tableRuntimes.stream()
-                .map(OptimizingUtil::buildTableOptimizeInfo)
-                .collect(Collectors.toList()),
-            tableRuntimeBeans.getRight());
+        PageResult.of(tableRuntimeBeans.getLeft(), tableRuntimeBeans.getRight());
     ctx.json(OkResponse.of(amsPageResult));
   }
 

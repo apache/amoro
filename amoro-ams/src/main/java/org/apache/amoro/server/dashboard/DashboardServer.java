@@ -108,8 +108,7 @@ public class DashboardServer {
     this.healthCheckController = new HealthCheckController();
     this.loginController = new LoginController(serviceConfig);
     // TODO: remove table service from OptimizerGroupController
-    this.optimizerGroupController =
-        new OptimizerGroupController(tableManager, tableService, optimizerManager);
+    this.optimizerGroupController = new OptimizerGroupController(tableManager, optimizerManager);
     this.optimizerController = new OptimizerController(optimizerManager);
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
     this.settingController = new SettingController(serviceConfig, optimizerManager);
