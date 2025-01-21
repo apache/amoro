@@ -22,8 +22,8 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
 import org.apache.amoro.hive.utils.TableTypeUtil;
-import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.table.MixedTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +34,8 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
   // 10 minutes
   private static final long INTERVAL = 10 * 60 * 1000L;
 
-  public HiveCommitSyncExecutor(TableManager tableManager, int poolSize) {
-    super(tableManager, poolSize);
+  public HiveCommitSyncExecutor(TableService tableService, int poolSize) {
+    super(tableService, poolSize);
   }
 
   @Override

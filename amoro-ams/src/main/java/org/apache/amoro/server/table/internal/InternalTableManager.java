@@ -18,23 +18,24 @@
 
 package org.apache.amoro.server.table.internal;
 
+import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.server.table.TableMetadata;
 
-import java.io.Closeable;
-
-/** Interface to create an internal table. */
-public interface InternalTableCreator extends Closeable {
+public interface InternalTableManager {
 
   /**
-   * Do all things about create an internal table, and prepare the {@link TableMetadata} for {@link
-   * InternalTableManager#createTable(java.lang.String, TableMetadata)}
+   * create table metadata
+   *
+   * @param catalogName internal catalog to create the table
+   * @param tableMeta table metadata info
    */
-  TableMetadata create();
+  void createTable(String catalogName, TableMetadata tableMeta);
 
-  /** Rollback all resource created during {@link #create()} */
-  void rollback();
-
-  /** Release resource like {@link org.apache.iceberg.io.FileIO} */
-  @Override
-  default void close() {}
+  /**
+   * delete the table metadata
+   *
+   * @param tableIdentifier table id
+   * @param deleteData if delete the external table
+   */
+  void dropTableMetadata(TableIdentifier tableIdentifier, boolean deleteData);
 }

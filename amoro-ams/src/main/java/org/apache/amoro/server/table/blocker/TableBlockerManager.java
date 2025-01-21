@@ -16,33 +16,41 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.server.table.blocker;
 
-import org.apache.amoro.AmoroTable;
-import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.server.catalog.InternalCatalog;
+import org.apache.amoro.api.BlockableOperation;
+import org.apache.amoro.api.Blocker;
+import org.apache.amoro.api.TableIdentifier;
 
-public interface TableService extends TableRuntimeHandler {
+import java.util.List;
+import java.util.Map;
 
-  void initialize();
-
-  void dispose();
-
-  void onTableCreated(InternalCatalog catalog, ServerTableIdentifier identifier);
-
-  void onTableDropped(InternalCatalog catalog, ServerTableIdentifier identifier);
-
-  TableRuntime getRuntime(Long tableId);
-
-  default boolean contains(Long tableId) {
-    return getRuntime(tableId) != null;
-  }
+public interface TableBlockerManager {
 
   /**
-   * load a table via server catalog.
+   * blocker operations
    *
-   * @param identifier managed table identifier
-   * @return managed table.
+   * @return the created blocker
    */
-  AmoroTable<?> loadTable(ServerTableIdentifier identifier);
+  Blocker block(
+      TableIdentifier tableIdentifier,
+      List<BlockableOperation> operations,
+      Map<String, String> properties);
+
+  /** release the blocker */
+  void releaseBlocker(TableIdentifier tableIdentifier, String blockerId);
+
+  /**
+   * renew the blocker
+   *
+   * @return expiration time
+   */
+  long renewBlocker(TableIdentifier tableIdentifier, String blockerId);
+
+  /**
+   * get blockers of table
+   *
+   * @return block list
+   */
+  List<Blocker> getBlockers(TableIdentifier tableIdentifier);
 }

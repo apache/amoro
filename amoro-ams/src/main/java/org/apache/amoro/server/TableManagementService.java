@@ -32,8 +32,8 @@ import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
+import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableMetadata;
-import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.utils.InternalTableUtil;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 
@@ -44,11 +44,11 @@ import java.util.stream.Collectors;
 public class TableManagementService implements AmoroTableMetastore.Iface {
 
   private final CatalogManager catalogManager;
-  private final TableService tableService;
+  private final TableManager tableManager;
 
-  public TableManagementService(CatalogManager catalogManager, TableService tableService) {
+  public TableManagementService(CatalogManager catalogManager, TableManager tableManager) {
     this.catalogManager = catalogManager;
-    this.tableService = tableService;
+    this.tableManager = tableManager;
   }
 
   @Override
@@ -89,11 +89,14 @@ public class TableManagementService implements AmoroTableMetastore.Iface {
     }
     ServerTableIdentifier identifier =
         ServerTableIdentifier.of(
-            tableMeta.getTableIdentifier(), TableFormat.valueOf(tableMeta.getFormat()));
+            tableMeta.getTableIdentifier().getCatalog(),
+            tableMeta.getTableIdentifier().getDatabase(),
+            tableMeta.getTableIdentifier().getTableName(),
+            TableFormat.valueOf(tableMeta.getFormat()));
     InternalCatalog catalog = catalogManager.getInternalCatalog(identifier.getCatalog());
     CatalogMeta catalogMeta = catalog.getMetadata();
     TableMetadata tableMetadata = new TableMetadata(identifier, tableMeta, catalogMeta);
-    tableService.createTable(catalog.name(), tableMetadata);
+    tableManager.createTable(catalog.name(), tableMetadata);
   }
 
   @Override
@@ -124,7 +127,7 @@ public class TableManagementService implements AmoroTableMetastore.Iface {
 
   @Override
   public void removeTable(TableIdentifier tableIdentifier, boolean deleteData) {
-    tableService.dropTableMetadata(tableIdentifier, deleteData);
+    tableManager.dropTableMetadata(tableIdentifier, deleteData);
   }
 
   @Override
@@ -142,22 +145,22 @@ public class TableManagementService implements AmoroTableMetastore.Iface {
       List<BlockableOperation> operations,
       Map<String, String> properties)
       throws OperationConflictException {
-    return tableService.block(tableIdentifier, operations, properties);
+    return tableManager.block(tableIdentifier, operations, properties);
   }
 
   @Override
   public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
-    tableService.releaseBlocker(tableIdentifier, blockerId);
+    tableManager.releaseBlocker(tableIdentifier, blockerId);
   }
 
   @Override
   public long renewBlocker(TableIdentifier tableIdentifier, String blockerId)
       throws NoSuchObjectException {
-    return tableService.renewBlocker(tableIdentifier, blockerId);
+    return tableManager.renewBlocker(tableIdentifier, blockerId);
   }
 
   @Override
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
-    return tableService.getBlockers(tableIdentifier);
+    return tableManager.getBlockers(tableIdentifier);
   }
 }

@@ -23,8 +23,8 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
-import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -46,12 +46,12 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   private static final long START_DELAY = 10 * 1000L;
 
   private final ScheduledExecutorService executor;
-  private final TableManager tableManager;
+  private final TableService tableService;
   private final Set<ServerTableIdentifier> scheduledTables =
       Collections.synchronizedSet(new HashSet<>());
 
-  protected BaseTableExecutor(TableManager tableManager, int poolSize) {
-    this.tableManager = tableManager;
+  protected BaseTableExecutor(TableService tableService, int poolSize) {
+    this.tableService = tableService;
     this.executor =
         Executors.newScheduledThreadPool(
             poolSize,
@@ -107,7 +107,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   }
 
   private boolean isExecutable(TableRuntime tableRuntime) {
-    return tableManager.contains(tableRuntime.getTableIdentifier().getId())
+    return tableService.contains(tableRuntime.getTableIdentifier().getId())
         && enabled(tableRuntime);
   }
 
@@ -140,6 +140,6 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   }
 
   protected AmoroTable<?> loadTable(TableRuntime tableRuntime) {
-    return tableManager.loadTable(tableRuntime.getTableIdentifier());
+    return tableService.loadTable(tableRuntime.getTableIdentifier());
   }
 }

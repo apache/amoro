@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.catalog;
 
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.AlreadyExistsException;
@@ -31,6 +32,7 @@ import org.apache.amoro.shade.guava32.com.google.common.cache.CacheBuilder;
 import org.apache.amoro.shade.guava32.com.google.common.cache.CacheLoader;
 import org.apache.amoro.shade.guava32.com.google.common.cache.LoadingCache;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.table.TableIdentifier;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,9 +136,8 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
   }
 
   @Override
-  public List<ExternalCatalog> getExternalCatalogs() {
+  public List<ServerCatalog> getServerCatalogs() {
     return listCatalogMetas().stream()
-        .filter(c -> !isInternal(c))
         .map(
             c -> {
               ServerCatalog serverCatalog =
@@ -146,7 +147,6 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
               serverCatalog.reload(c);
               return serverCatalog;
             })
-        .map(c -> (ExternalCatalog) c)
         .collect(Collectors.toList());
   }
 
@@ -193,6 +193,12 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
     metaCache.invalidate(catalogMeta.getCatalogName());
     catalog.updateMetadata(catalogMeta);
     LOG.info("Update catalog metadata: {}", catalogMeta.getCatalogName());
+  }
+
+  @Override
+  public AmoroTable<?> loadTable(TableIdentifier identifier) {
+    ServerCatalog serverCatalog = getServerCatalog(identifier.getCatalog());
+    return serverCatalog.loadTable(identifier.getDatabase(), identifier.getTableName());
   }
 
   private void validateCatalogUpdate(CatalogMeta oldMeta, CatalogMeta newMeta) {

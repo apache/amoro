@@ -51,6 +51,7 @@ import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Function;
@@ -101,6 +102,7 @@ public class TableController {
   private static final long UPGRADE_INFO_EXPIRE_INTERVAL = 60 * 60 * 1000;
 
   private final CatalogManager catalogManager;
+  private final TableManager tableManager;
   private final TableService tableService;
   private final ServerTableDescriptor tableDescriptor;
   private final Configurations serviceConfig;
@@ -110,10 +112,12 @@ public class TableController {
 
   public TableController(
       CatalogManager catalogManager,
+      TableManager tableManager,
       TableService tableService,
       ServerTableDescriptor tableDescriptor,
       Configurations serviceConfig) {
     this.catalogManager = catalogManager;
+    this.tableManager = tableManager;
     this.tableService = tableService;
     this.tableDescriptor = tableDescriptor;
     this.serviceConfig = serviceConfig;
@@ -150,7 +154,7 @@ public class TableController {
     TableSummary tableSummary = serverTableMeta.getTableSummary();
     Optional<ServerTableIdentifier> serverTableIdentifier =
         Optional.ofNullable(
-            tableService.getServerTableIdentifier(
+            tableManager.getServerTableIdentifier(
                 TableIdentifier.of(catalog, database, tableName).buildTableIdentifier()));
     if (serverTableIdentifier.isPresent()) {
       TableRuntime tableRuntime = tableService.getRuntime(serverTableIdentifier.get().getId());
@@ -679,7 +683,7 @@ public class TableController {
     Preconditions.checkState(catalogManager.catalogExist(catalog), "invalid catalog!");
 
     ServerTableIdentifier serverTableIdentifier =
-        tableService.getServerTableIdentifier(
+        tableManager.getServerTableIdentifier(
             TableIdentifier.of(catalog, db, table).buildTableIdentifier());
     TableRuntime tableRuntime =
         serverTableIdentifier != null

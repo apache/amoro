@@ -32,6 +32,7 @@ import org.apache.amoro.hive.catalog.MixedHiveCatalog;
 import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.server.AMSServiceTestBase;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
@@ -51,7 +52,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.IOException;
 import java.util.List;
 
-public class AMSTableTestBase extends TableServiceTestBase {
+public class AMSTableTestBase extends AMSServiceTestBase {
   @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   @Rule public TemporaryFolder temp = new TemporaryFolder();
@@ -176,7 +177,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
           tableTestHelper.primaryKeySpec(),
           tableTestHelper.partitionSpec());
       TableMetadata tableMetadata = tableMetadata();
-      tableService().createTable(catalogMeta.getCatalogName(), tableMetadata);
+      tableManager().createTable(catalogMeta.getCatalogName(), tableMetadata);
     } else {
       if (catalogTestHelper.tableFormat().equals(TableFormat.ICEBERG)) {
         createIcebergTable();
@@ -187,10 +188,10 @@ public class AMSTableTestBase extends TableServiceTestBase {
       } else {
         throw new IllegalStateException("un-support format");
       }
-      tableService().exploreExternalCatalog();
     }
+    tableService().exploreTableRuntimes();
 
-    serverTableIdentifier = tableService().listManagedTables().get(0);
+    serverTableIdentifier = tableManager().listManagedTables().get(0);
   }
 
   private void createMixedHiveTable() {
@@ -239,13 +240,13 @@ public class AMSTableTestBase extends TableServiceTestBase {
   protected void dropTable() {
     if (externalCatalog == null) {
       mixedTables.dropTableByMeta(tableMeta, true);
-      tableService().dropTableMetadata(tableMeta.getTableIdentifier(), true);
+      tableManager().dropTableMetadata(tableMeta.getTableIdentifier(), true);
     } else {
       String database = tableTestHelper.id().getDatabase();
       String table = tableTestHelper.id().getTableName();
       externalCatalog.dropTable(database, table, true);
-      tableService().exploreExternalCatalog();
     }
+    tableService().exploreTableRuntimes();
   }
 
   protected CatalogTestHelper catalogTestHelper() {
@@ -266,7 +267,11 @@ public class AMSTableTestBase extends TableServiceTestBase {
 
   protected TableMetadata tableMetadata() {
     return new TableMetadata(
-        ServerTableIdentifier.of(tableMeta.getTableIdentifier(), catalogTestHelper.tableFormat()),
+        ServerTableIdentifier.of(
+            tableMeta.getTableIdentifier().getCatalog(),
+            tableMeta.getTableIdentifier().getDatabase(),
+            tableMeta.getTableIdentifier().getTableName(),
+            catalogTestHelper.tableFormat()),
         tableMeta,
         catalogMeta);
   }

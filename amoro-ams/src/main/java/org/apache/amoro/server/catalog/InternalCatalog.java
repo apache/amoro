@@ -22,7 +22,6 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.api.CatalogMeta;
-import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.exception.AlreadyExistsException;
 import org.apache.amoro.exception.IllegalMetadataException;
 import org.apache.amoro.exception.ObjectNotExistsException;
@@ -32,6 +31,7 @@ import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.internal.InternalTableCreator;
 import org.apache.amoro.server.table.internal.InternalTableHandler;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 
 import java.util.List;
@@ -101,11 +101,7 @@ public abstract class InternalCatalog extends ServerCatalog {
             TableMetaMapper.class,
             mapper -> mapper.selectTableIdentifiersByDb(getMetadata().getCatalogName(), database))
         .stream()
-        .map(
-            sid ->
-                TableIDWithFormat.of(
-                    org.apache.amoro.table.TableIdentifier.of(sid.getIdentifier()),
-                    sid.getFormat()))
+        .map(sid -> TableIDWithFormat.of(sid.getIdentifier(), sid.getFormat()))
         .collect(Collectors.toList());
   }
 
@@ -115,11 +111,7 @@ public abstract class InternalCatalog extends ServerCatalog {
             TableMetaMapper.class,
             mapper -> mapper.selectTableIdentifiersByCatalog(getMetadata().getCatalogName()))
         .stream()
-        .map(
-            sid ->
-                TableIDWithFormat.of(
-                    org.apache.amoro.table.TableIdentifier.of(sid.getIdentifier()),
-                    sid.getFormat()))
+        .map(sid -> TableIDWithFormat.of(sid.getIdentifier(), sid.getFormat()))
         .collect(Collectors.toList());
   }
 
