@@ -20,12 +20,9 @@ package org.apache.amoro.spark;
 
 import org.apache.amoro.spark.mixed.MixedSessionCatalogBase;
 import org.apache.amoro.spark.mixed.MixedSparkCatalogBase;
-import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
 import org.apache.spark.sql.connector.catalog.FunctionCatalog;
-import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
-import org.apache.spark.sql.connector.iceberg.catalog.Procedure;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 /**
@@ -42,10 +39,5 @@ public class MixedFormatSparkSessionCatalog<
     MixedSparkCatalogBase newCatalog = new MixedFormatSparkCatalog();
     newCatalog.initialize(name, options);
     return newCatalog;
-  }
-
-  @Override
-  public Procedure loadProcedure(Identifier ident) throws NoSuchProcedureException {
-    throw new NoSuchProcedureException(ident);
   }
 }
