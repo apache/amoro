@@ -34,7 +34,7 @@ the multi-catalog feature can be used to support SQL across data sources, such a
 
 ```SQL
 SELECT c.ID, c.NAME, c.AGE, o.AMOUNT
-FROM MYSQL.ONLINE.CUSTOMERS c JOIN HIVE.OFFLINE.ORDERS o
+FROM ${CATALOG_A}.ONLINE.CUSTOMERS c JOIN ${CATALOG_B}.OFFLINE.ORDERS o
 ON (c.ID = o.CUSTOMER_ID)
 ```
 
