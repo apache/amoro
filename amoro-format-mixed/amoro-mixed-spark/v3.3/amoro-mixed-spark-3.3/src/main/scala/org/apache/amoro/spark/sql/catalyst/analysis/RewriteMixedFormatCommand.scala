@@ -120,13 +120,7 @@ case class RewriteMixedFormatCommand(sparkSession: SparkSession) extends Rule[Lo
               targetTable.identifier)
             val name = ResolvedDBObjectName(targetCatalog, seq)
             CreateTable(name, table.schema(), table.partitioning(), tableSpec, ifNotExists)
-          case _ =>
-            provider.isDefined match {
-              case true =>
-                throw new UnsupportedOperationException(
-                  s"format ${provider.get} does not support create table like command!!!")
-              case false => plan
-            }
+          case _ => plan
         }
       case _ => plan
     }
