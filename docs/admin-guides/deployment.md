@@ -100,42 +100,26 @@ Make sure the port is not used before configuring it.
 
 ### Configure system database
 
-You can use MySQL/PostgreSQL as the system database instead of the default Derby.
+AMS uses embedded [Apache Derby](https://db.apache.org/derby/) as the backend storage by default, so you can use `Derby` directly without any additional configuration.
 
-If you would like to use MySQL as the system database, you need to manually download the [MySQL JDBC Connector](https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.1.0/mysql-connector-j-8.1.0.jar)
-and move it into the `{AMORO_HOME}/lib/` directory. You can use the following command to complete these operations:
-```shell
-$ cd ${AMORO_HOME}
-$ MYSQL_JDBC_DRIVER_VERSION=8.0.30
-$ wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_JDBC_DRIVER_VERSION}/mysql-connector-java-${MYSQL_JDBC_DRIVER_VERSION}.jar
-$ mv mysql-connector-java-${MYSQL_JDBC_DRIVER_VERSION}.jar lib
-```
+You can also configure a relational backend storage as you needed.
 
-Create an empty database in MySQL/PostgreSQL, then AMS will automatically create tables in this MySQL/PostgreSQL database when it first started.
-If you want to create tables on yourself, set `ams.database.auto-create-tables` to false.
+> If you would like to use MySQL as the system database, you need to manually download the [MySQL JDBC Connector](https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.1.0/mysql-connector-j-8.1.0.jar)
+and move it into the `${AMORO_HOME}/lib/` directory.
 
+You need to create an empty database in the RDBMS before to start the server, then AMS will automatically create tables in the database when it first started.
 
-One thing you need to do is Adding MySQL/PostgreSQL configuration under `config.yaml` of Ams:
+One thing you need to do is adding configuration under `config.yaml` of Ams:
 
 ```yaml
-# MySQL
 ams:
   database:
-    type: mysql
-    jdbc-driver-class: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/amoro?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password: root
+    type: ${database_type} # postgres or mysql
+    jdbc-driver-class: ${your_driver_name}
+    url: ${your_jdbc_url}
+    username: ${your_username}
+    password: ${your_password}
     auto-create-tables: true
-# PostgreSQL
-#ams:
-#  database:
-#    type: postgres
-#    jdbc-driver-class: org.postgresql.Driver
-#    url: jdbc:postgresql://127.0.0.1:5432/amoro
-#    auto-create-tables: false
-#    username: user
-#    password: passwd
 ```
 
 ### Configure high availability
@@ -301,7 +285,7 @@ $ bin/ams.sh stop
 
 ### Upgrade system databases
 
-You can find all the upgrade SQL scripts under `{AMORO_HOME}/conf/mysql/` with name pattern `upgrade-a.b.c-to-x.y.z.sql`.
+You can find all the upgrade SQL scripts under `${AMORO_HOME}/conf/${db_type}/` with name pattern `upgrade-a.b.c-to-x.y.z.sql`.
 Execute the upgrade SQL scripts one by one to your system database based on your starting and target versions.
 
 ### Replace all libs and plugins
