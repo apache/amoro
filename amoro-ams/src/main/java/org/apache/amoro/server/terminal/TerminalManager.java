@@ -31,7 +31,6 @@ import org.apache.amoro.server.dashboard.model.LatestSessionInfo;
 import org.apache.amoro.server.dashboard.model.LogInfo;
 import org.apache.amoro.server.dashboard.model.SqlResult;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
-import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.terminal.kyuubi.KyuubiTerminalSessionFactory;
 import org.apache.amoro.server.terminal.local.LocalSessionFactory;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -61,7 +60,6 @@ public class TerminalManager {
   private final Configurations serviceConfig;
   private final AtomicLong threadPoolCount = new AtomicLong();
   private final CatalogManager catalogManager;
-  private final TableService tableService;
   private final TerminalSessionFactory sessionFactory;
   private final int resultLimits;
   private final boolean stopOnError;
@@ -82,11 +80,9 @@ public class TerminalManager {
           new LinkedBlockingQueue<>(),
           r -> new Thread(null, r, "terminal-execute-" + threadPoolCount.incrementAndGet()));
 
-  public TerminalManager(
-      Configurations conf, CatalogManager catalogManager, TableService tableService) {
+  public TerminalManager(Configurations conf, CatalogManager catalogManager) {
     this.serviceConfig = conf;
     this.catalogManager = catalogManager;
-    this.tableService = tableService;
     this.resultLimits = conf.getInteger(AmoroManagementConf.TERMINAL_RESULT_LIMIT);
     this.stopOnError = conf.getBoolean(AmoroManagementConf.TERMINAL_STOP_ON_ERROR);
     this.sessionTimeout = conf.getInteger(AmoroManagementConf.TERMINAL_SESSION_TIMEOUT);

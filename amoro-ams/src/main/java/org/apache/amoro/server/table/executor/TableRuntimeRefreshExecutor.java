@@ -23,8 +23,8 @@ import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
-import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.table.MixedTable;
 
@@ -36,8 +36,8 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
   private final int maxPendingPartitions;
 
   public TableRuntimeRefreshExecutor(
-      TableManager tableManager, int poolSize, long interval, int maxPendingPartitions) {
-    super(tableManager, poolSize);
+      TableService tableService, int poolSize, long interval, int maxPendingPartitions) {
+    super(tableService, poolSize);
     this.interval = interval;
     this.maxPendingPartitions = maxPendingPartitions;
   }

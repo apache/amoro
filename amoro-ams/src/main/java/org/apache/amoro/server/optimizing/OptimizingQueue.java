@@ -31,13 +31,13 @@ import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.QuotaProvider;
-import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
@@ -81,7 +81,7 @@ public class OptimizingQueue extends PersistentBase {
   private final Queue<TableOptimizingProcess> tableQueue = new LinkedTransferQueue<>();
   private final Queue<TaskRuntime<?>> retryTaskQueue = new LinkedTransferQueue<>();
   private final SchedulingPolicy scheduler;
-  private final TableManager tableManager;
+  private final CatalogManager catalogManager;
   private final Executor planExecutor;
   // Keep all planning table identifiers
   private final Set<ServerTableIdentifier> planningTables = new HashSet<>();
@@ -92,7 +92,7 @@ public class OptimizingQueue extends PersistentBase {
   private ResourceGroup optimizerGroup;
 
   public OptimizingQueue(
-      TableManager tableManager,
+      CatalogManager catalogManager,
       ResourceGroup optimizerGroup,
       QuotaProvider quotaProvider,
       Executor planExecutor,
@@ -103,7 +103,7 @@ public class OptimizingQueue extends PersistentBase {
     this.optimizerGroup = optimizerGroup;
     this.quotaProvider = quotaProvider;
     this.scheduler = new SchedulingPolicy(optimizerGroup);
-    this.tableManager = tableManager;
+    this.catalogManager = catalogManager;
     this.maxPlanningParallelism = maxPlanningParallelism;
     this.metrics =
         new OptimizerGroupMetrics(
@@ -275,7 +275,8 @@ public class OptimizingQueue extends PersistentBase {
   private TableOptimizingProcess planInternal(TableRuntime tableRuntime) {
     tableRuntime.beginPlanning();
     try {
-      AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
+      ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
+      AmoroTable<?> table = catalogManager.loadTable(identifier.getIdentifier());
       AbstractOptimizingPlanner planner =
           IcebergTableUtil.createOptimizingPlanner(
               tableRuntime.refresh(table),
@@ -601,7 +602,10 @@ public class OptimizingQueue extends PersistentBase {
 
     private UnKeyedTableCommit buildCommit() {
       MixedTable table =
-          (MixedTable) tableManager.loadTable(tableRuntime.getTableIdentifier()).originalTable();
+          (MixedTable)
+              catalogManager
+                  .loadTable(tableRuntime.getTableIdentifier().getIdentifier())
+                  .originalTable();
       if (table.isUnkeyedTable()) {
         return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
       } else {
