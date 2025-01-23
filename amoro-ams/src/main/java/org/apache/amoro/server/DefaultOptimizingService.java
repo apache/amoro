@@ -109,11 +109,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
       CatalogManager catalogManager,
       MaintainedTableManager tableManager,
       TableService tableService) {
-    this.optimizerTouchTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT);
-    this.taskAckTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT);
+    this.optimizerTouchTimeout = serviceConfig.get(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT).toMillis();
+    this.taskAckTimeout = serviceConfig.get(AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT).toMillis();
     this.maxPlanningParallelism =
         serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM);
-    this.pollingTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT);
+    this.pollingTimeout = serviceConfig.get(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT).toMillis();
     this.tableService = tableService;
     this.catalogManager = catalogManager;
     this.tableManager = tableManager;

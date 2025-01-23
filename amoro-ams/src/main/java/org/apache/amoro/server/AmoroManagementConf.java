@@ -81,10 +81,10 @@ public class AmoroManagementConf {
               "Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing "
                   + "manifests in the base table implementation across all concurrent commit operations.");
 
-  public static final ConfigOption<Long> REFRESH_EXTERNAL_CATALOGS_INTERVAL =
+  public static final ConfigOption<Duration> REFRESH_EXTERNAL_CATALOGS_INTERVAL =
       ConfigOptions.key("refresh-external-catalogs.interval")
-          .longType()
-          .defaultValue(3 * 60 * 1000L)
+          .durationType()
+          .defaultValue(Duration.ofMinutes(3))
           .withDescription("Interval to refresh the external catalog.");
 
   public static final ConfigOption<Integer> REFRESH_EXTERNAL_CATALOGS_THREAD_COUNT =
@@ -172,29 +172,29 @@ public class AmoroManagementConf {
           .defaultValue(3)
           .withDescription("The number of threads used for creating tags.");
 
-  public static final ConfigOption<Long> AUTO_CREATE_TAGS_INTERVAL =
+  public static final ConfigOption<Duration> AUTO_CREATE_TAGS_INTERVAL =
       ConfigOptions.key("auto-create-tags.interval")
-          .longType()
-          .defaultValue(60000L)
+          .durationType()
+          .defaultValue(Duration.ofMinutes(1))
           .withDescription("Interval for creating tags.");
 
-  public static final ConfigOption<Long> REFRESH_TABLES_INTERVAL =
+  public static final ConfigOption<Duration> REFRESH_TABLES_INTERVAL =
       ConfigOptions.key("refresh-tables.interval")
-          .longType()
-          .defaultValue(60000L)
+          .durationType()
+          .defaultValue(Duration.ofMinutes(1))
           .withDescription("Interval for refreshing table metadata.");
 
   public static final ConfigOption<Integer> REFRESH_MAX_PENDING_PARTITIONS =
       ConfigOptions.key("refresh-tables.max-pending-partition-count")
           .intType()
           .defaultValue(100)
-          .withDescription("Filters will not be used beyond that number of partitions");
+          .withDescription("Filters will not be used beyond that number of partitions.");
 
-  public static final ConfigOption<Long> BLOCKER_TIMEOUT =
+  public static final ConfigOption<Duration> BLOCKER_TIMEOUT =
       ConfigOptions.key("blocker.timeout")
-          .longType()
-          .defaultValue(60000L)
-          .withDescription("session timeout in Milliseconds");
+          .durationType()
+          .defaultValue(Duration.ofMinutes(1))
+          .withDescription("Session timeout. Default unit is milliseconds if not specified.");
 
   public static final ConfigOption<Boolean> HA_ENABLE =
       ConfigOptions.key("ha.enabled")
@@ -226,11 +226,11 @@ public class AmoroManagementConf {
           .defaultValue(1261)
           .withDescription("Port that the optimizing service thrift server is bound to.");
 
-  public static final ConfigOption<Long> THRIFT_MAX_MESSAGE_SIZE =
+  public static final ConfigOption<String> THRIFT_MAX_MESSAGE_SIZE =
       ConfigOptions.key("thrift-server.max-message-size")
-          .longType()
-          .defaultValue(100 * 1024 * 1024L)
-          .withDescription("Maximum message size that the Thrift server can accept.");
+          .stringType()
+          .defaultValue("100 MB")
+          .withDescription("Maximum message size that the Thrift server can accept. Default unit is bytes if not specified.");
 
   public static final ConfigOption<Integer> THRIFT_WORKER_THREADS =
       ConfigOptions.key("thrift-server.table-service.worker-thread-count")
@@ -342,16 +342,16 @@ public class AmoroManagementConf {
           .defaultValue(30000L)
           .withDescription("Max wait time before getting a connection timeout.");
 
-  public static final ConfigOption<Long> OPTIMIZER_HB_TIMEOUT =
+  public static final ConfigOption<Duration> OPTIMIZER_HB_TIMEOUT =
       ConfigOptions.key("optimizer.heart-beat-timeout")
-          .longType()
-          .defaultValue(60000L)
+          .durationType()
+          .defaultValue(Duration.ofMinutes(1))
           .withDescription("Timeout duration for Optimizer heartbeat.");
 
-  public static final ConfigOption<Long> OPTIMIZER_TASK_ACK_TIMEOUT =
+  public static final ConfigOption<Duration> OPTIMIZER_TASK_ACK_TIMEOUT =
       ConfigOptions.key("optimizer.task-ack-timeout")
-          .longType()
-          .defaultValue(30000L)
+          .durationType()
+          .defaultValue(Duration.ofSeconds(30))
           .withDescription("Timeout duration for task acknowledgment.");
 
   public static final ConfigOption<Integer> OPTIMIZER_MAX_PLANNING_PARALLELISM =
@@ -360,10 +360,10 @@ public class AmoroManagementConf {
           .defaultValue(1)
           .withDescription("Max planning parallelism in one optimizer group.");
 
-  public static final ConfigOption<Long> OPTIMIZER_POLLING_TIMEOUT =
+  public static final ConfigOption<Duration> OPTIMIZER_POLLING_TIMEOUT =
       ConfigOptions.key("optimizer.polling-timeout")
-          .longType()
-          .defaultValue(3000L)
+          .durationType()
+          .defaultValue(Duration.ofSeconds(3))
           .withDescription("Optimizer polling task timeout.");
 
   /** config key prefix of terminal */
@@ -396,11 +396,11 @@ public class AmoroManagementConf {
           .withDescription(
               "When a statement fails to execute, stop execution or continue executing the remaining statements.");
 
-  public static final ConfigOption<Integer> TERMINAL_SESSION_TIMEOUT =
+  public static final ConfigOption<Duration> TERMINAL_SESSION_TIMEOUT =
       ConfigOptions.key("terminal.session.timeout")
-          .intType()
-          .defaultValue(30)
-          .withDescription("Session timeout in minutes.");
+          .durationType()
+          .defaultValue(Duration.ofMinutes(30))
+          .withDescription("Session timeout. Default unit is milliseconds if not specified (** Note: default units are minutes when version < 0.8).");
 
   public static final ConfigOption<String> TERMINAL_SENSITIVE_CONF_KEYS =
       ConfigOptions.key("terminal.sensitive-conf-keys")
