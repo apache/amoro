@@ -230,7 +230,8 @@ public class AmoroManagementConf {
       ConfigOptions.key("thrift-server.max-message-size")
           .stringType()
           .defaultValue("100 MB")
-          .withDescription("Maximum message size that the Thrift server can accept. Default unit is bytes if not specified.");
+          .withDescription(
+              "Maximum message size that the Thrift server can accept. Default unit is bytes if not specified.");
 
   public static final ConfigOption<Integer> THRIFT_WORKER_THREADS =
       ConfigOptions.key("thrift-server.table-service.worker-thread-count")
@@ -400,7 +401,8 @@ public class AmoroManagementConf {
       ConfigOptions.key("terminal.session.timeout")
           .durationType()
           .defaultValue(Duration.ofMinutes(30))
-          .withDescription("Session timeout. Default unit is milliseconds if not specified (** Note: default units are minutes when version < 0.8).");
+          .withDescription(
+              "Session timeout. Default unit is milliseconds if not specified (** Note: default units are minutes when version < 0.8).");
 
   public static final ConfigOption<String> TERMINAL_SENSITIVE_CONF_KEYS =
       ConfigOptions.key("terminal.sensitive-conf-keys")

@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server;
 
+import static org.apache.amoro.server.AmoroServiceContainer.expandConfigMap;
+
 import org.apache.amoro.config.ConfigOption;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
@@ -39,82 +41,94 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Map;
 
-import static org.apache.amoro.server.AmoroServiceContainer.expandConfigMap;
-
 public class TestAmoroManagementConf {
-    private static final ConfigOption<Duration>[] TIME_RELATED_CONFIG_OPTIONS = new ConfigOption[] {
-            AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL,
-            AmoroManagementConf.AUTO_CREATE_TAGS_INTERVAL,
-            AmoroManagementConf.REFRESH_TABLES_INTERVAL,
-            AmoroManagementConf.BLOCKER_TIMEOUT,
-            AmoroManagementConf.OPTIMIZER_HB_TIMEOUT,
-            AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT,
-            AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT,
-            AmoroManagementConf.TERMINAL_SESSION_TIMEOUT
-    };
+  private static final ConfigOption<Duration>[] TIME_RELATED_CONFIG_OPTIONS =
+      new ConfigOption[] {
+        AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL,
+        AmoroManagementConf.AUTO_CREATE_TAGS_INTERVAL,
+        AmoroManagementConf.REFRESH_TABLES_INTERVAL,
+        AmoroManagementConf.BLOCKER_TIMEOUT,
+        AmoroManagementConf.OPTIMIZER_HB_TIMEOUT,
+        AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT,
+        AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT,
+        AmoroManagementConf.TERMINAL_SESSION_TIMEOUT
+      };
 
-    private static final ConfigOption<String>[] STORAGE_RELATED_CONFIG_OPTIONS = new ConfigOption[] {
-            AmoroManagementConf.THRIFT_MAX_MESSAGE_SIZE
-    };
+  private static final ConfigOption<String>[] STORAGE_RELATED_CONFIG_OPTIONS =
+      new ConfigOption[] {AmoroManagementConf.THRIFT_MAX_MESSAGE_SIZE};
 
-    @Test
-    void testParsingAmoroManagementConfWithTimeUnits() throws Exception {
-        Configurations serviceConfig = getConfigurationsWithUnits();
-        assertTimeRelatedConfigs(serviceConfig);
+  @Test
+  void testParsingDefaultTimeRelatedConfigs() {
+    Configurations serviceConfig = new Configurations();
+    assertTimeRelatedConfigs(serviceConfig);
+  }
+
+  @Test
+  void testParsingDefaultStorageRelatedConfigs() {
+    Configurations serviceConfig = new Configurations();
+    assertStorageRelatedConfigs(serviceConfig);
+  }
+
+  @Test
+  void testParsingAmoroManagementConfWithTimeUnits() throws Exception {
+    Configurations serviceConfig = getConfigurationsWithUnits();
+    assertTimeRelatedConfigs(serviceConfig);
+  }
+
+  @Test
+  void testParsingAmoroManagementConfWithStorageUnits() throws Exception {
+    Configurations serviceConfig = getConfigurationsWithUnits();
+    assertStorageRelatedConfigs(serviceConfig);
+  }
+
+  private Configurations getConfigurationsWithUnits() throws URISyntaxException, IOException {
+    URL resource = Resources.getResource("config-with-units.yaml");
+    JsonNode yamlConfig =
+        JacksonUtil.fromObjects(
+            new Yaml().loadAs(Files.newInputStream(Paths.get(resource.toURI())), Map.class));
+    Map<String, Object> systemConfig =
+        JacksonUtil.getMap(
+            yamlConfig,
+            AmoroManagementConf.SYSTEM_CONFIG,
+            new TypeReference<Map<String, Object>>() {});
+    Map<String, Object> expandedConfigurationMap = Maps.newHashMap();
+    expandConfigMap(systemConfig, "", expandedConfigurationMap);
+    return Configurations.fromObjectMap(expandedConfigurationMap);
+  }
+
+  private void assertTimeRelatedConfigs(Configurations serviceConfig) {
+    Configurations timeRelatedConfigsWithoutTimeUnit =
+        Configurations.fromObjectMap(timeRelatedConfigMapInMillisSecondsWithoutTimeUnits);
+    for (ConfigOption<Duration> configOption : TIME_RELATED_CONFIG_OPTIONS) {
+      Assertions.assertEquals(
+          timeRelatedConfigsWithoutTimeUnit.get(configOption), serviceConfig.get(configOption));
     }
+  }
 
-    @Test
-    void testParsingAmoroManagementConfWithStorageUnits() throws Exception {
-        Configurations serviceConfig = getConfigurationsWithUnits();
-        assertStorageRelatedConfigs(serviceConfig);
+  private void assertStorageRelatedConfigs(Configurations serviceConfig) {
+    Configurations storageRelatedConfigsWithoutTimeUnit =
+        Configurations.fromObjectMap(storageRelatedConfigMapWithoutTimeUnits);
+    for (ConfigOption<String> configOption : STORAGE_RELATED_CONFIG_OPTIONS) {
+      Assertions.assertEquals(
+          MemorySize.parse(storageRelatedConfigsWithoutTimeUnit.getString(configOption)),
+          MemorySize.parse(serviceConfig.getString(AmoroManagementConf.THRIFT_MAX_MESSAGE_SIZE)));
     }
+  }
 
-    private Configurations getConfigurationsWithUnits() throws URISyntaxException, IOException {
-        URL resource = Resources.getResource("config-with-units.yaml");
-        JsonNode yamlConfig =
-                JacksonUtil.fromObjects(
-                        new Yaml().loadAs(Files.newInputStream(Paths.get(resource.toURI())), Map.class));
-        Map<String, Object> systemConfig =
-                JacksonUtil.getMap(
-                        yamlConfig,
-                        AmoroManagementConf.SYSTEM_CONFIG,
-                        new TypeReference<Map<String, Object>>() {});
-        Map<String, Object> expandedConfigurationMap = Maps.newHashMap();
-        expandConfigMap(systemConfig, "", expandedConfigurationMap);
-        return Configurations.fromObjectMap(expandedConfigurationMap);
-    }
-    private void assertTimeRelatedConfigs(Configurations serviceConfig) {
-        Configurations timeRelatedConfigsWithoutTimeUnit = Configurations.fromObjectMap(timeRelatedConfigMapInMillisSecondsWithoutTimeUnits);
-        for (ConfigOption<Duration> configOption : TIME_RELATED_CONFIG_OPTIONS) {
-            Assertions.assertEquals(
-                    timeRelatedConfigsWithoutTimeUnit.get(configOption),
-                    serviceConfig.get(configOption));
-        }
-    }
+  private final Map<String, Object> timeRelatedConfigMapInMillisSecondsWithoutTimeUnits =
+      ImmutableMap.<String, Object>builder()
+          .put("refresh-external-catalogs.interval", "180000")
+          .put("refresh-tables.interval", "60000")
+          .put("optimizer.heart-beat-timeout", "60000")
+          .put("optimizer.task-ack-timeout", "30000")
+          .put("optimizer.polling-timeout", "3000")
+          .put("blocker.timeout", "60000")
+          .put("auto-create-tags.interval", "60000")
+          .put("terminal.session", "180000")
+          .build();
 
-    private void assertStorageRelatedConfigs(Configurations serviceConfig) {
-        Configurations storageRelatedConfigsWithoutTimeUnit = Configurations.fromObjectMap(storageRelatedConfigMapWithoutTimeUnits);
-        for (ConfigOption<String> configOption : STORAGE_RELATED_CONFIG_OPTIONS) {
-            Assertions.assertEquals(
-                    MemorySize.parse(storageRelatedConfigsWithoutTimeUnit.getString(configOption)),
-                    MemorySize.parse(serviceConfig.getString(AmoroManagementConf.THRIFT_MAX_MESSAGE_SIZE)));
-        }
-    }
-
-    private final Map<String, Object> timeRelatedConfigMapInMillisSecondsWithoutTimeUnits =
-            ImmutableMap.<String, Object>builder()
-                    .put("refresh-external-catalogs.interval", "180000")
-                    .put("refresh-tables.interval", "60000")
-                    .put("optimizer.heart-beat-timeout", "60000")
-                    .put("optimizer.task-ack-timeout", "30000")
-                    .put("optimizer.polling-timeout", "3000")
-                    .put("blocker.timeout", "60000")
-                    .put("auto-create-tags.interval", "60000")
-                    .put("terminal.session", "180000")
-                    .build();
-
-    private final Map<String, Object> storageRelatedConfigMapWithoutTimeUnits =
-            ImmutableMap.<String, Object>builder()
-                    .put("thrift-server.max-message-size", "104857600")
-                    .build();
+  private final Map<String, Object> storageRelatedConfigMapWithoutTimeUnits =
+      ImmutableMap.<String, Object>builder()
+          .put("thrift-server.max-message-size", "104857600")
+          .build();
 }
