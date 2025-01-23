@@ -614,7 +614,8 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     statusCode.add(OptimizingStatus.FULL_OPTIMIZING.getCode());
     String tableFilter = "pending";
     res =
-        tableManager().queryTableOptimizingInfo(optimizerGroup1, db1, tableFilter, statusCode, 10, 0);
+        tableManager()
+            .queryTableOptimizingInfo(optimizerGroup1, db1, tableFilter, statusCode, 10, 0);
     Integer expectedTotalInGroup1InDb1WithTableFilterAndStatus = 2;
     Assert.assertEquals(expectedTotalInGroup1InDb1WithTableFilterAndStatus, res.getRight());
     Assert.assertEquals(2, res.getLeft().size());

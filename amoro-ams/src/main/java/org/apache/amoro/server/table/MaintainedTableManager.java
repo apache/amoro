@@ -45,9 +45,7 @@ public interface MaintainedTableManager {
    */
   ServerTableIdentifier getServerTableIdentifier(TableIdentifier id);
 
-  /**
-   * Get the table runtime meta.
-   */
+  /** Get the table runtime meta. */
   TableRuntimeMeta getTableRuntimeMata(ServerTableIdentifier id);
 
   /**

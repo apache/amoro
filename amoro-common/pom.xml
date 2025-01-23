@@ -166,7 +166,7 @@
                 </executions>
             </plugin>
 
-            <!--Compile thrift api with commend: mvn thrift:compile -pl amoro-core-->
+            <!--Compile thrift api with commend: mvn thrift:compile -pl amoro-common-->
             <plugin>
                 <groupId>org.apache.thrift.tools</groupId>
                 <artifactId>maven-thrift-plugin</artifactId>

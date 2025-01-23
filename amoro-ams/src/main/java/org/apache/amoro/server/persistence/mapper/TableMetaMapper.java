@@ -392,65 +392,67 @@ public interface TableMetaMapper {
           + " b.target_change_snapshot_id, b.plan_time, b.from_sequence, b.to_sequence FROM table_runtime a"
           + " INNER JOIN table_identifier i ON a.table_id = i.table_id "
           + " LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id")
-  @Results(id = "tableRuntimeMeta", value = {
-    @Result(property = "tableId", column = "table_id"),
-    @Result(property = "catalogName", column = "catalog_name"),
-    @Result(property = "dbName", column = "db_name"),
-    @Result(property = "tableName", column = "table_name"),
-    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class),
-    @Result(property = "currentSnapshotId", column = "current_snapshot_id"),
-    @Result(property = "currentChangeSnapshotId", column = "current_change_snapshotId"),
-    @Result(property = "lastOptimizedSnapshotId", column = "last_optimized_snapshotId"),
-    @Result(
-        property = "lastOptimizedChangeSnapshotId",
-        column = "last_optimized_change_snapshotId"),
-    @Result(
-        property = "lastMajorOptimizingTime",
-        column = "last_major_optimizing_time",
-        typeHandler = Long2TsConverter.class),
-    @Result(
-        property = "lastMinorOptimizingTime",
-        column = "last_minor_optimizing_time",
-        typeHandler = Long2TsConverter.class),
-    @Result(
-        property = "lastFullOptimizingTime",
-        column = "last_full_optimizing_time",
-        typeHandler = Long2TsConverter.class),
-    @Result(
-        property = "tableStatus",
-        column = "optimizing_status_code",
-        typeHandler = OptimizingStatusConverter.class),
-    @Result(
-        property = "currentStatusStartTime",
-        column = "optimizing_status_start_time",
-        typeHandler = Long2TsConverter.class),
-    @Result(property = "optimizingProcessId", column = "optimizing_process_id"),
-    @Result(property = "optimizerGroup", column = "optimizer_group"),
-    @Result(
-        property = "tableConfig",
-        column = "table_config",
-        typeHandler = JsonObjectConverter.class),
-    @Result(
-        property = "pendingInput",
-        column = "pending_input",
-        typeHandler = JsonObjectConverter.class),
-    @Result(
-        property = "tableSummary",
-        column = "table_summary",
-        typeHandler = JsonObjectConverter.class),
-    @Result(property = "optimizingType", column = "optimizing_type"),
-    @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
-    @Result(property = "targetChangeSnapshotId", column = "target_change_snapshot_id"),
-    @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
-    @Result(
-        property = "fromSequence",
-        column = "from_sequence",
-        typeHandler = MapLong2StringConverter.class),
-    @Result(
-        property = "toSequence",
-        column = "to_sequence",
-        typeHandler = MapLong2StringConverter.class)
-  })
+  @Results(
+      id = "tableRuntimeMeta",
+      value = {
+        @Result(property = "tableId", column = "table_id"),
+        @Result(property = "catalogName", column = "catalog_name"),
+        @Result(property = "dbName", column = "db_name"),
+        @Result(property = "tableName", column = "table_name"),
+        @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class),
+        @Result(property = "currentSnapshotId", column = "current_snapshot_id"),
+        @Result(property = "currentChangeSnapshotId", column = "current_change_snapshotId"),
+        @Result(property = "lastOptimizedSnapshotId", column = "last_optimized_snapshotId"),
+        @Result(
+            property = "lastOptimizedChangeSnapshotId",
+            column = "last_optimized_change_snapshotId"),
+        @Result(
+            property = "lastMajorOptimizingTime",
+            column = "last_major_optimizing_time",
+            typeHandler = Long2TsConverter.class),
+        @Result(
+            property = "lastMinorOptimizingTime",
+            column = "last_minor_optimizing_time",
+            typeHandler = Long2TsConverter.class),
+        @Result(
+            property = "lastFullOptimizingTime",
+            column = "last_full_optimizing_time",
+            typeHandler = Long2TsConverter.class),
+        @Result(
+            property = "tableStatus",
+            column = "optimizing_status_code",
+            typeHandler = OptimizingStatusConverter.class),
+        @Result(
+            property = "currentStatusStartTime",
+            column = "optimizing_status_start_time",
+            typeHandler = Long2TsConverter.class),
+        @Result(property = "optimizingProcessId", column = "optimizing_process_id"),
+        @Result(property = "optimizerGroup", column = "optimizer_group"),
+        @Result(
+            property = "tableConfig",
+            column = "table_config",
+            typeHandler = JsonObjectConverter.class),
+        @Result(
+            property = "pendingInput",
+            column = "pending_input",
+            typeHandler = JsonObjectConverter.class),
+        @Result(
+            property = "tableSummary",
+            column = "table_summary",
+            typeHandler = JsonObjectConverter.class),
+        @Result(property = "optimizingType", column = "optimizing_type"),
+        @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
+        @Result(property = "targetChangeSnapshotId", column = "target_change_snapshot_id"),
+        @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
+        @Result(
+            property = "fromSequence",
+            column = "from_sequence",
+            typeHandler = MapLong2StringConverter.class),
+        @Result(
+            property = "toSequence",
+            column = "to_sequence",
+            typeHandler = MapLong2StringConverter.class)
+      })
   List<TableRuntimeMeta> selectTableRuntimeMetas();
 
   @Select(
@@ -496,7 +498,4 @@ public interface TableMetaMapper {
       @Param("fuzzyDbName") String fuzzyDbName,
       @Param("fuzzyTableName") String fuzzyTableName,
       @Param("statusCodeFilter") List<Integer> statusCodeFilter);
-
-
-
 }
