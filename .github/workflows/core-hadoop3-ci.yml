@@ -26,9 +26,9 @@ on:
       - "amoro-format-iceberg/**"
       - "amoro-format-paimon/**"
       - "amoro-format-hudi/**"
-      - "amoro-format-mixed/amoro-format-mixed-flink/**"
-      - "amoro-format-mixed/amoro-format-mixed-hive/**"
-      - "amoro-format-mixed/amoro-format-mixed-spark/**"
+      - "amoro-format-mixed/amoro-mixed-flink/**"
+      - "amoro-format-mixed/amoro-mixed-hive/**"
+      - "amoro-format-mixed/amoro-mixed-spark/**"
       - "pom.xml"
       - "tools/maven/**"
 

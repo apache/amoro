@@ -85,3 +85,38 @@ COMMENT ON COLUMN http_session.expiry_time IS 'Expiry time';
 COMMENT ON COLUMN http_session.max_interval IS 'Max internal';
 COMMENT ON COLUMN http_session.data_store IS 'Session data store';
 COMMENT ON TABLE http_session IS 'Http session store';
+
+-- update resource group memory unit
+UPDATE resource_group
+SET properties = jsonb_set(
+        properties::jsonb,
+        '{flink-conf.jobmanager.memory.process.size}',
+        ('"' || (properties::jsonb->>'flink-conf.jobmanager.memory.process.size') || 'MB"')::jsonb
+    )
+WHERE (properties::jsonb->>'flink-conf.jobmanager.memory.process.size') ~ '^[0-9]+$';
+
+
+UPDATE resource_group
+SET properties = jsonb_set(
+        properties::jsonb,
+        '{flink-conf.taskmanager.memory.process.size}',
+        ('"' || (properties::jsonb->>'flink-conf.taskmanager.memory.process.size') || 'MB"')::jsonb
+    )
+WHERE (properties::jsonb->>'flink-conf.taskmanager.memory.process.size') ~ '^[0-9]+$';
+
+-- update resource memory unit
+UPDATE resource
+SET properties = jsonb_set(
+        properties::jsonb,
+        '{flink-conf.jobmanager.memory.process.size}',
+        ('"' || (properties::jsonb->>'flink-conf.jobmanager.memory.process.size') || 'MB"')::jsonb
+    )
+WHERE (properties::jsonb->>'flink-conf.jobmanager.memory.process.size') ~ '^[0-9]+$';
+
+UPDATE resource
+SET properties = jsonb_set(
+        properties::jsonb,
+        '{flink-conf.taskmanager.memory.process.size}',
+        ('"' || (properties::jsonb->>'flink-conf.taskmanager.memory.process.size') || 'MB"')::jsonb
+    )
+WHERE (properties::jsonb->>'flink-conf.taskmanager.memory.process.size') ~ '^[0-9]+$';

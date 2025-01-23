@@ -23,6 +23,7 @@ import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.exception.OptimizingClosedException;
+import org.apache.amoro.exception.PersistenceException;
 import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
@@ -120,9 +121,20 @@ public class OptimizingQueue extends PersistentBase {
     if (tableRuntime.isOptimizingEnabled()) {
       tableRuntime.resetTaskQuotas(
           System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME);
+      // Close the committing process to avoid duplicate commit on the table.
+      if (tableRuntime.getOptimizingStatus() == OptimizingStatus.COMMITTING) {
+        OptimizingProcess process = tableRuntime.getOptimizingProcess();
+        if (process != null) {
+          LOG.warn(
+              "Close the committing process {} on table {}",
+              process.getProcessId(),
+              tableRuntime.getTableIdentifier());
+          process.close();
+        }
+      }
       if (!tableRuntime.getOptimizingStatus().isProcessing()) {
         scheduler.addTable(tableRuntime);
-      } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
+      } else {
         tableQueue.offer(new TableOptimizingProcess(tableRuntime));
       }
     } else {
@@ -569,6 +581,10 @@ public class OptimizingQueue extends PersistentBase {
       try {
         if (hasCommitted) {
           LOG.warn("{} has already committed, give up", tableRuntime.getTableIdentifier());
+          try {
+            persistAndSetCompleted(status == ProcessStatus.SUCCESS);
+          } catch (Exception ignored) {
+          }
           throw new IllegalStateException("repeat commit, and last error " + failedReason);
         }
         try {
@@ -577,10 +593,15 @@ public class OptimizingQueue extends PersistentBase {
           status = ProcessStatus.SUCCESS;
           endTime = System.currentTimeMillis();
           persistAndSetCompleted(true);
-        } catch (Exception e) {
-          LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
+        } catch (PersistenceException e) {
+          LOG.warn(
+              "{} failed to persist process completed, will retry next commit",
+              tableRuntime.getTableIdentifier(),
+              e);
+        } catch (Throwable t) {
+          LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), t);
           status = ProcessStatus.FAILED;
-          failedReason = ExceptionUtil.getErrorMessage(e, 4000);
+          failedReason = ExceptionUtil.getErrorMessage(t, 4000);
           endTime = System.currentTimeMillis();
           persistAndSetCompleted(false);
         }

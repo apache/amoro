@@ -43,6 +43,7 @@ import org.junit.platform.commons.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
@@ -57,16 +58,16 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
 
   public static Stream<Arguments> testCreateTable() {
     return Stream.of(
-        Arguments.arguments("arctic", true, ""),
-        Arguments.arguments("arctic", false, "pt"),
-        Arguments.arguments("arctic", true, "pt"),
-        Arguments.arguments("parquet", false, "pt"),
-        Arguments.arguments("parquet", false, "dt string"));
+        Arguments.arguments("arctic", true, "", "hive comment"),
+        Arguments.arguments("arctic", false, "pt", "hive comment"),
+        Arguments.arguments("arctic", true, "pt", "hive comment"),
+        Arguments.arguments("parquet", false, "pt", null),
+        Arguments.arguments("parquet", false, "dt string", null));
   }
 
-  @ParameterizedTest(name = "{index} USING {0} WITH PK {1} PARTITIONED BY ({2})")
+  @ParameterizedTest(name = "{index} USING {0} WITH PK {1} PARTITIONED BY ({2}) COMMENT {3}")
   @MethodSource
-  public void testCreateTable(String provider, boolean pk, String pt) {
+  public void testCreateTable(String provider, boolean pk, String pt, String comment) {
 
     String sqlText = "CREATE TABLE " + target() + "(" + " id INT, data string, pt string ";
     if (pk) {
@@ -78,6 +79,10 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
       sqlText += " PARTITIONED BY (" + pt + ")";
     }
 
+    if (StringUtils.isNotBlank(comment)) {
+      sqlText += " COMMENT  '" + comment + "'";
+    }
+
     sql(sqlText);
 
     if ("arctic".equalsIgnoreCase(provider)) {
@@ -86,6 +91,9 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
 
     Table hiveTable = loadHiveTable();
     Assertions.assertNotNull(hiveTable);
+
+    String hiveComment = hiveTable.getParameters().get("comment");
+    Assertions.assertTrue(Objects.equals(hiveComment, comment));
   }
 
   static final Schema SCHEMA =
@@ -105,17 +113,17 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
 
   public static Stream<Arguments> testCreateTableAsSelect() {
     return Stream.of(
-        Arguments.arguments("arctic", true, "", true),
-        Arguments.arguments("arctic", false, "pt", true),
-        Arguments.arguments("arctic", true, "pt", false),
-        Arguments.arguments("parquet", false, "pt", false),
-        Arguments.arguments("parquet", false, "", false));
+        Arguments.arguments("arctic", true, "", true, "hive comment"),
+        Arguments.arguments("arctic", false, "pt", true, "hive comment"),
+        Arguments.arguments("arctic", true, "pt", false, "hive comment"),
+        Arguments.arguments("parquet", false, "pt", false, "hive comment"),
+        Arguments.arguments("parquet", false, "", false, "hive comment"));
   }
 
-  @ParameterizedTest(name = "{index} USING {0} WITH PK {1} PARTITIONED BY ({2})")
+  @ParameterizedTest(name = "{index} USING {0} WITH PK {1} PARTITIONED BY ({2}) COMMENT {3}")
   @MethodSource
   public void testCreateTableAsSelect(
-      String provider, boolean pk, String pt, boolean duplicateCheck) {
+      String provider, boolean pk, String pt, boolean duplicateCheck, String comment) {
     spark().conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, duplicateCheck);
     createViewSource(SCHEMA, source);
     String sqlText = "CREATE TABLE " + target();
@@ -126,6 +134,11 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
     if (StringUtils.isNotBlank(pt)) {
       sqlText += " PARTITIONED BY (" + pt + ")";
     }
+
+    if (StringUtils.isNotBlank(comment)) {
+      sqlText += " COMMENT  '" + comment + "'";
+    }
+
     sqlText += " AS SELECT * FROM " + source();
 
     sql(sqlText);
@@ -135,6 +148,9 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
 
     Table hiveTable = loadHiveTable();
     Assertions.assertNotNull(hiveTable);
+
+    String hiveComment = hiveTable.getParameters().get("comment");
+    Assertions.assertTrue(Objects.equals(hiveComment, comment));
   }
 
   @Test

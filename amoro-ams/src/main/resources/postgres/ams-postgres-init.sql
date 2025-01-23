@@ -205,8 +205,7 @@ COMMENT ON COLUMN table_runtime.last_optimized_change_snapshotId IS 'Last optimi
 COMMENT ON COLUMN table_runtime.last_major_optimizing_time IS 'Latest Major Optimize time for all partitions';
 COMMENT ON COLUMN table_runtime.last_minor_optimizing_time IS 'Latest Minor Optimize time for all partitions';
 COMMENT ON COLUMN table_runtime.last_full_optimizing_time IS 'Latest Full Optimize time for all partitions';
-COMMENT ON COLUMN table_runtime.optimizing_status_code IS 'Table optimize status code: 100(FULL_OPTIMIZING),' ||
-        ' 200(MAJOR_OPTIMIZING), 300(MINOR_OPTIMIZING), 400(COMMITTING), 500(PLANING), 600(PENDING), 700(IDLE)';
+COMMENT ON COLUMN table_runtime.optimizing_status_code IS 'Table optimize status code: 100(FULL_OPTIMIZING), 200(MAJOR_OPTIMIZING), 300(MINOR_OPTIMIZING), 400(COMMITTING), 500(PLANING), 600(PENDING), 700(IDLE)';
 COMMENT ON COLUMN table_runtime.optimizing_status_start_time IS 'Table optimize status start time';
 COMMENT ON COLUMN table_runtime.optimizing_process_id IS 'Optimizing procedure UUID';
 COMMENT ON COLUMN table_runtime.optimizer_group IS 'Optimizer group';

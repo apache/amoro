@@ -325,8 +325,12 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
 
     reload();
-    assertTaskCompleted(null);
-    Assertions.assertNull(optimizingService().pollTask(token, THREAD_ID));
+    // Committing process will be closed when reloading
+    Assertions.assertNull(
+        tableService().getRuntime(serverTableIdentifier().getId()).getOptimizingProcess());
+    Assertions.assertEquals(
+        OptimizingStatus.IDLE,
+        tableService().getRuntime(serverTableIdentifier().getId()).getOptimizingStatus());
   }
 
   @Test
