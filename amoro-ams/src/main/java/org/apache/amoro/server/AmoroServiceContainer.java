@@ -68,6 +68,7 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportFacto
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.layered.TFramedTransport;
 import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.JacksonUtil;
+import org.apache.amoro.utils.MemorySize;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.SystemProperties;
 import org.slf4j.Logger;
@@ -339,7 +340,9 @@ public class AmoroServiceContainer {
 
   private void initThriftService() throws TTransportException {
     LOG.info("Initializing thrift service...");
-    long maxMessageSize = serviceConfig.getLong(AmoroManagementConf.THRIFT_MAX_MESSAGE_SIZE);
+    long maxMessageSize =
+        MemorySize.parse(serviceConfig.getString(AmoroManagementConf.THRIFT_MAX_MESSAGE_SIZE))
+            .getBytes();
     int selectorThreads = serviceConfig.getInteger(AmoroManagementConf.THRIFT_SELECTOR_THREADS);
     int workerThreads = serviceConfig.getInteger(AmoroManagementConf.THRIFT_WORKER_THREADS);
     int queueSizePerSelector =
@@ -533,7 +536,8 @@ public class AmoroServiceContainer {
   }
 
   @SuppressWarnings("unchecked")
-  private void expandConfigMap(
+  @VisibleForTesting
+  public static void expandConfigMap(
       Map<String, Object> config, String prefix, Map<String, Object> result) {
     for (Map.Entry<String, Object> entry : config.entrySet()) {
       String key = entry.getKey();

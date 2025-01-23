@@ -85,7 +85,7 @@ public class TerminalManager {
     this.catalogManager = catalogManager;
     this.resultLimits = conf.getInteger(AmoroManagementConf.TERMINAL_RESULT_LIMIT);
     this.stopOnError = conf.getBoolean(AmoroManagementConf.TERMINAL_STOP_ON_ERROR);
-    this.sessionTimeout = conf.getInteger(AmoroManagementConf.TERMINAL_SESSION_TIMEOUT);
+    this.sessionTimeout = (int) conf.get(AmoroManagementConf.TERMINAL_SESSION_TIMEOUT).toMinutes();
     this.sessionFactory = loadTerminalSessionFactory(conf);
     gcThread = new Thread(new SessionCleanTask());
     gcThread.setName("terminal-session-gc");
