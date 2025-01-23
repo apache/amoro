@@ -312,7 +312,7 @@ public class TestTableManager extends AMSTableTestBase {
     Assert.assertEquals(getProperties().size() + 3, block.getProperties().size());
     getProperties()
         .forEach((key, value) -> Assert.assertEquals(block.getProperties().get(key), value));
-    long timeout = AmoroManagementConf.BLOCKER_TIMEOUT.defaultValue();
+    long timeout = AmoroManagementConf.BLOCKER_TIMEOUT.defaultValue().toMillis();
     Assert.assertEquals(timeout + "", block.getProperties().get(RenewableBlocker.BLOCKER_TIMEOUT));
 
     Assert.assertEquals(
@@ -322,7 +322,7 @@ public class TestTableManager extends AMSTableTestBase {
   }
 
   private void assertBlockerRenewed(Blocker block) {
-    long timeout = AmoroManagementConf.BLOCKER_TIMEOUT.defaultValue();
+    long timeout = AmoroManagementConf.BLOCKER_TIMEOUT.defaultValue().toMillis();
     long actualTimeout =
         Long.parseLong(block.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY))
             - Long.parseLong(block.getProperties().get(RenewableBlocker.CREATE_TIME_PROPERTY));

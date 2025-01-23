@@ -27,6 +27,8 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 
+import java.time.Duration;
+
 public abstract class AMSServiceTestBase extends AMSManagerTestBase {
   private static DefaultTableService TABLE_SERVICE = null;
   private static DefaultOptimizingService OPTIMIZING_SERVICE = null;
@@ -35,7 +37,7 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
   public static void initTableService() {
     try {
       Configurations configurations = new Configurations();
-      configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, 800L);
+      configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, Duration.ofMillis(800L));
       TABLE_SERVICE = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
       OPTIMIZING_SERVICE =
           new DefaultOptimizingService(

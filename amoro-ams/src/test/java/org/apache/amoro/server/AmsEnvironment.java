@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -346,7 +347,7 @@ public class AmsEnvironment {
                         AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT,
                         optimizingServiceBindPort);
                     serviceConfig.set(
-                        AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL, 1000L);
+                        AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL, Duration.ofMillis(1000L));
                     serviceContainer.startService();
                     break;
                   } catch (TTransportException e) {
