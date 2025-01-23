@@ -341,7 +341,9 @@ public class AmoroServiceContainer {
 
   private void initThriftService() throws TTransportException {
     LOG.info("Initializing thrift service...");
-    long maxMessageSize = MemorySize.parse(serviceConfig.getString(AmoroManagementConf.THRIFT_MAX_MESSAGE_SIZE)).getBytes();
+    long maxMessageSize =
+        MemorySize.parse(serviceConfig.getString(AmoroManagementConf.THRIFT_MAX_MESSAGE_SIZE))
+            .getBytes();
     int selectorThreads = serviceConfig.getInteger(AmoroManagementConf.THRIFT_SELECTOR_THREADS);
     int workerThreads = serviceConfig.getInteger(AmoroManagementConf.THRIFT_WORKER_THREADS);
     int queueSizePerSelector =
