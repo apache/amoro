@@ -20,6 +20,7 @@ package org.apache.amoro.server.optimizing.maintainer;
 
 import static org.apache.amoro.BasicTableTestHelper.PRIMARY_KEY_SPEC;
 import static org.apache.amoro.BasicTableTestHelper.SPEC;
+import static org.mockito.Mockito.when;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
@@ -27,6 +28,7 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.config.DataExpirationConfig;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.PrimaryKeyedFile;
@@ -36,6 +38,7 @@ import org.apache.amoro.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.optimizing.scan.UnkeyedTableFileScanHelper;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
 import org.apache.amoro.server.table.TableConfigurations;
+import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.executor.ExecutorTestBase;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -44,23 +47,28 @@ import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.UpdatePartitionSpec;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.Mockito;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -237,16 +245,8 @@ public class TestDataExpire extends ExecutorTestBase {
     CloseableIterable<TableFileScanHelper.FileScanResult> scan = buildKeyedFileScanHelper().scan();
     assertScanResult(scan, 4, 0);
 
-    // expire partitions that order than 2022-01-02 18:00:00.000
     DataExpirationConfig config = parseDataExpirationConfig(keyedTable);
-    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(keyedTable);
-    tableMaintainer.expireDataFrom(
-        config,
-        LocalDateTime.parse("2022-01-03T18:00:00.000")
-            .atZone(
-                IcebergTableMaintainer.getDefaultZoneId(
-                    keyedTable.schema().findField(config.getExpirationField())))
-            .toInstant());
+    getMaintainerAndExpire(config, "2022-01-03T18:00:00.000");
 
     CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire =
         buildKeyedFileScanHelper().scan();
@@ -283,6 +283,101 @@ public class TestDataExpire extends ExecutorTestBase {
               createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00"));
     }
     Assert.assertEquals(expected, records);
+  }
+
+  @Test
+  public void testKeyedPartitionLevelAfterDropping() {
+    Assume.assumeTrue(getMixedTable().isKeyedTable());
+    Assume.assumeTrue(getMixedTable().spec().isPartitioned());
+
+    KeyedTable keyedTable = getMixedTable().asKeyedTable();
+
+    ArrayList<Record> baseRecords =
+        Lists.newArrayList(
+            createRecord(
+                1, "Oliver Bennett", parseMillis("2024-10-01T12:00:00"), "2024-10-01T12:00:00"));
+    OptimizingTestHelpers.appendBase(
+        keyedTable, tableTestHelper().writeBaseStore(keyedTable, 0, baseRecords, false));
+
+    ArrayList<Record> newRecords =
+        Lists.newArrayList(
+            createRecord(
+                3, "Ethan Matthews", parseMillis("2024-01-02T18:00:00"), "2024-01-02T18:00:00"),
+            createRecord(
+                4, "Sophia Rivera", parseMillis("2024-12-30T19:00:00"), "2024-12-30T19:00:00"));
+    OptimizingTestHelpers.appendChange(
+        keyedTable,
+        tableTestHelper().writeChangeStore(keyedTable, 1L, ChangeAction.INSERT, newRecords, false));
+
+    CloseableIterable<TableFileScanHelper.FileScanResult> scan = buildKeyedFileScanHelper().scan();
+    assertScanResult(scan, baseRecords.size() + newRecords.size(), 0);
+
+    List<String> partitionColumns =
+        keyedTable.spec().fields().stream().map(PartitionField::name).collect(Collectors.toList());
+
+    UpdatePartitionSpec updateChangeTableSpec = keyedTable.changeTable().updateSpec();
+    UpdatePartitionSpec updateBaseTableSpec = keyedTable.baseTable().updateSpec();
+
+    for (String p : partitionColumns) {
+      updateChangeTableSpec.removeField(p);
+      updateBaseTableSpec.removeField(p);
+    }
+    updateChangeTableSpec.commit();
+    updateBaseTableSpec.commit();
+
+    Assert.assertEquals(0, keyedTable.changeTable().spec().fields().size());
+    Assert.assertEquals(0, keyedTable.baseTable().spec().fields().size());
+
+    // start expiring partitions that order than 2024-12-01 18:00:00.000
+    // All records should not be expired since the partition column has been dropped
+    DataExpirationConfig config = parseDataExpirationConfig(keyedTable);
+    getMaintainerAndExpire(config, "2024-12-01T18:00:00.000");
+
+    CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire =
+        buildKeyedFileScanHelper().scan();
+
+    assertScanResult(scanAfterExpire, baseRecords.size() + newRecords.size(), 0);
+  }
+
+  @Test
+  public void testUnKeyedPartitionLevelAfterDropping() {
+    Assume.assumeTrue(getMixedTable().isUnkeyedTable());
+    Assume.assumeTrue(getMixedTable().spec().isPartitioned());
+
+    UnkeyedTable table = getMixedTable().asUnkeyedTable();
+
+    List<Record> records =
+        Lists.newArrayList(
+            createRecord(
+                1, "Oliver Bennett", parseMillis("2024-10-01T12:00:00"), "2024-10-01T12:00:00"),
+            createRecord(
+                2, "Ethan Matthews", parseMillis("2024-01-02T18:00:00"), "2024-01-02T18:00:00"),
+            createRecord(
+                3, "Sophia Rivera", parseMillis("2024-12-30T19:00:00"), "2024-12-30T19:00:00"));
+    OptimizingTestHelpers.appendBase(
+        table, tableTestHelper().writeBaseStore(table, 0, records, false));
+
+    List<String> partitionColumns =
+        table.spec().fields().stream().map(PartitionField::name).collect(Collectors.toList());
+
+    UpdatePartitionSpec updateBaseTableSpec = table.asUnkeyedTable().updateSpec();
+
+    for (String p : partitionColumns) {
+      updateBaseTableSpec.removeField(p);
+    }
+    updateBaseTableSpec.commit();
+
+    Assert.assertEquals(0, table.spec().fields().size());
+
+    // start expiring partitions that order than 2024-12-01 18:00:00.000
+    // All records should not be expired since the partition column has been dropped
+    DataExpirationConfig config = parseDataExpirationConfig(table);
+    getMaintainerAndExpire(config, "2024-12-01T18:00:00.000");
+
+    CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire =
+        getTableFileScanHelper().scan();
+
+    assertScanResult(scanAfterExpire, records.size(), 0);
   }
 
   @Test
@@ -392,9 +487,8 @@ public class TestDataExpire extends ExecutorTestBase {
     if (getTestFormat().equals(TableFormat.ICEBERG)) {
       Table table = getMixedTable().asUnkeyedTable();
       IcebergTableMaintainer icebergTableMaintainer = new IcebergTableMaintainer(table);
-      Types.NestedField field = table.schema().findField(config.getExpirationField());
       long lastSnapshotTime = table.currentSnapshot().timestampMillis();
-      long lastCommitTime = icebergTableMaintainer.expireBaseOnRule(config, field).toEpochMilli();
+      long lastCommitTime = icebergTableMaintainer.expireBaseOnRule(config).toEpochMilli();
       Assert.assertEquals(lastSnapshotTime, lastCommitTime);
     } else {
       MixedTable mixedTable = getMixedTable();
@@ -415,8 +509,7 @@ public class TestDataExpire extends ExecutorTestBase {
       } else {
         lastSnapshotTime = mixedTable.asUnkeyedTable().currentSnapshot().timestampMillis();
       }
-      long lastCommitTime =
-          mixedTableMaintainer.expireMixedBaseOnRule(config, field).toEpochMilli();
+      long lastCommitTime = mixedTableMaintainer.expireMixedBaseOnRule(config).toEpochMilli();
       Assert.assertEquals(lastSnapshotTime, lastCommitTime);
     }
   }
@@ -429,11 +522,9 @@ public class TestDataExpire extends ExecutorTestBase {
       icebergTableMaintainer.expireDataFrom(
           config,
           StringUtils.isBlank(datetime)
-              ? icebergTableMaintainer.expireBaseOnRule(config, field)
+              ? icebergTableMaintainer.expireBaseOnRule(config)
               : LocalDateTime.parse(datetime)
-                  .atZone(
-                      IcebergTableMaintainer.getDefaultZoneId(
-                          getMixedTable().schema().findField(config.getExpirationField())))
+                  .atZone(IcebergTableMaintainer.getDefaultZoneId(field))
                   .toInstant());
     } else {
       MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable());
@@ -441,27 +532,68 @@ public class TestDataExpire extends ExecutorTestBase {
       mixedTableMaintainer.expireDataFrom(
           config,
           StringUtils.isBlank(datetime)
-              ? mixedTableMaintainer.expireMixedBaseOnRule(config, field)
+              ? mixedTableMaintainer.expireMixedBaseOnRule(config)
               : LocalDateTime.parse(datetime)
-                  .atZone(
-                      IcebergTableMaintainer.getDefaultZoneId(
-                          getMixedTable().schema().findField(config.getExpirationField())))
+                  .atZone(IcebergTableMaintainer.getDefaultZoneId(field))
                   .toInstant());
     }
   }
 
   @Test
-  public void testNormalFieldPartitionLevel() {
-    getMixedTable().updateProperties().set(TableProperties.DATA_EXPIRATION_FIELD, "ts").commit();
-
-    testPartitionLevel();
-  }
-
-  @Test
   public void testNormalFieldFileLevel() {
+    Assume.assumeTrue(
+        parseDataExpirationConfig(getMixedTable()).getExpirationLevel()
+            == DataExpirationConfig.ExpireLevel.FILE);
     getMixedTable().updateProperties().set(TableProperties.DATA_EXPIRATION_FIELD, "ts").commit();
 
     testFileLevel();
+  }
+
+  @Test
+  public void testIllegalPartitionField() {
+    MixedTable testTable = getMixedTable();
+    Assume.assumeTrue(testTable.spec().isPartitioned());
+    DataExpirationConfig config = parseDataExpirationConfig(testTable);
+    Assume.assumeTrue(config.getExpirationLevel() == DataExpirationConfig.ExpireLevel.PARTITION);
+
+    testTable.updateProperties().set(TableProperties.DATA_EXPIRATION_FIELD, "ts").commit();
+    testTable.refresh();
+
+    List<Record> records =
+        Lists.newArrayList(
+            createRecord(
+                1, "Oliver Bennett", parseMillis("2024-10-01T12:00:00"), "2024-10-01T12:00:00"));
+    OptimizingTestHelpers.appendBase(
+        testTable, tableTestHelper().writeBaseStore(testTable, 0, records, false));
+
+    getMaintainerAndExpire(parseDataExpirationConfig(testTable), "2024-12-01T18:00:00.000");
+
+    CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire =
+        testTable.isKeyedTable()
+            ? buildKeyedFileScanHelper().scan()
+            : getTableFileScanHelper().scan();
+    assertScanResult(scanAfterExpire, records.size(), 0);
+
+    List<Record> result = readSortedBaseRecords(testTable);
+    Assert.assertEquals(records, result);
+  }
+
+  @Test
+  public void testNotExistedField() {
+    MixedTable testTable = getMixedTable();
+    testTable
+        .updateProperties()
+        .set(TableProperties.DATA_EXPIRATION_FIELD, "not_existed_field")
+        .commit();
+
+    DataExpirationConfig config = parseDataExpirationConfig(testTable);
+    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(testTable);
+    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
+    TableConfiguration tableConfiguration = Mockito.mock(TableConfiguration.class);
+    when(tableRuntime.getTableConfiguration()).thenReturn(tableConfiguration);
+    when(tableRuntime.getTableConfiguration().getExpiringDataConfig()).thenReturn(config);
+
+    mixedTableMaintainer.expireData(tableRuntime);
   }
 
   @Test
@@ -484,14 +616,15 @@ public class TestDataExpire extends ExecutorTestBase {
     assertScanResult(scan, 1, 0);
 
     DataExpirationConfig config = parseDataExpirationConfig(testTable);
-    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable());
-    mixedTableMaintainer.expireDataFrom(
-        config,
-        LocalDateTime.parse("2024-01-01T00:00:00.000")
-            .atZone(
-                IcebergTableMaintainer.getDefaultZoneId(
-                    testTable.schema().findField(config.getExpirationField())))
-            .toInstant());
+    Assert.assertFalse(config.isEnabled());
+
+    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(testTable);
+    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
+    TableConfiguration tableConfiguration = Mockito.mock(TableConfiguration.class);
+    when(tableRuntime.getTableConfiguration()).thenReturn(tableConfiguration);
+    when(tableRuntime.getTableConfiguration().getExpiringDataConfig()).thenReturn(config);
+
+    mixedTableMaintainer.expireData(tableRuntime);
 
     CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire;
     if (isKeyedTable()) {
@@ -499,7 +632,7 @@ public class TestDataExpire extends ExecutorTestBase {
     } else {
       scanAfterExpire = getTableFileScanHelper().scan();
     }
-    assertScanResult(scanAfterExpire, 0, 0);
+    assertScanResult(scanAfterExpire, 1, 0);
   }
 
   protected Record createRecord(int id, String name, long ts, String opTime) {
