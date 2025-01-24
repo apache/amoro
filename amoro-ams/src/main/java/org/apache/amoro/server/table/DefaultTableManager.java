@@ -47,6 +47,7 @@ import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -294,6 +295,9 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
   }
 
   private Map<Long, List<TaskRuntime.TaskQuota>> getQuotaTime(List<Long> tableIds) {
+    if (tableIds == null || tableIds.isEmpty()) {
+      return Maps.newHashMap();
+    }
     long calculatingEndTime = System.currentTimeMillis();
     long calculatingStartTime = calculatingEndTime - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
 
