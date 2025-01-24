@@ -294,7 +294,7 @@ public interface OptimizingMapper {
 
   @Select(
       "SELECT process_id, task_id, retry_num, table_id, start_time, end_time, fail_reason "
-          + "FROM optimizing_task_quota WHERE table_id in #{tables::number[]} AND process_id >= #{startTime}")
+          + "FROM optimizing_task_quota WHERE table_id in (#{tables::number[]}) AND process_id >= #{startTime}")
   @Lang(InListExtendedLanguageDriver.class)
   @ResultMap("taskQuota")
   List<TaskRuntime.TaskQuota> selectTableQuotas(
