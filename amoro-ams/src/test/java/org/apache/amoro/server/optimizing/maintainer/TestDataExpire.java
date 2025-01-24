@@ -194,6 +194,7 @@ public class TestDataExpire extends ExecutorTestBase {
 
     List<Record> expected;
     if (tableTestHelper().partitionSpec().isPartitioned()) {
+      // retention time is 1 day, expire partitions that order than 2022-01-02
       if (expireByStringDate()) {
         expected =
             Lists.newArrayList(
@@ -591,6 +592,7 @@ public class TestDataExpire extends ExecutorTestBase {
     prop.put(TableProperties.ENABLE_DATA_EXPIRATION, "true");
     prop.put(TableProperties.DATA_EXPIRATION_FIELD, "op_time");
     prop.put(TableProperties.DATA_EXPIRATION_RETENTION_TIME, "1d");
+    prop.put("write.metadata.metrics.default", "none");
     return prop;
   }
 
