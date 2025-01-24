@@ -464,6 +464,11 @@ public class MockAmoroManagementServer implements Runnable {
       return token;
     }
 
+    @Override
+    public boolean cancelProcess(long processId) throws TException {
+      return false;
+    }
+
     public Map<String, OptimizerRegisterInfo> getRegisteredOptimizers() {
       return registeredOptimizers;
     }

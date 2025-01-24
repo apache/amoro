@@ -18,14 +18,20 @@
 
 package org.apache.amoro.server.dashboard.utils;
 
+import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
-import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
+import org.apache.amoro.server.optimizing.TaskRuntime;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.table.descriptor.FilesStatistics;
 import org.apache.iceberg.ContentFile;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class OptimizingUtil {
 
@@ -34,20 +40,44 @@ public class OptimizingUtil {
    *
    * @return TableOptimizeInfo
    */
-  public static TableOptimizingInfo buildTableOptimizeInfo(TableRuntime optimizingTableRuntime) {
-    OptimizingProcess process = optimizingTableRuntime.getOptimizingProcess();
-    TableOptimizingInfo tableOptimizeInfo =
-        new TableOptimizingInfo(optimizingTableRuntime.getTableIdentifier());
-    tableOptimizeInfo.setOptimizeStatus(
-        optimizingTableRuntime.getOptimizingStatus().displayValue());
+  public static TableOptimizingInfo buildTableOptimizeInfo(
+      TableRuntimeMeta optimizingTableRuntime,
+      List<OptimizingTaskMeta> processTasks,
+      List<TaskRuntime.TaskQuota> quotas) {
+    ServerTableIdentifier identifier =
+        ServerTableIdentifier.of(
+            optimizingTableRuntime.getTableId(),
+            optimizingTableRuntime.getCatalogName(),
+            optimizingTableRuntime.getDbName(),
+            optimizingTableRuntime.getTableName(),
+            optimizingTableRuntime.getFormat());
+    TableOptimizingInfo tableOptimizeInfo = new TableOptimizingInfo(identifier);
+    OptimizingStatus optimizingStatus = optimizingTableRuntime.getTableStatus();
+    tableOptimizeInfo.setOptimizeStatus(optimizingStatus.displayValue());
     tableOptimizeInfo.setDuration(
         System.currentTimeMillis() - optimizingTableRuntime.getCurrentStatusStartTime());
-    tableOptimizeInfo.setQuota(optimizingTableRuntime.getTargetQuota());
-    tableOptimizeInfo.setQuotaOccupation(optimizingTableRuntime.calculateQuotaOccupy());
+    OptimizingConfig optimizingConfig =
+        optimizingTableRuntime.getTableConfig().getOptimizingConfig();
+    tableOptimizeInfo.setQuota(optimizingConfig.getTargetQuota());
+    double quotaOccupy =
+        calculateQuotaOccupy(
+            processTasks,
+            quotas,
+            optimizingTableRuntime.getCurrentStatusStartTime(),
+            System.currentTimeMillis());
+    tableOptimizeInfo.setQuotaOccupation(quotaOccupy);
     FilesStatistics optimizeFileInfo;
-    if (optimizingTableRuntime.getOptimizingStatus().isProcessing()) {
-      optimizeFileInfo = collectOptimizingFileInfo(process == null ? null : process.getSummary());
-    } else if (optimizingTableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING) {
+    if (optimizingStatus.isProcessing()) {
+      MetricsSummary summary = null;
+      if (processTasks != null && !processTasks.isEmpty()) {
+        List<MetricsSummary> taskSummary =
+            processTasks.stream()
+                .map(OptimizingTaskMeta::getMetricsSummary)
+                .collect(Collectors.toList());
+        summary = new MetricsSummary(taskSummary);
+      }
+      optimizeFileInfo = collectOptimizingFileInfo(summary);
+    } else if (optimizingStatus == OptimizingStatus.PENDING) {
       optimizeFileInfo = collectPendingFileInfo(optimizingTableRuntime.getPendingInput());
     } else {
       optimizeFileInfo = null;
@@ -58,6 +88,28 @@ public class OptimizingUtil {
     }
     tableOptimizeInfo.setGroupName(optimizingTableRuntime.getOptimizerGroup());
     return tableOptimizeInfo;
+  }
+
+  private static double calculateQuotaOccupy(
+      List<OptimizingTaskMeta> processTasks,
+      List<TaskRuntime.TaskQuota> quotas,
+      long startTime,
+      long endTime) {
+    double finishedOccupy = 0;
+    if (quotas != null) {
+      finishedOccupy = quotas.stream().mapToDouble(q -> q.getQuotaTime(startTime)).sum();
+    }
+    double runningOccupy = 0;
+    if (processTasks != null) {
+      runningOccupy =
+          processTasks.stream()
+              .mapToDouble(
+                  t ->
+                      TaskRuntime.taskRunningQuotaTime(
+                          startTime, endTime, t.getStartTime(), t.getCostTime()))
+              .sum();
+    }
+    return finishedOccupy + runningOccupy;
   }
 
   private static FilesStatistics collectPendingFileInfo(

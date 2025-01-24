@@ -20,6 +20,7 @@ package org.apache.amoro.server.table;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.TableIdentifier;
+import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -44,6 +45,9 @@ public interface MaintainedTableManager {
    */
   ServerTableIdentifier getServerTableIdentifier(TableIdentifier id);
 
+  /** Get the table runtime meta. */
+  TableRuntimeMeta getTableRuntimeMata(ServerTableIdentifier id);
+
   /**
    * Get the table info from database for given parameters.
    *
@@ -59,7 +63,7 @@ public interface MaintainedTableManager {
    * @return A pair with the first entry is the actual list under the filters with the offset and
    *     limit, and second value will be the number of total entries under the filters.
    */
-  Pair<List<TableRuntimeMeta>, Integer> queryTableRuntimeMetas(
+  Pair<List<TableOptimizingInfo>, Integer> queryTableOptimizingInfo(
       String optimizerGroup,
       @Nullable String fuzzyDbName,
       @Nullable String fuzzyTableName,

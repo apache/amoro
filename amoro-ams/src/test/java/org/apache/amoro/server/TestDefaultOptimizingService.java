@@ -40,10 +40,10 @@ import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
-import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.TableManager;
@@ -363,7 +363,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   /**
-   * Test the logic for {@link TableManager#queryTableRuntimeMetas(String, String, String, List,
+   * Test the logic for {@link TableManager#queryTableOptimizingInfo(String, String, String, List,
    * int, int)}.
    */
   @Test
@@ -562,9 +562,9 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
     // 2 test and assert the result
     // 2.1 only optimize group filter set
-    Pair<List<TableRuntimeMeta>, Integer> res =
+    Pair<List<TableOptimizingInfo>, Integer> res =
         tableManager()
-            .queryTableRuntimeMetas(optimizerGroup1, null, null, Collections.emptyList(), 10, 0);
+            .queryTableOptimizingInfo(optimizerGroup1, null, null, Collections.emptyList(), 10, 0);
     Integer expectedTotalinGroup1 = 14;
     Assert.assertEquals(expectedTotalinGroup1, res.getRight());
     Assert.assertEquals(10, res.getLeft().size());
@@ -572,7 +572,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     // 2.2 set optimize group and db filter
     res =
         tableManager()
-            .queryTableRuntimeMetas(optimizerGroup1, db1, null, Collections.emptyList(), 5, 0);
+            .queryTableOptimizingInfo(optimizerGroup1, db1, null, Collections.emptyList(), 5, 0);
     // there are 8 tables in db1 in optimizerGroup1
     Integer expectedTotalGroup1Db1 = 8;
     Assert.assertEquals(expectedTotalGroup1Db1, res.getRight());
@@ -583,14 +583,14 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     String fuzzyDbName = "InOtherGroup";
     res =
         tableManager()
-            .queryTableRuntimeMetas(opGroup2, null, fuzzyDbName, Collections.emptyList(), 2, 0);
+            .queryTableOptimizingInfo(opGroup2, null, fuzzyDbName, Collections.emptyList(), 2, 0);
     Integer expectedTotalWithFuzzyDbName = 3;
     Assert.assertEquals(expectedTotalWithFuzzyDbName, res.getRight());
     Assert.assertEquals(2, res.getLeft().size());
 
     res =
         tableManager()
-            .queryTableRuntimeMetas(opGroup2, null, fuzzyDbName, Collections.emptyList(), 5, 0);
+            .queryTableOptimizingInfo(opGroup2, null, fuzzyDbName, Collections.emptyList(), 5, 0);
     Assert.assertEquals(expectedTotalWithFuzzyDbName, res.getRight());
     // there are only 3 tables with the suffix in opGroup2
     Assert.assertEquals(3, res.getLeft().size());
@@ -598,7 +598,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     // 2.4 set optimize group and status filter, with only one status
     List<Integer> statusCode = new ArrayList<>();
     statusCode.add(OptimizingStatus.MAJOR_OPTIMIZING.getCode());
-    res = tableManager().queryTableRuntimeMetas(optimizerGroup1, null, null, statusCode, 10, 0);
+    res = tableManager().queryTableOptimizingInfo(optimizerGroup1, null, null, statusCode, 10, 0);
     Integer expectedTotalInGroup1WithMajorStatus = 2;
     Assert.assertEquals(expectedTotalInGroup1WithMajorStatus, res.getRight());
     Assert.assertEquals(2, res.getLeft().size());
@@ -607,7 +607,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     statusCode.clear();
     statusCode.add(OptimizingStatus.MINOR_OPTIMIZING.getCode());
     statusCode.add(OptimizingStatus.MAJOR_OPTIMIZING.getCode());
-    res = tableManager().queryTableRuntimeMetas(optimizerGroup1, null, null, statusCode, 3, 0);
+    res = tableManager().queryTableOptimizingInfo(optimizerGroup1, null, null, statusCode, 3, 0);
     Integer expectedTotalInGroup1WithMinorMajorStatus = 4;
     Assert.assertEquals(expectedTotalInGroup1WithMinorMajorStatus, res.getRight());
     Assert.assertEquals(3, res.getLeft().size());
@@ -618,7 +618,8 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     statusCode.add(OptimizingStatus.FULL_OPTIMIZING.getCode());
     String tableFilter = "pending";
     res =
-        tableManager().queryTableRuntimeMetas(optimizerGroup1, db1, tableFilter, statusCode, 10, 0);
+        tableManager()
+            .queryTableOptimizingInfo(optimizerGroup1, db1, tableFilter, statusCode, 10, 0);
     Integer expectedTotalInGroup1InDb1WithTableFilterAndStatus = 2;
     Assert.assertEquals(expectedTotalInGroup1InDb1WithTableFilterAndStatus, res.getRight());
     Assert.assertEquals(2, res.getLeft().size());
@@ -630,7 +631,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     String wrongTableFilter2 = "noTableWithName";
     res =
         tableManager()
-            .queryTableRuntimeMetas(optimizerGroup1, db1, wrongTableFilter2, statusCode, 10, 0);
+            .queryTableOptimizingInfo(optimizerGroup1, db1, wrongTableFilter2, statusCode, 10, 0);
     Assert.assertEquals(0, (int) res.getRight());
     Assert.assertTrue(res.getLeft().isEmpty());
   }
