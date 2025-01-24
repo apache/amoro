@@ -41,6 +41,20 @@ import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.PropertyUtil;
+import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute;
+import org.apache.spark.sql.catalyst.expressions.Alias;
+import org.apache.spark.sql.catalyst.expressions.And;
+import org.apache.spark.sql.catalyst.expressions.AttributeReference;
+import org.apache.spark.sql.catalyst.expressions.EqualTo;
+import org.apache.spark.sql.catalyst.expressions.GreaterThan;
+import org.apache.spark.sql.catalyst.expressions.LessThan;
+import org.apache.spark.sql.catalyst.expressions.Literal;
+import org.apache.spark.sql.catalyst.expressions.Or;
+import org.apache.spark.sql.catalyst.plans.logical.Filter;
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
+import org.apache.spark.sql.execution.SparkSqlParser;
+import org.apache.spark.sql.types.Decimal;
+import org.apache.spark.unsafe.types.UTF8String;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,7 +125,80 @@ public abstract class AbstractOptimizingEvaluator {
   }
 
   protected Expression getPartitionFilter() {
-    return Expressions.alwaysTrue();
+    String partitionFilter = config.getPartitionFilter();
+    return partitionFilter == null
+        ? Expressions.alwaysTrue()
+        : convertSqlToIcebergExpression(partitionFilter);
+  }
+
+  protected static Expression convertSqlToIcebergExpression(String sql) {
+    try {
+      SparkSqlParser parser = new SparkSqlParser();
+      LogicalPlan logicalPlan = parser.parsePlan("SELECT * FROM dummy WHERE " + sql);
+
+      Filter filter = (Filter) logicalPlan.children().head();
+      org.apache.spark.sql.catalyst.expressions.Expression sparkExpr = filter.condition();
+      return convertSparkExpressionToIceberg(sparkExpr);
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Failed to parse where condition: " + sql, e);
+    }
+  }
+
+  private static Expression convertSparkExpressionToIceberg(
+      org.apache.spark.sql.catalyst.expressions.Expression sparkExpr) {
+    if (sparkExpr instanceof EqualTo) {
+      EqualTo eq = (EqualTo) sparkExpr;
+      return Expressions.equal(getColumnName(eq.left()), getValue(eq.right()));
+    } else if (sparkExpr instanceof GreaterThan) {
+      GreaterThan gt = (GreaterThan) sparkExpr;
+      return Expressions.greaterThan(getColumnName(gt.left()), getValue(gt.right()));
+    } else if (sparkExpr instanceof LessThan) {
+      LessThan lt = (LessThan) sparkExpr;
+      return Expressions.lessThan(getColumnName(lt.left()), getValue(lt.right()));
+    } else if (sparkExpr instanceof And) {
+      And and = (And) sparkExpr;
+      return Expressions.and(
+          convertSparkExpressionToIceberg(and.left()),
+          convertSparkExpressionToIceberg(and.right()));
+    } else if (sparkExpr instanceof Or) {
+      Or or = (Or) sparkExpr;
+      return Expressions.or(
+          convertSparkExpressionToIceberg(or.left()), convertSparkExpressionToIceberg(or.right()));
+    }
+
+    throw new UnsupportedOperationException("Unsupported expression: " + sparkExpr);
+  }
+
+  private static String getColumnName(org.apache.spark.sql.catalyst.expressions.Expression expr) {
+    if (expr instanceof AttributeReference) {
+      return ((AttributeReference) expr).name();
+    }
+
+    if (expr instanceof Alias) {
+      return getColumnName(((Alias) expr).child());
+    }
+
+    if (expr instanceof UnresolvedAttribute) {
+      return ((UnresolvedAttribute) expr).name();
+    }
+    throw new IllegalArgumentException("Expected column reference, got: " + expr);
+  }
+
+  private static Object getValue(org.apache.spark.sql.catalyst.expressions.Expression expr) {
+    if (expr instanceof Literal) {
+      return convertLiteral((Literal) expr);
+    }
+
+    throw new IllegalArgumentException("Expected literal value, got: " + expr);
+  }
+
+  private static Object convertLiteral(Literal literal) {
+    if (literal.value() instanceof UTF8String) {
+      return ((UTF8String) literal.value()).toString();
+    } else if (literal.value() instanceof Decimal) {
+      return ((Decimal) literal.value()).toJavaBigDecimal();
+    }
+    return literal.value();
   }
 
   private void initPartitionPlans(TableFileScanHelper tableFileScanHelper) {
