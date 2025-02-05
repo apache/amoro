@@ -20,6 +20,7 @@ package org.apache.amoro.server;
 
 import org.apache.amoro.config.ConfigOption;
 import org.apache.amoro.config.ConfigOptions;
+import org.apache.amoro.utils.MemorySize;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -226,10 +227,10 @@ public class AmoroManagementConf {
           .defaultValue(1261)
           .withDescription("Port that the optimizing service thrift server is bound to.");
 
-  public static final ConfigOption<String> THRIFT_MAX_MESSAGE_SIZE =
+  public static final ConfigOption<MemorySize> THRIFT_MAX_MESSAGE_SIZE =
       ConfigOptions.key("thrift-server.max-message-size")
-          .stringType()
-          .defaultValue("100 MB")
+          .memorySizeType()
+          .defaultValue(MemorySize.ofMebiBytes(100))
           .withDescription(
               "Maximum message size that the Thrift server can accept. Default unit is bytes if not specified.");
 
