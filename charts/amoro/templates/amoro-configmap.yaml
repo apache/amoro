@@ -104,7 +104,7 @@ data:
         url: {{ .Values.amoroConf.database.url }}
         connection-pool-max-total: 20
         connection-pool-max-idle: 16
-        connection-pool-max-wait-millis: 1000
+        connection-pool-max-wait-millis: 30000
 
       terminal:
         backend: {{ .Values.amoroConf.terminal.backend }}
