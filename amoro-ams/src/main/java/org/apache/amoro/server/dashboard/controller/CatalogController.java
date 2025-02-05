@@ -263,6 +263,8 @@ public class CatalogController {
         } else {
           metaAuthConfig.put(AUTH_CONFIGS_KEY_KRB5, oldAuthConfig.get(AUTH_CONFIGS_KEY_KRB5));
         }
+        metaAuthConfig.put(
+            AUTH_CONFIGS_KEY_PRINCIPAL, serverAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
         break;
       case AUTH_CONFIGS_VALUE_TYPE_AK_SK:
         metaAuthConfig.put(
