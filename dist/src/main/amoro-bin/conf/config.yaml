@@ -94,6 +94,10 @@ ams:
   catalog-meta-cache:
     expiration-interval: 60s
 
+  overview-cache:
+    refresh-interval: 3m          # 3 min
+    max-size: 3360                # Keep 7 days history by default, 7 * 24 * 60 / 3 = 3360
+
   database:
     type: derby
     jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver

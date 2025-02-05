@@ -19,7 +19,7 @@
 package org.apache.amoro.server.dashboard.controller;
 
 import io.javalin.http.Context;
-import org.apache.amoro.server.dashboard.OverviewCache;
+import org.apache.amoro.server.dashboard.OverviewManager;
 import org.apache.amoro.server.dashboard.model.OverviewDataSizeItem;
 import org.apache.amoro.server.dashboard.model.OverviewResourceUsageItem;
 import org.apache.amoro.server.dashboard.model.OverviewSummary;
@@ -38,17 +38,17 @@ import java.util.stream.Collectors;
 /** The controller that handles overview page requests. */
 public class OverviewController {
 
-  private OverviewCache overviewCache;
+  private final OverviewManager manager;
 
-  public OverviewController() {
-    this.overviewCache = OverviewCache.getInstance();
+  public OverviewController(OverviewManager manager) {
+    this.manager = manager;
   }
 
   public void getResourceUsageHistory(Context ctx) {
     String startTime = ctx.queryParam("startTime");
     Preconditions.checkArgument(StringUtils.isNumeric(startTime), "invalid startTime!");
     List<OverviewResourceUsageItem> resourceUsageHistory =
-        overviewCache.getResourceUsageHistory(Long.parseLong(startTime));
+        manager.getResourceUsageHistory(Long.parseLong(startTime));
     ctx.json(OkResponse.of(resourceUsageHistory));
   }
 
@@ -56,7 +56,7 @@ public class OverviewController {
     String startTime = ctx.queryParam("startTime");
     Preconditions.checkArgument(StringUtils.isNumeric(startTime), "invalid startTime!");
     List<OverviewDataSizeItem> dataSizeHistory =
-        overviewCache.getDataSizeHistory(Long.parseLong(startTime));
+        manager.getDataSizeHistory(Long.parseLong(startTime));
     ctx.json(OkResponse.of(dataSizeHistory));
   }
 
@@ -98,7 +98,7 @@ public class OverviewController {
 
   private List<OverviewTopTableItem> getTopTables(
       boolean asc, Comparator<OverviewTopTableItem> comparator, int limit) {
-    return overviewCache.getAllTopTableItem().stream()
+    return manager.getAllTopTableItem().stream()
         .sorted(
             asc
                 ? comparator.thenComparing(OverviewTopTableItem::getTableName)
@@ -108,11 +108,11 @@ public class OverviewController {
   }
 
   public void getSummary(Context ctx) {
-    int totalCatalog = overviewCache.getTotalCatalog();
-    int totalTableCount = overviewCache.getTotalTableCount();
-    long totalDataSize = overviewCache.getTotalDataSize();
-    int totalCpu = overviewCache.getTotalCpu();
-    long totalMemory = overviewCache.getTotalMemory();
+    int totalCatalog = manager.getTotalCatalog();
+    int totalTableCount = manager.getTotalTableCount();
+    long totalDataSize = manager.getTotalDataSize();
+    int totalCpu = manager.getTotalCpu();
+    long totalMemory = manager.getTotalMemory();
 
     OverviewSummary overviewSummary =
         new OverviewSummary(totalCatalog, totalTableCount, totalDataSize, totalCpu, totalMemory);
@@ -120,7 +120,7 @@ public class OverviewController {
   }
 
   public void getOptimizingStatus(Context ctx) {
-    Map<String, Long> optimizingStatus = overviewCache.getOptimizingStatus();
+    Map<String, Long> optimizingStatus = manager.getOptimizingStatus();
     List<ImmutableMap<String, ? extends Serializable>> optimizingStatusList =
         optimizingStatus.entrySet().stream()
             .map(status -> ImmutableMap.of("name", status.getKey(), "value", status.getValue()))
