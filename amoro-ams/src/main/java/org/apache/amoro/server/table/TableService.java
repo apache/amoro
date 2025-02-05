@@ -18,101 +18,31 @@
 
 package org.apache.amoro.server.table;
 
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.api.BlockableOperation;
-import org.apache.amoro.api.Blocker;
-import org.apache.amoro.api.TableIdentifier;
-import org.apache.amoro.server.catalog.CatalogService;
-import org.apache.amoro.server.persistence.TableRuntimeMeta;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.amoro.server.catalog.InternalCatalog;
 
-import javax.annotation.Nullable;
-
-import java.util.List;
-import java.util.Map;
-
-public interface TableService extends CatalogService, TableManager {
+public interface TableService extends TableRuntimeHandler {
 
   void initialize();
 
-  /**
-   * create table metadata
-   *
-   * @param catalogName internal catalog to create the table
-   * @param tableMeta table metadata info
-   */
-  void createTable(String catalogName, TableMetadata tableMeta);
+  void dispose();
+
+  void onTableCreated(InternalCatalog catalog, ServerTableIdentifier identifier);
+
+  void onTableDropped(InternalCatalog catalog, ServerTableIdentifier identifier);
+
+  TableRuntime getRuntime(Long tableId);
+
+  default boolean contains(Long tableId) {
+    return getRuntime(tableId) != null;
+  }
 
   /**
-   * delete the table metadata
+   * load a table via server catalog.
    *
-   * @param tableIdentifier table id
-   * @param deleteData if delete the external table
+   * @param identifier managed table identifier
+   * @return managed table.
    */
-  void dropTableMetadata(TableIdentifier tableIdentifier, boolean deleteData);
-
-  /**
-   * Load all managed tables. Managed tables means the tables which are managed by AMS, AMS will
-   * watch their change and make them health.
-   *
-   * @return {@link ServerTableIdentifier} list
-   */
-  List<ServerTableIdentifier> listManagedTables();
-
-  /**
-   * Get the ServerTableIdentifier instance of the specified table identifier
-   *
-   * @return the {@link ServerTableIdentifier} instance
-   */
-  ServerTableIdentifier getServerTableIdentifier(TableIdentifier id);
-
-  /**
-   * blocker operations
-   *
-   * @return the created blocker
-   */
-  Blocker block(
-      TableIdentifier tableIdentifier,
-      List<BlockableOperation> operations,
-      Map<String, String> properties);
-
-  /** release the blocker */
-  void releaseBlocker(TableIdentifier tableIdentifier, String blockerId);
-
-  /**
-   * renew the blocker
-   *
-   * @return expiration time
-   */
-  long renewBlocker(TableIdentifier tableIdentifier, String blockerId);
-
-  /**
-   * get blockers of table
-   *
-   * @return block list
-   */
-  List<Blocker> getBlockers(TableIdentifier tableIdentifier);
-
-  /**
-   * Get the table info from database for given parameters.
-   *
-   * @param optimizerGroup The optimizer group of the table associated to. will be if we want the
-   *     info for all groups.
-   * @param fuzzyDbName the fuzzy db name used to filter the result, will be null if no filter set.
-   * @param fuzzyTableName the fuzzy table name used to filter the result, will be null if no filter
-   *     set.
-   * @param statusCodeFilters the status code used to filter the result, wil be null if no filter
-   *     set.
-   * @param limit How many entries we want to retrieve.
-   * @param offset The entries we'll skip when retrieving the entries.
-   * @return A pair with the first entry is the actual list under the filters with the offset and
-   *     limit, and second value will be the number of total entries under the filters.
-   */
-  Pair<List<TableRuntimeMeta>, Integer> getTableRuntimes(
-      String optimizerGroup,
-      @Nullable String fuzzyDbName,
-      @Nullable String fuzzyTableName,
-      @Nullable List<Integer> statusCodeFilters,
-      int limit,
-      int offset);
+  AmoroTable<?> loadTable(ServerTableIdentifier identifier);
 }

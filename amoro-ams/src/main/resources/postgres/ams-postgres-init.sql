@@ -205,8 +205,7 @@ COMMENT ON COLUMN table_runtime.last_optimized_change_snapshotId IS 'Last optimi
 COMMENT ON COLUMN table_runtime.last_major_optimizing_time IS 'Latest Major Optimize time for all partitions';
 COMMENT ON COLUMN table_runtime.last_minor_optimizing_time IS 'Latest Minor Optimize time for all partitions';
 COMMENT ON COLUMN table_runtime.last_full_optimizing_time IS 'Latest Full Optimize time for all partitions';
-COMMENT ON COLUMN table_runtime.optimizing_status_code IS 'Table optimize status code: 100(FULL_OPTIMIZING),' ||
-        ' 200(MAJOR_OPTIMIZING), 300(MINOR_OPTIMIZING), 400(COMMITTING), 500(PLANING), 600(PENDING), 700(IDLE)';
+COMMENT ON COLUMN table_runtime.optimizing_status_code IS 'Table optimize status code: 100(FULL_OPTIMIZING), 200(MAJOR_OPTIMIZING), 300(MINOR_OPTIMIZING), 400(COMMITTING), 500(PLANING), 600(PENDING), 700(IDLE)';
 COMMENT ON COLUMN table_runtime.optimizing_status_start_time IS 'Table optimize status start time';
 COMMENT ON COLUMN table_runtime.optimizing_process_id IS 'Optimizing procedure UUID';
 COMMENT ON COLUMN table_runtime.optimizer_group IS 'Optimizer group';
@@ -371,3 +370,35 @@ COMMENT ON COLUMN table_blocker.create_time IS 'Blocker create time';
 COMMENT ON COLUMN table_blocker.expiration_time IS 'Blocker expiration time';
 COMMENT ON COLUMN table_blocker.properties IS 'Blocker properties';
 COMMENT ON COLUMN table_blocker.prev_blocker_id is 'prev blocker id when created';
+
+
+CREATE TABLE http_session (
+    session_id    VARCHAR(120) NOT NULL,
+    context_path  VARCHAR(60),
+    virtual_host  VARCHAR(60),
+    last_node     VARCHAR(60),
+    access_time   BIGINT,
+    last_access_time  BIGINT,
+    create_time   BIGINT,
+    cookie_time   BIGINT,
+    last_save_time BIGINT,
+    expiry_time   BIGINT,
+    max_interval  BIGINT,
+    data_store    BYTEA,
+    PRIMARY KEY (session_id, context_path, virtual_host)
+);
+CREATE INDEX idx_session_expiry ON http_session (expiry_time);
+
+COMMENT ON COLUMN http_session.session_id IS 'Http session id';
+COMMENT ON COLUMN http_session.context_path IS 'Jetty context path';
+COMMENT ON COLUMN http_session.virtual_host IS 'Jetty virtual host';
+COMMENT ON COLUMN http_session.last_node IS 'Last node';
+COMMENT ON COLUMN http_session.access_time IS 'Access time';
+COMMENT ON COLUMN http_session.last_access_time IS 'Last access time';
+COMMENT ON COLUMN http_session.create_time IS 'Create time';
+COMMENT ON COLUMN http_session.cookie_time IS 'Cookie time';
+COMMENT ON COLUMN http_session.last_save_time IS 'Last save time';
+COMMENT ON COLUMN http_session.expiry_time IS 'Expiry time';
+COMMENT ON COLUMN http_session.max_interval IS 'Max internal';
+COMMENT ON COLUMN http_session.data_store IS 'Session data store';
+COMMENT ON TABLE http_session IS 'Http session store';

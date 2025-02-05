@@ -20,7 +20,7 @@ package org.apache.amoro.server.table.executor;
 
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.server.table.TableManager;
+import org.apache.amoro.server.table.TableService;
 
 public class AsyncTableExecutors {
 
@@ -40,56 +40,56 @@ public class AsyncTableExecutors {
     return instance;
   }
 
-  public void setup(TableManager tableManager, Configurations conf) {
+  public void setup(TableService tableService, Configurations conf) {
     if (conf.getBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
       this.snapshotsExpiringExecutor =
           new SnapshotsExpiringExecutor(
-              tableManager, conf.getInteger(AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT));
+              tableService, conf.getInteger(AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT));
     }
     if (conf.getBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
       this.orphanFilesCleaningExecutor =
           new OrphanFilesCleaningExecutor(
-              tableManager,
+              tableService,
               conf.getInteger(AmoroManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT),
               conf.get(AmoroManagementConf.CLEAN_ORPHAN_FILES_INTERVAL));
     }
     if (conf.getBoolean(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_ENABLED)) {
       this.danglingDeleteFilesCleaningExecutor =
           new DanglingDeleteFilesCleaningExecutor(
-              tableManager,
+              tableService,
               conf.getInteger(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT));
     }
     this.optimizingCommitExecutor =
         new OptimizingCommitExecutor(
-            tableManager, conf.getInteger(AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
+            tableService, conf.getInteger(AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
     this.optimizingExpiringExecutor =
         new OptimizingExpiringExecutor(
-            tableManager,
+            tableService,
             conf.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_KEEP_DAYS),
             conf.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL_HOURS));
-    this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableManager);
+    this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableService);
     if (conf.getBoolean(AmoroManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
       this.hiveCommitSyncExecutor =
           new HiveCommitSyncExecutor(
-              tableManager, conf.getInteger(AmoroManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT));
+              tableService, conf.getInteger(AmoroManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT));
     }
     this.tableRefreshingExecutor =
         new TableRuntimeRefreshExecutor(
-            tableManager,
+            tableService,
             conf.getInteger(AmoroManagementConf.REFRESH_TABLES_THREAD_COUNT),
             conf.getLong(AmoroManagementConf.REFRESH_TABLES_INTERVAL),
             conf.getInteger(AmoroManagementConf.REFRESH_MAX_PENDING_PARTITIONS));
     if (conf.getBoolean(AmoroManagementConf.AUTO_CREATE_TAGS_ENABLED)) {
       this.tagsAutoCreatingExecutor =
           new TagsAutoCreatingExecutor(
-              tableManager,
+              tableService,
               conf.getInteger(AmoroManagementConf.AUTO_CREATE_TAGS_THREAD_COUNT),
               conf.getLong(AmoroManagementConf.AUTO_CREATE_TAGS_INTERVAL));
     }
     if (conf.getBoolean(AmoroManagementConf.DATA_EXPIRATION_ENABLED)) {
       this.dataExpiringExecutor =
           new DataExpiringExecutor(
-              tableManager,
+              tableService,
               conf.getInteger(AmoroManagementConf.DATA_EXPIRATION_THREAD_COUNT),
               conf.get(AmoroManagementConf.DATA_EXPIRATION_INTERVAL));
     }

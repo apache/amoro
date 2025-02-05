@@ -33,6 +33,7 @@
     <url>https://amoro.apache.org</url>
 
     <properties>
+        <iceberg.version>1.4.3</iceberg.version>
         <spark.version>3.2.4</spark.version>
         <scala.version>2.12.15</scala.version>
     </properties>
@@ -144,7 +145,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark-3.2_2.12</artifactId>
+            <artifactId>iceberg-spark-3.3_2.12</artifactId>
             <version>${iceberg.version}</version>
             <scope>provided</scope>
             <exclusions>

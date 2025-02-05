@@ -101,7 +101,7 @@
         <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
         <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
 
-        <iceberg.version>1.4.3</iceberg.version>
+        <iceberg.version>1.6.1</iceberg.version>
         <paimon.version>0.9.0</paimon.version>
         <hive.version>3.1.1</hive.version>
         <hadoop.version>3.4.0</hadoop.version>
@@ -1360,8 +1360,8 @@
                 <guava.version>14.0.1</guava.version>
                 <hive.version>2.3.9</hive.version>
                 <hadoop.version>2.10.2</hadoop.version>
-                <terminal.spark.version>3.2.4</terminal.spark.version>
-                <terminal.spark.major.version>3.2</terminal.spark.major.version>
+                <terminal.spark.version>3.3.3</terminal.spark.version>
+                <terminal.spark.major.version>3.3</terminal.spark.major.version>
             </properties>
         </profile>
         <profile>

@@ -29,10 +29,11 @@ import org.apache.amoro.api.OperationConflictException;
 import org.apache.amoro.api.TableCommitMeta;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.api.TableMeta;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
+import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableMetadata;
-import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.utils.InternalTableUtil;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 
@@ -42,10 +43,12 @@ import java.util.stream.Collectors;
 
 public class TableManagementService implements AmoroTableMetastore.Iface {
 
-  private final TableService tableService;
+  private final CatalogManager catalogManager;
+  private final TableManager tableManager;
 
-  public TableManagementService(TableService tableService) {
-    this.tableService = tableService;
+  public TableManagementService(CatalogManager catalogManager, TableManager tableManager) {
+    this.catalogManager = catalogManager;
+    this.tableManager = tableManager;
   }
 
   @Override
@@ -53,29 +56,29 @@ public class TableManagementService implements AmoroTableMetastore.Iface {
 
   @Override
   public List<CatalogMeta> getCatalogs() {
-    return tableService.listCatalogMetas();
+    return catalogManager.listCatalogMetas();
   }
 
   @Override
   public CatalogMeta getCatalog(String name) {
-    return tableService.getCatalogMeta(name);
+    return catalogManager.getCatalogMeta(name);
   }
 
   @Override
   public List<String> getDatabases(String catalogName) {
-    ServerCatalog serverCatalog = tableService.getServerCatalog(catalogName);
+    ServerCatalog serverCatalog = catalogManager.getServerCatalog(catalogName);
     return serverCatalog.listDatabases();
   }
 
   @Override
   public void createDatabase(String catalogName, String database) {
-    InternalCatalog serverCatalog = tableService.getInternalCatalog(catalogName);
+    InternalCatalog serverCatalog = catalogManager.getInternalCatalog(catalogName);
     serverCatalog.createDatabase(database);
   }
 
   @Override
   public void dropDatabase(String catalogName, String database) {
-    InternalCatalog serverCatalog = tableService.getInternalCatalog(catalogName);
+    InternalCatalog serverCatalog = catalogManager.getInternalCatalog(catalogName);
     serverCatalog.dropDatabase(database);
   }
 
@@ -86,16 +89,19 @@ public class TableManagementService implements AmoroTableMetastore.Iface {
     }
     ServerTableIdentifier identifier =
         ServerTableIdentifier.of(
-            tableMeta.getTableIdentifier(), TableFormat.valueOf(tableMeta.getFormat()));
-    InternalCatalog catalog = tableService.getInternalCatalog(identifier.getCatalog());
+            tableMeta.getTableIdentifier().getCatalog(),
+            tableMeta.getTableIdentifier().getDatabase(),
+            tableMeta.getTableIdentifier().getTableName(),
+            TableFormat.valueOf(tableMeta.getFormat()));
+    InternalCatalog catalog = catalogManager.getInternalCatalog(identifier.getCatalog());
     CatalogMeta catalogMeta = catalog.getMetadata();
     TableMetadata tableMetadata = new TableMetadata(identifier, tableMeta, catalogMeta);
-    tableService.createTable(catalog.name(), tableMetadata);
+    tableManager.createTable(catalog.name(), tableMetadata);
   }
 
   @Override
   public List<TableMeta> listTables(String catalogName, String database) {
-    InternalCatalog serverCatalog = tableService.getInternalCatalog(catalogName);
+    InternalCatalog serverCatalog = catalogManager.getInternalCatalog(catalogName);
     List<TableMetadata> tableMetadataList = serverCatalog.listTableMetadataInDatabase(database);
     return tableMetadataList.stream()
         .map(TableMetadata::buildTableMeta)
@@ -104,7 +110,7 @@ public class TableManagementService implements AmoroTableMetastore.Iface {
 
   @Override
   public TableMeta getTable(TableIdentifier tableIdentifier) {
-    InternalCatalog serverCatalog = tableService.getInternalCatalog(tableIdentifier.getCatalog());
+    InternalCatalog serverCatalog = catalogManager.getInternalCatalog(tableIdentifier.getCatalog());
     TableMetadata tableMetadata =
         serverCatalog.loadTableMetadata(
             tableIdentifier.getDatabase(), tableIdentifier.getTableName());
@@ -121,7 +127,7 @@ public class TableManagementService implements AmoroTableMetastore.Iface {
 
   @Override
   public void removeTable(TableIdentifier tableIdentifier, boolean deleteData) {
-    tableService.dropTableMetadata(tableIdentifier, deleteData);
+    tableManager.dropTableMetadata(tableIdentifier, deleteData);
   }
 
   @Override
@@ -139,22 +145,22 @@ public class TableManagementService implements AmoroTableMetastore.Iface {
       List<BlockableOperation> operations,
       Map<String, String> properties)
       throws OperationConflictException {
-    return tableService.block(tableIdentifier, operations, properties);
+    return tableManager.block(tableIdentifier, operations, properties);
   }
 
   @Override
   public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
-    tableService.releaseBlocker(tableIdentifier, blockerId);
+    tableManager.releaseBlocker(tableIdentifier, blockerId);
   }
 
   @Override
   public long renewBlocker(TableIdentifier tableIdentifier, String blockerId)
       throws NoSuchObjectException {
-    return tableService.renewBlocker(tableIdentifier, blockerId);
+    return tableManager.renewBlocker(tableIdentifier, blockerId);
   }
 
   @Override
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
-    return tableService.getBlockers(tableIdentifier);
+    return tableManager.getBlockers(tableIdentifier);
   }
 }

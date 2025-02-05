@@ -19,18 +19,22 @@
 package org.apache.amoro.spark;
 
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.iceberg.spark.functions.SparkFunctions;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
+import org.apache.spark.sql.catalyst.analysis.NoSuchFunctionException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
 import org.apache.spark.sql.connector.catalog.CatalogExtension;
 import org.apache.spark.sql.connector.catalog.CatalogPlugin;
+import org.apache.spark.sql.connector.catalog.FunctionCatalog;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.NamespaceChange;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.catalog.TableChange;
+import org.apache.spark.sql.connector.catalog.functions.UnboundFunction;
 import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
@@ -38,8 +42,9 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.Map;
 
 /** Base class of spark session catalog. */
-public abstract class SessionCatalogBase<T extends TableCatalog & SupportsNamespaces>
-    implements SupportsNamespaces, CatalogExtension {
+public abstract class SessionCatalogBase<
+        T extends TableCatalog & SupportsNamespaces & FunctionCatalog>
+    implements SupportsNamespaces, CatalogExtension, FunctionCatalog {
 
   private static final String[] DEFAULT_NAMESPACE = new String[] {"default"};
 
@@ -233,5 +238,41 @@ public abstract class SessionCatalogBase<T extends TableCatalog & SupportsNamesp
     } else {
       getSessionCatalog().renameTable(from, to);
     }
+  }
+
+  private static boolean isSystemNamespace(String[] namespace) {
+    return namespace.length == 1 && namespace[0].equalsIgnoreCase("system");
+  }
+
+  @Override
+  public UnboundFunction loadFunction(Identifier ident) throws NoSuchFunctionException {
+    String[] namespace = ident.namespace();
+    String name = ident.name();
+
+    // Allow for empty namespace, as Spark's storage partitioned joins look up
+    // the corresponding functions to generate transforms for partitioning
+    // with an empty namespace, such as `bucket`.
+    // Otherwise, use `system` namespace.
+    if (namespace.length == 0 || isSystemNamespace(namespace)) {
+      UnboundFunction func = SparkFunctions.load(name);
+      if (func != null) {
+        return func;
+      }
+    }
+
+    throw new NoSuchFunctionException(ident);
+  }
+
+  @Override
+  public Identifier[] listFunctions(String[] namespace) throws NoSuchNamespaceException {
+    if (namespace.length == 0 || isSystemNamespace(namespace)) {
+      return SparkFunctions.list().stream()
+          .map(name -> Identifier.of(namespace, name))
+          .toArray(Identifier[]::new);
+    } else if (namespaceExists(namespace)) {
+      return new Identifier[0];
+    }
+
+    throw new NoSuchNamespaceException(namespace);
   }
 }

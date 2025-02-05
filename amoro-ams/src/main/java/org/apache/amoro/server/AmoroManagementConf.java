@@ -51,6 +51,12 @@ public class AmoroManagementConf {
           .defaultValue("admin")
           .withDescription("The administrator password");
 
+  public static final ConfigOption<Duration> CATALOG_META_CACHE_EXPIRATION_INTERVAL =
+      ConfigOptions.key("catalog-meta-cache.expiration-interval")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(60))
+          .withDescription("TTL for catalog metadata.");
+
   public static final ConfigOption<Integer> TABLE_MANIFEST_IO_THREAD_COUNT =
       ConfigOptions.key("table-manifest-io.thread-count")
           .intType()
@@ -256,6 +262,12 @@ public class AmoroManagementConf {
           .defaultValue("token")
           .withDescription("The authentication used by REST APIs, token (default) or basic.");
 
+  public static final ConfigOption<Duration> HTTP_SERVER_SESSION_TIMEOUT =
+      ConfigOptions.key("http-server.session-timeout")
+          .durationType()
+          .defaultValue(Duration.ofDays(7))
+          .withDescription("Timeout for http session.");
+
   public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_COUNT =
       ConfigOptions.key("self-optimizing.commit-thread-count")
           .intType()
@@ -327,7 +339,7 @@ public class AmoroManagementConf {
   public static final ConfigOption<Long> DB_CONNECT_MAX_WAIT_MILLIS =
       ConfigOptions.key("database.connection-pool-max-wait-millis")
           .longType()
-          .defaultValue(1000L)
+          .defaultValue(30000L)
           .withDescription("Max wait time before getting a connection timeout.");
 
   public static final ConfigOption<Long> OPTIMIZER_HB_TIMEOUT =

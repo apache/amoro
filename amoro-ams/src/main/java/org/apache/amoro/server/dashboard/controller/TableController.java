@@ -36,6 +36,7 @@ import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.dashboard.ServerTableDescriptor;
 import org.apache.amoro.server.dashboard.ServerTableProperties;
@@ -50,6 +51,7 @@ import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Function;
@@ -99,6 +101,8 @@ public class TableController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
   private static final long UPGRADE_INFO_EXPIRE_INTERVAL = 60 * 60 * 1000;
 
+  private final CatalogManager catalogManager;
+  private final TableManager tableManager;
   private final TableService tableService;
   private final ServerTableDescriptor tableDescriptor;
   private final Configurations serviceConfig;
@@ -107,9 +111,13 @@ public class TableController {
   private final ScheduledExecutorService tableUpgradeExecutor;
 
   public TableController(
+      CatalogManager catalogManager,
+      TableManager tableManager,
       TableService tableService,
       ServerTableDescriptor tableDescriptor,
       Configurations serviceConfig) {
+    this.catalogManager = catalogManager;
+    this.tableManager = tableManager;
     this.tableService = tableService;
     this.tableDescriptor = tableDescriptor;
     this.serviceConfig = serviceConfig;
@@ -138,7 +146,7 @@ public class TableController {
             && StringUtils.isNotBlank(database)
             && StringUtils.isNotBlank(tableName),
         "catalog.database.tableName can not be empty in any element");
-    Preconditions.checkState(tableService.catalogExist(catalog), "invalid catalog!");
+    Preconditions.checkState(catalogManager.catalogExist(catalog), "invalid catalog!");
 
     ServerTableMeta serverTableMeta =
         tableDescriptor.getTableDetail(
@@ -146,7 +154,7 @@ public class TableController {
     TableSummary tableSummary = serverTableMeta.getTableSummary();
     Optional<ServerTableIdentifier> serverTableIdentifier =
         Optional.ofNullable(
-            tableService.getServerTableIdentifier(
+            tableManager.getServerTableIdentifier(
                 TableIdentifier.of(catalog, database, tableName).buildTableIdentifier()));
     if (serverTableIdentifier.isPresent()) {
       TableRuntime tableRuntime = tableService.getRuntime(serverTableIdentifier.get().getId());
@@ -178,7 +186,7 @@ public class TableController {
             && StringUtils.isNotBlank(db)
             && StringUtils.isNotBlank(table),
         "catalog.database.tableName can not be empty in any element");
-    ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
+    ServerCatalog serverCatalog = catalogManager.getServerCatalog(catalog);
     CatalogMeta catalogMeta = serverCatalog.getMetadata();
     TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
     HMSClientPool hmsClientPool =
@@ -217,7 +225,7 @@ public class TableController {
         "catalog.database.tableName can not be empty in any element");
     UpgradeHiveMeta upgradeHiveMeta = ctx.bodyAsClass(UpgradeHiveMeta.class);
 
-    ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
+    ServerCatalog serverCatalog = catalogManager.getServerCatalog(catalog);
     CatalogMeta catalogMeta = serverCatalog.getMetadata();
     String amsUri = AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME);
     catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, amsUri);
@@ -518,7 +526,7 @@ public class TableController {
         StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(db),
         "catalog.database can not be empty in any element");
 
-    ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
+    ServerCatalog serverCatalog = catalogManager.getServerCatalog(catalog);
     Function<TableFormat, String> formatToType =
         format -> {
           if (format.equals(TableFormat.MIXED_HIVE) || format.equals(TableFormat.MIXED_ICEBERG)) {
@@ -584,7 +592,7 @@ public class TableController {
     String keywords = ctx.queryParam("keywords");
 
     List<String> dbList =
-        tableService.getServerCatalog(catalog).listDatabases().stream()
+        catalogManager.getServerCatalog(catalog).listDatabases().stream()
             .filter(item -> StringUtils.isBlank(keywords) || item.contains(keywords))
             .collect(Collectors.toList());
     ctx.json(OkResponse.of(dbList));
@@ -596,7 +604,7 @@ public class TableController {
    * @param ctx - context for handling the request and response
    */
   public void getCatalogs(Context ctx) {
-    List<CatalogMeta> catalogs = tableService.listCatalogMetas();
+    List<CatalogMeta> catalogs = catalogManager.listCatalogMetas();
     ctx.json(OkResponse.of(catalogs));
   }
 
@@ -672,10 +680,10 @@ public class TableController {
             && StringUtils.isNotBlank(db)
             && StringUtils.isNotBlank(table),
         "catalog.database.tableName can not be empty in any element");
-    Preconditions.checkState(tableService.catalogExist(catalog), "invalid catalog!");
+    Preconditions.checkState(catalogManager.catalogExist(catalog), "invalid catalog!");
 
     ServerTableIdentifier serverTableIdentifier =
-        tableService.getServerTableIdentifier(
+        tableManager.getServerTableIdentifier(
             TableIdentifier.of(catalog, db, table).buildTableIdentifier());
     TableRuntime tableRuntime =
         serverTableIdentifier != null

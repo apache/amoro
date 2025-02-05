@@ -52,7 +52,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
-public class TestTableService extends AMSTableTestBase {
+public class TestTableManager extends AMSTableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
@@ -68,13 +68,13 @@ public class TestTableService extends AMSTableTestBase {
     };
   }
 
-  public TestTableService(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+  public TestTableManager(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Test
   public void testCreateAndDropTable() {
-    ServerCatalog serverCatalog = tableService().getServerCatalog(TEST_CATALOG_NAME);
+    ServerCatalog serverCatalog = CATALOG_MANAGER.getServerCatalog(TEST_CATALOG_NAME);
     InternalCatalog internalCatalog =
         catalogTestHelper().isInternalCatalog() ? (InternalCatalog) serverCatalog : null;
 
@@ -94,7 +94,7 @@ public class TestTableService extends AMSTableTestBase {
 
     // test list tables
     List<TableIDWithFormat> tableIdentifierList =
-        tableService().getServerCatalog(TEST_CATALOG_NAME).listTables(TEST_DB_NAME);
+        CATALOG_MANAGER.getServerCatalog(TEST_CATALOG_NAME).listTables(TEST_DB_NAME);
     Assert.assertEquals(1, tableIdentifierList.size());
     Assert.assertEquals(
         tableMeta().getTableIdentifier(),
@@ -122,7 +122,7 @@ public class TestTableService extends AMSTableTestBase {
     if (catalogTestHelper().isInternalCatalog()) {
       Assert.assertThrows(
           AlreadyExistsException.class,
-          () -> tableService().createTable(TEST_CATALOG_NAME, tableMetadata()));
+          () -> tableManager().createTable(TEST_CATALOG_NAME, tableMetadata()));
     }
 
     // test create table with wrong catalog name
@@ -132,7 +132,7 @@ public class TestTableService extends AMSTableTestBase {
           TableMetadata copyMetadata =
               new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
           copyMetadata.getTableIdentifier().setCatalog("unknown");
-          tableService().createTable("unknown", copyMetadata);
+          tableManager().createTable("unknown", copyMetadata);
         });
 
     // test create table in not existed catalog
@@ -142,7 +142,7 @@ public class TestTableService extends AMSTableTestBase {
           TableMetadata copyMetadata =
               new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
           copyMetadata.getTableIdentifier().setCatalog("unknown");
-          tableService().createTable("unknown", copyMetadata);
+          tableManager().createTable("unknown", copyMetadata);
         });
 
     if (catalogTestHelper().tableFormat().equals(TableFormat.MIXED_ICEBERG)) {
@@ -153,13 +153,13 @@ public class TestTableService extends AMSTableTestBase {
             TableMetadata copyMetadata =
                 new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
             copyMetadata.getTableIdentifier().setDatabase("unknown");
-            tableService().createTable("unknown", copyMetadata);
+            tableManager().createTable("unknown", copyMetadata);
           });
     }
 
     // test drop table
     dropTable();
-    Assert.assertEquals(0, tableService().listManagedTables().size());
+    Assert.assertEquals(0, tableManager().listManagedTables().size());
     Assert.assertEquals(0, serverCatalog.listTables(TEST_DB_NAME).size());
     Assert.assertEquals(0, serverCatalog.listTables().size());
     if (catalogTestHelper().isInternalCatalog()) {
@@ -171,7 +171,7 @@ public class TestTableService extends AMSTableTestBase {
     // test drop not existed table
     Assert.assertThrows(
         ObjectNotExistsException.class,
-        () -> tableService().dropTableMetadata(tableMeta().getTableIdentifier(), true));
+        () -> tableManager().dropTableMetadata(tableMeta().getTableIdentifier(), true));
 
     dropDatabase();
   }
@@ -180,7 +180,8 @@ public class TestTableService extends AMSTableTestBase {
   public void testBlockAndRelease() {
     createDatabase();
     createTable();
-    TableIdentifier tableIdentifier = serverTableIdentifier().getIdentifier();
+    TableIdentifier tableIdentifier =
+        serverTableIdentifier().getIdentifier().buildTableIdentifier();
 
     List<BlockableOperation> operations = new ArrayList<>();
     operations.add(BlockableOperation.BATCH_WRITE);
@@ -190,13 +191,13 @@ public class TestTableService extends AMSTableTestBase {
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
 
-    Blocker block = tableService().block(tableIdentifier, operations, getProperties());
+    Blocker block = tableManager().block(tableIdentifier, operations, getProperties());
     assertBlocker(block, operations);
     assertBlockerCnt(1);
     assertBlocked(BlockableOperation.OPTIMIZE);
     assertBlocked(BlockableOperation.BATCH_WRITE);
 
-    tableService().releaseBlocker(tableIdentifier, block.getBlockerId());
+    tableManager().releaseBlocker(tableIdentifier, block.getBlockerId());
     assertBlockerCnt(0);
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
@@ -209,7 +210,8 @@ public class TestTableService extends AMSTableTestBase {
   public void testBlockConflict() {
     createDatabase();
     createTable();
-    TableIdentifier tableIdentifier = serverTableIdentifier().getIdentifier();
+    TableIdentifier tableIdentifier =
+        serverTableIdentifier().getIdentifier().buildTableIdentifier();
 
     List<BlockableOperation> operations = new ArrayList<>();
     operations.add(BlockableOperation.BATCH_WRITE);
@@ -219,19 +221,19 @@ public class TestTableService extends AMSTableTestBase {
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
 
-    Blocker block = tableService().block(tableIdentifier, operations, getProperties());
+    Blocker block = tableManager().block(tableIdentifier, operations, getProperties());
 
     Assert.assertThrows(
         "should be conflict",
         BlockerConflictException.class,
-        () -> tableService().block(tableIdentifier, operations, getProperties()));
+        () -> tableManager().block(tableIdentifier, operations, getProperties()));
 
     assertBlocker(block, operations);
     assertBlockerCnt(1);
     assertBlocked(BlockableOperation.OPTIMIZE);
     assertBlocked(BlockableOperation.BATCH_WRITE);
 
-    tableService().releaseBlocker(tableIdentifier, block.getBlockerId());
+    tableManager().releaseBlocker(tableIdentifier, block.getBlockerId());
     assertBlockerCnt(0);
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
@@ -244,7 +246,8 @@ public class TestTableService extends AMSTableTestBase {
   public void testRenewBlocker() throws InterruptedException {
     createDatabase();
     createTable();
-    TableIdentifier tableIdentifier = serverTableIdentifier().getIdentifier();
+    TableIdentifier tableIdentifier =
+        serverTableIdentifier().getIdentifier().buildTableIdentifier();
 
     List<BlockableOperation> operations = new ArrayList<>();
     operations.add(BlockableOperation.BATCH_WRITE);
@@ -254,10 +257,10 @@ public class TestTableService extends AMSTableTestBase {
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
 
-    Blocker block = tableService().block(tableIdentifier, operations, getProperties());
+    Blocker block = tableManager().block(tableIdentifier, operations, getProperties());
     Thread.sleep(1);
 
-    tableService().renewBlocker(tableIdentifier, block.getBlockerId());
+    tableManager().renewBlocker(tableIdentifier, block.getBlockerId());
     assertBlockerCnt(1);
     assertBlocked(BlockableOperation.OPTIMIZE);
     assertBlocked(BlockableOperation.BATCH_WRITE);
@@ -266,9 +269,9 @@ public class TestTableService extends AMSTableTestBase {
     assertBlockerCnt(1);
     assertBlocked(BlockableOperation.OPTIMIZE);
     assertBlocked(BlockableOperation.BATCH_WRITE);
-    assertBlockerRenewed(tableService().getBlockers(tableIdentifier).get(0));
+    assertBlockerRenewed(tableManager().getBlockers(tableIdentifier).get(0));
 
-    tableService().releaseBlocker(tableIdentifier, block.getBlockerId());
+    tableManager().releaseBlocker(tableIdentifier, block.getBlockerId());
     assertBlockerCnt(0);
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
@@ -281,22 +284,23 @@ public class TestTableService extends AMSTableTestBase {
   public void testAutoIncrementBlockerId() {
     createDatabase();
     createTable();
-    TableIdentifier tableIdentifier = serverTableIdentifier().getIdentifier();
+    TableIdentifier tableIdentifier =
+        serverTableIdentifier().getIdentifier().buildTableIdentifier();
 
     List<BlockableOperation> operations = new ArrayList<>();
     operations.add(BlockableOperation.BATCH_WRITE);
     operations.add(BlockableOperation.OPTIMIZE);
 
-    Blocker block = tableService().block(tableIdentifier, operations, getProperties());
+    Blocker block = tableManager().block(tableIdentifier, operations, getProperties());
 
-    tableService().releaseBlocker(tableIdentifier, block.getBlockerId());
+    tableManager().releaseBlocker(tableIdentifier, block.getBlockerId());
 
-    Blocker block2 = tableService().block(tableIdentifier, operations, getProperties());
+    Blocker block2 = tableManager().block(tableIdentifier, operations, getProperties());
 
     Assert.assertEquals(
         Long.parseLong(block2.getBlockerId()) - Long.parseLong(block.getBlockerId()), 1);
 
-    tableService().releaseBlocker(tableIdentifier, block2.getBlockerId());
+    tableManager().releaseBlocker(tableIdentifier, block2.getBlockerId());
 
     dropTable();
     dropDatabase();
@@ -336,7 +340,8 @@ public class TestTableService extends AMSTableTestBase {
   }
 
   private boolean isBlocked(BlockableOperation operation) {
-    return tableService().getBlockers(serverTableIdentifier().getIdentifier()).stream()
+    return tableManager()
+        .getBlockers(serverTableIdentifier().getIdentifier().buildTableIdentifier()).stream()
         .anyMatch(blocker -> blocker.getOperations().contains(operation));
   }
 
@@ -346,7 +351,8 @@ public class TestTableService extends AMSTableTestBase {
 
   private void assertBlockerCnt(int i) {
     List<Blocker> blockers;
-    blockers = tableService().getBlockers(serverTableIdentifier().getIdentifier());
+    blockers =
+        tableManager().getBlockers(serverTableIdentifier().getIdentifier().buildTableIdentifier());
     Assert.assertEquals(i, blockers.size());
   }
 

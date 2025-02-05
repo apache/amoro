@@ -37,6 +37,7 @@ import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.RestCatalogService;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.controller.CatalogController;
 import org.apache.amoro.server.dashboard.controller.HealthCheckController;
 import org.apache.amoro.server.dashboard.controller.LoginController;
@@ -50,6 +51,7 @@ import org.apache.amoro.server.dashboard.controller.TerminalController;
 import org.apache.amoro.server.dashboard.controller.VersionController;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.ParamSignatureCalculator;
+import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -76,6 +78,7 @@ public class DashboardServer {
   private static final String AUTH_TYPE_BASIC = "basic";
   private static final String X_REQUEST_SOURCE_HEADER = "X-Request-Source";
   private static final String X_REQUEST_SOURCE_WEB = "Web";
+  private static final String SWAGGER_PATH = "/openapi-ui";
 
   private final CatalogController catalogController;
   private final HealthCheckController healthCheckController;
@@ -95,19 +98,27 @@ public class DashboardServer {
 
   public DashboardServer(
       Configurations serviceConfig,
-      TableService tableService,
+      CatalogManager catalogManager,
+      TableManager tableManager,
       DefaultOptimizingService optimizerManager,
-      TerminalManager terminalManager) {
+      TerminalManager terminalManager,
+      TableService tableService) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
-    this.catalogController = new CatalogController(tableService, platformFileManager);
+    this.catalogController = new CatalogController(catalogManager, platformFileManager);
     this.healthCheckController = new HealthCheckController();
     this.loginController = new LoginController(serviceConfig);
-    this.optimizerGroupController = new OptimizerGroupController(tableService, optimizerManager);
+    // TODO: remove table service from OptimizerGroupController
+    this.optimizerGroupController =
+        new OptimizerGroupController(tableManager, tableService, optimizerManager);
     this.optimizerController = new OptimizerController(optimizerManager);
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
     this.settingController = new SettingController(serviceConfig, optimizerManager);
-    ServerTableDescriptor tableDescriptor = new ServerTableDescriptor(tableService, serviceConfig);
-    this.tableController = new TableController(tableService, tableDescriptor, serviceConfig);
+    ServerTableDescriptor tableDescriptor =
+        new ServerTableDescriptor(catalogManager, tableManager, serviceConfig);
+    // TODO: remove table service from TableController
+    this.tableController =
+        new TableController(
+            catalogManager, tableManager, tableService, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
     this.overviewController = new OverviewController();
@@ -118,7 +129,6 @@ public class DashboardServer {
   }
 
   private String indexHtml = "";
-
   // read index.html content
   public String getIndexFileContent() {
     try {
@@ -170,6 +180,17 @@ public class DashboardServer {
       path(
           "",
           () -> {
+            get(
+                "/swagger-docs",
+                ctx -> {
+                  InputStream openapiStream =
+                      getClass().getClassLoader().getResourceAsStream("openapi/openapi.yaml");
+                  if (openapiStream == null) {
+                    ctx.status(404).result("OpenAPI specification file not found");
+                  } else {
+                    ctx.result(openapiStream);
+                  }
+                });
             // static files
             get(
                 "/{page}",
@@ -358,6 +379,9 @@ public class DashboardServer {
   public void preHandleRequest(Context ctx) {
     String uriPath = ctx.path();
     String requestSource = ctx.header(X_REQUEST_SOURCE_HEADER);
+    if (uriPath.startsWith(SWAGGER_PATH)) {
+      return;
+    }
     if (needApiKeyCheck(uriPath) && !X_REQUEST_SOURCE_WEB.equalsIgnoreCase(requestSource)) {
       if (AUTH_TYPE_BASIC.equalsIgnoreCase(authType)) {
         BasicAuthCredentials cred = ctx.basicAuthCredentials();
@@ -380,7 +404,7 @@ public class DashboardServer {
   public void handleException(Exception e, Context ctx) {
     if (e instanceof ForbiddenException) {
       // request doesn't start with /ams is  page request. we return index.html
-      if (!ctx.req.getRequestURI().startsWith("/ams")) {
+      if (!ctx.req.getRequestURI().startsWith("/api/ams")) {
         ctx.html(getIndexFileContent());
       } else {
         ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Please login first", ""));
@@ -410,6 +434,9 @@ public class DashboardServer {
     "/index.html",
     "/favicon.ico",
     "/assets/*",
+    "/openapi-ui",
+    "/openapi-ui/*",
+    "/swagger-docs",
     RestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
   };
 

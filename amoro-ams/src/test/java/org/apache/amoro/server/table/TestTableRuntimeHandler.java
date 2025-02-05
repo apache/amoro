@@ -67,7 +67,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
 
   @Test
   public void testInitialize() throws Exception {
-    tableService = new DefaultTableService(new Configurations());
+    tableService = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
     TestHandler handler = new TestHandler();
     tableService.addHandlerChain(handler);
     tableService.initialize();
@@ -76,7 +76,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
       createDatabase();
     }
     createTable();
-    ServerTableIdentifier createTableId = tableService().listManagedTables().get(0);
+    ServerTableIdentifier createTableId = tableManager().listManagedTables().get(0);
     Assert.assertEquals(1, handler.getAddedTables().size());
     validateMixedTable(handler.getAddedTables().get(0).first());
     validateTableRuntime(handler.getAddedTables().get(0).second());
@@ -86,7 +86,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     Assert.assertTrue(handler.isDisposed());
 
     // initialize with a history table
-    tableService = new DefaultTableService(new Configurations());
+    tableService = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
     handler = new TestHandler();
     tableService.addHandlerChain(handler);
     tableService.initialize();

@@ -39,13 +39,14 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.events.IcebergReportEvent;
 import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.persistence.PersistentBase;
-import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.internal.InternalTableCreator;
 import org.apache.amoro.server.table.internal.InternalTableHandler;
+import org.apache.amoro.server.table.internal.InternalTableManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -106,10 +107,12 @@ public class RestCatalogService extends PersistentBase {
 
   private final JavalinJackson jsonMapper;
 
-  private final TableService tableService;
+  private final CatalogManager catalogManager;
+  private final InternalTableManager tableManager;
 
-  public RestCatalogService(TableService tableService) {
-    this.tableService = tableService;
+  public RestCatalogService(CatalogManager catalogManager, InternalTableManager tableManager) {
+    this.catalogManager = catalogManager;
+    this.tableManager = tableManager;
     ObjectMapper objectMapper = jsonMapper();
     this.jsonMapper = new JavalinJackson(objectMapper);
   }
@@ -283,7 +286,7 @@ public class RestCatalogService extends PersistentBase {
               catalog.newTableCreator(database, tableName, format, request)) {
             try {
               org.apache.amoro.server.table.TableMetadata metadata = creator.create();
-              tableService.createTable(catalog.name(), metadata);
+              tableManager.createTable(catalog.name(), metadata);
             } catch (RuntimeException e) {
               creator.rollback();
               throw e;
@@ -344,7 +347,8 @@ public class RestCatalogService extends PersistentBase {
               Boolean.parseBoolean(
                   Optional.ofNullable(ctx.req.getParameter("purgeRequested")).orElse("false"));
           org.apache.amoro.server.table.TableMetadata tableMetadata = handler.tableMetadata();
-          tableService.dropTableMetadata(tableMetadata.getTableIdentifier().getIdentifier(), purge);
+          tableManager.dropTableMetadata(
+              tableMetadata.getTableIdentifier().getIdentifier().buildTableIdentifier(), purge);
           handler.dropTable(purge);
           return null;
         });
@@ -432,7 +436,7 @@ public class RestCatalogService extends PersistentBase {
 
   private InternalCatalog getCatalog(String catalog) {
     Preconditions.checkNotNull(catalog, "lack required path variables: catalog");
-    ServerCatalog internalCatalog = tableService.getServerCatalog(catalog);
+    ServerCatalog internalCatalog = catalogManager.getServerCatalog(catalog);
     Preconditions.checkArgument(
         internalCatalog instanceof InternalCatalog, "The catalog is not an iceberg rest catalog");
     Set<TableFormat> tableFormats = CatalogUtil.tableFormats(internalCatalog.getMetadata());

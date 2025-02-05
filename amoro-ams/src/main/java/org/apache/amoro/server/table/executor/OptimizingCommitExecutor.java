@@ -20,8 +20,8 @@ package org.apache.amoro.server.table.executor;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.table.TableService;
 
 import java.util.Optional;
 
@@ -29,8 +29,8 @@ public class OptimizingCommitExecutor extends BaseTableExecutor {
 
   private static final long INTERVAL = 60 * 1000L; // 1min
 
-  public OptimizingCommitExecutor(TableManager tableManager, int poolSize) {
-    super(tableManager, poolSize);
+  public OptimizingCommitExecutor(TableService tableService, int poolSize) {
+    super(tableService, poolSize);
   }
 
   @Override

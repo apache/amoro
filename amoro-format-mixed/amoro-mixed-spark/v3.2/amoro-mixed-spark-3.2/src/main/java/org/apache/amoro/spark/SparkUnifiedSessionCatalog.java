@@ -23,7 +23,6 @@ import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-/** @Auth: hzwangtao6 @Time: 2024/5/24 14:04 @Description: */
 public class SparkUnifiedSessionCatalog<
         T extends TableCatalog & SupportsNamespaces & FunctionCatalog>
     extends SparkUnifiedSessionCatalogBase<T> {

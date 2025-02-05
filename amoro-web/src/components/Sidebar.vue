@@ -17,7 +17,7 @@
  / -->
 
 <script lang="ts">
-import { computed, defineComponent, nextTick, reactive, ref, toRefs, watchEffect } from 'vue'
+import { computed, defineComponent, nextTick, reactive, ref, toRefs, watchEffect, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import useStore from '@/store/index'
@@ -153,6 +153,21 @@ export default defineComponent({
       })
     }
 
+    const tableMenusRef = ref(null)
+    function handleClickOutside(event: Event) {
+      if (tableMenusRef?.value && !(tableMenusRef.value as any).contains(event.target)) {
+        toggleTablesMenu(false)
+      }
+    }
+
+    onBeforeUnmount(() => {
+      document.removeEventListener('click', handleClickOutside)
+    })
+
+    onMounted(() => {
+      document.addEventListener('click', handleClickOutside)
+    })
+
     return {
       ...toRefs(state),
       hasToken,
@@ -162,6 +177,7 @@ export default defineComponent({
       mouseenter,
       store,
       toggleTablesMenu,
+      tableMenusRef,
       goCreatePage,
       viewOverview,
     }
@@ -192,7 +208,7 @@ export default defineComponent({
       <MenuUnfoldOutlined v-if="collapsed" />
       <MenuFoldOutlined v-else />
     </a-button>
-    <div v-if="store.isShowTablesMenu && !hasToken" :class="{ 'collapsed-sub-menu': collapsed }" class="tables-menu-wrap" @click.self="toggleTablesMenu(false)" @mouseleave="toggleTablesMenu(false)" @mouseenter="toggleTablesMenu(true)">
+    <div ref="tableMenusRef" v-if="store.isShowTablesMenu && !hasToken" :class="{ 'collapsed-sub-menu': collapsed }" class="tables-menu-wrap" @click.self="toggleTablesMenu(false)" @mouseenter="toggleTablesMenu(true)">
       <TableMenu @go-create-page="goCreatePage" />
     </div>
   </div>

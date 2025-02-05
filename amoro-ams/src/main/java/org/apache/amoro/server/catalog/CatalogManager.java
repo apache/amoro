@@ -18,12 +18,14 @@
 
 package org.apache.amoro.server.catalog;
 
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.table.TableIdentifier;
 
 import java.util.List;
 
-/** The CatalogService interface defines the operations that can be performed on catalogs. */
-public interface CatalogService {
+/** The CatalogManager interface defines the operations that can be performed on catalogs. */
+public interface CatalogManager {
   /**
    * Returns a list of CatalogMeta objects.
    *
@@ -63,6 +65,13 @@ public interface CatalogService {
   InternalCatalog getInternalCatalog(String catalogName);
 
   /**
+   * Retrieves all ExternalCatalogs.
+   *
+   * @return a list of ExternalCatalogs
+   */
+  List<ServerCatalog> getServerCatalogs();
+
+  /**
    * Creates a catalog based on the provided catalog meta information. The catalog name is obtained
    * from the catalog meta.
    *
@@ -83,4 +92,12 @@ public interface CatalogService {
    * @param catalogMeta The CatalogMeta object representing the updated catalog information.
    */
   void updateCatalog(CatalogMeta catalogMeta);
+
+  /**
+   * load a table via server catalog.
+   *
+   * @param identifier managed table identifier
+   * @return managed table.
+   */
+  AmoroTable<?> loadTable(TableIdentifier identifier);
 }
