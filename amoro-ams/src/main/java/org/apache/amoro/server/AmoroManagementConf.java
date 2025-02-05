@@ -351,7 +351,7 @@ public class AmoroManagementConf {
   public static final ConfigOption<Long> DB_CONNECT_MAX_WAIT_MILLIS =
       ConfigOptions.key("database.connection-pool-max-wait-millis")
           .longType()
-          .defaultValue(1000L)
+          .defaultValue(30000L)
           .withDescription("Max wait time before getting a connection timeout.");
 
   public static final ConfigOption<Long> OPTIMIZER_HB_TIMEOUT =
