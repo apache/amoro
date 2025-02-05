@@ -280,7 +280,7 @@ async function getConfigInfo() {
       formState.catalog.type = type
       formState.catalog.optimizerGroup = optimizerGroup
       formState.tableFormatList = [...tableFormatList]
-      formState.authConfig = {...newCatalogConfig.authConfig, ...authConfig}
+      formState.authConfig = authConfig
       formState.storageConfig = storageConfig
       formState.properties = properties || {}
       formState.tableProperties = tableProperties || {}

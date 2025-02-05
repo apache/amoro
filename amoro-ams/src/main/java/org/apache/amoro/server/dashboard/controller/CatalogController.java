@@ -38,7 +38,6 @@ import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_CUS
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
-import static org.apache.amoro.properties.CatalogMetaProperties.FILE_CONTENT_BASE64_SUFFIX;
 import static org.apache.amoro.properties.CatalogMetaProperties.KEY_WAREHOUSE;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE;
@@ -191,6 +190,9 @@ public class CatalogController {
   private static Set<String> getHiddenCatalogProperties(
       String type, Map<String, ?> authConfig, Map<String, ?> storageConfig) {
     Set<String> hiddenProperties = Sets.newHashSet(TABLE_FORMATS);
+    if (!CATALOG_TYPE_CUSTOM.equals(type)) {
+      hiddenProperties.add(CatalogProperties.CATALOG_IMPL);
+    }
     if (AUTH_CONFIGS_VALUE_TYPE_AK_SK.equalsIgnoreCase(
         String.valueOf(authConfig.get(AUTH_CONFIGS_KEY_TYPE)))) {
       hiddenProperties.add(S3FileIOProperties.ACCESS_KEY_ID);
@@ -245,14 +247,22 @@ public class CatalogController {
             serverAuthConfig.get(AUTH_CONFIGS_KEY_HADOOP_USERNAME));
         break;
       case AUTH_CONFIGS_VALUE_TYPE_KERBEROS:
-        String krbB64 = getFileContent(serverAuthConfig, AUTH_CONFIGS_KEY_KRB5, oldAuthConfig);
-        metaAuthConfig.put(AUTH_CONFIGS_KEY_KRB5, krbB64);
+        String keytabFileId = serverAuthConfig.get(AUTH_CONFIGS_KEY_KEYTAB);
+        if (!StringUtils.isEmpty(keytabFileId)) {
+          String keytabB64 =
+              platformFileInfoService.getFileContentB64ById(Integer.valueOf(keytabFileId));
+          metaAuthConfig.put(AUTH_CONFIGS_KEY_KEYTAB, keytabB64);
+        } else {
+          metaAuthConfig.put(AUTH_CONFIGS_KEY_KEYTAB, oldAuthConfig.get(AUTH_CONFIGS_KEY_KEYTAB));
+        }
 
-        String keytabB64 = getFileContent(serverAuthConfig, AUTH_CONFIGS_KEY_KEYTAB, oldAuthConfig);
-        metaAuthConfig.put(AUTH_CONFIGS_KEY_KEYTAB, keytabB64);
-
-        metaAuthConfig.put(
-            AUTH_CONFIGS_KEY_PRINCIPAL, serverAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
+        String krbFileId = serverAuthConfig.get(AUTH_CONFIGS_KEY_KRB5);
+        if (!StringUtils.isEmpty(krbFileId)) {
+          String krbB64 = platformFileInfoService.getFileContentB64ById(Integer.valueOf(krbFileId));
+          metaAuthConfig.put(AUTH_CONFIGS_KEY_KRB5, krbB64);
+        } else {
+          metaAuthConfig.put(AUTH_CONFIGS_KEY_KRB5, oldAuthConfig.get(AUTH_CONFIGS_KEY_KRB5));
+        }
         break;
       case AUTH_CONFIGS_VALUE_TYPE_AK_SK:
         metaAuthConfig.put(
@@ -434,14 +444,22 @@ public class CatalogController {
 
       // when update catalog, fileId won't be post when file doesn't been changed!
       int idx;
+      boolean fillUseOld = oldCatalogMeta != null;
       for (idx = 0; idx < metaKeyList.size(); idx++) {
-        String file =
-            getFileContent(
-                info.getStorageConfig(),
-                metaKeyList.get(idx),
-                oldCatalogMeta == null ? null : oldCatalogMeta.getStorageConfigs());
-        metaStorageConfig.put(
-            metaKeyList.get(idx), StringUtils.isEmpty(file) ? EMPTY_XML_BASE64 : file);
+        String fileId = info.getStorageConfig().get(metaKeyList.get(idx));
+        if (!StringUtils.isEmpty(fileId)) {
+          String fileSite = platformFileInfoService.getFileContentB64ById(Integer.valueOf(fileId));
+          metaStorageConfig.put(
+              metaKeyList.get(idx), StringUtils.isEmpty(fileSite) ? EMPTY_XML_BASE64 : fileSite);
+        } else {
+          if (fillUseOld) {
+            String fileSite = oldCatalogMeta.getStorageConfigs().get(metaKeyList.get(idx));
+            metaStorageConfig.put(
+                metaKeyList.get(idx), StringUtils.isEmpty(fileSite) ? EMPTY_XML_BASE64 : fileSite);
+          } else {
+            metaStorageConfig.put(metaKeyList.get(idx), EMPTY_XML_BASE64);
+          }
+        }
       }
     } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_S3)) {
       CatalogUtil.copyProperty(
@@ -466,24 +484,6 @@ public class CatalogController {
 
     catalogMeta.setStorageConfigs(metaStorageConfig);
     return catalogMeta;
-  }
-
-  private String getFileContent(
-      Map<String, String> config, String fileKey, Map<String, String> oldConfig) {
-    String contentBase64Key = fileKey + FILE_CONTENT_BASE64_SUFFIX;
-    String contentBase64 = config.get(contentBase64Key);
-    if (!StringUtils.isEmpty(contentBase64)) {
-      return contentBase64;
-    }
-    String fileId = config.get(fileKey);
-    if (!StringUtils.isEmpty(fileId)) {
-      return platformFileInfoService.getFileContentB64ById(Integer.valueOf(fileId));
-    }
-    if (oldConfig != null) {
-      return oldConfig.get(fileKey);
-    }
-
-    return null;
   }
 
   private void checkHiddenProperties(CatalogRegisterInfo info) {
