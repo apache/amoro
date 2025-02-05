@@ -19,12 +19,6 @@
 package org.apache.amoro.server.dashboard;
 
 import org.apache.amoro.config.Configurations;
-import org.apache.amoro.metrics.Counter;
-import org.apache.amoro.metrics.Gauge;
-import org.apache.amoro.metrics.Metric;
-import org.apache.amoro.metrics.MetricDefine;
-import org.apache.amoro.metrics.MetricKey;
-import org.apache.amoro.metrics.MetricSet;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.dashboard.model.OverviewDataSizeItem;
 import org.apache.amoro.server.dashboard.model.OverviewResourceUsageItem;
@@ -36,11 +30,9 @@ import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
-import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -51,7 +43,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executors;
@@ -59,19 +50,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_COMMITTING_TABLES;
-import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TABLES;
-import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_IDLE_TABLES;
-import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED;
-import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PENDING_TABLES;
-import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
-import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_THREADS;
-import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_HEALTH_SCORE;
-import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_TOTAL_FILES;
-import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_TOTAL_FILES_SIZE;
 
 public class OverviewManager extends PersistentBase {
 
@@ -105,11 +84,12 @@ public class OverviewManager extends PersistentBase {
   @VisibleForTesting
   public OverviewManager(int maxRecordCount, Duration refreshInterval) {
     this.maxRecordCount = maxRecordCount;
-    ScheduledExecutorService overviewUpdaterScheduler = Executors.newSingleThreadScheduledExecutor(
-        new ThreadFactoryBuilder()
-           .setNameFormat("overview-updater-scheduler-%d")
-           .setDaemon(true)
-           .build());
+    ScheduledExecutorService overviewUpdaterScheduler =
+        Executors.newSingleThreadScheduledExecutor(
+            new ThreadFactoryBuilder()
+                .setNameFormat("overview-updater-scheduler-%d")
+                .setDaemon(true)
+                .build());
     overviewUpdaterScheduler.scheduleAtFixedRate(
         this::refresh, 1000L, refreshInterval.toMillis(), TimeUnit.MILLISECONDS);
   }
@@ -173,19 +153,20 @@ public class OverviewManager extends PersistentBase {
   private void refreshTableCache(long ts) {
     int totalCatalogs = getAs(CatalogMetaMapper.class, CatalogMetaMapper::selectCatalogCount);
 
-    List<TableRuntimeMeta> metas = getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
+    List<TableRuntimeMeta> metas =
+        getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
     AtomicLong totalDataSize = new AtomicLong();
     AtomicInteger totalFileCounts = new AtomicInteger();
     Map<String, OverviewTopTableItem> topTableItemMap = Maps.newHashMap();
     Map<String, Long> optimizingStatusMap = Maps.newHashMap();
     for (TableRuntimeMeta meta : metas) {
       String tableName = fullTableName(meta);
-          OverviewTopTableItem tableItem =
+      OverviewTopTableItem tableItem =
           topTableItemMap.computeIfAbsent(tableName, ignore -> new OverviewTopTableItem(tableName));
       tableItem.setTableSize(meta.getPendingInput().getTotalFileSize());
       tableItem.setFileCount(meta.getPendingInput().getTotalFileCount());
       tableItem.setAverageFileSize(
-          tableItem.getFileCount() == 0? 0 : tableItem.getTableSize() / tableItem.getFileCount());
+          tableItem.getFileCount() == 0 ? 0 : tableItem.getTableSize() / tableItem.getFileCount());
       tableItem.setHealthScore(meta.getPendingInput().getHealthScore());
       totalDataSize.addAndGet(tableItem.getTableSize());
       totalFileCounts.addAndGet(tableItem.getFileCount());
@@ -206,7 +187,6 @@ public class OverviewManager extends PersistentBase {
     this.optimizingStatusCountMap.clear();
     this.optimizingStatusCountMap.putAll(optimizingStatusMap);
   }
-
 
   private String statusToMetricString(OptimizingStatus status) {
     if (status == null) {
@@ -231,19 +211,17 @@ public class OverviewManager extends PersistentBase {
   }
 
   private void refreshResourceUsage(long ts) {
-      List<OptimizerInstance> instances = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
-      AtomicInteger cpuCount = new AtomicInteger();
-      AtomicLong memoryBytes = new AtomicLong();
-      for (OptimizerInstance instance : instances) {
-        cpuCount.addAndGet(instance.getThreadCount());
-        memoryBytes.addAndGet(instance.getMemoryMb() * 1024L * 1024L);
-      }
-      this.totalCpu.set(cpuCount.get());
-      this.totalMemory.set(memoryBytes.get());
-      addAndCheck(
-          new OverviewResourceUsageItem(ts, cpuCount.get(), memoryBytes.get()));
+    List<OptimizerInstance> instances = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
+    AtomicInteger cpuCount = new AtomicInteger();
+    AtomicLong memoryBytes = new AtomicLong();
+    for (OptimizerInstance instance : instances) {
+      cpuCount.addAndGet(instance.getThreadCount());
+      memoryBytes.addAndGet(instance.getMemoryMb() * 1024L * 1024L);
+    }
+    this.totalCpu.set(cpuCount.get());
+    this.totalMemory.set(memoryBytes.get());
+    addAndCheck(new OverviewResourceUsageItem(ts, cpuCount.get(), memoryBytes.get()));
   }
-
 
   private void addAndCheck(OverviewDataSizeItem dataSizeItem) {
     dataSizeHistory.add(dataSizeItem);
@@ -261,11 +239,11 @@ public class OverviewManager extends PersistentBase {
     }
   }
 
-    private String fullTableName(TableRuntimeMeta meta) {
-      return meta.getCatalogName()
-         .concat(".")
-         .concat(meta.getDbName())
-         .concat(".")
-         .concat(meta.getTableName());
-    }
+  private String fullTableName(TableRuntimeMeta meta) {
+    return meta.getCatalogName()
+        .concat(".")
+        .concat(meta.getDbName())
+        .concat(".")
+        .concat(meta.getTableName());
+  }
 }

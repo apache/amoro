@@ -290,16 +290,15 @@ public class AmoroManagementConf {
 
   public static final ConfigOption<Duration> OVERVIEW_CACHE_REFRESH_INTERVAL =
       ConfigOptions.key("overview-cache.refresh-interval")
-         .durationType()
-         .defaultValue(Duration.ofSeconds(180))
-         .withDescription("Interval for refreshing overview cache.");
+          .durationType()
+          .defaultValue(Duration.ofSeconds(180))
+          .withDescription("Interval for refreshing overview cache.");
 
   public static final ConfigOption<Integer> OVERVIEW_CACHE_MAX_SIZE =
       ConfigOptions.key("overview-cache.max-size")
-        .intType()
-        .defaultValue(3360)
-        .withDescription("Max size of overview cache.");
-
+          .intType()
+          .defaultValue(3360)
+          .withDescription("Max size of overview cache.");
 
   public static final ConfigOption<String> DB_TYPE =
       ConfigOptions.key("database.type")
