@@ -21,6 +21,7 @@ package org.apache.amoro.mixed;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.hadoop.conf.Configuration;
@@ -112,6 +113,13 @@ public class InternalMixedIcebergCatalog extends BasicMixedIcebergCatalog {
         PrimaryKeySpec keySpec,
         Map<String, String> properties) {
       return tableMetaStore.doAs(() -> icebergCatalog.loadTable(changeIdentifier));
+    }
+
+    @Override
+    protected TableIdentifier generateChangeStoreIdentifier(TableIdentifier baseIdentifier) {
+      return TableIdentifier.of(
+          baseIdentifier.namespace(),
+          baseIdentifier.name() + CHANGE_STORE_SEPARATOR + MixedTable.CHANGE_STORE_IDENTIFIER);
     }
 
     /**

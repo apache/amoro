@@ -38,7 +38,5 @@ public class InternalTableConstants {
   public static final String OSS_PROTOCOL_PREFIX = "oss://";
 
   public static final String CHANGE_STORE_TABLE_NAME_SUFFIX =
-      InternalMixedIcebergCatalog.CHANGE_STORE_SEPARATOR
-          + MixedTable.CHANGE_STORE_IDENTIFIER
-          + InternalMixedIcebergCatalog.CHANGE_STORE_SEPARATOR;
+      InternalMixedIcebergCatalog.CHANGE_STORE_SEPARATOR + MixedTable.CHANGE_STORE_IDENTIFIER;
 }
