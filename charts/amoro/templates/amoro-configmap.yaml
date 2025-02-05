@@ -40,7 +40,18 @@ data:
     ams:
       server-bind-host: "0.0.0.0"
       server-expose-host: "127.0.0.1"
-
+    
+    {{- if or .Values.amoroConf.shade.identifier .Values.amoroConf.shade.sensitiveKeywords}}
+      
+      shade:
+        {{- if .Values.amoroConf.shade.identifier }}
+        identifier: {{ .Values.amoroConf.shade.identifier }}
+        {{- end }}
+        {{- if .Values.amoroConf.shade.sensitiveKeywords }}
+        sensitive-keywords: {{ .Values.amoroConf.shade.sensitiveKeywords }}
+        {{- end }}
+    {{- end }}
+    
       thrift-server:
         max-message-size: 104857600 # 100MB
         selector-thread-count: 2

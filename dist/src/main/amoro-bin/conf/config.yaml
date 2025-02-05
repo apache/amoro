@@ -94,6 +94,11 @@ ams:
   catalog-meta-cache:
     expiration-interval: 60s
 
+  # Support for encrypted sensitive configuration items
+  shade:
+    identifier: default # Built-in support for default/base64. Defaults to "default", indicating no encryption
+    sensitive-keywords: admin-password;database.password
+
   database:
     type: derby
     jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
