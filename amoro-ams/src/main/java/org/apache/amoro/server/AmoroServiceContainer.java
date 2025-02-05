@@ -27,6 +27,7 @@ import org.apache.amoro.api.AmoroTableMetastore;
 import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.config.ConfigHelpers;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.config.shade.utils.ConfigShadeUtils;
 import org.apache.amoro.exception.AmoroRuntimeException;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.DefaultCatalogManager;
@@ -454,6 +455,8 @@ public class AmoroServiceContainer {
       // If same configurations in files and environment variables, environment variables have
       // higher priority.
       expandedConfigurationMap.putAll(envConfig);
+      // Decrypt the sensitive configurations if specified
+      expandedConfigurationMap = ConfigShadeUtils.decryptConfig(expandedConfigurationMap);
       serviceConfig = Configurations.fromObjectMap(expandedConfigurationMap);
       AmoroManagementConfValidator.validateConfig(serviceConfig);
       dataSource = DataSourceFactory.createDataSource(serviceConfig);
@@ -528,7 +531,8 @@ public class AmoroServiceContainer {
   }
 
   @SuppressWarnings("unchecked")
-  private void expandConfigMap(
+  @VisibleForTesting
+  public static void expandConfigMap(
       Map<String, Object> config, String prefix, Map<String, Object> result) {
     for (Map.Entry<String, Object> entry : config.entrySet()) {
       String key = entry.getKey();
