@@ -88,7 +88,7 @@ public class OverviewManager extends PersistentBase {
     ScheduledExecutorService overviewUpdaterScheduler =
         Executors.newSingleThreadScheduledExecutor(
             new ThreadFactoryBuilder()
-                .setNameFormat("overview-updater-scheduler-%d")
+                .setNameFormat("overview-refresh-scheduler-%d")
                 .setDaemon(true)
                 .build());
     resetStatusMap();
@@ -142,16 +142,16 @@ public class OverviewManager extends PersistentBase {
   @VisibleForTesting
   public void refresh() {
     long start = System.currentTimeMillis();
-    LOG.info("Updating overview cache");
+    LOG.info("Refreshing overview cache");
     try {
       refreshTableCache(start);
       refreshResourceUsage(start);
 
     } catch (Exception e) {
-      LOG.error("OverviewRefresher error", e);
+      LOG.error("Refreshed overview cache failed", e);
     } finally {
       long end = System.currentTimeMillis();
-      LOG.info("Refresher overview cache took {} ms.", end - start);
+      LOG.info("Refreshed overview cache in {} ms.", end - start);
     }
   }
 
@@ -174,7 +174,7 @@ public class OverviewManager extends PersistentBase {
           });
       String status = statusToMetricString(meta.getTableStatus());
       if (StringUtils.isNotEmpty(status)) {
-        optimizingStatusMap.computeIfAbsent(status, ignore -> 0L);
+        optimizingStatusMap.putIfAbsent(status, 0L);
         optimizingStatusMap.computeIfPresent(status, (k, v) -> v + 1);
       }
     }

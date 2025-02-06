@@ -18,11 +18,11 @@
 
 package org.apache.amoro.server.dashboard;
 
-import static org.apache.amoro.server.dashboard.OverviewCache.STATUS_COMMITTING;
-import static org.apache.amoro.server.dashboard.OverviewCache.STATUS_EXECUTING;
-import static org.apache.amoro.server.dashboard.OverviewCache.STATUS_IDLE;
-import static org.apache.amoro.server.dashboard.OverviewCache.STATUS_PENDING;
-import static org.apache.amoro.server.dashboard.OverviewCache.STATUS_PLANING;
+import static org.apache.amoro.server.dashboard.OverviewManager.STATUS_COMMITTING;
+import static org.apache.amoro.server.dashboard.OverviewManager.STATUS_EXECUTING;
+import static org.apache.amoro.server.dashboard.OverviewManager.STATUS_IDLE;
+import static org.apache.amoro.server.dashboard.OverviewManager.STATUS_PENDING;
+import static org.apache.amoro.server.dashboard.OverviewManager.STATUS_PLANING;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
