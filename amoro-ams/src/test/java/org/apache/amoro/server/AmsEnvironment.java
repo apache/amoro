@@ -307,6 +307,7 @@ public class AmsEnvironment {
     field
         .bind(serviceContainer)
         .get()
+        .getOptimizerManager()
         .listOptimizers()
         .forEach(
             resource -> {

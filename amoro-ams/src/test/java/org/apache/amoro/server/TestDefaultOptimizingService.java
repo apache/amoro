@@ -111,10 +111,12 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         toucher = null;
       }
       optimizingService()
+          .getOptimizerManager()
           .listOptimizers()
           .forEach(
               optimizer ->
                   optimizingService()
+                      .getOptimizerManager()
                       .deleteOptimizer(optimizer.getGroupName(), optimizer.getResourceId()));
       dropTable();
       dropDatabase();
@@ -228,7 +230,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
   @Test
   public void testTouch() throws InterruptedException {
-    OptimizerInstance optimizer = optimizingService().listOptimizers().get(0);
+    OptimizerInstance optimizer = optimizingService().getOptimizerManager().listOptimizers().get(0);
     long oldTouchTime = optimizer.getTouchTime();
     Thread.sleep(1);
     optimizingService().touch(token);

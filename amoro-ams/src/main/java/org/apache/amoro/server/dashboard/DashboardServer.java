@@ -35,7 +35,6 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.ForbiddenException;
 import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.controller.CatalogController;
@@ -51,6 +50,7 @@ import org.apache.amoro.server.dashboard.controller.TerminalController;
 import org.apache.amoro.server.dashboard.controller.VersionController;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.ParamSignatureCalculator;
+import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -99,7 +99,7 @@ public class DashboardServer {
       Configurations serviceConfig,
       CatalogManager catalogManager,
       TableManager tableManager,
-      DefaultOptimizingService optimizerManager,
+      OptimizerManager optimizerManager,
       TerminalManager terminalManager) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.catalogController = new CatalogController(catalogManager, platformFileManager);

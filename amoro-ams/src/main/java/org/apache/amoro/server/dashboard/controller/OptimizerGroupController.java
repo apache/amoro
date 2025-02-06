@@ -22,7 +22,6 @@ import io.javalin.http.Context;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.resource.ResourceType;
-import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.dashboard.model.OptimizerInstanceInfo;
 import org.apache.amoro.server.dashboard.model.OptimizerResourceInfo;
 import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
@@ -31,6 +30,7 @@ import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.OptimizerInstance;
+import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -56,10 +56,9 @@ public class OptimizerGroupController {
 
   private static final String ALL_GROUP = "all";
   private final TableManager tableManager;
-  private final DefaultOptimizingService optimizerManager;
+  private final OptimizerManager optimizerManager;
 
-  public OptimizerGroupController(
-      TableManager tableManager, DefaultOptimizingService optimizerManager) {
+  public OptimizerGroupController(TableManager tableManager, OptimizerManager optimizerManager) {
     this.tableManager = tableManager;
     this.optimizerManager = optimizerManager;
   }
