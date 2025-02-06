@@ -38,11 +38,14 @@ import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.catalog.CatalogManager;
+import org.apache.amoro.server.optimizing.OptimizingProcess;
+import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.ResourceMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerManager;
@@ -55,6 +58,7 @@ import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.table.TableProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -267,6 +271,26 @@ public class DefaultOptimizingService extends StatedPersistentBase
     OptimizerInstance optimizer = new OptimizerInstance(registerInfo, queue.getContainerName());
     registerOptimizer(optimizer, true);
     return optimizer.getToken();
+  }
+
+  @Override
+  public boolean cancelProcess(long processId) throws TException {
+    OptimizingProcessMeta processMeta =
+        getAs(OptimizingMapper.class, m -> m.getOptimizingProcess(processId));
+    if (processMeta == null) {
+      return false;
+    }
+    long tableId = processMeta.getTableId();
+    TableRuntime tableRuntime = tableService.getRuntime(tableId);
+    if (tableRuntime == null) {
+      return false;
+    }
+    OptimizingProcess process = tableRuntime.getOptimizingProcess();
+    if (process == null || process.getProcessId() != processId) {
+      return false;
+    }
+    process.close();
+    return true;
   }
 
   /**
