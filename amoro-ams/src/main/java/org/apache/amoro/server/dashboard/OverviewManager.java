@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executors;
@@ -90,8 +91,12 @@ public class OverviewManager extends PersistentBase {
                 .setNameFormat("overview-updater-scheduler-%d")
                 .setDaemon(true)
                 .build());
-    overviewUpdaterScheduler.scheduleAtFixedRate(
-        this::refresh, 1000L, refreshInterval.toMillis(), TimeUnit.MILLISECONDS);
+    resetStatusMap();
+
+    if (refreshInterval.toMillis() > 0) {
+      overviewUpdaterScheduler.scheduleAtFixedRate(
+          this::refresh, 1000L, refreshInterval.toMillis(), TimeUnit.MILLISECONDS);
+    }
   }
 
   public List<OverviewTopTableItem> getAllTopTableItem() {
@@ -160,17 +165,13 @@ public class OverviewManager extends PersistentBase {
     Map<String, OverviewTopTableItem> topTableItemMap = Maps.newHashMap();
     Map<String, Long> optimizingStatusMap = Maps.newHashMap();
     for (TableRuntimeMeta meta : metas) {
-      String tableName = fullTableName(meta);
-      OverviewTopTableItem tableItem =
-          topTableItemMap.computeIfAbsent(tableName, ignore -> new OverviewTopTableItem(tableName));
-      tableItem.setTableSize(meta.getPendingInput().getTotalFileSize());
-      tableItem.setFileCount(meta.getPendingInput().getTotalFileCount());
-      tableItem.setAverageFileSize(
-          tableItem.getFileCount() == 0 ? 0 : tableItem.getTableSize() / tableItem.getFileCount());
-      tableItem.setHealthScore(meta.getPendingInput().getHealthScore());
-      totalDataSize.addAndGet(tableItem.getTableSize());
-      totalFileCounts.addAndGet(tableItem.getFileCount());
-
+      Optional<OverviewTopTableItem> optItem = toTopTableItem(meta);
+      optItem.ifPresent(
+          tableItem -> {
+            topTableItemMap.put(tableItem.getTableName(), tableItem);
+            totalDataSize.addAndGet(tableItem.getTableSize());
+            totalFileCounts.addAndGet(tableItem.getFileCount());
+          });
       String status = statusToMetricString(meta.getTableStatus());
       if (StringUtils.isNotEmpty(status)) {
         optimizingStatusMap.computeIfAbsent(status, ignore -> 0L);
@@ -179,13 +180,28 @@ public class OverviewManager extends PersistentBase {
     }
 
     this.totalCatalog.set(totalCatalogs);
-    this.totalTableCount.set(totalFileCounts.get());
+    this.totalTableCount.set(topTableItemMap.size());
     this.totalDataSize.set(totalDataSize.get());
     this.allTopTableItem.clear();
     this.allTopTableItem.addAll(topTableItemMap.values());
     addAndCheck(new OverviewDataSizeItem(ts, this.totalDataSize.get()));
-    this.optimizingStatusCountMap.clear();
+    resetStatusMap();
     this.optimizingStatusCountMap.putAll(optimizingStatusMap);
+  }
+
+  private Optional<OverviewTopTableItem> toTopTableItem(TableRuntimeMeta meta) {
+    if (meta == null) {
+      return Optional.empty();
+    }
+    OverviewTopTableItem tableItem = new OverviewTopTableItem(fullTableName(meta));
+    if (meta.getPendingInput() != null) {
+      tableItem.setTableSize(meta.getPendingInput().getTotalFileSize());
+      tableItem.setFileCount(meta.getPendingInput().getTotalFileCount());
+      tableItem.setHealthScore(meta.getPendingInput().getHealthScore());
+    }
+    tableItem.setAverageFileSize(
+        tableItem.getFileCount() == 0 ? 0 : tableItem.getTableSize() / tableItem.getFileCount());
+    return Optional.of(tableItem);
   }
 
   private String statusToMetricString(OptimizingStatus status) {
@@ -208,6 +224,15 @@ public class OverviewManager extends PersistentBase {
       default:
         return null;
     }
+  }
+
+  private void resetStatusMap() {
+    optimizingStatusCountMap.clear();
+    optimizingStatusCountMap.put(STATUS_PENDING, 0L);
+    optimizingStatusCountMap.put(STATUS_PLANING, 0L);
+    optimizingStatusCountMap.put(STATUS_EXECUTING, 0L);
+    optimizingStatusCountMap.put(STATUS_IDLE, 0L);
+    optimizingStatusCountMap.put(STATUS_COMMITTING, 0L);
   }
 
   private void refreshResourceUsage(long ts) {

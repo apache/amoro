@@ -71,7 +71,7 @@ public class TestOverviewManager extends AMSTableTestBase {
   public void prepare() {
     createDatabase();
     createTable();
-    this.overviewManager = new OverviewManager(10, Duration.ofMinutes(3));
+    this.overviewManager = new OverviewManager(10, Duration.ofMinutes(0));
     this.overviewManager.refresh();
   }
 
