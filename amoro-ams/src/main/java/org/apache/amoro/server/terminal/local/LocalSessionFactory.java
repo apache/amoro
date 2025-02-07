@@ -149,7 +149,6 @@ public class LocalSessionFactory implements TerminalSessionFactory {
       }
 
       context = SparkSession.builder().config(sparkconf).getOrCreate();
-      context.sparkContext().setLogLevel("WARN");
     }
 
     return context;
