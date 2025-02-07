@@ -108,14 +108,14 @@
     </Appenders>
 
     <Loggers>
-        <logger name="amoro.metric"  level="info">
+        <logger name="amoro.metric"  level="info" additivity="false">
             <!-- iceberg rest metric reporter logs -->
-            <AppenderRef ref="amoroMetricReporter" additivity="false"/>
+            <AppenderRef ref="amoroMetricReporter"/>
         </logger>
 
-        <logger name="org.apache.spark"  level="warn">
-            <AppenderRef ref="infoFileAppender" additivity="false"/>
-            <AppenderRef ref="consoleAppender" level="${CONSOLE_LEVEL}" additivity="false"/>
+        <logger name="org.apache.spark"  level="warn" additivity="false">
+            <AppenderRef ref="infoFileAppender"/>
+            <AppenderRef ref="consoleAppender" level="${CONSOLE_LEVEL}"/>
         </logger>
 
         <Root level="debug">
