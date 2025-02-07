@@ -117,7 +117,8 @@ public class DashboardServer {
         new TableController(catalogManager, tableManager, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
-    this.overviewController = new OverviewController();
+    OverviewManager manager = new OverviewManager(serviceConfig);
+    this.overviewController = new OverviewController(manager);
 
     this.authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
     this.basicAuthUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
