@@ -91,7 +91,7 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
   @Override
   public CatalogMeta getCatalogMeta(String catalogName) {
     return getCatalogMetaOptional(catalogName)
-        .orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
+        .orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName)).deepCopy();
   }
 
   private Optional<CatalogMeta> getCatalogMetaOptional(String catalogName) {
