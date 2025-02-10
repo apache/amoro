@@ -57,6 +57,6 @@ public class TestBasicTableBlockerManager extends TableTestBase {
     Assert.assertTrue(block instanceof RenewableBlocker);
 
     blockerManager.release(block);
-    Assert.assertTrue(((RenewableBlocker)block).getRenewTaskFuture() == null);
+    Assert.assertTrue(((RenewableBlocker) block).getRenewTaskFuture() == null);
   }
 }

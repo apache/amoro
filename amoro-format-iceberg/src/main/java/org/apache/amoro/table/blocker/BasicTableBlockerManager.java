@@ -71,7 +71,7 @@ public class BasicTableBlockerManager implements TableBlockerManager {
     } finally {
       // Regardless of whether the lock was successfully released, we will no longer renew the lock.
       if (blocker instanceof RenewableBlocker) {
-        ((RenewableBlocker)blocker).cancelRenew();
+        ((RenewableBlocker) blocker).cancelRenew();
       }
     }
   }
