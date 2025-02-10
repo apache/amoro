@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -69,7 +70,6 @@ public class AmsEnvironment {
   private final AmoroServiceContainer serviceContainer;
   private Configurations serviceConfig;
   private DefaultCatalogManager catalogManager;
-  private DefaultTableService tableService;
   private final AtomicBoolean amsExit;
   private int tableServiceBindPort;
   private int optimizingServiceBindPort;
@@ -144,8 +144,8 @@ public class AmsEnvironment {
     DynFields.UnboundField<DefaultCatalogManager> amsCatalogManagerField =
         DynFields.builder().hiddenImpl(AmoroServiceContainer.class, "catalogManager").build();
     catalogManager = amsCatalogManagerField.bind(serviceContainer).get();
-    tableService = amsTableServiceField.bind(serviceContainer).get();
-    DynFields.UnboundField<CompletableFuture<Boolean>> tableServiceField =
+    DefaultTableService tableService = amsTableServiceField.bind(serviceContainer).get();
+    DynFields.UnboundField<CompletableFuture<Boolean>> tableServiceInitializedField =
         DynFields.builder().hiddenImpl(DefaultTableService.class, "initialized").build();
     boolean tableServiceIsStart = false;
     long startTime = System.currentTimeMillis();
@@ -154,7 +154,7 @@ public class AmsEnvironment {
         throw new RuntimeException("table service not start yet after 10s");
       }
       try {
-        tableServiceField.bind(tableService).get().get();
+        tableServiceInitializedField.bind(tableService).get().get();
         tableServiceIsStart = true;
       } catch (RuntimeException e) {
         LOG.info("table service not start yet");
@@ -347,7 +347,8 @@ public class AmsEnvironment {
                         AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT,
                         optimizingServiceBindPort);
                     serviceConfig.set(
-                        AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL, 1000L);
+                        AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL,
+                        Duration.ofMillis(1000L));
                     serviceContainer.startService();
                     break;
                   } catch (TTransportException e) {

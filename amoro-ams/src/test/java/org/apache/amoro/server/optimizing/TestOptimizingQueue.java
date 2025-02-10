@@ -108,7 +108,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   protected OptimizingQueue buildOptimizingGroupService(TableRuntime tableRuntime) {
     return new OptimizingQueue(
-        tableService(),
+        CATALOG_MANAGER,
         testResourceGroup(),
         quotaProvider,
         planExecutor,
@@ -118,7 +118,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   private OptimizingQueue buildOptimizingGroupService() {
     return new OptimizingQueue(
-        tableService(),
+        CATALOG_MANAGER,
         testResourceGroup(),
         quotaProvider,
         planExecutor,

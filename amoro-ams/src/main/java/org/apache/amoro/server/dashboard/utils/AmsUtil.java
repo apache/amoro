@@ -19,7 +19,6 @@
 package org.apache.amoro.server.dashboard.utils;
 
 import org.apache.amoro.Constants;
-import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 
@@ -45,17 +44,6 @@ public class AmsUtil {
 
   private static final String ZOOKEEPER_ADDRESS_FORMAT = "zookeeper://%s/%s";
   private static final String THRIFT_ADDRESS_FORMAT = "thrift://%s:%s";
-
-  public static TableIdentifier toTableIdentifier(
-      org.apache.amoro.table.TableIdentifier tableIdentifier) {
-    if (tableIdentifier == null) {
-      return null;
-    }
-    return new TableIdentifier(
-        tableIdentifier.getCatalog(),
-        tableIdentifier.getDatabase(),
-        tableIdentifier.getTableName());
-  }
 
   public static Long longOrNull(String value) {
     if (value == null) {

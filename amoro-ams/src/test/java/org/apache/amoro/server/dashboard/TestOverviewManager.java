@@ -18,11 +18,11 @@
 
 package org.apache.amoro.server.dashboard;
 
-import static org.apache.amoro.server.dashboard.OverviewCache.STATUS_COMMITTING;
-import static org.apache.amoro.server.dashboard.OverviewCache.STATUS_EXECUTING;
-import static org.apache.amoro.server.dashboard.OverviewCache.STATUS_IDLE;
-import static org.apache.amoro.server.dashboard.OverviewCache.STATUS_PENDING;
-import static org.apache.amoro.server.dashboard.OverviewCache.STATUS_PLANING;
+import static org.apache.amoro.server.dashboard.OverviewManager.STATUS_COMMITTING;
+import static org.apache.amoro.server.dashboard.OverviewManager.STATUS_EXECUTING;
+import static org.apache.amoro.server.dashboard.OverviewManager.STATUS_IDLE;
+import static org.apache.amoro.server.dashboard.OverviewManager.STATUS_PENDING;
+import static org.apache.amoro.server.dashboard.OverviewManager.STATUS_PLANING;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
@@ -31,7 +31,6 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.server.dashboard.model.OverviewTopTableItem;
-import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.executor.TableRuntimeRefreshExecutor;
@@ -48,13 +47,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
 @RunWith(Parameterized.class)
-public class TestOverviewCache extends AMSTableTestBase {
+public class TestOverviewManager extends AMSTableTestBase {
 
-  private OverviewCache overviewCache;
+  private OverviewManager overviewManager;
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
@@ -63,7 +63,7 @@ public class TestOverviewCache extends AMSTableTestBase {
     };
   }
 
-  public TestOverviewCache(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+  public TestOverviewManager(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper, false);
   }
 
@@ -71,9 +71,8 @@ public class TestOverviewCache extends AMSTableTestBase {
   public void prepare() {
     createDatabase();
     createTable();
-    this.overviewCache = OverviewCache.getInstance();
-    this.overviewCache.initialize(10, MetricManager.getInstance().getGlobalRegistry());
-    this.overviewCache.refresh();
+    this.overviewManager = new OverviewManager(10, Duration.ofMinutes(0));
+    this.overviewManager.refresh();
   }
 
   @After
@@ -117,38 +116,38 @@ public class TestOverviewCache extends AMSTableTestBase {
   @Test
   public void testOverviewCache() {
     // empty table
-    Assertions.assertEquals(1, overviewCache.getTotalCatalog());
-    Assertions.assertEquals(1, overviewCache.getTotalTableCount());
-    Assertions.assertEquals(0, overviewCache.getTotalDataSize());
-    Assertions.assertEquals(0, overviewCache.getTotalCpu());
-    Assertions.assertEquals(0, overviewCache.getTotalMemory());
+    Assertions.assertEquals(1, overviewManager.getTotalCatalog());
+    Assertions.assertEquals(1, overviewManager.getTotalTableCount());
+    Assertions.assertEquals(0, overviewManager.getTotalDataSize());
+    Assertions.assertEquals(0, overviewManager.getTotalCpu());
+    Assertions.assertEquals(0, overviewManager.getTotalMemory());
 
-    Assertions.assertEquals(0, overviewCache.getOptimizingStatus().get(STATUS_PENDING));
-    Assertions.assertEquals(0, overviewCache.getOptimizingStatus().get(STATUS_COMMITTING));
-    Assertions.assertEquals(0, overviewCache.getOptimizingStatus().get(STATUS_EXECUTING));
-    Assertions.assertEquals(0, overviewCache.getOptimizingStatus().get(STATUS_PLANING));
-    Assertions.assertEquals(1, overviewCache.getOptimizingStatus().get(STATUS_IDLE));
+    Assertions.assertEquals(0, overviewManager.getOptimizingStatus().get(STATUS_PENDING));
+    Assertions.assertEquals(0, overviewManager.getOptimizingStatus().get(STATUS_COMMITTING));
+    Assertions.assertEquals(0, overviewManager.getOptimizingStatus().get(STATUS_EXECUTING));
+    Assertions.assertEquals(0, overviewManager.getOptimizingStatus().get(STATUS_PLANING));
+    Assertions.assertEquals(1, overviewManager.getOptimizingStatus().get(STATUS_IDLE));
 
-    Assertions.assertEquals(1, overviewCache.getDataSizeHistory(0).size());
-    Assertions.assertEquals(1, overviewCache.getResourceUsageHistory(0).size());
+    Assertions.assertEquals(1, overviewManager.getDataSizeHistory(0).size());
+    Assertions.assertEquals(1, overviewManager.getResourceUsageHistory(0).size());
 
-    List<OverviewTopTableItem> allTopTableItem = overviewCache.getAllTopTableItem();
+    List<OverviewTopTableItem> allTopTableItem = overviewManager.getAllTopTableItem();
     Assertions.assertEquals(1, allTopTableItem.size());
     Assertions.assertEquals(-1, allTopTableItem.get(0).getHealthScore());
 
     // insert data
     initTableWithFiles();
     refreshPending();
-    overviewCache.refresh();
+    overviewManager.refresh();
 
-    Assertions.assertTrue(overviewCache.getTotalDataSize() > 0);
+    Assertions.assertTrue(overviewManager.getTotalDataSize() > 0);
 
-    Assertions.assertEquals(1, overviewCache.getOptimizingStatus().get(STATUS_PENDING));
-    Assertions.assertEquals(0, overviewCache.getOptimizingStatus().get(STATUS_IDLE));
+    Assertions.assertEquals(1, overviewManager.getOptimizingStatus().get(STATUS_PENDING));
+    Assertions.assertEquals(0, overviewManager.getOptimizingStatus().get(STATUS_IDLE));
 
-    Assertions.assertEquals(2, overviewCache.getDataSizeHistory(0).size());
-    Assertions.assertEquals(2, overviewCache.getResourceUsageHistory(0).size());
-    allTopTableItem = overviewCache.getAllTopTableItem();
+    Assertions.assertEquals(2, overviewManager.getDataSizeHistory(0).size());
+    Assertions.assertEquals(2, overviewManager.getResourceUsageHistory(0).size());
+    allTopTableItem = overviewManager.getAllTopTableItem();
     Assertions.assertEquals(100, allTopTableItem.get(0).getHealthScore());
   }
 }

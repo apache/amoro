@@ -38,23 +38,27 @@ import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.catalog.CatalogManager;
+import org.apache.amoro.server.optimizing.OptimizingProcess;
+import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.ResourceMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
-import org.apache.amoro.server.table.DefaultTableService;
+import org.apache.amoro.server.table.MaintainedTableManager;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.table.TableProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -100,20 +104,26 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final OptimizerKeeper optimizerKeeper = new OptimizerKeeper();
   private final CatalogManager catalogManager;
   private final TableService tableService;
+  private final MaintainedTableManager tableManager;
   private final RuntimeHandlerChain tableHandlerChain;
   private final ExecutorService planExecutor;
 
   public DefaultOptimizingService(
       Configurations serviceConfig,
       CatalogManager catalogManager,
-      DefaultTableService tableService) {
-    this.optimizerTouchTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT);
-    this.taskAckTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT);
+      MaintainedTableManager tableManager,
+      TableService tableService) {
+    this.optimizerTouchTimeout =
+        serviceConfig.get(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT).toMillis();
+    this.taskAckTimeout =
+        serviceConfig.get(AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT).toMillis();
     this.maxPlanningParallelism =
         serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM);
-    this.pollingTimeout = serviceConfig.getLong(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT);
+    this.pollingTimeout =
+        serviceConfig.get(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT).toMillis();
     this.tableService = tableService;
     this.catalogManager = catalogManager;
+    this.tableManager = tableManager;
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
     this.planExecutor =
         Executors.newCachedThreadPool(
@@ -140,7 +150,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
           List<TableRuntime> tableRuntimes = groupToTableRuntimes.remove(groupName);
           OptimizingQueue optimizingQueue =
               new OptimizingQueue(
-                  tableService,
+                  catalogManager,
                   group,
                   this,
                   planExecutor,
@@ -266,6 +276,26 @@ public class DefaultOptimizingService extends StatedPersistentBase
     return optimizer.getToken();
   }
 
+  @Override
+  public boolean cancelProcess(long processId) throws TException {
+    OptimizingProcessMeta processMeta =
+        getAs(OptimizingMapper.class, m -> m.getOptimizingProcess(processId));
+    if (processMeta == null) {
+      return false;
+    }
+    long tableId = processMeta.getTableId();
+    TableRuntime tableRuntime = tableService.getRuntime(tableId);
+    if (tableRuntime == null) {
+      return false;
+    }
+    OptimizingProcess process = tableRuntime.getOptimizingProcess();
+    if (process == null || process.getProcessId() != processId) {
+      return false;
+    }
+    process.close();
+    return true;
+  }
+
   /**
    * Get optimizing queue.
    *
@@ -317,7 +347,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
           doAs(ResourceMapper.class, mapper -> mapper.insertResourceGroup(resourceGroup));
           OptimizingQueue optimizingQueue =
               new OptimizingQueue(
-                  tableService,
+                  catalogManager,
                   resourceGroup,
                   this,
                   planExecutor,
@@ -414,7 +444,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
         return false;
       }
     }
-    for (ServerTableIdentifier identifier : tableService.listManagedTables()) {
+    for (ServerTableIdentifier identifier : tableManager.listManagedTables()) {
       if (optimizingQueueByGroup.containsKey(name)
           && optimizingQueueByGroup.get(name).containsTable(identifier)) {
         return false;

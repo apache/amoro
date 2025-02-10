@@ -25,7 +25,7 @@ public class OverviewTopTableItem {
   private long tableSize;
   private int fileCount;
   private long averageFileSize;
-  private int healthScore;
+  private int healthScore = -1;
 
   public OverviewTopTableItem() {}
 

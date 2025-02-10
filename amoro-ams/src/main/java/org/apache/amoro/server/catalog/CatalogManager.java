@@ -18,7 +18,9 @@
 
 package org.apache.amoro.server.catalog;
 
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.table.TableIdentifier;
 
 import java.util.List;
 
@@ -67,7 +69,7 @@ public interface CatalogManager {
    *
    * @return a list of ExternalCatalogs
    */
-  List<ExternalCatalog> getExternalCatalogs();
+  List<ServerCatalog> getServerCatalogs();
 
   /**
    * Creates a catalog based on the provided catalog meta information. The catalog name is obtained
@@ -90,4 +92,12 @@ public interface CatalogManager {
    * @param catalogMeta The CatalogMeta object representing the updated catalog information.
    */
   void updateCatalog(CatalogMeta catalogMeta);
+
+  /**
+   * load a table via server catalog.
+   *
+   * @param identifier managed table identifier
+   * @return managed table.
+   */
+  AmoroTable<?> loadTable(TableIdentifier identifier);
 }

@@ -19,12 +19,6 @@
 # configurations of metric reporters
 
 metric-reporters:
-  - name: overview-exporter               # configs for overview exporter
-    enabled: true                         # if false, overview page will not fetch data
-    properties:
-      refresh-interval: 180000            # 3 min
-      max-history-records: 3360           # Keep 7 days history by default, 7 * 24 * 60 / 3 = 3360
-
 #  - name: prometheus-exporter            # configs for prometheus exporter
 #    enabled: false
 #    properties:

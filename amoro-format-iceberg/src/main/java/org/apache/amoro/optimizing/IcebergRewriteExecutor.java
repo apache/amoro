@@ -24,7 +24,6 @@ import org.apache.amoro.io.writer.IcebergFanoutPosDeleteWriter;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.IdentityPartitionConverters;
@@ -44,18 +43,6 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
   public IcebergRewriteExecutor(
       RewriteFilesInput input, MixedTable table, StructLikeCollections structLikeCollections) {
     super(input, table, structLikeCollections);
-  }
-
-  // TODO We can remove this override method after upgrading Iceberg version to 1.5+.
-  @Override
-  protected StructLike partition() {
-    StructLike partitionData = super.partition();
-    if (partitionData != null && partitionData.size() == 0) {
-      // Cast empty partition data to NULL to avoid creating empty partition directory.
-      return null;
-    } else {
-      return partitionData;
-    }
   }
 
   @Override

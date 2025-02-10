@@ -23,6 +23,7 @@ import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.exception.OptimizingClosedException;
+import org.apache.amoro.exception.PersistenceException;
 import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
@@ -31,13 +32,13 @@ import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.QuotaProvider;
-import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
@@ -81,7 +82,7 @@ public class OptimizingQueue extends PersistentBase {
   private final Queue<TableOptimizingProcess> tableQueue = new LinkedTransferQueue<>();
   private final Queue<TaskRuntime<?>> retryTaskQueue = new LinkedTransferQueue<>();
   private final SchedulingPolicy scheduler;
-  private final TableManager tableManager;
+  private final CatalogManager catalogManager;
   private final Executor planExecutor;
   // Keep all planning table identifiers
   private final Set<ServerTableIdentifier> planningTables = new HashSet<>();
@@ -92,7 +93,7 @@ public class OptimizingQueue extends PersistentBase {
   private ResourceGroup optimizerGroup;
 
   public OptimizingQueue(
-      TableManager tableManager,
+      CatalogManager catalogManager,
       ResourceGroup optimizerGroup,
       QuotaProvider quotaProvider,
       Executor planExecutor,
@@ -103,7 +104,7 @@ public class OptimizingQueue extends PersistentBase {
     this.optimizerGroup = optimizerGroup;
     this.quotaProvider = quotaProvider;
     this.scheduler = new SchedulingPolicy(optimizerGroup);
-    this.tableManager = tableManager;
+    this.catalogManager = catalogManager;
     this.maxPlanningParallelism = maxPlanningParallelism;
     this.metrics =
         new OptimizerGroupMetrics(
@@ -120,9 +121,20 @@ public class OptimizingQueue extends PersistentBase {
     if (tableRuntime.isOptimizingEnabled()) {
       tableRuntime.resetTaskQuotas(
           System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME);
+      // Close the committing process to avoid duplicate commit on the table.
+      if (tableRuntime.getOptimizingStatus() == OptimizingStatus.COMMITTING) {
+        OptimizingProcess process = tableRuntime.getOptimizingProcess();
+        if (process != null) {
+          LOG.warn(
+              "Close the committing process {} on table {}",
+              process.getProcessId(),
+              tableRuntime.getTableIdentifier());
+          process.close();
+        }
+      }
       if (!tableRuntime.getOptimizingStatus().isProcessing()) {
         scheduler.addTable(tableRuntime);
-      } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
+      } else {
         tableQueue.offer(new TableOptimizingProcess(tableRuntime));
       }
     } else {
@@ -275,7 +287,8 @@ public class OptimizingQueue extends PersistentBase {
   private TableOptimizingProcess planInternal(TableRuntime tableRuntime) {
     tableRuntime.beginPlanning();
     try {
-      AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
+      ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
+      AmoroTable<?> table = catalogManager.loadTable(identifier.getIdentifier());
       AbstractOptimizingPlanner planner =
           IcebergTableUtil.createOptimizingPlanner(
               tableRuntime.refresh(table),
@@ -568,6 +581,10 @@ public class OptimizingQueue extends PersistentBase {
       try {
         if (hasCommitted) {
           LOG.warn("{} has already committed, give up", tableRuntime.getTableIdentifier());
+          try {
+            persistAndSetCompleted(status == ProcessStatus.SUCCESS);
+          } catch (Exception ignored) {
+          }
           throw new IllegalStateException("repeat commit, and last error " + failedReason);
         }
         try {
@@ -576,10 +593,15 @@ public class OptimizingQueue extends PersistentBase {
           status = ProcessStatus.SUCCESS;
           endTime = System.currentTimeMillis();
           persistAndSetCompleted(true);
-        } catch (Exception e) {
-          LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
+        } catch (PersistenceException e) {
+          LOG.warn(
+              "{} failed to persist process completed, will retry next commit",
+              tableRuntime.getTableIdentifier(),
+              e);
+        } catch (Throwable t) {
+          LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), t);
           status = ProcessStatus.FAILED;
-          failedReason = ExceptionUtil.getErrorMessage(e, 4000);
+          failedReason = ExceptionUtil.getErrorMessage(t, 4000);
           endTime = System.currentTimeMillis();
           persistAndSetCompleted(false);
         }
@@ -601,7 +623,10 @@ public class OptimizingQueue extends PersistentBase {
 
     private UnKeyedTableCommit buildCommit() {
       MixedTable table =
-          (MixedTable) tableManager.loadTable(tableRuntime.getTableIdentifier()).originalTable();
+          (MixedTable)
+              catalogManager
+                  .loadTable(tableRuntime.getTableIdentifier().getIdentifier())
+                  .originalTable();
       if (table.isUnkeyedTable()) {
         return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
       } else {

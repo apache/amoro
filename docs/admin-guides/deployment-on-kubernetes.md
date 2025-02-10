@@ -156,17 +156,17 @@ ingress:
 
 ### Configure the database.
 
-AMS default is to use Derby database for storage. When the pod is destroyed, the data will also disappear.
-In production environments, we recommend using MySQL as the storage for system data.
+AMS uses embedded [Apache Derby](https://db.apache.org/derby/) as its backend storage by default.
+In production environments, we recommend using a RDBMS(Relational Database Management System) with higher availability guarantees as the storage for system data, you can ref to [Database Configuration](/deployment/#configure-system-database) for more detail.
 
 ```yaml
 amoroConf: 
   database:
-    type: mysql
-    driver: com.mysql.cj.jdbc.Driver
-    url: <jdbc-uri>
-    username: <mysql-user>
-    password: <mysql-password>
+    type: ${your_database_type}
+    driver: ${your_database_driver}
+    url: ${your_jdbc_url}
+    username: ${your_username}
+    password: ${your_password}
 ```
 
 
