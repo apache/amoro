@@ -73,7 +73,7 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
 
   public DefaultTableManager(Configurations configuration, CatalogManager catalogManager) {
     this.catalogManager = catalogManager;
-    this.blockerTimeout = configuration.getLong(AmoroManagementConf.BLOCKER_TIMEOUT);
+    this.blockerTimeout = configuration.get(AmoroManagementConf.BLOCKER_TIMEOUT).toMillis();
   }
 
   @Override

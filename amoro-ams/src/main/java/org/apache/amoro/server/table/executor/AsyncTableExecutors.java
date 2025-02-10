@@ -77,14 +77,14 @@ public class AsyncTableExecutors {
         new TableRuntimeRefreshExecutor(
             tableService,
             conf.getInteger(AmoroManagementConf.REFRESH_TABLES_THREAD_COUNT),
-            conf.getLong(AmoroManagementConf.REFRESH_TABLES_INTERVAL),
+            conf.get(AmoroManagementConf.REFRESH_TABLES_INTERVAL).toMillis(),
             conf.getInteger(AmoroManagementConf.REFRESH_MAX_PENDING_PARTITIONS));
     if (conf.getBoolean(AmoroManagementConf.AUTO_CREATE_TAGS_ENABLED)) {
       this.tagsAutoCreatingExecutor =
           new TagsAutoCreatingExecutor(
               tableService,
               conf.getInteger(AmoroManagementConf.AUTO_CREATE_TAGS_THREAD_COUNT),
-              conf.getLong(AmoroManagementConf.AUTO_CREATE_TAGS_INTERVAL));
+              conf.get(AmoroManagementConf.AUTO_CREATE_TAGS_INTERVAL).toMillis());
     }
     if (conf.getBoolean(AmoroManagementConf.DATA_EXPIRATION_ENABLED)) {
       this.dataExpiringExecutor =
