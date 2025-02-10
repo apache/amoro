@@ -54,7 +54,9 @@ public class TestBasicTableBlockerManager extends TableTestBase {
     BasicTableBlockerManager blockerManager = (BasicTableBlockerManager) tableBlockerManager;
 
     Blocker block = blockerManager.block(OPERATIONS);
+    Assert.assertTrue(block instanceof RenewableBlocker);
 
     blockerManager.release(block);
+    Assert.assertTrue(((RenewableBlocker) block).getRenewTaskFuture() == null);
   }
 }
