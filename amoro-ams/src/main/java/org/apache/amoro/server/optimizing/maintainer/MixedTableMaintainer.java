@@ -121,26 +121,19 @@ public class MixedTableMaintainer implements TableMaintainer {
     try {
       DataExpirationConfig expirationConfig =
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
-      Types.NestedField field =
-          mixedTable.schema().findField(expirationConfig.getExpirationField());
-      if (!TableConfigurations.isValidDataExpirationField(
-          expirationConfig, field, mixedTable.name())) {
-        return;
-      }
 
-      expireDataFrom(expirationConfig, expireMixedBaseOnRule(expirationConfig, field));
+      expireDataFrom(expirationConfig, expireMixedBaseOnRule(expirationConfig));
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
     }
   }
 
-  protected Instant expireMixedBaseOnRule(
-      DataExpirationConfig expirationConfig, Types.NestedField field) {
+  protected Instant expireMixedBaseOnRule(DataExpirationConfig expirationConfig) {
     Instant changeInstant =
         Optional.ofNullable(changeMaintainer).isPresent()
-            ? changeMaintainer.expireBaseOnRule(expirationConfig, field)
+            ? changeMaintainer.expireBaseOnRule(expirationConfig)
             : Instant.MIN;
-    Instant baseInstant = baseMaintainer.expireBaseOnRule(expirationConfig, field);
+    Instant baseInstant = baseMaintainer.expireBaseOnRule(expirationConfig);
     if (changeInstant.compareTo(baseInstant) >= 0) {
       return changeInstant;
     } else {
@@ -149,13 +142,17 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @VisibleForTesting
-  public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+  void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
     if (instant.equals(Instant.MIN)) {
+      return;
+    }
+    Types.NestedField field = mixedTable.schema().findField(expirationConfig.getExpirationField());
+    if (TableConfigurations.isInvalidDataExpirationField(
+        expirationConfig, field, mixedTable.spec(), mixedTable.name())) {
       return;
     }
 
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
-    Types.NestedField field = mixedTable.schema().findField(expirationConfig.getExpirationField());
     LOG.info(
         "Expiring data older than {} in mixed table {} ",
         Instant.ofEpochMilli(expireTimestamp)
