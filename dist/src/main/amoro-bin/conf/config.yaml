@@ -22,7 +22,7 @@ ams:
   server-expose-host: "127.0.0.1"
 
   thrift-server:
-    max-message-size: 104857600 # 100MB
+    max-message-size: 100MB # 104857600
     selector-thread-count: 2
     selector-queue-size: 4
     table-service:
@@ -37,13 +37,13 @@ ams:
     rest-auth-type: token
 
   refresh-external-catalogs:
-    interval: 180000 # 3min
+    interval: 3min # 180000
     thread-count: 10
     queue-size: 1000000
 
   refresh-tables:
     thread-count: 10
-    interval: 60000 # 1min
+    interval: 1min # 60000
     max-pending-partition-count: 100 # default 100
 
   self-optimizing:
@@ -52,13 +52,13 @@ ams:
     runtime-data-expire-interval-hours: 1
 
   optimizer:
-    heart-beat-timeout: 60000 # 1min
-    task-ack-timeout: 30000 # 30s
-    polling-timeout: 3000 # 3s
+    heart-beat-timeout: 1min # 60000
+    task-ack-timeout: 30s # 30000
+    polling-timeout: 3s # 3000
     max-planning-parallelism: 1 # default 1
 
   blocker:
-    timeout: 60000 # 1min
+    timeout: 1min # 60000
 
   # optional features
   expire-snapshots:
@@ -86,7 +86,7 @@ ams:
   auto-create-tags:
     enabled: true
     thread-count: 3
-    interval: 60000 # 1min
+    interval: 1min # 60000
 
   table-manifest-io:
     thread-count: 20
@@ -141,7 +141,7 @@ ams:
       limit: 1000
     stop-on-error: false
     session:
-      timeout: 30
+      timeout: 30min # 1800000
     local:
       using-session-catalog-for-hive: false
       spark.sql.iceberg.handle-timestamp-without-timezone: false

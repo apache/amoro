@@ -53,7 +53,7 @@ data:
     {{- end }}
     
       thrift-server:
-        max-message-size: 104857600 # 100MB
+        max-message-size: 100MB # 104857600
         selector-thread-count: 2
         selector-queue-size: 4
         table-service:
@@ -67,11 +67,11 @@ data:
         bind-port: {{ .Values.server.rest.port }}
 
       refresh-external-catalogs:
-        interval: 180000 # 3min
+        interval: 3min # 180000
 
       refresh-tables:
         thread-count: 10
-        interval: 60000 # 1min
+        interval: 1min # 60000
 
       self-optimizing:
         commit-thread-count: 10
@@ -79,11 +79,11 @@ data:
         runtime-data-expire-interval-hours: 1
 
       optimizer:
-        heart-beat-timeout: 60000 # 1min
-        task-ack-timeout: 30000 # 30s
+        heart-beat-timeout: 1min # 60000
+        task-ack-timeout: 30s # 30000
 
       blocker:
-        timeout: 60000 # 1min
+        timeout: 1min # 60000
 
       # optional features
       expire-snapshots:

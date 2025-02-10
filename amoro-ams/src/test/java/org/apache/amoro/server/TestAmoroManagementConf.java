@@ -28,6 +28,7 @@ import org.apache.amoro.shade.guava32.com.google.common.io.Resources;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.amoro.utils.JacksonUtil;
+import org.apache.amoro.utils.MemorySize;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
@@ -65,7 +66,7 @@ public class TestAmoroManagementConf {
           .put(AmoroManagementConf.TERMINAL_SESSION_TIMEOUT.key(), "min")
           .build();
 
-  private static final ConfigOption<String>[] STORAGE_RELATED_CONFIG_OPTIONS =
+  private static final ConfigOption<MemorySize>[] STORAGE_RELATED_CONFIG_OPTIONS =
       new ConfigOption[] {AmoroManagementConf.THRIFT_MAX_MESSAGE_SIZE};
 
   @Test
@@ -186,7 +187,7 @@ public class TestAmoroManagementConf {
 
   private void assertStorageRelatedConfigs(
       Configurations serviceConfig, Configurations expectedConfig) {
-    for (ConfigOption<String> configOption : STORAGE_RELATED_CONFIG_OPTIONS) {
+    for (ConfigOption<MemorySize> configOption : STORAGE_RELATED_CONFIG_OPTIONS) {
       Assertions.assertEquals(
           expectedConfig.get(configOption),
           serviceConfig.get(AmoroManagementConf.THRIFT_MAX_MESSAGE_SIZE));
