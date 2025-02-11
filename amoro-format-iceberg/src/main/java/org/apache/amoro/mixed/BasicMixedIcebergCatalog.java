@@ -65,6 +65,7 @@ public class BasicMixedIcebergCatalog implements MixedFormatCatalog {
   private AmsClient client;
   private MixedTables tables;
   private SupportsNamespaces asNamespaceCatalog;
+  private String separator;
 
   @Override
   public String name() {
@@ -93,6 +94,7 @@ public class BasicMixedIcebergCatalog implements MixedFormatCatalog {
     }
     this.databaseFilterPattern = databaseFilterPattern;
     this.catalogProperties = properties;
+    this.separator = tableStoreSeparator();
     this.tables = newMixedTables(metaStore, properties, icebergCatalog());
     if (properties.containsKey(CatalogMetaProperties.AMS_URI)) {
       this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
@@ -221,7 +223,13 @@ public class BasicMixedIcebergCatalog implements MixedFormatCatalog {
       TableMetaStore metaStore,
       Map<String, String> catalogProperties,
       org.apache.iceberg.catalog.Catalog icebergCatalog) {
-    return new MixedTables(metaStore, catalogProperties, icebergCatalog);
+    return new MixedTables(metaStore, catalogProperties, icebergCatalog, separator);
+  }
+
+  protected String tableStoreSeparator() {
+    return catalogProperties.getOrDefault(
+        CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR,
+        CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR_DEFAULT);
   }
 
   private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(

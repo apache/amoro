@@ -59,7 +59,7 @@ CREATE TABLE `table_identifier`
     `table_name`      varchar(128) NOT NULL COMMENT 'Table name',
     PRIMARY KEY (`table_id`),
     UNIQUE KEY `table_name_index` (`catalog_name`,`db_name`,`table_name`)
-) ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table identifier for AMS' ROW_FORMAT=DYNAMIC;
 INSERT INTO `table_identifier` (`catalog_name`, `db_name`, `table_name`) SELECT `catalog_name`, `db_name`, `table_name` FROM `table_metadata`;
 
 -- table_metadata

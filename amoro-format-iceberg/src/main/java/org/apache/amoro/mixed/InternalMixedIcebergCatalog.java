@@ -21,6 +21,7 @@ package org.apache.amoro.mixed;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.hadoop.conf.Configuration;
@@ -43,7 +44,6 @@ import java.util.stream.Collectors;
 public class InternalMixedIcebergCatalog extends BasicMixedIcebergCatalog {
 
   public static final String CHANGE_STORE_SEPARATOR = "@";
-  public static final String CHANGE_STORE_NAME = "change";
 
   public static final String HTTP_HEADER_LIST_TABLE_FILTER = "LIST-TABLE-FILTER";
 
@@ -81,29 +81,23 @@ public class InternalMixedIcebergCatalog extends BasicMixedIcebergCatalog {
   @Override
   protected MixedTables newMixedTables(
       TableMetaStore metaStore, Map<String, String> catalogProperties, Catalog icebergCatalog) {
-    return new InternalMixedTables(metaStore, catalogProperties, icebergCatalog);
+    return new InternalMixedTables(
+        metaStore, catalogProperties, icebergCatalog, tableStoreSeparator());
+  }
+
+  @Override
+  protected String tableStoreSeparator() {
+    return CHANGE_STORE_SEPARATOR;
   }
 
   static class InternalMixedTables extends MixedTables {
 
     public InternalMixedTables(
-        TableMetaStore tableMetaStore, Map<String, String> catalogProperties, Catalog catalog) {
-      super(tableMetaStore, catalogProperties, catalog);
-    }
-
-    /**
-     * For internal table, using {table-name}@change as change store identifier, this identifier
-     * cloud be recognized by AMS. Due to '@' is an invalid character of table name, the change
-     * store identifier will never be conflict with other table name.
-     *
-     * @param baseIdentifier base store table identifier.
-     * @return change store iceberg table identifier.
-     */
-    @Override
-    protected TableIdentifier generateChangeStoreIdentifier(TableIdentifier baseIdentifier) {
-      return TableIdentifier.of(
-          baseIdentifier.namespace(),
-          baseIdentifier.name() + CHANGE_STORE_SEPARATOR + CHANGE_STORE_NAME);
+        TableMetaStore tableMetaStore,
+        Map<String, String> catalogProperties,
+        Catalog catalog,
+        String separator) {
+      super(tableMetaStore, catalogProperties, catalog, separator);
     }
 
     /**
@@ -119,6 +113,13 @@ public class InternalMixedIcebergCatalog extends BasicMixedIcebergCatalog {
         PrimaryKeySpec keySpec,
         Map<String, String> properties) {
       return tableMetaStore.doAs(() -> icebergCatalog.loadTable(changeIdentifier));
+    }
+
+    @Override
+    protected TableIdentifier generateChangeStoreIdentifier(TableIdentifier baseIdentifier) {
+      return TableIdentifier.of(
+          baseIdentifier.namespace(),
+          baseIdentifier.name() + CHANGE_STORE_SEPARATOR + MixedTable.CHANGE_STORE_IDENTIFIER);
     }
 
     /**
