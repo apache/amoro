@@ -42,6 +42,7 @@ import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.resource.ContainerMetadata;
+import org.apache.amoro.server.resource.DefaultOptimizerManager;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.DefaultTableManager;
@@ -100,7 +101,7 @@ public class AmoroServiceContainer {
   private CatalogManager catalogManager;
   private TableManager tableManager;
   private TableService tableService;
-  private DefaultOptimizingService optimizingService;
+  private DefaultOptimizerManager optimizerManager;
   private TerminalManager terminalManager;
   private Configurations serviceConfig;
   private TServer tableManagementServer;
@@ -157,12 +158,10 @@ public class AmoroServiceContainer {
     tableManager = new DefaultTableManager(serviceConfig, catalogManager);
 
     tableService = new DefaultTableService(serviceConfig, catalogManager);
-    optimizingService =
-        new DefaultOptimizingService(serviceConfig, catalogManager, tableManager, tableService);
-
+    optimizerManager = new DefaultOptimizerManager(serviceConfig, catalogManager, tableManager);
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
-    addHandlerChain(optimizingService.getTableRuntimeHandler());
+    addHandlerChain(optimizerManager.getTableRuntimeHandler());
     addHandlerChain(AsyncTableExecutors.getInstance().getDataExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getSnapshotsExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
@@ -219,10 +218,11 @@ public class AmoroServiceContainer {
       terminalManager.dispose();
       terminalManager = null;
     }
-    if (optimizingService != null) {
-      LOG.info("Stopping optimizing service...");
-      optimizingService.dispose();
-      optimizingService = null;
+
+    if (optimizerManager != null) {
+      LOG.info("Stopping optimizing manager...");
+      optimizerManager.dispose();
+      optimizerManager = null;
     }
 
     if (amsServiceMetrics != null) {
@@ -253,7 +253,7 @@ public class AmoroServiceContainer {
   private void initHttpService() {
     DashboardServer dashboardServer =
         new DashboardServer(
-            serviceConfig, catalogManager, tableManager, optimizingService, terminalManager);
+            serviceConfig, catalogManager, tableManager, optimizerManager, terminalManager);
     RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableManager);
 
     httpServer =
@@ -364,7 +364,7 @@ public class AmoroServiceContainer {
         new OptimizingService.Processor<>(
             ThriftServiceProxy.createProxy(
                 OptimizingService.Iface.class,
-                optimizingService,
+                new DefaultOptimizingService(serviceConfig, optimizerManager, tableService),
                 AmoroRuntimeException::normalize));
     optimizingServiceServer =
         createThriftServer(
@@ -559,6 +559,6 @@ public class AmoroServiceContainer {
 
   @VisibleForTesting
   public OptimizerManager getOptimizingService() {
-    return this.optimizingService;
+    return this.optimizerManager;
   }
 }

@@ -40,12 +40,11 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
       configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, Duration.ofMillis(800L));
       TABLE_SERVICE = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
       OPTIMIZING_SERVICE =
-          new DefaultOptimizingService(
-              configurations, CATALOG_MANAGER, TABLE_MANAGER, TABLE_SERVICE);
-      TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
+          new DefaultOptimizingService(configurations, OPTIMIZER_MANAGER, TABLE_SERVICE);
+      TABLE_SERVICE.addHandlerChain(OPTIMIZER_MANAGER.getTableRuntimeHandler());
       TABLE_SERVICE.initialize();
       try {
-        OPTIMIZING_SERVICE.createResourceGroup(defaultResourceGroup());
+        OPTIMIZER_MANAGER.createResourceGroup(defaultResourceGroup());
       } catch (Throwable ignored) {
       }
     } catch (Throwable throwable) {

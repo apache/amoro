@@ -22,10 +22,10 @@ import io.javalin.http.Context;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.resource.ResourceType;
-import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.OptimizerInstance;
+import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 
@@ -36,9 +36,9 @@ import java.util.stream.Collectors;
 /** The controller that handles optimizer requests. */
 public class OptimizerController {
 
-  private final DefaultOptimizingService optimizerManager;
+  private final OptimizerManager optimizerManager;
 
-  public OptimizerController(DefaultOptimizingService optimizerManager) {
+  public OptimizerController(OptimizerManager optimizerManager) {
     this.optimizerManager = optimizerManager;
   }
 

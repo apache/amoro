@@ -19,8 +19,10 @@
 package org.apache.amoro.server.resource;
 
 import org.apache.amoro.resource.ResourceManager;
+import org.apache.amoro.server.optimizing.OptimizingQueue;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface OptimizerManager extends ResourceManager {
   List<OptimizerInstance> listOptimizers();
@@ -28,4 +30,18 @@ public interface OptimizerManager extends ResourceManager {
   List<OptimizerInstance> listOptimizers(String groupName);
 
   void deleteOptimizer(String groupName, String resourceId);
+
+  void registerOptimizer(OptimizerInstance optimizer, boolean needPersistent);
+
+  void unregisterOptimizer(String token);
+
+  OptimizerInstance getOptimizerByToken(String token);
+
+  Optional<OptimizingQueue> getOptionalQueueByGroup(String optimizerGroup);
+
+  OptimizingQueue getQueueByGroup(String optimizerGroup);
+
+  OptimizingQueue getQueueByToken(String token);
+
+  boolean canDeleteResourceGroup(String name);
 }
