@@ -45,9 +45,9 @@ public abstract class AMSManagerTestBase {
   @BeforeClass
   public static void initTableManger() {
     try {
-      Configurations configurations = new Configurations();
       CATALOG_MANAGER = new DefaultCatalogManager(new Configurations());
       TABLE_MANAGER = new DefaultTableManager(new Configurations(), CATALOG_MANAGER);
+      Configurations configurations = new Configurations();
       configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, Duration.ofMillis(800L));
       OPTIMIZER_MANAGER =
           new DefaultOptimizerManager(configurations, CATALOG_MANAGER, TABLE_MANAGER);
