@@ -23,6 +23,8 @@ import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.resource.DefaultOptimizerManager;
+import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.table.DefaultTableManager;
 import org.apache.amoro.server.table.DerbyPersistence;
 import org.apache.amoro.server.table.TableManager;
@@ -37,6 +39,7 @@ public abstract class AMSManagerTestBase {
 
   protected static DefaultCatalogManager CATALOG_MANAGER = null;
   protected static DefaultTableManager TABLE_MANAGER = null;
+  protected static DefaultOptimizerManager OPTIMIZER_MANAGER = null;
 
   @BeforeClass
   public static void initTableManger() {
@@ -44,6 +47,7 @@ public abstract class AMSManagerTestBase {
       Configurations configurations = new Configurations();
       CATALOG_MANAGER = new DefaultCatalogManager(configurations);
       TABLE_MANAGER = new DefaultTableManager(configurations, CATALOG_MANAGER);
+      OPTIMIZER_MANAGER = new DefaultOptimizerManager(configurations);
     } catch (Throwable throwable) {
       Assert.fail(throwable.getMessage());
     }
@@ -57,6 +61,10 @@ public abstract class AMSManagerTestBase {
 
   protected TableManager tableManager() {
     return TABLE_MANAGER;
+  }
+
+  protected OptimizerManager optimizerManager() {
+    return OPTIMIZER_MANAGER;
   }
 
   protected static ResourceGroup defaultResourceGroup() {
