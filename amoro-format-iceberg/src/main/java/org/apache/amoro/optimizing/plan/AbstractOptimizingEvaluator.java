@@ -18,6 +18,26 @@
 
 package org.apache.amoro.optimizing.plan;
 
+import net.sf.jsqlparser.expression.BooleanValue;
+import net.sf.jsqlparser.expression.CastExpression;
+import net.sf.jsqlparser.expression.DoubleValue;
+import net.sf.jsqlparser.expression.LongValue;
+import net.sf.jsqlparser.expression.NotExpression;
+import net.sf.jsqlparser.expression.StringValue;
+import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
+import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
+import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
+import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
+import net.sf.jsqlparser.expression.operators.relational.GreaterThan;
+import net.sf.jsqlparser.expression.operators.relational.GreaterThanEquals;
+import net.sf.jsqlparser.expression.operators.relational.InExpression;
+import net.sf.jsqlparser.expression.operators.relational.IsNullExpression;
+import net.sf.jsqlparser.expression.operators.relational.MinorThan;
+import net.sf.jsqlparser.expression.operators.relational.MinorThanEquals;
+import net.sf.jsqlparser.expression.operators.relational.NotEqualsTo;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.statement.select.PlainSelect;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.OptimizingConfig;
@@ -39,29 +59,24 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.PropertyUtil;
-import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute;
-import org.apache.spark.sql.catalyst.expressions.Alias;
-import org.apache.spark.sql.catalyst.expressions.And;
-import org.apache.spark.sql.catalyst.expressions.AttributeReference;
-import org.apache.spark.sql.catalyst.expressions.EqualTo;
-import org.apache.spark.sql.catalyst.expressions.GreaterThan;
-import org.apache.spark.sql.catalyst.expressions.LessThan;
-import org.apache.spark.sql.catalyst.expressions.Literal;
-import org.apache.spark.sql.catalyst.expressions.Or;
-import org.apache.spark.sql.catalyst.plans.logical.Filter;
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
-import org.apache.spark.sql.execution.SparkSqlParser;
-import org.apache.spark.sql.types.Decimal;
-import org.apache.spark.unsafe.types.UTF8String;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoField;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -128,77 +143,166 @@ public abstract class AbstractOptimizingEvaluator {
     String partitionFilter = config.getPartitionFilter();
     return partitionFilter == null
         ? Expressions.alwaysTrue()
-        : convertSqlToIcebergExpression(partitionFilter);
+        : convertSqlToIcebergExpression(partitionFilter, mixedTable.schema().columns());
   }
 
-  protected static Expression convertSqlToIcebergExpression(String sql) {
+  protected static Expression convertSqlToIcebergExpression(
+      String sql, List<Types.NestedField> tableColumns) {
     try {
-      SparkSqlParser parser = new SparkSqlParser();
-      LogicalPlan logicalPlan = parser.parsePlan("SELECT * FROM dummy WHERE " + sql);
-
-      Filter filter = (Filter) logicalPlan.children().head();
-      org.apache.spark.sql.catalyst.expressions.Expression sparkExpr = filter.condition();
-      return convertSparkExpressionToIceberg(sparkExpr);
+      PlainSelect select = (PlainSelect) CCJSqlParserUtil.parse("SELECT * FROM dummy WHERE " + sql);
+      return convertSparkExpressionToIceberg(select.getWhere(), tableColumns);
     } catch (Exception e) {
       throw new IllegalArgumentException("Failed to parse where condition: " + sql, e);
     }
   }
 
   private static Expression convertSparkExpressionToIceberg(
-      org.apache.spark.sql.catalyst.expressions.Expression sparkExpr) {
-    if (sparkExpr instanceof EqualTo) {
-      EqualTo eq = (EqualTo) sparkExpr;
-      return Expressions.equal(getColumnName(eq.left()), getValue(eq.right()));
-    } else if (sparkExpr instanceof GreaterThan) {
-      GreaterThan gt = (GreaterThan) sparkExpr;
-      return Expressions.greaterThan(getColumnName(gt.left()), getValue(gt.right()));
-    } else if (sparkExpr instanceof LessThan) {
-      LessThan lt = (LessThan) sparkExpr;
-      return Expressions.lessThan(getColumnName(lt.left()), getValue(lt.right()));
-    } else if (sparkExpr instanceof And) {
-      And and = (And) sparkExpr;
+      net.sf.jsqlparser.expression.Expression whereExpr, List<Types.NestedField> tableColumns) {
+    if (whereExpr instanceof IsNullExpression) {
+      IsNullExpression isNull = (IsNullExpression) whereExpr;
+      Types.NestedField column = getColumn(isNull.getLeftExpression(), tableColumns);
+      return isNull.isNot()
+          ? Expressions.notNull(column.name())
+          : Expressions.isNull(column.name());
+    } else if (whereExpr instanceof EqualsTo) {
+      EqualsTo eq = (EqualsTo) whereExpr;
+      Types.NestedField column = getColumn(eq.getLeftExpression(), tableColumns);
+      return Expressions.equal(column.name(), getValue(eq.getRightExpression(), column));
+    } else if (whereExpr instanceof NotEqualsTo) {
+      NotEqualsTo ne = (NotEqualsTo) whereExpr;
+      Types.NestedField column = getColumn(ne.getLeftExpression(), tableColumns);
+      return Expressions.notEqual(column.name(), getValue(ne.getRightExpression(), column));
+    } else if (whereExpr instanceof GreaterThan) {
+      GreaterThan gt = (GreaterThan) whereExpr;
+      Types.NestedField column = getColumn(gt.getLeftExpression(), tableColumns);
+      return Expressions.greaterThan(column.name(), getValue(gt.getRightExpression(), column));
+    } else if (whereExpr instanceof GreaterThanEquals) {
+      GreaterThanEquals ge = (GreaterThanEquals) whereExpr;
+      Types.NestedField column = getColumn(ge.getLeftExpression(), tableColumns);
+      return Expressions.greaterThanOrEqual(
+          column.name(), getValue(ge.getRightExpression(), column));
+    } else if (whereExpr instanceof MinorThan) {
+      MinorThan lt = (MinorThan) whereExpr;
+      Types.NestedField column = getColumn(lt.getLeftExpression(), tableColumns);
+      return Expressions.lessThan(column.name(), getValue(lt.getRightExpression(), column));
+    } else if (whereExpr instanceof MinorThanEquals) {
+      MinorThanEquals le = (MinorThanEquals) whereExpr;
+      Types.NestedField column = getColumn(le.getLeftExpression(), tableColumns);
+      return Expressions.lessThanOrEqual(column.name(), getValue(le.getRightExpression(), column));
+    } else if (whereExpr instanceof InExpression) {
+      InExpression in = (InExpression) whereExpr;
+      Types.NestedField column = getColumn(in.getLeftExpression(), tableColumns);
+      net.sf.jsqlparser.expression.Expression rightExpr = in.getRightExpression();
+      List<Object> values = new ArrayList<>();
+      if (rightExpr instanceof ExpressionList) {
+        for (net.sf.jsqlparser.expression.Expression expr : ((ExpressionList<?>) rightExpr)) {
+          values.add(getValue(expr, column));
+        }
+      } else {
+        throw new UnsupportedOperationException("Subquery IN not supported");
+      }
+      return in.isNot()
+          ? Expressions.notIn(column.name(), values)
+          : Expressions.in(column.name(), values);
+    } else if (whereExpr instanceof NotExpression) {
+      NotExpression not = (NotExpression) whereExpr;
+      return Expressions.not(convertSparkExpressionToIceberg(not.getExpression(), tableColumns));
+    } else if (whereExpr instanceof AndExpression) {
+      AndExpression and = (AndExpression) whereExpr;
       return Expressions.and(
-          convertSparkExpressionToIceberg(and.left()),
-          convertSparkExpressionToIceberg(and.right()));
-    } else if (sparkExpr instanceof Or) {
-      Or or = (Or) sparkExpr;
+          convertSparkExpressionToIceberg(and.getLeftExpression(), tableColumns),
+          convertSparkExpressionToIceberg(and.getRightExpression(), tableColumns));
+    } else if (whereExpr instanceof OrExpression) {
+      OrExpression or = (OrExpression) whereExpr;
       return Expressions.or(
-          convertSparkExpressionToIceberg(or.left()), convertSparkExpressionToIceberg(or.right()));
+          convertSparkExpressionToIceberg(or.getLeftExpression(), tableColumns),
+          convertSparkExpressionToIceberg(or.getRightExpression(), tableColumns));
     }
-
-    throw new UnsupportedOperationException("Unsupported expression: " + sparkExpr);
+    throw new UnsupportedOperationException("Unsupported expression: " + whereExpr);
   }
 
-  private static String getColumnName(org.apache.spark.sql.catalyst.expressions.Expression expr) {
-    if (expr instanceof AttributeReference) {
-      return ((AttributeReference) expr).name();
+  private static Types.NestedField getColumn(
+      net.sf.jsqlparser.expression.Expression expr, List<Types.NestedField> tableColumns) {
+    if (expr instanceof Column) {
+      String columnName = ((Column) expr).getColumnName();
+      Optional<Types.NestedField> column =
+          tableColumns.stream().filter(c -> c.name().equals(columnName)).findFirst();
+      if (column.isPresent()) {
+        return column.get();
+      }
+      throw new IllegalArgumentException("Column not found: " + columnName);
     }
 
-    if (expr instanceof Alias) {
-      return getColumnName(((Alias) expr).child());
-    }
-
-    if (expr instanceof UnresolvedAttribute) {
-      return ((UnresolvedAttribute) expr).name();
-    }
     throw new IllegalArgumentException("Expected column reference, got: " + expr);
   }
 
-  private static Object getValue(org.apache.spark.sql.catalyst.expressions.Expression expr) {
-    if (expr instanceof Literal) {
-      return convertLiteral((Literal) expr);
+  private static Object getValue(
+      net.sf.jsqlparser.expression.Expression expr, Types.NestedField column) {
+    try {
+      return convertValue(expr, column);
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Failed to convert value: " + expr, e);
     }
-
-    throw new IllegalArgumentException("Expected literal value, got: " + expr);
   }
 
-  private static Object convertLiteral(Literal literal) {
-    if (literal.value() instanceof UTF8String) {
-      return ((UTF8String) literal.value()).toString();
-    } else if (literal.value() instanceof Decimal) {
-      return ((Decimal) literal.value()).toJavaBigDecimal();
+  private static Object convertValue(
+      net.sf.jsqlparser.expression.Expression expr, Types.NestedField column) {
+    switch (column.type().typeId()) {
+      case BOOLEAN:
+        return ((BooleanValue) expr).getValue();
+      case STRING:
+        return ((StringValue) expr).getValue();
+      case INTEGER:
+      case LONG:
+        return ((LongValue) expr).getValue();
+      case FLOAT:
+      case DOUBLE:
+        return ((DoubleValue) expr).getValue();
+      case DATE:
+        String dateStr = null;
+        if (expr instanceof StringValue) {
+          dateStr = ((StringValue) expr).getValue();
+        } else if (expr instanceof CastExpression
+            && ((CastExpression) expr).getColDataType().getDataType().equalsIgnoreCase("date")) {
+          dateStr = ((StringValue) ((CastExpression) expr).getLeftExpression()).getValue();
+        }
+        if (dateStr != null) {
+          return Date.valueOf(dateStr).toLocalDate().toEpochDay();
+        }
+        break;
+      case TIME:
+        String timeStr = null;
+        if (expr instanceof StringValue) {
+          timeStr = ((StringValue) expr).getValue();
+        } else if (expr instanceof CastExpression
+            && ((CastExpression) expr).getColDataType().getDataType().equalsIgnoreCase("time")) {
+          timeStr = ((StringValue) ((CastExpression) expr).getLeftExpression()).getValue();
+        }
+        if (timeStr != null) {
+          return Time.valueOf(timeStr).toLocalTime().getLong(ChronoField.MICRO_OF_DAY);
+        }
+        break;
+      case TIMESTAMP:
+        String timestampStr = null;
+        if (expr instanceof StringValue) {
+          timestampStr = ((StringValue) expr).getValue();
+        } else if (expr instanceof CastExpression
+            && ((CastExpression) expr)
+                .getColDataType()
+                .getDataType()
+                .equalsIgnoreCase("timestamp")) {
+          timestampStr = ((StringValue) ((CastExpression) expr).getLeftExpression()).getValue();
+        }
+        if (timestampStr != null) {
+          return Timestamp.valueOf(timestampStr)
+                  .toLocalDateTime()
+                  .toEpochSecond(ZoneOffset.ofHours(0))
+              * 1_000_000L;
+        }
+        break;
     }
-    return literal.value();
+    throw new IllegalArgumentException(
+        expr + " can not be converted to column type: " + column.type());
   }
 
   private void initPartitionPlans(TableFileScanHelper tableFileScanHelper) {
