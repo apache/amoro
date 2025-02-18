@@ -68,6 +68,11 @@ public class BasicTableBlockerManager implements TableBlockerManager {
     } catch (TException e) {
       throw new IllegalStateException(
           "failed to release " + tableIdentifier + "'s blocker " + blocker.blockerId(), e);
+    } finally {
+      // Regardless of whether the lock was successfully released, we will no longer renew the lock.
+      if (blocker instanceof RenewableBlocker) {
+        ((RenewableBlocker) blocker).cancelRenew();
+      }
     }
   }
 

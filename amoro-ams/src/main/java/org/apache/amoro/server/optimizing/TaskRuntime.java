@@ -52,6 +52,20 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
   @StateField private int threadId = -1;
   @StateField private String failReason;
 
+  public static long taskRunningQuotaTime(
+      long calculatingStartTime, long calculatingEndTime, long taskStartTime, long taskCostTime) {
+    if (taskStartTime == AmoroServiceConstants.INVALID_TIME) {
+      return 0;
+    }
+    calculatingStartTime = Math.max(taskStartTime, calculatingStartTime);
+    calculatingEndTime =
+        taskCostTime == AmoroServiceConstants.INVALID_TIME
+            ? calculatingEndTime
+            : taskCostTime + taskStartTime;
+    long lastingTime = calculatingEndTime - calculatingStartTime;
+    return Math.max(0, lastingTime);
+  }
+
   private TaskRuntime() {}
 
   public TaskRuntime(OptimizingTaskId taskId, T taskDescriptor) {
@@ -204,14 +218,7 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
   }
 
   public long getQuotaTime(long calculatingStartTime, long calculatingEndTime) {
-    if (startTime == AmoroServiceConstants.INVALID_TIME) {
-      return 0;
-    }
-    calculatingStartTime = Math.max(startTime, calculatingStartTime);
-    calculatingEndTime =
-        costTime == AmoroServiceConstants.INVALID_TIME ? calculatingEndTime : costTime + startTime;
-    long lastingTime = calculatingEndTime - calculatingStartTime;
-    return Math.max(0, lastingTime);
+    return taskRunningQuotaTime(calculatingStartTime, calculatingEndTime, startTime, costTime);
   }
 
   public void setStatus(Status status) {

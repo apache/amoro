@@ -88,7 +88,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   public DefaultTableService(Configurations configuration, CatalogManager catalogManager) {
     this.catalogManager = catalogManager;
     this.externalCatalogRefreshingInterval =
-        configuration.getLong(AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL);
+        configuration.get(AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL).toMillis();
     this.serverConfiguration = configuration;
   }
 

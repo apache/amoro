@@ -114,6 +114,9 @@ public interface CatalogMetaMapper {
   @Select("SELECT database_count FROM " + TABLE_NAME + " WHERE catalog_name = #{catalogName}")
   Integer selectDatabaseCount(@Param("catalogName") String catalogName);
 
+  @Select("SELECT COUNT(*) FROM " + TABLE_NAME)
+  Integer selectCatalogCount();
+
   @Update(
       "UPDATE "
           + TABLE_NAME
