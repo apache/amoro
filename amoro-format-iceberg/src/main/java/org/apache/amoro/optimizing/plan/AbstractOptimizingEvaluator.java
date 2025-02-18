@@ -18,8 +18,7 @@
 
 package org.apache.amoro.optimizing.plan;
 
-import net.sf.jsqlparser.expression.BooleanValue;
-import net.sf.jsqlparser.expression.CastExpression;
+import net.sf.jsqlparser.expression.DateTimeLiteralExpression;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.NotExpression;
@@ -32,12 +31,14 @@ import net.sf.jsqlparser.expression.operators.relational.GreaterThan;
 import net.sf.jsqlparser.expression.operators.relational.GreaterThanEquals;
 import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.expression.operators.relational.IsNullExpression;
+import net.sf.jsqlparser.expression.operators.relational.ItemsList;
 import net.sf.jsqlparser.expression.operators.relational.MinorThan;
 import net.sf.jsqlparser.expression.operators.relational.MinorThanEquals;
 import net.sf.jsqlparser.expression.operators.relational.NotEqualsTo;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.select.PlainSelect;
+import net.sf.jsqlparser.statement.select.Select;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.OptimizingConfig;
@@ -149,7 +150,8 @@ public abstract class AbstractOptimizingEvaluator {
   protected static Expression convertSqlToIcebergExpression(
       String sql, List<Types.NestedField> tableColumns) {
     try {
-      PlainSelect select = (PlainSelect) CCJSqlParserUtil.parse("SELECT * FROM dummy WHERE " + sql);
+      Select statement = (Select) CCJSqlParserUtil.parse("SELECT * FROM dummy WHERE " + sql);
+      PlainSelect select = (PlainSelect) statement.getSelectBody();
       return convertSparkExpressionToIceberg(select.getWhere(), tableColumns);
     } catch (Exception e) {
       throw new IllegalArgumentException("Failed to parse where condition: " + sql, e);
@@ -192,10 +194,11 @@ public abstract class AbstractOptimizingEvaluator {
     } else if (whereExpr instanceof InExpression) {
       InExpression in = (InExpression) whereExpr;
       Types.NestedField column = getColumn(in.getLeftExpression(), tableColumns);
-      net.sf.jsqlparser.expression.Expression rightExpr = in.getRightExpression();
+      ItemsList rightItems = in.getRightItemsList();
       List<Object> values = new ArrayList<>();
-      if (rightExpr instanceof ExpressionList) {
-        for (net.sf.jsqlparser.expression.Expression expr : ((ExpressionList<?>) rightExpr)) {
+      if (rightItems instanceof ExpressionList) {
+        for (net.sf.jsqlparser.expression.Expression expr :
+            ((ExpressionList) rightItems).getExpressions()) {
           values.add(getValue(expr, column));
         }
       } else {
@@ -249,7 +252,7 @@ public abstract class AbstractOptimizingEvaluator {
       net.sf.jsqlparser.expression.Expression expr, Types.NestedField column) {
     switch (column.type().typeId()) {
       case BOOLEAN:
-        return ((BooleanValue) expr).getValue();
+        return Boolean.valueOf(((Column) expr).getColumnName());
       case STRING:
         return ((StringValue) expr).getValue();
       case INTEGER:
@@ -259,40 +262,19 @@ public abstract class AbstractOptimizingEvaluator {
       case DOUBLE:
         return ((DoubleValue) expr).getValue();
       case DATE:
-        String dateStr = null;
-        if (expr instanceof StringValue) {
-          dateStr = ((StringValue) expr).getValue();
-        } else if (expr instanceof CastExpression
-            && ((CastExpression) expr).getColDataType().getDataType().equalsIgnoreCase("date")) {
-          dateStr = ((StringValue) ((CastExpression) expr).getLeftExpression()).getValue();
-        }
+        String dateStr = getDateTimeLiteralStr(expr, "date");
         if (dateStr != null) {
           return Date.valueOf(dateStr).toLocalDate().toEpochDay();
         }
         break;
       case TIME:
-        String timeStr = null;
-        if (expr instanceof StringValue) {
-          timeStr = ((StringValue) expr).getValue();
-        } else if (expr instanceof CastExpression
-            && ((CastExpression) expr).getColDataType().getDataType().equalsIgnoreCase("time")) {
-          timeStr = ((StringValue) ((CastExpression) expr).getLeftExpression()).getValue();
-        }
+        String timeStr = getDateTimeLiteralStr(expr, "time");
         if (timeStr != null) {
           return Time.valueOf(timeStr).toLocalTime().getLong(ChronoField.MICRO_OF_DAY);
         }
         break;
       case TIMESTAMP:
-        String timestampStr = null;
-        if (expr instanceof StringValue) {
-          timestampStr = ((StringValue) expr).getValue();
-        } else if (expr instanceof CastExpression
-            && ((CastExpression) expr)
-                .getColDataType()
-                .getDataType()
-                .equalsIgnoreCase("timestamp")) {
-          timestampStr = ((StringValue) ((CastExpression) expr).getLeftExpression()).getValue();
-        }
+        String timestampStr = getDateTimeLiteralStr(expr, "timestamp");
         if (timestampStr != null) {
           return Timestamp.valueOf(timestampStr)
                   .toLocalDateTime()
@@ -303,6 +285,18 @@ public abstract class AbstractOptimizingEvaluator {
     }
     throw new IllegalArgumentException(
         expr + " can not be converted to column type: " + column.type());
+  }
+
+  private static String getDateTimeLiteralStr(
+      net.sf.jsqlparser.expression.Expression expr, String type) {
+    String timestampStr = null;
+    if (expr instanceof StringValue) {
+      timestampStr = ((StringValue) expr).getValue();
+    } else if (expr instanceof DateTimeLiteralExpression
+        && ((DateTimeLiteralExpression) expr).getType().name().equalsIgnoreCase(type)) {
+      timestampStr = ((DateTimeLiteralExpression) expr).getValue().replaceAll("^'(.*)'$", "$1");
+    }
+    return timestampStr;
   }
 
   private void initPartitionPlans(TableFileScanHelper tableFileScanHelper) {
