@@ -35,7 +35,6 @@ import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.exception.PluginRetryAuthException;
 import org.apache.amoro.exception.TaskNotFoundException;
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
@@ -56,7 +55,6 @@ import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.table.TableProperties;
@@ -90,7 +88,7 @@ import java.util.stream.Collectors;
  * suspending tasks.
  */
 public class DefaultOptimizingService extends StatedPersistentBase
-    implements OptimizingService.Iface, OptimizerManager, QuotaProvider {
+    implements OptimizingService.Iface, QuotaProvider {
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultOptimizingService.class);
 
@@ -103,6 +101,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final Map<String, OptimizerInstance> authOptimizers = new ConcurrentHashMap<>();
   private final OptimizerKeeper optimizerKeeper = new OptimizerKeeper();
   private final CatalogManager catalogManager;
+  private final OptimizerManager optimizerManager;
   private final TableService tableService;
   private final MaintainedTableManager tableManager;
   private final RuntimeHandlerChain tableHandlerChain;
@@ -112,6 +111,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
       Configurations serviceConfig,
       CatalogManager catalogManager,
       MaintainedTableManager tableManager,
+      OptimizerManager optimizerManager,
       TableService tableService) {
     this.optimizerTouchTimeout =
         serviceConfig.get(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT).toMillis();
@@ -124,6 +124,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     this.tableService = tableService;
     this.catalogManager = catalogManager;
     this.tableManager = tableManager;
+    this.optimizerManager = optimizerManager;
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
     this.planExecutor =
         Executors.newCachedThreadPool(
@@ -317,19 +318,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
         .orElseThrow(() -> new PluginRetryAuthException("Optimizer has not been authenticated"));
   }
 
-  @Override
-  public List<OptimizerInstance> listOptimizers() {
-    return ImmutableList.copyOf(authOptimizers.values());
-  }
-
-  @Override
-  public List<OptimizerInstance> listOptimizers(String group) {
-    return authOptimizers.values().stream()
-        .filter(optimizer -> optimizer.getGroupName().equals(group))
-        .collect(Collectors.toList());
-  }
-
-  @Override
+  // TODO need to use optimizer manager
   public void deleteOptimizer(String group, String resourceId) {
     List<OptimizerInstance> deleteOptimizers =
         getAs(OptimizerMapper.class, mapper -> mapper.selectByResourceId(resourceId));
@@ -340,11 +329,10 @@ public class DefaultOptimizingService extends StatedPersistentBase
         });
   }
 
-  @Override
   public void createResourceGroup(ResourceGroup resourceGroup) {
     doAsTransaction(
         () -> {
-          doAs(ResourceMapper.class, mapper -> mapper.insertResourceGroup(resourceGroup));
+          optimizerManager.createResourceGroup(resourceGroup);
           OptimizingQueue optimizingQueue =
               new OptimizingQueue(
                   catalogManager,
@@ -357,10 +345,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
         });
   }
 
-  @Override
   public void deleteResourceGroup(String groupName) {
     if (canDeleteResourceGroup(groupName)) {
-      doAs(ResourceMapper.class, mapper -> mapper.deleteResourceGroup(groupName));
+      optimizerManager.deleteResourceGroup(groupName);
       OptimizingQueue optimizingQueue = optimizingQueueByGroup.remove(groupName);
       optimizingQueue.dispose();
     } else {
@@ -371,52 +358,13 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
   }
 
-  @Override
   public void updateResourceGroup(ResourceGroup resourceGroup) {
     Preconditions.checkNotNull(resourceGroup, "The resource group cannot be null.");
     Optional.ofNullable(optimizingQueueByGroup.get(resourceGroup.getName()))
         .ifPresent(queue -> queue.updateOptimizerGroup(resourceGroup));
-    doAs(ResourceMapper.class, mapper -> mapper.updateResourceGroup(resourceGroup));
+    optimizerManager.updateResourceGroup(resourceGroup);
   }
 
-  @Override
-  public void createResource(Resource resource) {
-    doAs(ResourceMapper.class, mapper -> mapper.insertResource(resource));
-  }
-
-  @Override
-  public void deleteResource(String resourceId) {
-    doAs(ResourceMapper.class, mapper -> mapper.deleteResource(resourceId));
-  }
-
-  @Override
-  public List<ResourceGroup> listResourceGroups() {
-    return getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
-  }
-
-  @Override
-  public List<ResourceGroup> listResourceGroups(String containerName) {
-    return getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups).stream()
-        .filter(group -> group.getContainer().equals(containerName))
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  public ResourceGroup getResourceGroup(String groupName) {
-    return getAs(ResourceMapper.class, mapper -> mapper.selectResourceGroup(groupName));
-  }
-
-  @Override
-  public List<Resource> listResourcesByGroup(String groupName) {
-    return getAs(ResourceMapper.class, mapper -> mapper.selectResourcesByGroup(groupName));
-  }
-
-  @Override
-  public Resource getResource(String resourceId) {
-    return getAs(ResourceMapper.class, mapper -> mapper.selectResource(resourceId));
-  }
-
-  @Override
   public void dispose() {
     optimizerKeeper.dispose();
     tableHandlerChain.dispose();
@@ -439,7 +387,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
         return false;
       }
     }
-    for (OptimizerInstance optimizer : listOptimizers()) {
+    for (OptimizerInstance optimizer : optimizerManager.listOptimizers()) {
       if (optimizer.getGroupName().equals(name)) {
         return false;
       }

@@ -31,6 +31,7 @@ import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.OptimizerInstance;
+import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -56,11 +57,15 @@ public class OptimizerGroupController {
 
   private static final String ALL_GROUP = "all";
   private final TableManager tableManager;
-  private final DefaultOptimizingService optimizerManager;
+  private final DefaultOptimizingService optimizingService;
+  private final OptimizerManager optimizerManager;
 
   public OptimizerGroupController(
-      TableManager tableManager, DefaultOptimizingService optimizerManager) {
+      TableManager tableManager,
+      DefaultOptimizingService optimizingService,
+      OptimizerManager optimizerManager) {
     this.tableManager = tableManager;
+    this.optimizingService = optimizingService;
     this.optimizerManager = optimizerManager;
   }
 
@@ -205,7 +210,7 @@ public class OptimizerGroupController {
     resource.getProperties().putAll(optimizerInstances.get(0).getProperties());
     ResourceContainers.get(resource.getContainerName()).releaseOptimizer(resource);
     optimizerManager.deleteResource(resourceId);
-    optimizerManager.deleteOptimizer(resource.getGroupName(), resourceId);
+    optimizingService.deleteOptimizer(resource.getGroupName(), resourceId);
     ctx.json(OkResponse.of("Success to release optimizer"));
   }
 
@@ -263,7 +268,7 @@ public class OptimizerGroupController {
     }
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
-    optimizerManager.createResourceGroup(builder.build());
+    optimizingService.createResourceGroup(builder.build());
     ctx.json(OkResponse.of("The optimizer group has been successfully created."));
   }
 
@@ -278,21 +283,21 @@ public class OptimizerGroupController {
     Map<String, String> properties = (Map) map.get("properties");
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
-    optimizerManager.updateResourceGroup(builder.build());
+    optimizingService.updateResourceGroup(builder.build());
     ctx.json(OkResponse.of("The optimizer group has been successfully updated."));
   }
 
   /** delete optimizeGroup url = /optimize/resourceGroups/{resourceGroupName} */
   public void deleteResourceGroup(Context ctx) {
     String name = ctx.pathParam("resourceGroupName");
-    optimizerManager.deleteResourceGroup(name);
+    optimizingService.deleteResourceGroup(name);
     ctx.json(OkResponse.of("The optimizer group has been successfully deleted."));
   }
 
   /** check if optimizerGroup can be deleted url = /optimize/resourceGroups/delete/check */
   public void deleteCheckResourceGroup(Context ctx) {
     String name = ctx.pathParam("resourceGroupName");
-    ctx.json(OkResponse.of(optimizerManager.canDeleteResourceGroup(name)));
+    ctx.json(OkResponse.of(optimizingService.canDeleteResourceGroup(name)));
   }
 
   /** check if optimizerGroup can be deleted url = /optimize/containers/get */
