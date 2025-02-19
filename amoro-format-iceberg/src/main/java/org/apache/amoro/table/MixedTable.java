@@ -31,6 +31,8 @@ import java.util.Map;
 /** Represents an mixed-format table. */
 public interface MixedTable extends Serializable {
 
+  String CHANGE_STORE_IDENTIFIER = "change";
+
   /** Returns the {@link TableIdentifier} of this table */
   TableIdentifier id();
 
