@@ -470,12 +470,14 @@ public class TestDataExpire extends ExecutorTestBase {
 
   @Test
   public void testExpireByPartition() {
-    getMixedTable()
-        .updateProperties()
-        .set(WRITE_METADATA_METRICS_DEFAULT_KEY, WRITE_METADATA_METRICS_NONE_VALUE)
-        .commit();
+    if (getMixedTable().format().in(TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG)) {
+      getMixedTable()
+          .updateProperties()
+          .set(WRITE_METADATA_METRICS_DEFAULT_KEY, WRITE_METADATA_METRICS_NONE_VALUE)
+          .commit();
 
-    testPartitionLevel();
+      testPartitionLevel();
+    }
   }
 
   @Test
