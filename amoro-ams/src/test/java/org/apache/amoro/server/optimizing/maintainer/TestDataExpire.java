@@ -163,6 +163,9 @@ public class TestDataExpire extends ExecutorTestBase {
   public static final PartitionSpec SPEC2 =
       PartitionSpec.builderFor(TABLE_SCHEMA2).identity("op_time").build();
 
+  public static final String WRITE_METADATA_METRICS_DEFAULT_KEY = "write.metadata.metrics.default";
+  public static final String WRITE_METADATA_METRICS_NONE_VALUE = "none";
+
   public TestDataExpire(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
@@ -195,7 +198,7 @@ public class TestDataExpire extends ExecutorTestBase {
     List<Record> expected;
     if (tableTestHelper().partitionSpec().isPartitioned()) {
       // retention time is 1 day, expire partitions that order than 2022-01-02
-      if (expireByStringDate()) {
+      if (expireByStringDate() && isMetricsNotNone()) {
         expected =
             Lists.newArrayList(
                 createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
@@ -252,7 +255,7 @@ public class TestDataExpire extends ExecutorTestBase {
     CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire =
         buildKeyedFileScanHelper().scan();
     if (tableTestHelper().partitionSpec().isPartitioned()) {
-      if (expireByStringDate()) {
+      if (expireByStringDate() && isMetricsNotNone()) {
         assertScanResult(scanAfterExpire, 1, 0);
       } else {
         assertScanResult(scanAfterExpire, 3, 0);
@@ -264,7 +267,7 @@ public class TestDataExpire extends ExecutorTestBase {
     List<Record> records = readSortedKeyedRecords(keyedTable);
     List<Record> expected;
     if (tableTestHelper().partitionSpec().isPartitioned()) {
-      if (expireByStringDate()) {
+      if (expireByStringDate() && isMetricsNotNone()) {
         expected =
             Lists.newArrayList(
                 createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
@@ -466,6 +469,16 @@ public class TestDataExpire extends ExecutorTestBase {
   }
 
   @Test
+  public void testExpireByPartition() {
+    getMixedTable()
+        .updateProperties()
+        .set(WRITE_METADATA_METRICS_DEFAULT_KEY, WRITE_METADATA_METRICS_NONE_VALUE)
+        .commit();
+
+    testPartitionLevel();
+  }
+
+  @Test
   public void testGcDisabled() {
     MixedTable testTable = getMixedTable();
     testTable.updateProperties().set("gc.enabled", "false").commit();
@@ -592,7 +605,6 @@ public class TestDataExpire extends ExecutorTestBase {
     prop.put(TableProperties.ENABLE_DATA_EXPIRATION, "true");
     prop.put(TableProperties.DATA_EXPIRATION_FIELD, "op_time");
     prop.put(TableProperties.DATA_EXPIRATION_RETENTION_TIME, "1d");
-    prop.put("write.metadata.metrics.default", "none");
     return prop;
   }
 
@@ -614,6 +626,12 @@ public class TestDataExpire extends ExecutorTestBase {
         .type()
         .typeId()
         .equals(Type.TypeID.STRING);
+  }
+
+  private boolean isMetricsNotNone() {
+    return !CompatiblePropertyUtil.propertyAsString(
+            getMixedTable().properties(), WRITE_METADATA_METRICS_DEFAULT_KEY, "")
+        .equals(WRITE_METADATA_METRICS_NONE_VALUE);
   }
 
   private static DataExpirationConfig parseDataExpirationConfig(MixedTable table) {
