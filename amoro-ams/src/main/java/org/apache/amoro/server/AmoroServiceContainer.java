@@ -42,6 +42,7 @@ import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.resource.ContainerMetadata;
+import org.apache.amoro.server.resource.DefaultOptimizerManager;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.DefaultTableManager;
@@ -99,6 +100,7 @@ public class AmoroServiceContainer {
   private DataSource dataSource;
   private CatalogManager catalogManager;
   private TableManager tableManager;
+  private OptimizerManager optimizerManager;
   private TableService tableService;
   private DefaultOptimizingService optimizingService;
   private TerminalManager terminalManager;
@@ -155,10 +157,13 @@ public class AmoroServiceContainer {
 
     catalogManager = new DefaultCatalogManager(serviceConfig);
     tableManager = new DefaultTableManager(serviceConfig, catalogManager);
+    optimizerManager = new DefaultOptimizerManager(serviceConfig);
 
     tableService = new DefaultTableService(serviceConfig, catalogManager);
+
     optimizingService =
-        new DefaultOptimizingService(serviceConfig, catalogManager, tableManager, tableService);
+        new DefaultOptimizingService(
+            serviceConfig, catalogManager, tableManager, optimizerManager, tableService);
 
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
@@ -253,7 +258,12 @@ public class AmoroServiceContainer {
   private void initHttpService() {
     DashboardServer dashboardServer =
         new DashboardServer(
-            serviceConfig, catalogManager, tableManager, optimizingService, terminalManager);
+            serviceConfig,
+            catalogManager,
+            tableManager,
+            optimizerManager,
+            optimizingService,
+            terminalManager);
     RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableManager);
 
     httpServer =
@@ -558,7 +568,7 @@ public class AmoroServiceContainer {
   }
 
   @VisibleForTesting
-  public OptimizerManager getOptimizingService() {
-    return this.optimizingService;
+  public OptimizerManager getOptimizerManager() {
+    return this.optimizerManager;
   }
 }
