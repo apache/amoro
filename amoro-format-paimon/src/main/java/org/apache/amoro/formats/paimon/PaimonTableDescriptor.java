@@ -190,7 +190,8 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         throw new RuntimeException(e);
       }
     } else {
-      snapshots = Collections.singleton(table.tagManager().taggedSnapshot(ref)).iterator();
+      snapshots =
+          Collections.singleton(table.tagManager().getOrThrow(ref).trimToSnapshot()).iterator();
     }
 
     FileStore<?> store = table.store();
@@ -233,7 +234,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     if (BranchManager.isMainBranch(ref) || table.branchManager().branchExists(ref)) {
       snapshot = table.snapshotManager().copyWithBranch(ref).snapshot(commitId);
     } else {
-      snapshot = table.tagManager().tag(ref);
+      snapshot = table.tagManager().getOrThrow(ref).trimToSnapshot();
     }
 
     FileStore<?> store = table.store();
@@ -621,7 +622,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     return store
         .pathFactory()
         .createDataFilePathFactory(manifestEntry.partition(), manifestEntry.bucket())
-        .toPath(manifestEntry.file().fileName())
+        .toPath(manifestEntry.file())
         .toString();
   }
 
