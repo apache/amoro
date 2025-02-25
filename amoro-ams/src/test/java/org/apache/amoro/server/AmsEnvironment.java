@@ -283,7 +283,7 @@ public class AmsEnvironment {
     if (optimizingStarted) {
       return;
     }
-    OptimizerManager optimizerManager = serviceContainer.getOptimizingService();
+    OptimizerManager optimizerManager = serviceContainer.getOptimizerManager();
     optimizerManager.createResourceGroup(
         new ResourceGroup.Builder("default", "localContainer")
             .addProperty("memory", "1024")
@@ -302,8 +302,8 @@ public class AmsEnvironment {
   }
 
   public void stopOptimizer() {
-    DynFields.UnboundField<DefaultOptimizingService> field =
-        DynFields.builder().hiddenImpl(AmoroServiceContainer.class, "optimizingService").build();
+    DynFields.UnboundField<OptimizerManager> field =
+        DynFields.builder().hiddenImpl(AmoroServiceContainer.class, "optimizerManager").build();
     field
         .bind(serviceContainer)
         .get()

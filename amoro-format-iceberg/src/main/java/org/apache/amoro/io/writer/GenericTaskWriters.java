@@ -131,7 +131,7 @@ public class GenericTaskWriters {
               - 1;
       return new GenericBaseTaskWriter(
           fileFormat,
-          new GenericAppenderFactory(base.schema(), table.spec()),
+          new GenericAppenderFactory(base.schema(), table.spec()).setAll(table.properties()),
           new CommonOutputFileFactory(
               base.location(),
               table.spec(),
@@ -161,7 +161,7 @@ public class GenericTaskWriters {
                       TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT)
                   .toUpperCase(Locale.ENGLISH)));
       GenericAppenderFactory appenderFactory =
-          new GenericAppenderFactory(base.schema(), table.spec());
+          new GenericAppenderFactory(base.schema(), table.spec()).setAll(table.properties());
       appenderFactory.set(
           org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX
               + MetadataColumns.DELETE_FILE_PATH.name(),
@@ -219,7 +219,7 @@ public class GenericTaskWriters {
       Schema changeWriteSchema = SchemaUtil.changeWriteSchema(change.schema());
       return new GenericChangeTaskWriter(
           fileFormat,
-          new GenericAppenderFactory(changeWriteSchema, table.spec()),
+          new GenericAppenderFactory(changeWriteSchema, table.spec()).setAll(table.properties()),
           new CommonOutputFileFactory(
               change.location(),
               table.spec(),
