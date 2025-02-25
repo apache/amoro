@@ -163,8 +163,7 @@ public class TestDataExpire extends ExecutorTestBase {
   public static final PartitionSpec SPEC2 =
       PartitionSpec.builderFor(TABLE_SCHEMA2).identity("op_time").build();
 
-  public static final String WRITE_METADATA_METRICS_DEFAULT_KEY = "write.metadata.metrics.default";
-  public static final String WRITE_METADATA_METRICS_NONE_VALUE = "none";
+  public static final String WRITE_METRICS_MODE_NONE = "none";
 
   public TestDataExpire(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
@@ -473,7 +472,9 @@ public class TestDataExpire extends ExecutorTestBase {
     if (getMixedTable().format().in(TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG)) {
       getMixedTable()
           .updateProperties()
-          .set(WRITE_METADATA_METRICS_DEFAULT_KEY, WRITE_METADATA_METRICS_NONE_VALUE)
+          .set(
+              org.apache.iceberg.TableProperties.DEFAULT_WRITE_METRICS_MODE,
+              WRITE_METRICS_MODE_NONE)
           .commit();
 
       testPartitionLevel();
@@ -632,8 +633,10 @@ public class TestDataExpire extends ExecutorTestBase {
 
   private boolean isMetricsNotNone() {
     return !CompatiblePropertyUtil.propertyAsString(
-            getMixedTable().properties(), WRITE_METADATA_METRICS_DEFAULT_KEY, "")
-        .equals(WRITE_METADATA_METRICS_NONE_VALUE);
+            getMixedTable().properties(),
+            org.apache.iceberg.TableProperties.DEFAULT_WRITE_METRICS_MODE,
+            "")
+        .equals(WRITE_METRICS_MODE_NONE);
   }
 
   private static DataExpirationConfig parseDataExpirationConfig(MixedTable table) {

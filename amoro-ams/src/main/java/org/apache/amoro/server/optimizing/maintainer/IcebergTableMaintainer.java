@@ -965,9 +965,6 @@ public class IcebergTableMaintainer implements TableMaintainer {
     Object upperBound =
         Conversions.fromByteBuffer(type, contentFile.upperBounds().get(field.fieldId()));
     Literal<Long> literal = Literal.of(Long.MAX_VALUE);
-    if ("none".equals(table.properties().get("write.metadata.metrics.default"))) {
-      upperBound = null;
-    }
     if (null == upperBound) {
       if (canBeExpireByPartition(contentFile, field, expireValue)) {
         literal = Literal.of(0L);
