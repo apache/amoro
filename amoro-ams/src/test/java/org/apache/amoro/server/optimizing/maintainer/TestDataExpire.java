@@ -50,7 +50,6 @@ import org.apache.amoro.utils.ContentFiles;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.MetricsConfig;
 import org.apache.iceberg.MetricsModes;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -476,7 +475,7 @@ public class TestDataExpire extends ExecutorTestBase {
         .updateProperties()
         .set(
             org.apache.iceberg.TableProperties.DEFAULT_WRITE_METRICS_MODE,
-                MetricsModes.None.get().toString())
+            MetricsModes.None.get().toString())
         .commit();
 
     testPartitionLevel();
