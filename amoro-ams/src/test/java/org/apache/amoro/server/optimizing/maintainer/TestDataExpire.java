@@ -20,6 +20,7 @@ package org.apache.amoro.server.optimizing.maintainer;
 
 import static org.apache.amoro.BasicTableTestHelper.PRIMARY_KEY_SPEC;
 import static org.apache.amoro.BasicTableTestHelper.SPEC;
+import static org.junit.Assume.assumeTrue;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
@@ -49,6 +50,8 @@ import org.apache.amoro.utils.ContentFiles;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.MetricsConfig;
+import org.apache.iceberg.MetricsModes;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -163,8 +166,6 @@ public class TestDataExpire extends ExecutorTestBase {
   public static final PartitionSpec SPEC2 =
       PartitionSpec.builderFor(TABLE_SCHEMA2).identity("op_time").build();
 
-  public static final String WRITE_METRICS_MODE_NONE = "none";
-
   public TestDataExpire(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
@@ -197,7 +198,7 @@ public class TestDataExpire extends ExecutorTestBase {
     List<Record> expected;
     if (tableTestHelper().partitionSpec().isPartitioned()) {
       // retention time is 1 day, expire partitions that order than 2022-01-02
-      if (expireByStringDate() && isMetricsNotNone()) {
+      if (expireByStringDate()) {
         expected =
             Lists.newArrayList(
                 createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
@@ -254,7 +255,7 @@ public class TestDataExpire extends ExecutorTestBase {
     CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire =
         buildKeyedFileScanHelper().scan();
     if (tableTestHelper().partitionSpec().isPartitioned()) {
-      if (expireByStringDate() && isMetricsNotNone()) {
+      if (expireByStringDate()) {
         assertScanResult(scanAfterExpire, 1, 0);
       } else {
         assertScanResult(scanAfterExpire, 3, 0);
@@ -266,7 +267,7 @@ public class TestDataExpire extends ExecutorTestBase {
     List<Record> records = readSortedKeyedRecords(keyedTable);
     List<Record> expected;
     if (tableTestHelper().partitionSpec().isPartitioned()) {
-      if (expireByStringDate() && isMetricsNotNone()) {
+      if (expireByStringDate()) {
         expected =
             Lists.newArrayList(
                 createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
@@ -468,17 +469,17 @@ public class TestDataExpire extends ExecutorTestBase {
   }
 
   @Test
-  public void testExpireByPartition() {
-    if (getMixedTable().format().in(TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG)) {
-      getMixedTable()
-          .updateProperties()
-          .set(
-              org.apache.iceberg.TableProperties.DEFAULT_WRITE_METRICS_MODE,
-              WRITE_METRICS_MODE_NONE)
-          .commit();
+  public void testExpireByPartitionWhenMetricsModeIsNone() {
+    assumeTrue(getMixedTable().format().in(TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG));
 
-      testPartitionLevel();
-    }
+    getMixedTable()
+        .updateProperties()
+        .set(
+            org.apache.iceberg.TableProperties.DEFAULT_WRITE_METRICS_MODE,
+                MetricsModes.None.get().toString())
+        .commit();
+
+    testPartitionLevel();
   }
 
   @Test
@@ -629,14 +630,6 @@ public class TestDataExpire extends ExecutorTestBase {
         .type()
         .typeId()
         .equals(Type.TypeID.STRING);
-  }
-
-  private boolean isMetricsNotNone() {
-    return !CompatiblePropertyUtil.propertyAsString(
-            getMixedTable().properties(),
-            org.apache.iceberg.TableProperties.DEFAULT_WRITE_METRICS_MODE,
-            "")
-        .equals(WRITE_METRICS_MODE_NONE);
   }
 
   private static DataExpirationConfig parseDataExpirationConfig(MixedTable table) {

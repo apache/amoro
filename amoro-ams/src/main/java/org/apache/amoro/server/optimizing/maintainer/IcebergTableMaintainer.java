@@ -966,7 +966,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
         Conversions.fromByteBuffer(type, contentFile.upperBounds().get(field.fieldId()));
     Literal<Long> literal = Literal.of(Long.MAX_VALUE);
     if (null == upperBound) {
-      if (canBeExpireByPartition(contentFile, field, expireValue)) {
+      if (canBeExpireByPartitionValue(contentFile, field, expireValue)) {
         literal = Literal.of(0L);
       }
     } else if (upperBound instanceof Long) {
@@ -992,10 +992,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
                   .toInstant()
                   .toEpochMilli());
     }
+
     return literal;
   }
 
-  private boolean canBeExpireByPartition(
+  @SuppressWarnings("unchecked")
+  private boolean canBeExpireByPartitionValue(
       ContentFile<?> contentFile, Types.NestedField expireField, Comparable<?> expireValue) {
     PartitionSpec partitionSpec = table.specs().get(contentFile.specId());
     int pos = 0;
@@ -1005,16 +1007,22 @@ public class IcebergTableMaintainer implements TableMaintainer {
         if (partitionField.transform().isVoid()) {
           return false;
         }
+
         Comparable<?> partitionUpperBound =
             ((SerializableFunction<Comparable<?>, Comparable<?>>)
                     partitionField.transform().bind(expireField.type()))
                 .apply(expireValue);
         Comparable<Object> filePartitionValue =
             contentFile.partition().get(pos, partitionUpperBound.getClass());
-        compareResults.add(filePartitionValue.compareTo(partitionUpperBound) < 0);
+        int compared = filePartitionValue.compareTo(partitionUpperBound);
+        Boolean compareResult =
+            expireField.type() == Types.StringType.get() ? compared <= 0 : compared < 0;
+        compareResults.add(compareResult);
       }
+
       pos++;
     }
+
     return !compareResults.isEmpty() && compareResults.stream().allMatch(Boolean::booleanValue);
   }
 
