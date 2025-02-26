@@ -249,6 +249,17 @@ public class AMSTableTestBase extends AMSServiceTestBase {
     tableService().exploreTableRuntimes();
   }
 
+  protected void dropTableOnly() {
+    if (externalCatalog == null) {
+      mixedTables.dropTableByMeta(tableMeta, true);
+      tableManager().dropTableMetadata(tableMeta.getTableIdentifier(), true);
+    } else {
+      String database = tableTestHelper.id().getDatabase();
+      String table = tableTestHelper.id().getTableName();
+      externalCatalog.dropTable(database, table, true);
+    }
+  }
+
   protected CatalogTestHelper catalogTestHelper() {
     return catalogTestHelper;
   }
