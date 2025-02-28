@@ -29,6 +29,6 @@ export function usePagination() {
     showQuickJumper: true,
     showSizeChanger: true,
     hideOnSinglePage: false,
-    // showTotal: (total: number) => `total ${total} records`
+    showTotal: (total: number) => `total ${total} records`
   }
 }
