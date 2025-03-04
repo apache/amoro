@@ -26,46 +26,44 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 /** Tests for the {@link MemorySize} class. */
 public class MemorySizeTest {
 
-  @Test
-  public void testUnitConversion() {
-    final MemorySize zero = MemorySize.ZERO;
-    assertEquals(0, zero.getBytes());
-    assertEquals(0, zero.getKibiBytes());
-    assertEquals(0, zero.getMebiBytes());
-    assertEquals(0, zero.getGibiBytes());
-    assertEquals(0, zero.getTebiBytes());
+  static Stream<Object[]> memorySizeProvider() {
+    return Stream.of(
+        new Object[] {MemorySize.ZERO, 0, 0, 0, 0, 0},
+        new Object[] {new MemorySize(955), 955, 0, 0, 0, 0},
+        new Object[] {new MemorySize(18500), 18500, 18, 0, 0, 0},
+        new Object[] {new MemorySize(15 * 1024 * 1024), 15_728_640, 15_360, 15, 0, 0},
+        new Object[] {
+          new MemorySize(2L * 1024 * 1024 * 1024 * 1024 + 10),
+          2199023255562L,
+          2147483648L,
+          2097152,
+          2048,
+          2
+        });
+  }
 
-    final MemorySize bytes = new MemorySize(955);
-    assertEquals(955, bytes.getBytes());
-    assertEquals(0, bytes.getKibiBytes());
-    assertEquals(0, bytes.getMebiBytes());
-    assertEquals(0, bytes.getGibiBytes());
-    assertEquals(0, bytes.getTebiBytes());
-
-    final MemorySize kilos = new MemorySize(18500);
-    assertEquals(18500, kilos.getBytes());
-    assertEquals(18, kilos.getKibiBytes());
-    assertEquals(0, kilos.getMebiBytes());
-    assertEquals(0, kilos.getGibiBytes());
-    assertEquals(0, kilos.getTebiBytes());
-
-    final MemorySize megas = new MemorySize(15 * 1024 * 1024);
-    assertEquals(15_728_640, megas.getBytes());
-    assertEquals(15_360, megas.getKibiBytes());
-    assertEquals(15, megas.getMebiBytes());
-    assertEquals(0, megas.getGibiBytes());
-    assertEquals(0, megas.getTebiBytes());
-
-    final MemorySize teras = new MemorySize(2L * 1024 * 1024 * 1024 * 1024 + 10);
-    assertEquals(2199023255562L, teras.getBytes());
-    assertEquals(2147483648L, teras.getKibiBytes());
-    assertEquals(2097152, teras.getMebiBytes());
-    assertEquals(2048, teras.getGibiBytes());
-    assertEquals(2, teras.getTebiBytes());
+  @ParameterizedTest
+  @MethodSource("memorySizeProvider")
+  void testUnitConversion(
+      MemorySize memorySize,
+      long expectedBytes,
+      long expectedKibiBytes,
+      long expectedMebiBytes,
+      long expectedGibiBytes,
+      long expectedTebiBytes) {
+    assertEquals(expectedBytes, memorySize.getBytes());
+    assertEquals(expectedKibiBytes, memorySize.getKibiBytes());
+    assertEquals(expectedMebiBytes, memorySize.getMebiBytes());
+    assertEquals(expectedGibiBytes, memorySize.getGibiBytes());
+    assertEquals(expectedTebiBytes, memorySize.getTebiBytes());
   }
 
   @Test(expected = IllegalArgumentException.class)
