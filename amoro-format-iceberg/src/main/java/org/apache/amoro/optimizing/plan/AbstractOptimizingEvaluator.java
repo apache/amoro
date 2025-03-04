@@ -31,7 +31,6 @@ import net.sf.jsqlparser.expression.operators.relational.GreaterThan;
 import net.sf.jsqlparser.expression.operators.relational.GreaterThanEquals;
 import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.expression.operators.relational.IsNullExpression;
-import net.sf.jsqlparser.expression.operators.relational.ItemsList;
 import net.sf.jsqlparser.expression.operators.relational.MinorThan;
 import net.sf.jsqlparser.expression.operators.relational.MinorThanEquals;
 import net.sf.jsqlparser.expression.operators.relational.NotEqualsTo;
@@ -151,7 +150,7 @@ public abstract class AbstractOptimizingEvaluator {
       String sql, List<Types.NestedField> tableColumns) {
     try {
       Select statement = (Select) CCJSqlParserUtil.parse("SELECT * FROM dummy WHERE " + sql);
-      PlainSelect select = (PlainSelect) statement.getSelectBody();
+      PlainSelect select = statement.getPlainSelect();
       return convertSparkExpressionToIceberg(select.getWhere(), tableColumns);
     } catch (Exception e) {
       throw new IllegalArgumentException("Failed to parse where condition: " + sql, e);
@@ -194,11 +193,10 @@ public abstract class AbstractOptimizingEvaluator {
     } else if (whereExpr instanceof InExpression) {
       InExpression in = (InExpression) whereExpr;
       Types.NestedField column = getColumn(in.getLeftExpression(), tableColumns);
-      ItemsList rightItems = in.getRightItemsList();
+      net.sf.jsqlparser.expression.Expression rightExpr = in.getRightExpression();
       List<Object> values = new ArrayList<>();
-      if (rightItems instanceof ExpressionList) {
-        for (net.sf.jsqlparser.expression.Expression expr :
-            ((ExpressionList) rightItems).getExpressions()) {
+      if (rightExpr instanceof ExpressionList) {
+        for (net.sf.jsqlparser.expression.Expression expr : ((ExpressionList<?>) rightExpr)) {
           values.add(getValue(expr, column));
         }
       } else {
@@ -327,7 +325,7 @@ public abstract class AbstractOptimizingEvaluator {
         partitionPlanMap.entrySet().stream()
             .filter(entry -> entry.getValue().isNecessary())
             .limit(maxPendingPartitions)
-            .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue())));
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
   protected abstract PartitionEvaluator buildEvaluator(Pair<Integer, StructLike> partition);
