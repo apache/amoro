@@ -36,17 +36,29 @@ public class MemorySizeTest {
 
   static Stream<Object[]> memorySizeProvider() {
     return Stream.of(
-            new Object[]{MemorySize.ZERO, 0, 0, 0, 0, 0},
-            new Object[]{new MemorySize(955), 955, 0, 0, 0, 0},
-            new Object[]{new MemorySize(18500), 18500, 18, 0, 0, 0},
-            new Object[]{new MemorySize(15 * 1024 * 1024), 15_728_640, 15_360, 15, 0, 0},
-            new Object[]{new MemorySize(2L * 1024 * 1024 * 1024 * 1024 + 10), 2199023255562L, 2147483648L, 2097152, 2048, 2}
-    );
+        new Object[] {MemorySize.ZERO, 0, 0, 0, 0, 0},
+        new Object[] {new MemorySize(955), 955, 0, 0, 0, 0},
+        new Object[] {new MemorySize(18500), 18500, 18, 0, 0, 0},
+        new Object[] {new MemorySize(15 * 1024 * 1024), 15_728_640, 15_360, 15, 0, 0},
+        new Object[] {
+          new MemorySize(2L * 1024 * 1024 * 1024 * 1024 + 10),
+          2199023255562L,
+          2147483648L,
+          2097152,
+          2048,
+          2
+        });
   }
 
   @ParameterizedTest
   @MethodSource("memorySizeProvider")
-  void testUnitConversion(MemorySize memorySize, long expectedBytes, long expectedKibiBytes, long expectedMebiBytes, long expectedGibiBytes, long expectedTebiBytes) {
+  void testUnitConversion(
+      MemorySize memorySize,
+      long expectedBytes,
+      long expectedKibiBytes,
+      long expectedMebiBytes,
+      long expectedGibiBytes,
+      long expectedTebiBytes) {
     assertEquals(expectedBytes, memorySize.getBytes());
     assertEquals(expectedKibiBytes, memorySize.getKibiBytes());
     assertEquals(expectedMebiBytes, memorySize.getMebiBytes());
