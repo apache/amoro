@@ -23,6 +23,7 @@ import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class ResourceGroup {
   private String name;
@@ -95,5 +96,24 @@ public class ResourceGroup {
       resourceGroup.setProperties(properties);
       return resourceGroup;
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    ResourceGroup that = (ResourceGroup) o;
+    return Objects.equals(name, that.name)
+        && Objects.equals(container, that.container)
+        && Objects.equals(properties, that.properties);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(name, container, properties);
   }
 }

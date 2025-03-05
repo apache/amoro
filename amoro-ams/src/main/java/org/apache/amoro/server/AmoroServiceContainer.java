@@ -157,13 +157,12 @@ public class AmoroServiceContainer {
 
     catalogManager = new DefaultCatalogManager(serviceConfig);
     tableManager = new DefaultTableManager(serviceConfig, catalogManager);
-    optimizerManager = new DefaultOptimizerManager(serviceConfig);
+    optimizerManager = new DefaultOptimizerManager(serviceConfig, catalogManager);
 
     tableService = new DefaultTableService(serviceConfig, catalogManager);
 
     optimizingService =
-        new DefaultOptimizingService(
-            serviceConfig, catalogManager, tableManager, optimizerManager, tableService);
+        new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
 
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);

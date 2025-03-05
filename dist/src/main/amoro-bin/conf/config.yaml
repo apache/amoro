@@ -50,6 +50,7 @@ ams:
     commit-thread-count: 10
     runtime-data-keep-days: 30
     runtime-data-expire-interval-hours: 1
+    refresh-group-interval: 30s
 
   optimizer:
     heart-beat-timeout: 1min # 60000
