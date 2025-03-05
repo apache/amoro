@@ -226,15 +226,15 @@ public class MemorySizeTest {
 
   static Stream<Arguments> testToHumanReadableStringProvider() {
     return Stream.of(
-            Arguments.of(0L, "0 bytes"),
-            Arguments.of(1L, "1 bytes"),
-            Arguments.of(1024L, "1024 bytes"),
-            Arguments.of(1025L, "1.001kb (1025 bytes)"),
-            Arguments.of(1536L, "1.500kb (1536 bytes)"),
-            Arguments.of(1_000_000L, "976.563kb (1000000 bytes)"),
-            Arguments.of(1_000_000_000L, "953.674mb (1000000000 bytes)"),
-            Arguments.of(1_000_000_000_000L, "931.323gb (1000000000000 bytes)"),
-            Arguments.of(1_000_000_000_000_000L, "909.495tb (1000000000000000 bytes)"));
+        Arguments.of(0L, "0 bytes"),
+        Arguments.of(1L, "1 bytes"),
+        Arguments.of(1024L, "1024 bytes"),
+        Arguments.of(1025L, "1.001kb (1025 bytes)"),
+        Arguments.of(1536L, "1.500kb (1536 bytes)"),
+        Arguments.of(1_000_000L, "976.563kb (1000000 bytes)"),
+        Arguments.of(1_000_000_000L, "953.674mb (1000000000 bytes)"),
+        Arguments.of(1_000_000_000_000L, "931.323gb (1000000000000 bytes)"),
+        Arguments.of(1_000_000_000_000_000L, "909.495tb (1000000000000000 bytes)"));
   }
 
   @ParameterizedTest
