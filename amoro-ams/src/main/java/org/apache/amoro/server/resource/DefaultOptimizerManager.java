@@ -18,12 +18,21 @@
 
 package org.apache.amoro.server.resource;
 
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceGroup;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.persistence.PersistentBase;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.ResourceMapper;
+import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.table.MaintainedTableManager;
+import org.apache.amoro.server.table.TableManager;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.table.TableProperties;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,8 +49,15 @@ import java.util.stream.Collectors;
 public class DefaultOptimizerManager extends PersistentBase implements OptimizerManager {
 
   protected final Configurations serverConfiguration;
+  private final CatalogManager catalogManager;
+  private final MaintainedTableManager tableManager;
 
-  public DefaultOptimizerManager(Configurations serverConfiguration) {
+  public DefaultOptimizerManager(
+      Configurations serverConfiguration,
+      TableManager tableManager,
+      CatalogManager catalogManager) {
+    this.catalogManager = catalogManager;
+    this.tableManager = tableManager;
     this.serverConfiguration = serverConfiguration;
   }
 
@@ -81,11 +97,19 @@ public class DefaultOptimizerManager extends PersistentBase implements Optimizer
 
   @Override
   public void deleteResourceGroup(String groupName) {
-    doAs(ResourceMapper.class, mapper -> mapper.deleteResourceGroup(groupName));
+    if (canDeleteResourceGroup(groupName)) {
+      doAs(ResourceMapper.class, mapper -> mapper.deleteResourceGroup(groupName));
+    } else {
+      throw new RuntimeException(
+          String.format(
+              "The resource group %s cannot be deleted because it is currently in use.",
+              groupName));
+    }
   }
 
   @Override
   public void updateResourceGroup(ResourceGroup resourceGroup) {
+    Preconditions.checkNotNull(resourceGroup, "The resource group cannot be null.");
     doAs(ResourceMapper.class, mapper -> mapper.updateResourceGroup(resourceGroup));
   }
 
@@ -124,5 +148,31 @@ public class DefaultOptimizerManager extends PersistentBase implements Optimizer
   @Override
   public Resource getResource(String resourceId) {
     return getAs(ResourceMapper.class, mapper -> mapper.selectResource(resourceId));
+  }
+
+  @Override
+  public boolean canDeleteResourceGroup(String name) {
+    for (CatalogMeta catalogMeta : catalogManager.listCatalogMetas()) {
+      if (catalogMeta.getCatalogProperties() != null
+          && catalogMeta
+              .getCatalogProperties()
+              .getOrDefault(
+                  CatalogMetaProperties.TABLE_PROPERTIES_PREFIX
+                      + TableProperties.SELF_OPTIMIZING_GROUP,
+                  TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT)
+              .equals(name)) {
+        return false;
+      }
+    }
+    for (OptimizerInstance optimizer : listOptimizers()) {
+      if (optimizer.getGroupName().equals(name)) {
+        return false;
+      }
+    }
+    List<TableRuntimeMeta> tableRuntimeMetas =
+        getAs(
+            TableMetaMapper.class,
+            mapper -> mapper.selectTableRuntimesForOptimizerGroup(name, null, null, null));
+    return tableRuntimeMetas.isEmpty();
   }
 }
