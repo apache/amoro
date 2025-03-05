@@ -75,7 +75,7 @@ public class TestFileUtil {
         "/a/b/c, hdfs:/a/b/c",
         "a/b/c, a/b/c"
       })
-  public void testGetUriPath_1to6(String param1, String param2) {
+  public void testGetUriPath(String param1, String param2) {
     Assert.assertEquals(param1, TableFileUtil.getUriPath(param2));
   }
 
