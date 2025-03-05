@@ -75,8 +75,8 @@ public class TestFileUtil {
         "/a/b/c, hdfs:/a/b/c",
         "a/b/c, a/b/c"
       })
-  public void testGetUriPath(String param1, String param2) {
-    Assert.assertEquals(param1, TableFileUtil.getUriPath(param2));
+  public void testGetUriPath(String expected, String path) {
+    Assert.assertEquals(expected, TableFileUtil.getUriPath(path));
   }
 
   private static final TemporaryFolder temp = new TemporaryFolder();
