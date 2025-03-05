@@ -27,6 +27,7 @@ import static org.junit.Assert.fail;
 
 import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
@@ -223,21 +224,22 @@ public class MemorySizeTest {
     memory.divide(-23L);
   }
 
-  @Test
-  public void testToHumanReadableString() {
-    assertThat(new MemorySize(0L).toHumanReadableString(), is("0 bytes"));
-    assertThat(new MemorySize(1L).toHumanReadableString(), is("1 bytes"));
-    assertThat(new MemorySize(1024L).toHumanReadableString(), is("1024 bytes"));
-    assertThat(new MemorySize(1025L).toHumanReadableString(), is("1.001kb (1025 bytes)"));
-    assertThat(new MemorySize(1536L).toHumanReadableString(), is("1.500kb (1536 bytes)"));
-    assertThat(new MemorySize(1_000_000L).toHumanReadableString(), is("976.563kb (1000000 bytes)"));
-    assertThat(
-        new MemorySize(1_000_000_000L).toHumanReadableString(), is("953.674mb (1000000000 bytes)"));
-    assertThat(
-        new MemorySize(1_000_000_000_000L).toHumanReadableString(),
-        is("931.323gb (1000000000000 bytes)"));
-    assertThat(
-        new MemorySize(1_000_000_000_000_000L).toHumanReadableString(),
-        is("909.495tb (1000000000000000 bytes)"));
+  static Stream<Arguments> testToHumanReadableStringProvider() {
+    return Stream.of(
+        Arguments.of(0L, "0 bytes"),
+        Arguments.of(1L, "1 bytes"),
+        Arguments.of(1024L, "1024 bytes"),
+        Arguments.of(1025L, "1.001kb (1025 bytes)"),
+        Arguments.of(1536L, "1.500kb (1536 bytes)"),
+        Arguments.of(1_000_000L, "976.563kb (1000000 bytes)"),
+        Arguments.of(1_000_000_000L, "953.674mb (1000000000 bytes)"),
+        Arguments.of(1_000_000_000_000L, "931.323gb (1000000000000 bytes)"),
+        Arguments.of(1_000_000_000_000_000L, "909.495tb (1000000000000000 bytes)"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("testToHumanReadableStringProvider")
+  public void testToHumanReadableString(long bytes, String expected) {
+    assertThat(new MemorySize(bytes).toHumanReadableString(), is(expected));
   }
 }
