@@ -157,8 +157,8 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
       memory = memoryPerThread * resource.getThreadCount();
     }
 
-    // Reserving 20% of total pod memory for JVM non-heap memory
-    jvmHeapMemory = (long)(memory * 0.8);
+    // reserving 20% of total pod memory for JVM non-heap memory
+    jvmHeapMemory = (long) (memory * 0.8);
 
     // point at amoro home in docker image
     String startUpArgs =
