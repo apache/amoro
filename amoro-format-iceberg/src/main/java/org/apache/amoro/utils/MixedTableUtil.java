@@ -190,4 +190,27 @@ public class MixedTableUtil {
       return spec;
     }
   }
+
+  /**
+   * Generate change store table name for mixed format tables.
+   *
+   * @param tableName mixed format table name.
+   * @param separator change store separator.
+   * @return change store table name.
+   */
+  public static String changeStoreName(String tableName, String separator) {
+    return tableName + separator + MixedTable.CHANGE_STORE_IDENTIFIER + separator;
+  }
+
+  /**
+   * Determine if it is a change store of a mixed format table by the table name.
+   *
+   * @param tableName table name.
+   * @param separator change store separator.
+   * @return if it is a change store.
+   */
+  public static boolean isChangeStore(String tableName, String separator) {
+    return tableName != null
+        && tableName.endsWith(separator + MixedTable.CHANGE_STORE_IDENTIFIER + separator);
+  }
 }

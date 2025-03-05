@@ -220,10 +220,16 @@ public class SparkTestBase {
   }
 
   protected void createViewSource(Schema schema, List<Record> data) {
+    createViewSource(schema, data, Double.NaN);
+  }
+
+  protected void createViewSource(Schema schema, List<Record> data, double version) {
     Dataset<Row> ds =
         spark()
             .createDataFrame(
-                data.stream().map(TestTableUtil::recordToRow).collect(Collectors.toList()),
+                data.stream()
+                    .map(r -> TestTableUtil.recordToRow(r, version))
+                    .collect(Collectors.toList()),
                 SparkSchemaUtil.convert(schema));
 
     ds.createOrReplaceTempView(sourceTable);
