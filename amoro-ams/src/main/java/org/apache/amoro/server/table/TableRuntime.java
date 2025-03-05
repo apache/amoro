@@ -174,6 +174,9 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void dispose() {
+    tableSummaryMetrics.unregister();
+    orphanFilesCleaningMetrics.unregister();
+    optimizingMetrics.unregister();
     tableLock.lock();
     try {
       doAsTransaction(
@@ -185,9 +188,6 @@ public class TableRuntime extends StatedPersistentBase {
     } finally {
       tableLock.unlock();
     }
-    optimizingMetrics.unregister();
-    orphanFilesCleaningMetrics.unregister();
-    tableSummaryMetrics.unregister();
   }
 
   public void beginPlanning() {
