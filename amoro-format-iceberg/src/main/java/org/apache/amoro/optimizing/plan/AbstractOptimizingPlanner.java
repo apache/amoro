@@ -31,6 +31,7 @@ import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,6 +111,10 @@ public abstract class AbstractOptimizingPlanner extends AbstractOptimizingEvalua
 
   @Override
   protected Expression getPartitionFilter() {
+    if (Expressions.alwaysTrue().equals(partitionFilter)
+        && !Expressions.alwaysTrue().equals(super.getPartitionFilter())) {
+      return super.getPartitionFilter();
+    }
     return partitionFilter;
   }
 

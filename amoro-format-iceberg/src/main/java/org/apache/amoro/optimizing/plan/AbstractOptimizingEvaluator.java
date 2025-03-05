@@ -69,7 +69,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.sql.Date;
 import java.sql.Time;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
@@ -274,10 +275,13 @@ public abstract class AbstractOptimizingEvaluator {
       case TIMESTAMP:
         String timestampStr = getDateTimeLiteralStr(expr, "timestamp");
         if (timestampStr != null) {
-          return Timestamp.valueOf(timestampStr)
-                  .toLocalDateTime()
-                  .toEpochSecond(ZoneOffset.ofHours(0))
-              * 1_000_000L;
+          long timestamp;
+          if (column.type().equals(Types.TimestampType.withZone())) {
+            timestamp = OffsetDateTime.parse(timestampStr).toEpochSecond();
+          } else {
+            timestamp = LocalDateTime.parse(timestampStr).toEpochSecond(ZoneOffset.ofHours(0));
+          }
+          return timestamp * 1_000_000L;
         }
         break;
     }

@@ -68,9 +68,9 @@ public class TestAbstractOptimizingEvaluator {
                 .toEpochSecond(ZoneOffset.ofHours(0))
             * 1_000_000L;
     testConvertSqlToIcebergExpressionByType(
-        epochMicroSecond, "TIMESTAMP '2022-01-01 12:12:12'", Types.TimestampType.withoutZone());
+        epochMicroSecond, "TIMESTAMP '2022-01-01T12:12:12'", Types.TimestampType.withoutZone());
     testConvertSqlToIcebergExpressionByType(
-        epochMicroSecond, "'2022-01-01 12:12:12'", Types.TimestampType.withoutZone());
+        epochMicroSecond, "'2022-01-01T12:12:12'", Types.TimestampType.withoutZone());
   }
 
   public <T> void testConvertSqlToIcebergExpressionByType(T exprValue, String sqlValue, Type type) {
