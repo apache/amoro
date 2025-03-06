@@ -60,7 +60,7 @@ Self-optimizing configurations are applicable to both Iceberg Format and Mixed s
 | self-optimizing.full.trigger.interval         | -1(closed)       | The time interval in milliseconds to trigger full optimizing                                                                                                                                                                            |
 | self-optimizing.full.rewrite-all-files        | true             | Whether full optimizing rewrites all files or skips files that do not need to be optimized                                                                                                                                              |
 | self-optimizing.min-plan-interval             | 60000            | The minimum time interval between two self-optimizing planning action                                                                                                                                                                   |
-| self-optimizing.filter                        | null             | Filter conditions for self-optimizing, using SQL conditional expressions, without supporting any functions. For the timestamp column condition, the ISO date-time formatter must be used. For example: op_time > '2007-12-03T10:15:30'. |
+| self-optimizing.filter                        | NULL             | Filter conditions for self-optimizing, using SQL conditional expressions, without supporting any functions. For the timestamp column condition, the ISO date-time formatter must be used. For example: op_time > '2007-12-03T10:15:30'. |
 
 ## Data-cleaning configurations
 

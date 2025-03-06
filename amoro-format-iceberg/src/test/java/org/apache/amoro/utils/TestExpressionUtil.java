@@ -47,6 +47,9 @@ public class TestExpressionUtil {
         Expressions.notNull("column_a"),
         convertSqlFilterToIcebergExpression("column_a IS NOT NULL", fields));
 
+    assertEqualExpressions(
+        Expressions.alwaysTrue(), convertSqlFilterToIcebergExpression("", fields));
+
     testConvertSqlToIcebergExpressionByType("1", "'1'", Types.StringType.get());
     testConvertSqlToIcebergExpressionByType(1, "1", Types.IntegerType.get());
     testConvertSqlToIcebergExpressionByType(1L, "1", Types.LongType.get());

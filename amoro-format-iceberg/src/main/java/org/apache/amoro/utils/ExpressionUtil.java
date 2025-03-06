@@ -39,6 +39,7 @@ import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import org.apache.amoro.table.MixedTable;
+import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -118,7 +119,7 @@ public class ExpressionUtil {
    */
   public static Expression convertSqlFilterToIcebergExpression(
       String sqlFilter, List<Types.NestedField> tableColumns) {
-    if (sqlFilter == null) {
+    if (StringUtils.isEmpty(StringUtils.trim(sqlFilter))) {
       return Expressions.alwaysTrue();
     }
 
