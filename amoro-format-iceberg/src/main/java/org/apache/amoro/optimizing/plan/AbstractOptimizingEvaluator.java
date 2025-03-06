@@ -32,12 +32,12 @@ import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonIgno
 import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableSnapshot;
+import org.apache.amoro.utils.ExpressionUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.PropertyUtil;
@@ -111,7 +111,8 @@ public abstract class AbstractOptimizingEvaluator {
   }
 
   protected Expression getPartitionFilter() {
-    return Expressions.alwaysTrue();
+    return ExpressionUtil.convertSqlFilterToIcebergExpression(
+        config.getFilter(), mixedTable.schema().columns());
   }
 
   private void initPartitionPlans(TableFileScanHelper tableFileScanHelper) {
@@ -142,7 +143,7 @@ public abstract class AbstractOptimizingEvaluator {
         partitionPlanMap.entrySet().stream()
             .filter(entry -> entry.getValue().isNecessary())
             .limit(maxPendingPartitions)
-            .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue())));
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
   protected abstract PartitionEvaluator buildEvaluator(Pair<Integer, StructLike> partition);

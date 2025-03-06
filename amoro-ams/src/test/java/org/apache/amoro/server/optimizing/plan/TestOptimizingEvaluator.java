@@ -33,6 +33,7 @@ import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.TableSnapshot;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
@@ -119,6 +120,83 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
     pendingInput = optimizingEvaluator.getOptimizingPendingInput();
 
     assertInput(pendingInput, FileInfo.buildFileInfo(dataFiles));
+  }
+
+  @Test
+  public void testFragmentFilesWithPartitionFilterTimeStamp() {
+    getMixedTable()
+        .updateProperties()
+        .set(TableProperties.SELF_OPTIMIZING_FILTER, "op_time >= '2022-01-01T12:00:00'")
+        .commit();
+    testFragmentFilesWithPartitionFilterDo(true);
+
+    getMixedTable()
+        .updateProperties()
+        .set(TableProperties.SELF_OPTIMIZING_FILTER, "op_time > '2022-01-01T12:00:00'")
+        .commit();
+    testFragmentFilesWithPartitionFilterDo(false);
+  }
+
+  @Test
+  public void testFragmentFilesWithPartitionFilterInteger() {
+    getMixedTable()
+        .updateProperties()
+        .set(TableProperties.SELF_OPTIMIZING_FILTER, "id > 0")
+        .commit();
+    testFragmentFilesWithPartitionFilterDo(true);
+
+    getMixedTable()
+        .updateProperties()
+        .set(TableProperties.SELF_OPTIMIZING_FILTER, "id > 8")
+        .commit();
+    testFragmentFilesWithPartitionFilterDo(false);
+  }
+
+  @Test
+  public void testFragmentFilesWithPartitionFilterString() {
+    getMixedTable()
+        .updateProperties()
+        .set(TableProperties.SELF_OPTIMIZING_FILTER, "name > '0'")
+        .commit();
+    testFragmentFilesWithPartitionFilterDo(true);
+
+    getMixedTable()
+        .updateProperties()
+        .set(TableProperties.SELF_OPTIMIZING_FILTER, "name > '8'")
+        .commit();
+    testFragmentFilesWithPartitionFilterDo(false);
+  }
+
+  private void testFragmentFilesWithPartitionFilterDo(boolean isNecessary) {
+    closeFullOptimizingInterval();
+    updateBaseHashBucket(1);
+    List<DataFile> dataFiles = Lists.newArrayList();
+    List<Record> newRecords =
+        OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
+    long transactionId = beginTransaction();
+    dataFiles.addAll(
+        OptimizingTestHelpers.appendBase(
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
+
+    // add more files
+    newRecords =
+        OptimizingTestHelpers.generateRecord(tableTestHelper(), 5, 8, "2022-01-01T12:00:00");
+    transactionId = beginTransaction();
+    dataFiles.addAll(
+        OptimizingTestHelpers.appendBase(
+            getMixedTable(),
+            tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false)));
+
+    AbstractOptimizingEvaluator optimizingEvaluator = buildOptimizingEvaluator();
+    if (isNecessary) {
+      Assert.assertTrue(optimizingEvaluator.isNecessary());
+      AbstractOptimizingEvaluator.PendingInput pendingInput =
+          optimizingEvaluator.getOptimizingPendingInput();
+      assertInput(pendingInput, FileInfo.buildFileInfo(dataFiles));
+    } else {
+      Assert.assertFalse(optimizingEvaluator.isNecessary());
+    }
   }
 
   protected AbstractOptimizingEvaluator buildOptimizingEvaluator() {

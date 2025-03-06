@@ -74,6 +74,9 @@ public class OptimizingConfig {
   // self-optimizing.full.rewrite-all-files
   private boolean fullRewriteAllFiles;
 
+  // self-optimizing.filter
+  private String filter;
+
   // base.file-index.hash-bucket
   private int baseHashBucket;
 
@@ -240,6 +243,15 @@ public class OptimizingConfig {
     return this;
   }
 
+  public OptimizingConfig setFilter(String filter) {
+    this.filter = filter;
+    return this;
+  }
+
+  public String getFilter() {
+    return filter;
+  }
+
   public int getBaseHashBucket() {
     return baseHashBucket;
   }
@@ -291,6 +303,7 @@ public class OptimizingConfig {
         && Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0
         && fullTriggerInterval == that.fullTriggerInterval
         && fullRewriteAllFiles == that.fullRewriteAllFiles
+        && Objects.equal(filter, that.filter)
         && baseHashBucket == that.baseHashBucket
         && baseRefreshInterval == that.baseRefreshInterval
         && hiveRefreshInterval == that.hiveRefreshInterval
@@ -317,6 +330,7 @@ public class OptimizingConfig {
         majorDuplicateRatio,
         fullTriggerInterval,
         fullRewriteAllFiles,
+        filter,
         baseHashBucket,
         baseRefreshInterval,
         hiveRefreshInterval,
@@ -341,6 +355,7 @@ public class OptimizingConfig {
         .add("majorDuplicateRatio", majorDuplicateRatio)
         .add("fullTriggerInterval", fullTriggerInterval)
         .add("fullRewriteAllFiles", fullRewriteAllFiles)
+        .add("filter", filter)
         .add("baseHashBucket", baseHashBucket)
         .add("baseRefreshInterval", baseRefreshInterval)
         .add("hiveRefreshInterval", hiveRefreshInterval)
