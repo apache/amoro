@@ -114,9 +114,9 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
           .listOptimizers()
           .forEach(
               optimizer -> {
-                optimizerManager()
-                    .deleteOptimizer(optimizer.getGroupName(), optimizer.getResourceId());
                 optimizingService()
+                    .deleteOptimizer(optimizer.getGroupName(), optimizer.getResourceId());
+                optimizerManager()
                     .deleteOptimizer(optimizer.getGroupName(), optimizer.getResourceId());
               });
       dropTable();
