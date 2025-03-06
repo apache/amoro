@@ -18,26 +18,6 @@
 
 package org.apache.amoro.optimizing.plan;
 
-import net.sf.jsqlparser.expression.DateTimeLiteralExpression;
-import net.sf.jsqlparser.expression.DoubleValue;
-import net.sf.jsqlparser.expression.LongValue;
-import net.sf.jsqlparser.expression.NotExpression;
-import net.sf.jsqlparser.expression.StringValue;
-import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
-import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
-import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
-import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
-import net.sf.jsqlparser.expression.operators.relational.GreaterThan;
-import net.sf.jsqlparser.expression.operators.relational.GreaterThanEquals;
-import net.sf.jsqlparser.expression.operators.relational.InExpression;
-import net.sf.jsqlparser.expression.operators.relational.IsNullExpression;
-import net.sf.jsqlparser.expression.operators.relational.MinorThan;
-import net.sf.jsqlparser.expression.operators.relational.MinorThanEquals;
-import net.sf.jsqlparser.expression.operators.relational.NotEqualsTo;
-import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import net.sf.jsqlparser.schema.Column;
-import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.Select;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.OptimizingConfig;
@@ -52,14 +32,13 @@ import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonIgno
 import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableSnapshot;
+import org.apache.amoro.utils.ExpressionUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
@@ -67,17 +46,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.sql.Date;
-import java.sql.Time;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoField;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -141,164 +111,8 @@ public abstract class AbstractOptimizingEvaluator {
   }
 
   protected Expression getPartitionFilter() {
-    String partitionFilter = config.getPartitionFilter();
-    return partitionFilter == null
-        ? Expressions.alwaysTrue()
-        : convertSqlToIcebergExpression(partitionFilter, mixedTable.schema().columns());
-  }
-
-  protected static Expression convertSqlToIcebergExpression(
-      String sql, List<Types.NestedField> tableColumns) {
-    try {
-      Select statement = (Select) CCJSqlParserUtil.parse("SELECT * FROM dummy WHERE " + sql);
-      PlainSelect select = statement.getPlainSelect();
-      return convertSparkExpressionToIceberg(select.getWhere(), tableColumns);
-    } catch (Exception e) {
-      throw new IllegalArgumentException("Failed to parse where condition: " + sql, e);
-    }
-  }
-
-  private static Expression convertSparkExpressionToIceberg(
-      net.sf.jsqlparser.expression.Expression whereExpr, List<Types.NestedField> tableColumns) {
-    if (whereExpr instanceof IsNullExpression) {
-      IsNullExpression isNull = (IsNullExpression) whereExpr;
-      Types.NestedField column = getColumn(isNull.getLeftExpression(), tableColumns);
-      return isNull.isNot()
-          ? Expressions.notNull(column.name())
-          : Expressions.isNull(column.name());
-    } else if (whereExpr instanceof EqualsTo) {
-      EqualsTo eq = (EqualsTo) whereExpr;
-      Types.NestedField column = getColumn(eq.getLeftExpression(), tableColumns);
-      return Expressions.equal(column.name(), getValue(eq.getRightExpression(), column));
-    } else if (whereExpr instanceof NotEqualsTo) {
-      NotEqualsTo ne = (NotEqualsTo) whereExpr;
-      Types.NestedField column = getColumn(ne.getLeftExpression(), tableColumns);
-      return Expressions.notEqual(column.name(), getValue(ne.getRightExpression(), column));
-    } else if (whereExpr instanceof GreaterThan) {
-      GreaterThan gt = (GreaterThan) whereExpr;
-      Types.NestedField column = getColumn(gt.getLeftExpression(), tableColumns);
-      return Expressions.greaterThan(column.name(), getValue(gt.getRightExpression(), column));
-    } else if (whereExpr instanceof GreaterThanEquals) {
-      GreaterThanEquals ge = (GreaterThanEquals) whereExpr;
-      Types.NestedField column = getColumn(ge.getLeftExpression(), tableColumns);
-      return Expressions.greaterThanOrEqual(
-          column.name(), getValue(ge.getRightExpression(), column));
-    } else if (whereExpr instanceof MinorThan) {
-      MinorThan lt = (MinorThan) whereExpr;
-      Types.NestedField column = getColumn(lt.getLeftExpression(), tableColumns);
-      return Expressions.lessThan(column.name(), getValue(lt.getRightExpression(), column));
-    } else if (whereExpr instanceof MinorThanEquals) {
-      MinorThanEquals le = (MinorThanEquals) whereExpr;
-      Types.NestedField column = getColumn(le.getLeftExpression(), tableColumns);
-      return Expressions.lessThanOrEqual(column.name(), getValue(le.getRightExpression(), column));
-    } else if (whereExpr instanceof InExpression) {
-      InExpression in = (InExpression) whereExpr;
-      Types.NestedField column = getColumn(in.getLeftExpression(), tableColumns);
-      net.sf.jsqlparser.expression.Expression rightExpr = in.getRightExpression();
-      List<Object> values = new ArrayList<>();
-      if (rightExpr instanceof ExpressionList) {
-        for (net.sf.jsqlparser.expression.Expression expr : ((ExpressionList<?>) rightExpr)) {
-          values.add(getValue(expr, column));
-        }
-      } else {
-        throw new UnsupportedOperationException("Subquery IN not supported");
-      }
-      return in.isNot()
-          ? Expressions.notIn(column.name(), values)
-          : Expressions.in(column.name(), values);
-    } else if (whereExpr instanceof NotExpression) {
-      NotExpression not = (NotExpression) whereExpr;
-      return Expressions.not(convertSparkExpressionToIceberg(not.getExpression(), tableColumns));
-    } else if (whereExpr instanceof AndExpression) {
-      AndExpression and = (AndExpression) whereExpr;
-      return Expressions.and(
-          convertSparkExpressionToIceberg(and.getLeftExpression(), tableColumns),
-          convertSparkExpressionToIceberg(and.getRightExpression(), tableColumns));
-    } else if (whereExpr instanceof OrExpression) {
-      OrExpression or = (OrExpression) whereExpr;
-      return Expressions.or(
-          convertSparkExpressionToIceberg(or.getLeftExpression(), tableColumns),
-          convertSparkExpressionToIceberg(or.getRightExpression(), tableColumns));
-    }
-    throw new UnsupportedOperationException("Unsupported expression: " + whereExpr);
-  }
-
-  private static Types.NestedField getColumn(
-      net.sf.jsqlparser.expression.Expression expr, List<Types.NestedField> tableColumns) {
-    if (expr instanceof Column) {
-      String columnName = ((Column) expr).getColumnName();
-      Optional<Types.NestedField> column =
-          tableColumns.stream().filter(c -> c.name().equals(columnName)).findFirst();
-      if (column.isPresent()) {
-        return column.get();
-      }
-      throw new IllegalArgumentException("Column not found: " + columnName);
-    }
-
-    throw new IllegalArgumentException("Expected column reference, got: " + expr);
-  }
-
-  private static Object getValue(
-      net.sf.jsqlparser.expression.Expression expr, Types.NestedField column) {
-    try {
-      return convertValue(expr, column);
-    } catch (Exception e) {
-      throw new IllegalArgumentException("Failed to convert value: " + expr, e);
-    }
-  }
-
-  private static Object convertValue(
-      net.sf.jsqlparser.expression.Expression expr, Types.NestedField column) {
-    switch (column.type().typeId()) {
-      case BOOLEAN:
-        return Boolean.valueOf(((Column) expr).getColumnName());
-      case STRING:
-        return ((StringValue) expr).getValue();
-      case INTEGER:
-      case LONG:
-        return ((LongValue) expr).getValue();
-      case FLOAT:
-      case DOUBLE:
-        return ((DoubleValue) expr).getValue();
-      case DATE:
-        String dateStr = getDateTimeLiteralStr(expr, "date");
-        if (dateStr != null) {
-          return Date.valueOf(dateStr).toLocalDate().toEpochDay();
-        }
-        break;
-      case TIME:
-        String timeStr = getDateTimeLiteralStr(expr, "time");
-        if (timeStr != null) {
-          return Time.valueOf(timeStr).toLocalTime().getLong(ChronoField.MICRO_OF_DAY);
-        }
-        break;
-      case TIMESTAMP:
-        String timestampStr = getDateTimeLiteralStr(expr, "timestamp");
-        if (timestampStr != null) {
-          long timestamp;
-          if (column.type().equals(Types.TimestampType.withZone())) {
-            timestamp = OffsetDateTime.parse(timestampStr).toEpochSecond();
-          } else {
-            timestamp = LocalDateTime.parse(timestampStr).toEpochSecond(ZoneOffset.ofHours(0));
-          }
-          return timestamp * 1_000_000L;
-        }
-        break;
-    }
-    throw new IllegalArgumentException(
-        expr + " can not be converted to column type: " + column.type());
-  }
-
-  private static String getDateTimeLiteralStr(
-      net.sf.jsqlparser.expression.Expression expr, String type) {
-    String timestampStr = null;
-    if (expr instanceof StringValue) {
-      timestampStr = ((StringValue) expr).getValue();
-    } else if (expr instanceof DateTimeLiteralExpression
-        && ((DateTimeLiteralExpression) expr).getType().name().equalsIgnoreCase(type)) {
-      timestampStr = ((DateTimeLiteralExpression) expr).getValue().replaceAll("^'(.*)'$", "$1");
-    }
-    return timestampStr;
+    return ExpressionUtil.convertSqlFilterToIcebergExpression(
+        config.getFilter(), mixedTable.schema().columns());
   }
 
   private void initPartitionPlans(TableFileScanHelper tableFileScanHelper) {

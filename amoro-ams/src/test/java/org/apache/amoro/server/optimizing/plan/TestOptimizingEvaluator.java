@@ -126,13 +126,13 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
   public void testFragmentFilesWithPartitionFilterTimeStamp() {
     getMixedTable()
         .updateProperties()
-        .set(TableProperties.SELF_OPTIMIZING_PARTITION_FILTER, "op_time >= '2022-01-01T12:00:00'")
+        .set(TableProperties.SELF_OPTIMIZING_FILTER, "op_time >= '2022-01-01T12:00:00'")
         .commit();
     testFragmentFilesWithPartitionFilterDo(true);
 
     getMixedTable()
         .updateProperties()
-        .set(TableProperties.SELF_OPTIMIZING_PARTITION_FILTER, "op_time > '2022-01-01T12:00:00'")
+        .set(TableProperties.SELF_OPTIMIZING_FILTER, "op_time > '2022-01-01T12:00:00'")
         .commit();
     testFragmentFilesWithPartitionFilterDo(false);
   }
@@ -141,13 +141,13 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
   public void testFragmentFilesWithPartitionFilterInteger() {
     getMixedTable()
         .updateProperties()
-        .set(TableProperties.SELF_OPTIMIZING_PARTITION_FILTER, "id > 0")
+        .set(TableProperties.SELF_OPTIMIZING_FILTER, "id > 0")
         .commit();
     testFragmentFilesWithPartitionFilterDo(true);
 
     getMixedTable()
         .updateProperties()
-        .set(TableProperties.SELF_OPTIMIZING_PARTITION_FILTER, "id > 8")
+        .set(TableProperties.SELF_OPTIMIZING_FILTER, "id > 8")
         .commit();
     testFragmentFilesWithPartitionFilterDo(false);
   }
@@ -156,13 +156,13 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
   public void testFragmentFilesWithPartitionFilterString() {
     getMixedTable()
         .updateProperties()
-        .set(TableProperties.SELF_OPTIMIZING_PARTITION_FILTER, "name > '0'")
+        .set(TableProperties.SELF_OPTIMIZING_FILTER, "name > '0'")
         .commit();
     testFragmentFilesWithPartitionFilterDo(true);
 
     getMixedTable()
         .updateProperties()
-        .set(TableProperties.SELF_OPTIMIZING_PARTITION_FILTER, "name > '8'")
+        .set(TableProperties.SELF_OPTIMIZING_FILTER, "name > '8'")
         .commit();
     testFragmentFilesWithPartitionFilterDo(false);
   }

@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.optimizing.plan;
+package org.apache.amoro.utils;
 
-import static org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator.convertSqlToIcebergExpression;
+import static org.apache.amoro.utils.ExpressionUtil.convertSqlFilterToIcebergExpression;
 
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
@@ -35,16 +35,17 @@ import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TestAbstractOptimizingEvaluator {
+public class TestExpressionUtil {
   @Test
   public void testConvertSqlToIcebergExpression() {
     List<Types.NestedField> fields = new ArrayList<>();
     fields.add(Types.NestedField.optional(1, "column_a", Types.IntegerType.get()));
     assertEqualExpressions(
-        Expressions.isNull("column_a"), convertSqlToIcebergExpression("column_a IS NULL", fields));
+        Expressions.isNull("column_a"),
+        convertSqlFilterToIcebergExpression("column_a IS NULL", fields));
     assertEqualExpressions(
         Expressions.notNull("column_a"),
-        convertSqlToIcebergExpression("column_a IS NOT NULL", fields));
+        convertSqlFilterToIcebergExpression("column_a IS NOT NULL", fields));
 
     testConvertSqlToIcebergExpressionByType("1", "'1'", Types.StringType.get());
     testConvertSqlToIcebergExpressionByType(1, "1", Types.IntegerType.get());
@@ -80,40 +81,40 @@ public class TestAbstractOptimizingEvaluator {
 
     assertEqualExpressions(
         Expressions.equal("column_a", exprValue),
-        convertSqlToIcebergExpression("column_a = " + sqlValue, fields));
+        convertSqlFilterToIcebergExpression("column_a = " + sqlValue, fields));
     assertEqualExpressions(
         Expressions.notEqual("column_a", exprValue),
-        convertSqlToIcebergExpression("column_a != " + sqlValue, fields));
+        convertSqlFilterToIcebergExpression("column_a != " + sqlValue, fields));
     assertEqualExpressions(
         Expressions.greaterThan("column_a", exprValue),
-        convertSqlToIcebergExpression("column_a > " + sqlValue, fields));
+        convertSqlFilterToIcebergExpression("column_a > " + sqlValue, fields));
     assertEqualExpressions(
         Expressions.greaterThanOrEqual("column_a", exprValue),
-        convertSqlToIcebergExpression("column_a >= " + sqlValue, fields));
+        convertSqlFilterToIcebergExpression("column_a >= " + sqlValue, fields));
     assertEqualExpressions(
         Expressions.lessThan("column_a", exprValue),
-        convertSqlToIcebergExpression("column_a < " + sqlValue, fields));
+        convertSqlFilterToIcebergExpression("column_a < " + sqlValue, fields));
     assertEqualExpressions(
         Expressions.lessThanOrEqual("column_a", exprValue),
-        convertSqlToIcebergExpression("column_a <= " + sqlValue, fields));
+        convertSqlFilterToIcebergExpression("column_a <= " + sqlValue, fields));
     assertEqualExpressions(
         Expressions.in("column_a", exprValue),
-        convertSqlToIcebergExpression("column_a IN (" + sqlValue + ")", fields));
+        convertSqlFilterToIcebergExpression("column_a IN (" + sqlValue + ")", fields));
     assertEqualExpressions(
         Expressions.notIn("column_a", exprValue),
-        convertSqlToIcebergExpression("column_a NOT IN (" + sqlValue + ")", fields));
+        convertSqlFilterToIcebergExpression("column_a NOT IN (" + sqlValue + ")", fields));
     assertEqualExpressions(
         Expressions.not(Expressions.equal("column_a", exprValue)),
-        convertSqlToIcebergExpression("NOT column_a = " + sqlValue, fields));
+        convertSqlFilterToIcebergExpression("NOT column_a = " + sqlValue, fields));
     assertEqualExpressions(
         Expressions.and(
             Expressions.equal("column_a", exprValue), Expressions.equal("column_b", exprValue)),
-        convertSqlToIcebergExpression(
+        convertSqlFilterToIcebergExpression(
             "column_a = " + sqlValue + " AND column_b = " + sqlValue, fields));
     assertEqualExpressions(
         Expressions.or(
             Expressions.equal("column_a", exprValue), Expressions.equal("column_b", exprValue)),
-        convertSqlToIcebergExpression(
+        convertSqlFilterToIcebergExpression(
             "column_a = " + sqlValue + " OR column_b = " + sqlValue, fields));
   }
 
