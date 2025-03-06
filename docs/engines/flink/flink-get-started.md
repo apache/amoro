@@ -69,7 +69,7 @@ FLINK_HADOOP_SHADE_VERSION=2.7.5
 APACHE_FLINK_URL=archive.apache.org/dist/flink
 MAVEN_URL=https://repo1.maven.org/maven2
 FLINK_CONNECTOR_URL=${MAVEN_URL}/org/apache/flink
-AMORO_CONNECTOR_URL=${MAVEN_URL}/org/apache/flink
+AMORO_CONNECTOR_URL=${MAVEN_URL}/org/apache/amoro
 
 # Download FLink binary package
 wget ${APACHE_FLINK_URL}/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-scala_2.12.tgz
@@ -80,11 +80,11 @@ cd flink-${FLINK_VERSION}
 # Download Flink Hadoop dependency
 wget ${FLINK_CONNECTOR_URL}/flink-shaded-hadoop-2-uber/${FLINK_HADOOP_SHADE_VERSION}-10.0/flink-shaded-hadoop-2-uber-${FLINK_HADOOP_SHADE_VERSION}-10.0.jar
 # Download Flink Amoro Connector
-wget ${AMORO_CONNECTOR_URL}/amoro-mixed-flink-runtime-${FLINK_MAJOR_VERSION}/${AMORO_VERSION}/amoro-mixed-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
+wget ${AMORO_CONNECTOR_URL}/amoro-mixed-format-flink-runtime-${FLINK_MAJOR_VERSION}/${AMORO_VERSION}/amoro-mixed-format-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
 
 # Copy the necessary JAR files to the lib directory
 mv flink-shaded-hadoop-2-uber-${FLINK_HADOOP_SHADE_VERSION}-10.0.jar lib
-mv amoro-mixed-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar lib
+mv amoro-mixed-format-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar lib
 ```
 
 Modify Flink related configuration files:
