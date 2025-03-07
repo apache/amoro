@@ -225,5 +225,4 @@ export default {
   Failed: '已失败',
   Finished: '已结束',
   Created: '已创建',
-  totalCount: '共 {total} 条',
 }

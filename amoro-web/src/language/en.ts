@@ -225,5 +225,4 @@ export default {
   Failed: 'Failed',
   Finished: 'Finished',
   Created: 'Created',
-  totalCount: 'total {total} records',
 }
