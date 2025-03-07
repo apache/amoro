@@ -151,7 +151,7 @@ public class DashboardServer {
       }
       return indexHtml;
     } catch (IOException e) {
-      throw new UncheckedIOException("Load index html failed", e);
+      throw new UncheckedIOException("Load index html filed", e);
     }
   }
 

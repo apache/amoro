@@ -61,14 +61,14 @@ public class SparkOptimizerExecutor extends OptimizerExecutor {
       List<OptimizingTaskResult> results = jsc.parallelize(of, 1).map(taskFunction).collect();
       result = results.get(0);
       LOG.info(
-          "Optimizer executor[{}] executed task[{}] and cost {} ms",
+          "Optimizer executor[{}] executed task[{}] and cost {}",
           threadName,
           task.getTaskId(),
           System.currentTimeMillis() - startTime);
       return result;
     } catch (Throwable r) {
       LOG.error(
-          "Optimizer executor[{}] executed task[{}] failed, and cost {} ms",
+          "Optimizer executor[{}] executed task[{}] failed, and cost {}",
           threadName,
           task.getTaskId(),
           (System.currentTimeMillis() - startTime),

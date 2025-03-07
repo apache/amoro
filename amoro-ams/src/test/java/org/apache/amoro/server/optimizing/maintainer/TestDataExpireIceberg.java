@@ -36,7 +36,7 @@ public class TestDataExpireIceberg extends TestDataExpire {
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
     return new Object[][] {
-      // Iceberg format partitioned by timestamp field
+      // Iceberg format partitioned by timestamp filed
       {
         new BasicCatalogTestHelper(TableFormat.ICEBERG),
         new BasicTableTestHelper(false, true, getDefaultProp())
@@ -45,7 +45,7 @@ public class TestDataExpireIceberg extends TestDataExpire {
         new BasicCatalogTestHelper(TableFormat.ICEBERG),
         new BasicTableTestHelper(false, false, getDefaultProp())
       },
-      // Iceberg format partitioned by timestampz field
+      // Iceberg format partitioned by timestampz filed
       {
         new BasicCatalogTestHelper(TableFormat.ICEBERG),
         new BasicTableTestHelper(
@@ -59,7 +59,7 @@ public class TestDataExpireIceberg extends TestDataExpire {
             PartitionSpec.unpartitioned(),
             getDefaultProp())
       },
-      // Iceberg format partitioned by date string field
+      // Iceberg format partitioned by date string filed
       {
         new BasicCatalogTestHelper(TableFormat.ICEBERG),
         new BasicTableTestHelper(
