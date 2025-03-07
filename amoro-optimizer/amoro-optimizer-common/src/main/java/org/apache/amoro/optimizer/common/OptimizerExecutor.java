@@ -153,7 +153,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       result.setTaskOutput(outputByteBuffer);
       result.setSummary(output.summary());
       logger.info(
-          "Optimizer executor[{}] executed task[{}]({}) and cost {}",
+          "Optimizer executor[{}] executed task[{}]({}) and cost {} ms",
           threadId,
           task.getTaskId(),
           input,
@@ -161,7 +161,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       return result;
     } catch (Throwable t) {
       logger.error(
-          "Optimizer executor[{}] executed task[{}] failed and cost {}",
+          "Optimizer executor[{}] executed task[{}] failed and cost {} ms",
           threadId,
           task.getTaskId(),
           System.currentTimeMillis() - startTime,

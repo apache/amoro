@@ -42,7 +42,7 @@ class ChangeFieldName extends TypeUtil.CustomOrderSchemaVisitor<Type> {
   private final Set<String> fieldNameSet = Sets.newHashSet();
 
   /**
-   * Change the filed name of a schema, change to uppercase or lowercase.
+   * Change the field name of a schema, change to uppercase or lowercase.
    *
    * @param changeType TO_UPPERCASE or TO_LOWERCASE
    */

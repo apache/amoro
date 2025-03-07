@@ -29,7 +29,7 @@ public class OptimizerTestHelpers {
     try {
       return new OptimizerConfig(optimizerArgs);
     } catch (CmdLineException e) {
-      throw new RuntimeException("Build optimizer config filed", e);
+      throw new RuntimeException("Build optimizer config failed", e);
     }
   }
 
