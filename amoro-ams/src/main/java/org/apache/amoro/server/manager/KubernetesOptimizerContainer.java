@@ -73,6 +73,8 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
 
   private static final String KUBERNETES_NAME_PROPERTIES = "name";
 
+  public static final String JVM_HEAP_RATIO_PROPERTY = "jvm.heap.ratio";
+
   private KubernetesClient client;
 
   @Override
@@ -157,8 +159,9 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
       memory = memoryPerThread * resource.getThreadCount();
     }
 
-    // reserving 20% of total pod memory for JVM non-heap memory
-    jvmHeapMemory = (long) (memory * 0.8);
+    double jvmHeapRatio =
+        Double.parseDouble(groupProperties.getOrDefault(JVM_HEAP_RATIO_PROPERTY, "0.8"));
+    jvmHeapMemory = (long) (memory * jvmHeapRatio);
 
     // point at amoro home in docker image
     String startUpArgs =
