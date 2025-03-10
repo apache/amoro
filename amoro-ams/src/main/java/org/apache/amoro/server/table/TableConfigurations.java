@@ -294,6 +294,11 @@ public class TableConfigurations {
                 properties,
                 TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES,
                 TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT))
+        .setFilter(
+            CompatiblePropertyUtil.propertyAsString(
+                properties,
+                TableProperties.SELF_OPTIMIZING_FILTER,
+                TableProperties.SELF_OPTIMIZING_FILTER_DEFAULT))
         .setBaseHashBucket(
             CompatiblePropertyUtil.propertyAsInt(
                 properties,

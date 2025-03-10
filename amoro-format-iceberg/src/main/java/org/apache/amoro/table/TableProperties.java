@@ -115,6 +115,9 @@ public class TableProperties {
       "self-optimizing.full.rewrite-all-files";
   public static final boolean SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT = true;
 
+  public static final String SELF_OPTIMIZING_FILTER = "self-optimizing.filter";
+  public static final String SELF_OPTIMIZING_FILTER_DEFAULT = null;
+
   public static final String SELF_OPTIMIZING_MIN_PLAN_INTERVAL =
       "self-optimizing.min-plan-interval";
   public static final long SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT = 60000;
