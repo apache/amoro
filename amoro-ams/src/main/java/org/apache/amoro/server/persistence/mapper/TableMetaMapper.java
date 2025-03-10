@@ -498,4 +498,31 @@ public interface TableMetaMapper {
       @Param("fuzzyDbName") String fuzzyDbName,
       @Param("fuzzyTableName") String fuzzyTableName,
       @Param("statusCodeFilter") List<Integer> statusCodeFilter);
+
+  @Select(
+      "<script>"
+          + "<bind name=\"isMySQL\" value=\"_databaseId == 'mysql'\" />"
+          + "<bind name=\"isPostgreSQL\" value=\"_databaseId == 'postgres'\" />"
+          + "<bind name=\"isDerby\" value=\"_databaseId == 'derby'\" />"
+          + "SELECT table_name FROM table_runtime "
+          + "/* Debug: ${_databaseId} */"
+          + "WHERE 1=1 "
+          + "<if test='optimizerGroup != null'> AND optimizer_group = #{optimizerGroup} </if> "
+          + "<if test='fuzzyDbName != null and isMySQL'> AND db_name like CONCAT('%', #{fuzzyDbName, jdbcType=VARCHAR}, '%') </if>"
+          + "<if test='fuzzyDbName != null and (isPostgreSQL or isDerby)'> AND db_name like '%' || #{fuzzyDbName, jdbcType=VARCHAR} || '%' </if>"
+          + "<if test='fuzzyTableName != null and isMySQL'> AND table_name like CONCAT('%', #{fuzzyTableName, jdbcType=VARCHAR}, '%') </if>"
+          + "<if test='fuzzyTableName != null and (isPostgreSQL or isDerby)'> AND table_name like '%' || #{fuzzyTableName, jdbcType=VARCHAR} || '%' </if>"
+          + "<if test='statusCodeFilter != null and statusCodeFilter.size() > 0'>"
+          + "AND optimizing_status_code IN ("
+          + "<foreach item='item' collection='statusCodeFilter' separator=','>"
+          + "#{item}"
+          + "</foreach> ) </if>"
+          + "ORDER BY optimizing_status_code, optimizing_status_start_time DESC "
+          + "</script>")
+  @ResultMap("tableRuntimeMeta")
+  List<String> selectTableRuntimeNamesForOptimizerGroup(
+      @Param("optimizerGroup") String optimizerGroup,
+      @Param("fuzzyDbName") String fuzzyDbName,
+      @Param("fuzzyTableName") String fuzzyTableName,
+      @Param("statusCodeFilter") List<Integer> statusCodeFilter);
 }

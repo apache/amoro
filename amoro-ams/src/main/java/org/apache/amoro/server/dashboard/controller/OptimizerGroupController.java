@@ -57,7 +57,6 @@ public class OptimizerGroupController {
 
   private static final String ALL_GROUP = "all";
   private final TableManager tableManager;
-  private final DefaultOptimizingService optimizingService;
   private final OptimizerManager optimizerManager;
 
   public OptimizerGroupController(
@@ -65,7 +64,6 @@ public class OptimizerGroupController {
       DefaultOptimizingService optimizingService,
       OptimizerManager optimizerManager) {
     this.tableManager = tableManager;
-    this.optimizingService = optimizingService;
     this.optimizerManager = optimizerManager;
   }
 
@@ -210,7 +208,7 @@ public class OptimizerGroupController {
     resource.getProperties().putAll(optimizerInstances.get(0).getProperties());
     ResourceContainers.get(resource.getContainerName()).releaseOptimizer(resource);
     optimizerManager.deleteResource(resourceId);
-    optimizingService.deleteOptimizer(resource.getGroupName(), resourceId);
+    optimizerManager.deleteOptimizer(resource.getGroupName(), resourceId);
     ctx.json(OkResponse.of("Success to release optimizer"));
   }
 
@@ -268,7 +266,7 @@ public class OptimizerGroupController {
     }
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
-    optimizingService.createResourceGroup(builder.build());
+    optimizerManager.createResourceGroup(builder.build());
     ctx.json(OkResponse.of("The optimizer group has been successfully created."));
   }
 
@@ -283,21 +281,21 @@ public class OptimizerGroupController {
     Map<String, String> properties = (Map) map.get("properties");
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
-    optimizingService.updateResourceGroup(builder.build());
+    optimizerManager.updateResourceGroup(builder.build());
     ctx.json(OkResponse.of("The optimizer group has been successfully updated."));
   }
 
   /** delete optimizeGroup url = /optimize/resourceGroups/{resourceGroupName} */
   public void deleteResourceGroup(Context ctx) {
     String name = ctx.pathParam("resourceGroupName");
-    optimizingService.deleteResourceGroup(name);
+    optimizerManager.deleteResourceGroup(name);
     ctx.json(OkResponse.of("The optimizer group has been successfully deleted."));
   }
 
   /** check if optimizerGroup can be deleted url = /optimize/resourceGroups/delete/check */
   public void deleteCheckResourceGroup(Context ctx) {
     String name = ctx.pathParam("resourceGroupName");
-    ctx.json(OkResponse.of(optimizingService.canDeleteResourceGroup(name)));
+    ctx.json(OkResponse.of(optimizerManager.canDeleteResourceGroup(name)));
   }
 
   /** check if optimizerGroup can be deleted url = /optimize/containers/get */

@@ -380,6 +380,12 @@ public class AmoroManagementConf {
           .defaultValue(Duration.ofSeconds(3))
           .withDescription("Optimizer polling task timeout.");
 
+  public static final ConfigOption<Duration> OPTIMIZER_QUEUE_REFRESH_INTERVAL =
+      ConfigOptions.key("optimizer.queue-refresh-interval")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(30))
+          .withDescription("Optimizer queue refresh interval.");
+
   /** config key prefix of terminal */
   public static final String TERMINAL_PREFIX = "terminal.";
 
