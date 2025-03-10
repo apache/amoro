@@ -160,7 +160,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
       try (CloseableIterable<CombinedScanTask> tasksIterable = scan.planTasks()) {
         this.tasks = Lists.newArrayList(tasksIterable);
         LOG.info(
-            "mor statistics plan task end, cost time {}, tasks num {}",
+            "mor statistics plan task end, cost time {} ms, tasks num {}",
             System.currentTimeMillis() - startTime,
             tasks.size());
       } catch (IOException e) {

@@ -45,6 +45,8 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.PartitionField;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Schema;
@@ -63,6 +65,7 @@ import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.SerializableFunction;
 import org.apache.iceberg.util.ThreadPools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,8 +78,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -650,7 +655,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   CloseableIterable<FileEntry> fileScan(
-      Table table, Expression dataFilter, DataExpirationConfig expirationConfig) {
+      Table table,
+      Expression dataFilter,
+      DataExpirationConfig expirationConfig,
+      long expireTimestamp) {
     TableScan tableScan = table.newScan().filter(dataFilter).includeColumnStats();
 
     CloseableIterable<FileScanTask> tasks;
@@ -680,6 +688,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
             .collect(Collectors.toSet());
 
     Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
+    Comparable<?> expireValue = getExpireValue(expirationConfig, field, expireTimestamp);
     return CloseableIterable.transform(
         CloseableIterable.withNoopClose(Iterables.concat(dataFiles, deleteFiles)),
         contentFile -> {
@@ -689,7 +698,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
                   field,
                   DateTimeFormatter.ofPattern(
                       expirationConfig.getDateTimePattern(), Locale.getDefault()),
-                  expirationConfig.getNumberDateFormat());
+                  expirationConfig.getNumberDateFormat(),
+                  expireValue);
           return new FileEntry(contentFile.copyWithoutStats(), literal);
         });
   }
@@ -698,7 +708,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
       DataExpirationConfig expirationConfig, Expression dataFilter, long expireTimestamp) {
     Map<StructLike, DataFileFreshness> partitionFreshness = Maps.newConcurrentMap();
     ExpireFiles expiredFiles = new ExpireFiles();
-    try (CloseableIterable<FileEntry> entries = fileScan(table, dataFilter, expirationConfig)) {
+    try (CloseableIterable<FileEntry> entries =
+        fileScan(table, dataFilter, expirationConfig, expireTimestamp)) {
       Queue<FileEntry> fileEntries = new LinkedTransferQueue<>();
       entries.forEach(
           e -> {
@@ -714,6 +725,33 @@ public class IcebergTableMaintainer implements TableMaintainer {
       throw new RuntimeException(e);
     }
     return expiredFiles;
+  }
+
+  private Comparable<?> getExpireValue(
+      DataExpirationConfig expirationConfig, Types.NestedField field, long expireTimestamp) {
+    switch (field.type().typeId()) {
+        // expireTimestamp is in milliseconds, TIMESTAMP type is in microseconds
+      case TIMESTAMP:
+        return expireTimestamp * 1000;
+      case LONG:
+        if (expirationConfig.getNumberDateFormat().equals(EXPIRE_TIMESTAMP_MS)) {
+          return expireTimestamp;
+        } else if (expirationConfig.getNumberDateFormat().equals(EXPIRE_TIMESTAMP_S)) {
+          return expireTimestamp / 1000;
+        } else {
+          throw new IllegalArgumentException(
+              "Number dateformat: " + expirationConfig.getNumberDateFormat());
+        }
+      case STRING:
+        return LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(expireTimestamp), getDefaultZoneId(field))
+            .format(
+                DateTimeFormatter.ofPattern(
+                    expirationConfig.getDateTimePattern(), Locale.getDefault()));
+      default:
+        throw new IllegalArgumentException(
+            "Unsupported expiration field type: " + field.type().typeId());
+    }
   }
 
   /**
@@ -917,17 +955,20 @@ public class IcebergTableMaintainer implements TableMaintainer {
     }
   }
 
-  private static Literal<Long> getExpireTimestampLiteral(
+  private Literal<Long> getExpireTimestampLiteral(
       ContentFile<?> contentFile,
       Types.NestedField field,
       DateTimeFormatter formatter,
-      String numberDateFormatter) {
+      String numberDateFormatter,
+      Comparable<?> expireValue) {
     Type type = field.type();
     Object upperBound =
         Conversions.fromByteBuffer(type, contentFile.upperBounds().get(field.fieldId()));
     Literal<Long> literal = Literal.of(Long.MAX_VALUE);
     if (null == upperBound) {
-      return literal;
+      if (canBeExpireByPartitionValue(contentFile, field, expireValue)) {
+        literal = Literal.of(0L);
+      }
     } else if (upperBound instanceof Long) {
       switch (type.typeId()) {
         case TIMESTAMP:
@@ -951,7 +992,38 @@ public class IcebergTableMaintainer implements TableMaintainer {
                   .toInstant()
                   .toEpochMilli());
     }
+
     return literal;
+  }
+
+  @SuppressWarnings("unchecked")
+  private boolean canBeExpireByPartitionValue(
+      ContentFile<?> contentFile, Types.NestedField expireField, Comparable<?> expireValue) {
+    PartitionSpec partitionSpec = table.specs().get(contentFile.specId());
+    int pos = 0;
+    List<Boolean> compareResults = new ArrayList<>();
+    for (PartitionField partitionField : partitionSpec.fields()) {
+      if (partitionField.sourceId() == expireField.fieldId()) {
+        if (partitionField.transform().isVoid()) {
+          return false;
+        }
+
+        Comparable<?> partitionUpperBound =
+            ((SerializableFunction<Comparable<?>, Comparable<?>>)
+                    partitionField.transform().bind(expireField.type()))
+                .apply(expireValue);
+        Comparable<Object> filePartitionValue =
+            contentFile.partition().get(pos, partitionUpperBound.getClass());
+        int compared = filePartitionValue.compareTo(partitionUpperBound);
+        Boolean compareResult =
+            expireField.type() == Types.StringType.get() ? compared <= 0 : compared < 0;
+        compareResults.add(compareResult);
+      }
+
+      pos++;
+    }
+
+    return !compareResults.isEmpty() && compareResults.stream().allMatch(Boolean::booleanValue);
   }
 
   public Table getTable() {

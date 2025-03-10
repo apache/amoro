@@ -21,6 +21,8 @@ package org.apache.amoro;
 import org.apache.amoro.data.DataTreeNode;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 public class TestTreeNode {
 
@@ -29,35 +31,17 @@ public class TestTreeNode {
     DataTreeNode.of(0, 0).parent();
   }
 
-  @Test
-  public void testParentNode() {
-    assertParentNode(DataTreeNode.of(0, 0));
-    assertParentNode(DataTreeNode.of(1, 0));
-    assertParentNode(DataTreeNode.of(1, 0));
-    assertParentNode(DataTreeNode.of(3, 3));
-    assertParentNode(DataTreeNode.of(255, 0));
-    assertParentNode(DataTreeNode.of(255, 126));
-    assertParentNode(DataTreeNode.of(255, 245));
-    assertParentNode(DataTreeNode.of(255, 255));
+  @ParameterizedTest
+  @CsvSource({"0, 0", "1, 0", "1, 0", "3, 3", "255, 0", "255, 126", "255, 245", "255, 255"})
+  public void testParentNode(int level, int index) {
+    assertParentNode(DataTreeNode.of(level, index));
   }
 
-  @Test
-  public void testNodeId() {
-    Assert.assertEquals(1, DataTreeNode.of(0, 0).getId());
-    Assert.assertEquals(2, DataTreeNode.of(1, 0).getId());
-    Assert.assertEquals(3, DataTreeNode.of(1, 1).getId());
-    Assert.assertEquals(4, DataTreeNode.of(3, 0).getId());
-    Assert.assertEquals(7, DataTreeNode.of(3, 3).getId());
-    Assert.assertEquals(13, DataTreeNode.of(7, 5).getId());
-    Assert.assertEquals(11, DataTreeNode.of(7, 3).getId());
-
-    Assert.assertEquals(DataTreeNode.of(0, 0), DataTreeNode.ofId(1));
-    Assert.assertEquals(DataTreeNode.of(1, 0), DataTreeNode.ofId(2));
-    Assert.assertEquals(DataTreeNode.of(1, 1), DataTreeNode.ofId(3));
-    Assert.assertEquals(DataTreeNode.of(3, 0), DataTreeNode.ofId(4));
-    Assert.assertEquals(DataTreeNode.of(3, 3), DataTreeNode.ofId(7));
-    Assert.assertEquals(DataTreeNode.of(7, 5), DataTreeNode.ofId(13));
-    Assert.assertEquals(DataTreeNode.of(7, 3), DataTreeNode.ofId(11));
+  @ParameterizedTest
+  @CsvSource({"0, 0, 1", "1, 0, 2", "1, 1, 3", "3, 0, 4", "3, 3, 7", "7, 5, 13", "7, 3, 11"})
+  public void testNodeId(int mask, int index, int expectedId) {
+    Assert.assertEquals(expectedId, DataTreeNode.of(mask, index).getId());
+    Assert.assertEquals(DataTreeNode.of(mask, index), DataTreeNode.ofId(expectedId));
   }
 
   private void assertParentNode(DataTreeNode node) {

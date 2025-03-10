@@ -29,6 +29,8 @@ import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
@@ -63,14 +65,18 @@ public class TestFileUtil {
         fileDir);
   }
 
-  @Test
-  public void testGetUriPath() {
-    Assert.assertEquals("/a/b/c", TableFileUtil.getUriPath("hdfs://xxxxx/a/b/c"));
-    Assert.assertEquals("/a/b/c", TableFileUtil.getUriPath("hdfs://localhost:8888/a/b/c"));
-    Assert.assertEquals("/a/b/c", TableFileUtil.getUriPath("file://xxxxx/a/b/c"));
-    Assert.assertEquals("/a/b/c", TableFileUtil.getUriPath("/a/b/c"));
-    Assert.assertEquals("/a/b/c", TableFileUtil.getUriPath("hdfs:/a/b/c"));
-    Assert.assertEquals("a/b/c", TableFileUtil.getUriPath("a/b/c"));
+  @ParameterizedTest
+  @CsvSource(
+      value = {
+        "/a/b/c, hdfs://xxxxx/a/b/c",
+        "/a/b/c, hdfs://localhost:8888/a/b/c",
+        "/a/b/c, file://xxxxx/a/b/c",
+        "/a/b/c, /a/b/c",
+        "/a/b/c, hdfs:/a/b/c",
+        "a/b/c, a/b/c"
+      })
+  public void testGetUriPath(String expected, String path) {
+    Assert.assertEquals(expected, TableFileUtil.getUriPath(path));
   }
 
   private static final TemporaryFolder temp = new TemporaryFolder();

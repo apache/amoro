@@ -20,6 +20,7 @@ package org.apache.amoro.server.optimizing.maintainer;
 
 import static org.apache.amoro.BasicTableTestHelper.PRIMARY_KEY_SPEC;
 import static org.apache.amoro.BasicTableTestHelper.SPEC;
+import static org.junit.Assume.assumeTrue;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
@@ -49,6 +50,7 @@ import org.apache.amoro.utils.ContentFiles;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.MetricsModes;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -194,6 +196,7 @@ public class TestDataExpire extends ExecutorTestBase {
 
     List<Record> expected;
     if (tableTestHelper().partitionSpec().isPartitioned()) {
+      // retention time is 1 day, expire partitions that order than 2022-01-02
       if (expireByStringDate()) {
         expected =
             Lists.newArrayList(
@@ -462,6 +465,20 @@ public class TestDataExpire extends ExecutorTestBase {
     getMixedTable().updateProperties().set(TableProperties.DATA_EXPIRATION_FIELD, "ts").commit();
 
     testFileLevel();
+  }
+
+  @Test
+  public void testExpireByPartitionWhenMetricsModeIsNone() {
+    assumeTrue(getMixedTable().format().in(TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG));
+
+    getMixedTable()
+        .updateProperties()
+        .set(
+            org.apache.iceberg.TableProperties.DEFAULT_WRITE_METRICS_MODE,
+            MetricsModes.None.get().toString())
+        .commit();
+
+    testPartitionLevel();
   }
 
   @Test
