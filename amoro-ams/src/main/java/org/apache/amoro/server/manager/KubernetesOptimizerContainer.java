@@ -73,6 +73,8 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
 
   private static final String KUBERNETES_NAME_PROPERTIES = "name";
 
+  public static final String JVM_HEAP_RATIO_PROPERTY = "jvm.heap.ratio";
+
   private KubernetesClient client;
 
   @Override
@@ -148,6 +150,7 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
       Resource resource, Map<String, String> groupProperties) {
     long memoryPerThread;
     long memory;
+    long jvmHeapMemory;
 
     if (resource.getMemoryMb() > 0) {
       memory = resource.getMemoryMb();
@@ -155,11 +158,16 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
       memoryPerThread = Long.parseLong(checkAndGetProperty(groupProperties, MEMORY_PROPERTY));
       memory = memoryPerThread * resource.getThreadCount();
     }
+
+    double jvmHeapRatio =
+        Double.parseDouble(groupProperties.getOrDefault(JVM_HEAP_RATIO_PROPERTY, "0.8"));
+    jvmHeapMemory = (long) (memory * jvmHeapRatio);
+
     // point at amoro home in docker image
     String startUpArgs =
         String.format(
             "/entrypoint.sh optimizer %s %s",
-            memory, super.buildOptimizerStartupArgsString(resource));
+            jvmHeapMemory, super.buildOptimizerStartupArgsString(resource));
     LOG.info("Starting k8s optimizer using k8s client with start command : {}", startUpArgs);
 
     String namespace = groupProperties.getOrDefault(NAMESPACE, "default");
