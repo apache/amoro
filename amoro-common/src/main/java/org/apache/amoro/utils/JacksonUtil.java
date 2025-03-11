@@ -125,7 +125,7 @@ public class JacksonUtil {
     return textNode.asText();
   }
 
-  /** Retrieve the given map from a JsonNode, and return empty map if the filed doesn't exist. */
+  /** Retrieve the given map from a JsonNode, and return empty map if the field doesn't exist. */
   public static <K, V> Map<K, V> getMap(
       JsonNode jsonNode, String fieldName, TypeReference<Map<K, V>> mapType) {
     Preconditions.checkNotNull(jsonNode, "JsonNode should not be null");

@@ -22,7 +22,7 @@ ams:
   server-expose-host: "127.0.0.1"
 
   thrift-server:
-    max-message-size: 100MB # 104857600
+    max-message-size: 100MB
     selector-thread-count: 2
     selector-queue-size: 4
     table-service:
@@ -37,13 +37,13 @@ ams:
     rest-auth-type: token
 
   refresh-external-catalogs:
-    interval: 3min # 180000
+    interval: 3min
     thread-count: 10
     queue-size: 1000000
 
   refresh-tables:
     thread-count: 10
-    interval: 1min # 60000
+    interval: 1min
     max-pending-partition-count: 100 # default 100
 
   self-optimizing:
@@ -52,13 +52,13 @@ ams:
     runtime-data-expire-interval-hours: 1
 
   optimizer:
-    heart-beat-timeout: 1min # 60000
-    task-ack-timeout: 30s # 30000
-    polling-timeout: 3s # 3000
+    heart-beat-timeout: 1min
+    task-ack-timeout: 30s
+    polling-timeout: 3s
     max-planning-parallelism: 1 # default 1
 
   blocker:
-    timeout: 1min # 60000
+    timeout: 1min
 
   # optional features
   expire-snapshots:
@@ -86,7 +86,7 @@ ams:
   auto-create-tags:
     enabled: true
     thread-count: 3
-    interval: 1min # 60000
+    interval: 1min
 
   table-manifest-io:
     thread-count: 20
@@ -94,22 +94,13 @@ ams:
   catalog-meta-cache:
     expiration-interval: 60s
 
-  # Support for encrypted sensitive configuration items
-  shade:
-    identifier: default # Built-in support for default/base64. Defaults to "default", indicating no encryption
-    sensitive-keywords: admin-password;database.password
-
-  overview-cache:
-    refresh-interval: 3min          # 3 min
-    max-size: 3360                # Keep 7 days history by default, 7 * 24 * 60 / 3 = 3360
-
   database:
     type: derby
     jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
     url: jdbc:derby:/tmp/amoro/derby;create=true
     connection-pool-max-total: 20
     connection-pool-max-idle: 16
-    connection-pool-max-wait-millis: 30000
+    connection-pool-max-wait-millis: 1000
 
 #  MySQL database configuration.
 #  database:
@@ -121,7 +112,7 @@ ams:
 #    auto-create-tables: true
 #    connection-pool-max-total: 20
 #    connection-pool-max-idle: 16
-#    connection-pool-max-wait-millis: 30000
+#    connection-pool-max-wait-millis: 1000
 
 #  Postgres database configuration.
 #  database:
@@ -133,7 +124,7 @@ ams:
 #    auto-create-tables: true
 #    connection-pool-max-total: 20
 #    connection-pool-max-idle: 16
-#    connection-pool-max-wait-millis: 30000
+#    connection-pool-max-wait-millis: 1000
 
   terminal:
     backend: local
@@ -141,7 +132,7 @@ ams:
       limit: 1000
     stop-on-error: false
     session:
-      timeout: 30min # 1800000
+      timeout: 30min
     local:
       using-session-catalog-for-hive: false
       spark.sql.iceberg.handle-timestamp-without-timezone: false

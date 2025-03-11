@@ -195,11 +195,11 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     CloseableIterable<MixedFileEntry> changeEntries =
         CloseableIterable.transform(
-            changeMaintainer.fileScan(changeTable, dataFilter, expirationConfig),
+            changeMaintainer.fileScan(changeTable, dataFilter, expirationConfig, expireTimestamp),
             e -> new MixedFileEntry(e.getFile(), e.getTsBound(), true));
     CloseableIterable<MixedFileEntry> baseEntries =
         CloseableIterable.transform(
-            baseMaintainer.fileScan(baseTable, dataFilter, expirationConfig),
+            baseMaintainer.fileScan(baseTable, dataFilter, expirationConfig, expireTimestamp),
             e -> new MixedFileEntry(e.getFile(), e.getTsBound(), false));
     IcebergTableMaintainer.ExpireFiles changeExpiredFiles =
         new IcebergTableMaintainer.ExpireFiles();

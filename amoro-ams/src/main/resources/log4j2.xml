@@ -41,9 +41,11 @@
     <Loggers>
         <Root level="debug">
             <AppenderRef ref="consoleAppender" level="info"/>
-            <AppenderRef ref="consoleAppender" level="error"/>
         </Root>
-        <Logger name="iceberg.metric"  level="info">
+        <Logger name="org.apache.spark" additivity="false">
+            <AppenderRef ref="consoleAppender" level="warn"/>
+        </Logger>
+        <Logger name="iceberg.metric"  level="info" additivity="false">
             <AppenderRef ref="icebergRestMetricReporter"/>
         </Logger>
     </Loggers>

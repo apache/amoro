@@ -104,7 +104,7 @@ public class HiveSchemaUtil {
   }
 
   /**
-   * Change the filed name in schema to lowercase.
+   * Change the field name in schema to lowercase.
    *
    * @param schema The original schema to change
    * @return An new schema with lowercase field name

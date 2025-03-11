@@ -51,8 +51,8 @@ import org.apache.amoro.server.dashboard.controller.TerminalController;
 import org.apache.amoro.server.dashboard.controller.VersionController;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.ParamSignatureCalculator;
+import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.table.TableManager;
-import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.lang3.StringUtils;
@@ -100,28 +100,28 @@ public class DashboardServer {
       Configurations serviceConfig,
       CatalogManager catalogManager,
       TableManager tableManager,
-      DefaultOptimizingService optimizerManager,
-      TerminalManager terminalManager,
-      TableService tableService) {
+      OptimizerManager optimizerManager,
+      DefaultOptimizingService optimizingService,
+      TerminalManager terminalManager) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.catalogController = new CatalogController(catalogManager, platformFileManager);
     this.healthCheckController = new HealthCheckController();
     this.loginController = new LoginController(serviceConfig);
     // TODO: remove table service from OptimizerGroupController
     this.optimizerGroupController =
-        new OptimizerGroupController(tableManager, tableService, optimizerManager);
-    this.optimizerController = new OptimizerController(optimizerManager);
+        new OptimizerGroupController(tableManager, optimizingService, optimizerManager);
+    this.optimizerController = new OptimizerController(optimizingService, optimizerManager);
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
     this.settingController = new SettingController(serviceConfig, optimizerManager);
     ServerTableDescriptor tableDescriptor =
         new ServerTableDescriptor(catalogManager, tableManager, serviceConfig);
     // TODO: remove table service from TableController
     this.tableController =
-        new TableController(
-            catalogManager, tableManager, tableService, tableDescriptor, serviceConfig);
+        new TableController(catalogManager, tableManager, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
-    this.overviewController = new OverviewController();
+    OverviewManager manager = new OverviewManager(serviceConfig);
+    this.overviewController = new OverviewController(manager);
 
     this.authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
     this.basicAuthUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
@@ -151,7 +151,7 @@ public class DashboardServer {
       }
       return indexHtml;
     } catch (IOException e) {
-      throw new UncheckedIOException("Load index html filed", e);
+      throw new UncheckedIOException("Load index html failed", e);
     }
   }
 

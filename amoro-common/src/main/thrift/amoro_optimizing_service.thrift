@@ -65,4 +65,6 @@ service OptimizingService {
 
     string authenticate(1: OptimizerRegisterInfo registerInfo)
             throws (1: amoro_commons.AmoroException e1)
+
+    bool cancelProcess(1:i64 processId)
 }

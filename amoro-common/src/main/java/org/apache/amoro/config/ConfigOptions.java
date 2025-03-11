@@ -20,6 +20,8 @@ package org.apache.amoro.config;
 
 import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkNotNull;
 
+import org.apache.amoro.utils.MemorySize;
+
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -156,6 +158,14 @@ public class ConfigOptions {
      */
     public TypedConfigOptionBuilder<Map<String, String>> mapType() {
       return new TypedConfigOptionBuilder<>(key, PROPERTIES_MAP_CLASS);
+    }
+
+    /**
+     * Defines that the value of the option should be of {@link org.apache.amoro.utils.MemorySize}
+     * type.
+     */
+    public TypedConfigOptionBuilder<MemorySize> memorySizeType() {
+      return new TypedConfigOptionBuilder<>(key, MemorySize.class);
     }
 
     /**

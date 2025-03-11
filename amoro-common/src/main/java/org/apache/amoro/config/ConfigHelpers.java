@@ -21,6 +21,8 @@ package org.apache.amoro.config;
 import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkArgument;
 import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkNotNull;
 
+import org.apache.amoro.utils.MemorySize;
+
 import javax.annotation.Nonnull;
 
 import java.io.File;
@@ -108,9 +110,20 @@ public class ConfigHelpers {
       return (T) convertToDuration(rawValue);
     } else if (clazz == Map.class) {
       return (T) convertToProperties(rawValue);
+    } else if (clazz == MemorySize.class) {
+      return (T) convertToMemorySize(rawValue);
     }
 
     throw new IllegalArgumentException("Unsupported type: " + clazz);
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> T convertToMemorySize(Object rawValue) {
+    if (rawValue instanceof MemorySize) {
+      return (T) rawValue;
+    } else {
+      return (T) MemorySize.parse(rawValue.toString());
+    }
   }
 
   @SuppressWarnings("unchecked")

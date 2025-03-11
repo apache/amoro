@@ -26,46 +26,46 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 /** Tests for the {@link MemorySize} class. */
 public class MemorySizeTest {
 
-  @Test
-  public void testUnitConversion() {
-    final MemorySize zero = MemorySize.ZERO;
-    assertEquals(0, zero.getBytes());
-    assertEquals(0, zero.getKibiBytes());
-    assertEquals(0, zero.getMebiBytes());
-    assertEquals(0, zero.getGibiBytes());
-    assertEquals(0, zero.getTebiBytes());
+  static Stream<Object[]> memorySizeProvider() {
+    return Stream.of(
+        new Object[] {MemorySize.ZERO, 0, 0, 0, 0, 0},
+        new Object[] {new MemorySize(955), 955, 0, 0, 0, 0},
+        new Object[] {new MemorySize(18500), 18500, 18, 0, 0, 0},
+        new Object[] {new MemorySize(15 * 1024 * 1024), 15_728_640, 15_360, 15, 0, 0},
+        new Object[] {
+          new MemorySize(2L * 1024 * 1024 * 1024 * 1024 + 10),
+          2199023255562L,
+          2147483648L,
+          2097152,
+          2048,
+          2
+        });
+  }
 
-    final MemorySize bytes = new MemorySize(955);
-    assertEquals(955, bytes.getBytes());
-    assertEquals(0, bytes.getKibiBytes());
-    assertEquals(0, bytes.getMebiBytes());
-    assertEquals(0, bytes.getGibiBytes());
-    assertEquals(0, bytes.getTebiBytes());
-
-    final MemorySize kilos = new MemorySize(18500);
-    assertEquals(18500, kilos.getBytes());
-    assertEquals(18, kilos.getKibiBytes());
-    assertEquals(0, kilos.getMebiBytes());
-    assertEquals(0, kilos.getGibiBytes());
-    assertEquals(0, kilos.getTebiBytes());
-
-    final MemorySize megas = new MemorySize(15 * 1024 * 1024);
-    assertEquals(15_728_640, megas.getBytes());
-    assertEquals(15_360, megas.getKibiBytes());
-    assertEquals(15, megas.getMebiBytes());
-    assertEquals(0, megas.getGibiBytes());
-    assertEquals(0, megas.getTebiBytes());
-
-    final MemorySize teras = new MemorySize(2L * 1024 * 1024 * 1024 * 1024 + 10);
-    assertEquals(2199023255562L, teras.getBytes());
-    assertEquals(2147483648L, teras.getKibiBytes());
-    assertEquals(2097152, teras.getMebiBytes());
-    assertEquals(2048, teras.getGibiBytes());
-    assertEquals(2, teras.getTebiBytes());
+  @ParameterizedTest
+  @MethodSource("memorySizeProvider")
+  void testUnitConversion(
+      MemorySize memorySize,
+      long expectedBytes,
+      long expectedKibiBytes,
+      long expectedMebiBytes,
+      long expectedGibiBytes,
+      long expectedTebiBytes) {
+    assertEquals(expectedBytes, memorySize.getBytes());
+    assertEquals(expectedKibiBytes, memorySize.getKibiBytes());
+    assertEquals(expectedMebiBytes, memorySize.getMebiBytes());
+    assertEquals(expectedGibiBytes, memorySize.getGibiBytes());
+    assertEquals(expectedTebiBytes, memorySize.getTebiBytes());
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -82,44 +82,56 @@ public class MemorySizeTest {
     assertEquals(1234, MemorySize.parseBytes("1234 bytes"));
   }
 
-  @Test
-  public void testParseKibiBytes() {
-    assertEquals(667766, MemorySize.parse("667766k").getKibiBytes());
-    assertEquals(667766, MemorySize.parse("667766 k").getKibiBytes());
-    assertEquals(667766, MemorySize.parse("667766kb").getKibiBytes());
-    assertEquals(667766, MemorySize.parse("667766 kb").getKibiBytes());
-    assertEquals(667766, MemorySize.parse("667766kibibytes").getKibiBytes());
-    assertEquals(667766, MemorySize.parse("667766 kibibytes").getKibiBytes());
+  @ParameterizedTest
+  @CsvSource({
+    "667766k, 667766",
+    "667766 k, 667766",
+    "667766kb, 667766",
+    "667766 kb, 667766",
+    "667766kibibytes, 667766",
+    "667766 kibibytes, 667766"
+  })
+  public void testParseKibiBytes(String input, int expected) {
+    assertEquals(expected, MemorySize.parse(input).getKibiBytes());
   }
 
-  @Test
-  public void testParseMebiBytes() {
-    assertEquals(7657623, MemorySize.parse("7657623m").getMebiBytes());
-    assertEquals(7657623, MemorySize.parse("7657623 m").getMebiBytes());
-    assertEquals(7657623, MemorySize.parse("7657623mb").getMebiBytes());
-    assertEquals(7657623, MemorySize.parse("7657623 mb").getMebiBytes());
-    assertEquals(7657623, MemorySize.parse("7657623mebibytes").getMebiBytes());
-    assertEquals(7657623, MemorySize.parse("7657623 mebibytes").getMebiBytes());
+  @ParameterizedTest
+  @CsvSource({
+    "7657623m, 7657623",
+    "7657623 m, 7657623",
+    "7657623mb, 7657623",
+    "7657623 mb, 7657623",
+    "7657623mebibytes, 7657623",
+    "7657623 mebibytes, 7657623"
+  })
+  public void testParseMebiBytes(String input, int expected) {
+    assertEquals(expected, MemorySize.parse(input).getMebiBytes());
   }
 
-  @Test
-  public void testParseGibiBytes() {
-    assertEquals(987654, MemorySize.parse("987654g").getGibiBytes());
-    assertEquals(987654, MemorySize.parse("987654 g").getGibiBytes());
-    assertEquals(987654, MemorySize.parse("987654gb").getGibiBytes());
-    assertEquals(987654, MemorySize.parse("987654 gb").getGibiBytes());
-    assertEquals(987654, MemorySize.parse("987654gibibytes").getGibiBytes());
-    assertEquals(987654, MemorySize.parse("987654 gibibytes").getGibiBytes());
+  @ParameterizedTest
+  @CsvSource({
+    "987654g, 987654",
+    "987654 g, 987654",
+    "987654gb, 987654",
+    "987654 gb, 987654",
+    "987654gibibytes, 987654",
+    "987654 gibibytes, 987654"
+  })
+  public void testParseGibiBytes(String input, int expected) {
+    assertEquals(expected, MemorySize.parse(input).getGibiBytes());
   }
 
-  @Test
-  public void testParseTebiBytes() {
-    assertEquals(1234567, MemorySize.parse("1234567t").getTebiBytes());
-    assertEquals(1234567, MemorySize.parse("1234567 t").getTebiBytes());
-    assertEquals(1234567, MemorySize.parse("1234567tb").getTebiBytes());
-    assertEquals(1234567, MemorySize.parse("1234567 tb").getTebiBytes());
-    assertEquals(1234567, MemorySize.parse("1234567tebibytes").getTebiBytes());
-    assertEquals(1234567, MemorySize.parse("1234567 tebibytes").getTebiBytes());
+  @ParameterizedTest
+  @CsvSource({
+    "1234567t, 1234567",
+    "1234567 t, 1234567",
+    "1234567tb, 1234567",
+    "1234567 tb, 1234567",
+    "1234567tebibytes, 1234567",
+    "1234567 tebibytes, 1234567"
+  })
+  public void testParseTebiBytes(String input, int expected) {
+    assertEquals(expected, MemorySize.parse(input).getTebiBytes());
   }
 
   @Test
@@ -225,21 +237,22 @@ public class MemorySizeTest {
     memory.divide(-23L);
   }
 
-  @Test
-  public void testToHumanReadableString() {
-    assertThat(new MemorySize(0L).toHumanReadableString(), is("0 bytes"));
-    assertThat(new MemorySize(1L).toHumanReadableString(), is("1 bytes"));
-    assertThat(new MemorySize(1024L).toHumanReadableString(), is("1024 bytes"));
-    assertThat(new MemorySize(1025L).toHumanReadableString(), is("1.001kb (1025 bytes)"));
-    assertThat(new MemorySize(1536L).toHumanReadableString(), is("1.500kb (1536 bytes)"));
-    assertThat(new MemorySize(1_000_000L).toHumanReadableString(), is("976.563kb (1000000 bytes)"));
-    assertThat(
-        new MemorySize(1_000_000_000L).toHumanReadableString(), is("953.674mb (1000000000 bytes)"));
-    assertThat(
-        new MemorySize(1_000_000_000_000L).toHumanReadableString(),
-        is("931.323gb (1000000000000 bytes)"));
-    assertThat(
-        new MemorySize(1_000_000_000_000_000L).toHumanReadableString(),
-        is("909.495tb (1000000000000000 bytes)"));
+  static Stream<Arguments> testToHumanReadableStringProvider() {
+    return Stream.of(
+        Arguments.of(0L, "0 bytes"),
+        Arguments.of(1L, "1 bytes"),
+        Arguments.of(1024L, "1024 bytes"),
+        Arguments.of(1025L, "1.001kb (1025 bytes)"),
+        Arguments.of(1536L, "1.500kb (1536 bytes)"),
+        Arguments.of(1_000_000L, "976.563kb (1000000 bytes)"),
+        Arguments.of(1_000_000_000L, "953.674mb (1000000000 bytes)"),
+        Arguments.of(1_000_000_000_000L, "931.323gb (1000000000000 bytes)"),
+        Arguments.of(1_000_000_000_000_000L, "909.495tb (1000000000000000 bytes)"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("testToHumanReadableStringProvider")
+  public void testToHumanReadableString(long bytes, String expected) {
+    assertThat(new MemorySize(bytes).toHumanReadableString(), is(expected));
   }
 }

@@ -15,12 +15,27 @@
 # limitations under the License.
 #
 
-# This file is config file for plugin metric reporter
-# configurations of metric reporters
+ams:
+  thrift-server:
+    max-message-size: 209715200 # 200MB
 
-metric-reporters:
-#  - name: prometheus-exporter            # configs for prometheus exporter
-#    enabled: false
-#    properties:
-#       port: 7001
+  refresh-external-catalogs:
+    interval: 300000 # 5min
 
+  refresh-tables:
+    interval: 120000 # 2min
+
+  optimizer:
+    heart-beat-timeout: 120000 # 2min
+    task-ack-timeout: 60000 # 60s
+    polling-timeout: 6000 # 6s
+
+  blocker:
+    timeout: 120000 # 2min
+
+  auto-create-tags:
+    interval: 120000 # 2min
+
+  terminal:
+    session:
+      timeout: 30 # 30min when version < 0.8

@@ -25,6 +25,8 @@ import org.apache.amoro.Constants;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.api.OptimizingService;
+import org.apache.amoro.client.OptimizingClientPools;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClientPool;
@@ -51,12 +53,12 @@ import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.table.TableManager;
-import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Function;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.TableProperties;
@@ -103,7 +105,6 @@ public class TableController {
 
   private final CatalogManager catalogManager;
   private final TableManager tableManager;
-  private final TableService tableService;
   private final ServerTableDescriptor tableDescriptor;
   private final Configurations serviceConfig;
   private final ConcurrentHashMap<TableIdentifier, UpgradeRunningInfo> upgradeRunningInfo =
@@ -113,12 +114,10 @@ public class TableController {
   public TableController(
       CatalogManager catalogManager,
       TableManager tableManager,
-      TableService tableService,
       ServerTableDescriptor tableDescriptor,
       Configurations serviceConfig) {
     this.catalogManager = catalogManager;
     this.tableManager = tableManager;
-    this.tableService = tableService;
     this.tableDescriptor = tableDescriptor;
     this.serviceConfig = serviceConfig;
     this.tableUpgradeExecutor =
@@ -157,11 +156,12 @@ public class TableController {
             tableManager.getServerTableIdentifier(
                 TableIdentifier.of(catalog, database, tableName).buildTableIdentifier()));
     if (serverTableIdentifier.isPresent()) {
-      TableRuntime tableRuntime = tableService.getRuntime(serverTableIdentifier.get().getId());
-      if (tableRuntime != null) {
-        tableSummary.setOptimizingStatus(tableRuntime.getOptimizingStatus().name());
+      TableRuntimeMeta tableRuntimeMeta =
+          tableManager.getTableRuntimeMata(serverTableIdentifier.get());
+      if (tableRuntimeMeta != null) {
+        tableSummary.setOptimizingStatus(tableRuntimeMeta.getTableStatus().name());
         AbstractOptimizingEvaluator.PendingInput tableRuntimeSummary =
-            tableRuntime.getTableSummary();
+            tableRuntimeMeta.getTableSummary();
         if (tableRuntimeSummary != null) {
           tableSummary.setHealthScore(tableRuntimeSummary.getHealthScore());
         }
@@ -674,31 +674,31 @@ public class TableController {
     String catalog = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
-    String processId = ctx.pathParam("processId");
+    String processIds = ctx.pathParam("processId");
     Preconditions.checkArgument(
         StringUtils.isNotBlank(catalog)
             && StringUtils.isNotBlank(db)
             && StringUtils.isNotBlank(table),
         "catalog.database.tableName can not be empty in any element");
     Preconditions.checkState(catalogManager.catalogExist(catalog), "invalid catalog!");
-
+    long processId = Long.parseLong(processIds);
     ServerTableIdentifier serverTableIdentifier =
         tableManager.getServerTableIdentifier(
             TableIdentifier.of(catalog, db, table).buildTableIdentifier());
-    TableRuntime tableRuntime =
-        serverTableIdentifier != null
-            ? tableService.getRuntime(serverTableIdentifier.getId())
-            : null;
+    TableRuntimeMeta meta = tableManager.getTableRuntimeMata(serverTableIdentifier);
+    if (meta == null || meta.getOptimizingProcessId() != processId) {
+      throw new IllegalArgumentException(
+          String.format("Can't cancel optimizing process %s", processId));
+    }
 
-    Preconditions.checkArgument(
-        tableRuntime != null
-            && tableRuntime.getOptimizingProcess() != null
-            && Objects.equals(
-                tableRuntime.getOptimizingProcess().getProcessId(), Long.parseLong(processId)),
-        "Can't cancel optimizing process %s",
-        processId);
-
-    tableRuntime.getOptimizingProcess().close();
+    OptimizingService.Iface client =
+        OptimizingClientPools.getClient(
+            AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
+    try {
+      client.cancelProcess(processId);
+    } catch (TException e) {
+      throw new IllegalStateException("Failed to cancel optimizing process:" + e.getMessage());
+    }
     ctx.json(OkResponse.ok());
   }
 
