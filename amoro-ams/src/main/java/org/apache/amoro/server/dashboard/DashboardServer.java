@@ -440,6 +440,8 @@ public class DashboardServer {
     RestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
   };
 
+  private static final String[] apiAuthWhiteList = {"/api/ams/v1/health/status"};
+
   private static boolean needLoginCheck(String uri) {
     for (String item : urlWhiteList) {
       if (item.endsWith("*")) {
@@ -456,6 +458,11 @@ public class DashboardServer {
   }
 
   private boolean needApiKeyCheck(String uri) {
+    for (String item : apiAuthWhiteList) {
+      if (uri.equals(item)) {
+        return false;
+      }
+    }
     return uri.startsWith("/api/ams");
   }
 
