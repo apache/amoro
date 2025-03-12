@@ -468,30 +468,30 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   private void disposeTable(ServerTableIdentifier tableIdentifier) {
-    // Here, we first remove the tableRuntime before removing the tableIdentifier. This follows the
-    // reverse process of the syncTable() method, where we first add the tableIdentifier and then
-    // add the tableRuntime.
-    Optional.ofNullable(tableRuntimeMap.get(tableIdentifier.getId()))
-        .ifPresent(
-            tableRuntime -> {
-              try {
-                if (headHandler != null) {
-                  headHandler.fireTableRemoved(tableRuntime);
-                }
-                tableRuntime.dispose();
-                tableRuntimeMap.remove(
-                    tableIdentifier.getId()); // remove only after successful operation
-              } catch (Exception e) {
-                LOG.error("Error occurred while disposing table {}", tableIdentifier, e);
-              }
-            });
-    doAs(
-        TableMetaMapper.class,
-        mapper ->
-            mapper.deleteTableIdByName(
-                tableIdentifier.getCatalog(),
-                tableIdentifier.getDatabase(),
-                tableIdentifier.getTableName()));
+    doAsTransaction(
+        () ->
+            Optional.ofNullable(tableRuntimeMap.get(tableIdentifier.getId()))
+                .ifPresent(
+                    tableRuntime -> {
+                      try {
+                        if (headHandler != null) {
+                          headHandler.fireTableRemoved(tableRuntime);
+                        }
+                        tableRuntime.dispose();
+                        tableRuntimeMap.remove(
+                            tableIdentifier.getId()); // remove only after successful operation
+                      } catch (Exception e) {
+                        LOG.error("Error occurred while disposing table {}", tableIdentifier, e);
+                      }
+                    }),
+        () ->
+            doAs(
+                TableMetaMapper.class,
+                mapper ->
+                    mapper.deleteTableIdByName(
+                        tableIdentifier.getCatalog(),
+                        tableIdentifier.getDatabase(),
+                        tableIdentifier.getTableName())));
   }
 
   private static class TableIdentity {
