@@ -231,7 +231,7 @@ export function download(url: string, _blank = true) {
  * @param url
  * @param _blank
  */
-export function downloadWithHeader(url: string, _blank = true) {
+export function downloadWithHeader(url: string, fileName: string = 'download', _blank = true) {
   fetch(url, {
     headers: {
       'X-Request-Source': 'Web'
@@ -247,7 +247,7 @@ export function downloadWithHeader(url: string, _blank = true) {
       const fileURL = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = fileURL
-      link.download = url.substring(url.lastIndexOf('/') + 1) || 'download'
+      link.download = fileName
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)

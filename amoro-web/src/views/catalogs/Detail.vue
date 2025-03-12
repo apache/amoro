@@ -607,8 +607,8 @@ function uploadFile(info: UploadChangeParam, config: { uploadLoading: boolean, i
     message.error((error as Error).message)
   }
 }
-function viewFileDetail(url: string) {
-  downloadWithHeader(url)
+function viewFileDetail(url: string, fileName: string) {
+  downloadWithHeader(url, fileName)
 }
 onMounted(() => {
   getCatalogTypeOps()
@@ -725,7 +725,7 @@ onMounted(() => {
               </a-upload>
               <span
                 v-if="config.isSuccess || config.fileName" class="config-value"
-                :class="{ 'view-active': !!config.fileUrl }" @click="viewFileDetail(config.fileUrl)"
+                :class="{ 'view-active': !!config.fileUrl }" @click="viewFileDetail(config.fileUrl, config.fileName)"
               >{{ config.fileName
               }}</span>
             </a-form-item>
@@ -776,7 +776,7 @@ onMounted(() => {
               <span
                 v-if="config.isSuccess || config.fileName" class="config-value auth-filename"
                 :class="{ 'view-active': !!config.fileUrl }" :title="config.fileName"
-                @click="viewFileDetail(config.fileUrl)"
+                @click="viewFileDetail(config.fileUrl, config.fileName)"
               >{{ config.fileName }}</span>
             </a-form-item>
           </div>
