@@ -104,7 +104,7 @@ instance.interceptors.response.use(
     }
     // Actively cancel the request without throwing an error
     if (axios.isCancel(error)) {
-      return new Promise(() => {}) // Returns a Promise object in the "pending" state, if it is not passed down, it may cause memory leaks
+      return new Promise(() => { }) // Returns a Promise object in the "pending" state, if it is not passed down, it may cause memory leaks
     }
     return Promise.reject(error)
   },
@@ -178,29 +178,29 @@ const request: any = function (options: CustomAxiosRequestConfig) {
       return Promise.reject(err) // Business custom handling errors
     })
 }
-;['get', 'delete'].forEach((method) => {
-  request[method] = function (url: string, options: CustomAxiosRequestConfig = {}) {
-    options = Object.assign({}, options, {
-      url,
-      method,
-    })
-    return request(options)
-  }
-})
-;['post', 'put'].forEach((method) => {
-  request[method] = function (
-    url: string,
-    data: Record<string, any> = {},
-    options: CustomAxiosRequestConfig = {},
-  ) {
-    options = Object.assign({}, options, {
-      url,
-      method,
-      data,
-    })
-    return request(options)
-  }
-})
+  ;['get', 'delete'].forEach((method) => {
+    request[method] = function (url: string, options: CustomAxiosRequestConfig = {}) {
+      options = Object.assign({}, options, {
+        url,
+        method,
+      })
+      return request(options)
+    }
+  })
+  ;['post', 'put'].forEach((method) => {
+    request[method] = function (
+      url: string,
+      data: Record<string, any> = {},
+      options: CustomAxiosRequestConfig = {},
+    ) {
+      options = Object.assign({}, options, {
+        url,
+        method,
+        data,
+      })
+      return request(options)
+    }
+  })
 
 /**
  * file download
@@ -223,5 +223,40 @@ export function download(url: string, _blank = true) {
     })
   }
 }
+
+
+
+/**
+ * file download with header
+ * @param url
+ * @param _blank
+ */
+export function downloadWithHeader(url: string, fileName: string = 'download', _blank = true) {
+  fetch(url, {
+    headers: {
+      'X-Request-Source': 'Web'
+    }
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`)
+      }
+      return response.blob()
+    })
+    .then(blob => {
+      const fileURL = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = fileURL
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(fileURL)
+    })
+    .catch(error => {
+      console.error('Download failed:', error)
+    })
+}
+
 
 export default request as WrapperRequest
