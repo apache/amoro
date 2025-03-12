@@ -33,6 +33,7 @@ import { checkCatalogStatus, delCatalog, getCatalogsSetting, getCatalogsTypes, s
 import type { ICatalogItem, IIOptimizeGroupItem, ILableAndValue, IMap } from '@/types/common.type'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { getResourceGroupsListAPI } from '@/services/optimize.service'
+import { downloadWithHeader } from '@/utils/request'
 
 interface IStorageConfigItem {
   label: string
@@ -607,7 +608,7 @@ function uploadFile(info: UploadChangeParam, config: { uploadLoading: boolean, i
   }
 }
 function viewFileDetail(url: string) {
-  url && window.open(url)
+  downloadWithHeader(url)
 }
 onMounted(() => {
   getCatalogTypeOps()
