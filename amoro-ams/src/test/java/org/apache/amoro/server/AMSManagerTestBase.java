@@ -59,6 +59,10 @@ public abstract class AMSManagerTestBase {
     EventsManager.dispose();
   }
 
+  protected DefaultCatalogManager catalogManager() {
+    return CATALOG_MANAGER;
+  }
+
   protected TableManager tableManager() {
     return TABLE_MANAGER;
   }
