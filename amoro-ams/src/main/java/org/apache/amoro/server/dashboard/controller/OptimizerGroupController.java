@@ -34,6 +34,7 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.TableManager;
+import org.apache.amoro.server.utils.ValidatorUtil;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -49,7 +50,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /** The controller that handles optimizer requests. */
@@ -57,7 +57,6 @@ public class OptimizerGroupController {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerGroupController.class);
 
   private static final String ALL_GROUP = "all";
-  private static final Pattern GROUP_NAME_PATTERN = Pattern.compile("^[A-Za-z0-9_-]{1,50}$");
   private final TableManager tableManager;
   private final DefaultOptimizingService optimizingService;
   private final OptimizerManager optimizerManager;
@@ -266,7 +265,7 @@ public class OptimizerGroupController {
     String container = (String) map.get("container");
     Map<String, String> properties = (Map) map.get("properties");
 
-    if (!validateGroupName(name)) {
+    if (!ValidatorUtil.validateGroupName(name)) {
       throw new BadRequestException(
           String.format("Group name:%s must match ^[A-Za-z0-9_-]{1,50}$.", name));
     }
@@ -314,9 +313,5 @@ public class OptimizerGroupController {
             ResourceContainers.getMetadataList().stream()
                 .map(ContainerMetadata::getName)
                 .collect(Collectors.toList())));
-  }
-
-  public boolean validateGroupName(String groupName) {
-    return groupName != null && GROUP_NAME_PATTERN.matcher(groupName).matches();
   }
 }
