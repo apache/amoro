@@ -76,16 +76,16 @@ with container-impl as `org.apache.amoro.server.manager.KubernetesOptimizerConta
 Kubernetes container support the following properties:
 
 
-| Property Name             | Required | Default Value | Description                                                                                                   |
-|---------------------------|----------|---------------|---------------------------------------------------------------------------------------------------------------|
-| kube-config-path          | true     | N/A           | Kubernetes config location                                                                                    |
-| image                     | true     | N/A           | Optimizer Image name                                                                                          |
-| pullPolicy                | false    | IfNotPresent  | Specify the imagePullPolicy in the container spec                                                             |
-| namespace                 | false    | "default"     | The namespace of optimizer to deploy                                                                          |
-| ams-optimizing-uri        | false    | N/A           | URI of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available |
-| cpu.factor                | false    | "1.0"         | CPU factor when request kubernetes resource. Default 1 Cpu pre thread                                         |
-| memory                    | true     | N/A           | Memory usage for pre thread                                                                                   |
-
+| Property Name      | Required | Default Value | Description                                                                                                   |
+|--------------------|----------|---------------|---------------------------------------------------------------------------------------------------------------|
+| kube-config-path   | true     | N/A           | Kubernetes config location                                                                                    |
+| image              | true     | N/A           | Optimizer Image name                                                                                          |
+| pullPolicy         | false    | IfNotPresent  | Specify the imagePullPolicy in the container spec                                                             |
+| namespace          | false    | "default"     | The namespace of optimizer to deploy                                                                          |
+| ams-optimizing-uri | false    | N/A           | URI of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available |
+| cpu.factor         | false    | "1.0"         | CPU factor when request kubernetes resource. Default 1 Cpu pre thread                                         |
+| memory             | true     | N/A           | Memory usage for pre thread                                                                                   |
+| jvm.heap.ratio     | false    | "0.8"         | JVM heap memory ratio of total pod memory. Default 0.8 (80%)                                                  |
 
 ```yaml
 containers:

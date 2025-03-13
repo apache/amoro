@@ -278,6 +278,7 @@ optimizer:
       #kube-config-path: "~/.kube/config"
       image: "apache/amoro:latest"
       pullPolicy: "IfNotPresent"
+      jvm.heap.ratio: "0.8"
   extra: []
 
 ## Configure the plugin that allows you to access the metric reporters and event listeners.
