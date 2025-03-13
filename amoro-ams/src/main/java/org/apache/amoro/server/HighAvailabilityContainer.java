@@ -73,11 +73,13 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
       this.tableServiceServerInfo =
           buildServerInfo(
               serviceConfig.getString(AmoroManagementConf.SERVER_EXPOSE_HOST),
-              serviceConfig.getInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT));
+              serviceConfig.getInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT),
+              serviceConfig.getInteger(AmoroManagementConf.HTTP_SERVER_PORT));
       this.optimizingServiceServerInfo =
           buildServerInfo(
               serviceConfig.getString(AmoroManagementConf.SERVER_EXPOSE_HOST),
-              serviceConfig.getInteger(AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT));
+              serviceConfig.getInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT),
+              serviceConfig.getInteger(AmoroManagementConf.HTTP_SERVER_PORT));
     } else {
       leaderLatch = null;
       zkClient = null;
@@ -148,10 +150,11 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
     followerLath.countDown();
   }
 
-  private AmsServerInfo buildServerInfo(String host, int port) {
+  private AmsServerInfo buildServerInfo(String host, int thriftBindPort, int restBindPort) {
     AmsServerInfo amsServerInfo = new AmsServerInfo();
     amsServerInfo.setHost(host);
-    amsServerInfo.setThriftBindPort(port);
+    amsServerInfo.setRestBindPort(restBindPort);
+    amsServerInfo.setThriftBindPort(thriftBindPort);
     return amsServerInfo;
   }
 
