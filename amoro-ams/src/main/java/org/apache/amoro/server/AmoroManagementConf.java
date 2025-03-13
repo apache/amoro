@@ -380,6 +380,12 @@ public class AmoroManagementConf {
           .defaultValue(Duration.ofSeconds(3))
           .withDescription("Optimizer polling task timeout.");
 
+  public static final ConfigOption<Duration> OPTIMIZING_REFRESH_GROUP_INTERVAL =
+      ConfigOptions.key("self-optimizing.refresh-group-interval")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(30))
+          .withDescription("Optimizer group refresh interval.");
+
   /** config key prefix of terminal */
   public static final String TERMINAL_PREFIX = "terminal.";
 
