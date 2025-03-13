@@ -15,12 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { useI18n } from 'vue-i18n'
 
 export function usePagination() {
   const _total = 0
   const _current = 1
   const _pageSizeOptions = ['25', '50', '100']
   const _pageSize = 25
+  const { t } = useI18n()
+
   return {
     total: _total,
     current: _current,
@@ -29,6 +32,6 @@ export function usePagination() {
     showQuickJumper: true,
     showSizeChanger: true,
     hideOnSinglePage: false,
-    // showTotal: (total: number) => `total ${total} records`
+    showTotal: (total: number) => { return t('totalCount', { total }) }
   }
 }
