@@ -49,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /** The controller that handles optimizer requests. */
@@ -56,6 +57,7 @@ public class OptimizerGroupController {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerGroupController.class);
 
   private static final String ALL_GROUP = "all";
+  private static final Pattern GROUP_NAME_PATTERN = Pattern.compile("^[A-Za-z0-9_-]{1,50}$");
   private final TableManager tableManager;
   private final DefaultOptimizingService optimizingService;
   private final OptimizerManager optimizerManager;
@@ -263,6 +265,11 @@ public class OptimizerGroupController {
     String name = (String) map.get("name");
     String container = (String) map.get("container");
     Map<String, String> properties = (Map) map.get("properties");
+
+    if (!validateGroupName(name)) {
+      throw new BadRequestException(
+          String.format("Group name:%s must match ^[A-Za-z0-9_-]{1,50}$.", name));
+    }
     if (optimizerManager.getResourceGroup(name) != null) {
       throw new BadRequestException(String.format("Optimizer group:%s already existed.", name));
     }
@@ -307,5 +314,9 @@ public class OptimizerGroupController {
             ResourceContainers.getMetadataList().stream()
                 .map(ContainerMetadata::getName)
                 .collect(Collectors.toList())));
+  }
+
+  public boolean validateGroupName(String groupName) {
+    return groupName != null && GROUP_NAME_PATTERN.matcher(groupName).matches();
   }
 }
