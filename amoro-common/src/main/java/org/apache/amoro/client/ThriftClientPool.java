@@ -40,7 +40,6 @@ public class ThriftClientPool<
   private static final Logger LOG = LoggerFactory.getLogger(ThriftClientPool.class);
   private static final int RECONNECT_INTERVAL = 2000;
   private static final int BORROW_ATTEMPTS = 5;
-
   private final ThriftClientFactory clientFactory;
   private final ThriftPingFactory pingFactory;
   private final GenericObjectPool<ThriftClient<T>> pool;
