@@ -302,9 +302,11 @@ public class TableOptimizingMetrics {
   }
 
   public void unregister() {
-    registeredMetricKeys.forEach(globalRegistry::unregister);
-    registeredMetricKeys.clear();
-    globalRegistry = null;
+    if (globalRegistry != null) {
+      registeredMetricKeys.forEach(globalRegistry::unregister);
+      registeredMetricKeys.clear();
+      globalRegistry = null;
+    }
   }
 
   /**
