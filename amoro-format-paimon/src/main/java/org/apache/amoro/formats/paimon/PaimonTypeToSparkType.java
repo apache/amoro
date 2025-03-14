@@ -41,7 +41,6 @@ import org.apache.paimon.types.VarBinaryType;
 import org.apache.paimon.types.VarCharType;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.LongType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.types.UserDefinedType;
@@ -51,7 +50,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Copy from org.apache.paimon.spark.SparkTypeUtilsorg.apache.paimon.spark.SparkTypeUtils. Reason:
+ * Copy from org.apache.paimon.spark.SparkTypeUtils org.apache.paimon.spark.SparkTypeUtils. Reason:
  * 1. Ams server don't have paimon-spark dependency.
  */
 public class PaimonTypeToSparkType {
@@ -262,7 +261,7 @@ public class PaimonTypeToSparkType {
         return new SmallIntType();
       } else if (atomic instanceof org.apache.spark.sql.types.IntegerType) {
         return new IntType();
-      } else if (atomic instanceof LongType) {
+      } else if (atomic instanceof org.apache.spark.sql.types.LongType) {
         return new BigIntType();
       } else if (atomic instanceof org.apache.spark.sql.types.FloatType) {
         return new FloatType();

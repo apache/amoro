@@ -643,7 +643,7 @@ public class CatalogController {
         StringUtils.isNotEmpty(ctx.pathParam("catalogName")), "Catalog name is empty!");
     ServerCatalog serverCatalog = catalogService.getServerCatalog(catalogName);
     if (serverCatalog instanceof InternalCatalog) {
-      ctx.json(OkResponse.of(serverCatalog.listTables().size() == 0));
+      ctx.json(OkResponse.of(serverCatalog.listTables().isEmpty()));
     } else {
       ctx.json(OkResponse.of(true));
     }
