@@ -60,7 +60,7 @@ tests:
           path: data["config.yaml"]
           pattern:
             |
-            local.spark.sql.iceberg.handle-timestamp-without-timezone: true
+            spark.sql.iceberg.handle-timestamp-without-timezone: true
   - it: Amoro configMap should show kyuubi url if terminal.backend is set to kyuubi
     set:
       amoroConf:
