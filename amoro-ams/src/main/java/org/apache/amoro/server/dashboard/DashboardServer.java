@@ -78,8 +78,6 @@ public class DashboardServer {
   private static final String AUTH_TYPE_BASIC = "basic";
   private static final String X_REQUEST_SOURCE_HEADER = "X-Request-Source";
   private static final String X_REQUEST_SOURCE_WEB = "Web";
-  private static final String SWAGGER_PATH = "/openapi-ui";
-
   private final CatalogController catalogController;
   private final HealthCheckController healthCheckController;
   private final LoginController loginController;
@@ -128,31 +126,32 @@ public class DashboardServer {
     this.basicAuthPassword = serviceConfig.get(AmoroManagementConf.ADMIN_PASSWORD);
   }
 
-  private String indexHtml = "";
+  private volatile String indexHtml = null;
   // read index.html content
   public String getIndexFileContent() {
-    try {
-      if ("".equals(indexHtml)) {
-        try (InputStream fileName =
-            DashboardServer.class.getClassLoader().getResourceAsStream("static/index.html")) {
-          Preconditions.checkNotNull(fileName, "Cannot find index file.");
-          try (InputStreamReader isr =
-                  new InputStreamReader(fileName, StandardCharsets.UTF_8.newDecoder());
-              BufferedReader br = new BufferedReader(isr)) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = br.readLine()) != null) {
-              // process the line
-              sb.append(line);
+    if (indexHtml == null) {
+      synchronized (this) {
+        if (indexHtml == null) {
+          try (InputStream inputStream =
+              DashboardServer.class.getClassLoader().getResourceAsStream("static/index.html")) {
+            Preconditions.checkNotNull(inputStream, "Cannot find index file.");
+            try (InputStreamReader isr =
+                    new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+                BufferedReader br = new BufferedReader(isr)) {
+              StringBuilder sb = new StringBuilder();
+              String line;
+              while ((line = br.readLine()) != null) {
+                sb.append(line);
+              }
+              indexHtml = sb.toString();
             }
-            indexHtml = sb.toString();
+          } catch (IOException e) {
+            throw new UncheckedIOException("Load index html failed", e);
           }
         }
       }
-      return indexHtml;
-    } catch (IOException e) {
-      throw new UncheckedIOException("Load index html failed", e);
     }
+    return indexHtml;
   }
 
   public Consumer<StaticFileConfig> configStaticFiles() {
@@ -378,26 +377,28 @@ public class DashboardServer {
 
   public void preHandleRequest(Context ctx) {
     String uriPath = ctx.path();
-    String requestSource = ctx.header(X_REQUEST_SOURCE_HEADER);
-    if (uriPath.startsWith(SWAGGER_PATH)) {
+    if (inWhiteList(uriPath)) {
       return;
     }
-    if (needApiKeyCheck(uriPath) && !X_REQUEST_SOURCE_WEB.equalsIgnoreCase(requestSource)) {
-      if (AUTH_TYPE_BASIC.equalsIgnoreCase(authType)) {
-        BasicAuthCredentials cred = ctx.basicAuthCredentials();
-        if (!(basicAuthUser.equals(cred.component1())
-            && basicAuthPassword.equals(cred.component2()))) {
-          throw new SignatureCheckException(
-              "Failed to authenticate via basic authentication for url:" + uriPath);
-        }
-      } else {
-        checkApiToken(
-            ctx.url(), ctx.queryParam("apiKey"), ctx.queryParam("signature"), ctx.queryParamMap());
-      }
-    } else if (needLoginCheck(uriPath)) {
+    String requestSource = ctx.header(X_REQUEST_SOURCE_HEADER);
+    boolean isWebRequest = X_REQUEST_SOURCE_WEB.equalsIgnoreCase(requestSource);
+
+    if (isWebRequest) {
       if (null == ctx.sessionAttribute("user")) {
         throw new ForbiddenException("User session attribute is missed for url: " + uriPath);
       }
+      return;
+    }
+    if (AUTH_TYPE_BASIC.equalsIgnoreCase(authType)) {
+      BasicAuthCredentials cred = ctx.basicAuthCredentials();
+      if (!(basicAuthUser.equals(cred.component1())
+          && basicAuthPassword.equals(cred.component2()))) {
+        throw new SignatureCheckException(
+            "Failed to authenticate via basic authentication for url:" + uriPath);
+      }
+    } else {
+      checkApiToken(
+          ctx.url(), ctx.queryParam("apiKey"), ctx.queryParam("signature"), ctx.queryParamMap());
     }
   }
 
@@ -417,7 +418,7 @@ public class DashboardServer {
     LOG.error("An error occurred while processing the url:{}", ctx.url(), e);
   }
 
-  private static final String[] urlWhiteList = {
+  private static final String[] URL_WHITE_LIST = {
     "/api/ams/v1/versionInfo",
     "/api/ams/v1/login",
     "/api/ams/v1/health/status",
@@ -440,30 +441,19 @@ public class DashboardServer {
     RestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
   };
 
-  private static final String[] apiAuthWhiteList = {"/api/ams/v1/health/status"};
-
-  private static boolean needLoginCheck(String uri) {
-    for (String item : urlWhiteList) {
+  private static boolean inWhiteList(String uri) {
+    for (String item : URL_WHITE_LIST) {
       if (item.endsWith("*")) {
         if (uri.startsWith(item.substring(0, item.length() - 1))) {
-          return false;
+          return true;
         }
       } else {
         if (uri.equals(item)) {
-          return false;
+          return true;
         }
       }
     }
-    return true;
-  }
-
-  private boolean needApiKeyCheck(String uri) {
-    for (String item : apiAuthWhiteList) {
-      if (uri.equals(item)) {
-        return false;
-      }
-    }
-    return uri.startsWith("/api/ams");
+    return false;
   }
 
   private void checkApiToken(
@@ -472,16 +462,15 @@ public class DashboardServer {
     String encryptString;
     String signCal;
 
-    APITokenManager apiTokenService = new APITokenManager();
     try {
+      if (apiKey == null || signature == null) {
+        throw new SignatureCheckException("API key or signature is missing");
+      }
+      APITokenManager apiTokenService = new APITokenManager();
       String secret = apiTokenService.getSecretByKey(apiKey);
 
       if (secret == null) {
-        throw new SignatureCheckException();
-      }
-
-      if (apiKey == null || signature == null) {
-        throw new SignatureCheckException();
+        throw new SignatureCheckException("Invalid API key");
       }
 
       params.remove("apiKey");
