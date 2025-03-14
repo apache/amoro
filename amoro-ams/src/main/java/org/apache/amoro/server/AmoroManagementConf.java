@@ -146,7 +146,7 @@ public class AmoroManagementConf {
   public static final ConfigOption<Boolean> SYNC_HIVE_TABLES_ENABLED =
       ConfigOptions.key("sync-hive-tables.enabled")
           .booleanType()
-          .defaultValue(true)
+          .defaultValue(false)
           .withDescription("Enable synchronizing Hive tables.");
 
   public static final ConfigOption<Integer> SYNC_HIVE_TABLES_THREAD_COUNT =
@@ -428,7 +428,7 @@ public class AmoroManagementConf {
   public static final ConfigOption<Boolean> DATA_EXPIRATION_ENABLED =
       ConfigOptions.key("data-expiration.enabled")
           .booleanType()
-          .defaultValue(false)
+          .defaultValue(true)
           .withDescription("Enable data expiration");
 
   public static final ConfigOption<Integer> DATA_EXPIRATION_THREAD_COUNT =
