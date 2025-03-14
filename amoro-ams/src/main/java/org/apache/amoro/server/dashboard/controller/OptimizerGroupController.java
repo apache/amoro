@@ -310,7 +310,7 @@ public class OptimizerGroupController {
                 .collect(Collectors.toList())));
   }
 
-  public void validateGroupName(String groupName) {
+  private void validateGroupName(String groupName) {
     if (StringUtils.isEmpty(groupName)) {
       throw new BadRequestException(
           "Group name can not be empty, please specify a valid group name.");
