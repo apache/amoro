@@ -233,9 +233,11 @@ public class TableSummaryMetrics {
   }
 
   public void unregister() {
-    registeredMetricKeys.forEach(globalRegistry::unregister);
-    registeredMetricKeys.clear();
-    globalRegistry = null;
+    if (globalRegistry != null) {
+      registeredMetricKeys.forEach(globalRegistry::unregister);
+      registeredMetricKeys.clear();
+      globalRegistry = null;
+    }
   }
 
   public void refresh(AbstractOptimizingEvaluator.PendingInput tableSummary) {

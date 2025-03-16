@@ -29,7 +29,8 @@ import org.slf4j.LoggerFactory;
 /** Clean table dangling delete files */
 public class DanglingDeleteFilesCleaningExecutor extends BaseTableExecutor {
 
-  private static final Logger LOG = LoggerFactory.getLogger(OrphanFilesCleaningExecutor.class);
+  private static final Logger LOG =
+      LoggerFactory.getLogger(DanglingDeleteFilesCleaningExecutor.class);
 
   private static final long INTERVAL = 24 * 60 * 60 * 1000L;
 

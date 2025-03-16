@@ -99,13 +99,22 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
   @Override
   public void onTableDropped(InternalCatalog catalog, ServerTableIdentifier identifier) {
-    Optional.ofNullable(tableRuntimeMap.remove(identifier.getId()))
+    Optional.ofNullable(tableRuntimeMap.get(identifier.getId()))
         .ifPresent(
             tableRuntime -> {
-              if (headHandler != null) {
-                headHandler.fireTableRemoved(tableRuntime);
+              try {
+                if (headHandler != null) {
+                  headHandler.fireTableRemoved(tableRuntime);
+                }
+                tableRuntime.dispose();
+                tableRuntimeMap.remove(
+                    identifier.getId()); // remove only after successful operation
+              } catch (Exception e) {
+                LOG.error(
+                    "Error occurred while removing tableRuntime of table {}",
+                    identifier.getId(),
+                    e);
               }
-              tableRuntime.dispose();
             });
   }
 
@@ -255,7 +264,8 @@ public class DefaultTableService extends PersistentBase implements TableService 
     LOG.info("Syncing external catalogs took {} ms.", end - start);
   }
 
-  private void exploreExternalCatalog(ExternalCatalog externalCatalog) {
+  @VisibleForTesting
+  public void exploreExternalCatalog(ExternalCatalog externalCatalog) {
     final List<CompletableFuture<Set<TableIdentity>>> tableIdentifiersFutures =
         Lists.newArrayList();
     externalCatalog
@@ -458,21 +468,36 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   private void disposeTable(ServerTableIdentifier tableIdentifier) {
-    doAs(
-        TableMetaMapper.class,
-        mapper ->
-            mapper.deleteTableIdByName(
-                tableIdentifier.getCatalog(),
-                tableIdentifier.getDatabase(),
-                tableIdentifier.getTableName()));
-    Optional.ofNullable(tableRuntimeMap.remove(tableIdentifier.getId()))
-        .ifPresent(
-            tableRuntime -> {
-              if (headHandler != null) {
-                headHandler.fireTableRemoved(tableRuntime);
-              }
-              tableRuntime.dispose();
-            });
+    TableRuntime existedTableRuntime = tableRuntimeMap.get(tableIdentifier.getId());
+    try {
+      doAsTransaction(
+          () ->
+              Optional.ofNullable(existedTableRuntime)
+                  .ifPresent(
+                      tableRuntime -> {
+                        try {
+                          if (headHandler != null) {
+                            headHandler.fireTableRemoved(tableRuntime);
+                          }
+                          tableRuntime.dispose();
+                          tableRuntimeMap.remove(
+                              tableIdentifier.getId()); // remove only after successful operation
+                        } catch (Exception e) {
+                          LOG.error("Error occurred while disposing table {}", tableIdentifier, e);
+                        }
+                      }),
+          () ->
+              doAs(
+                  TableMetaMapper.class,
+                  mapper ->
+                      mapper.deleteTableIdByName(
+                          tableIdentifier.getCatalog(),
+                          tableIdentifier.getDatabase(),
+                          tableIdentifier.getTableName())));
+    } catch (Throwable t) {
+      tableRuntimeMap.putIfAbsent(tableIdentifier.getId(), existedTableRuntime);
+      throw t;
+    }
   }
 
   private static class TableIdentity {
