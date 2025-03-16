@@ -73,7 +73,7 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
 
   private static final String KUBERNETES_NAME_PROPERTIES = "name";
 
-  public static final String JVM_HEAP_RATIO_PROPERTY = "jvm.heap.ratio";
+  public static final String JVM_HEAP_RATIO_PROPERTY = "extra.jvm.heap.ratio";
 
   private KubernetesClient client;
 
