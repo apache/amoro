@@ -18,13 +18,6 @@
 
 package org.apache.amoro.server.dashboard;
 
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import io.javalin.core.security.BasicAuthCredentials;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
@@ -47,6 +40,8 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.servlet.http.HttpServletRequest;
+
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TestDashboardServer {
@@ -75,16 +70,23 @@ public class TestDashboardServer {
     when(mockConfig.get(AmoroManagementConf.ADMIN_USERNAME)).thenReturn("admin");
     when(mockConfig.get(AmoroManagementConf.ADMIN_PASSWORD)).thenReturn("password");
 
-    dashboardServer =
-        new DashboardServer(
-            mockConfig,
-            mockCatalogManager,
-            mockTableManager,
-            mockOptimizerManager,
-            mockOptimizingService,
-            mockTerminalManager);
+    mockContext = mock(Context.class);
+    mockHttpRequest = mock(HttpServletRequest.class);
 
     when(mockContext.req).thenReturn(mockHttpRequest);
+    when(mockContext.url()).thenReturn("http://test-url");
+    when(mockHttpRequest.getRequestURI()).thenReturn("/test-uri");
+
+    if (dashboardServer == null) {
+      dashboardServer =
+          new DashboardServer(
+              mockConfig,
+              mockCatalogManager,
+              mockTableManager,
+              mockOptimizerManager,
+              mockOptimizingService,
+              mockTerminalManager);
+    }
   }
 
   @Test
