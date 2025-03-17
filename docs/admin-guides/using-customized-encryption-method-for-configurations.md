@@ -70,12 +70,39 @@ public interface ConfigShade {
   String decrypt(String content);
 }
 ```
-In this interface, the method `getIdentifier()` returns the unique identifier for your encryption algorithm, which is used to configure the `ams.shade.identifier`. The `decrypt(String content)` method is used to decrypt the input ciphertext.
+In this interface:
+
+- `getIdentifier()`: Returns a **unique** identifier for your encryption algorithm, which is used to configure the `ams.shade.identifier`. Avoid using "default" (which disables encryption) or "base64" (which refers to AMS’s built-in Base64 support).
+- `decrypt(String content)`: Implements the decryption logic for converting encrypted values back to plaintext.
+
+Here is an example implementation:
+```java
+package com.example.shade;
+
+import org.apache.amoro.config.Configurations;
+import org.apache.amoro.config.shade.ConfigShade;
+import java.util.Base64;
+
+/**
+ * Custom Base64 decryption implementation for AMS.
+ */
+public class Base64CustomConfigShade implements ConfigShade {
+    @Override
+    public String getIdentifier() {
+        return "base64-custom"; // Use this identifier in shade.identifier
+    }
+
+    @Override
+    public String decrypt(String content) {
+        return new String(Base64.getDecoder().decode(content));
+    }
+}
+```
 
 ### Register the Custom Implementation
 Create a file named `org.apache.amoro.config.shade.ConfigShade` under `resources/META-INF/services/` and add the fully qualified class name of your implementation:
 ```j
-com.example.shade.Base64ConfigShade
+com.example.shade.Base64CustomConfigShade
 ```
 ### Build the JAR
 Package your implementation into a JAR file using Maven:
