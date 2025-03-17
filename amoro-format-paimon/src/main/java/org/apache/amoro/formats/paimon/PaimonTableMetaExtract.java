@@ -30,6 +30,7 @@ import org.apache.paimon.types.MapType;
 import org.apache.paimon.types.RowType;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,7 +42,7 @@ public class PaimonTableMetaExtract implements TableMetaExtract<DataTable> {
     SchemaManager schemaManager = new SchemaManager(table.fileIO(), table.location());
     List<TableSchema> tableSchemas = schemaManager.listAll();
     return tableSchemas.stream()
-        .sorted((o1, o2) -> Long.compare(o1.timeMillis(), o2.timeMillis()))
+        .sorted(Comparator.comparingLong(TableSchema::timeMillis))
         .map(
             schema ->
                 new InternalTableMeta(
