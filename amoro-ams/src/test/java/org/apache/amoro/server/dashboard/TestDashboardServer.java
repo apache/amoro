@@ -75,13 +75,6 @@ public class TestDashboardServer {
     when(mockConfig.get(AmoroManagementConf.ADMIN_USERNAME)).thenReturn("admin");
     when(mockConfig.get(AmoroManagementConf.ADMIN_PASSWORD)).thenReturn("password");
 
-    mockContext = mock(Context.class);
-    mockHttpRequest = mock(HttpServletRequest.class);
-
-    when(mockContext.req).thenReturn(mockHttpRequest);
-    when(mockContext.url()).thenReturn("http://test-url");
-    when(mockHttpRequest.getRequestURI()).thenReturn("/test-uri");
-
     if (dashboardServer == null) {
       dashboardServer =
           new DashboardServer(
