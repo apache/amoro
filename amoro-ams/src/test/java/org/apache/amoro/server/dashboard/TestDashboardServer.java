@@ -18,9 +18,11 @@
 
 package org.apache.amoro.server.dashboard;
 
+import static org.mockito.Mockito.*;
+
+import io.javalin.core.security.BasicAuthCredentials;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
-import io.javalin.core.security.BasicAuthCredentials;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.ForbiddenException;
 import org.apache.amoro.exception.SignatureCheckException;
@@ -40,8 +42,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.servlet.http.HttpServletRequest;
-
-import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TestDashboardServer {
