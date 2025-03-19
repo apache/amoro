@@ -41,7 +41,7 @@ import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.junit.jupiter.params.provider.Arguments;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -85,7 +85,11 @@ public class FlinkCatalogContext {
             schema,
             "Flink managed table",
             new ArrayList<>(),
-            Collections.singletonMap(TABLE_FORMAT.key(), tableFormat)),
+            new HashMap<String, String>() {
+              {
+                put(TABLE_FORMAT.key(), tableFormat);
+              }
+            }),
         resolvedSchema);
   }
 
