@@ -20,6 +20,7 @@ package org.apache.amoro.utils;
 
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
+import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.junit.Assert;
@@ -310,5 +311,277 @@ public class TestMixedFormatCatalogUtil {
     Assert.assertEquals(name, props.get(keyWarehouse));
     Assert.assertFalse(props.containsKey(type));
     Assert.assertEquals(restImpl, props.get(CatalogProperties.CATALOG_IMPL));
+  }
+
+  /** test merge writable properties basic case */
+  @Test
+  public void testMergeDefaultWritableProperties1() {
+    Map<String, String> expected = new HashMap<>();
+    expected.put("log-store.enabled", "true");
+    expected.put("log-store.topic", "topic1");
+    expected.put("log-store.address", "168.0.0.1:9092");
+    expected.put("log-store.type", "kafka");
+    expected.put("log-store.consistency.guarantee.enable", "true");
+    expected.put("write.upsert.enable", "true");
+    expected.put("write.parquet.compression-codec", "true");
+
+    Map<String, String> tableProperties = new HashMap<>();
+    tableProperties.put("log-store.enabled", "true");
+    tableProperties.put("log-store.topic", "topic1");
+
+    Map<String, String> catalogProperties = new HashMap<>();
+    catalogProperties.put("table.log-store.enabled", "false");
+    catalogProperties.put("table.log-store.address", "168.0.0.1:9092");
+    catalogProperties.put("table.log-store.type", "kafka");
+    catalogProperties.put("table.log-store.consistency.guarantee.enable", "true");
+    catalogProperties.put("table.self-optimizing.enabled", "false");
+    catalogProperties.put("table.optimize.quota", "0.1");
+    catalogProperties.put("table.write.upsert.enable", "true");
+    catalogProperties.put("table.write.parquet.compression-codec", "true");
+
+    Map<String, String> result =
+        MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
+            tableProperties, catalogProperties);
+    Assert.assertEquals(expected, result);
+  }
+
+  /** test handling log-store related properties */
+  @Test
+  public void testMergeDefaultWritableProperties2() {
+    Map<String, String> expected = new HashMap<>();
+    expected.put("log-store.enabled", "false");
+
+    Map<String, String> tableProperties = new HashMap<>();
+    tableProperties.put("log-store.enabled", "false");
+
+    Map<String, String> catalogProperties = new HashMap<>();
+    catalogProperties.put("table.log-store.enabled", "false");
+    catalogProperties.put("table.log-store.address", "168.0.0.1:9092");
+    catalogProperties.put("table.log-store.type", "kafka");
+    catalogProperties.put("table.self-optimizing.enabled", "false");
+    catalogProperties.put("table.optimize.quota", "0.1");
+
+    Map<String, String> result =
+        MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
+            tableProperties, catalogProperties);
+    Assert.assertEquals(expected, result);
+  }
+
+  /** test merge additional properties */
+  @Test
+  public void testMergeDefaultWritableProperties3() {
+    Map<String, String> expected = new HashMap<>();
+    expected.put("log-store.enabled", "true");
+    expected.put("log-store.topic", "topic1");
+    expected.put("log-store.type", "kafka");
+
+    Map<String, String> tableProperties = new HashMap<>();
+    tableProperties.put("log-store.enabled", "true");
+    tableProperties.put("log-store.topic", "topic1");
+
+    Map<String, String> catalogProperties = new HashMap<>();
+    catalogProperties.put("table.log-store.enabled", "false");
+    catalogProperties.put("table.log-store.address", "168.0.0.1:9092"); // would not merge
+    catalogProperties.put("table.log-store.type", "kafka");
+    catalogProperties.put("table.self-optimizing.enabled", "false");
+    catalogProperties.put("table.optimize.quota", "0.1");
+
+    // add additional props
+    catalogProperties.put(
+        CatalogMetaProperties.TABLE_NON_PERSISTED_PROPERTIES_ADDITIONAL,
+        TableProperties.LOG_STORE_ADDRESS);
+    Map<String, String> result =
+        MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
+            tableProperties, catalogProperties);
+
+    Assert.assertEquals(expected, result);
+  }
+
+  /** test merge additional props */
+  @Test
+  public void testMergeDefaultWritableProperties4() {
+    Map<String, String> expected = new HashMap<>();
+    expected.put("log-store.enabled", "true");
+    expected.put("log-store.name", "cluster1");
+    expected.put("log-store.topic", "topic1");
+
+    Map<String, String> tableProperties = new HashMap<>();
+    tableProperties.put("log-store.enabled", "true");
+    tableProperties.put("log-store.topic", "topic1");
+
+    Map<String, String> catalogProperties = new HashMap<>();
+    catalogProperties.put("table.log-store.enabled", "false");
+    catalogProperties.put("table.log-store.name", "cluster1");
+    catalogProperties.put("table.log-store.address", "168.0.0.1:9092"); // would not merge
+    catalogProperties.put("table.log-store.type", "kafka"); // would not merge
+
+    // add additional prefix
+    catalogProperties.put(
+        CatalogMetaProperties.TABLE_NON_PERSISTED_PROPERTIES_ADDITIONAL,
+        "log-store.address;log-store.type");
+    Map<String, String> result =
+        MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
+            tableProperties, catalogProperties);
+    Assert.assertEquals(expected, result);
+  }
+
+  /** test merge additional prefix */
+  @Test
+  public void testMergeDefaultWritableProperties5() {
+    Map<String, String> expected = new HashMap<>();
+    expected.put("log-store.enabled", "true");
+    expected.put("log-store.topic", "topic1");
+
+    Map<String, String> tableProperties = new HashMap<>();
+    tableProperties.put("log-store.enabled", "true");
+    tableProperties.put("log-store.topic", "topic1");
+
+    Map<String, String> catalogProperties = new HashMap<>();
+    catalogProperties.put("table.log-store.enabled", "false");
+    catalogProperties.put("table.log-store.address", "168.0.0.1:9092"); // would not merge
+    catalogProperties.put("table.log-store.type", "kafka");
+    catalogProperties.put("table.change.data.ttl.minutes", "10080");
+
+    // add additional prefix
+    catalogProperties.put(
+        CatalogMetaProperties.TABLE_NON_PERSISTED_PROPERTIES_ADDITIONAL, "log-store.;change.data.");
+    Map<String, String> result =
+        MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
+            tableProperties, catalogProperties);
+
+    Assert.assertEquals(expected, result);
+  }
+
+  /** test merge excluded props */
+  @Test
+  public void testMergeDefaultWritableProperties6() {
+    Map<String, String> expected = new HashMap<>();
+    expected.put("self-optimizing.enabled", "false");
+    expected.put("optimize.quota", "0.1");
+
+    Map<String, String> tableProperties = new HashMap<>();
+
+    Map<String, String> catalogProperties = new HashMap<>();
+    catalogProperties.put("table.self-optimizing.enabled", "false");
+    catalogProperties.put("table.optimize.quota", "0.1");
+    catalogProperties.put("table.clean-orphan-file.min-existing-time-minutes", "0.1");
+
+    // add excluded props
+    catalogProperties.put(
+        CatalogMetaProperties.TABLE_NON_PERSISTED_PROPERTIES_EXCLUDED,
+        "self-optimizing.enabled;optimize.quota");
+    Map<String, String> result =
+        MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
+            tableProperties, catalogProperties);
+    Assert.assertEquals(expected, result);
+  }
+
+  /** test merge excluded prefix */
+  @Test
+  public void testMergeDefaultWritableProperties7() {
+    Map<String, String> expected = new HashMap<>();
+    expected.put("self-optimizing.enabled", "false");
+    expected.put("self-optimizing.execute.num-retries", "3");
+    expected.put("optimize.quota", "0.1");
+
+    Map<String, String> tableProperties = new HashMap<>();
+
+    Map<String, String> catalogProperties = new HashMap<>();
+    catalogProperties.put("table.self-optimizing.enabled", "false");
+    catalogProperties.put("table.self-optimizing.execute.num-retries", "3");
+    catalogProperties.put("table.optimize.quota", "0.1");
+    catalogProperties.put("table.clean-orphan-file.min-existing-time-minutes", "0.1");
+
+    // add excluded prefix
+    catalogProperties.put(
+        CatalogMetaProperties.TABLE_NON_PERSISTED_PROPERTIES_EXCLUDED,
+        "self-optimizing.;optimize.");
+    Map<String, String> result =
+        MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
+            tableProperties, catalogProperties);
+    Assert.assertEquals(expected, result);
+  }
+
+  /** test merge excluded prefix */
+  @Test
+  public void testMergeDefaultWritableProperties8() {
+    Map<String, String> expected = new HashMap<>();
+    expected.put("snapshot.base.keep.minutes", "720");
+
+    Map<String, String> tableProperties = new HashMap<>();
+
+    Map<String, String> catalogProperties = new HashMap<>();
+    catalogProperties.put("table.snapshot.base.keep.minutes", "720");
+    catalogProperties.put("table.self-optimizing.execute.num-retries", "3");
+    catalogProperties.put("table.optimize.quota", "0.1");
+    catalogProperties.put("table.clean-orphan-file.min-existing-time-minutes", "0.1");
+
+    // add excluded key
+    catalogProperties.put(
+        CatalogMetaProperties.TABLE_NON_PERSISTED_PROPERTIES_EXCLUDED,
+        "snapshot.base.keep.minutes");
+    Map<String, String> result =
+        MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
+            tableProperties, catalogProperties);
+    Assert.assertEquals(expected, result);
+  }
+
+  /** test conflicts between excluded and additional config prop which is a default not-writable */
+  @Test
+  public void testMergeDefaultWritableProperties9() {
+    Map<String, String> expected = new HashMap<>();
+
+    Map<String, String> tableProperties = new HashMap<>();
+
+    Map<String, String> catalogProperties = new HashMap<>();
+    catalogProperties.put("table.write.upsert.enabled", "false");
+
+    catalogProperties.put(
+        CatalogMetaProperties.TABLE_NON_PERSISTED_PROPERTIES_EXCLUDED, "write.upsert.enabled");
+    catalogProperties.put(
+        CatalogMetaProperties.TABLE_NON_PERSISTED_PROPERTIES_ADDITIONAL, "write.upsert.enabled");
+    Map<String, String> result =
+        MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
+            tableProperties, catalogProperties);
+    Assert.assertEquals(expected, result);
+  }
+
+  /** test conflicts between excluded and additional config prop which is a default not-writable */
+  @Test
+  public void testMergeDefaultWritableProperties10() {
+    Map<String, String> expected = new HashMap<>();
+    expected.put("tag.auto-create.trigger.max-delay.minutes", "60");
+
+    Map<String, String> tableProperties = new HashMap<>();
+
+    Map<String, String> catalogProperties = new HashMap<>();
+    catalogProperties.put("table.tag.auto-create.trigger.max-delay.minutes", "60");
+    catalogProperties.put("table.tag.auto-create.trigger.offset.minutes", "1");
+
+    catalogProperties.put(
+        CatalogMetaProperties.TABLE_NON_PERSISTED_PROPERTIES_EXCLUDED,
+        "tag.auto-create.trigger.max-delay.minutes");
+    catalogProperties.put(
+        CatalogMetaProperties.TABLE_NON_PERSISTED_PROPERTIES_ADDITIONAL, "tag.auto-create.");
+    Map<String, String> result =
+        MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
+            tableProperties, catalogProperties);
+    Assert.assertEquals(expected, result);
+  }
+
+  /** test default non-persisted mixed-hive properties */
+  @Test
+  public void testMergeDefaultWritableProperties11() {
+    Map<String, String> expected = new HashMap<>();
+
+    Map<String, String> tableProperties = new HashMap<>();
+
+    Map<String, String> catalogProperties = new HashMap<>();
+    catalogProperties.put("table.base.hive.auto-sync-data-write", "false");
+
+    Map<String, String> result =
+        MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
+            tableProperties, catalogProperties);
+    Assert.assertEquals(expected, result);
   }
 }
