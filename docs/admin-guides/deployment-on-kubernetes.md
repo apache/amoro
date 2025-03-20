@@ -225,17 +225,7 @@ optimizer:
       namespace: "default"
       kube-config-path: "~/.kube/config"
       image: "apache/amoro:latest"
-      pullPolicy: "IfNotPresent"      
-extra:
-  - name: "kubernetes-custom"
-    type: "kubernetes"
-    properties:
-      namespace: "default"
-      image: "apache/amoro:latest"
       pullPolicy: "IfNotPresent"
-      memory: "1024"
-      cpu.factor: "1.0"
-      extra.jvm.heap.ratio: "0.8"
 ```
 
 To use PodTemplate, you need to copy and paste the following into the `kubernetes.properties`.
