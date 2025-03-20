@@ -669,11 +669,11 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
      * transformed into Flink options. 1. optimizing-group properties 2. optimizing-container
      * properties
      *
-     * @return flink options, format is `-Dkey1=value1 -Dkey2=value2`
+     * @return flink options, format is `-Dkey1="value1" -Dkey2="value2"`
      */
     public String toCliOptions() {
       return flinkOptions.entrySet().stream()
-          .map(entry -> "-D" + entry.getKey() + "=" + entry.getValue())
+          .map(entry -> "-D" + entry.getKey() + "=\"" + entry.getValue() + "\"")
           .collect(Collectors.joining(" "));
     }
 
