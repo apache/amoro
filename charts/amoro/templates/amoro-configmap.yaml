@@ -94,9 +94,26 @@ data:
         enabled: true
         thread-count: 10
 
-      sync-hive-tables:
+      clean-dangling-delete-files:
         enabled: true
         thread-count: 10
+
+      sync-hive-tables:
+        enabled: false
+        thread-count: 10
+
+      data-expiration:
+        enabled: true
+        thread-count: 10
+        interval: 1d
+      
+      auto-create-tags:
+        enabled: true
+        thread-count: 3
+        interval: 1min # 60000
+          
+      table-manifest-io:
+        thread-count: 20
 
       database:
         type: {{ .Values.amoroConf.database.type }}
@@ -109,7 +126,14 @@ data:
       terminal:
         backend: {{ .Values.amoroConf.terminal.backend }}
         {{- if eq .Values.amoroConf.terminal.backend "local" }}
-        local.spark.sql.iceberg.handle-timestamp-without-timezone: {{ .Values.amoroConf.terminal.icebergHandleTimestampWithoutTimezone }}
+        result:
+          limit: 1000
+        stop-on-error: false
+        session:
+          timeout: 30min
+        local:
+          using-session-catalog-for-hive: false        
+          spark.sql.iceberg.handle-timestamp-without-timezone: {{ .Values.amoroConf.terminal.icebergHandleTimestampWithoutTimezone }}
         {{- end }}
         {{- if hasKey .Values.amoroConf.terminal "kyuubiLdapEnabled" }}
         kyuubi.ldap.enabled: {{ .Values.amoroConf.terminal.kyuubiLdapEnabled}}
