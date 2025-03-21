@@ -36,6 +36,7 @@ import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
@@ -61,20 +62,12 @@ public class TableConfigurations {
                     properties,
                     TableProperties.ENABLE_TABLE_EXPIRE,
                     TableProperties.ENABLE_TABLE_EXPIRE_DEFAULT))
-        .setSnapshotTTLMinutes(
-            ConfigHelpers.TimeUtils.parseDuration(
-                        CompatiblePropertyUtil.propertyAsString(
-                            properties,
-                            TableProperties.SNAPSHOT_KEEP_DURATION,
-                            TableProperties.SNAPSHOT_KEEP_DURATION_DEFAULT),
-                        ChronoUnit.MINUTES)
-                    .getSeconds()
-                / 60)
+        .setSnapshotTTLMinutes(parseSnapshotDuration(properties).getSeconds() / 60)
         .setSnapshotMinCount(
             CompatiblePropertyUtil.propertyAsInt(
                 properties,
-                TableProperties.SNAPSHOT_MIN_COUNT,
-                TableProperties.SNAPSHOT_MIN_COUNT_DEFAULT))
+                TableProperties.MIN_SNAPSHOTS_TO_KEEP,
+                TableProperties.MIN_SNAPSHOTS_TO_KEEP_DEFAULT))
         .setChangeDataTTLMinutes(
             CompatiblePropertyUtil.propertyAsLong(
                 properties,
@@ -164,6 +157,25 @@ public class TableConfigurations {
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException(
           String.format("Unable to expire data since: %s", since), e);
+    }
+  }
+
+  private static Duration parseSnapshotDuration(Map<String, String> properties) {
+    if (properties.containsKey(TableProperties.MAX_SNAPSHOT_AGE_MS)) {
+      return ConfigHelpers.TimeUtils.parseDuration(
+          CompatiblePropertyUtil.propertyAsString(
+                  properties,
+                  TableProperties.MAX_SNAPSHOT_AGE_MS,
+                  TableProperties.MAX_SNAPSHOT_AGE_MS_DEFAULT)
+              + "ms",
+          ChronoUnit.MILLIS);
+    } else {
+      return ConfigHelpers.TimeUtils.parseDuration(
+          CompatiblePropertyUtil.propertyAsString(
+              properties,
+              TableProperties.SNAPSHOT_KEEP_DURATION,
+              TableProperties.SNAPSHOT_KEEP_DURATION_DEFAULT),
+          ChronoUnit.MINUTES);
     }
   }
 

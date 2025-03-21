@@ -98,6 +98,8 @@ public class CompatiblePropertyUtil {
         return TableProperties.ENABLE_LOG_STORE_LEGACY;
       case TableProperties.SNAPSHOT_KEEP_DURATION:
         return TableProperties.BASE_SNAPSHOT_KEEP_MINUTES;
+      case TableProperties.MIN_SNAPSHOTS_TO_KEEP:
+        return TableProperties.SNAPSHOT_MIN_COUNT;
       default:
         return null;
     }

@@ -568,6 +568,22 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     table.updateProperties().set(TableProperties.SNAPSHOT_MIN_COUNT, "10").commit();
     Assert.assertEquals(
         10, TableConfigurations.parseTableConfig(table.properties()).getSnapshotMinCount());
+
+    table.updateProperties().set(TableProperties.MAX_SNAPSHOT_AGE_MS, "600000").commit();
+    Assert.assertEquals(
+        10L, TableConfigurations.parseTableConfig(table.properties()).getSnapshotTTLMinutes());
+
+    table.updateProperties().set(TableProperties.MIN_SNAPSHOTS_TO_KEEP, "12").commit();
+    Assert.assertEquals(
+        12, TableConfigurations.parseTableConfig(table.properties()).getSnapshotMinCount());
+
+    table.updateProperties().remove(TableProperties.MAX_SNAPSHOT_AGE_MS).commit();
+    Assert.assertEquals(
+        720L, TableConfigurations.parseTableConfig(table.properties()).getSnapshotTTLMinutes());
+
+    table.updateProperties().remove(TableProperties.MIN_SNAPSHOTS_TO_KEEP).commit();
+    Assert.assertEquals(
+        10, TableConfigurations.parseTableConfig(table.properties()).getSnapshotMinCount());
   }
 
   private long waitUntilAfter(long timestampMillis) {
