@@ -158,6 +158,8 @@ and individuals to grow together, and sincerely hope to help users better use Da
 
 Join the Amoro WeChat Group: Add " `kllnn999` " as a friend on WeChat and specify "Amoro lover".
 
+We use the [workspace](https://asf-amoro.slack.com/) on Slack. To be invited, follow this [invite link](https://join.slack.com/t/asf-amoro/shared_invite/zt-328wr7rbm-hFlTDc0ImZca3Vv24AhGdQ).
+
 ## Contributors
 This project exists thanks to all the people who contribute.
 
