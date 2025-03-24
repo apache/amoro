@@ -53,7 +53,7 @@ There are some limitations in using the Mixed-Iceberg format:
 
 - Compatibility limited — In scenarios where Hive and Iceberg are compatible, there may be a violation of primary key uniqueness or the failure of conflict resolution.
 - Primary key constraint — When the primary key does not include partition keys and there are no updates to the stream data, normalized operators or other methods need to be used to restore the previous data to ensure primary key uniqueness.
-- Engines integrated — Currently supports reading and writing with Flink and Spark, and querying data with Trino and Impala.
+- Engines integrated — Currently supports reading and writing with Flink and Spark, and querying data with Trino.
 
 The BaseStore and ChangeStore of the Mixed-Iceberg format both use the Iceberg format and are consistent with Iceberg in schema, types, and partition usage. 
 While possessing the features of the Mixed-Iceberg format, the BaseStore and ChangeStore can be read and written using the native Iceberg connector, thus having all the functional features of the Iceberg format. 
