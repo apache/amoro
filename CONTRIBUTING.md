@@ -21,6 +21,12 @@
 This document provides guidelines for contributing to Amoro. While these suggestions are not strict
 rules, they aim to facilitate a smooth contribution experience.
 
+If you are thinking of contributing but first would like to discuss the change you wish to make, 
+we welcome you to head over to the [Join Community](https://amoro.apache.org/join-community/) page 
+on the official Amoro documentation site to find a number of ways to connect with the community, 
+including [slack](https://join.slack.com/t/asf-amoro/shared_invite/zt-328wr7rbm-hFlTDc0ImZca3Vv24AhGdQ) and our mailing lists. Of course, always feel free to just open a [new issue](https://github.com/apache/amoro/issues/new) in the 
+GitHub repo. You can also check the following for a [good first issue](https://github.com/apache/amoro/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+
 ## Issues
 
 Regardless of the type of contribution you plan to make, it is recommended that you create an issue

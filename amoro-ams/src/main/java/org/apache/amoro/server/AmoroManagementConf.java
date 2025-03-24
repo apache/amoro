@@ -146,7 +146,7 @@ public class AmoroManagementConf {
   public static final ConfigOption<Boolean> SYNC_HIVE_TABLES_ENABLED =
       ConfigOptions.key("sync-hive-tables.enabled")
           .booleanType()
-          .defaultValue(true)
+          .defaultValue(false)
           .withDescription("Enable synchronizing Hive tables.");
 
   public static final ConfigOption<Integer> SYNC_HIVE_TABLES_THREAD_COUNT =
@@ -380,6 +380,12 @@ public class AmoroManagementConf {
           .defaultValue(Duration.ofSeconds(3))
           .withDescription("Optimizer polling task timeout.");
 
+  public static final ConfigOption<Duration> OPTIMIZING_REFRESH_GROUP_INTERVAL =
+      ConfigOptions.key("self-optimizing.refresh-group-interval")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(30))
+          .withDescription("Optimizer group refresh interval.");
+
   /** config key prefix of terminal */
   public static final String TERMINAL_PREFIX = "terminal.";
 
@@ -428,7 +434,7 @@ public class AmoroManagementConf {
   public static final ConfigOption<Boolean> DATA_EXPIRATION_ENABLED =
       ConfigOptions.key("data-expiration.enabled")
           .booleanType()
-          .defaultValue(false)
+          .defaultValue(true)
           .withDescription("Enable data expiration");
 
   public static final ConfigOption<Integer> DATA_EXPIRATION_THREAD_COUNT =

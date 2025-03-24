@@ -334,6 +334,10 @@ public class OptimizingQueue extends PersistentBase {
     retryTaskQueue.offer(taskRuntime);
   }
 
+  public ResourceGroup getOptimizerGroup() {
+    return optimizerGroup;
+  }
+
   public void updateOptimizerGroup(ResourceGroup optimizerGroup) {
     Preconditions.checkArgument(
         this.optimizerGroup.getName().equals(optimizerGroup.getName()),

@@ -35,6 +35,7 @@ import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +50,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /** The controller that handles optimizer requests. */
@@ -57,15 +59,14 @@ public class OptimizerGroupController {
 
   private static final String ALL_GROUP = "all";
   private final TableManager tableManager;
-  private final DefaultOptimizingService optimizingService;
   private final OptimizerManager optimizerManager;
+  private static final Pattern GROUP_NAME_PATTERN = Pattern.compile("^[A-Za-z0-9_-]{1,50}$");
 
   public OptimizerGroupController(
       TableManager tableManager,
       DefaultOptimizingService optimizingService,
       OptimizerManager optimizerManager) {
     this.tableManager = tableManager;
-    this.optimizingService = optimizingService;
     this.optimizerManager = optimizerManager;
   }
 
@@ -210,7 +211,7 @@ public class OptimizerGroupController {
     resource.getProperties().putAll(optimizerInstances.get(0).getProperties());
     ResourceContainers.get(resource.getContainerName()).releaseOptimizer(resource);
     optimizerManager.deleteResource(resourceId);
-    optimizingService.deleteOptimizer(resource.getGroupName(), resourceId);
+    optimizerManager.deleteOptimizer(resource.getGroupName(), resourceId);
     ctx.json(OkResponse.of("Success to release optimizer"));
   }
 
@@ -263,12 +264,10 @@ public class OptimizerGroupController {
     String name = (String) map.get("name");
     String container = (String) map.get("container");
     Map<String, String> properties = (Map) map.get("properties");
-    if (optimizerManager.getResourceGroup(name) != null) {
-      throw new BadRequestException(String.format("Optimizer group:%s already existed.", name));
-    }
+    validateGroupName(name);
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
-    optimizingService.createResourceGroup(builder.build());
+    optimizerManager.createResourceGroup(builder.build());
     ctx.json(OkResponse.of("The optimizer group has been successfully created."));
   }
 
@@ -283,21 +282,21 @@ public class OptimizerGroupController {
     Map<String, String> properties = (Map) map.get("properties");
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
-    optimizingService.updateResourceGroup(builder.build());
+    optimizerManager.updateResourceGroup(builder.build());
     ctx.json(OkResponse.of("The optimizer group has been successfully updated."));
   }
 
   /** delete optimizeGroup url = /optimize/resourceGroups/{resourceGroupName} */
   public void deleteResourceGroup(Context ctx) {
     String name = ctx.pathParam("resourceGroupName");
-    optimizingService.deleteResourceGroup(name);
+    optimizerManager.deleteResourceGroup(name);
     ctx.json(OkResponse.of("The optimizer group has been successfully deleted."));
   }
 
   /** check if optimizerGroup can be deleted url = /optimize/resourceGroups/delete/check */
   public void deleteCheckResourceGroup(Context ctx) {
     String name = ctx.pathParam("resourceGroupName");
-    ctx.json(OkResponse.of(optimizingService.canDeleteResourceGroup(name)));
+    ctx.json(OkResponse.of(optimizerManager.canDeleteResourceGroup(name)));
   }
 
   /** check if optimizerGroup can be deleted url = /optimize/containers/get */
@@ -307,5 +306,21 @@ public class OptimizerGroupController {
             ResourceContainers.getMetadataList().stream()
                 .map(ContainerMetadata::getName)
                 .collect(Collectors.toList())));
+  }
+
+  private void validateGroupName(String groupName) {
+    if (StringUtils.isEmpty(groupName)) {
+      throw new BadRequestException(
+          "Group name can not be empty, please specify a valid group name.");
+    }
+
+    if (!GROUP_NAME_PATTERN.matcher(groupName).matches()) {
+      throw new BadRequestException(
+          String.format("Group name:%s must match ^[A-Za-z0-9_-]{1,50}$.", groupName));
+    }
+    if (optimizerManager.getResourceGroup(groupName) != null) {
+      throw new BadRequestException(
+          String.format("Optimizer group:%s already existed.", groupName));
+    }
   }
 }
