@@ -19,6 +19,7 @@
 package org.apache.amoro.server.table.internal;
 
 import org.apache.amoro.mixed.InternalMixedIcebergCatalog;
+import org.apache.amoro.table.MixedTable;
 
 /** Constants defines for internal table */
 public class InternalTableConstants {
@@ -37,6 +38,5 @@ public class InternalTableConstants {
   public static final String OSS_PROTOCOL_PREFIX = "oss://";
 
   public static final String CHANGE_STORE_TABLE_NAME_SUFFIX =
-      InternalMixedIcebergCatalog.CHANGE_STORE_SEPARATOR
-          + InternalMixedIcebergCatalog.CHANGE_STORE_NAME;
+      InternalMixedIcebergCatalog.CHANGE_STORE_SEPARATOR + MixedTable.CHANGE_STORE_IDENTIFIER;
 }

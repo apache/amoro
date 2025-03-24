@@ -88,7 +88,7 @@ public class PoolConfig<T extends TServiceClient> extends GenericObjectPoolConfi
 
   public static PoolConfig<?> forUrl(String url) {
     PoolConfig<?> poolConfig = new PoolConfig<>();
-    URLEncodedUtils.parse(URI.create(url), Charset.defaultCharset())
+    URLEncodedUtils.parse(URI.create(url), String.valueOf(Charset.defaultCharset()))
         .forEach(
             pair -> {
               try {
