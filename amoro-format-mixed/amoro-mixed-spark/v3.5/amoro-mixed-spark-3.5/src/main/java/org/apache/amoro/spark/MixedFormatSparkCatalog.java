@@ -252,7 +252,7 @@ public class MixedFormatSparkCatalog extends MixedSparkCatalogBase implements Su
     // one order leads to different results
     Preconditions.checkArgument(
         setSnapshotId == null || pickSnapshotId == null,
-        "Cannot set the current the current snapshot ID and cherry-pick snapshot changes");
+        "Cannot set the current snapshot ID and cherry-pick snapshot changes at the same time");
 
     if (setSnapshotId != null) {
       long newSnapshotId = Long.parseLong(setSnapshotId.value());
