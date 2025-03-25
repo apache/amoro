@@ -31,19 +31,5 @@ public interface ResourceContainer {
    */
   void init(String name, Map<String, String> containerProperties);
 
-  /**
-   * Start a new optimizer.
-   *
-   * @param resource resource information to start the optimizer
-   */
-  void requestResource(Resource resource);
-
-  /**
-   * Release a optimizer
-   *
-   * @param resource resource information to release the optimizer
-   */
-  void releaseOptimizer(Resource resource);
-
   ResourceStatus getStatus(String resourceId);
 }

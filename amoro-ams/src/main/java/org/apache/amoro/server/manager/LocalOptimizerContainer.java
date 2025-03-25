@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 
-public class LocalOptimizerContainer extends AbstractResourceContainer {
+public class LocalOptimizerContainer extends AbstractOptimizerContainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(LocalOptimizerContainer.class);
 

@@ -56,7 +56,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /** Kubernetes Optimizer Container with Standalone Optimizer */
-public class KubernetesOptimizerContainer extends AbstractResourceContainer {
+public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(KubernetesOptimizerContainer.class);
 
