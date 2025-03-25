@@ -16,49 +16,54 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.executor;
+package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.scheduler.TimelyTableScheduler;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Service for expiring tables periodically. */
-public class SnapshotsExpiringExecutor extends BaseTableExecutor {
-  private static final Logger LOG = LoggerFactory.getLogger(SnapshotsExpiringExecutor.class);
+/** Service for automatically creating tags for table periodically. */
+public class TagsAutoCreatingExecutor extends TimelyTableScheduler {
+  private static final Logger LOG = LoggerFactory.getLogger(TagsAutoCreatingExecutor.class);
 
-  private static final long INTERVAL = 60 * 60 * 1000L; // 1 hour
+  private final long interval;
 
-  public SnapshotsExpiringExecutor(TableService tableService, int poolSize) {
+  protected TagsAutoCreatingExecutor(TableService tableService, int poolSize, long interval) {
     super(tableService, poolSize);
+    this.interval = interval;
   }
 
   @Override
-  protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return INTERVAL;
+  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
+    return interval;
   }
 
   @Override
-  protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.getTableConfiguration().isExpireSnapshotEnabled();
+  protected boolean enabled(DefaultTableRuntime tableRuntime) {
+    return tableRuntime.getTableConfiguration().getTagConfiguration().isAutoCreateTag()
+        && tableRuntime.getFormat() == TableFormat.ICEBERG;
   }
 
   @Override
-  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
-    scheduleIfNecessary(tableRuntime, getStartDelay());
-  }
-
-  @Override
-  public void execute(TableRuntime tableRuntime) {
+  protected void execute(DefaultTableRuntime tableRuntime) {
     try {
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
       TableMaintainer tableMaintainer = TableMaintainer.ofTable(amoroTable);
-      tableMaintainer.expireSnapshots(tableRuntime);
+      tableMaintainer.autoCreateTags(tableRuntime);
     } catch (Throwable t) {
-      LOG.error("unexpected expire error of table {} ", tableRuntime.getTableIdentifier(), t);
+      LOG.error("Failed to create tags on {}", tableRuntime.getTableIdentifier(), t);
     }
+  }
+
+  @Override
+  public void handleConfigChanged(
+      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
+    scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 }

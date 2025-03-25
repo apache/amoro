@@ -16,16 +16,26 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.resource;
 
-import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.server.optimizing.OptimizingStatus;
+/**
+ * Interface of internal resource container. For InternalResourceContainer, resources are managed by
+ * AMS. Resources are decoupled from processes. For ExternalResourceContainer, resources are managed
+ * outside, and each single resource belonged to a process.
+ */
+public interface InternalResourceContainer extends ResourceContainer {
 
-public interface TableRuntimeHandler {
+  /**
+   * Start a new optimizer.
+   *
+   * @param resource resource information to start the optimizer
+   */
+  void requestResource(Resource resource);
 
-  void addHandlerChain(RuntimeHandlerChain handler);
-
-  void handleTableChanged(DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus);
-
-  void handleTableChanged(DefaultTableRuntime tableRuntime, TableConfiguration originalConfig);
+  /**
+   * Release a optimizer
+   *
+   * @param resource resource information to release the optimizer
+   */
+  void releaseResource(Resource resource);
 }

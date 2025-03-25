@@ -65,6 +65,7 @@ public class AuthenticatedHiveClientPool extends ClientPoolImpl<HMSClient, TExce
     } catch (MetaException e) {
       throw new RuntimeException("Failed to connect to Hive Metastore", e);
     } catch (Throwable t) {
+      t.printStackTrace();
       if (t.getMessage().contains("Another instance of Derby may have already booted")) {
         throw new RuntimeException(
             "Failed to start an embedded metastore because embedded "

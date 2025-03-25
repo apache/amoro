@@ -16,18 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.executor;
+package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.scheduler.TimelyTableScheduler;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Clean table dangling delete files */
-public class DanglingDeleteFilesCleaningExecutor extends BaseTableExecutor {
+public class DanglingDeleteFilesCleaningExecutor extends TimelyTableScheduler {
 
   private static final Logger LOG =
       LoggerFactory.getLogger(DanglingDeleteFilesCleaningExecutor.class);
@@ -39,22 +40,23 @@ public class DanglingDeleteFilesCleaningExecutor extends BaseTableExecutor {
   }
 
   @Override
-  protected long getNextExecutingTime(TableRuntime tableRuntime) {
+  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
     return INTERVAL;
   }
 
   @Override
-  protected boolean enabled(TableRuntime tableRuntime) {
+  protected boolean enabled(DefaultTableRuntime tableRuntime) {
     return tableRuntime.getTableConfiguration().isDeleteDanglingDeleteFilesEnabled();
   }
 
   @Override
-  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+  public void handleConfigChanged(
+      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 
   @Override
-  protected void execute(TableRuntime tableRuntime) {
+  protected void execute(DefaultTableRuntime tableRuntime) {
     try {
       LOG.info("{} start cleaning dangling delete files", tableRuntime.getTableIdentifier());
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
