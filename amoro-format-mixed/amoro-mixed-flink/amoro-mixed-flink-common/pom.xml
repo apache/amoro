@@ -88,8 +88,9 @@
 
         <dependency>
             <groupId>org.apache.paimon</groupId>
-            <artifactId>paimon-flink-common</artifactId>
+            <artifactId>paimon-flink-1.17</artifactId>
             <version>${paimon.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
