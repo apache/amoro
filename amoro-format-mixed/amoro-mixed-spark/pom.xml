@@ -37,5 +37,7 @@
         <module>v3.2/amoro-mixed-spark-runtime-3.2</module>
         <module>v3.3/amoro-mixed-spark-3.3</module>
         <module>v3.3/amoro-mixed-spark-runtime-3.3</module>
+        <module>v3.5/amoro-mixed-spark-3.5</module>
+        <module>v3.5/amoro-mixed-spark-runtime-3.5</module>
     </modules>
 </project>

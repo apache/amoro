@@ -41,11 +41,13 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
       TABLE_SERVICE = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
       OPTIMIZING_SERVICE =
           new DefaultOptimizingService(
-              configurations, CATALOG_MANAGER, TABLE_MANAGER, OPTIMIZER_MANAGER, TABLE_SERVICE);
+              configurations, CATALOG_MANAGER, OPTIMIZER_MANAGER, TABLE_SERVICE);
       TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
       TABLE_SERVICE.initialize();
       try {
-        OPTIMIZING_SERVICE.createResourceGroup(defaultResourceGroup());
+        ResourceGroup group = defaultResourceGroup();
+        OPTIMIZER_MANAGER.createResourceGroup(group);
+        OPTIMIZING_SERVICE.createResourceGroup(group);
       } catch (Throwable ignored) {
       }
     } catch (Throwable throwable) {

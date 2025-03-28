@@ -69,7 +69,7 @@ public class OptimizerController {
     resource.getProperties().putAll(optimizerInstances.get(0).getProperties());
     ResourceContainers.get(resource.getContainerName()).releaseOptimizer(resource);
     optimizerManager.deleteResource(resourceId);
-    optimizingService.deleteOptimizer(resource.getGroupName(), resourceId);
+    optimizerManager.deleteOptimizer(resource.getGroupName(), resourceId);
     ctx.json(OkResponse.of("Success to release optimizer"));
   }
 
