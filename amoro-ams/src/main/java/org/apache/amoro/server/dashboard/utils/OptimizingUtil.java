@@ -79,6 +79,8 @@ public class OptimizingUtil {
       optimizeFileInfo = collectOptimizingFileInfo(summary);
     } else if (optimizingStatus == OptimizingStatus.PENDING) {
       optimizeFileInfo = collectPendingFileInfo(optimizingTableRuntime.getPendingInput());
+    } else if (optimizingStatus == OptimizingStatus.IDLE) {
+      optimizeFileInfo = collectFileInfo(optimizingTableRuntime.getTableSummary());
     } else {
       optimizeFileInfo = null;
     }
@@ -136,6 +138,16 @@ public class OptimizingUtil {
                 metricsSummary.getPositionalDeleteSize(), metricsSummary.getPositionDeleteSize()),
             metricsSummary.getPosDeleteFileCnt())
         .addFiles(metricsSummary.getRewriteDataSize(), metricsSummary.getRewriteDataFileCnt())
+        .build();
+  }
+
+  private static FilesStatistics collectFileInfo(
+      AbstractOptimizingEvaluator.PendingInput tableSummary) {
+    if (tableSummary == null) {
+      return null;
+    }
+    return FilesStatistics.builder()
+        .addFiles(tableSummary.getTotalFileSize(), tableSummary.getTotalFileCount())
         .build();
   }
 
