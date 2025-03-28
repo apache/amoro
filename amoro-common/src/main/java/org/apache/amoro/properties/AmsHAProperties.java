@@ -21,7 +21,7 @@ package org.apache.amoro.properties;
 import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
 
 public class AmsHAProperties {
-  private static final String ROOT_PATH = "/arctic/ams";
+  private static final String ROOT_PATH = "/amoro/ams";
   private static final String LEADER_PATH = "/leader";
   private static final String TABLE_SERVICE_MASTER_PATH = "/master";
   private static final String OPTIMIZING_SERVICE_MASTER_PATH = "/optimizing-service-master";
