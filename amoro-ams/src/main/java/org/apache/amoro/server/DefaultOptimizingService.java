@@ -558,14 +558,16 @@ public class DefaultOptimizingService extends StatedPersistentBase
             .forEach(DefaultOptimizingService.this::deleteResourceGroup);
         resourceGroups.forEach(
             resourceGroup -> {
-              if (optimizingQueueByGroup.containsKey(resourceGroup.getName())
-                  && !optimizingQueueByGroup
-                      .get(resourceGroup.getName())
-                      .getOptimizerGroup()
-                      .equals(resourceGroup)) {
-                updateResourceGroup(resourceGroup);
-              } else {
+              boolean newGroup = !optimizingQueueByGroup.containsKey(resourceGroup.getName());
+              if (newGroup) {
                 createResourceGroup(resourceGroup);
+              } else {
+                if (!optimizingQueueByGroup
+                    .get(resourceGroup.getName())
+                    .getOptimizerGroup()
+                    .equals(resourceGroup)) {
+                  updateResourceGroup(resourceGroup);
+                }
               }
             });
       } catch (Throwable t) {
