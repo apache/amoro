@@ -50,13 +50,13 @@ export function getTableDetail(
 export function getHiveTableDetail(
   { catalog = '' as string, db = '' as string, table = '' as string },
 ) {
-  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/hive/details`)
+  return request.get(`/api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/hive/details`)
 }
 
 export function getUpgradeStatus(
   { catalog = '' as string, db = '' as string, table = '' as string },
 ) {
-  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/upgrade/status`)
+  return request.get(`/api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/upgrade/status`)
 }
 // get partions table
 export function getPartitionTable(
@@ -200,14 +200,14 @@ export function getTasksByOptimizingProcessId(
 export function upgradeHiveTable(
   { catalog = '' as string, db = '' as string, table = '' as string, properties = {} as IMap<string>, pkList = [] as IMap<string>[] },
 ) {
-  return request.post(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/upgrade`, {
+  return request.post(`/api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/upgrade`, {
     properties,
     pkList,
   })
 }
 
 export function getUpgradeProperties() {
-  return request.get('api/ams/v1/upgrade/properties')
+  return request.get('/api/ams/v1/upgrade/properties')
 }
 
 export function cancelOptimizingProcess(
