@@ -164,11 +164,20 @@ public class TableProperties {
    */
   @Deprecated public static final long BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 720; // 12 Hours
 
-  public static final String SNAPSHOT_KEEP_DURATION = "snapshot.keep.duration";
-  public static final String SNAPSHOT_KEEP_DURATION_DEFAULT = "720min"; // 12 Hours
+  @Deprecated public static final String SNAPSHOT_KEEP_DURATION = "snapshot.keep.duration";
+  @Deprecated public static final String SNAPSHOT_KEEP_DURATION_DEFAULT = "720min"; // 12 Hours
 
-  public static final String SNAPSHOT_MIN_COUNT = "snapshot.keep.min-count";
-  public static final int SNAPSHOT_MIN_COUNT_DEFAULT = 1;
+  @Deprecated public static final String SNAPSHOT_MIN_COUNT = "snapshot.keep.min-count";
+  @Deprecated public static final int SNAPSHOT_MIN_COUNT_DEFAULT = 1;
+
+  public static final String MAX_SNAPSHOT_AGE_MS =
+      org.apache.iceberg.TableProperties.MAX_SNAPSHOT_AGE_MS;
+  public static final String MAX_SNAPSHOT_AGE_MS_DEFAULT = "43200000"; // 12 Hours
+
+  public static final String MIN_SNAPSHOTS_TO_KEEP =
+      org.apache.iceberg.TableProperties.MIN_SNAPSHOTS_TO_KEEP;
+  public static final int MIN_SNAPSHOTS_TO_KEEP_DEFAULT =
+      org.apache.iceberg.TableProperties.MIN_SNAPSHOTS_TO_KEEP_DEFAULT;
 
   public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
   public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;
