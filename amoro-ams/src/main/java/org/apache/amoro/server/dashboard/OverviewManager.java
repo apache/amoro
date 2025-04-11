@@ -194,10 +194,10 @@ public class OverviewManager extends PersistentBase {
       return Optional.empty();
     }
     OverviewTopTableItem tableItem = new OverviewTopTableItem(fullTableName(meta));
-    if (meta.getPendingInput() != null) {
-      tableItem.setTableSize(meta.getPendingInput().getTotalFileSize());
-      tableItem.setFileCount(meta.getPendingInput().getTotalFileCount());
-      tableItem.setHealthScore(meta.getPendingInput().getHealthScore());
+    if (meta.getTableSummary() != null) {
+      tableItem.setTableSize(meta.getTableSummary().getTotalFileSize());
+      tableItem.setFileCount(meta.getTableSummary().getTotalFileCount());
+      tableItem.setHealthScore(meta.getTableSummary().getHealthScore());
     }
     tableItem.setAverageFileSize(
         tableItem.getFileCount() == 0 ? 0 : tableItem.getTableSize() / tableItem.getFileCount());
