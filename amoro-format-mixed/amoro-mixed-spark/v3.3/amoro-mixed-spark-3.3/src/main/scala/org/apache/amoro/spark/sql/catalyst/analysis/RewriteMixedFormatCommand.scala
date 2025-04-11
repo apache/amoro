@@ -47,12 +47,8 @@ case class RewriteMixedFormatCommand(sparkSession: SparkSession) extends Rule[Lo
 
   private def isCreateMixedFormatTable(catalog: TableCatalog, provider: Option[String]): Boolean = {
     catalog match {
-      case _: MixedFormatSparkCatalog => true
-      case _: MixedFormatSparkSessionCatalog[_] =>
-        provider.isDefined && MixedSessionCatalogBase.SUPPORTED_PROVIDERS.contains(
-          provider.get.toLowerCase)
-      case _: SparkUnifiedCatalog => true
-      case _: SparkUnifiedSessionCatalog[_] =>
+      case _: MixedFormatSparkCatalog | _: MixedFormatSparkSessionCatalog[_]
+          | _: SparkUnifiedCatalog | _: SparkUnifiedSessionCatalog[_] =>
         provider.isDefined && MixedSessionCatalogBase.SUPPORTED_PROVIDERS.contains(
           provider.get.toLowerCase)
       case _ => false
@@ -92,7 +88,7 @@ case class RewriteMixedFormatCommand(sparkSession: SparkSession) extends Rule[Lo
         val (targetCatalog, targetIdentifier) = buildCatalogAndIdentifier(sparkSession, targetTable)
         val table = sourceCatalog.loadTable(sourceIdentifier)
         var targetProperties = properties
-        targetProperties += ("provider" -> "mixed_hive")
+        targetProperties += ("provider" -> provider.getOrElse("mixed_hive"))
         table match {
           case keyedTable: MixedSparkTable =>
             keyedTable.table() match {
