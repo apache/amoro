@@ -19,10 +19,10 @@
 package org.apache.amoro.client;
 
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.thrift.org.apache.commons.lang3.tuple.Pair;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TServiceClient;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import java.io.UnsupportedEncodingException;
