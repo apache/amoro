@@ -18,15 +18,19 @@
 
 package org.apache.amoro.client;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.thrift.org.apache.commons.lang3.tuple.Pair;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TServiceClient;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.apache.http.client.utils.URLEncodedUtils;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
-import java.nio.charset.Charset;
+import java.net.URLDecoder;
 import java.time.Duration;
+import java.util.List;
 
 public class PoolConfig<T extends TServiceClient> extends GenericObjectPoolConfig<ThriftClient<T>> {
 
@@ -39,6 +43,10 @@ public class PoolConfig<T extends TServiceClient> extends GenericObjectPoolConfi
   private int maxMessageSize = 100 * 1024 * 1024; // 100MB
   private boolean autoReconnect = true;
   private int maxReconnects = 5;
+
+  private static final String URL_ENCODING = "UTF-8";
+  private static final String URL_QUERY_DELIMITER = "&";
+  private static final String URL_QUERY_PARAMETER_DELIMITER = "=";
 
   public PoolConfig() {
     setMinIdle(MIN_IDLE_DEFAULT);
@@ -88,15 +96,35 @@ public class PoolConfig<T extends TServiceClient> extends GenericObjectPoolConfi
 
   public static PoolConfig<?> forUrl(String url) {
     PoolConfig<?> poolConfig = new PoolConfig<>();
-    URLEncodedUtils.parse(URI.create(url), String.valueOf(Charset.defaultCharset()))
+    parseQuery(URI.create(url))
         .forEach(
             pair -> {
               try {
-                BeanUtils.setProperty(poolConfig, pair.getName(), pair.getValue());
+                BeanUtils.setProperty(poolConfig, pair.getKey(), pair.getValue());
               } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException("Parse url parameters failed", e);
               }
             });
     return poolConfig;
+  }
+
+  static List<Pair<String, String>> parseQuery(URI uri) {
+    Preconditions.checkNotNull(uri, "URI can not be null");
+    List<Pair<String, String>> queries = Lists.newArrayList();
+    String query = uri.getRawQuery();
+    if (query != null && !query.trim().isEmpty()) {
+      String[] pairs = query.trim().split(URL_QUERY_DELIMITER);
+      for (String pair : pairs) {
+        String[] kv = pair.trim().split(URL_QUERY_PARAMETER_DELIMITER, 2);
+        try {
+          String key = URLDecoder.decode(kv[0], URL_ENCODING);
+          String value = URLDecoder.decode(kv[1], URL_ENCODING);
+          queries.add(Pair.of(key, value));
+        } catch (UnsupportedEncodingException e) {
+          throw new RuntimeException("Unsupported encoding for uri", e);
+        }
+      }
+    }
+    return queries;
   }
 }
