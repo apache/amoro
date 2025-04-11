@@ -90,7 +90,7 @@ case class RewriteMixedFormatCommand(sparkSession: SparkSession) extends Rule[Lo
         val (targetCatalog, targetIdentifier) = buildCatalogAndIdentifier(sparkSession, targetTable)
         val table = sourceCatalog.loadTable(sourceIdentifier)
         var targetProperties = properties
-        targetProperties += ("provider" -> "arctic")
+        targetProperties += ("provider" -> provider.get)
         table match {
           case keyedTable: MixedSparkTable =>
             keyedTable.table() match {

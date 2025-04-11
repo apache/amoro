@@ -95,7 +95,7 @@ case class RewriteMixedFormatCommand(sparkSession: SparkSession) extends Rule[Lo
                 mixedSparkTable.table().asKeyedTable().primaryKeySpec().fieldNames()))
           case _ =>
         }
-        targetProperties += ("provider" -> "mixed_hive")
+        targetProperties += ("provider" -> provider.get)
         CreateV2Table(
           targetCatalog,
           targetIdentifier,
