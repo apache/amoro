@@ -113,12 +113,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-bundled-guava</artifactId>
-            <version>${iceberg.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
         </dependency>
