@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.TableCatalog
 import org.apache.spark.sql.execution.command.CreateTableLikeCommand
 
-import org.apache.amoro.spark.{MixedFormatSparkCatalog, MixedFormatSparkSessionCatalog}
+import org.apache.amoro.spark.{MixedFormatSparkCatalog, MixedFormatSparkSessionCatalog, SparkUnifiedCatalog, SparkUnifiedSessionCatalog}
 import org.apache.amoro.spark.mixed.MixedSessionCatalogBase
 import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.buildCatalogAndIdentifier
 import org.apache.amoro.spark.sql.catalyst.plans.{AlterMixedFormatTableDropPartition, TruncateMixedFormatTable}
@@ -49,6 +49,10 @@ case class RewriteMixedFormatCommand(sparkSession: SparkSession) extends Rule[Lo
     catalog match {
       case _: MixedFormatSparkCatalog => true
       case _: MixedFormatSparkSessionCatalog[_] =>
+        provider.isDefined && MixedSessionCatalogBase.SUPPORTED_PROVIDERS.contains(
+          provider.get.toLowerCase)
+      case _: SparkUnifiedCatalog => true
+      case _: SparkUnifiedSessionCatalog[_] =>
         provider.isDefined && MixedSessionCatalogBase.SUPPORTED_PROVIDERS.contains(
           provider.get.toLowerCase)
       case _ => false
@@ -95,7 +99,7 @@ case class RewriteMixedFormatCommand(sparkSession: SparkSession) extends Rule[Lo
                 mixedSparkTable.table().asKeyedTable().primaryKeySpec().fieldNames()))
           case _ =>
         }
-        targetProperties += ("provider" -> "arctic")
+        targetProperties += ("provider" -> "mixed_hive")
         CreateV2Table(
           targetCatalog,
           targetIdentifier,

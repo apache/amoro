@@ -86,42 +86,37 @@ case class RewriteMixedFormatCommand(sparkSession: SparkSession) extends Rule[Lo
         optionsMap += (WriteMode.WRITE_MODE_KEY -> WriteMode.OVERWRITE_DYNAMIC.mode)
         val newTableSpec = tableSpec.copy(properties = propertiesMap)
         c.copy(tableSpec = newTableSpec, writeOptions = optionsMap)
-      case CreateTableLikeCommand(targetTable, sourceTable, _, provider, properties, ifNotExists) =>
-        isCreateMixedFormatTableLikeCommand(targetTable, provider) match {
-          case true =>
-            val (sourceCatalog, sourceIdentifier) =
-              buildCatalogAndIdentifier(sparkSession, sourceTable)
-            val (targetCatalog, targetIdentifier) =
-              buildCatalogAndIdentifier(sparkSession, targetTable)
-            val table = sourceCatalog.loadTable(sourceIdentifier)
-            var targetProperties = properties
-            targetProperties += ("provider" -> "mixed_hive")
-            table match {
-              case keyedTable: MixedSparkTable =>
-                keyedTable.table() match {
-                  case table: KeyedTable =>
-                    targetProperties += ("primary.keys" -> String.join(
-                      ",",
-                      table.primaryKeySpec().fieldNames()))
-                  case _ =>
-                }
+      case CreateTableLikeCommand(targetTable, sourceTable, _, provider, properties, ifNotExists)
+          if isCreateMixedFormatTableLikeCommand(targetTable, provider) =>
+        val (sourceCatalog, sourceIdentifier) = buildCatalogAndIdentifier(sparkSession, sourceTable)
+        val (targetCatalog, targetIdentifier) = buildCatalogAndIdentifier(sparkSession, targetTable)
+        val table = sourceCatalog.loadTable(sourceIdentifier)
+        var targetProperties = properties
+        targetProperties += ("provider" -> "mixed_hive")
+        table match {
+          case keyedTable: MixedSparkTable =>
+            keyedTable.table() match {
+              case table: KeyedTable =>
+                targetProperties += ("primary.keys" -> String.join(
+                  ",",
+                  table.primaryKeySpec().fieldNames()))
               case _ =>
             }
-            val tableSpec = TableSpec(
-              properties = targetProperties.toMap,
-              provider = provider,
-              options = Map.empty,
-              location = None,
-              comment = None,
-              serde = None,
-              external = false)
-            val seq: Seq[String] = Seq(
-              targetTable.database.getOrElse(sparkSession.catalog.currentDatabase),
-              targetTable.identifier)
-            val name = ResolvedDBObjectName(targetCatalog, seq)
-            CreateTable(name, table.schema(), table.partitioning(), tableSpec, ifNotExists)
-          case _ => plan
+          case _ =>
         }
+        val tableSpec = TableSpec(
+          properties = targetProperties.toMap,
+          provider = provider,
+          options = Map.empty,
+          location = None,
+          comment = None,
+          serde = None,
+          external = false)
+        val seq: Seq[String] = Seq(
+          targetTable.database.getOrElse(sparkSession.catalog.currentDatabase),
+          targetTable.identifier)
+        val name = ResolvedDBObjectName(targetCatalog, seq)
+        CreateTable(name, table.schema(), table.partitioning(), tableSpec, ifNotExists)
       case _ => plan
     }
   }

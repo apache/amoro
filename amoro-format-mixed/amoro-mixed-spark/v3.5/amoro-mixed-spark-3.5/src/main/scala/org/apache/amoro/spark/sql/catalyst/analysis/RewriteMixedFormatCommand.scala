@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
 import org.apache.spark.sql.execution.command.CreateTableLikeCommand
 
-import org.apache.amoro.spark.{MixedFormatSparkCatalog, MixedFormatSparkSessionCatalog}
+import org.apache.amoro.spark.{MixedFormatSparkCatalog, MixedFormatSparkSessionCatalog, SparkUnifiedCatalog, SparkUnifiedSessionCatalog}
 import org.apache.amoro.spark.mixed.MixedSessionCatalogBase
 import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.buildCatalogAndIdentifier
 import org.apache.amoro.spark.sql.catalyst.plans.{AlterMixedFormatTableDropPartition, TruncateMixedFormatTable}
@@ -49,6 +49,10 @@ case class RewriteMixedFormatCommand(sparkSession: SparkSession) extends Rule[Lo
     catalog match {
       case _: MixedFormatSparkCatalog => true
       case _: MixedFormatSparkSessionCatalog[_] =>
+        provider.isDefined && MixedSessionCatalogBase.SUPPORTED_PROVIDERS.contains(
+          provider.get.toLowerCase)
+      case _: SparkUnifiedCatalog => true
+      case _: SparkUnifiedSessionCatalog[_] =>
         provider.isDefined && MixedSessionCatalogBase.SUPPORTED_PROVIDERS.contains(
           provider.get.toLowerCase)
       case _ => false
@@ -111,7 +115,9 @@ case class RewriteMixedFormatCommand(sparkSession: SparkSession) extends Rule[Lo
           serde = None,
           external = false)
         val identifier =
-          Identifier.of(Array.apply(targetTable.database.get), targetTable.identifier)
+          Identifier.of(
+            Array.apply(targetTable.database.getOrElse(sparkSession.catalog.currentDatabase)),
+            targetTable.identifier)
         val name = ResolvedIdentifier(targetCatalog, identifier)
         CreateTable(name, table.schema(), table.partitioning(), tableSpec, ifNotExists)
       case _ => plan
