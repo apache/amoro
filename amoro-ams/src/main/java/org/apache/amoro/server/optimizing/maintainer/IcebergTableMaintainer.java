@@ -189,7 +189,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   private void expireSnapshots(long olderThan, int minCount, Set<String> exclude) {
     LOG.debug(
-        "start expire snapshots older than {} and retain last {} snapshots, the exclude is {}",
+        "{}:start expire snapshots older than {} and retain last {} snapshots, the exclude is {}",
+        table.name(),
         olderThan,
         minCount,
         exclude);
@@ -229,7 +230,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
             TableFileUtil.deleteEmptyDirectory(fileIO(), parent, exclude);
           } catch (Exception e) {
             // Ignore exceptions to remove as many directories as possible
-            LOG.warn("Fail to delete empty directory {}", parent, e);
+            LOG.warn("{}:fail to delete empty directory {}", table.name(), parent, e);
           }
         });
 
@@ -471,7 +472,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
           CommitMetaProducer.CLEAN_DANGLING_DELETE.name());
       rewriteFiles.commit();
     } catch (ValidationException e) {
-      LOG.warn("Iceberg RewriteFiles commit failed on clear danglingDeleteFiles, but ignore", e);
+      LOG.warn(
+          "{}:iceberg rewriteFiles commit failed on clear danglingDeleteFiles, but ignore",
+          table.name(),
+          e);
       return 0;
     }
     return danglingDeleteFiles.size();
