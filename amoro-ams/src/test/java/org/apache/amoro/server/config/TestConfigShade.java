@@ -52,10 +52,7 @@ public class TestConfigShade {
       new Base64ConfigShade().getIdentifier();
 
   static Stream<Arguments> encryptedValueProvider() {
-    return Stream.of(
-            Arguments.of(USERNAME, "YWRtaW4="),
-            Arguments.of(PASSWORD, "cGFzc3dvcmQ=")
-    );
+    return Stream.of(Arguments.of(USERNAME, "YWRtaW4="), Arguments.of(PASSWORD, "cGFzc3dvcmQ="));
   }
 
   @ParameterizedTest
@@ -64,7 +61,8 @@ public class TestConfigShade {
     String actualEncoded = getBase64EncodedText(rawValue);
     Assertions.assertEquals(expectedEncoded, actualEncoded);
 
-    String decrypted = ConfigShadeUtils.decryptOption(BASE64_CONFIG_SHADE_IDENTIFIER, actualEncoded);
+    String decrypted =
+        ConfigShadeUtils.decryptOption(BASE64_CONFIG_SHADE_IDENTIFIER, actualEncoded);
     Assertions.assertEquals(rawValue, decrypted);
   }
 
