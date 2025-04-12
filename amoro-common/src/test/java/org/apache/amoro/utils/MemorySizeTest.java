@@ -75,11 +75,11 @@ public class MemorySizeTest {
 
   @ParameterizedTest
   @CsvSource({
-          "'1234', 1234",
-          "'1234b', 1234",
-          "'1234 b', 1234",
-          "'1234bytes', 1234",
-          "'1234 bytes', 1234"
+    "'1234', 1234",
+    "'1234b', 1234",
+    "'1234 b', 1234",
+    "'1234bytes', 1234",
+    "'1234 bytes', 1234"
   })
   public void testParseBytes(String input, long expected) {
     assertEquals(expected, MemorySize.parseBytes(input));
