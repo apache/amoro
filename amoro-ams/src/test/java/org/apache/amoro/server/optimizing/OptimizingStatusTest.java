@@ -21,6 +21,11 @@ package org.apache.amoro.server.optimizing;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 public class OptimizingStatusTest {
   @Test
@@ -36,16 +41,21 @@ public class OptimizingStatusTest {
     assertEquals(OptimizingStatus.IDLE, OptimizingStatus.ofCode(700));
   }
 
-  @Test
-  public void testOptimizingStatusDisplayValue() {
-    assertEquals(7, OptimizingStatus.values().length);
+  static Stream<Arguments> displayValueToStatusProvider() {
+    return Stream.of(
+        Arguments.of("full", OptimizingStatus.FULL_OPTIMIZING),
+        Arguments.of("major", OptimizingStatus.MAJOR_OPTIMIZING),
+        Arguments.of("minor", OptimizingStatus.MINOR_OPTIMIZING),
+        Arguments.of("committing", OptimizingStatus.COMMITTING),
+        Arguments.of("planning", OptimizingStatus.PLANNING),
+        Arguments.of("pending", OptimizingStatus.PENDING),
+        Arguments.of("idle", OptimizingStatus.IDLE));
+  }
 
-    assertEquals(OptimizingStatus.FULL_OPTIMIZING, OptimizingStatus.ofDisplayValue("full"));
-    assertEquals(OptimizingStatus.MAJOR_OPTIMIZING, OptimizingStatus.ofDisplayValue("major"));
-    assertEquals(OptimizingStatus.MINOR_OPTIMIZING, OptimizingStatus.ofDisplayValue("minor"));
-    assertEquals(OptimizingStatus.COMMITTING, OptimizingStatus.ofDisplayValue("committing"));
-    assertEquals(OptimizingStatus.PLANNING, OptimizingStatus.ofDisplayValue("planning"));
-    assertEquals(OptimizingStatus.PENDING, OptimizingStatus.ofDisplayValue("pending"));
-    assertEquals(OptimizingStatus.IDLE, OptimizingStatus.ofDisplayValue("idle"));
+  @ParameterizedTest
+  @MethodSource("displayValueToStatusProvider")
+  public void testOptimizingStatusDisplayValue(
+      String displayValue, OptimizingStatus expectedStatus) {
+    assertEquals(expectedStatus, OptimizingStatus.ofDisplayValue(displayValue));
   }
 }
