@@ -33,6 +33,10 @@
     <name>Amoro Project Mixed Format Spark 3.2 Runtime</name>
     <url>https://amoro.apache.org</url>
 
+    <properties>
+        <iceberg.version>1.4.3</iceberg.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
