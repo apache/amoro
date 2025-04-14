@@ -31,6 +31,9 @@ import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.amoro.utils.JacksonUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.yaml.snakeyaml.Yaml;
 
 import java.net.URL;
@@ -39,6 +42,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class TestConfigShade {
   private static final String USERNAME = "admin";
@@ -47,19 +51,19 @@ public class TestConfigShade {
   private static final String BASE64_CONFIG_SHADE_IDENTIFIER =
       new Base64ConfigShade().getIdentifier();
 
-  @Test
-  public void testDecryptOptions() {
-    String encryptUsername = getBase64EncodedText(USERNAME);
-    String encryptPassword = getBase64EncodedText(PASSWORD);
-    Assertions.assertEquals(encryptUsername, "YWRtaW4=");
-    Assertions.assertEquals(encryptPassword, "cGFzc3dvcmQ=");
+  static Stream<Arguments> encryptedValueProvider() {
+    return Stream.of(Arguments.of(USERNAME, "YWRtaW4="), Arguments.of(PASSWORD, "cGFzc3dvcmQ="));
+  }
 
-    String decryptUsername =
-        ConfigShadeUtils.decryptOption(BASE64_CONFIG_SHADE_IDENTIFIER, encryptUsername);
-    String decryptPassword =
-        ConfigShadeUtils.decryptOption(BASE64_CONFIG_SHADE_IDENTIFIER, encryptPassword);
-    Assertions.assertEquals(decryptUsername, USERNAME);
-    Assertions.assertEquals(decryptPassword, PASSWORD);
+  @ParameterizedTest
+  @MethodSource("encryptedValueProvider")
+  public void testDecryptOption(String rawValue, String expectedEncoded) {
+    String actualEncoded = getBase64EncodedText(rawValue);
+    Assertions.assertEquals(expectedEncoded, actualEncoded);
+
+    String decrypted =
+        ConfigShadeUtils.decryptOption(BASE64_CONFIG_SHADE_IDENTIFIER, actualEncoded);
+    Assertions.assertEquals(rawValue, decrypted);
   }
 
   private String getBase64EncodedText(String plaintext) {
