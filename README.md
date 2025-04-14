@@ -156,9 +156,17 @@ explore what amoro can do.
 If you are interested in Lakehouse, Data Lake Format, welcome to join our community, we welcome any organizations, teams
 and individuals to grow together, and sincerely hope to help users better use Data Lake Format through open source.
 
-Join the Amoro WeChat Group: Add " `kllnn999` " as a friend on WeChat and specify "Amoro lover".
+### Slack
 
-We use the [workspace](https://asf-amoro.slack.com/) on Slack. To be invited, follow this [invite link](https://join.slack.com/t/asf-amoro/shared_invite/zt-328wr7rbm-hFlTDc0ImZca3Vv24AhGdQ).
+You can join the Amoro community on Slack. Amoro channel is in ASF Slack workspace.
+
+- Anyone with an @apache.org email address can become a full member of the ASF Slack workspace.
+- Search [Amoro channel](https://the-asf.slack.com/archives/C06RZ9UHUTH) and join it.
+- If you don't have an @apache.org email address, you can email to `dev@amoro.apache.org` to apply for an
+  [ASF Slack invitation](https://infra.apache.org/slack.html). Then join [Amoro channel](https://the-asf.slack.com/archives/C06RZ9UHUTH).
+
+### Wechat
+Join the Amoro WeChat Group: Add " `kllnn999` " as a friend and request to join the group.
 
 ## Contributors
 This project exists thanks to all the people who contribute.
