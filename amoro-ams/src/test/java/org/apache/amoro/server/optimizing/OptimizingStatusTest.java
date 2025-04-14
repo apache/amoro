@@ -29,16 +29,25 @@ import java.util.stream.Stream;
 
 public class OptimizingStatusTest {
   @Test
-  public void testOptimizingStatusCodeValue() {
+  public void testNumberOfOptimizingStatuses() {
     assertEquals(7, OptimizingStatus.values().length);
+  }
 
-    assertEquals(OptimizingStatus.FULL_OPTIMIZING, OptimizingStatus.ofCode(100));
-    assertEquals(OptimizingStatus.MAJOR_OPTIMIZING, OptimizingStatus.ofCode(200));
-    assertEquals(OptimizingStatus.MINOR_OPTIMIZING, OptimizingStatus.ofCode(300));
-    assertEquals(OptimizingStatus.COMMITTING, OptimizingStatus.ofCode(400));
-    assertEquals(OptimizingStatus.PLANNING, OptimizingStatus.ofCode(500));
-    assertEquals(OptimizingStatus.PENDING, OptimizingStatus.ofCode(600));
-    assertEquals(OptimizingStatus.IDLE, OptimizingStatus.ofCode(700));
+  static Stream<Arguments> codeToStatusProvider() {
+    return Stream.of(
+        Arguments.of(100, OptimizingStatus.FULL_OPTIMIZING),
+        Arguments.of(200, OptimizingStatus.MAJOR_OPTIMIZING),
+        Arguments.of(300, OptimizingStatus.MINOR_OPTIMIZING),
+        Arguments.of(400, OptimizingStatus.COMMITTING),
+        Arguments.of(500, OptimizingStatus.PLANNING),
+        Arguments.of(600, OptimizingStatus.PENDING),
+        Arguments.of(700, OptimizingStatus.IDLE));
+  }
+
+  @ParameterizedTest
+  @MethodSource("codeToStatusProvider")
+  public void testOptimizingStatusCodeValue(int code, OptimizingStatus expectedStatus) {
+    assertEquals(expectedStatus, OptimizingStatus.ofCode(code));
   }
 
   static Stream<Arguments> displayValueToStatusProvider() {
