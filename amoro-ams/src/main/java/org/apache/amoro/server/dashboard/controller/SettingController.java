@@ -25,7 +25,7 @@ import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.OptimizerManager;
-import org.apache.amoro.server.resource.ResourceContainers;
+import org.apache.amoro.server.resource.InternalContainers;
 import org.glassfish.jersey.internal.guava.Sets;
 
 import java.util.ArrayList;
@@ -72,7 +72,7 @@ public class SettingController {
 
   /** Get container settings. */
   public void getContainerSetting(Context ctx) {
-    List<ContainerMetadata> containerMetas = ResourceContainers.getMetadataList();
+    List<ContainerMetadata> containerMetas = InternalContainers.getMetadataList();
     List<Map<String, Object>> result = new ArrayList<>();
     Objects.requireNonNull(containerMetas)
         .forEach(

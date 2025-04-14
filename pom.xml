@@ -49,6 +49,7 @@
         <module>amoro-common</module>
         <module>amoro-web</module>
         <module>amoro-ams</module>
+        <module>amoro-scheduler</module>
         <module>amoro-optimizer</module>
         <module>amoro-metrics</module>
         <module>amoro-format-iceberg</module>
