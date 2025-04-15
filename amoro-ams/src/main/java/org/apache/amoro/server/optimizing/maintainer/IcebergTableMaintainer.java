@@ -192,7 +192,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
         "Start expire snapshots older than {} and retain last {} snapshots, the exclude is {} for table {}",
         olderThan,
         minCount,
-        exclude,table.name());
+        exclude,
+        table.name());
     final AtomicInteger toDeleteFiles = new AtomicInteger(0);
     Set<String> parentDirectories = new HashSet<>();
     Set<String> expiredFiles = new HashSet<>();
@@ -229,7 +230,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
             TableFileUtil.deleteEmptyDirectory(fileIO(), parent, exclude);
           } catch (Exception e) {
             // Ignore exceptions to remove as many directories as possible
-            LOG.warn("Fail to delete empty directory {} for table {}", parent,table.name(), e);
+            LOG.warn("Fail to delete empty directory {} for table {}", parent, table.name(), e);
           }
         });
 
@@ -239,7 +240,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
             LOG.info(
                 "To delete {} files , success delete {} files in table {}",
                 toDeleteFiles.get(),
-                deletedFiles,getTable().name()));
+                deletedFiles,
+                getTable().name()));
   }
 
   @Override
@@ -336,7 +338,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
         danglingDeleteFilesCnt > 0,
         () ->
             LOG.info(
-                "Total delete {} dangling delete files for table {}", danglingDeleteFilesCnt,table.name()));
+                "Total delete {} dangling delete files for table {}",
+                danglingDeleteFilesCnt,
+                table.name()));
   }
 
   protected long mustOlderThan(TableRuntime tableRuntime, long now) {
@@ -410,7 +414,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
           LOG.info(
               "There were {} files expected for deletion and {} files were successfully deleted for table {}",
               finalExpected,
-              finalDeleted,table.name());
+              finalDeleted,
+              table.name());
           orphanFilesCleaningMetrics.completeOrphanDataFiles(finalExpected, finalDeleted);
         });
   }
@@ -418,10 +423,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
   private void clearInternalTableMetadata(
       long lastTime, TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics) {
     Set<String> validFiles = getValidMetadataFiles(table);
-    LOG.info("Get runtime {} valid files for table {}",  validFiles.size(),table.name());
+    LOG.info("Get runtime {} valid files for table {}", validFiles.size(), table.name());
     Pattern excludeFileNameRegex = getExcludeFileNameRegex(table);
     LOG.info(
-        "Get runtime exclude file name pattern {} for table {}",  excludeFileNameRegex,table.name());
+        "Get runtime exclude file name pattern {} for table {}",
+        excludeFileNameRegex,
+        table.name());
     String metadataLocation = table.location() + File.separator + METADATA_FOLDER_NAME;
     LOG.info("start orphan files clean in {}", metadataLocation);
 
@@ -439,7 +446,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
               LOG.info(
                   "There were {} metadata files to be deleted and {} metadata files were successfully deleted for table {}",
                   filesToDelete.size(),
-                  deleted,table.name());
+                  deleted,
+                  table.name());
               orphanFilesCleaningMetrics.completeOrphanMetadataFiles(filesToDelete.size(), deleted);
             });
       } else {
@@ -598,7 +606,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     Set<String> validFiles = new HashSet<>();
     Iterable<Snapshot> snapshots = internalTable.snapshots();
     int size = Iterables.size(snapshots);
-    LOG.info("Get runtime {} snapshots to scan for table {}", size,tableName);
+    LOG.info("Get runtime {} snapshots to scan for table {}", size, tableName);
     for (Snapshot snapshot : snapshots) {
       String manifestListLocation = snapshot.manifestListLocation();
       validFiles.add(TableFileUtil.getUriPath(manifestListLocation));
@@ -829,7 +837,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
         dataFiles.size(),
         dataFiles.stream().map(ContentFile::path).collect(Collectors.joining(",")),
         deleteFiles.size(),
-        deleteFiles.stream().map(ContentFile::path).collect(Collectors.joining(",")),table.name());
+        deleteFiles.stream().map(ContentFile::path).collect(Collectors.joining(",")),
+        table.name());
   }
 
   public static class ExpireFiles {
