@@ -460,13 +460,22 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     @Override
     protected long mustOlderThan(TableRuntime tableRuntime, long now) {
+      DataExpirationConfig expiringDataConfig =
+          tableRuntime.getTableConfiguration().getExpiringDataConfig();
+      long dataExpiringSnapshotTime =
+          expiringDataConfig.isEnabled()
+                  && expiringDataConfig.getBaseOnRule()
+                      == DataExpirationConfig.BaseOnRule.LAST_COMMIT_TIME
+              ? fetchLatestNonOptimizedSnapshotTime(table)
+              : Long.MAX_VALUE;
+
       return min(
           // The snapshots keep time for base store
           now - snapshotsKeepTime(tableRuntime),
           // The snapshot optimizing plan based should not be expired for committing
           fetchOptimizingPlanSnapshotTime(table, tableRuntime),
           // The latest non-optimized snapshot should not be expired for data expiring
-          fetchLatestNonOptimizedSnapshotTime(table),
+          dataExpiringSnapshotTime,
           // The latest flink committed snapshot should not be expired for recovering flink job
           fetchLatestFlinkCommittedSnapshotTime(table),
           // The latest snapshot contains the optimized sequence should not be expired for MOR
