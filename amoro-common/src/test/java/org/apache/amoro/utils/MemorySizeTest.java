@@ -73,13 +73,16 @@ public class MemorySizeTest {
     new MemorySize(-1);
   }
 
-  @Test
-  public void testParseBytes() {
-    assertEquals(1234, MemorySize.parseBytes("1234"));
-    assertEquals(1234, MemorySize.parseBytes("1234b"));
-    assertEquals(1234, MemorySize.parseBytes("1234 b"));
-    assertEquals(1234, MemorySize.parseBytes("1234bytes"));
-    assertEquals(1234, MemorySize.parseBytes("1234 bytes"));
+  @ParameterizedTest
+  @CsvSource({
+    "'1234', 1234",
+    "'1234b', 1234",
+    "'1234 b', 1234",
+    "'1234bytes', 1234",
+    "'1234 bytes', 1234"
+  })
+  public void testParseBytes(String input, long expected) {
+    assertEquals(expected, MemorySize.parseBytes(input));
   }
 
   @ParameterizedTest

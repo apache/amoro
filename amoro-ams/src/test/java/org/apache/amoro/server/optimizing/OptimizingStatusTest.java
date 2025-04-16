@@ -21,31 +21,50 @@ package org.apache.amoro.server.optimizing;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 public class OptimizingStatusTest {
   @Test
-  public void testOptimizingStatusCodeValue() {
+  public void testNumberOfOptimizingStatuses() {
     assertEquals(7, OptimizingStatus.values().length);
-
-    assertEquals(OptimizingStatus.FULL_OPTIMIZING, OptimizingStatus.ofCode(100));
-    assertEquals(OptimizingStatus.MAJOR_OPTIMIZING, OptimizingStatus.ofCode(200));
-    assertEquals(OptimizingStatus.MINOR_OPTIMIZING, OptimizingStatus.ofCode(300));
-    assertEquals(OptimizingStatus.COMMITTING, OptimizingStatus.ofCode(400));
-    assertEquals(OptimizingStatus.PLANNING, OptimizingStatus.ofCode(500));
-    assertEquals(OptimizingStatus.PENDING, OptimizingStatus.ofCode(600));
-    assertEquals(OptimizingStatus.IDLE, OptimizingStatus.ofCode(700));
   }
 
-  @Test
-  public void testOptimizingStatusDisplayValue() {
-    assertEquals(7, OptimizingStatus.values().length);
+  static Stream<Arguments> codeToStatusProvider() {
+    return Stream.of(
+        Arguments.of(100, OptimizingStatus.FULL_OPTIMIZING),
+        Arguments.of(200, OptimizingStatus.MAJOR_OPTIMIZING),
+        Arguments.of(300, OptimizingStatus.MINOR_OPTIMIZING),
+        Arguments.of(400, OptimizingStatus.COMMITTING),
+        Arguments.of(500, OptimizingStatus.PLANNING),
+        Arguments.of(600, OptimizingStatus.PENDING),
+        Arguments.of(700, OptimizingStatus.IDLE));
+  }
 
-    assertEquals(OptimizingStatus.FULL_OPTIMIZING, OptimizingStatus.ofDisplayValue("full"));
-    assertEquals(OptimizingStatus.MAJOR_OPTIMIZING, OptimizingStatus.ofDisplayValue("major"));
-    assertEquals(OptimizingStatus.MINOR_OPTIMIZING, OptimizingStatus.ofDisplayValue("minor"));
-    assertEquals(OptimizingStatus.COMMITTING, OptimizingStatus.ofDisplayValue("committing"));
-    assertEquals(OptimizingStatus.PLANNING, OptimizingStatus.ofDisplayValue("planning"));
-    assertEquals(OptimizingStatus.PENDING, OptimizingStatus.ofDisplayValue("pending"));
-    assertEquals(OptimizingStatus.IDLE, OptimizingStatus.ofDisplayValue("idle"));
+  @ParameterizedTest
+  @MethodSource("codeToStatusProvider")
+  public void testOptimizingStatusCodeValue(int code, OptimizingStatus expectedStatus) {
+    assertEquals(expectedStatus, OptimizingStatus.ofCode(code));
+  }
+
+  static Stream<Arguments> displayValueToStatusProvider() {
+    return Stream.of(
+        Arguments.of("full", OptimizingStatus.FULL_OPTIMIZING),
+        Arguments.of("major", OptimizingStatus.MAJOR_OPTIMIZING),
+        Arguments.of("minor", OptimizingStatus.MINOR_OPTIMIZING),
+        Arguments.of("committing", OptimizingStatus.COMMITTING),
+        Arguments.of("planning", OptimizingStatus.PLANNING),
+        Arguments.of("pending", OptimizingStatus.PENDING),
+        Arguments.of("idle", OptimizingStatus.IDLE));
+  }
+
+  @ParameterizedTest
+  @MethodSource("displayValueToStatusProvider")
+  public void testOptimizingStatusDisplayValue(
+      String displayValue, OptimizingStatus expectedStatus) {
+    assertEquals(expectedStatus, OptimizingStatus.ofDisplayValue(displayValue));
   }
 }

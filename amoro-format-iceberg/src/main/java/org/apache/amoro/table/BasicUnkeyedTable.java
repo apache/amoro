@@ -320,7 +320,6 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
     return new PartitionPropertiesUpdate(this, transaction);
   }
 
-  @Override
   public UUID uuid() {
     return UUID.fromString(this.operations().current().uuid());
   }
