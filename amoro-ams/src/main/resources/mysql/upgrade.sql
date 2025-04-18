@@ -75,3 +75,16 @@ update resource_group set properties = JSON_SET(properties, '$."flink-conf.taskm
 -- update resource memory unit
 update resource set properties = JSON_SET(properties, '$."flink-conf.jobmanager.memory.process.size"', CONCAT(JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.jobmanager.memory.process.size"')), 'MB')) WHERE JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.jobmanager.memory.process.size"')) REGEXP '^[0-9]+$';
 update resource set properties = JSON_SET(properties, '$."flink-conf.taskmanager.memory.process.size"', CONCAT(JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.taskmanager.memory.process.size"')), 'MB')) WHERE JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.taskmanager.memory.process.size"')) REGEXP '^[0-9]+$';
+
+-- Drop the existing primary key of table_optimizing_process
+ALTER TABLE `table_optimizing_process` DROP PRIMARY KEY;
+-- Add the new primary key including table_id
+ALTER TABLE `table_optimizing_process` ADD PRIMARY KEY (`process_id`, `table_id`);
+-- Drop the existing primary key of task_runtime
+ALTER TABLE `task_runtime` DROP PRIMARY KEY;
+-- Add the new primary key including table_id
+ALTER TABLE `task_runtime` ADD PRIMARY KEY (`process_id`, `task_id`, `table_id`);
+-- Drop the existing primary key of optimizing_task_quota
+ALTER TABLE `optimizing_task_quota` DROP PRIMARY KEY;
+-- Add the new primary key including table_id
+ALTER TABLE `optimizing_task_quota` ADD PRIMARY KEY (`process_id`, `task_id`, `retry_num`, `table_id`);
