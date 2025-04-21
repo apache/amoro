@@ -125,6 +125,7 @@ public class IcebergCatalog implements FormatCatalog {
 
   @Override
   public boolean dropTable(String database, String table, boolean purge) {
-    return icebergCatalog.dropTable(TableIdentifier.of(database, table), purge);
+    return metaStore.doAs(
+        () -> icebergCatalog.dropTable(TableIdentifier.of(database, table), purge));
   }
 }
