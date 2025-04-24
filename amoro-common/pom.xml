@@ -30,7 +30,7 @@
 
     <artifactId>amoro-common</artifactId>
     <packaging>jar</packaging>
-    <name>Amoro Project Core</name>
+    <name>Amoro Project Common</name>
     <url>https://amoro.apache.org</url>
 
     <dependencies>
