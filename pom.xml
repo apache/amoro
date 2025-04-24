@@ -373,6 +373,7 @@
                 <version>${parquet-avro.version}</version>
             </dependency>
 
+            <!-- TODO: Remove this parquet-jackson when upgrade JDK to 11 or higher? -->
             <dependency>
                 <groupId>org.apache.parquet</groupId>
                 <artifactId>parquet-jackson</artifactId>
