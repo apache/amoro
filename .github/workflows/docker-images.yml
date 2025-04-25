@@ -41,12 +41,13 @@ jobs:
     strategy:
       matrix:
         hadoop: [ "v2", "v3" ]
+        jdk: [ "17" ]
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 8
+      - name: Set up JDK ${{ matrix.jdk }}
         uses: actions/setup-java@v3
         with:
-          java-version: '8'
+          java-version: '${{ matrix.jdk }}'
           distribution: 'temurin'
           cache: maven
       - name: Set up QEMU
@@ -86,7 +87,7 @@ jobs:
           echo "MVN_HADOOP=-Phadoop2" >> $GITHUB_ENV
 
       - name: Build dist module with Maven
-        run: mvn clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats
+        run: mvn clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats -Djava.version=${{ matrix.jdk }}
 
       - name: Build and Push Amoro Docker Image
         uses: docker/build-push-action@v4
@@ -104,12 +105,13 @@ jobs:
     strategy:
       matrix:
         flink: [ "1.14.6", "1.20.0" ]
+        jdk: [ "17" ]
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 8
+      - name: Set up JDK ${{ matrix.jdk }}
         uses: actions/setup-java@v3
         with:
-          java-version: '8'
+          java-version: '${{ matrix.jdk }}'
           distribution: 'temurin'
           cache: maven
       - name: Set up QEMU
@@ -162,7 +164,7 @@ jobs:
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'amoro-optimizer/amoro-optimizer-flink' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
+        run: mvn clean package -pl 'amoro-optimizer/amoro-optimizer-flink' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp -Djava.version=${{ matrix.jdk }}
 
       - name: Build and Push Flink Optimizer Docker Image
         uses: docker/build-push-action@v4
@@ -185,12 +187,13 @@ jobs:
     strategy:
       matrix:
         spark: [ "3.3.3" ]
+        jdk: [ "17" ]
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 8
+      - name: Set up JDK ${{ matrix.jdk }}
         uses: actions/setup-java@v3
         with:
-          java-version: '8'
+          java-version: '${{ matrix.jdk }}'
           distribution: 'temurin'
           cache: maven
       - name: Set up QEMU
@@ -237,7 +240,7 @@ jobs:
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${OPTIMIZER_SPARK} -DskipTests -B -ntp
+        run: mvn clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${OPTIMIZER_SPARK} -DskipTests -B -ntp -Djava.version=${{ matrix.jdk }}
 
       - name: Build and Push Spark Optimizer Docker Image
         uses: docker/build-push-action@v4
