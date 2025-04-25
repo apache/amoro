@@ -31,8 +31,7 @@
     <url>https://amoro.apache.org</url>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
         <hive.version>2.1.1</hive.version>
         <airlift.version>214</airlift.version>
         <airlift-units.version>1.6</airlift-units.version>
