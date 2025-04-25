@@ -580,6 +580,7 @@
                     <verbose>true</verbose>
                     <fork>true</fork>
                     <compilerVersion>17</compilerVersion>
+                    <release>17</release>
                 </configuration>
             </plugin>
 
