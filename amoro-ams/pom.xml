@@ -309,22 +309,6 @@
             </exclusions>
         </dependency>
 
-        <!--  apache hudi dependencies -->
-        <dependency>
-            <groupId>org.apache.hudi</groupId>
-            <artifactId>hudi-java-client</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.orc</groupId>
-                    <artifactId>orc-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>asm</groupId>
-                    <artifactId>asm</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
         <!-- runtime dependencies -->
         <dependency>
             <groupId>org.apache.amoro</groupId>
@@ -436,6 +420,7 @@
             <groupId>io.kubernetes</groupId>
             <artifactId>client-java</artifactId>
             <version>15.0.1</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>

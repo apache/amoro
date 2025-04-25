@@ -17,7 +17,7 @@
   */
 
 import type { RouteRecordRaw } from 'vue-router'
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory  } from 'vue-router'
 const SwaggerUI = () => import('@/components/SwaggerUI.vue')
 const Home = () => import('@/views/Home.vue')
 const Page404 = () => import('@/views/404.vue')
@@ -119,7 +119,7 @@ const routes: Array<RouteRecordRaw> = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes,
 })
 

@@ -72,7 +72,7 @@ public class BasicTableTestHelper implements TableTestHelper {
     if (tableProperties != null) {
       this.tableProperties.putAll(tableProperties);
     }
-    this.tableProperties.put(TableProperties.FORMAT_VERSION, "2");
+    this.tableProperties.putIfAbsent(TableProperties.FORMAT_VERSION, "2");
   }
 
   public BasicTableTestHelper(
