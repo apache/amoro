@@ -32,6 +32,7 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
   private final OptimizerExecutor[] allExecutors;
   private FlinkOptimizerExecutor executor;
   private String optimizeGroupName;
+  private Thread optimizerThread;
 
   public FlinkExecutor(OptimizerExecutor[] allExecutors, String optimizeGroupName) {
     this.allExecutors = allExecutors;
@@ -61,12 +62,25 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
     // add label optimize_group;
     getMetricGroup().getAllVariables().put("<optimizer_group>", optimizeGroupName);
     executor.initOperatorMetric(getMetricGroup());
-    new Thread(() -> executor.start(), "flink-optimizer-executor-" + subTaskIndex).start();
+    optimizerThread =
+        new Thread(() -> executor.start(), "flink-optimizer-executor-" + subTaskIndex);
+    optimizerThread.setDaemon(true);
+    optimizerThread.start();
   }
 
   @Override
   public void close() throws Exception {
-    executor.stop();
+    if (executor != null) {
+      executor.stop();
+    }
+    if (optimizerThread != null && optimizerThread.isAlive()) {
+      optimizerThread.interrupt();
+      try {
+        optimizerThread.join(5000);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
   }
 
   @Override
