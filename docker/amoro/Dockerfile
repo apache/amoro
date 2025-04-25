@@ -23,7 +23,7 @@
 #        --tag apache/amoro:tagname
 #        .
 
-FROM eclipse-temurin:8-jdk-jammy as builder
+FROM eclipse-temurin:11-jdk-jammy AS builder
 
 # Add the entire project to the build container, unzip it,
 # and remove flink-optimizer to reduce the container size.
@@ -40,13 +40,13 @@ RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.
     && rm -rf /workspace/amoro
 
 
-FROM eclipse-temurin:8-jdk-jammy
+FROM eclipse-temurin:11-jdk-jammy
 
 ARG MAVEN_MIRROR=https://repo.maven.apache.org/maven2
 
-ENV AMORO_HOME /usr/local/amoro
-ENV AMORO_CONF_DIR ${AMORO_HOME}/conf
-ENV LOG_LEVEL info
+ENV AMORO_HOME=/usr/local/amoro
+ENV AMORO_CONF_DIR=${AMORO_HOME}/conf
+ENV LOG_LEVEL=info
 EXPOSE 1630 1260 1261
 
 COPY ./docker/amoro/entrypoint.sh /
