@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>amoro-format-paimon</artifactId>
-    <name>Amoro Paimon Format Integration</name>
+    <name>Amoro Project Paimon Format</name>
 
     <dependencies>
         <dependency>

@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>amoro-format-hudi</artifactId>
-    <name>Amoro Hudi Format Integration</name>
+    <name>Amoro Project Hudi Format</name>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
